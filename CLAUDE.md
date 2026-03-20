@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Not yet scaffolded — Vue project setup pending.
+**Status:** Scaffolded — basic app running with AppShell component.
 
 ---
 
@@ -23,7 +23,21 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 
 ## Architecture
 
-> To be filled in after scaffolding.
+```
+app/                        # Vue 3 + Vite project
+├── src/
+│   ├── components/
+│   │   └── AppShell.vue    # Top-level layout (header + main slot)
+│   ├── App.vue             # Root component — mounts AppShell
+│   ├── main.ts             # App entry point
+│   └── style.scss          # Global styles: Tailwind directives + base resets
+├── index.html
+├── tailwind.config.js      # Tailwind v3 — indigo primary theme, Inter font
+├── postcss.config.js
+├── vite.config.ts
+└── package.json            # Locked via package-lock.json
+.gitignore                  # Excludes node_modules, dist, .env
+```
 
 ---
 

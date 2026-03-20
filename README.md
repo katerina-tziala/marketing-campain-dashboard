@@ -48,6 +48,39 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
 - Uses the same Gemini API connection as the Budget Optimizer
 
 
+## Getting Started
+
+The app lives in the `app/` folder.
+
+### Install dependencies
+
+```bash
+cd app
+npm install
+```
+
+### Run in development mode
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Build for production
+
+```bash
+npm run build
+```
+
+### Preview the production build
+
+```bash
+npm run preview
+```
+
+---
+
 ## Tech Stack
 
 - **Vue.js 3** (Composition API): frontend framework
