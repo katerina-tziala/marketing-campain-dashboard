@@ -89,3 +89,18 @@ npm run preview
 - **PapaParse**: CSV parsing
 - **Google Gemini API**: AI-powered recommendations (free tier)
 - **Vite**: build tool and dev server
+
+
+## CSV Format
+
+The CSV file should include the following columns:
+
+| Column | Type | Description |
+|---|---|---|
+| campaign | string | Campaign name |
+| channel | string | Channel (e.g. Paid Search, Social, Email, Display, Video, Organic, Affiliate) |
+| budget | number | Cost in EUR |
+| impressions | number | Total impressions |
+| clicks | number | Total clicks |
+| conversions | number | Total conversions |
+| revenue | number | Revenue in EUR |

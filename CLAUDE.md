@@ -32,12 +32,26 @@ app/                        # Vue 3 + Vite project
 │   ├── main.ts             # App entry point
 │   └── style.scss          # Global styles: Tailwind directives + base resets
 ├── index.html
-├── tailwind.config.js      # Tailwind v3 — indigo primary theme, Inter font
+├── tailwind.config.js      # Tailwind v3 — indigo primary theme, system font stack
 ├── postcss.config.js
 ├── vite.config.ts
 └── package.json            # Locked via package-lock.json
 .gitignore                  # Excludes node_modules, dist, .env
 ```
+
+---
+
+## CSV Format
+
+| Column | Type | Description |
+|---|---|---|
+| `campaign` | string | Campaign name |
+| `channel` | string | Channel (Paid Search, Social, Email, Display, Video, Organic, Affiliate) |
+| `budget` | number | Cost in EUR |
+| `impressions` | number | Total impressions |
+| `clicks` | number | Total clicks |
+| `conversions` | number | Total conversions |
+| `revenue` | number | Revenue in EUR |
 
 ---
 
