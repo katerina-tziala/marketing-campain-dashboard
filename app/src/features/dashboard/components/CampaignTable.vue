@@ -1,0 +1,251 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import type { Campaign } from '../../../common/types/campaign'
+
+const props = defineProps<{ campaigns: Campaign[] }>()
+
+type SortField = keyof Campaign | 'roi' | 'ctr' | 'cvr' | 'cac'
+type SortDir = 'asc' | 'desc'
+
+const sortField = ref<SortField>('revenue')
+const sortDir = ref<SortDir>('desc')
+
+function getFieldValue(c: Campaign, field: SortField): number | string {
+  if (field === 'roi') return c.budget > 0 ? (c.revenue - c.budget) / c.budget : 0
+  if (field === 'ctr') return c.impressions > 0 ? c.clicks / c.impressions : 0
+  if (field === 'cvr') return c.clicks > 0 ? c.conversions / c.clicks : 0
+  if (field === 'cac') return c.conversions > 0 ? c.budget / c.conversions : 0
+  return c[field as keyof Campaign]
+}
+
+function sort(field: SortField) {
+  if (sortField.value === field) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDir.value = 'desc'
+  }
+}
+
+const sortedCampaigns = computed(() =>
+  [...props.campaigns].sort((a, b) => {
+    const aVal = getFieldValue(a, sortField.value)
+    const bVal = getFieldValue(b, sortField.value)
+    const dir = sortDir.value === 'asc' ? 1 : -1
+    if (aVal < bVal) return -dir
+    if (aVal > bVal) return dir
+    return 0
+  }),
+)
+
+function roiValue(c: Campaign) {
+  return c.budget > 0 ? ((c.revenue - c.budget) / c.budget) * 100 : 0
+}
+
+function roiFormatted(c: Campaign) {
+  return c.budget > 0
+    ? `${roiValue(c).toFixed(0)}%`
+    : '—'
+}
+
+function roiClass(c: Campaign) {
+  const r = roiValue(c)
+  if (r <= 0) return 'campaign-table__td--roi-negative'
+  if (r <= 50) return 'campaign-table__td--roi-warning'
+  return 'campaign-table__td--roi-positive'
+}
+
+function ctr(c: Campaign) {
+  return c.impressions > 0
+    ? `${((c.clicks / c.impressions) * 100).toFixed(2)}%`
+    : '—'
+}
+
+function cvr(c: Campaign) {
+  return c.clicks > 0
+    ? `${((c.conversions / c.clicks) * 100).toFixed(2)}%`
+    : '—'
+}
+
+function cac(c: Campaign) {
+  return c.conversions > 0
+    ? eur(c.budget / c.conversions, 2)
+    : '—'
+}
+
+function eur(val: number, decimals = 0) {
+  return new Intl.NumberFormat('en', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(val)
+}
+
+function compactNumber(val: number) {
+  if (val >= 1000) {
+    return new Intl.NumberFormat('en', {
+      notation: 'compact',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }).format(val)
+  }
+  return val.toLocaleString('en')
+}
+
+const columns: { key: SortField; label: string }[] = [
+  { key: 'campaign', label: 'Campaign' },
+  { key: 'channel', label: 'Channel' },
+  { key: 'budget', label: 'Budget' },
+  { key: 'clicks', label: 'Clicks' },
+  { key: 'ctr', label: 'CTR' },
+  { key: 'conversions', label: 'Conv.' },
+  { key: 'cvr', label: 'CVR' },
+  { key: 'revenue', label: 'Revenue' },
+  { key: 'roi', label: 'ROI' },
+  { key: 'cac', label: 'CAC' },
+]
+</script>
+
+<template>
+  <div class="campaign-table">
+    <table class="campaign-table__table">
+      <thead class="campaign-table__head">
+        <tr>
+          <th
+            v-for="col in columns"
+            :key="col.key"
+            scope="col"
+            class="campaign-table__th"
+            @click="sort(col.key)"
+          >
+            <span class="campaign-table__th-inner">
+              {{ col.label }}
+              <span
+                class="campaign-table__sort-icon"
+                :class="sortField === col.key ? 'campaign-table__sort-icon--active' : ''"
+              >
+                {{ sortField === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}
+              </span>
+            </span>
+          </th>
+        </tr>
+      </thead>
+
+      <tbody class="campaign-table__body">
+        <tr
+          v-for="c in sortedCampaigns"
+          :key="c.campaign"
+          class="campaign-table__tr"
+        >
+          <td class="campaign-table__td campaign-table__td--name">{{ c.campaign }}</td>
+          <td class="campaign-table__td">
+            <span class="channel-badge">{{ c.channel }}</span>
+          </td>
+          <td class="campaign-table__td">{{ eur(c.budget) }}</td>
+          <td class="campaign-table__td">{{ compactNumber(c.clicks) }}</td>
+          <td class="campaign-table__td">{{ ctr(c) }}</td>
+          <td class="campaign-table__td">{{ c.conversions.toLocaleString('en') }}</td>
+          <td class="campaign-table__td">{{ cvr(c) }}</td>
+          <td class="campaign-table__td campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
+          <td class="campaign-table__td campaign-table__td--roi" :class="roiClass(c)">
+            {{ roiFormatted(c) }}
+          </td>
+          <td class="campaign-table__td">{{ cac(c) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.campaign-table {
+
+  &__table {
+    @apply min-w-full text-sm;
+    border-collapse: collapse;
+  }
+
+  &__head {
+    background-color: var(--color-surface);
+  }
+
+  &__th {
+    @apply cursor-pointer select-none whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border);
+
+    &:hover {
+      color: theme('colors.primary.400');
+    }
+  }
+
+  &__th-inner {
+    @apply flex items-center gap-1;
+  }
+
+  &__sort-icon {
+    @apply text-xs;
+    color: var(--color-border);
+
+    &--active {
+      color: theme('colors.primary.400');
+    }
+  }
+
+  &__body {
+    background-color: var(--color-surface);
+  }
+
+  &__tr {
+    @apply transition-colors;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-surface) 60%, white 5%);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__td {
+    @apply px-4 py-3;
+    color: #cbd5e1;
+
+    &--name {
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    &--strong {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    &--roi {
+      @apply font-semibold;
+    }
+
+    &--roi-positive {
+      color: #10b981;
+    }
+
+    &--roi-warning {
+      color: #f59e0b;
+    }
+
+    &--roi-negative {
+      color: #f43f5e;
+    }
+  }
+}
+
+.channel-badge {
+  @apply rounded-full px-2 py-0.5 text-xs font-medium;
+  border: 1px solid theme('colors.primary.700');
+  color: theme('colors.primary.400');
+  background-color: transparent;
+}
+</style>

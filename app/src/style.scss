@@ -2,7 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
-// ─── Base ────────────────────────────────────────────────────────────────────
+// ─── Theme tokens ─────────────────────────────────────────────────────────────
+
+:root {
+  --color-bg: #070a15;
+  --color-surface: #151b2e;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-title: #a5b4fc;
+  --color-border: #1e2a4a;
+  --color-header-bg: #070a15;
+  --color-header-text: #f1f5f9;
+}
+
+// ─── Shared component classes ────────────────────────────────────────────────
+
+@layer components {
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    @apply rounded-md shadow-sm;
+  }
+
+  .btn-primary {
+    @apply rounded-lg bg-primary-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors
+           hover:bg-primary-700
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  }
+
+  .section-title {
+    color: var(--color-title);
+    @apply text-base;
+  }
+}
+
+// ─── Base ─────────────────────────────────────────────────────────────────────
 
 *,
 *::before,
@@ -13,10 +47,11 @@
 body {
   margin: 0;
   font-family: theme('fontFamily.sans');
-  background-color: theme('colors.primary.50');
-  color: theme('colors.primary.900');
+  background-color: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #app {
