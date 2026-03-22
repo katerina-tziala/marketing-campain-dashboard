@@ -1,0 +1,5 @@
+export { default as BarChart } from './BarChart.vue'
+export { default as DonutChart } from './DonutChart.vue'
+export { default as FunnelChart } from './FunnelChart.vue'
+export { default as GroupedBarChart } from './GroupedBarChart.vue'
+export { CHART_COLORS } from './useChartTheme'

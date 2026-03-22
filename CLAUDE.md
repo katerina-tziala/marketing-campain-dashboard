@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Scaffolded — basic app running with AppShell component.
+**Status:** Campaign Performance Dashboard implemented — app lands directly on the dashboard, Pinia store, charts module, and dark theme in place. Empty state component planned for when CSV upload is added.
 
 ---
 
@@ -13,8 +13,10 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 | Layer | Technology |
 |---|---|
 | Framework | Vue 3 (Composition API) |
+| Routing | Vue Router 4 |
+| State Management | Pinia |
 | Build Tool | Vite |
-| Styling | Tailwind CSS v3 + SCSS |
+| Styling | Tailwind CSS v3 + SCSS (dark mode via `class` strategy) |
 | Charts | Chart.js + vue-chartjs |
 | CSV Parsing | PapaParse |
 | AI | Google Gemini API (free tier) |
@@ -26,17 +28,43 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 ```
 app/                        # Vue 3 + Vite project
 ├── src/
-│   ├── components/
-│   │   └── AppShell.vue    # Top-level layout (header + main slot)
-│   ├── App.vue             # Root component — mounts AppShell
-│   ├── main.ts             # App entry point
-│   └── style.scss          # Global styles: Tailwind directives + base resets
+│   ├── common/                 # Shared types and data — no framework dependencies
+│   │   ├── types/
+│   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
+│   │   └── data/
+│   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
+│   ├── stores/
+│   │   └── campaignStore.ts    # Pinia store — campaigns, filters, KPIs, derived state
+│   ├── router/
+│   │   └── index.ts            # Vue Router — single route: / → DashboardView
+│   ├── ui/                     # UI component library — generic, reusable, no app dependencies
+│   │   ├── charts/             # Chart.js wrapper module
+│   │   │   ├── register.ts     # Registers all Chart.js components once (imported in main.ts)
+│   │   │   ├── useChartTheme.ts# Chart colors, grid, tooltip constants for dark theme
+│   │   │   ├── BarChart.vue    # Bar chart wrapper (supports horizontal mode)
+│   │   │   ├── DonutChart.vue  # Doughnut chart wrapper
+│   │   │   ├── GroupedBarChart.vue # Grouped bar chart wrapper
+│   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
+│   │   │   └── index.ts        # Barrel export for charts
+│   │   └── index.ts            # Barrel export for the full ui library
+│   ├── shell/
+│   │   └── AppShell.vue            # Top-level layout wrapper — header + main slot
+│   ├── features/
+│   │   └── dashboard/              # Dashboard feature folder
+│   │       ├── DashboardView.vue   # Campaign performance dashboard — loads at /
+│   │       └── components/         # Components owned by this view
+│   │           ├── KpiCard.vue         # Single KPI metric card
+│   │           ├── CampaignTable.vue   # Sortable campaign data table
+│   │           └── ChannelFilter.vue   # Multi-select channel filter pills
+│   ├── App.vue                 # Root component — AppShell + RouterView
+│   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
+│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode
 ├── index.html
-├── tailwind.config.js      # Tailwind v3 — indigo primary theme, system font stack
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme
 ├── postcss.config.js
-├── vite.config.ts
-└── package.json            # Locked via package-lock.json
-.gitignore                  # Excludes node_modules, dist, .env
+├── vite.config.ts              # @ alias → src/
+└── package.json                # Locked via package-lock.json
+.gitignore                      # Excludes node_modules, dist, .env
 ```
 
 ---
@@ -46,7 +74,7 @@ app/                        # Vue 3 + Vite project
 | Column | Type | Description |
 |---|---|---|
 | `campaign` | string | Campaign name |
-| `channel` | string | Channel (Paid Search, Social, Email, Display, Video, Organic, Affiliate) |
+| `channel` | string | Channel name — any string; channels are extracted dynamically from the data |
 | `budget` | number | Cost in EUR |
 | `impressions` | number | Total impressions |
 | `clicks` | number | Total clicks |
@@ -66,13 +94,13 @@ app/                        # Vue 3 + Vite project
 - [ ] Error handling: wrong file type, empty/oversized file, missing columns, invalid values
 
 ### Campaign Performance Dashboard
-- [ ] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
-- [ ] Bar chart: ROI by campaign
-- [ ] Donut chart: Budget allocation by channel
-- [ ] Grouped bar chart: Revenue vs Budget by channel
-- [ ] Conversion Funnel: Impressions → Clicks → Conversions
-- [ ] Campaign table: sortable by any column
-- [ ] Channel filters (Paid Search, Social, Email, Display, Video, Organic, Affiliate) — real-time updates
+- [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
+- [x] Bar chart: ROI by campaign
+- [x] Donut chart: Budget allocation by channel
+- [x] Grouped bar chart: Revenue vs Budget by channel
+- [x] Conversion Funnel: Impressions → Clicks → Conversions
+- [x] Campaign table: sortable by any column
+- [x] Channel filters — dynamic from data, real-time updates across all charts and table
 
 ### AI Budget Optimizer (Gemini)
 - [ ] Send campaign data to Gemini API

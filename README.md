@@ -13,7 +13,7 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
   - Grouped bar chart: Revenue vs Budget by channel
   - Conversion Funnel: Impressions → Clicks → Conversions
 - **Campaign Table:** Sortable by any column, all metrics visible at a glance
-- **Channel Filters:** Filter by channel (Paid Search, Social, Email, Display, Video, Organic, Affiliate) — the entire dashboard updates in real-time
+- **Channel Filters:** Filter by any channel — channels are extracted dynamically from the data, the entire dashboard updates in real-time
 
 ### CSV Upload & Template
 
@@ -84,8 +84,10 @@ npm run preview
 ## Tech Stack
 
 - **Vue.js 3** (Composition API): frontend framework
+- **Vue Router 4**: client-side routing
+- **Pinia**: state management (official Vue 3 store)
 - **Chart.js** + **vue-chartjs**: charts & data visualization
-- **Tailwind CSS v3** + **SCSS**: styling with custom theme configuration
+- **Tailwind CSS v3** + **SCSS**: styling with custom theme and dark mode
 - **PapaParse**: CSV parsing
 - **Google Gemini API**: AI-powered recommendations (free tier)
 - **Vite**: build tool and dev server

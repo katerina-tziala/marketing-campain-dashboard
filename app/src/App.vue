@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import AppShell from './components/AppShell.vue'
+import { RouterView } from 'vue-router'
+import AppShell from './shell/AppShell.vue'
 </script>
 
 <template>
   <AppShell>
-    <p class="text-primary-600">App is running.</p>
+    <RouterView />
   </AppShell>
 </template>
