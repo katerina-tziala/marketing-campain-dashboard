@@ -5,13 +5,8 @@
 <template>
   <div class="app-shell">
     <header class="app-shell__header">
-      <div class="app-shell__header-inner">
-        <div class="app-shell__branding">
-          <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
-        </div>
-      </div>
+      <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
     </header>
-
     <main class="app-shell__main">
       <slot />
     </main>
@@ -30,18 +25,6 @@
     border-bottom: 1px solid var(--color-border);
   }
 
-  &__header-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  &__branding {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
   &__title {
     font-size: theme('fontSize.2xl');
     font-weight: 800;
@@ -58,7 +41,11 @@
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
-    padding: theme('spacing.6') 0;
+    padding: theme('spacing.6') theme('spacing.6');
+
+    @media (min-width: 1280px) {
+      padding: theme('spacing.6') 0;
+    }
   }
 }
 </style>
