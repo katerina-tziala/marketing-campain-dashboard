@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented — app lands directly on the dashboard, Pinia store, charts module, dark theme, CSV download, toast notification system, and base UI components all in place. CSV upload and AI features are next.
+**Status:** Campaign Performance Dashboard implemented — app shows empty state when no data is loaded; users upload a CSV via a modal (title + file); data is parsed, validated, and loaded into the store. CSV upload error modal and "upload again" flow are next.
 
 ---
 
@@ -34,7 +34,7 @@ app/                        # Vue 3 + Vite project
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
-│   │   ├── campaignStore.ts    # Pinia store — campaigns, filters, KPIs, derived state
+│   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
 │   │   └── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
@@ -56,19 +56,26 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
+│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header slot, body slot, footer slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — header (title + download button) + main slot + ToastContainer
 │   ├── features/
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — loads at /
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
 │   │   └── csv-file/               # CSV feature folder
+│   │       ├── types/
+│   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
+│   │       ├── components/
+│   │       │   ├── EmptyState.vue  # No-data screen — download template + upload CSV buttons
+│   │       │   └── UploadModal.vue # Upload modal — campaign title input + drag & drop file picker
 │   │       └── utils/
-│   │           └── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
+│   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
+│   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
 │   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode
@@ -100,11 +107,13 @@ app/                        # Vue 3 + Vite project
 
 ### CSV Upload & Template
 - [x] Download CSV template (mock campaigns)
-- [ ] Empty state with "Download Template" and "Upload CSV" options
-- [ ] Drag & drop + file picker upload
-- [ ] Auto-detection of columns
+- [x] Empty state with "Download Template" and "Upload CSV" options
+- [x] Drag & drop + file picker upload
+- [x] Auto-detection of columns (case-insensitive, 7 expected headers, extra columns ignored)
+- [ ] Error handling modal: wrong file type, empty/oversized file, missing columns, invalid rows
+- [ ] Upload again / replace existing data (with confirmation warning)
+- [ ] Data persistence (memory vs sessionStorage vs localStorage)
 - [ ] Data preview before importing
-- [ ] Error handling: wrong file type, empty/oversized file, missing columns, invalid values
 
 ### Campaign Performance Dashboard
 - [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC

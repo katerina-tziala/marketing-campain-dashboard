@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 import type { Campaign } from '../common/types/campaign'
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
-  const campaigns = ref<Campaign[]>(MOCK_CAMPAINS)
+  const campaigns = ref<Campaign[]>([])
+  const title = ref<string>('')
   const selectedChannels = ref<string[]>([])
 
   // Getters
@@ -70,8 +70,15 @@ export const useCampaignStore = defineStore('campaigns', () => {
     selectedChannels.value = []
   }
 
+  function loadCampaigns(newTitle: string, newCampaigns: Campaign[]): void {
+    title.value = newTitle
+    campaigns.value = newCampaigns
+    selectedChannels.value = []
+  }
+
   return {
     campaigns,
+    title,
     filteredCampaigns,
     selectedChannels,
     availableChannels,
@@ -81,5 +88,6 @@ export const useCampaignStore = defineStore('campaigns', () => {
     totalConversions,
     toggleChannel,
     clearFilters,
+    loadCampaigns,
   }
 })

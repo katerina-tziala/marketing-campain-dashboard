@@ -26,6 +26,7 @@ withDefaults(
 .base-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: theme('spacing.2');
   padding: theme('spacing[1.5]') theme('spacing.3');
   border-radius: theme('borderRadius.md');

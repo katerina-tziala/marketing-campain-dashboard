@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   BarChart,
   CHART_COLORS,
@@ -9,11 +9,30 @@ import {
   GroupedBarChart,
 } from '../../ui/charts'
 import { useCampaignStore } from '../../stores/campaignStore'
+import { useToastStore } from '../../stores/toastStore'
+import EmptyState from '../csv-file/components/EmptyState.vue'
+import UploadModal from '../csv-file/components/UploadModal.vue'
+import type { CsvValidationError } from '../csv-file/types'
+import type { Campaign } from '../../common/types/campaign'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
 import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
+const toastStore = useToastStore()
+
+const showUploadModal = ref(false)
+
+function onUploadSuccess(payload: { title: string; campaigns: Campaign[] }): void {
+  store.loadCampaigns(payload.title, payload.campaigns)
+  showUploadModal.value = false
+}
+
+function onUploadError(errors: CsvValidationError[]): void {
+  // TODO: open error modal — for now show first error as toast
+  toastStore.addToast(errors[0].message)
+  showUploadModal.value = false
+}
 
 // ── Shared campaign color map ──────────────────────────────────────────────────
 
@@ -93,12 +112,16 @@ const funnelValues = computed(() => [
 </script>
 
 <template>
-  <div class="dashboard">
+  <!-- Empty state -->
+  <EmptyState v-if="store.campaigns.length === 0" @upload="showUploadModal = true" />
+
+  <!-- Dashboard -->
+  <div v-else class="dashboard">
     <!-- Header -->
     <div class="dashboard__header">
       <h2 class="dashboard__title">Campaign Performance</h2>
       <p class="dashboard__subtitle">
-        {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
+        {{ store.title }} , {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
       </p>
     </div>
 
@@ -179,12 +202,26 @@ const funnelValues = computed(() => [
         <CampaignTable :campaigns="store.filteredCampaigns" />
       </div>
     </div>
+
   </div>
+
+  <!-- Upload Modal -->
+  <UploadModal
+    v-if="showUploadModal"
+    @success="onUploadSuccess"
+    @error="onUploadError"
+    @close="showUploadModal = false"
+  />
 </template>
 
 <style lang="scss" scoped>
 .dashboard {
   @apply space-y-6 pb-4;
+  padding: theme('spacing.6') theme('spacing.6');
+
+  @media (min-width: 1280px) {
+    padding: theme('spacing.6') 0;
+  }
 
   &__title {
     @apply text-lg font-semibold tracking-tight;

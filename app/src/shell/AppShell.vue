@@ -60,15 +60,13 @@ function handleDownloadTemplate(): void {
   }
 
   &__main {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
-    padding: theme('spacing.6') theme('spacing.6');
-
-    @media (min-width: 1280px) {
-      padding: theme('spacing.6') 0;
-    }
+    overflow: hidden;
   }
 }
 </style>
