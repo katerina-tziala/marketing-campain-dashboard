@@ -64,9 +64,11 @@ onUnmounted(() => {
   border-radius: theme('borderRadius.lg');
   width: 100%;
   max-width: 480px;
+  max-height: calc(100vh - 2rem);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 
   &__header {
     display: flex;
@@ -115,6 +117,9 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: theme('spacing.5');
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   &__footer {

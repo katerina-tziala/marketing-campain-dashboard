@@ -9,28 +9,19 @@ import {
   GroupedBarChart,
 } from '../../ui/charts'
 import { useCampaignStore } from '../../stores/campaignStore'
-import { useToastStore } from '../../stores/toastStore'
 import EmptyState from '../csv-file/components/EmptyState.vue'
 import UploadModal from '../csv-file/components/UploadModal.vue'
-import type { CsvValidationError } from '../csv-file/types'
 import type { Campaign } from '../../common/types/campaign'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
 import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
-const toastStore = useToastStore()
 
 const showUploadModal = ref(false)
 
 function onUploadSuccess(payload: { title: string; campaigns: Campaign[] }): void {
   store.loadCampaigns(payload.title, payload.campaigns)
-  showUploadModal.value = false
-}
-
-function onUploadError(errors: CsvValidationError[]): void {
-  // TODO: open error modal — for now show first error as toast
-  toastStore.addToast(errors[0].message)
   showUploadModal.value = false
 }
 
@@ -209,7 +200,6 @@ const funnelValues = computed(() => [
   <UploadModal
     v-if="showUploadModal"
     @success="onUploadSuccess"
-    @error="onUploadError"
     @close="showUploadModal = false"
   />
 </template>

@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 import type { Campaign } from '../../../common/types/campaign'
-import type { CsvParseResult, CsvValidationError } from '../types'
+import type { CsvParseResult, CsvRowError } from '../types'
 
 const EXPECTED_HEADERS: (keyof Campaign)[] = [
   'campaign',
@@ -12,7 +12,7 @@ const EXPECTED_HEADERS: (keyof Campaign)[] = [
   'revenue',
 ]
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2MB
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
 
 export function parseCsv(file: File): Promise<CsvParseResult> {
   // ── File-level validation ────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ export function parseCsv(file: File): Promise<CsvParseResult> {
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return Promise.resolve({
       campaigns: [],
-      errors: [{ type: 'file_size', message: 'File exceeds the 2MB size limit.' }],
+      errors: [{ type: 'file_size', message: 'File exceeds the 2 MB size limit.' }],
     })
   }
 
@@ -49,8 +49,8 @@ export function parseCsv(file: File): Promise<CsvParseResult> {
             errors: [
               {
                 type: 'missing_columns',
-                message: 'The CSV is missing required columns.',
-                details: missingColumns.map((c) => `"${c}"`),
+                message: 'CSV file headers are missing.',
+                details: missingColumns,
               },
             ],
           })
@@ -78,11 +78,11 @@ export function parseCsv(file: File): Promise<CsvParseResult> {
         // ── Row validation ─────────────────────────────────────────────────────
 
         const campaigns: Campaign[] = []
-        const rowErrors: string[] = []
+        const rowErrors: CsvRowError[] = []
 
         data.forEach((row, i) => {
-          const rowNum = i + 2 // +2: 1-based + header row
-          const errors: string[] = []
+          const rowNum = i + 2 // +2: 1-based index + header row
+          const errors: CsvRowError[] = []
 
           const campaign = get(row, 'campaign')
           const channel = get(row, 'channel')
@@ -92,34 +92,52 @@ export function parseCsv(file: File): Promise<CsvParseResult> {
           const conversions = Number(get(row, 'conversions'))
           const revenue = Number(get(row, 'revenue'))
 
-          if (!campaign) errors.push('campaign is empty')
-          if (!channel) errors.push('channel is empty')
-          if (isNaN(budget) || budget <= 0) errors.push('budget must be a number greater than 0')
-          if (isNaN(impressions) || impressions < 0 || !Number.isInteger(impressions))
-            errors.push('impressions must be a non-negative integer')
-          if (isNaN(clicks) || clicks < 0 || !Number.isInteger(clicks))
-            errors.push('clicks must be a non-negative integer')
-          if (clicks > impressions) errors.push('clicks cannot exceed impressions')
-          if (isNaN(conversions) || conversions < 0 || !Number.isInteger(conversions))
-            errors.push('conversions must be a non-negative integer')
-          if (conversions > clicks) errors.push('conversions cannot exceed clicks')
-          if (isNaN(revenue) || revenue < 0) errors.push('revenue must be a non-negative number')
+          if (!campaign)
+            errors.push({ row: rowNum, column: 'campaign', issue: 'Cannot be empty' })
+
+          if (!channel)
+            errors.push({ row: rowNum, column: 'channel', issue: 'Cannot be empty' })
+
+          if (isNaN(budget) || budget <= 0)
+            errors.push({ row: rowNum, column: 'budget', issue: 'Must be a number greater than 0' })
+
+          const impressionsValid = !isNaN(impressions) && impressions >= 0 && Number.isInteger(impressions)
+          if (!impressionsValid)
+            errors.push({ row: rowNum, column: 'impressions', issue: 'Must be a non-negative integer' })
+
+          const clicksValid = !isNaN(clicks) && clicks >= 0 && Number.isInteger(clicks)
+          if (!clicksValid) {
+            errors.push({ row: rowNum, column: 'clicks', issue: 'Must be a non-negative integer' })
+          } else if (impressionsValid && clicks > impressions) {
+            errors.push({ row: rowNum, column: 'clicks', issue: 'Cannot exceed impressions' })
+          }
+
+          const conversionsValid = !isNaN(conversions) && conversions >= 0 && Number.isInteger(conversions)
+          if (!conversionsValid) {
+            errors.push({ row: rowNum, column: 'conversions', issue: 'Must be a non-negative integer' })
+          } else if (clicksValid && conversions > clicks) {
+            errors.push({ row: rowNum, column: 'conversions', issue: 'Cannot exceed clicks' })
+          }
+
+          if (isNaN(revenue) || revenue < 0)
+            errors.push({ row: rowNum, column: 'revenue', issue: 'Must be a non-negative number' })
 
           if (errors.length > 0) {
-            rowErrors.push(`Row ${rowNum}: ${errors.join('; ')}`)
+            rowErrors.push(...errors)
           } else {
             campaigns.push({ campaign, channel, budget, impressions, clicks, conversions, revenue })
           }
         })
 
         if (rowErrors.length > 0) {
+          const invalidRowCount = new Set(rowErrors.map((e) => e.row)).size
           return resolve({
-            campaigns: [],
+            campaigns,
             errors: [
               {
                 type: 'invalid_rows',
-                message: `${rowErrors.length} row${rowErrors.length > 1 ? 's' : ''} failed validation.`,
-                details: rowErrors,
+                message: `${invalidRowCount} row${invalidRowCount > 1 ? 's' : ''} failed validation.`,
+                rowErrors,
               },
             ],
           })

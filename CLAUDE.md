@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented — app shows empty state when no data is loaded; users upload a CSV via a modal (title + file); data is parsed, validated, and loaded into the store. CSV upload error modal and "upload again" flow are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling: file-level errors (type, size, empty) shown inline under the dropzone; missing columns listed by name inline; invalid rows shown in a structured table inside the modal with the option to proceed with valid rows or go back. Upload again / replace data and AI features are next.
 
 ---
 
@@ -18,7 +18,7 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 | Build Tool | Vite |
 | Styling | Tailwind CSS v3 + SCSS (dark mode via `class` strategy) |
 | Charts | Chart.js + vue-chartjs |
-| CSV Parsing | PapaParse (planned — for upload direction only) |
+| CSV Parsing | PapaParse (upload direction only) |
 | AI | Google Gemini API (free tier) |
 
 ---
@@ -110,7 +110,7 @@ app/                        # Vue 3 + Vite project
 - [x] Empty state with "Download Template" and "Upload CSV" options
 - [x] Drag & drop + file picker upload
 - [x] Auto-detection of columns (case-insensitive, 7 expected headers, extra columns ignored)
-- [ ] Error handling modal: wrong file type, empty/oversized file, missing columns, invalid rows
+- [x] Error handling: wrong file type and size shown inline; missing columns listed by name; invalid rows shown in a structured table with option to proceed with valid rows
 - [ ] Upload again / replace existing data (with confirmation warning)
 - [ ] Data persistence (memory vs sessionStorage vs localStorage)
 - [ ] Data preview before importing

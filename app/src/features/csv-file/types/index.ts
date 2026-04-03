@@ -1,3 +1,9 @@
+export interface CsvRowError {
+  row: number
+  column: string
+  issue: string
+}
+
 export type CsvValidationErrorType =
   | 'file_type'
   | 'file_size'
@@ -9,6 +15,7 @@ export interface CsvValidationError {
   type: CsvValidationErrorType
   message: string
   details?: string[]
+  rowErrors?: CsvRowError[]
 }
 
 export interface CsvParseResult {
