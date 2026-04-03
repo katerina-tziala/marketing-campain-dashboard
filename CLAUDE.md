@@ -124,3 +124,25 @@ app/                        # Vue 3 + Vite project
 2. **Bug fix / small update:** Fix → update CLAUDE.md if relevant → update LOGS.md (short entry)
 3. **Refactor / architecture change:** Discuss → get approval → change → update CLAUDE.md + README + LOGS.md
 4. **Language:** English only in all code and documentation files
+
+### Log Entry Required Fields
+
+Every LOGS.md entry must include both `Brainstorming` and `Prompt` fields — no exceptions.
+
+**Full entry** (feature / refactor / architecture):
+```
+**Type:**
+**Summary:**
+**Brainstorming:**
+**Prompt:**
+**What was built:** / **What changed:**
+**Key decisions & why:**
+```
+
+**Short entry** (small update / bug fix):
+```
+**Type:**
+**Brainstorming:** (1–2 sentences on the reasoning behind the change)
+**Prompt:**
+- bullet list of changes
+```
