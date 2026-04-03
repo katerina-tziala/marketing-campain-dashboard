@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented — app lands directly on the dashboard, Pinia store, charts module, and dark theme in place. Empty state component planned for when CSV upload is added.
+**Status:** Campaign Performance Dashboard implemented — app lands directly on the dashboard, Pinia store, charts module, dark theme, CSV download, toast notification system, and base UI components all in place. CSV upload and AI features are next.
 
 ---
 
@@ -18,7 +18,7 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 | Build Tool | Vite |
 | Styling | Tailwind CSS v3 + SCSS (dark mode via `class` strategy) |
 | Charts | Chart.js + vue-chartjs |
-| CSV Parsing | PapaParse |
+| CSV Parsing | PapaParse (planned — for upload direction only) |
 | AI | Google Gemini API (free tier) |
 
 ---
@@ -34,7 +34,8 @@ app/                        # Vue 3 + Vite project
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
-│   │   └── campaignStore.ts    # Pinia store — campaigns, filters, KPIs, derived state
+│   │   ├── campaignStore.ts    # Pinia store — campaigns, filters, KPIs, derived state
+│   │   └── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -46,20 +47,32 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── GroupedBarChart.vue # Grouped bar chart wrapper
 │   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
 │   │   │   └── index.ts        # Barrel export for charts
+│   │   ├── icons/              # Inline SVG icon components
+│   │   │   ├── DownloadIcon.vue
+│   │   │   ├── CloseIcon.vue
+│   │   │   └── index.ts        # Barrel export for icons
+│   │   ├── toast/              # Toast notification module
+│   │   │   ├── ToastNotification.vue  # Single error toast — role="alert", aria-live
+│   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
+│   │   │   └── index.ts        # Barrel export for toast
+│   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — header + main slot
+│   │   └── AppShell.vue            # Top-level layout wrapper — header (title + download button) + main slot + ToastContainer
 │   ├── features/
-│   │   └── dashboard/              # Dashboard feature folder
-│   │       ├── DashboardView.vue   # Campaign performance dashboard — loads at /
-│   │       └── components/         # Components owned by this view
-│   │           ├── KpiCard.vue         # Single KPI metric card
-│   │           ├── CampaignTable.vue   # Sortable campaign data table
-│   │           └── ChannelFilter.vue   # Multi-select channel filter pills
+│   │   ├── dashboard/              # Dashboard feature folder
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — loads at /
+│   │   │   └── components/         # Components owned by this view
+│   │   │       ├── KpiCard.vue         # Single KPI metric card
+│   │   │       ├── CampaignTable.vue   # Sortable campaign data table
+│   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
+│   │   └── csv-file/               # CSV feature folder
+│   │       └── utils/
+│   │           └── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
 │   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode
-├── index.html
+├── index.html                  # <html class="dark"> — dark mode active before JS runs
 ├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/
@@ -86,7 +99,7 @@ app/                        # Vue 3 + Vite project
 ## Feature Checklist
 
 ### CSV Upload & Template
-- [ ] Download CSV template (12 demo campaigns)
+- [x] Download CSV template (mock campaigns)
 - [ ] Empty state with "Download Template" and "Upload CSV" options
 - [ ] Drag & drop + file picker upload
 - [ ] Auto-detection of columns
@@ -120,29 +133,76 @@ app/                        # Vue 3 + Vite project
 
 ## Workflow Rules
 
-1. **New feature:** Brainstorm → get approval → build → update README + CLAUDE.md + LOGS.md
-2. **Bug fix / small update:** Fix → update CLAUDE.md if relevant → update LOGS.md (short entry)
-3. **Refactor / architecture change:** Discuss → get approval → change → update CLAUDE.md + README + LOGS.md
-4. **Language:** English only in all code and documentation files
+### Language
+- **English only** — all communication, code, comments, and documentation files without exception.
 
-### Log Entry Required Fields
+### Git
+- **Never run git commands** — no git status, git add, git commit, git log, or any other git operation.
+- The user handles all git operations. When asked for a commit message, provide the text only — no commands.
 
-Every LOGS.md entry must include both `Brainstorming` and `Prompt` fields — no exceptions.
+### Per interaction type
 
-**Full entry** (feature / refactor / architecture):
+**New feature:**
+1. Brainstorm first — discuss approach, components needed, options, trade-offs. Wait for explicit approval before writing any code.
+2. Build it.
+3. Update `README.md` — document the feature.
+4. Update `CLAUDE.md` — mark checklist item done, update Architecture if new files were added.
+5. **Immediately** append a Full Entry to `LOGS.md` — this is the last tool call before responding.
+6. Reply with a summary.
+
+**Bug fix / small update:**
+1. Fix it.
+2. Update `CLAUDE.md` if relevant.
+3. **Immediately** append a Short Entry to `LOGS.md` — this is the last tool call before responding.
+4. Reply with a summary.
+
+**Refactor / architecture change:**
+1. Discuss first — explain what and why. Wait for explicit approval.
+2. Make the change.
+3. Update `CLAUDE.md` — architecture section and checklist.
+4. Update `README.md` if it affects setup or features.
+5. **Immediately** append a Full Entry to `LOGS.md` — this is the last tool call before responding.
+6. Reply with a summary.
+
+> **CRITICAL:** The LOGS.md entry is mandatory for every code change — no matter how small. It is never optional and never deferred. The log entry is always the last tool call before the final response.
+
+### Keeping CLAUDE.md up to date
+
+CLAUDE.md must be updated as part of every interaction that changes the codebase. It is the living spec — it must always reflect the current state of the project.
+
+After every change, check and update:
+- **Status** — reflects what is currently built
+- **Architecture** — any new files, folders, or structural changes are added; removed files are deleted
+- **Feature Checklist** — completed items marked `[x]`
+
+This update happens in the same session as the code change, before responding to the user.
+
+---
+
+## LOGS.md Entry Format
+
+### Full entry — feature / refactor / architecture
+
 ```
-**Type:**
-**Summary:**
-**Brainstorming:**
-**Prompt:**
+## [#N] Title
+**Type:** feature | refactor | architecture
+**Summary:** One-sentence description of what changed and why.
+**Brainstorming:** Reasoning, options considered, trade-offs, and decisions made before building.
+**Prompt:** The actual prompt used — written as if given to the AI.
 **What was built:** / **What changed:**
+- bullet list of files created or modified and what each does
 **Key decisions & why:**
+- bullet list of non-obvious choices and their rationale
 ```
 
-**Short entry** (small update / bug fix):
+### Short entry — small update / bug fix
+
 ```
-**Type:**
-**Brainstorming:** (1–2 sentences on the reasoning behind the change)
-**Prompt:**
+## [#N] Title
+**Type:** update | fix
+**Brainstorming:** 1–2 sentences on why this change was made.
+**Prompt:** The actual prompt used.
 - bullet list of changes
 ```
+
+Both entry types require **Brainstorming** and **Prompt** — no exceptions.
