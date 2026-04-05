@@ -617,3 +617,11 @@ src/
 **Prompt:** Move EmptyState to dashboard since it is more logical that this component relates to that feature.
 - `EmptyState.vue` — moved from `csv-file/components/` to `dashboard/components/`; updated composable import path to `../../csv-file/composables/useDownloadTemplate`
 - `DashboardView.vue` — updated import to `./components/EmptyState.vue`
+
+## [#38] Align error table styles to campaign table; extract shared data-table base styles
+**Type:** refactor
+**Brainstorming:** The error table used different background colors, tighter padding, and a solid border between rows, making it look visually disconnected from the campaign table. Once aligned, it became clear both tables shared identical base styles defined separately in each component — extracting them into a global `@layer components` class removes the duplication and establishes a consistent table visual language. The row index column in the error table also used a muted secondary color, making it look like a label; matching it to the campaign name style (bold, `#cbd5e1`) gives it the same visual weight.
+**Prompt:** Update the error table to use the same colors as the campaign table. Move common table styles to the layer components. The row index should be the same style as campaign name.
+- `style.scss` — added `.data-table`, `.data-table__th`, `.data-table__tr`, `.data-table__td` to `@layer components` with all shared base styles
+- `CampaignTable.vue` — template updated to use shared `data-table` classes; `campaign-table__th` and `campaign-table__td--*` modifiers kept scoped for unique behavior (sort hover, ROI colors, channel badge); removed duplicated scoped base styles
+- `CsvRowErrorTable.vue` — header background changed to `var(--color-surface)`; padding increased to match campaign table; cell text color changed to `#cbd5e1`; row border changed to `color-mix(in srgb, var(--color-border) 50%, transparent)` with no border on last child; row hover added; template updated to use shared `data-table` classes; scoped reduced to `error-table__th` (sticky + column widths) and `error-table__td` modifiers; `--row` modifier updated to `font-weight: 600`

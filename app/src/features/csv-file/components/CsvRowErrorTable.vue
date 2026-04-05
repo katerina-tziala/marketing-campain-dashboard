@@ -38,19 +38,19 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
     </p>
 
     <div class="error-table-wrapper">
-      <table class="error-table">
+      <table class="data-table">
         <thead>
           <tr>
-            <th class="error-table__th error-table__th--row">Row</th>
-            <th class="error-table__th error-table__th--col">Column</th>
-            <th class="error-table__th">Issue</th>
+            <th class="data-table__th error-table__th error-table__th--row">Row</th>
+            <th class="data-table__th error-table__th error-table__th--col">Column</th>
+            <th class="data-table__th error-table__th">Issue</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(err, i) in rowErrors" :key="i" class="error-table__row">
-            <td class="error-table__td error-table__td--row">{{ err.row }}</td>
-            <td class="error-table__td error-table__td--col">{{ err.column }}</td>
-            <td class="error-table__td">{{ err.issue }}</td>
+          <tr v-for="(err, i) in rowErrors" :key="i" class="data-table__tr">
+            <td class="data-table__td error-table__td--row">{{ err.row }}</td>
+            <td class="data-table__td error-table__td--col">{{ err.column }}</td>
+            <td class="data-table__td">{{ err.issue }}</td>
           </tr>
         </tbody>
       </table>
@@ -113,48 +113,23 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
   max-height: 260px;
 }
 
-.error-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: theme('fontSize.sm');
+.error-table__th {
+  position: sticky;
+  top: 0;
 
-  &__th {
-    text-align: left;
-    padding: theme('spacing.2') theme('spacing.3');
-    font-size: theme('fontSize.xs');
+  &--row { width: 56px; }
+  &--col { width: 110px; }
+}
+
+.error-table__td {
+  &--row {
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--color-text-secondary);
-    background-color: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
-    position: sticky;
-    top: 0;
-
-    &--row { width: 56px; }
-    &--col { width: 110px; }
+    font-variant-numeric: tabular-nums;
   }
 
-  &__row {
-    &:not(:last-child) td {
-      border-bottom: 1px solid var(--color-border);
-    }
-  }
-
-  &__td {
-    padding: theme('spacing.2') theme('spacing.3');
-    color: var(--color-text);
-    vertical-align: top;
-
-    &--row {
-      color: var(--color-text-secondary);
-      font-variant-numeric: tabular-nums;
-    }
-
-    &--col {
-      font-weight: 500;
-      color: #f43f5e;
-    }
+  &--col {
+    font-weight: 500;
+    color: #f43f5e;
   }
 }
 
