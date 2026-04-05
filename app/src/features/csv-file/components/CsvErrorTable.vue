@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BaseButton, DownloadIcon } from '../../../ui'
+import { BaseButton } from '../../../ui'
 import type { CsvRowError } from '../types'
 import type { Campaign } from '../../../common/types/campaign'
 
@@ -13,7 +13,6 @@ const emit = defineEmits<{
   back: []
   proceed: []
   close: []
- downloadTemplate: []
 }>()
 
 const invalidRowCount = computed(() => new Set(props.rowErrors.map((e) => e.row)).size)
@@ -59,23 +58,17 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
 
   <!-- Footer -->
   <div class="error-footer">
-    <BaseButton variant="ghost" @click="emit('downloadTemplate')">
-      <DownloadIcon />
-      Download Template
+    <BaseButton
+      v-if="validCampaigns.length > 0"
+      variant="ghost"
+      class="error-footer__proceed"
+      @click="emit('proceed')"
+    >
+      Proceed with valid rows
     </BaseButton>
 
-    <div class="error-footer__actions">
-      <BaseButton variant="ghost" @click="emit('close')">Cancel</BaseButton>
-      <BaseButton variant="primary" @click="emit('back')">Back</BaseButton>
-      <BaseButton
-        v-if="validCampaigns.length > 0"
-        variant="primary"
-        @click="emit('proceed')"
-      >
-        Proceed with {{ validCampaigns.length }} valid
-        {{ validCampaigns.length === 1 ? 'row' : 'rows' }}
-      </BaseButton>
-    </div>
+    <BaseButton variant="ghost" class="error-footer__cancel" @click="emit('close')">Cancel</BaseButton>
+    <BaseButton variant="primary" class="error-footer__back" @click="emit('back')">Back</BaseButton>
   </div>
 </template>
 
@@ -91,7 +84,7 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
   min-height: 0;
   overflow-y: auto;
   width: 90vw;
-  max-width: 800px;
+  max-width: 640px;
 }
 
 // ── Summary ────────────────────────────────────────────────────────────────────
@@ -138,16 +131,29 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
 .error-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: theme('spacing.3');
   padding: theme('spacing.4') theme('spacing.6');
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
 
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: theme('spacing.6');
+  &__cancel {
+    margin-left: auto;
+  }
+
+  @media (max-width: 479px) {
+    flex-direction: column;
+    padding: theme('spacing.4');
+
+    .error-footer__back    { order: 1; }
+    .error-footer__proceed { order: 2; }
+    .error-footer__cancel  { order: 3; }
+
+    .error-footer__back,
+    .error-footer__proceed,
+    .error-footer__cancel {
+      width: 100%;
+      margin-left: 0;
+    }
   }
 }
 </style>

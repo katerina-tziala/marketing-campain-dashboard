@@ -7,7 +7,7 @@ import { useDownloadTemplate } from '../composables/useDownloadTemplate'
 import type { Campaign } from '../../../common/types/campaign'
 import type { CsvRowError } from '../types'
 import CsvUploadForm from './CsvUploadForm.vue'
-import CsvRowErrorTable from './CsvRowErrorTable.vue'
+import CsvErrorTable from './CsvErrorTable.vue'
 
 const campaignStore = useCampaignStore()
 const { downloadTemplate } = useDownloadTemplate()
@@ -110,16 +110,15 @@ function handleProceed(): void {
       :is-loading="isLoading"
       @submit="handleSubmit"
       @close="close"
-      @downloadTemplate="downloadTemplate"
+      @download-template="downloadTemplate"
     />
-    <CsvRowErrorTable
+    <CsvErrorTable
       v-else
       :row-errors="rowErrors"
       :valid-campaigns="validCampaigns"
       @back="handleBack"
       @proceed="handleProceed"
       @close="close"
-      @downloadTemplate="downloadTemplate"
     />
   </BaseModal>
 </template>

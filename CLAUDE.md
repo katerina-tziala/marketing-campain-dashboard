@@ -77,7 +77,7 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── UploadModal.vue     # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
 │   │       │   ├── CsvUploadForm.vue   # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
-│   │       │   └── CsvRowErrorTable.vue # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel/Download buttons
+│   │       │   └── CsvErrorTable.vue    # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/
@@ -197,28 +197,30 @@ This update happens in the same session as the code change, before responding to
 
 ## LOGS.md Entry Format
 
-### Full entry — feature / refactor / architecture
+All entries use the same format — there is no short entry. Every change, no matter how small, gets a full entry.
 
 ```
 ## [#N] Title
-**Type:** feature | refactor | architecture
+**Type:** feature | refactor | architecture | update | fix
+
 **Summary:** One-sentence description of what changed and why.
-**Brainstorming:** Reasoning, options considered, trade-offs, and decisions made before building.
+
+**Brainstorming:** Reasoning, options considered, trade-offs, and decisions made.
+
 **Prompt:** The actual prompt used — written as if given to the AI.
+
 **What was built:** / **What changed:**
 - bullet list of files created or modified and what each does
+
 **Key decisions & why:**
 - bullet list of non-obvious choices and their rationale
 ```
 
-### Short entry — small update / bug fix
-
-```
-## [#N] Title
-**Type:** update | fix
-**Brainstorming:** 1–2 sentences on why this change was made.
-**Prompt:** The actual prompt used.
-- bullet list of changes
-```
-
-Both entry types require **Brainstorming** and **Prompt** — no exceptions.
+**Formatting rules — no exceptions:**
+- `**Type:**` follows immediately after the `##` heading with no blank line between them
+- One blank line between every section
+- Two blank lines between entries
+- No `---` separators
+- No extra sections beyond the six above
+- New entries always appended at the end
+- All six sections required: **Type**, **Summary**, **Brainstorming**, **Prompt**, **What was built / What changed**, **Key decisions & why**

@@ -14,7 +14,7 @@ const emit = defineEmits<{
   'update:file': [value: File | null]
   submit: []
   close: []
-  downloadTemplate: []
+  'download-template': []
 }>()
 
 const isDragging = ref(false)
@@ -112,18 +112,16 @@ function handleSubmit(): void {
 
   <!-- Footer -->
   <div class="form-footer">
-    <BaseButton variant="ghost" @click="emit('downloadTemplate')">
+    <BaseButton variant="ghost" class="form-footer__download" @click="emit('download-template')">
       <DownloadIcon />
       Download Template
     </BaseButton>
 
-    <div class="form-footer__actions">
-      <BaseButton variant="ghost" :disabled="isLoading" @click="emit('close')">Cancel</BaseButton>
-      <BaseButton variant="primary" :disabled="isLoading" @click="handleSubmit">
-        <UploadIcon />
-        {{ isLoading ? 'Uploading…' : 'Upload' }}
-      </BaseButton>
-    </div>
+    <BaseButton variant="ghost" class="form-footer__cancel" :disabled="isLoading" @click="emit('close')">Cancel</BaseButton>
+    <BaseButton variant="primary" class="form-footer__upload" :disabled="isLoading" @click="handleSubmit">
+      <UploadIcon />
+      {{ isLoading ? 'Uploading…' : 'Upload' }}
+    </BaseButton>
   </div>
 </template>
 
@@ -138,8 +136,8 @@ function handleSubmit(): void {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-   width: 90vw;
-  max-width: 800px;
+  width: 90vw;
+  max-width: 640px;
 }
 
 // ── Fields ─────────────────────────────────────────────────────────────────────
@@ -242,16 +240,29 @@ function handleSubmit(): void {
 .form-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: theme('spacing.3');
   padding: theme('spacing.4') theme('spacing.6');
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
 
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: theme('spacing.6');
+  &__cancel {
+    margin-left: auto;
+  }
+
+  @media (max-width: 479px) {
+    flex-direction: column;
+    padding: theme('spacing.4');
+
+    .form-footer__upload   { order: 1; }
+    .form-footer__download { order: 2; }
+    .form-footer__cancel   { order: 3; }
+
+    .form-footer__upload,
+    .form-footer__download,
+    .form-footer__cancel {
+      width: 100%;
+      margin-left: 0;
+    }
   }
 }
 </style>
