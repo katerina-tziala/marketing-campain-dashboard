@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling: file-level errors (type, size, empty) shown inline under the dropzone; missing columns listed by name inline; invalid rows shown in a structured table inside the modal with the option to proceed with valid rows or go back. Upload again / replace data and AI features are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Assistant structural scaffold in place: AI button in dashboard header, push panel (lg+) and modal (<lg) with stubbed Budget Optimizer and Executive Summary sections. Gemini integration and upload-replace flow are next.
 
 ---
 
@@ -52,6 +52,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
 │   │   │   ├── FileTextIcon.vue
+│   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
 │   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
 │   │   ├── toast/              # Toast notification module
@@ -62,10 +63,15 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — header (title + upload button when data loaded) + main slot + UploadModal + ToastContainer; provides openUploadModal via provide()
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiAssistantDrawer; provides openUploadModal and openAiPanel via provide()
 │   ├── features/
+│   │   ├── ai-assistant/           # AI Assistant feature folder
+│   │   │   ├── components/
+│   │   │   │   ├── AiAssistantDrawer.vue   # Unified panel/modal — push panel at lg+ (width 0→400px), modal via Teleport at <lg; Escape to close
+│   │   │   │   └── AiAssistantContent.vue  # Stub content — Budget Optimizer + Executive Summary sections with disabled buttons
+│   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal from AppShell
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
@@ -131,19 +137,15 @@ app/                        # Vue 3 + Vite project
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table
 
-### AI Budget Optimizer (Gemini)
-- [ ] Send campaign data to Gemini API
-- [ ] Return budget reallocation recommendations in natural language
-- [ ] Confidence score per recommendation (High / Medium / Low)
-- [ ] Settings page for user Gemini API key input
-- [ ] Test Connection button
-- [ ] Disabled state + message when no API key provided
-- [ ] Link to get a free key from Google AI Studio
-
-### Executive Summary Generator (AI)
-- [ ] One-click AI summary in 3–5 bullets
-- [ ] Highlight top and underperforming campaigns
-- [ ] Uses same Gemini connection as Budget Optimizer
+### AI Assistant
+- [x] AI button in dashboard header (SparklesIcon + "AI" label)
+- [x] Push panel at lg+ (slides in from right, compresses dashboard; 400px wide)
+- [x] Modal at <lg (teleported, fade+scale transition; body scroll locked)
+- [x] Escape key closes panel / modal
+- [ ] Budget Optimizer — send campaign data to Gemini API; budget reallocation recommendations; confidence scores (High / Medium / Low)
+- [ ] Executive Summary — one-click AI summary in 3–5 bullets; highlights top and underperforming campaigns
+- [ ] Settings page — Gemini API key input, Test Connection button, link to Google AI Studio
+- [ ] Disabled state + message when no API key is configured
 
 ---
 

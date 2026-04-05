@@ -4,25 +4,35 @@ import { BaseButton, UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
 import { useCampaignStore } from '../stores/campaignStore'
 import UploadModal from '../features/csv-file/components/UploadModal.vue'
+import { AiAssistantDrawer } from '../features/ai-assistant'
 
 const store = useCampaignStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
+const isAiOpen = ref(false)
 
 provide('openUploadModal', () => uploadModal.value?.open())
+provide('openAiPanel', () => { isAiOpen.value = true })
 </script>
 
 <template>
   <div class="app-shell">
-    <header class="app-shell__header">
-      <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
-      <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="uploadModal?.open()">
-        <UploadIcon />
-        Upload CSV
-      </BaseButton>
-    </header>
-    <main class="app-shell__main">
-      <slot />
-    </main>
+    <!-- Left column — header + content; compresses when drawer opens -->
+    <div class="app-shell__left">
+      <header class="app-shell__header">
+        <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
+        <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="uploadModal?.open()">
+          <UploadIcon />
+          Upload CSV
+        </BaseButton>
+      </header>
+      <main class="app-shell__main">
+        <slot />
+      </main>
+    </div>
+
+    <!-- AI drawer — sibling to left column so it pushes everything left -->
+    <AiAssistantDrawer :open="isAiOpen" @close="isAiOpen = false" />
+
     <UploadModal ref="uploadModal" />
     <ToastContainer />
   </div>
@@ -34,14 +44,43 @@ provide('openUploadModal', () => uploadModal.value?.open())
   flex-direction: column;
   min-height: 100vh;
 
+  // At lg+: flip to flex row so the drawer pushes the entire left column
+  @media (min-width: 1024px) {
+    flex-direction: row;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  // ── Left column (header + main content) ────────────────────────────────────
+
+  &__left {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+
+    // At lg+: left column owns the scroll so the drawer stays fixed
+    @media (min-width: 1024px) {
+      overflow-y: auto;
+    }
+  }
+
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: theme('spacing.4');
+    flex-shrink: 0;
     background-color: var(--color-header-bg);
     padding: theme('spacing.5') theme('spacing.6');
     border-bottom: 1px solid var(--color-border);
+
+    // Sticky within the scrolling left column at lg+
+    @media (min-width: 1024px) {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
   }
 
   &__title {
@@ -62,7 +101,8 @@ provide('openUploadModal', () => uploadModal.value?.open())
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
-    overflow: hidden;
+    overflow-x: clip;
+    padding: 0 24px;
   }
 }
 </style>
