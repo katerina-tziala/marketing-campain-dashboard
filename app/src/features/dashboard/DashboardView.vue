@@ -9,21 +9,15 @@ import {
   GroupedBarChart,
 } from '../../ui/charts'
 import { useCampaignStore } from '../../stores/campaignStore'
-import EmptyState from '../csv-file/components/EmptyState.vue'
+import EmptyState from './components/EmptyState.vue'
 import UploadModal from '../csv-file/components/UploadModal.vue'
-import type { Campaign } from '../../common/types/campaign'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
 import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
 
-const showUploadModal = ref(false)
-
-function onUploadSuccess(payload: { title: string; campaigns: Campaign[] }): void {
-  store.loadCampaigns(payload.title, payload.campaigns)
-  showUploadModal.value = false
-}
+const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
 
 // ── Shared campaign color map ──────────────────────────────────────────────────
 
@@ -104,7 +98,7 @@ const funnelValues = computed(() => [
 
 <template>
   <!-- Empty state -->
-  <EmptyState v-if="store.campaigns.length === 0" @upload="showUploadModal = true" />
+  <EmptyState v-if="store.campaigns.length === 0" @upload="uploadModal?.open()" />
 
   <!-- Dashboard -->
   <div v-else class="dashboard">
@@ -197,11 +191,7 @@ const funnelValues = computed(() => [
   </div>
 
   <!-- Upload Modal -->
-  <UploadModal
-    v-if="showUploadModal"
-    @success="onUploadSuccess"
-    @close="showUploadModal = false"
-  />
+  <UploadModal ref="uploadModal" />
 </template>
 
 <style lang="scss" scoped>

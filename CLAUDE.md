@@ -48,15 +48,18 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
 │   │   │   └── index.ts        # Barrel export for charts
 │   │   ├── icons/              # Inline SVG icon components
-│   │   │   ├── DownloadIcon.vue
+│   │   │   ├── ArrowLeftIcon.vue
 │   │   │   ├── CloseIcon.vue
+│   │   │   ├── DownloadIcon.vue
+│   │   │   ├── FileTextIcon.vue
+│   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
 │   │   ├── toast/              # Toast notification module
 │   │   │   ├── ToastNotification.vue  # Single error toast — role="alert", aria-live
 │   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
-│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header slot, body slot, footer slot; Escape to close
+│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — header (title + download button) + main slot + ToastContainer
@@ -64,6 +67,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard
 │   │   │   └── components/         # Components owned by this view
+│   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
@@ -71,8 +75,11 @@ app/                        # Vue 3 + Vite project
 │   │       ├── types/
 │   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
 │   │       ├── components/
-│   │       │   ├── EmptyState.vue  # No-data screen — download template + upload CSV buttons
-│   │       │   └── UploadModal.vue # Upload modal — campaign title input + drag & drop file picker
+│   │       │   ├── UploadModal.vue     # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
+│   │       │   ├── CsvUploadForm.vue   # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
+│   │       │   └── CsvRowErrorTable.vue # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel/Download buttons
+│   │       ├── composables/
+│   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/
 │   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
 │   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
