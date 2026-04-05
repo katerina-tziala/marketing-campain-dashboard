@@ -1,33 +1,29 @@
 <script setup lang="ts">
-import { BaseButton, DownloadIcon } from '../ui'
+import { provide, ref } from 'vue'
+import { BaseButton, UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
-import { useToastStore } from '../stores/toastStore'
-import { downloadCsv } from '../features/csv-file/utils/downloadCsv'
-import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
+import { useCampaignStore } from '../stores/campaignStore'
+import UploadModal from '../features/csv-file/components/UploadModal.vue'
 
-const toastStore = useToastStore()
+const store = useCampaignStore()
+const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
 
-function handleDownloadTemplate(): void {
-  try {
-    downloadCsv(MOCK_CAMPAINS, 'marketing_campain_sample')
-  } catch {
-    toastStore.addToast('Failed to generate the CSV template. Please try again.')
-  }
-}
+provide('openUploadModal', () => uploadModal.value?.open())
 </script>
 
 <template>
   <div class="app-shell">
     <header class="app-shell__header">
       <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
-      <BaseButton variant="ghost" @click="handleDownloadTemplate">
-        <DownloadIcon />
-        Download Template
+      <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="uploadModal?.open()">
+        <UploadIcon />
+        Upload CSV
       </BaseButton>
     </header>
     <main class="app-shell__main">
       <slot />
     </main>
+    <UploadModal ref="uploadModal" />
     <ToastContainer />
   </div>
 </template>

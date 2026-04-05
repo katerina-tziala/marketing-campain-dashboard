@@ -853,3 +853,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - "Row" dropped from the name — the component's purpose is clear without it; shorter names reduce noise in imports and templates
+
+
+## [#42] Move upload button and UploadModal to AppShell
+**Type:** update
+
+**Summary:** Removed the Download Template button from AppShell header; moved UploadModal ownership to AppShell, which now conditionally shows an Upload CSV button in the header when data is loaded.
+
+**Brainstorming:** The Download Template button in the header was removed as requested. The Upload CSV button is a global action that belongs in the persistent layout shell rather than inside the dashboard view — it needs to be accessible from the header regardless of scroll position. UploadModal is self-contained and only needs open() called, so moving it to AppShell is straightforward. DashboardView's EmptyState still needs to trigger the modal, which is solved with Vue's provide/inject: AppShell provides openUploadModal, DashboardView injects it and passes it to EmptyState's @upload handler.
+
+**Prompt:** In the AppShell component remove the download template button. When a file is loaded and dashboard is visible, we should display the upload file button and when user clicks on it the upload modal should be displayed.
+
+**What changed:**
+- `shell/AppShell.vue` — removed Download Template button and all related imports (BaseButton, DownloadIcon, downloadCsv, MOCK_CAMPAINS, toastStore); added UploadModal ref; added Upload CSV button (v-if store.campaigns.length > 0); renders UploadModal; provides openUploadModal via provide()
+- `features/dashboard/DashboardView.vue` — removed UploadModal import and uploadModal ref; removed <UploadModal> render; injects openUploadModal from AppShell; EmptyState @upload calls openUploadModal?.()
+
+**Key decisions & why:**
+- UploadModal moved to AppShell — it is a global action reachable from both the header button and the empty state; AppShell is the correct owner for components that need to be accessible application-wide
+- provide/inject for EmptyState access — DashboardView injects openUploadModal from AppShell and passes it to EmptyState's @upload handler; avoids prop drilling or an event bus while keeping UploadModal encapsulated in AppShell

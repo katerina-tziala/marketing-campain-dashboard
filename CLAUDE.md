@@ -62,10 +62,10 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — header (title + download button) + main slot + ToastContainer
+│   │   └── AppShell.vue            # Top-level layout wrapper — header (title + upload button when data loaded) + main slot + UploadModal + ToastContainer; provides openUploadModal via provide()
 │   ├── features/
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal from AppShell
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card

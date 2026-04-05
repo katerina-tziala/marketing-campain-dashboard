@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
-import { computed, ref } from 'vue'
+import { computed, inject } from 'vue'
 import {
   BarChart,
   CHART_COLORS,
@@ -10,14 +10,13 @@ import {
 } from '../../ui/charts'
 import { useCampaignStore } from '../../stores/campaignStore'
 import EmptyState from './components/EmptyState.vue'
-import UploadModal from '../csv-file/components/UploadModal.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
 import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
 
-const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
+const openUploadModal = inject<() => void>('openUploadModal')
 
 // ── Shared campaign color map ──────────────────────────────────────────────────
 
@@ -98,7 +97,7 @@ const funnelValues = computed(() => [
 
 <template>
   <!-- Empty state -->
-  <EmptyState v-if="store.campaigns.length === 0" @upload="uploadModal?.open()" />
+  <EmptyState v-if="store.campaigns.length === 0" @upload="openUploadModal?.()" />
 
   <!-- Dashboard -->
   <div v-else class="dashboard">
@@ -190,8 +189,6 @@ const funnelValues = computed(() => [
 
   </div>
 
-  <!-- Upload Modal -->
-  <UploadModal ref="uploadModal" />
 </template>
 
 <style lang="scss" scoped>
