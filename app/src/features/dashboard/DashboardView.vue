@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import {
   BarChart,
   CHART_COLORS,
@@ -9,11 +9,14 @@ import {
   GroupedBarChart,
 } from '../../ui/charts'
 import { useCampaignStore } from '../../stores/campaignStore'
+import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
 import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
+
+const openUploadModal = inject<() => void>('openUploadModal')
 
 // ── Shared campaign color map ──────────────────────────────────────────────────
 
@@ -93,12 +96,16 @@ const funnelValues = computed(() => [
 </script>
 
 <template>
-  <div class="dashboard">
+  <!-- Empty state -->
+  <EmptyState v-if="store.campaigns.length === 0" @upload="openUploadModal?.()" />
+
+  <!-- Dashboard -->
+  <div v-else class="dashboard">
     <!-- Header -->
     <div class="dashboard__header">
       <h2 class="dashboard__title">Campaign Performance</h2>
       <p class="dashboard__subtitle">
-        {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
+        {{ store.title }} , {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
       </p>
     </div>
 
@@ -179,12 +186,19 @@ const funnelValues = computed(() => [
         <CampaignTable :campaigns="store.filteredCampaigns" />
       </div>
     </div>
+
   </div>
+
 </template>
 
 <style lang="scss" scoped>
 .dashboard {
   @apply space-y-6 pb-4;
+  padding: theme('spacing.6') theme('spacing.6');
+
+  @media (min-width: 1280px) {
+    padding: theme('spacing.6') 0;
+  }
 
   &__title {
     @apply text-lg font-semibold tracking-tight;

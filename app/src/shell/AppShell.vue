@@ -1,15 +1,30 @@
 <script setup lang="ts">
-// AppShell — top-level layout wrapper
+import { provide, ref } from 'vue'
+import { BaseButton, UploadIcon } from '../ui'
+import { ToastContainer } from '../ui/toast'
+import { useCampaignStore } from '../stores/campaignStore'
+import UploadModal from '../features/csv-file/components/UploadModal.vue'
+
+const store = useCampaignStore()
+const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
+
+provide('openUploadModal', () => uploadModal.value?.open())
 </script>
 
 <template>
   <div class="app-shell">
     <header class="app-shell__header">
       <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
+      <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="uploadModal?.open()">
+        <UploadIcon />
+        Upload CSV
+      </BaseButton>
     </header>
     <main class="app-shell__main">
       <slot />
     </main>
+    <UploadModal ref="uploadModal" />
+    <ToastContainer />
   </div>
 </template>
 
@@ -20,6 +35,10 @@
   min-height: 100vh;
 
   &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.4');
     background-color: var(--color-header-bg);
     padding: theme('spacing.5') theme('spacing.6');
     border-bottom: 1px solid var(--color-border);
@@ -37,15 +56,13 @@
   }
 
   &__main {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     max-width: 1280px;
     width: 100%;
     margin: 0 auto;
-    padding: theme('spacing.6') theme('spacing.6');
-
-    @media (min-width: 1280px) {
-      padding: theme('spacing.6') 0;
-    }
+    overflow: hidden;
   }
 }
 </style>

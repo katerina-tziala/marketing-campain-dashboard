@@ -109,14 +109,14 @@ const columns: { key: SortField; label: string }[] = [
 
 <template>
   <div class="campaign-table">
-    <table class="campaign-table__table">
-      <thead class="campaign-table__head">
+    <table class="data-table">
+      <thead>
         <tr>
           <th
             v-for="col in columns"
             :key="col.key"
             scope="col"
-            class="campaign-table__th"
+            class="data-table__th campaign-table__th"
             @click="sort(col.key)"
           >
             <span class="campaign-table__th-inner">
@@ -132,26 +132,26 @@ const columns: { key: SortField; label: string }[] = [
         </tr>
       </thead>
 
-      <tbody class="campaign-table__body">
+      <tbody>
         <tr
           v-for="c in sortedCampaigns"
           :key="c.campaign"
-          class="campaign-table__tr"
+          class="data-table__tr"
         >
-          <td class="campaign-table__td campaign-table__td--name">{{ c.campaign }}</td>
-          <td class="campaign-table__td">
+          <td class="data-table__td campaign-table__td--name">{{ c.campaign }}</td>
+          <td class="data-table__td">
             <span class="channel-badge">{{ c.channel }}</span>
           </td>
-          <td class="campaign-table__td">{{ eur(c.budget) }}</td>
-          <td class="campaign-table__td">{{ compactNumber(c.clicks) }}</td>
-          <td class="campaign-table__td">{{ ctr(c) }}</td>
-          <td class="campaign-table__td">{{ c.conversions.toLocaleString('en') }}</td>
-          <td class="campaign-table__td">{{ cvr(c) }}</td>
-          <td class="campaign-table__td campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
-          <td class="campaign-table__td campaign-table__td--roi" :class="roiClass(c)">
+          <td class="data-table__td">{{ eur(c.budget) }}</td>
+          <td class="data-table__td">{{ compactNumber(c.clicks) }}</td>
+          <td class="data-table__td">{{ ctr(c) }}</td>
+          <td class="data-table__td">{{ c.conversions.toLocaleString('en') }}</td>
+          <td class="data-table__td">{{ cvr(c) }}</td>
+          <td class="data-table__td campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
+          <td class="data-table__td campaign-table__td--roi" :class="roiClass(c)">
             {{ roiFormatted(c) }}
           </td>
-          <td class="campaign-table__td">{{ cac(c) }}</td>
+          <td class="data-table__td">{{ cac(c) }}</td>
         </tr>
       </tbody>
     </table>
@@ -160,20 +160,8 @@ const columns: { key: SortField; label: string }[] = [
 
 <style lang="scss" scoped>
 .campaign-table {
-
-  &__table {
-    @apply min-w-full text-sm;
-    border-collapse: collapse;
-  }
-
-  &__head {
-    background-color: var(--color-surface);
-  }
-
   &__th {
-    @apply cursor-pointer select-none whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider;
-    color: var(--color-text-secondary);
-    border-bottom: 1px solid var(--color-border);
+    @apply cursor-pointer select-none whitespace-nowrap;
 
     &:hover {
       color: theme('colors.primary.400');
@@ -193,30 +181,9 @@ const columns: { key: SortField; label: string }[] = [
     }
   }
 
-  &__body {
-    background-color: var(--color-surface);
-  }
-
-  &__tr {
-    @apply transition-colors;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-
-    &:hover {
-      background-color: color-mix(in srgb, var(--color-surface) 60%, white 5%);
-    }
-
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
   &__td {
-    @apply px-4 py-3;
-    color: #cbd5e1;
-
     &--name {
       font-weight: 600;
-      color: #cbd5e1;
     }
 
     &--strong {
@@ -228,17 +195,9 @@ const columns: { key: SortField; label: string }[] = [
       @apply font-semibold;
     }
 
-    &--roi-positive {
-      color: #10b981;
-    }
-
-    &--roi-warning {
-      color: #f59e0b;
-    }
-
-    &--roi-negative {
-      color: #f43f5e;
-    }
+    &--roi-positive { color: #10b981; }
+    &--roi-warning  { color: #f59e0b; }
+    &--roi-negative { color: #f43f5e; }
   }
 }
 

@@ -1,0 +1,22 @@
+campaign,channel,budget,impressions,clicks,conversions,revenue
+Google Brand Search,Paid Search,8500,142000,8520,680,28900
+Google Non-Brand Search,Paid Search,12000,380000,9120,420,18600
+Bing Ads,Paid Search,3200,95000,2850,142,7100
+Facebook Awareness,Paid Social,6200,280000,5720,145,7800
+Instagram Retargeting,Paid Social,4800,185000,6840,312,14200
+LinkedIn B2B,Paid Social,9500,95000,2850,98,22400
+TikTok Awareness,Paid Social,3800,320000,14800,152,5320
+Newsletter Campaign,Email,1200,68000,8160,408,12800
+Win-Back Email,Email,800,24000,3840,192,9600
+Programmatic Display,Display,5500,480000,4800,96,4800
+Retargeting Display,Retargeting,3200,180000,5400,216,10800
+YouTube Pre-Roll,Video,7800,310000,12400,186,11200
+CTV Campaign,CTV / OTT,11000,180000,6400,128,9600
+SEO Content Hub,Organic Search,3500,285000,14250,570,24600
+Google My Business,Organic Search,500,42000,5040,252,8400
+Partner Network,Affiliate,4200,156000,7800,390,19500
+Micro-Influencer Push,Influencer,6800,410000,12300,246,15400
+Web Push Re-engagement,Push Notifications,600,38000,7600,380,11400
+Native Content Ads,Native Ads,4100,290000,8700,174,8700
+Podcast Mid-Roll,Podcast,5200,95000,2850,104,7020
+Referral Program,Referral,2000,48000,9600,480,21600

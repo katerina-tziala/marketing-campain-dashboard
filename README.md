@@ -17,17 +17,16 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
 
 ### CSV Upload & Template
 
-- **Download CSV Template:** One click to download a ready-made CSV with correct columns and 12 demo campaigns. Use it as-is for a quick demo or replace with your own data.
+- **Download CSV Template:** One click to download a ready-made CSV with correct columns and 21 demo campaigns. Use it as-is for a quick demo or replace with your own data.
 - **Empty State:** When no data is loaded, the app shows two clear options: "Download Template" and "Upload CSV"
 - **Drag & Drop** or file picker upload
-- **Auto-detection** of columns (campaign, channel, budget, clicks, etc.)
-- **Data Preview** before importing
-- **Error Handling:**
-  - Wrong file type (e.g. .xlsx, .pdf instead of .csv)
-  - Empty file or file too large (limit 5MB)
-  - Missing required columns
-  - Non-numeric values in numeric fields or negative values
-  - Friendly error messages with link to download the template
+- **Auto-detection** of columns (case-insensitive; extra columns are silently ignored)
+- **Error Handling:** All errors are surfaced inline — no separate error screens.
+  - *Wrong file type:* Caught immediately on file selection or drop — only `.csv` files are accepted
+  - *File too large:* Files over 2 MB are rejected with a message under the dropzone
+  - *Empty file:* A CSV with headers but no data rows is rejected
+  - *Missing columns:* Lists every missing column by name (e.g. `budget, revenue`) and prompts to consult the template
+  - *Invalid rows:* A structured table shows the row number, column name, and specific issue for every validation failure. If some rows are valid, the user can choose to **proceed with the valid rows** or go back and fix the file
 
 ### AI Budget Optimizer (Gemini)
 
