@@ -108,7 +108,7 @@ const funnelValues = computed(() => [
     <div class="dashboard__header">
       <div class="dashboard__title-row">
         <h2 class="dashboard__title">Campaign Performance</h2>
-        <BaseButton variant="ghost" @click="openAiPanel?.()">
+        <BaseButton @click="openAiPanel?.()">
           <SparklesIcon />
           AI
         </BaseButton>

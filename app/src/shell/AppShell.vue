@@ -42,13 +42,12 @@ provide('openAiPanel', () => { isAiOpen.value = true })
 .app-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 
   // At lg+: flip to flex row so the drawer pushes the entire left column
   @media (min-width: 1024px) {
     flex-direction: row;
-    height: 100vh;
-    overflow: hidden;
   }
 
   // ── Left column (header + main content) ────────────────────────────────────
@@ -58,11 +57,7 @@ provide('openAiPanel', () => { isAiOpen.value = true })
     min-width: 0;
     display: flex;
     flex-direction: column;
-
-    // At lg+: left column owns the scroll so the drawer stays fixed
-    @media (min-width: 1024px) {
-      overflow-y: auto;
-    }
+    overflow-y: auto;
   }
 
   &__header {
@@ -74,13 +69,6 @@ provide('openAiPanel', () => { isAiOpen.value = true })
     background-color: var(--color-header-bg);
     padding: theme('spacing.5') theme('spacing.6');
     border-bottom: 1px solid var(--color-border);
-
-    // Sticky within the scrolling left column at lg+
-    @media (min-width: 1024px) {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
   }
 
   &__title {
