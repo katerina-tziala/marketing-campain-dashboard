@@ -1,4 +1,3 @@
-
 import type { BusinessContext } from "../types";
 import { getPromptList } from "./prompt-utils";
 
@@ -10,15 +9,14 @@ const CONTEXT_DICTIONARY: Record<keyof BusinessContext, string | undefined> = {
   attributionModel: 'ATTRIBUTION_MODEL',
   riskTolerance: 'RISK_TOLERANCE',
   scalingTolerance: 'SCALING_TOLERANCE',
-  constraints: undefined
-}
+  constraints: undefined,
+};
 
 export function getBusinessContextLinesForPrompt(
-  context: BusinessContext
+  context: BusinessContext,
 ): string[] {
-  let lines: string[] = ["BUSINESS CONTEXT:"];
-
-  const { constraints, ...restContext } = context
+  const lines: string[] = ["BUSINESS CONTEXT:"];
+  const { constraints, ...restContext } = context;
 
   Object.entries(restContext).forEach(([key, value]) => {
     const text = CONTEXT_DICTIONARY[key as keyof BusinessContext];
@@ -28,16 +26,13 @@ export function getBusinessContextLinesForPrompt(
   });
 
   if (constraints?.length) {
-    const constraintsList = getPromptList('CONSTRAINTS', constraints);
-    lines = [...lines, ...constraintsList];
+    lines.push('', ...getPromptList('CONSTRAINTS', constraints));
   }
 
   return lines;
 }
 
-export function getBusinessContextForPrompt(
-  lines: string[]
-): string {
+export function getBusinessContextForPrompt(lines: string[]): string {
   if (lines.length === 1) {
     lines.push(
       "No additional business context provided.",
@@ -50,9 +45,9 @@ export function getBusinessContextForPrompt(
 }
 
 export function generateBusinessContextForPrompt(
-  context?: BusinessContext
+  context?: BusinessContext,
 ): string {
   const lines: string[] = getBusinessContextLinesForPrompt(context ?? {});
- 
+
   return getBusinessContextForPrompt(lines);
 }

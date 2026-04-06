@@ -1,2 +1,2 @@
-export * from './budget-optimizer-prompt';
-export * from './executive-summary-prompt';
+export { generateBudgetOptimizerPrompt } from './budget-optimizer-prompt';
+export { generateExecutiveSummaryPrompt } from './executive-summary-prompt';

@@ -1,15 +1,24 @@
-
 import type {
   BudgetOptimizerContextInput,
   BudgetOptimizerData,
   PromptInstructionStep,
-  PromptIntructions,
+  PromptInstructions,
+  PromptScopeConfig,
 } from "../types";
 import { getBusinessContextForPrompt, getBusinessContextLinesForPrompt } from "./business-context";
-import { getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getPromptInstructions, getPromptList } from "./prompt-utils";
+import {
+  getAnalysisInstructions,
+  getInterpretationRulesBlock,
+  getOutputRulesBlock,
+  getPromptInstructions,
+  getPromptList,
+  getScopeBlock,
+} from "./prompt-utils";
 
-const BUDGET_INSTRUCTIONS: PromptIntructions = {
-  role: ['You are a senior performance marketing analyst responsible for realistic budget optimization across the provided analysis scope.'],
+const BUDGET_INSTRUCTIONS: PromptInstructions = {
+  role: [
+    'You are a senior performance marketing analyst responsible for realistic budget optimization across the provided analysis scope.',
+  ],
   task: [
     'Your task is to analyze the provided campaign performance data and recommend realistic budget reallocations that improve marketing efficiency while controlling execution risk.',
   ],
@@ -18,10 +27,10 @@ const BUDGET_INSTRUCTIONS: PromptIntructions = {
     list: [
       'overfunded campaigns with weak efficiency',
       'underfunded campaigns with strong efficiency',
-      'pportunities to reallocate spend to higher-performing campaigns',
-      'patterns across channels that indicate allocation imbalance'
-    ]
-  }
+      'opportunities to reallocate spend to higher-performing campaigns',
+      'patterns across channels that indicate allocation imbalance',
+    ],
+  },
 };
 
 const OUTPUT_SCHEMA = `{
@@ -92,19 +101,19 @@ const BUDGET_OPTIMIZER_ANALYSIS_STEPS: PromptInstructionStep[] = [
     bullets: [
       "ROI",
       "Conversion Rate (CVR)",
-      "Customer Acquisition Cost (CAC)"
+      "Customer Acquisition Cost (CAC)",
     ],
     notes: [
-      "Prioritize actions that materially improve overall portfolio performance rather than optimizing minor inefficiencies."
-    ]
+      "Prioritize actions that materially improve overall portfolio performance rather than optimizing minor inefficiencies.",
+    ],
   },
   {
     title: "Use the following conceptual weighting when comparing campaigns:",
     bullets: [
       "ROI weight: 40%",
       "CVR weight: 30%",
-      "inverse CAC weight: 30%"
-    ]
+      "inverse CAC weight: 30%",
+    ],
   },
   {
     title: "Identify budget-to-performance mismatches such as:",
@@ -112,123 +121,114 @@ const BUDGET_OPTIMIZER_ANALYSIS_STEPS: PromptInstructionStep[] = [
       "high spend with weak ROI",
       "low spend with strong ROI",
       "strong CTR but weak CVR",
-      "unusually high CAC"
+      "unusually high CAC",
     ],
     notes: [
-      "If weak performance is caused by poor conversion efficiency rather than insufficient spend, recommend restructuring instead of increasing budget."
-    ]
+      "If weak performance is caused by poor conversion efficiency rather than insufficient spend, recommend restructuring instead of increasing budget.",
+    ],
   },
   {
     title: "Recommend reallocations from weaker campaigns to stronger campaigns when supported by the data.",
     notes: [
-      "Return no more than 3 recommendations. Prioritize the highest-impact opportunities only."
-    ]
+      "Return no more than 3 recommendations. Prioritize the highest-impact opportunities only.",
+    ],
   },
   {
     title: "Treat strong performance on low volume cautiously.",
     notes: [
-      "Prefer controlled tests over aggressive scaling when evidence is limited."
-    ]
+      "Prefer controlled tests over aggressive scaling when evidence is limited.",
+    ],
   },
   {
     title: "Do not recommend more than a 3x budget increase for any campaign.",
     notes: [
       "Avoid trivial reallocations.",
       "Recommend only meaningful budget changes unless framing a small change as a test.",
-      "Assume diminishing returns when increasing budget."
-    ]
+      "Assume diminishing returns when increasing budget.",
+    ],
   },
   {
     title: "Consider overall portfolio balance when evaluating reallocations.",
     notes: [
-      "Avoid concentrating excessive budget in a single campaign unless the efficiency signal is exceptionally strong."
-    ]
+      "Avoid concentrating excessive budget in a single campaign unless the efficiency signal is exceptionally strong.",
+    ],
   },
   {
     title: "Avoid reallocations that rely on unrealistic performance scaling.",
     notes: [
-      "Assume performance efficiency may decline as budget increases."
-    ]
+      "Assume performance efficiency may decline as budget increases.",
+    ],
   },
   {
-    title: "Unless business context explicitly allows it, assume the total budget should remain constant."
+    title: "Unless business context explicitly allows it, assume the total budget should remain constant.",
   },
   {
-    title: "Prefer conservative reallocations when evidence is uncertain."
+    title: "Prefer conservative reallocations when evidence is uncertain.",
   },
   {
     title: "Each recommendation must clearly explain:",
     bullets: [
       "why the move makes sense",
       "what metric improvement is expected",
-      "how success should be measured"
-    ]
+      "how success should be measured",
+    ],
   },
   {
-    title: "Estimate expected impact conservatively and avoid assuming perfect linear scaling."
+    title: "Estimate expected impact conservatively and avoid assuming perfect linear scaling.",
   },
   {
-    title: "If signals are mixed, recommend tests or staged adjustments instead of aggressive reallocations."
-  }
+    title: "If signals are mixed, recommend tests or staged adjustments instead of aggressive reallocations.",
+  },
 ];
 
 const INTERPRETATION_RULES = [
-     'If optimization scope is filtered, recommendations must stay entirely inside the filtered subset',
-    'Keep recommendations realistic and operationally practical',
-    'Use explicit campaign names when suggesting budget movements',
-    'Do not recommend reallocations smaller than 5% of the source campaign budget unless explicitly framed as a test',
-    'Amount values must always be positive numbers'
-  ];
+  'If optimization scope is filtered, recommendations must stay entirely inside the filtered subset',
+  'Keep recommendations realistic and operationally practical',
+  'Use explicit campaign names when suggesting budget movements',
+  'Do not recommend reallocations smaller than 5% of the source campaign budget unless explicitly framed as a test',
+  'Amount values must always be positive numbers',
+];
 
-  const ARRAY_SIZE_LIST =  [
-      'recommendations: maximum 3',
-      'top_performers: maximum 3',
-      'underperformers: maximum 3',
-      'quick_wins: maximum 3',
-      'correlations: maximum 2',
-      'risks: maximum 2'
-    ];
- 
+const ARRAY_SIZE_LIST = [
+  'recommendations: maximum 3',
+  'top_performers: maximum 3',
+  'underperformers: maximum 3',
+  'quick_wins: maximum 3',
+  'correlations: maximum 2',
+  'risks: maximum 2',
+];
 
-function getBudgetOptimizerScopeByFilteredChannels(
-  includedChannels: string[] = []
-): string {
-  if (includedChannels.length > 0) {
-    const lines: string[] = [
-      "OPTIMIZATION SCOPE:",
-      "Scoped optimization.",
-      "Channel filters are active.",
-      "Recommendations must only optimize budget within the filtered subset.",
-      "Included channels:"
-    ];
+const ARRAY_SIZE_NOTES = [
+  'If fewer items exist, return only the supported ones.',
+  'These are upper limits, not required counts.',
+  'Do not fabricate entries just to fill the list.',
+];
 
-    for (const channel of includedChannels) {
-      lines.push(`- ${channel}`);
-    }
-
-    lines.push(
-      "Do not recommend reallocating budget to campaigns or channels outside the selected scope.",
-      "Interpret performance only within the provided subset.",
-      "Do not generalize optimization conclusions to the full portfolio unless explicitly supported by the data."
-    );
-
-    return lines.join("\n");
-  }
-
-  return [
-    "OPTIMIZATION SCOPE:",
+const OPTIMIZER_SCOPE_CONFIG: PromptScopeConfig = {
+  label: "OPTIMIZATION SCOPE",
+  filteredDescription: [
+    "Scoped optimization.",
+    "Channel filters are active.",
+    "Recommendations must only optimize budget within the filtered subset.",
+  ],
+  unfilteredDescription: [
     "Full portfolio optimization.",
     "No channel filters applied.",
-    "Recommendations may consider all campaigns included in the dataset."
-  ].join("\n");
-}
+    "Recommendations may consider all campaigns included in the dataset.",
+  ],
+  filteredConstraints: [
+    "Do not recommend reallocating budget to campaigns or channels outside the selected scope.",
+    "Interpret performance only within the provided subset.",
+    "Do not generalize optimization conclusions to the full portfolio unless explicitly supported by the data.",
+  ],
+};
 
 function generateBudgetOptimizerContext(
-  context?: BudgetOptimizerContextInput
+  context?: BudgetOptimizerContextInput,
 ): string {
-  const { allowBudgetExpansion, ...busonessContext } = context ?? {};
+  const { allowBudgetExpansion, ...businessContext } = context ?? {};
 
-  const lines = getBusinessContextLinesForPrompt(busonessContext ?? {});
+  const lines = getBusinessContextLinesForPrompt(businessContext ?? {});
   if (typeof allowBudgetExpansion === "boolean") {
     lines.push(`ALLOW_BUDGET_EXPANSION: ${allowBudgetExpansion ? "true" : "false"}`);
   }
@@ -236,37 +236,28 @@ function generateBudgetOptimizerContext(
   return getBusinessContextForPrompt(lines);
 }
 
-
-
-export function buildBudgetOptimizerPrompt(
+export function generateBudgetOptimizerPrompt(
   data: BudgetOptimizerData,
   userContext?: BudgetOptimizerContextInput,
-  filteredChannels?: string[]
+  filteredChannels?: string[],
 ): string {
- 
-  return `
-  ${getPromptInstructions(BUDGET_INSTRUCTIONS)}
-  
-  OPTIMIZATION DATA:
-  ${JSON.stringify(data, null, 2)}
+  const arraySizeBlock = [
+    ...getPromptList('ARRAY SIZE GUIDELINES', ARRAY_SIZE_LIST),
+    '',
+    ...ARRAY_SIZE_NOTES,
+  ].join("\n");
 
-  ${generateBudgetOptimizerContext(userContext)}
+  const sections = [
+    getPromptInstructions(BUDGET_INSTRUCTIONS),
+    `OPTIMIZATION DATA:\n${JSON.stringify(data, null, 2)}`,
+    generateBudgetOptimizerContext(userContext),
+    getScopeBlock(OPTIMIZER_SCOPE_CONFIG, filteredChannels),
+    getAnalysisInstructions(BUDGET_OPTIMIZER_ANALYSIS_STEPS),
+    getInterpretationRulesBlock(INTERPRETATION_RULES),
+    getOutputRulesBlock('Keep the response compact and decision-oriented'),
+    arraySizeBlock,
+    `Respond ONLY in this JSON schema:\n${OUTPUT_SCHEMA}`,
+  ];
 
-  ${getBudgetOptimizerScopeByFilteredChannels(filteredChannels ?? [])}
-
-  ${getAnalysisInstructions(BUDGET_OPTIMIZER_ANALYSIS_STEPS)}
-  
-  ${getInterpretationRulesBlock(INTERPRETATION_RULES)}
-  
-  ${getOutputRulesBlock('Keep the response compact and decision-oriented')}
- 
-  ${getPromptList('ARRAY SIZE GUIDELINES', ARRAY_SIZE_LIST).join("\n")}}
-
-  If fewer items exist, return only the supported ones.
-  These are upper limits, not required counts
-  Do not fabricate entries just to fill the list.
-  
-  Respond ONLY in this JSON schema:
-  ${OUTPUT_SCHEMA}
-`.trim();
+  return sections.join("\n\n");
 }

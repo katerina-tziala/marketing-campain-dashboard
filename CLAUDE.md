@@ -79,10 +79,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze button (SparklesIcon) + idle/loading/demo-result states; reallocation table + confidence badge
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize button (SparklesIcon) + idle/loading/demo-result states; top performers + underperformers + insights
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # Shared building blocks (AllocationShare, FunnelMetrics, PortfolioCount, CampainSummaryTotals) + ExecutiveSummary and BudgetOptimizer data/response types
+│   │   │   │   └── index.ts            # Shared building blocks (AllocationShare, FunnelMetrics, PortfolioCount, PromptScopeConfig, CampainSummaryTotals) + prompt types (PromptList, PromptInstructions, PromptInstructionStep) + ExecutiveSummary and BudgetOptimizer data/response types
 │   │   │   ├── prompts/
-│   │   │   │   ├── executive-summary-prompt.ts  # Builds executive-summary AI prompt from ExecutiveSummaryData
-│   │   │   │   └── index.ts            # Barrel export for prompts
+│   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
+│   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt
+│   │   │   │   ├── executive-summary-prompt.ts # generateExecutiveSummaryPrompt — assembles executive-summary AI prompt from ExecutiveSummaryData
+│   │   │   │   ├── budget-optimizer-prompt.ts  # generateBudgetOptimizerPrompt — assembles budget-optimizer AI prompt from BudgetOptimizerData
+│   │   │   │   └── index.ts                    # Barrel export for prompts
 │   │   │   ├── utils/
 │   │   │   │   ├── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — aggregation, ranking, key findings; called on-demand at prompt time with filtered data
 │   │   │   │   └── buildBudgetOptimizerData.ts  # Transforms Campaign[] into BudgetOptimizerData — per-campaign metrics, channel aggregation, portfolio totals; called on-demand at prompt time with filtered data

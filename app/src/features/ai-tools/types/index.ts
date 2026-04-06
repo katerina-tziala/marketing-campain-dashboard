@@ -3,7 +3,7 @@ export type PromptList = {
     list: string[] 
 };
 
-export type PromptIntructions = { 
+export type PromptInstructions = {
   role: string[],
   task: string[],
   objectives: PromptList
@@ -13,6 +13,13 @@ export type PromptInstructionStep = {
   title: string
   bullets?: string[]
   notes?: string[]
+};
+
+export type PromptScopeConfig = {
+  label: string;
+  filteredDescription: string[];
+  unfilteredDescription: string[];
+  filteredConstraints: string[];
 };
 
 export type BusinessContext = {
