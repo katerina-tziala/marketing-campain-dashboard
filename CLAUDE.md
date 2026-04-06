@@ -84,7 +84,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── executive-summary-prompt.ts  # Builds executive-summary AI prompt from ExecutiveSummaryData
 │   │   │   │   └── index.ts            # Barrel export for prompts
 │   │   │   ├── utils/
-│   │   │   │   └── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — aggregation, ranking, key findings; called on-demand at prompt time with filtered data
+│   │   │   │   ├── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — aggregation, ranking, key findings; called on-demand at prompt time with filtered data
+│   │   │   │   └── buildBudgetOptimizerData.ts  # Transforms Campaign[] into BudgetOptimizerData — per-campaign metrics, channel aggregation, portfolio totals; called on-demand at prompt time with filtered data
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
