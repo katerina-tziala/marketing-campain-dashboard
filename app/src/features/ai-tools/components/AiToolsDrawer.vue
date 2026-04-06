@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue'
 import { CloseIcon, SparklesIcon } from '../../../ui/icons'
-import AiAssistantContent from './AiAssistantContent.vue'
+import AiToolsContent from './AiToolsContent.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -35,15 +35,13 @@ watch(
       <div class="ai-drawer__header">
         <div class="ai-drawer__header-start">
           <SparklesIcon class="ai-drawer__icon" />
-          <h2 class="ai-drawer__title">AI Assistant</h2>
+          <h2 class="ai-drawer__title">AI Tools</h2>
         </div>
         <button class="ai-close-btn" aria-label="Close AI panel" @click="emit('close')">
           <CloseIcon />
         </button>
       </div>
-      <div class="ai-drawer__body">
-        <AiAssistantContent />
-      </div>
+      <AiToolsContent />
     </div>
   </div>
 
@@ -55,21 +53,19 @@ watch(
         class="ai-modal-wrap"
         role="dialog"
         aria-modal="true"
-        aria-label="AI Assistant"
+        aria-label="AI Tools"
       >
         <div class="ai-modal">
           <div class="ai-modal__header">
             <div class="ai-modal__header-start">
               <SparklesIcon class="ai-modal__icon" />
-              <h2 class="ai-modal__title">AI Assistant</h2>
+              <h2 class="ai-modal__title">AI Tools</h2>
             </div>
             <button class="ai-close-btn" aria-label="Close" @click="emit('close')">
               <CloseIcon />
             </button>
           </div>
-          <div class="ai-modal__body">
-            <AiAssistantContent />
-          </div>
+          <AiToolsContent />
         </div>
       </div>
     </Transition>
@@ -160,12 +156,6 @@ watch(
     color: var(--color-title);
     margin: 0;
   }
-
-  &__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: theme('spacing.6');
-  }
 }
 
 // ── Modal (<lg) ──────────────────────────────────────────────────────────────
@@ -225,12 +215,6 @@ watch(
     font-weight: 600;
     color: var(--color-title);
     margin: 0;
-  }
-
-  &__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: theme('spacing.6');
   }
 }
 

@@ -4,7 +4,7 @@ import { BaseButton, UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
 import { useCampaignStore } from '../stores/campaignStore'
 import UploadModal from '../features/csv-file/components/UploadModal.vue'
-import { AiAssistantDrawer } from '../features/ai-assistant'
+import { AiToolsDrawer } from '../features/ai-tools'
 
 const store = useCampaignStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
@@ -31,7 +31,7 @@ provide('openAiPanel', () => { isAiOpen.value = true })
     </div>
 
     <!-- AI drawer — sibling to left column so it pushes everything left -->
-    <AiAssistantDrawer :open="isAiOpen" @close="isAiOpen = false" />
+    <AiToolsDrawer :open="isAiOpen" @close="isAiOpen = false" />
 
     <UploadModal ref="uploadModal" />
     <ToastContainer />

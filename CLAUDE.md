@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Assistant structural scaffold in place: AI button in dashboard header, push panel (lg+) and modal (<lg) with stubbed Budget Optimizer and Executive Summary sections. Gemini integration and upload-replace flow are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push panel (lg+) and modal (<lg). AI connection form (provider select + API key + connect with live verification) implemented for Google Gemini and Grok; connected state shows status bar + tabbed interface (Optimizer / Summary) with stubbed content. Actual Gemini/Grok API calls and upload-replace flow are next.
 
 ---
 
@@ -19,7 +19,7 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 | Styling | Tailwind CSS v3 + SCSS (dark mode via `class` strategy) |
 | Charts | Chart.js + vue-chartjs |
 | CSV Parsing | PapaParse (upload direction only) |
-| AI | Google Gemini API (free tier) |
+| AI | Google Gemini API + Grok (xAI) API (free tiers) |
 
 ---
 
@@ -35,7 +35,8 @@ app/                        # Vue 3 + Vite project
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
 │   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
-│   │   └── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   └── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError; connect() tests key via live API call; disconnect()
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -52,6 +53,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
 │   │   │   ├── FileTextIcon.vue
+│   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
 │   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
 │   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
@@ -63,12 +65,15 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiAssistantDrawer; provides openUploadModal and openAiPanel via provide()
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide()
 │   ├── features/
-│   │   ├── ai-assistant/           # AI Assistant feature folder
+│   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   ├── AiAssistantDrawer.vue   # Unified panel/modal — push panel at lg+ (width 0→400px), modal via Teleport at <lg; Escape to close
-│   │   │   │   └── AiAssistantContent.vue  # Stub content — Budget Optimizer + Executive Summary sections with disabled buttons
+│   │   │   │   ├── AiToolsDrawer.vue       # Unified panel/modal — push panel at lg+ (width 0→400px), modal via Teleport at <lg; Escape to close; title "AI Tools"
+│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + tab panels when connected
+│   │   │   │   ├── AiConnectionForm.vue    # Provider select (Gemini/Grok) + API key input (show/hide) + Connect button with spinner + inline error
+│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link
+│   │   │   │   └── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
@@ -137,15 +142,18 @@ app/                        # Vue 3 + Vite project
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table
 
-### AI Assistant
-- [x] AI button in dashboard header (SparklesIcon + "AI" label)
+### AI Tools
+- [x] AI button in dashboard header (SparklesIcon + "AI" label, primary variant)
 - [x] Push panel at lg+ (slides in from right, compresses dashboard; 400px wide)
 - [x] Modal at <lg (teleported, fade+scale transition; body scroll locked)
 - [x] Escape key closes panel / modal
-- [ ] Budget Optimizer — send campaign data to Gemini API; budget reallocation recommendations; confidence scores (High / Medium / Low)
+- [x] Connection form — provider select (Google Gemini / Grok), API key input with show/hide toggle, Connect button with spinner
+- [x] Live connection verification — Gemini: GET /v1beta/models; Grok: GET /v1/models; inline error on failure
+- [x] Connected status bar — provider name + green dot + "Connected" + Disconnect link
+- [x] Tabbed interface — Optimizer tab (SlidersIcon) + Summary tab (FileTextIcon)
+- [x] API key memory-only (not persisted to storage)
+- [ ] Budget Optimizer — send campaign data to AI provider; budget reallocation recommendations; confidence scores (High / Medium / Low)
 - [ ] Executive Summary — one-click AI summary in 3–5 bullets; highlights top and underperforming campaigns
-- [ ] Settings page — Gemini API key input, Test Connection button, link to Google AI Studio
-- [ ] Disabled state + message when no API key is configured
 
 ---
 

@@ -917,3 +917,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Primary is the default variant — removing the explicit `variant="ghost"` attribute is cleaner than setting `variant="primary"`, avoids redundancy
 - Scroll container at all sizes — consistent behavior across breakpoints; the drawer already uses Teleport on small screens so the side-by-side overflow model is safe to enable universally
 - Non-sticky header — user preference; the header scrolls away so more vertical space is available for dashboard content when scrolled
+
+
+## [#45] AI Tools — connection form, live verification, connected status, tabbed interface
+**Type:** feature
+
+**Summary:** Renamed the AI Assistant feature to AI Tools, introduced a Pinia aiStore for memory-only connection state, and replaced the stub content with a connection form (Google Gemini / Grok), live API key verification, a connected status bar, and a tabbed interface (Optimizer / Summary).
+
+**Brainstorming:** The feature needed four distinct states: (1) disconnected — show a form; (2) connecting — show spinner on the button; (3) connected — show status bar + tabs; (4) error — show inline message. Keeping all connection state in a dedicated Pinia store (aiStore) rather than local component state makes it available across the entire app, which will be needed when the Optimizer and Summary tabs actually call the AI APIs. Memory-only storage was chosen over sessionStorage/localStorage so API keys are never written to disk or browser storage. For provider support, Google Gemini (generativelanguage.googleapis.com) and Grok (api.x.ai, OpenAI-compatible) were chosen as both have free tiers. Connection verification uses a lightweight read-only endpoint on each provider (list models) that confirms the key is valid without consuming quota. The folder was renamed from ai-assistant to ai-tools and all component names updated for consistency. The drawer body padding was removed and moved into each child component so the status bar and tab bar can span the full panel width without negative-margin hacks.
+
+**Prompt:** Rename ai assistant to ai tools, update the title. When no connection is established display a message and a form with provider and api key fields and a Connect button. Connection state in a shared store. On connect, establish and verify the connection. When connected show provider name and green Connected text with green dot on the right under the header. Underneath two tabs: Optimizer and Summary, both with icons. Providers: Google Gemini and Grok (free API keys). Memory-only for security. Rename folders for consistency.
+
+**What was built:**
+- `stores/aiStore.ts` — new Pinia store; AiProvider type ('gemini' | 'grok'); PROVIDER_LABELS map; testGemini() and testGrok() async helpers; connect() action with isConnecting/connectionError; disconnect() action; all state memory-only
+- `ui/icons/SlidersIcon.vue` — new Lucide-style vertical sliders SVG icon for the Optimizer tab
+- `ui/icons/index.ts` — added SlidersIcon export
+- `features/ai-tools/components/AiConnectionForm.vue` — provider select (Gemini/Grok), API key input with show/hide toggle, Connect button with CSS spinner, inline error display; calls store.connect()
+- `features/ai-tools/components/AiConnectedStatus.vue` — full-width status bar with provider label, green pulsing dot, "Connected" text, and Disconnect link; calls store.disconnect()
+- `features/ai-tools/components/AiTabs.vue` — two tabs (Optimizer with SlidersIcon, Summary with FileTextIcon); role="tablist" / role="tab" ARIA; emits change event; active underline indicator
+- `features/ai-tools/components/AiToolsContent.vue` — orchestrates connection form vs connected state; manages activeTab ref; stub content for each tab panel
+- `features/ai-tools/components/AiToolsDrawer.vue` — renamed from AiAssistantDrawer; title updated to "AI Tools"; uses AiToolsContent; removed &__body padding (content manages its own layout)
+- `features/ai-tools/index.ts` — barrel export for AiToolsDrawer
+- `shell/AppShell.vue` — updated import from AiAssistantDrawer → AiToolsDrawer
+- `features/ai-assistant/` — deleted entire folder
+
+**Key decisions & why:**
+- Memory-only API key storage — user requirement; keys are never written to sessionStorage or localStorage, so they cannot be extracted from browser storage
+- Live verification on connect — a real API call (list models) confirms the key works before showing the connected state; avoids silent failures later when the AI features are used
+- Separate test helpers per provider — Gemini and Grok have different auth mechanisms (query param vs Bearer header) and different error status codes; separate functions keep the logic clean
+- Drawer body padding removed — status bar and tab bar need to span full panel width; moving padding into child components avoids negative-margin hacks
+- AiToolsContent as orchestrator — connection form, status bar, tabs, and tab panels are all in one component that reads store.isConnected; this keeps AiToolsDrawer unaware of connection state
