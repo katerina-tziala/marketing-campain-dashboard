@@ -1,4 +1,21 @@
-export type ExecutiveSummaryTotals = {
+export type BusinessContext = {
+  period?: string;
+  industry?: string;
+  goal?: string;
+  businessStage?: string;
+  attributionModel?: string;
+  riskTolerance?: string;
+  scalingTolerance?: string;
+  constraints?: string[];
+};
+
+export type BudgetOptimizerContextInput = BusinessContext & {
+  allowBudgetExpansion?: boolean;
+};
+
+// ── Reusable building blocks ───────────────────────────────────────────────
+
+export type CampainSummaryTotals = {
   budget: number;
   revenue: number;
   roi: number;
@@ -8,46 +25,42 @@ export type ExecutiveSummaryTotals = {
   cvr: number;
 };
 
-export type ExecutiveSummaryPortfolio = {
+export type AllocationShare = {
+  budgetShare: number;
+  revenueShare: number;
+};
+
+export type FunnelMetrics = {
+  impressions: number;
+  clicks: number;
+};
+
+export type PortfolioCount = {
   campaignCount: number;
   channelCount: number;
 };
 
-export type ExecutiveSummaryChannel = {
+export type ConfidenceLevel = "High" | "Medium" | "Low";
+
+// ── Executive Summary types ────────────────────────────────────────────────
+
+export type ExecutiveSummaryChannel = CampainSummaryTotals & AllocationShare & {
   channel: string;
-  budget: number;
-  revenue: number;
-  roi: number;
-  conversions: number;
-  cac: number;
-  ctr: number;
-  cvr: number;
-  budgetShare: number;
-  revenueShare: number;
 };
 
-export type ExecutiveSummaryCampaign = {
+export type ExecutiveSummaryCampaign = CampainSummaryTotals & {
   campaign: string;
   channel: string;
-  budget: number;
-  revenue: number;
-  roi: number;
-  conversions: number;
-  cac: number;
-  ctr: number;
-  cvr: number;
 };
 
-export type ExecutiveSummaryOtherChannelsSummary = {
+export type ExecutiveSummaryOtherChannelsSummary = AllocationShare & {
   channelCount: number;
-  budgetShare: number;
-  revenueShare: number;
 };
 
 export type ExecutiveSummaryData = {
   period?: string;
-  totals: ExecutiveSummaryTotals;
-  portfolio: ExecutiveSummaryPortfolio;
+  totals: CampainSummaryTotals;
+  portfolio: PortfolioCount;
   topChannels: ExecutiveSummaryChannel[];
   otherChannelsSummary?: ExecutiveSummaryOtherChannelsSummary;
   topCampaigns: ExecutiveSummaryCampaign[];
@@ -55,102 +68,121 @@ export type ExecutiveSummaryData = {
   keyFindings?: string[];
 };
 
- 
-export type ExecutiveSummaryContextInput = {
-  period?: string;
-  industry?: string;
-  goal?: string;
-  businessStage?: string;
-  attributionModel?: string;
-  riskTolerance?: string;
-  scalingTolerance?: string;
-  constraints?: string[];
-};
+// ── Budget Optimizer types ─────────────────────────────────────────────────
 
- 
-export type ExecutiveSummaryScopeInput = {
-  isFiltered: boolean;
-  includedChannels?: string[];
-};
-
-export type BudgetOptimizerContextInput = {
-  period?: string;
-  industry?: string;
-  goal?: string;
-  businessStage?: string;
-  attributionModel?: string;
-  riskTolerance?: string;
-  scalingTolerance?: string;
-  constraints?: string[];
-  allowBudgetExpansion?: boolean;
-};
-
-export type BudgetOptimizerTotals = {
-  budget: number;
-  revenue: number;
-  roi: number;
-  conversions: number;
-  cac: number;
-  ctr: number;
-  cvr: number;
-};
-
-export type BudgetOptimizerScopeInput = {
-  isFiltered: boolean;
-  includedChannels?: string[];
-};
- 
-
-export type BudgetOptimizerCampaign = {
+export type BudgetOptimizerCampaign = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
   campaign: string;
   channel: string;
-
-  budget: number;
-  revenue: number;
-
-  impressions: number;
-  clicks: number;
-  conversions: number;
-
-  roi: number;
-  ctr: number;
-  cvr: number;
-  cac: number;
-
-  budgetShare: number;
-  revenueShare: number;
-   efficiencyScore?: number;
-  spendTier?: "high" | "medium" | "low";
+  efficiencyScore?: number;
+  spendTier?: Lowercase<ConfidenceLevel>;
 };
 
-export type BudgetOptimizerChannel = {
-channel: string;
-
-  budget: number;
-  revenue: number;
-
-  impressions: number;
-  clicks: number;
-  conversions: number;
-
-  roi: number;
-  ctr: number;
-  cvr: number;
-  cac: number;
-
-  budgetShare: number;
-  revenueShare: number;
-
+export type BudgetOptimizerChannel = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
+  channel: string;
   efficiencyScore?: number;
 };
 
 export type BudgetOptimizerData = {
-  totals: BudgetOptimizerTotals;
+  totals: CampainSummaryTotals;
   campaigns: BudgetOptimizerCampaign[];
   channels: BudgetOptimizerChannel[];
-  portfolio: {
-    campaignCount: number;
-    channelCount: number;
-  };
+  portfolio: PortfolioCount;
   keyFindings?: string[];
+};
+
+export type BudgetOptimizerResponse = {
+  period?: string;
+  executive_summary: string;
+  recommendations: {
+    action: string;
+    from_campaign: string;
+    to_campaign: string;
+    amount: number;
+    expected_impact: {
+      additional_revenue: number;
+      additional_conversions: number;
+      new_roi_estimate: string;
+    };
+    confidence: ConfidenceLevel;
+    reasoning: string;
+    timeline: "Immediate" | "This Month" | "Next Quarter";
+    success_metrics: {
+      what_to_measure: string;
+      target: string;
+      review_after: string;
+    };
+  }[];
+  top_performers: {
+    campaign: string;
+    roi: number;
+    insight: string;
+    unlock_potential: string;
+  }[];
+  underperformers: {
+    campaign: string;
+    roi: number;
+    insight: string;
+    recommended_action: "Reduce" | "Pause" | "Restructure";
+  }[];
+  quick_wins: {
+    action: string;
+    effort: Exclude<ConfidenceLevel, "High">;
+    potential_impact: string;
+    timeline: string;
+  }[];
+  correlations: {
+    finding: string;
+    implication: string;
+  }[];
+  risks: {
+    risk: string;
+    mitigation: string;
+  }[];
+};
+
+export type ExecutiveSummaryResponse = {
+  period?: string;
+  health_score: {
+    score: number;
+    label: "Excellent" | "Good" | "Needs Attention" | "Critical";
+    reasoning: string;
+  };
+  bottom_line: string;
+  insights: {
+    type: "performance" | "opportunity" | "warning" | "achievement";
+    icon: "📊" | "🏆" | "⚠️" | "🎯" | "💡" | "📈" | "📉" | "🔥";
+    text: string;
+    metric_highlight: {
+      label: string;
+      value: string;
+    };
+  }[];
+  priority_actions: {
+    priority: number;
+    action: string;
+    expected_outcome: string;
+    urgency: "Immediate" | "This Quarter" | "Next Quarter";
+    success_metric: string;
+  }[];
+  channel_summary: {
+    channel: string;
+    status: "strong" | "moderate" | "weak";
+    budget_share: string;
+    one_liner: string;
+  }[];
+  additional_channels_note?: string;
+  correlations: {
+    finding: string;
+    so_what: string;
+  }[];
+  key_metrics: {
+    total_spend: string;
+    total_revenue: string;
+    overall_roi: string;
+    total_conversions: string;
+    best_channel: string;
+    worst_channel: string;
+    best_campaign: string;
+    biggest_opportunity: string;
+  };
 };

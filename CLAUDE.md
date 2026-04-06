@@ -79,7 +79,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze button (SparklesIcon) + idle/loading/demo-result states; reallocation table + confidence badge
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize button (SparklesIcon) + idle/loading/demo-result states; top performers + underperformers + insights
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # ExecutiveSummaryData and related types
+│   │   │   │   └── index.ts            # Shared building blocks (AllocationShare, FunnelMetrics, PortfolioCount, CampainSummaryTotals) + ExecutiveSummary and BudgetOptimizer data/response types
 │   │   │   ├── prompts/
 │   │   │   │   ├── executive-summary-prompt.ts  # Builds executive-summary AI prompt from ExecutiveSummaryData
 │   │   │   │   └── index.ts            # Barrel export for prompts

@@ -1034,3 +1034,39 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - All campaigns and channels included — the optimizer needs the full picture to recommend reallocations, unlike the summary which highlights top/bottom performers
 - Sorted by budget descending — the optimizer's primary concern is where money is allocated, so budget ordering is the natural default
 - Same architecture as executive summary builder — pure function, no store dependency, called on-demand with filtered data; keeps the two builders consistent and testable
+
+
+## [#50] Extract reusable building-block types for AI tools
+**Type:** refactor
+
+**Summary:** Extracted three shared type aliases (AllocationShare, FunnelMetrics, PortfolioCount) from duplicated inline fields across Executive Summary and Budget Optimizer types, improving composability without changing any runtime behavior.
+
+**Brainstorming:** Audited the ai-tools types file and found three patterns repeated across multiple types: budgetShare+revenueShare (4 places), impressions+clicks (2 places), and campaignCount+channelCount (2 places, one inline). Extracting these into named building blocks lets the domain types compose via intersection rather than re-declaring the same fields. The existing `CampainSummaryTotals` was already reused correctly and didn't need changes. The two Response types and BusinessContext were already clean. Renamed `ExecutiveSummaryPortfolio` to the more generic `PortfolioCount` since both Data types use the same shape. Verified no external imports of `ExecutiveSummaryPortfolio` existed before renaming.
+
+**Prompt:** Focus on types in ai tools. Read carefully the file and extend reusable models.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — extracted `AllocationShare` (budgetShare + revenueShare), `FunnelMetrics` (impressions + clicks), `PortfolioCount` (campaignCount + channelCount); composed `ExecutiveSummaryChannel`, `ExecutiveSummaryOtherChannelsSummary`, `BudgetOptimizerCampaign`, `BudgetOptimizerChannel`, and both Data types via intersection with these building blocks; added section comments for clarity
+
+**Key decisions & why:**
+- Three building blocks, not more — only extracted patterns that appeared in 2+ types; single-field patterns like `channel: string` were left inline to avoid over-abstraction
+- Renamed `ExecutiveSummaryPortfolio` → `PortfolioCount` — the shape is generic (not executive-summary-specific) and both Data types use it; the old name was never imported externally
+- Intersection composition (`&`) over interface extension — keeps each building block as a simple type alias that composes naturally with `&`, consistent with the existing pattern in the file
+
+
+## [#51] Extract ConfidenceLevel type alias
+**Type:** refactor
+
+**Summary:** Extracted `ConfidenceLevel = "High" | "Medium" | "Low"` as a shared type alias, replacing three inline string literal unions across the AI response types.
+
+**Brainstorming:** Audited all string literal unions in both Response types. Only the High/Medium/Low pattern was genuinely reused: `recommendations[].confidence` (capitalized), `quick_wins[].effort` (subset — Low | Medium), and `BudgetOptimizerCampaign.spendTier` (lowercase). The two timeline unions look similar but differ ("This Month" vs "This Quarter"), so they stay inline. Used `Lowercase<ConfidenceLevel>` for spendTier and `Exclude<ConfidenceLevel, "High">` for effort to derive from the single source of truth.
+
+**Prompt:** "High" | "Medium" | "Low" is repeated with small case types can we extract one type?
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added `ConfidenceLevel` type alias; `recommendations[].confidence` uses `ConfidenceLevel`, `quick_wins[].effort` uses `Exclude<ConfidenceLevel, "High">`, `BudgetOptimizerCampaign.spendTier` uses `Lowercase<ConfidenceLevel>`
+
+**Key decisions & why:**
+- Single extraction, not multiple — only the High/Medium/Low pattern was truly duplicated; other unions are unique or differ in values
+- `Lowercase<ConfidenceLevel>` for spendTier — derives from the same source instead of maintaining a separate lowercase union, keeping the two in sync
+- `Exclude<ConfidenceLevel, "High">` for effort — expresses the subset relationship explicitly; if ConfidenceLevel gains a value, effort stays intentionally constrained
