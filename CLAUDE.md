@@ -31,6 +31,8 @@ app/                        # Vue 3 + Vite project
 │   ├── common/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
 │   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
+│   │   ├── utils/
+│   │   │   └── math.ts         # safeDivide + round2 — shared math helpers
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
@@ -76,6 +78,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze button (SparklesIcon) + idle/loading/demo-result states; reallocation table + confidence badge
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize button (SparklesIcon) + idle/loading/demo-result states; top performers + underperformers + insights
+│   │   │   ├── types/
+│   │   │   │   └── index.ts            # ExecutiveSummaryData and related types
+│   │   │   ├── prompts/
+│   │   │   │   ├── executive-summary-prompt.ts  # Builds executive-summary AI prompt from ExecutiveSummaryData
+│   │   │   │   └── index.ts            # Barrel export for prompts
+│   │   │   ├── utils/
+│   │   │   │   └── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — aggregation, ranking, key findings; called on-demand at prompt time with filtered data
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell

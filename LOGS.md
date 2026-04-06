@@ -992,3 +992,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - 5vh/5vw padding on the overlay wrapper — achieves the 90% max constraint naturally
 - `display: none` on drawer at <lg and on overlay at lg+ — ensures only one instance of AiToolsContent is in the DOM at a time per breakpoint, avoiding duplicate state
 - `#cbd5e1` for text — matches `.data-table__td` color, giving the AI panel the same visual weight as the campaign table
+
+
+## [#48] Executive summary data builder + shared math helpers
+**Type:** feature
+
+**Summary:** Implemented the calculation logic that transforms Campaign[] into a compact ExecutiveSummaryData payload for AI analysis, with shared math helpers and a reactive computed in the campaign store.
+
+**Brainstorming:** The campaign store already had inline safe-division logic for KPI computation. Rather than duplicating that, `safeDivide` and `round2` were extracted into `common/utils/math.ts` so both the store's existing KPIs and the new summary builder share the same primitives. The builder function itself is pure (no Vue/Pinia dependency) — it takes `Campaign[]` and an optional `period` string, returns `ExecutiveSummaryData`. This makes it deterministic and easy to unit test. The store exposes the result as a computed `executiveSummaryData` that reacts to `campaigns` (unfiltered — the AI gets the full portfolio, not the user's current filter state). Channel aggregation uses a Map for O(n) grouping. Top/underperforming campaign selection uses multi-key sorting (roi → revenue → conversions for top; roi → budget → revenue for underperforming). Key findings are generated programmatically from the aggregated data — disproportionate revenue/budget ratios, negative-ROI high-budget channels, standout campaign ROI, and concentration risk. Optional fields (period, otherChannelsSummary, keyFindings) are only included when they have meaningful content.
+
+**Prompt:** Implement the calculation logic that transforms validated campaign CSV rows into a compact executive-summary payload for AI analysis. Per-campaign metrics, portfolio totals, channel aggregation, top/underperforming selection, key findings. Store in campaignStore. Reuse existing logic where possible.
+
+**What was built:**
+- `common/utils/math.ts` — new; `safeDivide(n, d)` returns 0 when d=0; `round2(v)` rounds to 2 decimal places
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — new; main builder function: derives per-campaign metrics, aggregates channels, splits top/other channels, selects top and underperforming campaigns, generates key findings
+- `stores/campaignStore.ts` — refactored KPI computed to use `safeDivide`/`round2`; added `executiveSummaryData` computed that calls the builder on all campaigns
+- `features/ai-tools/prompts/index.ts` — fixed barrel export path (was `./executive-summary`, now `./executive-summary-prompt`)
+
+**Key decisions & why:**
+- Pure builder function with no Vue dependency — keeps the logic testable and decoupled; called on-demand at prompt time with filtered data
+- Not stored as a computed in the store — summary data is built when the AI prompt is triggered, using the current filtered campaigns, so the AI analysis matches what the user sees on the dashboard
+- Shared math helpers in `common/utils/` — `safeDivide` and `round2` are generic, not AI-specific; the store's existing KPI logic now uses them too, eliminating duplicated safe-division patterns
+- Multi-key sorting for campaign ranking — single-metric sorting would produce arbitrary tiebreaking; the spec's priority ordering (roi → revenue → conversions) gives deterministic, meaningful results
+- Optional fields excluded when empty — `period`, `otherChannelsSummary`, and `keyFindings` are omitted from the returned object when they carry no data, keeping the AI prompt payload clean

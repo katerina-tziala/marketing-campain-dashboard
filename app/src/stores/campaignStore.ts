@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Campaign } from '../common/types/campaign'
+import { safeDivide, round2 } from '../common/utils/math'
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
@@ -38,22 +39,10 @@ export const useCampaignStore = defineStore('campaigns', () => {
   const kpis = computed(() => ({
     totalBudget: totalBudget.value,
     totalRevenue: totalRevenue.value,
-    roi:
-      totalBudget.value > 0
-        ? ((totalRevenue.value - totalBudget.value) / totalBudget.value) * 100
-        : 0,
-    ctr:
-      totalImpressions.value > 0
-        ? (totalClicks.value / totalImpressions.value) * 100
-        : 0,
-    cvr:
-      totalClicks.value > 0
-        ? (totalConversions.value / totalClicks.value) * 100
-        : 0,
-    cac:
-      totalConversions.value > 0
-        ? totalBudget.value / totalConversions.value
-        : 0,
+    roi: round2(safeDivide(totalRevenue.value - totalBudget.value, totalBudget.value) * 100),
+    ctr: round2(safeDivide(totalClicks.value, totalImpressions.value) * 100),
+    cvr: round2(safeDivide(totalConversions.value, totalClicks.value) * 100),
+    cac: round2(safeDivide(totalBudget.value, totalConversions.value)),
   }))
 
   // Actions
