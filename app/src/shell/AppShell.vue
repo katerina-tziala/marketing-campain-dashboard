@@ -16,7 +16,7 @@ provide('openAiPanel', () => { isAiOpen.value = true })
 
 <template>
   <div class="app-shell">
-    <!-- Left column — header + content; compresses when drawer opens -->
+    <!-- Left column — header + content; compresses when drawer opens at lg+ -->
     <div class="app-shell__left">
       <header class="app-shell__header">
         <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
@@ -30,7 +30,7 @@ provide('openAiPanel', () => { isAiOpen.value = true })
       </main>
     </div>
 
-    <!-- AI drawer — sibling to left column so it pushes everything left -->
+    <!-- AI drawer — sibling to left column so it pushes everything left at lg+ -->
     <AiToolsDrawer :open="isAiOpen" @close="isAiOpen = false" />
 
     <UploadModal ref="uploadModal" />

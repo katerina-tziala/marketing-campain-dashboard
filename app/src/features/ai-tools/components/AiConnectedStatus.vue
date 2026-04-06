@@ -34,7 +34,7 @@ const providerLabel = computed(() =>
   &__provider {
     font-size: theme('fontSize.sm');
     font-weight: 500;
-    color: var(--color-title);
+    color: #cbd5e1;
   }
 
   &__right {
@@ -64,7 +64,7 @@ const providerLabel = computed(() =>
     border: none;
     cursor: pointer;
     font-size: theme('fontSize.xs');
-    color: var(--color-text-secondary);
+    color: #cbd5e1;
     padding: 0;
     text-decoration: underline;
     text-underline-offset: 2px;

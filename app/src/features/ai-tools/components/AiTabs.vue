@@ -49,7 +49,7 @@ const tabs: { id: AiTab; label: string }[] = [
     cursor: pointer;
     font-size: theme('fontSize.sm');
     font-weight: 500;
-    color: var(--color-text-secondary);
+    color: #cbd5e1;
     transition: color 150ms ease, border-color 150ms ease;
     margin-bottom: -1px;
 

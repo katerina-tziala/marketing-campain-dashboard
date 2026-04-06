@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push panel (lg+) and modal (<lg). AI connection form (provider select + API key + connect with live verification) implemented for Google Gemini and Grok; connected state shows status bar + tabbed interface (Optimizer / Summary) with stubbed content. Actual Gemini/Grok API calls and upload-replace flow are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider select + API key + connect with live verification) implemented for Google Gemini and Grok; connected state shows status bar + tabbed interface (Optimizer / Summary) with stubbed content. Actual Gemini/Grok API calls and upload-replace flow are next.
 
 ---
 
@@ -69,11 +69,13 @@ app/                        # Vue 3 + Vite project
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   ├── AiToolsDrawer.vue       # Unified panel/modal — push panel at lg+ (width 0→400px), modal via Teleport at <lg; Escape to close; title "AI Tools"
-│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + tab panels when connected
+│   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→400px); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
+│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected
 │   │   │   │   ├── AiConnectionForm.vue    # Provider select (Gemini/Grok) + API key input (show/hide) + Connect button with spinner + inline error
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link
-│   │   │   │   └── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
+│   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
+│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze button (SparklesIcon) + idle/loading/demo-result states; reallocation table + confidence badge
+│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize button (SparklesIcon) + idle/loading/demo-result states; top performers + underperformers + insights
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
@@ -144,16 +146,18 @@ app/                        # Vue 3 + Vite project
 
 ### AI Tools
 - [x] AI button in dashboard header (SparklesIcon + "AI" label, primary variant)
-- [x] Push panel at lg+ (slides in from right, compresses dashboard; 400px wide)
-- [x] Modal at <lg (teleported, fade+scale transition; body scroll locked)
-- [x] Escape key closes panel / modal
+- [x] Push drawer at lg+ (slides in from right, compresses dashboard; 400px wide)
+- [x] Fixed overlay at <lg (on top of dashboard; max 90vw/90vh; backdrop + slide-in transition)
+- [x] Escape key or backdrop click closes panel
 - [x] Connection form — provider select (Google Gemini / Grok), API key input with show/hide toggle, Connect button with spinner
 - [x] Live connection verification — Gemini: GET /v1beta/models; Grok: GET /v1/models; inline error on failure
 - [x] Connected status bar — provider name + green dot + "Connected" + Disconnect link
 - [x] Tabbed interface — Optimizer tab (SlidersIcon) + Summary tab (FileTextIcon)
 - [x] API key memory-only (not persisted to storage)
-- [ ] Budget Optimizer — send campaign data to AI provider; budget reallocation recommendations; confidence scores (High / Medium / Low)
-- [ ] Executive Summary — one-click AI summary in 3–5 bullets; highlights top and underperforming campaigns
+- [x] Budget Optimizer tab — title, file subtitle, Analyze button, idle/loading/demo-result states; reallocation table with confidence badge
+- [x] Executive Summary tab — title, file subtitle, Summarize button, idle/loading/demo-result states; top performers, underperformers, insights
+- [ ] Configure actual AI prompts for Optimizer and Summary (replace demo stubs with real API calls)
+- [ ] Error handling for AI API calls — status = 'error', inline message, retry option
 
 ---
 

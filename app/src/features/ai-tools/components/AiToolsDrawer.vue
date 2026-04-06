@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { CloseIcon, SparklesIcon } from '../../../ui/icons'
 import AiToolsContent from './AiToolsContent.vue'
 
@@ -11,25 +11,11 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 onMounted(() => document.addEventListener('keydown', onKeydown))
-onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown)
-  document.body.style.overflow = ''
-})
-
-// Lock body scroll when modal is visible (small screens only)
-watch(
-  () => props.open,
-  (val) => {
-    const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches
-    if (!isLargeScreen) {
-      document.body.style.overflow = val ? 'hidden' : ''
-    }
-  },
-)
+onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <!-- Push panel — lg+ only; outer width transitions 0 → 400px -->
+  <!-- lg+: push drawer — width transitions 0 → 400px, compresses dashboard -->
   <div class="ai-drawer" :class="{ 'ai-drawer--open': open }" aria-hidden="true">
     <div class="ai-drawer__panel">
       <div class="ai-drawer__header">
@@ -45,31 +31,27 @@ watch(
     </div>
   </div>
 
-  <!-- Modal — <lg only; teleported to body, hidden on lg+ via CSS -->
-  <Teleport to="body">
-    <Transition name="ai-modal">
-      <div
-        v-if="open"
-        class="ai-modal-wrap"
-        role="dialog"
-        aria-modal="true"
-        aria-label="AI Tools"
-      >
-        <div class="ai-modal">
-          <div class="ai-modal__header">
-            <div class="ai-modal__header-start">
-              <SparklesIcon class="ai-modal__icon" />
-              <h2 class="ai-modal__title">AI Tools</h2>
-            </div>
-            <button class="ai-close-btn" aria-label="Close" @click="emit('close')">
-              <CloseIcon />
-            </button>
+  <!-- <lg: fixed overlay — panel on top of dashboard -->
+  <Transition name="ai-overlay">
+    <div
+      v-if="open"
+      class="ai-overlay"
+      @click.self="emit('close')"
+    >
+      <div class="ai-overlay__panel">
+        <div class="ai-overlay__header">
+          <div class="ai-overlay__header-start">
+            <SparklesIcon class="ai-overlay__icon" />
+            <h2 class="ai-overlay__title">AI Tools</h2>
           </div>
-          <AiToolsContent />
+          <button class="ai-close-btn" aria-label="Close AI panel" @click="emit('close')">
+            <CloseIcon />
+          </button>
         </div>
+        <AiToolsContent />
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </Transition>
 </template>
 
 <style lang="scss" scoped>
@@ -82,7 +64,7 @@ watch(
   background: none;
   padding: theme('spacing.2');
   cursor: pointer;
-  color: var(--color-text-secondary);
+  color: #cbd5e1;
   transition: color 150ms ease, background-color 150ms ease;
   border-radius: theme('borderRadius.md');
   border: 2px solid transparent;
@@ -102,22 +84,25 @@ watch(
   }
 }
 
-// ── Push panel (lg+) ─────────────────────────────────────────────────────────
+// ── Push drawer (lg+) ───────────────────────────────────────────────────────
 
 .ai-drawer {
-  overflow: hidden;
-  flex-shrink: 0;
-  width: 0;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: none;
 
   @media (min-width: 1024px) {
+    display: block;
+    overflow: hidden;
+    flex-shrink: 0;
+    width: 0;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
     &--open {
-      width: 400px;
+      width: 480px;
     }
   }
 
   &__panel {
-    width: 400px;
+    width: 480px;
     height: 100vh;
     position: sticky;
     top: 0;
@@ -153,40 +138,40 @@ watch(
   &__title {
     font-size: theme('fontSize.lg');
     font-weight: 600;
-    color: var(--color-title);
+    color: #cbd5e1;
     margin: 0;
   }
 }
 
-// ── Modal (<lg) ──────────────────────────────────────────────────────────────
+// ── Overlay (<lg) ───────────────────────────────────────────────────────────
 
-.ai-modal-wrap {
+.ai-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.65);
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: theme('spacing.4');
+  justify-content: flex-end;
+  padding: 5vh 5vw;
 
-  // Hidden on lg+ — panel takes over
+  // Hidden on lg+ — drawer takes over
   @media (min-width: 1024px) {
     display: none;
   }
-}
 
-.ai-modal {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: theme('borderRadius.lg');
-  width: 100%;
-  max-width: 480px;
-  max-height: calc(100vh - 2rem);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  &__panel {
+    width: 100%;
+    max-width: 90vw;
+    max-height: 90vh;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: theme('borderRadius.lg');
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
   &__header {
     display: flex;
@@ -213,28 +198,28 @@ watch(
   &__title {
     font-size: theme('fontSize.lg');
     font-weight: 600;
-    color: var(--color-title);
+    color: #cbd5e1;
     margin: 0;
   }
 }
 
-// ── Modal transition ─────────────────────────────────────────────────────────
+// ── Overlay transition ──────────────────────────────────────────────────────
 
-.ai-modal-enter-active,
-.ai-modal-leave-active {
+.ai-overlay-enter-active,
+.ai-overlay-leave-active {
   transition: opacity 0.2s ease;
 
-  .ai-modal {
+  .ai-overlay__panel {
     transition: transform 0.2s ease;
   }
 }
 
-.ai-modal-enter-from,
-.ai-modal-leave-to {
+.ai-overlay-enter-from,
+.ai-overlay-leave-to {
   opacity: 0;
 
-  .ai-modal {
-    transform: scale(0.95) translateY(8px);
+  .ai-overlay__panel {
+    transform: translateX(24px);
   }
 }
 </style>

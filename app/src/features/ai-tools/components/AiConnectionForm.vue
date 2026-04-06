@@ -78,7 +78,7 @@ async function handleConnect(): Promise<void> {
 
   &__intro {
     font-size: theme('fontSize.sm');
-    color: var(--color-text-secondary);
+    color: #cbd5e1;
     line-height: 1.55;
     margin: 0;
   }
@@ -100,7 +100,7 @@ async function handleConnect(): Promise<void> {
     font-weight: 600;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: var(--color-text-secondary);
+    color: #cbd5e1;
   }
 
   &__select,
