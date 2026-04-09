@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider select + API key + connect with live verification) implemented for Google Gemini and Grok; connected state shows status bar + tabbed interface (Optimizer / Summary) with stubbed content. Actual Gemini/Grok API calls and upload-replace flow are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider select + API key + connect with live verification) implemented for Google Gemini and Grok; connected state shows status bar + tabbed interface (Optimizer / Summary). Both AI tabs have full UI rendering all response sections with 5 cycling mock responses each. Budget Optimizer: executive summary, recommendations, top/underperformers, quick wins, correlations, risks. Executive Summary: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations. Actual Gemini/Grok API calls and upload-replace flow are next.
 
 ---
 
@@ -76,8 +76,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiConnectionForm.vue    # Provider select (Gemini/Grok) + API key input (show/hide) + Connect button with spinner + inline error
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link
 │   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
-│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze button (SparklesIcon) + idle/loading/demo-result states; reallocation table + confidence badge
-│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize button (SparklesIcon) + idle/loading/demo-result states; top performers + underperformers + insights
+│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button; idle/loading/result states; renders full BudgetOptimizerResponse: executive summary, recommendations (confidence badge, amount, impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge), quick wins (effort badge), correlations, risks & mitigations; cycles through 5 mock responses
+│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button; idle/loading/result states; renders full ExecutiveSummaryResponse: health score (color-coded badge with score/100), bottom line, key metrics grid (8 metrics in 2-col layout), insights (typed cards with icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share), correlations; cycles through 5 mock responses
 │   │   │   ├── types/
 │   │   │   │   └── index.ts            # Shared building blocks (AllocationShare, FunnelMetrics, PortfolioCount, PromptScopeConfig, CampainSummaryTotals) + prompt types (PromptList, PromptInstructions, PromptInstructionStep) + ExecutiveSummary and BudgetOptimizer data/response types
 │   │   │   ├── prompts/
@@ -86,6 +86,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── executive-summary-prompt.ts # generateExecutiveSummaryPrompt — assembles executive-summary AI prompt from ExecutiveSummaryData
 │   │   │   │   ├── budget-optimizer-prompt.ts  # generateBudgetOptimizerPrompt — assembles budget-optimizer AI prompt from BudgetOptimizerData
 │   │   │   │   └── index.ts                    # Barrel export for prompts
+│   │   │   ├── mocks/
+│   │   │   │   ├── budget-optimizer-mocks.ts    # 5 BudgetOptimizerResponse mock objects (aggressive reallocation, conservative, seasonal pivot, channel consolidation, growth expansion)
+│   │   │   │   ├── executive-summary-mocks.ts  # 5 ExecutiveSummaryResponse mock objects (strong portfolio, needs attention, excellent, critical, growth phase)
+│   │   │   │   └── index.ts                    # Barrel export for mocks
 │   │   │   ├── utils/
 │   │   │   │   ├── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — aggregation, ranking, key findings; called on-demand at prompt time with filtered data
 │   │   │   │   └── buildBudgetOptimizerData.ts  # Transforms Campaign[] into BudgetOptimizerData — per-campaign metrics, channel aggregation, portfolio totals; called on-demand at prompt time with filtered data
@@ -167,8 +171,8 @@ app/                        # Vue 3 + Vite project
 - [x] Connected status bar — provider name + green dot + "Connected" + Disconnect link
 - [x] Tabbed interface — Optimizer tab (SlidersIcon) + Summary tab (FileTextIcon)
 - [x] API key memory-only (not persisted to storage)
-- [x] Budget Optimizer tab — title, file subtitle, Analyze button, idle/loading/demo-result states; reallocation table with confidence badge
-- [x] Executive Summary tab — title, file subtitle, Summarize button, idle/loading/demo-result states; top performers, underperformers, insights
+- [x] Budget Optimizer tab — full UI for BudgetOptimizerResponse: executive summary, recommendations (confidence badge, reallocation amount, expected impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge: Reduce/Pause/Restructure), quick wins (effort badge), correlations, risks & mitigations; 5 mock responses cycle on each Analyze click
+- [x] Executive Summary tab — full UI for ExecutiveSummaryResponse: health score badge (Excellent/Good/Needs Attention/Critical with color + score/100), bottom line, key metrics grid (8 metrics), insights (typed cards with emoji icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share + one-liner), correlations; 5 mock responses cycle on each Summarize click
 - [ ] Configure actual AI prompts for Optimizer and Summary (replace demo stubs with real API calls)
 - [ ] Error handling for AI API calls — status = 'error', inline message, retry option
 

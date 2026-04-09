@@ -1,19 +1,64 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { SparklesIcon } from '../../../ui/icons'
-
-// TODO: Replace demo response with actual AI API call (aiStore.provider + apiKey → prompt)
-// TODO: Add error handling (status = 'error', display message, retry option)
+import { EXECUTIVE_SUMMARY_MOCKS } from '../mocks'
+import type { ExecutiveSummaryResponse } from '../types'
 
 type Status = 'idle' | 'loading' | 'done'
 
 const campaignStore = useCampaignStore()
 const status = ref<Status>('idle')
+const mockIndex = ref(-1)
+const response = ref<ExecutiveSummaryResponse | null>(null)
+
+const healthScoreClass = (label: string) => {
+  const map: Record<string, string> = {
+    excellent: 'ai-health--excellent',
+    good: 'ai-health--good',
+    'needs attention': 'ai-health--warning',
+    critical: 'ai-health--critical',
+  }
+  return `ai-health ${map[label.toLowerCase()] ?? 'ai-health--good'}`
+}
+
+const channelStatusClass = (s: string) => {
+  const map: Record<string, string> = {
+    strong: 'ai-channel-status--strong',
+    moderate: 'ai-channel-status--moderate',
+    weak: 'ai-channel-status--weak',
+  }
+  return `ai-channel-status ${map[s] ?? 'ai-channel-status--moderate'}`
+}
+
+const urgencyBadgeClass = (urgency: string) => {
+  const map: Record<string, string> = {
+    immediate: 'ai-badge--danger',
+    'this quarter': 'ai-badge--warning',
+    'next quarter': 'ai-badge--info',
+  }
+  return `ai-badge ${map[urgency.toLowerCase()] ?? 'ai-badge--info'}`
+}
+
+const insightTypeClass = (type: string) => {
+  const map: Record<string, string> = {
+    performance: 'ai-insight--performance',
+    opportunity: 'ai-insight--opportunity',
+    warning: 'ai-insight--warning',
+    achievement: 'ai-insight--achievement',
+  }
+  return `ai-insight ${map[type] ?? 'ai-insight--performance'}`
+}
+
+const summarizeLabel = computed(() =>
+  status.value === 'done' ? 'Re-Summarize' : 'Summarize',
+)
 
 async function summarize(): Promise<void> {
   status.value = 'loading'
-  await new Promise<void>((resolve) => setTimeout(resolve, 2000))
+  await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+  mockIndex.value = (mockIndex.value + 1) % EXECUTIVE_SUMMARY_MOCKS.length
+  response.value = EXECUTIVE_SUMMARY_MOCKS[mockIndex.value]
   status.value = 'done'
 }
 </script>
@@ -32,7 +77,7 @@ async function summarize(): Promise<void> {
         @click="summarize"
       >
         <SparklesIcon class="ai-panel__action-icon" />
-        Summarize
+        {{ summarizeLabel }}
       </button>
     </div>
 
@@ -49,33 +94,160 @@ async function summarize(): Promise<void> {
       <p class="ai-panel__loader-text">Generating summary…</p>
     </div>
 
-    <!-- Demo result -->
-    <!-- TODO: Replace with actual AI response rendering (markdown or structured output) -->
-    <div v-else class="ai-panel__result">
-      <div class="ai-result-section">
-        <h4 class="ai-result-section__title ai-result-section__title--green">Top Performers</h4>
-        <ul class="ai-result-section__list">
-          <li>Google Ads — ROI 245%, highest revenue generator at €42,500</li>
-          <li>Email Marketing — CVR 8.2%, most cost-efficient channel with strong repeat engagement</li>
-          <li>LinkedIn Ads — steady B2B conversions, CAC within target range</li>
-        </ul>
+    <!-- Result -->
+    <div v-else-if="response" class="ai-panel__result">
+
+      <!-- Health Score -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Portfolio Health</span>
+          <span v-if="response.period" class="ai-result-block__period">{{ response.period }}</span>
+        </div>
+
+        <div class="ai-health-score">
+          <div :class="healthScoreClass(response.health_score.label)">
+            <span class="ai-health__value">{{ response.health_score.score }}</span>
+            <span class="ai-health__max">/100</span>
+          </div>
+          <span class="ai-health-score__label">{{ response.health_score.label }}</span>
+        </div>
+        <p class="ai-result-block__text">{{ response.health_score.reasoning }}</p>
       </div>
 
-      <div class="ai-result-section">
-        <h4 class="ai-result-section__title ai-result-section__title--red">Underperformers</h4>
-        <ul class="ai-result-section__list">
-          <li>Display Ads — ROI -12%, high spend with low conversion rate (0.6%)</li>
-          <li>Twitter/X Ads — elevated CAC, audience engagement below channel average</li>
-        </ul>
+      <!-- Bottom Line -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Bottom Line</span>
+        </div>
+        <p class="ai-result-block__text">{{ response.bottom_line }}</p>
       </div>
 
-      <div class="ai-result-section">
-        <h4 class="ai-result-section__title ai-result-section__title--indigo">Actionable Insights</h4>
-        <ol class="ai-result-section__list ai-result-section__list--ordered">
-          <li>Reallocate 20% of Display Ads budget to Google Ads to capitalise on proven ROI</li>
-          <li>Scale Email Marketing spend — highest return per euro, low saturation risk</li>
-          <li>Pause or restructure Twitter/X campaigns; reassess targeting parameters</li>
-        </ol>
+      <!-- Key Metrics -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Key Metrics</span>
+        </div>
+        <div class="ai-metrics-grid">
+          <div class="ai-metric">
+            <span class="ai-metric__label">Total Spend</span>
+            <span class="ai-metric__value">{{ response.key_metrics.total_spend }}</span>
+          </div>
+          <div class="ai-metric">
+            <span class="ai-metric__label">Total Revenue</span>
+            <span class="ai-metric__value">{{ response.key_metrics.total_revenue }}</span>
+          </div>
+          <div class="ai-metric">
+            <span class="ai-metric__label">Overall ROI</span>
+            <span class="ai-metric__value">{{ response.key_metrics.overall_roi }}</span>
+          </div>
+          <div class="ai-metric">
+            <span class="ai-metric__label">Conversions</span>
+            <span class="ai-metric__value">{{ response.key_metrics.total_conversions }}</span>
+          </div>
+          <div class="ai-metric ai-metric--span">
+            <span class="ai-metric__label">Best Channel</span>
+            <span class="ai-metric__value ai-metric__value--positive">{{ response.key_metrics.best_channel }}</span>
+          </div>
+          <div class="ai-metric ai-metric--span">
+            <span class="ai-metric__label">Worst Channel</span>
+            <span class="ai-metric__value ai-metric__value--negative">{{ response.key_metrics.worst_channel }}</span>
+          </div>
+          <div class="ai-metric ai-metric--span">
+            <span class="ai-metric__label">Best Campaign</span>
+            <span class="ai-metric__value">{{ response.key_metrics.best_campaign }}</span>
+          </div>
+          <div class="ai-metric ai-metric--full">
+            <span class="ai-metric__label">Biggest Opportunity</span>
+            <span class="ai-metric__value ai-metric__value--opportunity">{{ response.key_metrics.biggest_opportunity }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Insights</span>
+        </div>
+
+        <div
+          v-for="(insight, i) in response.insights"
+          :key="i"
+          :class="insightTypeClass(insight.type)"
+        >
+          <div class="ai-insight__head">
+            <span class="ai-insight__icon">{{ insight.icon }}</span>
+            <span class="ai-insight__text">{{ insight.text }}</span>
+          </div>
+          <div class="ai-insight__metric">
+            <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
+            <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Priority Actions -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Priority Actions</span>
+        </div>
+
+        <div
+          v-for="(action, i) in response.priority_actions"
+          :key="i"
+          class="ai-priority"
+        >
+          <div class="ai-priority__head">
+            <span class="ai-priority__number">#{{ action.priority }}</span>
+            <span class="ai-priority__action">{{ action.action }}</span>
+            <span :class="urgencyBadgeClass(action.urgency)">{{ action.urgency }}</span>
+          </div>
+          <p class="ai-priority__outcome">{{ action.expected_outcome }}</p>
+          <p class="ai-priority__metric">
+            <strong>Success metric:</strong> {{ action.success_metric }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Channel Summary -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Channel Summary</span>
+        </div>
+
+        <div
+          v-for="(ch, i) in response.channel_summary"
+          :key="i"
+          class="ai-channel"
+        >
+          <div class="ai-channel__head">
+            <span class="ai-channel__name">{{ ch.channel }}</span>
+            <div class="ai-channel__head-right">
+              <span class="ai-channel__budget">{{ ch.budget_share }}</span>
+              <span :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
+            </div>
+          </div>
+          <p class="ai-channel__liner">{{ ch.one_liner }}</p>
+        </div>
+
+        <p v-if="response.additional_channels_note" class="ai-result-block__note">
+          {{ response.additional_channels_note }}
+        </p>
+      </div>
+
+      <!-- Correlations -->
+      <div v-if="response.correlations.length" class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Correlations</span>
+        </div>
+
+        <div
+          v-for="(corr, i) in response.correlations"
+          :key="i"
+          class="ai-correlation"
+        >
+          <p class="ai-correlation__finding">{{ corr.finding }}</p>
+          <p class="ai-correlation__implication">{{ corr.so_what }}</p>
+        </div>
       </div>
     </div>
   </div>
@@ -198,43 +370,431 @@ async function summarize(): Promise<void> {
   }
 }
 
-.ai-result-section {
+// ── Result blocks ────────────────────────────────────────────────────────────
+
+.ai-result-block {
   background-color: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: theme('borderRadius.lg');
-  padding: theme('spacing.4') theme('spacing.4');
+  padding: theme('spacing.4');
   display: flex;
   flex-direction: column;
-  gap: theme('spacing.2');
+  gap: theme('spacing.3');
 
-  &__title {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__label {
     font-size: theme('fontSize.xs');
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin: 0;
-
-    &--green  { color: #10b981; }
-    &--red    { color: #f87171; }
-    &--indigo { color: #818cf8; }
+    color: #818cf8;
   }
 
-  &__list {
+  &__period {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  &__text {
+    font-size: theme('fontSize.sm');
+    color: #cbd5e1;
+    line-height: 1.6;
     margin: 0;
-    padding-left: theme('spacing.4');
+
+    strong {
+      color: var(--color-title);
+      font-weight: 600;
+    }
+  }
+
+  &__note {
+    font-size: theme('fontSize.xs');
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+    font-style: italic;
+  }
+}
+
+// ── Health Score ──────────────────────────────────────────────────────────────
+
+.ai-health-score {
+  display: flex;
+  align-items: center;
+  gap: theme('spacing.3');
+
+  &__label {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+}
+
+.ai-health {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: theme('spacing.1') theme('spacing.3');
+  border-radius: theme('borderRadius.lg');
+  border: 1px solid;
+
+  &__value {
+    font-size: theme('fontSize.2xl');
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  &__max {
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    opacity: 0.6;
+  }
+
+  &--excellent {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.25);
+  }
+
+  &--good {
+    color: #6366f1;
+    background-color: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.25);
+  }
+
+  &--warning {
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.25);
+  }
+
+  &--critical {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.25);
+  }
+}
+
+// ── Key Metrics Grid ─────────────────────────────────────────────────────────
+
+.ai-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: theme('spacing.2');
+}
+
+.ai-metric {
+  padding: theme('spacing.2') theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  &--span {
+    grid-column: span 1;
+  }
+
+  &--full {
+    grid-column: 1 / -1;
+  }
+
+  &__label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+  }
+
+  &__value {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
+    color: var(--color-title);
+    line-height: 1.3;
+
+    &--positive { color: #10b981; }
+    &--negative { color: #f87171; }
+    &--opportunity { color: #818cf8; }
+  }
+}
+
+// ── Insight card ─────────────────────────────────────────────────────────────
+
+.ai-insight {
+  padding: theme('spacing.3');
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing.2');
+  border: 1px solid;
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
     display: flex;
-    flex-direction: column;
-    gap: theme('spacing[1.5]');
+    gap: theme('spacing.2');
+    align-items: flex-start;
+  }
 
-    li {
-      font-size: theme('fontSize.sm');
-      color: #cbd5e1;
-      line-height: 1.5;
-    }
+  &__icon {
+    font-size: theme('fontSize.base');
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
 
-    &--ordered {
-      list-style-type: decimal;
+  &__text {
+    font-size: theme('fontSize.sm');
+    color: #cbd5e1;
+    line-height: 1.5;
+  }
+
+  &__metric {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: theme('spacing.1') theme('spacing.2');
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: theme('borderRadius.sm');
+  }
+
+  &__metric-label {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  &__metric-value {
+    font-size: theme('fontSize.sm');
+    font-weight: 700;
+    color: var(--color-title);
+  }
+
+  &--performance {
+    background-color: rgba(99, 102, 241, 0.05);
+    border-color: rgba(99, 102, 241, 0.15);
+  }
+
+  &--opportunity {
+    background-color: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.15);
+  }
+
+  &--warning {
+    background-color: rgba(245, 158, 11, 0.05);
+    border-color: rgba(245, 158, 11, 0.15);
+  }
+
+  &--achievement {
+    background-color: rgba(129, 140, 248, 0.05);
+    border-color: rgba(129, 140, 248, 0.15);
+  }
+}
+
+// ── Priority action card ─────────────────────────────────────────────────────
+
+.ai-priority {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    gap: theme('spacing.2');
+  }
+
+  &__number {
+    font-size: theme('fontSize.xs');
+    font-weight: 800;
+    color: #818cf8;
+    flex-shrink: 0;
+    min-width: 1.25rem;
+  }
+
+  &__action {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
+    color: var(--color-title);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  &__outcome {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.5;
+    padding-left: calc(1.25rem + theme('spacing.2'));
+  }
+
+  &__metric {
+    font-size: theme('fontSize.xs');
+    color: #cbd5e1;
+    margin: 0;
+    line-height: 1.4;
+    padding-left: calc(1.25rem + theme('spacing.2'));
+
+    strong {
+      color: #818cf8;
+      font-weight: 600;
     }
+  }
+}
+
+// ── Badge ────────────────────────────────────────────────────────────────────
+
+.ai-badge {
+  font-size: theme('fontSize.xs');
+  font-weight: 600;
+  border-radius: theme('borderRadius.full');
+  padding: 2px theme('spacing.2');
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &--success {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  &--warning {
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  &--danger {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+  }
+
+  &--info {
+    color: #818cf8;
+    background-color: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+  }
+}
+
+// ── Channel card ─────────────────────────────────────────────────────────────
+
+.ai-channel {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__head-right {
+    display: flex;
+    align-items: center;
+    gap: theme('spacing.2');
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
+    color: var(--color-title);
+  }
+
+  &__budget {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  &__liner {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
+
+.ai-channel-status {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: theme('borderRadius.full');
+  padding: 2px theme('spacing[1.5]');
+
+  &--strong {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  &--moderate {
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  &--weak {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+  }
+}
+
+// ── Correlation card ─────────────────────────────────────────────────────────
+
+.ai-correlation {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__finding {
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    color: var(--color-title);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  &__implication {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.5;
   }
 }
 

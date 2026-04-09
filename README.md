@@ -28,23 +28,21 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
   - *Missing columns:* Lists every missing column by name (e.g. `budget, revenue`) and prompts to consult the template
   - *Invalid rows:* A structured table shows the row number, column name, and specific issue for every validation failure. If some rows are valid, the user can choose to **proceed with the valid rows** or go back and fix the file
 
-### AI Budget Optimizer (Gemini)
+### AI Budget Optimizer (Gemini / Grok)
 
-- Sends campaign data to Google Gemini API for analysis
-- Returns budget reallocation recommendations in natural language
-- Explains reasoning (e.g. "Move 20% of Display budget to Email which has 5x better ROI")
+- Sends campaign data to AI provider (Google Gemini or Grok) for analysis
+- Returns structured results: executive summary, recommendations with confidence badges, top performers, underperformers with action badges (Reduce / Pause / Restructure), quick wins with effort level, correlations, and risks with mitigations
+- Each recommendation includes reallocation amount, expected revenue/conversion impact, new ROI estimate, timeline, and success metrics
 - Confidence score for each recommendation (High / Medium / Low)
-- User enters their own Gemini API key in Settings
-- **Test Connection** button to verify the key works before use
-- If no key is provided, AI features appear disabled with a message: "Enter your API key in Settings to enable AI features"
-- Instructions and link to get a free Gemini API key from Google AI Studio
+- User enters their own API key in the AI Tools panel — supports Google Gemini and Grok (xAI)
+- **Connect** button with live verification before use
+- Currently uses mock responses for UI development (5 scenarios cycle on each Analyze click)
 
 ### Executive Summary Generator (AI)
 
-- One button generates an AI-powered summary in 3-5 bullets
-- Natural language overview for executives (e.g. "Email channel has the best ROI at 2,133% but receives only 4% of total budget")
-- Highlights top and underperforming campaigns
-- Uses the same Gemini API connection as the Budget Optimizer
+- Returns structured results: portfolio health score (0-100 with Excellent/Good/Needs Attention/Critical labels), bottom line summary, key metrics dashboard (8 metrics in grid), typed insights with emoji icons and metric highlights, numbered priority actions with urgency badges, channel summary with status indicators and budget share, and data correlations
+- Uses the same AI provider connection as the Budget Optimizer (Gemini or Grok)
+- Currently uses mock responses for UI development (5 scenarios cycle on each Summarize click)
 
 
 ## Getting Started

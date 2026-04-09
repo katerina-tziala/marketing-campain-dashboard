@@ -1115,3 +1115,47 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ARRAY_SIZE_NOTES` as a separate constant — the three lines are behavioural notes about the list, not list items; merging them would cause the AI to see "If fewer items exist" as an array-size guideline bullet, which misrepresents the intent
 - `build` → `generate` only for prompt functions — data builders (`buildExecutiveSummaryData`, `buildBudgetOptimizerData`) keep `build` since they construct structured payloads; prompt functions `generate` a string for AI consumption; the naming distinction mirrors the responsibility split
 - Keep `prompts/` folder name and location — `prompts/` is concise and clear; `prompt-generations/` is verbose; moving into `utils/` would blur the data-transformation vs prompt-assembly boundary
+
+
+## [#16] Budget Optimizer — mock responses and full UI
+**Type:** feature
+
+**Summary:** Created 5 mock BudgetOptimizerResponse objects and built the full result UI for the Budget Optimizer panel, replacing the hardcoded demo stub with structured rendering of all response sections.
+
+**Brainstorming:** The BudgetOptimizerResponse type has 7 distinct sections (executive_summary, recommendations, top_performers, underperformers, quick_wins, correlations, risks). Options considered: (1) extract each section into its own component — rejected because the sections are tightly coupled to this panel and not reused elsewhere; (2) render everything inside AiOptimizerPanel.vue — chosen for simplicity and consistency with the existing pattern; (3) create a generic "result renderer" — rejected as premature abstraction. For mock data, 5 scenarios were designed to cover different optimization strategies: aggressive reallocation, conservative tweaks, seasonal pivot, channel consolidation, and growth expansion. This variety ensures the UI handles diverse data shapes (different array lengths, different badge types, optional fields).
+
+**Prompt:** Based on the BudgetOptimizerResponse create 5 mock responses. Place mock data in a folder mocks in ai-tools. When clicking on analyze iterate through the 5 responses and show one each time. The plan is to identify and create all the components required for the UI.
+
+**What was built:**
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — 5 BudgetOptimizerResponse mock objects covering aggressive reallocation, conservative optimization, seasonal pivot, channel consolidation, and growth expansion scenarios
+- `features/ai-tools/mocks/index.ts` — barrel export for the mocks folder
+- `features/ai-tools/components/AiOptimizerPanel.vue` — complete rewrite: replaced hardcoded demo table with full structured rendering of all 7 BudgetOptimizerResponse sections; added mock cycling logic (mockIndex increments mod 5 on each Analyze click); button label changes to "Re-Analyze" after first result; new CSS for recommendation cards, performer cards, quick-win cards, correlation cards, risk cards, action badges (Reduce/Pause/Restructure), and effort badges (Low/Medium)
+
+**Key decisions & why:**
+- All rendering stays in AiOptimizerPanel.vue — sections are specific to this panel and not reused; extracting 7 sub-components would add indirection without value at this stage
+- Mock index starts at -1 and increments before use — ensures first click shows index 0 (the first mock) rather than skipping it
+- 5 diverse scenarios — covers different array lengths, confidence levels, action types, and optional fields to stress-test the UI layout
+- Button changes to "Re-Analyze" after first result — communicates to the user that they can cycle to a new analysis without confusion about repeated clicks
+- Reused existing CSS class patterns (ai-result-block, ai-confidence) and extended with new card types (ai-recommendation, ai-performer, ai-quick-win, ai-correlation, ai-risk) and generic ai-badge for action/effort labels
+
+
+## [#17] Executive Summary — mock responses and full UI
+**Type:** feature
+
+**Summary:** Created 5 mock ExecutiveSummaryResponse objects and built the full result UI for the Executive Summary panel, replacing the demo stub with structured rendering of all response sections.
+
+**Brainstorming:** The ExecutiveSummaryResponse type has 8 distinct sections (health_score, bottom_line, key_metrics, insights, priority_actions, channel_summary, correlations, additional_channels_note). Design decisions: (1) health score rendered as a large color-coded badge with score/100 — this is the hero element that sets the tone for the entire summary; (2) key metrics in a 2-column grid with special full-width treatment for "biggest opportunity" — provides scannable data density; (3) insight cards color-coded by type (performance/opportunity/warning/achievement) with inline metric highlight bar — each insight is self-contained with its supporting data point; (4) priority actions numbered with urgency badges (Immediate/This Quarter/Next Quarter) — conveys both order and time pressure; (5) channel summary with status dots (strong/moderate/weak) + budget share — quick portfolio overview. For mock data, 5 scenarios covering the full health_score spectrum: strong (82/Good), needs attention (48), excellent (91), critical (25), and growth phase (73/Good). Each has different insight types, action counts, and channel distributions to stress-test the layout.
+
+**Prompt:** Do the same and complete summary UI based on ExecutiveSummaryResponse. Create 5 mock responses, place in mocks folder, cycle through on Summarize click.
+
+**What was built:**
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — 5 ExecutiveSummaryResponse mock objects: strong portfolio (82/Good), needs attention (48), excellent performance (91), critical state (25), growth phase (73/Good)
+- `features/ai-tools/mocks/index.ts` — added executive summary mocks barrel export
+- `features/ai-tools/components/AiSummaryPanel.vue` — complete rewrite: replaced demo stub with full structured rendering of all ExecutiveSummaryResponse sections; mock cycling logic (mockIndex mod 5); button changes to "Re-Summarize" after first result; new CSS for health score badge, key metrics grid, insight cards (4 type-based color themes), priority action cards (numbered with urgency badge), channel cards (status badge), correlation cards
+
+**Key decisions & why:**
+- Health score as a hero badge with score/100 — immediately communicates portfolio state at a glance; color-coding (green/indigo/amber/red) maps to the 4 label tiers and provides instant visual assessment
+- Key metrics in a 2-column grid — maximizes information density in the narrow drawer width; "biggest opportunity" spans full width because it's typically a longer text value
+- Insight cards typed by color (performance=indigo, opportunity=green, warning=amber, achievement=purple) — helps users scan for what matters most to them; the inline metric highlight bar makes each insight self-contained
+- 5 mocks covering the full health score spectrum (25-91) — ensures the UI handles all 4 health labels (Excellent/Good/Needs Attention/Critical) and varying array lengths
+- Correlations use `so_what` field (not `implication` like Budget Optimizer) — matches the ExecutiveSummaryResponse type definition which uses different field names than BudgetOptimizerResponse

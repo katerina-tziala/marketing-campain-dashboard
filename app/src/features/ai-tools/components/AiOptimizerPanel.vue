@@ -1,29 +1,51 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { SparklesIcon } from '../../../ui/icons'
-
-// TODO: Replace demo response with actual AI API call (aiStore.provider + apiKey → prompt)
-// TODO: Add error handling (status = 'error', display message, retry option)
+import { BUDGET_OPTIMIZER_MOCKS } from '../mocks'
+import type { BudgetOptimizerResponse } from '../types'
 
 type Status = 'idle' | 'loading' | 'done'
 
 const campaignStore = useCampaignStore()
 const status = ref<Status>('idle')
+const mockIndex = ref(-1)
+const response = ref<BudgetOptimizerResponse | null>(null)
+
+const confidenceClass = (level: string) =>
+  `ai-confidence ai-confidence--${level.toLowerCase()}`
+
+const formatCurrency = (value: number) =>
+  `€${value.toLocaleString('en-IE')}`
+
+const actionBadgeClass = (action: string) => {
+  const map: Record<string, string> = {
+    reduce: 'ai-badge--warning',
+    pause: 'ai-badge--danger',
+    restructure: 'ai-badge--info',
+  }
+  return `ai-badge ${map[action.toLowerCase()] ?? 'ai-badge--info'}`
+}
+
+const effortBadgeClass = (effort: string) => {
+  const map: Record<string, string> = {
+    low: 'ai-badge--success',
+    medium: 'ai-badge--warning',
+  }
+  return `ai-badge ${map[effort.toLowerCase()] ?? 'ai-badge--info'}`
+}
+
+const analyzeLabel = computed(() =>
+  status.value === 'done' ? 'Re-Analyze' : 'Analyze',
+)
 
 async function analyze(): Promise<void> {
   status.value = 'loading'
-  await new Promise<void>((resolve) => setTimeout(resolve, 2500))
+  await new Promise<void>((resolve) => setTimeout(resolve, 1500))
+  mockIndex.value = (mockIndex.value + 1) % BUDGET_OPTIMIZER_MOCKS.length
+  response.value = BUDGET_OPTIMIZER_MOCKS[mockIndex.value]
   status.value = 'done'
 }
-
-const demoRows = [
-  { channel: 'Google Ads', current: '€8,000', recommended: '€10,500', change: '+€2,500', up: true },
-  { channel: 'Email Marketing', current: '€2,000', recommended: '€2,800', change: '+€800', up: true },
-  { channel: 'LinkedIn Ads', current: '€3,500', recommended: '€3,500', change: '—', up: null },
-  { channel: 'Display Ads', current: '€5,000', recommended: '€2,200', change: '-€2,800', up: false },
-  { channel: 'Twitter/X Ads', current: '€3,000', recommended: '€2,500', change: '-€500', up: false },
-]
 </script>
 
 <template>
@@ -40,7 +62,7 @@ const demoRows = [
         @click="analyze"
       >
         <SparklesIcon class="ai-panel__action-icon" />
-        Analyze
+        {{ analyzeLabel }}
       </button>
     </div>
 
@@ -58,50 +80,176 @@ const demoRows = [
       <p class="ai-panel__loader-text">Analyzing campaigns…</p>
     </div>
 
-    <!-- Demo result -->
-    <!-- TODO: Replace with actual AI response rendering (markdown or structured output) -->
-    <div v-else class="ai-panel__result">
+    <!-- Result -->
+    <div v-else-if="response" class="ai-panel__result">
+
+      <!-- Executive Summary -->
       <div class="ai-result-block">
         <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Recommended Reallocation</span>
-          <span class="ai-confidence ai-confidence--high">High Confidence</span>
+          <span class="ai-result-block__label">Executive Summary</span>
+          <span v-if="response.period" class="ai-result-block__period">{{ response.period }}</span>
         </div>
-
-        <table class="ai-realloc-table">
-          <thead>
-            <tr>
-              <th>Channel</th>
-              <th>Current</th>
-              <th>Recommended</th>
-              <th>Change</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in demoRows" :key="row.channel">
-              <td class="ai-realloc-table__channel">{{ row.channel }}</td>
-              <td>{{ row.current }}</td>
-              <td>{{ row.recommended }}</td>
-              <td
-                class="ai-realloc-table__change"
-                :class="{
-                  'ai-realloc-table__change--up': row.up === true,
-                  'ai-realloc-table__change--down': row.up === false,
-                }"
-              >{{ row.change }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <p class="ai-result-block__text">{{ response.executive_summary }}</p>
       </div>
 
+      <!-- Recommendations -->
       <div class="ai-result-block">
         <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Rationale</span>
+          <span class="ai-result-block__label">Recommendations</span>
         </div>
-        <p class="ai-result-block__text">
-          Shifting budget from low-ROI Display Ads and Twitter/X to proven performers
-          (Google Ads, Email Marketing) is projected to increase overall ROI by
-          <strong>18–24%</strong> without increasing total spend.
-        </p>
+
+        <div
+          v-for="(rec, i) in response.recommendations"
+          :key="i"
+          class="ai-recommendation"
+        >
+          <div class="ai-recommendation__head">
+            <span class="ai-recommendation__action">{{ rec.action }}</span>
+            <span :class="confidenceClass(rec.confidence)">{{ rec.confidence }}</span>
+          </div>
+
+          <div class="ai-recommendation__details">
+            <div class="ai-recommendation__row">
+              <span class="ai-recommendation__detail-label">Reallocation</span>
+              <span class="ai-recommendation__detail-value">{{ formatCurrency(rec.amount) }}</span>
+            </div>
+            <div class="ai-recommendation__row">
+              <span class="ai-recommendation__detail-label">Timeline</span>
+              <span class="ai-recommendation__detail-value">{{ rec.timeline }}</span>
+            </div>
+            <div class="ai-recommendation__row">
+              <span class="ai-recommendation__detail-label">Est. Revenue</span>
+              <span class="ai-recommendation__detail-value ai-recommendation__detail-value--positive">
+                +{{ formatCurrency(rec.expected_impact.additional_revenue) }}
+              </span>
+            </div>
+            <div class="ai-recommendation__row">
+              <span class="ai-recommendation__detail-label">Est. Conversions</span>
+              <span class="ai-recommendation__detail-value ai-recommendation__detail-value--positive">
+                +{{ rec.expected_impact.additional_conversions }}
+              </span>
+            </div>
+            <div class="ai-recommendation__row">
+              <span class="ai-recommendation__detail-label">New ROI</span>
+              <span class="ai-recommendation__detail-value">{{ rec.expected_impact.new_roi_estimate }}</span>
+            </div>
+          </div>
+
+          <p class="ai-recommendation__reasoning">{{ rec.reasoning }}</p>
+
+          <div class="ai-recommendation__metrics">
+            <span class="ai-recommendation__metrics-title">Success Metrics</span>
+            <p class="ai-recommendation__metrics-text">
+              <strong>Measure:</strong> {{ rec.success_metrics.what_to_measure }}
+            </p>
+            <p class="ai-recommendation__metrics-text">
+              <strong>Target:</strong> {{ rec.success_metrics.target }}
+            </p>
+            <p class="ai-recommendation__metrics-text">
+              <strong>Review after:</strong> {{ rec.success_metrics.review_after }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Performers -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Top Performers</span>
+        </div>
+
+        <div
+          v-for="(perf, i) in response.top_performers"
+          :key="i"
+          class="ai-performer"
+        >
+          <div class="ai-performer__head">
+            <span class="ai-performer__name">{{ perf.campaign }}</span>
+            <span class="ai-performer__roi ai-performer__roi--positive">{{ perf.roi }}x ROI</span>
+          </div>
+          <p class="ai-performer__insight">{{ perf.insight }}</p>
+          <p class="ai-performer__unlock">
+            <strong>Unlock:</strong> {{ perf.unlock_potential }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Underperformers -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Underperformers</span>
+        </div>
+
+        <div
+          v-for="(perf, i) in response.underperformers"
+          :key="i"
+          class="ai-performer"
+        >
+          <div class="ai-performer__head">
+            <span class="ai-performer__name">{{ perf.campaign }}</span>
+            <div class="ai-performer__head-right">
+              <span class="ai-performer__roi ai-performer__roi--negative">{{ perf.roi }}x ROI</span>
+              <span :class="actionBadgeClass(perf.recommended_action)">{{ perf.recommended_action }}</span>
+            </div>
+          </div>
+          <p class="ai-performer__insight">{{ perf.insight }}</p>
+        </div>
+      </div>
+
+      <!-- Quick Wins -->
+      <div class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Quick Wins</span>
+        </div>
+
+        <div
+          v-for="(qw, i) in response.quick_wins"
+          :key="i"
+          class="ai-quick-win"
+        >
+          <div class="ai-quick-win__head">
+            <span class="ai-quick-win__action">{{ qw.action }}</span>
+            <span :class="effortBadgeClass(qw.effort)">{{ qw.effort }} effort</span>
+          </div>
+          <div class="ai-quick-win__details">
+            <span class="ai-quick-win__impact">{{ qw.potential_impact }}</span>
+            <span class="ai-quick-win__timeline">{{ qw.timeline }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Correlations -->
+      <div v-if="response.correlations.length" class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Correlations</span>
+        </div>
+
+        <div
+          v-for="(corr, i) in response.correlations"
+          :key="i"
+          class="ai-correlation"
+        >
+          <p class="ai-correlation__finding">{{ corr.finding }}</p>
+          <p class="ai-correlation__implication">{{ corr.implication }}</p>
+        </div>
+      </div>
+
+      <!-- Risks -->
+      <div v-if="response.risks.length" class="ai-result-block">
+        <div class="ai-result-block__header">
+          <span class="ai-result-block__label">Risks & Mitigations</span>
+        </div>
+
+        <div
+          v-for="(risk, i) in response.risks"
+          :key="i"
+          class="ai-risk"
+        >
+          <p class="ai-risk__risk">{{ risk.risk }}</p>
+          <p class="ai-risk__mitigation">
+            <strong>Mitigation:</strong> {{ risk.mitigation }}
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -250,6 +398,12 @@ const demoRows = [
     color: #818cf8;
   }
 
+  &__period {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
   &__text {
     font-size: theme('fontSize.sm');
     color: #cbd5e1;
@@ -270,6 +424,8 @@ const demoRows = [
   font-weight: 600;
   border-radius: theme('borderRadius.full');
   padding: 2px theme('spacing.2');
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &--high {
     color: #10b981;
@@ -290,37 +446,308 @@ const demoRows = [
   }
 }
 
-// ── Reallocation table ───────────────────────────────────────────────────────
+// ── Generic badge ────────────────────────────────────────────────────────────
 
-.ai-realloc-table {
-  width: 100%;
-  border-collapse: collapse;
+.ai-badge {
   font-size: theme('fontSize.xs');
+  font-weight: 600;
+  border-radius: theme('borderRadius.full');
+  padding: 2px theme('spacing.2');
+  white-space: nowrap;
+  flex-shrink: 0;
 
-  th {
-    text-align: left;
+  &--success {
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+
+  &--warning {
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  &--danger {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+  }
+
+  &--info {
+    color: #818cf8;
+    background-color: rgba(129, 140, 248, 0.1);
+    border: 1px solid rgba(129, 140, 248, 0.25);
+  }
+}
+
+// ── Recommendation card ──────────────────────────────────────────────────────
+
+.ai-recommendation {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing.2');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__action {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
+    color: var(--color-title);
+    line-height: 1.4;
+  }
+
+  &__details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: theme('spacing.1') theme('spacing.4');
+    padding: theme('spacing.2') 0;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  &__detail-label {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+  }
+
+  &__detail-value {
+    font-size: theme('fontSize.xs');
     font-weight: 600;
     color: #cbd5e1;
-    padding: theme('spacing[1.5]') theme('spacing.2');
-    border-bottom: 1px solid var(--color-border);
+
+    &--positive {
+      color: #10b981;
+    }
   }
 
-  td {
-    padding: theme('spacing[1.5]') theme('spacing.2');
-    color: #cbd5e1;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  &__reasoning {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0;
+    font-style: italic;
   }
 
-  &__channel {
+  &__metrics {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: theme('borderRadius.md');
+    padding: theme('spacing.2') theme('spacing.3');
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.1');
+  }
+
+  &__metrics-title {
+    font-size: theme('fontSize.xs');
+    font-weight: 700;
+    color: #818cf8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__metrics-text {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
+
+    strong {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+  }
+}
+
+// ── Performer card ───────────────────────────────────────────────────────────
+
+.ai-performer {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__head-right {
+    display: flex;
+    align-items: center;
+    gap: theme('spacing.2');
+    flex-shrink: 0;
+  }
+
+  &__name {
+    font-size: theme('fontSize.sm');
+    font-weight: 600;
     color: var(--color-title);
+  }
+
+  &__roi {
+    font-size: theme('fontSize.xs');
+    font-weight: 700;
+    white-space: nowrap;
+
+    &--positive { color: #10b981; }
+    &--negative { color: #f87171; }
+  }
+
+  &__insight {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__unlock {
+    font-size: theme('fontSize.xs');
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin: 0;
+
+    strong {
+      color: #818cf8;
+      font-weight: 600;
+    }
+  }
+}
+
+// ── Quick win card ───────────────────────────────────────────────────────────
+
+.ai-quick-win {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__action {
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    color: var(--color-title);
+    line-height: 1.4;
+  }
+
+  &__details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: theme('spacing.2');
+  }
+
+  &__impact {
+    font-size: theme('fontSize.xs');
+    color: #10b981;
     font-weight: 500;
   }
 
-  &__change {
-    font-weight: 600;
+  &__timeline {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    white-space: nowrap;
+  }
+}
 
-    &--up   { color: #10b981; }
-    &--down { color: #f87171; }
+// ── Correlation card ─────────────────────────────────────────────────────────
+
+.ai-correlation {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__finding {
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    color: var(--color-title);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  &__implication {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// ── Risk card ────────────────────────────────────────────────────────────────
+
+.ai-risk {
+  padding: theme('spacing.3');
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: theme('borderRadius.md');
+  display: flex;
+  flex-direction: column;
+  gap: theme('spacing[1.5]');
+
+  & + & {
+    margin-top: theme('spacing.1');
+  }
+
+  &__risk {
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    color: #f59e0b;
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  &__mitigation {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.5;
+
+    strong {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
   }
 }
 
