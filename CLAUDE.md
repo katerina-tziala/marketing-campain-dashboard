@@ -80,10 +80,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button; idle/loading/result states; renders full ExecutiveSummaryResponse: health score (color-coded badge with score/100), bottom line, key metrics grid (8 metrics in 2-col layout), insights (typed cards with icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share), correlations; cycles through 5 mock responses
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── shared.ts           # fetchWithTimeout (10s), errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules
-│   │   │   │   ├── gemini.ts           # connectGemini (list + filter models), callGemini (generateContent API), getOptimalGeminiModel (latest flash model from filtered list), filterGeminiModels
-│   │   │   │   ├── groq.ts             # connectGroq (list + filter models), callGroq (chat/completions API), getOptimalGroqModel (most recently created from filtered list), filterGroqModels
-│   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; orchestrates: fetch models → filter → AI model selection prompt → return ranked AiModel[]
-│   │   │   │   └── index.ts            # Barrel export for ai-connection
+│   │   │   │   ├── gemini.ts           # connectGemini(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models or throw Error with error code); callGemini, filterModels, getOptimalModel (flash-first + latest version) are internal
+│   │   │   │   ├── groq.ts             # connectGroq(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models or throw Error with error code); callGroq, filterModels, getOptimalModel (most recent created) are internal
+│   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; thin wrapper that delegates to connectGemini/connectGroq; catches errors and maps known error codes from message or falls back to errorCodeFromException
+│   │   │   │   └── index.ts            # Barrel export — only connectProvider
 │   │   │   ├── types/
 │   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel, ModelSelectionResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse + shared building blocks + prompt types + data/response types
 │   │   │   ├── prompts/

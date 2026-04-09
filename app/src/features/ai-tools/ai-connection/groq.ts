@@ -1,15 +1,16 @@
-import type { GroqModel, GroqModelsResponse, AiConnectionErrorCode } from '../types'
-import { fetchWithTimeout, errorCodeFromStatus } from './shared'
+import type { GroqModel, GroqModelsResponse, AiModel, ModelSelectionResponse } from '../types'
+import { fetchWithTimeout, errorCodeFromStatus, parseJsonResponse } from './shared'
+import { generateModelSelectionPrompt } from '../prompts'
 
-function filterGroqModels(models: GroqModel[]): GroqModel[] {
+function filterModels(models: GroqModel[]): GroqModel[] {
   const banned = [
     "whisper",
     "audio",
     "guard",
     "safeguard",
     "moderation",
-    "orpheus" // gated model
-  ];
+    "orpheus",
+  ]
 
   return models.filter((m) => {
     const id = (m.id || '').toLowerCase()
@@ -18,21 +19,21 @@ function filterGroqModels(models: GroqModel[]): GroqModel[] {
   })
 }
 
-export function getOptimalGroqModel(models: GroqModel[]): string {
+function getOptimalModel(models: GroqModel[]): string {
   const sorted = [...models].sort((a, b) => b.created - a.created)
   return sorted[0]?.id ?? ''
 }
 
-export async function connectGroq(apiKey: string): Promise<GroqModel[] | AiConnectionErrorCode> {
+async function fetchModels(apiKey: string): Promise<GroqModel[]> {
   const res = await fetchWithTimeout('https://api.groq.com/openai/v1/models', {
     headers: { Authorization: `Bearer ${apiKey}` },
   })
-  if (!res.ok) return errorCodeFromStatus(res.status)
+  if (!res.ok) throw new Error(errorCodeFromStatus(res.status))
   const body: GroqModelsResponse = await res.json()
-  return filterGroqModels(body.data)
+  return filterModels(body.data)
 }
 
-export async function callGroq(apiKey: string, prompt: string, model: string): Promise<string> {
+async function callGroq(apiKey: string, prompt: string, model: string): Promise<string> {
   const res = await fetchWithTimeout('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -51,3 +52,24 @@ export async function callGroq(apiKey: string, prompt: string, model: string): P
   const body = await res.json()
   return body.choices?.[0]?.message?.content ?? ''
 }
+
+export async function connectGroq(apiKey: string): Promise<AiModel[]> {
+  const models = await fetchModels(apiKey)
+
+  if (models.length === 0) {
+    throw new Error('no-models')
+  }
+
+  const prompt = generateModelSelectionPrompt(models)
+  const optimal = getOptimalModel(models)
+  const raw = await callGroq(apiKey, prompt, optimal)
+  const parsed = parseJsonResponse(raw) as ModelSelectionResponse
+  const selected = parsed.selected_models ?? []
+
+  if (selected.length === 0) {
+    throw new Error('no-models')
+  }
+
+  return selected
+}
+

@@ -1297,3 +1297,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Flash-first for Gemini — flash models are faster and cheaper, ideal for a meta-prompt that just selects models; version sort as tiebreaker ensures we get the latest flash variant
 - Created-timestamp for Groq — Groq doesn't have a "flash" concept; most recently created model is the best proxy for "latest and most capable"
 - Model param now required on callGemini/callGroq — removes the hidden coupling to a default; every call site must explicitly choose which model to use
+
+
+## [#24] Refactor connectProvider — full flow inside each provider
+**Type:** refactor
+
+**Summary:** Moved the complete connection flow (fetch → filter → select models) into connectGemini and connectGroq, making connectProvider a thin try/catch wrapper with no branching logic.
+
+**Brainstorming:** connectProvider had if/else checks for provider at every step: fetching models, getting the optimal model, calling the AI. By pushing the entire flow into each provider's connect function, each provider owns its full lifecycle and connectProvider becomes a simple dispatcher. The provider functions now return `AiModel[]` on success or throw `ConnectionError` on failure — connectProvider catches and converts to `AiConnectionError`. This also means callGemini, callGroq, filterModels, getOptimalModel are no longer exported — they're internal implementation details of each provider module.
+
+**Prompt:** Refactor connectProvider. connectGemini should return the 3 final models or throw an error. Similar for connectGroq. That way we avoid if/else checks for the subsequent functionality and we do not need to export those functions.
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — connectGemini now handles the full flow: fetchModels → filterModels → getOptimalModel → callGemini → parseJsonResponse → return AiModel[]; throws ConnectionError (with error code) on failure; callGemini, filterModels, getOptimalModel are now internal (not exported)
+- `features/ai-tools/ai-connection/groq.ts` — same pattern: connectGroq owns the full flow; throws ConnectionError; internal helpers not exported
+- `features/ai-tools/ai-connection/connectProvider.ts` — reduced to a thin wrapper: delegates to connectGemini/connectGroq, catches ConnectionError → AiConnectionError; no more getOptimalModel, callAi, selectModels helpers
+- `features/ai-tools/ai-connection/index.ts` — barrel now only exports connectProvider
+
+**Key decisions & why:**
+- ConnectionError class in each provider file — each provider throws typed errors with AiConnectionErrorCode; connectProvider catches them uniformly without knowing provider internals
+- Provider functions return AiModel[] directly (no error codes in return type) — cleaner API: success = return, failure = throw; connectProvider does the conversion to the store-friendly AiConnectionError
+- callGemini/callGroq no longer exported — they're implementation details; if future features need to call the AI directly, they should go through a higher-level API that manages model selection and error handling
+
+
+## [#25] Remove ConnectionError class — use plain Error with error code as message
+**Type:** fix
+
+**Summary:** Replaced custom ConnectionError class with plain Error throws, using the error code string as the message. connectProvider checks error messages against known codes.
+
+**Brainstorming:** The ConnectionError class was duplicated in both provider files and added unnecessary complexity. Since the error codes are unique strings, we can throw `new Error('invalid-key')` and check `e.message` against a known set in connectProvider. This removes the custom class entirely while preserving the same error code mapping.
+
+**Prompt:** Can we avoid ConnectionError and throw normal error?
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — removed ConnectionError class and its export; all throws now use `new Error(errorCode)` directly
+- `features/ai-tools/ai-connection/groq.ts` — same: removed ConnectionError class, use plain Error throws
+- `features/ai-tools/ai-connection/connectProvider.ts` — removed ConnectionError imports; added ERROR_CODES Set of all known AiConnectionErrorCode values; catch block checks if `e.message` is a known code (use directly) or falls back to `errorCodeFromException(e)` for network/timeout/unknown errors
+
+**Key decisions & why:**
+- Error message = error code — simple convention: provider functions throw `new Error('invalid-key')` or `new Error('no-models')`; no custom class needed since the message itself carries the structured information
+- ERROR_CODES Set for validation — ensures only legitimate error codes pass through; any other Error message (like "Gemini API error (500)") falls through to errorCodeFromException which classifies it as 'unknown'
