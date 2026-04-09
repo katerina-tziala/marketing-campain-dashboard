@@ -38,7 +38,7 @@ app/                        # Vue 3 + Vite project
 │   ├── stores/
 │   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
 │   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
-│   │   └── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (GeminiModel[] | GroqModel[]); connect() delegates to connectProvider and stores returned models; disconnect()
+│   │   └── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[]), selectedModel (AiModel — highest strength_score); connect() delegates to connectProvider which fetches models + runs AI model selection; disconnect()
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -79,10 +79,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button; idle/loading/result states; renders full BudgetOptimizerResponse: executive summary, recommendations (confidence badge, amount, impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge), quick wins (effort badge), correlations, risks & mitigations; cycles through 5 mock responses
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button; idle/loading/result states; renders full ExecutiveSummaryResponse: health score (color-coded badge with score/100), bottom line, key metrics grid (8 metrics in 2-col layout), insights (typed cards with icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share), correlations; cycles through 5 mock responses
 │   │   │   ├── ai-connection/
-│   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → GeminiModel[] | GroqModel[] | AiConnectionError; fetchWithTimeout (10s), errorCodeFromStatus, errorCodeFromException; connectGemini returns parsed GeminiModel[], connectGroq returns parsed GroqModel[]
+│   │   │   │   ├── shared.ts           # fetchWithTimeout (10s), errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules
+│   │   │   │   ├── gemini.ts           # connectGemini (list + filter models), callGemini (generateContent API), getOptimalGeminiModel (latest flash model from filtered list), filterGeminiModels
+│   │   │   │   ├── groq.ts             # connectGroq (list + filter models), callGroq (chat/completions API), getOptimalGroqModel (most recently created from filtered list), filterGroqModels
+│   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; orchestrates: fetch models → filter → AI model selection prompt → return ranked AiModel[]
 │   │   │   │   └── index.ts            # Barrel export for ai-connection
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode, AiConnectionError, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse + shared building blocks (AllocationShare, FunnelMetrics, PortfolioCount, PromptScopeConfig, CampainSummaryTotals) + prompt types + ExecutiveSummary and BudgetOptimizer data/response types
+│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel, ModelSelectionResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse + shared building blocks + prompt types + data/response types
 │   │   │   ├── prompts/
 │   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
 │   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt

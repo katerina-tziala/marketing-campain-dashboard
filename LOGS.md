@@ -1249,3 +1249,51 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `typeof result === 'string'` inside connectGemini/connectGroq to distinguish error code from models array — clean and zero-overhead; error codes are always strings, model arrays are always objects
 - `isConnectionError` type guard in the store using `'code' in result` — cleanly narrows the union at the store boundary; the store doesn't need to know about individual model types
 - Models cleared on disconnect — prevents stale model data from a previous provider persisting after switching
+
+
+## [#22] AI model selection during connection + split provider files
+**Type:** feature
+
+**Summary:** Connection now fetches provider models, filters them, sends an AI model selection prompt using a default model, and stores the ranked AiModel[] with auto-selected best model. Provider logic split into separate gemini.ts and groq.ts files with shared utilities.
+
+**Brainstorming:** The connection flow needed to go beyond just verifying the API key — it should also determine the best model to use for subsequent prompts. The approach: (1) fetch all models from the provider API; (2) filter out non-text models (embeddings, image, audio, etc.); (3) send the filtered list to the AI itself using a default/fallback model and the existing `generateModelSelectionPrompt`; (4) parse the AI's structured JSON response into `AiModel[]`; (5) store the ranked list and auto-select the highest `strength_score`. New error case: `no-models` if the filter or AI selection returns nothing. The ai-connection folder was also growing — splitting into `gemini.ts`, `groq.ts`, and `shared.ts` keeps each provider's HTTP logic self-contained and the shared utilities (fetchWithTimeout, error code mapping, JSON parsing) reusable. The `connectProvider.ts` becomes a thin orchestrator.
+
+**Prompt:** Use filterGeminiModels and filterGroqModels to filter models on response. Use generateModelSelectionPrompt to get optimal models from AI. Connection should end when we get a response from the model selection prompt. If the list is empty throw a new error. Save in the store the models returned AND set as selected model the one with highest strength score. Use OUTPUT_SCHEMA to create the type for the final list. Split provider files per integration.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added AiModel type (id, model, display_name, provider, strength, strength_score, reason), ModelSelectionResponse type, added 'no-models' to AiConnectionErrorCode
+- `features/ai-tools/ai-connection/shared.ts` — new file: extracted fetchWithTimeout, errorCodeFromStatus, errorCodeFromException + new parseJsonResponse (strips markdown fences before JSON.parse)
+- `features/ai-tools/ai-connection/gemini.ts` — new file: filterGeminiModels, getDefaultGeminiModel (gemini-2.0-flash), connectGemini (list + filter), callGemini (POST to generateContent endpoint)
+- `features/ai-tools/ai-connection/groq.ts` — new file: filterGroqModels, getDefaultGroqModel (llama-3.3-70b-versatile), connectGroq (list + filter), callGroq (POST to chat/completions endpoint)
+- `features/ai-tools/ai-connection/connectProvider.ts` — rewritten as orchestrator: getDefaultModel, callAi (provider dispatcher), selectModels (generates prompt → calls AI → parses ModelSelectionResponse), connectProvider (fetch → filter → select → return AiModel[] or error)
+- `features/ai-tools/ai-connection/index.ts` — updated barrel exports
+- `stores/aiStore.ts` — models ref changed to AiModel[]; added selectedModel ref (AiModel | null); selectBestModel helper picks highest strength_score; connect() stores both; disconnect() clears both
+- `features/ai-tools/components/AiConnectionForm.vue` — added 'no-models' to ERROR_MESSAGES and ERROR_HINTS maps
+
+**Key decisions & why:**
+- Default models (gemini-2.0-flash / llama-3.3-70b-versatile) for the initial selection prompt — we need a model to ask "which model is best" before we know the answer; these are reliable mid-tier models available on both free tiers
+- `getDefaultGeminiModel` / `getDefaultGroqModel` as exported functions — centralizes the default model choice per provider; easy to update in one place if defaults change
+- `parseJsonResponse` strips markdown fences — AI models often wrap JSON in ```json blocks even when told not to; this handles that gracefully
+- `selectBestModel` using reduce on strength_score — simple, deterministic selection; the AI already ranked them so the highest score is always the first choice
+- Split into gemini.ts / groq.ts / shared.ts — each provider file owns its API specifics (endpoints, auth headers, request/response shapes, model filtering); shared.ts owns transport-level utilities; connectProvider.ts is a thin orchestrator that doesn't know HTTP details
+- `no-models` error code — covers both "provider returned no compatible models" and "AI selection returned empty" cases; UI explains to try a different provider
+
+
+## [#23] Dynamic optimal model selection — remove hardcoded defaults
+**Type:** update
+
+**Summary:** Replaced hardcoded DEFAULT_MODEL constants with dynamic `getOptimalModel` functions that pick the best model from the actual filtered models list returned by each provider's API.
+
+**Brainstorming:** The hardcoded defaults (gemini-2.0-flash, llama-3.3-70b-versatile) would go stale as providers add new models. Since we already have the filtered models list from the list-models API call, we can pick the best one programmatically. For Gemini: prefer "flash" models (cheaper/faster for a meta-prompt) then sort by version descending (latest first). For Groq: sort by `created` timestamp descending (most recently added). Both return the model identifier from the actual list, so the initial model selection prompt always uses a model the provider actually supports right now.
+
+**Prompt:** Is there a way to get the best model for the initial call without DEFAULT_MODEL hardcoded? What about calling the one with the latest version?
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — removed DEFAULT_MODEL constant and getDefaultGeminiModel; added getOptimalGeminiModel(models) which sorts filtered list by flash-preference then version descending, strips "models/" prefix; callGemini model param now required (no fallback)
+- `features/ai-tools/ai-connection/groq.ts` — removed DEFAULT_MODEL constant and getDefaultGroqModel; added getOptimalGroqModel(models) which sorts by created timestamp descending; callGroq model param now required
+- `features/ai-tools/ai-connection/connectProvider.ts` — getDefaultModel replaced with getOptimalModel(provider, models) that passes the filtered list to the provider-specific function; selectModels now receives the typed filtered models and calls getOptimalModel to pick the initial model
+
+**Key decisions & why:**
+- Flash-first for Gemini — flash models are faster and cheaper, ideal for a meta-prompt that just selects models; version sort as tiebreaker ensures we get the latest flash variant
+- Created-timestamp for Groq — Groq doesn't have a "flash" concept; most recently created model is the best proxy for "latest and most capable"
+- Model param now required on callGemini/callGroq — removes the hidden coupling to a default; every call site must explicitly choose which model to use

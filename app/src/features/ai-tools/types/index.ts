@@ -13,6 +13,7 @@ export type AiConnectionErrorCode =
   | 'timeout'
   | 'rate-limit'
   | 'server-error'
+  | 'no-models'
   | 'unknown';
 
 export type AiConnectionError = {
@@ -55,6 +56,22 @@ export type GroqModel = {
 export type GroqModelsResponse = {
   object: string;
   data: GroqModel[];
+};
+
+// ── AI Model (from model selection prompt) ────────────────────────────────
+
+export type AiModel = {
+  id: string;
+  model: string;
+  display_name: string;
+  provider: string;
+  strength: string;
+  strength_score: number;
+  reason: string;
+};
+
+export type ModelSelectionResponse = {
+  selected_models: AiModel[];
 };
 
 // ── Prompt types ──────────────────────────────────────────────────────────

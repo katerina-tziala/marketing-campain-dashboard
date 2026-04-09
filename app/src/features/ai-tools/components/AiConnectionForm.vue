@@ -17,6 +17,7 @@ const ERROR_MESSAGES: Record<AiConnectionErrorCode, (provider: AiProvider) => st
   'timeout': () => 'Connection timed out. Check your network and try again.',
   'rate-limit': (p) => `${PROVIDER_LABELS[p]} rate limit reached. Please wait a moment and try again.`,
   'server-error': (p) => `${PROVIDER_LABELS[p]} is temporarily unavailable. Try again later.`,
+  'no-models': (p) => `No suitable models found for ${PROVIDER_LABELS[p]}.`,
   'unknown': (p) => `Connection to ${PROVIDER_LABELS[p]} failed.`,
 }
 
@@ -26,6 +27,7 @@ const ERROR_HINTS: Record<AiConnectionErrorCode, string> = {
   'timeout': 'The server took too long to respond. Try again in a moment.',
   'rate-limit': 'You have made too many requests. Wait a minute before trying again.',
   'server-error': 'This is a problem on the provider\u2019s side, not yours. Try again later.',
+  'no-models': 'The provider returned no models compatible with this application. Try a different provider.',
   'unknown': 'If this persists, try a different provider or check the provider\u2019s status page.',
 }
 

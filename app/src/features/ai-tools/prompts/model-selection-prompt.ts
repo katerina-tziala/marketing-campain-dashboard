@@ -41,6 +41,7 @@ const OUTPUT_SCHEMA = `
 {
   "selected_models": [
     {
+      "id": "exact model identifier from list",
       "model": "exact identifier from list",
       "display_name": "user-friendly model name",
       "provider": "user-friendly provider name",

@@ -1,60 +1,37 @@
-import type {
-  AiProvider,
-  AiConnectionError,
-  AiConnectionErrorCode,
-  GeminiModel,
-  GeminiModelsResponse,
-  GroqModel,
-  GroqModelsResponse,
-} from '../types'
+import type { AiProvider, AiConnectionError, AiModel, GeminiModel, GroqModel, ModelSelectionResponse } from '../types'
+import { errorCodeFromException, parseJsonResponse } from './shared'
+import { connectGemini, callGemini, getOptimalGeminiModel } from './gemini'
+import { connectGroq, callGroq, getOptimalGroqModel } from './groq'
+import { generateModelSelectionPrompt } from '../prompts'
 
-const CONNECTION_TIMEOUT_MS = 10_000
-
-async function fetchWithTimeout(input: RequestInfo, init?: RequestInit): Promise<Response> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), CONNECTION_TIMEOUT_MS)
-  try {
-    return await fetch(input, { ...init, signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-  }
+function getOptimalModel(provider: AiProvider, models: GeminiModel[] | GroqModel[]): string {
+  return provider === 'gemini'
+    ? getOptimalGeminiModel(models as GeminiModel[])
+    : getOptimalGroqModel(models as GroqModel[])
 }
 
-function errorCodeFromStatus(status: number): AiConnectionErrorCode {
-  if (status === 400 || status === 401 || status === 403) return 'invalid-key'
-  if (status === 429) return 'rate-limit'
-  if (status >= 500) return 'server-error'
-  return 'unknown'
+function callAi(provider: AiProvider, apiKey: string, prompt: string, model: string): Promise<string> {
+  return provider === 'gemini'
+    ? callGemini(apiKey, prompt, model)
+    : callGroq(apiKey, prompt, model)
 }
 
-function errorCodeFromException(e: unknown): AiConnectionErrorCode {
-  if (e instanceof DOMException && e.name === 'AbortError') return 'timeout'
-  if (e instanceof TypeError) return 'network'
-  return 'unknown'
-}
-
-async function connectGemini(apiKey: string): Promise<GeminiModel[] | AiConnectionErrorCode> {
-  const res = await fetchWithTimeout(
-    `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-  )
-  if (!res.ok) return errorCodeFromStatus(res.status)
-  const body: GeminiModelsResponse = await res.json()
-  return body.models
-}
-
-async function connectGroq(apiKey: string): Promise<GroqModel[] | AiConnectionErrorCode> {
-  const res = await fetchWithTimeout('https://api.groq.com/openai/v1/models', {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  })
-  if (!res.ok) return errorCodeFromStatus(res.status)
-  const body: GroqModelsResponse = await res.json()
-  return body.data
+async function selectModels(
+  provider: AiProvider,
+  apiKey: string,
+  filteredModels: GeminiModel[] | GroqModel[],
+): Promise<AiModel[]> {
+  const prompt = generateModelSelectionPrompt(filteredModels)
+  const optimalModel = getOptimalModel(provider, filteredModels)
+  const raw = await callAi(provider, apiKey, prompt, optimalModel)
+  const parsed = parseJsonResponse(raw) as ModelSelectionResponse
+  return parsed.selected_models ?? []
 }
 
 export async function connectProvider(
   provider: AiProvider,
   apiKey: string,
-): Promise<GeminiModel[] | GroqModel[] | AiConnectionError> {
+): Promise<AiModel[] | AiConnectionError> {
   try {
     const result = provider === 'gemini'
       ? await connectGemini(apiKey)
@@ -63,7 +40,18 @@ export async function connectProvider(
     if (typeof result === 'string') {
       return { code: result, provider }
     }
-    return result
+
+    if (result.length === 0) {
+      return { code: 'no-models', provider }
+    }
+
+    const selectedModels = await selectModels(provider, apiKey, result)
+
+    if (selectedModels.length === 0) {
+      return { code: 'no-models', provider }
+    }
+
+    return selectedModels
   } catch (e) {
     return { code: errorCodeFromException(e), provider }
   }

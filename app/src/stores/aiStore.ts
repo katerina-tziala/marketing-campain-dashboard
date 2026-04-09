@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { AiProvider, AiConnectionError, GeminiModel, GroqModel } from '../features/ai-tools/types'
+import type { AiProvider, AiConnectionError, AiModel } from '../features/ai-tools/types'
 import { connectProvider } from '../features/ai-tools/ai-connection'
 
-function isConnectionError(result: GeminiModel[] | GroqModel[] | AiConnectionError): result is AiConnectionError {
+function isConnectionError(result: AiModel[] | AiConnectionError): result is AiConnectionError {
   return 'code' in result
+}
+
+function selectBestModel(models: AiModel[]): AiModel {
+  console.log(models);
+  
+  return models.reduce((best, m) => m.strength_score > best.strength_score ? m : best)
 }
 
 export const useAiStore = defineStore('ai', () => {
@@ -13,7 +19,8 @@ export const useAiStore = defineStore('ai', () => {
   const isConnected = ref(false)
   const isConnecting = ref(false)
   const connectionError = ref<AiConnectionError | null>(null)
-  const models = ref<GeminiModel[] | GroqModel[]>([])
+  const models = ref<AiModel[]>([])
+  const selectedModel = ref<AiModel | null>(null)
 
   async function connect(p: AiProvider, key: string): Promise<void> {
     isConnecting.value = true
@@ -26,6 +33,7 @@ export const useAiStore = defineStore('ai', () => {
         provider.value = p
         apiKey.value = key
         models.value = result
+        selectedModel.value = selectBestModel(result)
         isConnected.value = true
       }
     } finally {
@@ -39,7 +47,8 @@ export const useAiStore = defineStore('ai', () => {
     isConnected.value = false
     connectionError.value = null
     models.value = []
+    selectedModel.value = null
   }
 
-  return { provider, apiKey, isConnected, isConnecting, connectionError, models, connect, disconnect }
+  return { provider, apiKey, isConnected, isConnecting, connectionError, models, selectedModel, connect, disconnect }
 })
