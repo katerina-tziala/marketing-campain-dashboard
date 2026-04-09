@@ -1,4 +1,65 @@
-export type PromptList = { 
+// ── AI Provider & Connection ──────────────────────────────────────────────
+
+export type AiProvider = 'gemini' | 'groq';
+
+export const PROVIDER_LABELS: Record<AiProvider, string> = {
+  gemini: 'Google Gemini',
+  groq: 'Groq',
+};
+
+export type AiConnectionErrorCode =
+  | 'invalid-key'
+  | 'network'
+  | 'timeout'
+  | 'rate-limit'
+  | 'server-error'
+  | 'unknown';
+
+export type AiConnectionError = {
+  code: AiConnectionErrorCode;
+  provider: AiProvider;
+};
+
+// ── Provider model types ──────────────────────────────────────────────────
+
+export type GeminiModel = {
+  name: string;
+  version: string;
+  displayName: string;
+  description: string;
+  inputTokenLimit: number;
+  outputTokenLimit: number;
+  supportedGenerationMethods: string[];
+  temperature?: number;
+  topP?: number;
+  topK?: number;
+  maxTemperature?: number;
+  thinking?: boolean;
+};
+
+export type GeminiModelsResponse = {
+  models: GeminiModel[];
+};
+
+export type GroqModel = {
+  id: string;
+  object: string;
+  created: number;
+  owned_by: string;
+  active: boolean;
+  context_window: number;
+  public_apps: unknown;
+  max_completion_tokens: number;
+};
+
+export type GroqModelsResponse = {
+  object: string;
+  data: GroqModel[];
+};
+
+// ── Prompt types ──────────────────────────────────────────────────────────
+
+export type PromptList = {
    title: string, 
     list: string[] 
 };

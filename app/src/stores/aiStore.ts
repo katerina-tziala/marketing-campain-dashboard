@@ -1,31 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { AiProvider, AiConnectionError, GeminiModel, GroqModel } from '../features/ai-tools/types'
+import { connectProvider } from '../features/ai-tools/ai-connection'
 
-export type AiProvider = 'gemini' | 'grok'
-
-export const PROVIDER_LABELS: Record<AiProvider, string> = {
-  gemini: 'Google Gemini',
-  grok: 'Grok',
-}
-
-async function testGemini(apiKey: string): Promise<void> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
-  )
-  if (!res.ok) {
-    if (res.status === 400 || res.status === 403) throw new Error('Invalid API key.')
-    throw new Error(`Connection failed (${res.status}).`)
-  }
-}
-
-async function testGrok(apiKey: string): Promise<void> {
-  const res = await fetch('https://api.x.ai/v1/models', {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  })
-  if (!res.ok) {
-    if (res.status === 401) throw new Error('Invalid API key.')
-    throw new Error(`Connection failed (${res.status}).`)
-  }
+function isConnectionError(result: GeminiModel[] | GroqModel[] | AiConnectionError): result is AiConnectionError {
+  return 'code' in result
 }
 
 export const useAiStore = defineStore('ai', () => {
@@ -33,20 +12,22 @@ export const useAiStore = defineStore('ai', () => {
   const apiKey = ref('')
   const isConnected = ref(false)
   const isConnecting = ref(false)
-  const connectionError = ref<string | null>(null)
+  const connectionError = ref<AiConnectionError | null>(null)
+  const models = ref<GeminiModel[] | GroqModel[]>([])
 
   async function connect(p: AiProvider, key: string): Promise<void> {
     isConnecting.value = true
     connectionError.value = null
     try {
-      if (p === 'gemini') await testGemini(key)
-      else await testGrok(key)
-      provider.value = p
-      apiKey.value = key
-      isConnected.value = true
-    } catch (e) {
-      connectionError.value =
-        e instanceof Error ? e.message : 'Connection failed. Check your network.'
+      const result = await connectProvider(p, key)
+      if (isConnectionError(result)) {
+        connectionError.value = result
+      } else {
+        provider.value = p
+        apiKey.value = key
+        models.value = result
+        isConnected.value = true
+      }
     } finally {
       isConnecting.value = false
     }
@@ -57,7 +38,8 @@ export const useAiStore = defineStore('ai', () => {
     apiKey.value = ''
     isConnected.value = false
     connectionError.value = null
+    models.value = []
   }
 
-  return { provider, apiKey, isConnected, isConnecting, connectionError, connect, disconnect }
+  return { provider, apiKey, isConnected, isConnecting, connectionError, models, connect, disconnect }
 })

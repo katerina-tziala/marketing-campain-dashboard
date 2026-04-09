@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
-import { PROVIDER_LABELS } from '../../../stores/aiStore'
+import { PROVIDER_LABELS } from '../types'
 
 const store = useAiStore()
 const providerLabel = computed(() =>

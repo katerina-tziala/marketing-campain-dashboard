@@ -5,12 +5,13 @@ import { SparklesIcon } from '../../../ui/icons'
 import { EXECUTIVE_SUMMARY_MOCKS } from '../mocks'
 import type { ExecutiveSummaryResponse } from '../types'
 
-type Status = 'idle' | 'loading' | 'done'
+type Status = 'idle' | 'loading' | 'done' | 'error'
 
 const campaignStore = useCampaignStore()
 const status = ref<Status>('idle')
 const mockIndex = ref(-1)
 const response = ref<ExecutiveSummaryResponse | null>(null)
+const errorMessage = ref<string | null>(null)
 
 const healthScoreClass = (label: string) => {
   const map: Record<string, string> = {
@@ -51,7 +52,7 @@ const insightTypeClass = (type: string) => {
 }
 
 const summarizeLabel = computed(() =>
-  status.value === 'done' ? 'Re-Summarize' : 'Summarize',
+  status.value === 'done' || status.value === 'error' ? 'Re-Summarize' : 'Summarize',
 )
 
 async function summarize(): Promise<void> {
@@ -92,6 +93,12 @@ async function summarize(): Promise<void> {
     <div v-else-if="status === 'loading'" class="ai-panel__loader">
       <span class="ai-panel__spinner" aria-hidden="true" />
       <p class="ai-panel__loader-text">Generating summary…</p>
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="status === 'error'" class="ai-panel__error" role="alert">
+      <p class="ai-panel__error-message">{{ errorMessage }}</p>
+      <p class="ai-panel__error-hint">Click "Re-Summarize" to try again.</p>
     </div>
 
     <!-- Result -->
@@ -360,6 +367,30 @@ async function summarize(): Promise<void> {
   &__loader-text {
     font-size: theme('fontSize.sm');
     color: #cbd5e1;
+    margin: 0;
+  }
+
+  &__error {
+    background-color: rgba(248, 113, 113, 0.06);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    border-radius: theme('borderRadius.lg');
+    padding: theme('spacing.5');
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.1');
+    text-align: center;
+  }
+
+  &__error-message {
+    font-size: theme('fontSize.sm');
+    color: #f87171;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  &__error-hint {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
     margin: 0;
   }
 

@@ -1,13 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAiStore, type AiProvider } from '../../../stores/aiStore'
+import { ref, computed } from 'vue'
+import { useAiStore } from '../../../stores/aiStore'
 import { BaseButton } from '../../../ui'
+import type { AiProvider, AiConnectionErrorCode } from '../types'
+import { PROVIDER_LABELS } from '../types'
 
 const store = useAiStore()
 
 const selectedProvider = ref<AiProvider>('gemini')
 const apiKey = ref('')
 const showKey = ref(false)
+
+const ERROR_MESSAGES: Record<AiConnectionErrorCode, (provider: AiProvider) => string> = {
+  'invalid-key': (p) => `Invalid API key for ${PROVIDER_LABELS[p]}.`,
+  'network': () => 'Could not reach the server. Check your internet connection.',
+  'timeout': () => 'Connection timed out. Check your network and try again.',
+  'rate-limit': (p) => `${PROVIDER_LABELS[p]} rate limit reached. Please wait a moment and try again.`,
+  'server-error': (p) => `${PROVIDER_LABELS[p]} is temporarily unavailable. Try again later.`,
+  'unknown': (p) => `Connection to ${PROVIDER_LABELS[p]} failed.`,
+}
+
+const ERROR_HINTS: Record<AiConnectionErrorCode, string> = {
+  'invalid-key': 'Double-check that you copied the full key and that it has not been revoked.',
+  'network': 'Make sure you are connected to the internet and try again.',
+  'timeout': 'The server took too long to respond. Try again in a moment.',
+  'rate-limit': 'You have made too many requests. Wait a minute before trying again.',
+  'server-error': 'This is a problem on the provider\u2019s side, not yours. Try again later.',
+  'unknown': 'If this persists, try a different provider or check the provider\u2019s status page.',
+}
+
+const errorMessage = computed(() =>
+  store.connectionError
+    ? ERROR_MESSAGES[store.connectionError.code](store.connectionError.provider)
+    : null,
+)
+
+const errorHint = computed(() =>
+  store.connectionError ? ERROR_HINTS[store.connectionError.code] : null,
+)
 
 async function handleConnect(): Promise<void> {
   if (!apiKey.value.trim()) return
@@ -22,13 +52,19 @@ async function handleConnect(): Promise<void> {
     </p>
 
     <form class="ai-conn__form" @submit.prevent="handleConnect">
-      <div class="ai-conn__field">
-        <label class="ai-conn__label" for="ai-provider">Provider</label>
-        <select id="ai-provider" v-model="selectedProvider" class="ai-conn__select">
-          <option value="gemini">Google Gemini</option>
-          <option value="grok">Grok</option>
-        </select>
-      </div>
+      <fieldset class="ai-conn__field ai-conn__fieldset">
+        <legend class="ai-conn__label">Provider</legend>
+        <div class="ai-conn__radios">
+          <label class="ai-conn__radio" :class="{ 'ai-conn__radio--active': selectedProvider === 'gemini' }">
+            <input type="radio" v-model="selectedProvider" value="gemini" class="ai-conn__radio-input" />
+            <span class="ai-conn__radio-label">Google Gemini</span>
+          </label>
+          <label class="ai-conn__radio" :class="{ 'ai-conn__radio--active': selectedProvider === 'groq' }">
+            <input type="radio" v-model="selectedProvider" value="groq" class="ai-conn__radio-input" />
+            <span class="ai-conn__radio-label">Groq</span>
+          </label>
+        </div>
+      </fieldset>
 
       <div class="ai-conn__field">
         <label class="ai-conn__label" for="ai-key">API Key</label>
@@ -53,9 +89,10 @@ async function handleConnect(): Promise<void> {
         </div>
       </div>
 
-      <p v-if="store.connectionError" class="ai-conn__error" role="alert">
-        {{ store.connectionError }}
-      </p>
+      <div v-if="store.connectionError" class="ai-conn__error" role="alert">
+        <p class="ai-conn__error-message">{{ errorMessage }}</p>
+        <p v-if="errorHint" class="ai-conn__error-hint">{{ errorHint }}</p>
+      </div>
 
       <BaseButton
         type="submit"
@@ -103,7 +140,72 @@ async function handleConnect(): Promise<void> {
     color: #cbd5e1;
   }
 
-  &__select,
+  &__fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  &__radios {
+    display: flex;
+    gap: theme('spacing.2');
+  }
+
+  &__radio {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: theme('spacing[1.5]');
+    padding: theme('spacing[1.5]') theme('spacing.3');
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: theme('borderRadius.md');
+    cursor: pointer;
+    transition: border-color 150ms ease, background-color 150ms ease;
+
+    &:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    &--active {
+      border-color: #6366f1;
+      background-color: rgba(99, 102, 241, 0.08);
+    }
+  }
+
+  &__radio-input {
+    appearance: none;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid var(--color-border);
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+    transition: border-color 150ms ease;
+
+    &:checked {
+      border-color: #6366f1;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 0.375rem;
+        height: 0.375rem;
+        border-radius: 50%;
+        background-color: #6366f1;
+      }
+    }
+  }
+
+  &__radio-label {
+    font-size: theme('fontSize.sm');
+    color: var(--color-title);
+    font-weight: 500;
+  }
+
   &__input {
     width: 100%;
     background-color: var(--color-bg);
@@ -117,19 +219,6 @@ async function handleConnect(): Promise<void> {
 
     &:focus {
       border-color: #6366f1;
-    }
-  }
-
-  &__select {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right theme('spacing.3') center;
-    padding-right: theme('spacing.8');
-
-    option {
-      background-color: #1e2435;
     }
   }
 
@@ -160,13 +249,28 @@ async function handleConnect(): Promise<void> {
   }
 
   &__error {
-    font-size: theme('fontSize.xs');
-    color: #f87171;
     margin: 0;
     padding: theme('spacing.2') theme('spacing.3');
     background-color: rgba(248, 113, 113, 0.08);
     border: 1px solid rgba(248, 113, 113, 0.2);
     border-radius: theme('borderRadius.md');
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.1');
+  }
+
+  &__error-message {
+    font-size: theme('fontSize.xs');
+    color: #f87171;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  &__error-hint {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
   }
 
   &__submit {

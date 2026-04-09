@@ -1159,3 +1159,93 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Insight cards typed by color (performance=indigo, opportunity=green, warning=amber, achievement=purple) — helps users scan for what matters most to them; the inline metric highlight bar makes each insight self-contained
 - 5 mocks covering the full health score spectrum (25-91) — ensures the UI handles all 4 health labels (Excellent/Good/Needs Attention/Critical) and varying array lengths
 - Correlations use `so_what` field (not `implication` like Budget Optimizer) — matches the ExecutiveSummaryResponse type definition which uses different field names than BudgetOptimizerResponse
+
+
+## [#18] Rename Grok to Groq, rename test helpers to connect helpers, radio buttons for providers
+**Type:** update
+
+**Summary:** Renamed all Grok references to Groq across the codebase, renamed testGemini/testGrok to connectGemini/connectGroq, updated Groq API endpoint, and replaced the provider dropdown with radio buttons.
+
+**Brainstorming:** Three changes bundled together as they all touch the AI connection layer: (1) Grok → Groq is a naming correction — Groq is the cloud inference platform, distinct from xAI's Grok LLM; (2) test → connect renaming better describes the function's purpose — it's not a test utility, it's the actual connection handshake; (3) radio buttons vs dropdown — with only 2 providers, radio buttons show all options at a glance without requiring a click to reveal them, reducing interaction cost and making the choice more discoverable.
+
+**Prompt:** Update everything and all docs from grok to Groq. testGemini and testGroq rename to connectGemini and connectGroq. connectGroq should connect to https://api.groq.com/openai/v1/models. Change dropdown to radio buttons for providers since we only allow 2 integrations at the moment.
+
+**What changed:**
+- `stores/aiStore.ts` — `AiProvider` type `'grok'` → `'groq'`; `PROVIDER_LABELS.grok` → `PROVIDER_LABELS.groq` with label `'Groq'`; `testGemini` → `connectGemini`; `testGrok` → `connectGroq`; API endpoint changed from `https://api.x.ai/v1/models` to `https://api.groq.com/openai/v1/models`; `connect()` calls updated to use new function names
+- `features/ai-tools/components/AiConnectionForm.vue` — replaced `<select>` dropdown with `<fieldset>` containing two styled radio buttons; `value="grok"` → `value="groq"`; removed select CSS (appearance, background-image chevron, option styles); added radio button CSS (ai-conn__radios, ai-conn__radio, ai-conn__radio-input with custom dot, ai-conn__radio--active highlight)
+- `CLAUDE.md` — updated tech stack, status, architecture descriptions, and feature checklist to reflect Groq naming, radio buttons, and connectGemini/connectGroq helpers
+- `README.md` — updated all Grok → Groq references across AI Budget Optimizer, Executive Summary, and Tech Stack sections
+
+**Key decisions & why:**
+- Radio buttons with active highlight state — the `ai-conn__radio--active` class adds an indigo border and subtle background tint to the selected option, providing clear visual feedback without a separate indicator element
+- Custom radio input styling — native radio appearance is hidden; a custom circle with indigo dot on `:checked` matches the dark theme design system
+- `<fieldset>` + `<legend>` instead of `<div>` + `<label>` — semantically correct for a group of radio buttons; improves accessibility by associating the "Provider" label with the entire radio group
+
+
+## [#19] Granular error handling for AI connection and panels
+**Type:** feature
+
+**Summary:** Added comprehensive error handling for AI connection with 6 error codes, contextual user-facing hints per error type, 10s connection timeout, and error state in both Optimizer and Summary panels.
+
+**Brainstorming:** Identified 6 distinct error cases: (1) invalid API key (400/401/403) — user action needed: check/re-copy key; (2) network offline or DNS failure (TypeError from fetch) — user action: check internet; (3) request timeout (AbortError after 10s) — user action: check network, try again; (4) rate limited (429) — user action: wait and retry; (5) server error (5xx) — provider's fault, not user's; (6) unknown/unexpected — generic fallback. Each case gets a specific error code, a clear primary message, and a secondary hint explaining what the user can do. The connect button re-enables after error so user can immediately try again — no separate retry button needed. Both AI panels also get an error state for when real API calls are wired up later.
+
+**Prompt:** Add proper error handling for AI connection. Identify all cases where connection is lost, key is invalid, or something has gone wrong. Implement proper user feedback for each case. No retry button — re-enable connect button. All messages above the connect button.
+
+**What was built:**
+- `stores/aiStore.ts` — added `AiConnectionErrorCode` type (6 codes: invalid-key, network, timeout, rate-limit, server-error, unknown); `AiConnectionError` type (code + message); `ConnectionError` class extending Error with code; `handleHttpError` helper mapping HTTP status to specific codes with provider-aware messages; `fetchWithTimeout` wrapper with 10s AbortController timeout; `toConnectionError` converting any caught error to structured `AiConnectionError`; `connectionError` ref changed from `string | null` to `AiConnectionError | null`
+- `features/ai-tools/components/AiConnectionForm.vue` — added `ERROR_HINTS` map with contextual hint per error code; error display changed from single `<p>` to `<div>` with primary message + secondary hint; added `ai-conn__error-message` (red, 500 weight) and `ai-conn__error-hint` (slate, normal) CSS
+- `features/ai-tools/components/AiOptimizerPanel.vue` — added `'error'` to Status type; `errorMessage` ref; error block in template between loading and result; button shows "Re-Analyze" on error; error CSS (red tinted background, centered message + hint)
+- `features/ai-tools/components/AiSummaryPanel.vue` — same error state additions as Optimizer; hint says "Click Re-Summarize to try again"
+
+**Key decisions & why:**
+- 6 error codes rather than just message strings — allows the UI to show different hints per error type; also enables future logic (e.g., auto-disconnect on invalid key, skip retry on auth errors)
+- `fetchWithTimeout` using AbortController — fetch has no built-in timeout, so without this the spinner would hang forever on network issues; 10s is generous enough for slow connections but catches truly dead requests
+- `ConnectionError` class extending Error — allows typed error propagation through the try/catch chain; `toConnectionError` then converts any error (ConnectionError, DOMException, TypeError, or unknown) to a structured object
+- Error messages include provider name (e.g., "Invalid API key for Google Gemini") — when both providers are available, users need to know which one failed
+- Panels show error state with hint pointing to the button — no separate retry button, just re-enable the action button; keeps UI clean and consistent with the existing idle/loading/done flow
+
+
+## [#20] Extract AI connection logic into ai-tools feature module
+**Type:** refactor
+
+**Summary:** Moved all AI connection types, constants, and helper functions out of aiStore.ts into the ai-tools feature module, separating data (error codes) from presentation (user-facing messages).
+
+**Brainstorming:** The aiStore had grown to include HTTP logic, error mapping, timeout handling, and user-facing message strings — none of which belong in a Pinia store. Three changes: (1) move types (AiProvider, AiConnectionErrorCode, AiConnectionError) and PROVIDER_LABELS to ai-tools/types where all other AI feature types live; (2) extract connection logic (fetchWithTimeout, connectGemini, connectGroq, error code mapping) into a new ai-tools/ai-connection module with a single entry point `connectProvider(provider, key) → AiConnectionError | null`; (3) change AiConnectionError from `{ code, message }` to `{ code, provider }` — the helpers return structured data, and the UI component (AiConnectionForm) is the only place that constructs user-facing strings. This separates concerns: the connection module handles HTTP, the store manages state, and the UI owns the words.
+
+**Prompt:** Improve architecture. Move helper functions to ai-tools feature in an ai-connection folder. Move types to the ai-tools types folder. Error handling in helper functions should return proper properties for the UI and the UI component should handle the message for displaying to the user.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added AiProvider, PROVIDER_LABELS, AiConnectionErrorCode, AiConnectionError (now `{ code, provider }` with no message string)
+- `features/ai-tools/ai-connection/connectProvider.ts` — new file: fetchWithTimeout (10s AbortController), errorCodeFromStatus (HTTP status → error code), errorCodeFromException (JS error → error code), connectGemini, connectGroq, and `connectProvider` entry point returning `AiConnectionError | null`
+- `features/ai-tools/ai-connection/index.ts` — barrel export
+- `stores/aiStore.ts` — slimmed to pure store logic: imports types from ai-tools/types and connectProvider from ai-tools/ai-connection; no HTTP code, no error message strings, no timeout logic
+- `features/ai-tools/components/AiConnectionForm.vue` — now owns all user-facing strings: ERROR_MESSAGES map (code + provider → message via function) and ERROR_HINTS map (code → hint); imports types from ai-tools/types instead of aiStore
+- `features/ai-tools/components/AiConnectedStatus.vue` — imports PROVIDER_LABELS from ai-tools/types instead of aiStore
+
+**Key decisions & why:**
+- `AiConnectionError = { code, provider }` without message — separates data from presentation; the connection module doesn't know or care what the user sees; the UI component decides how to phrase each error
+- `connectProvider` returns `null` on success, `AiConnectionError` on failure (no throw) — the store just checks the result without try/catch, making the control flow cleaner and removing the need for the `ConnectionError` class and `toConnectionError` converter
+- `errorCodeFromStatus` and `errorCodeFromException` as pure mapping functions — simple input→output with no side effects; easy to reason about and test
+- ERROR_MESSAGES as functions `(provider) => string` — allows provider-aware messages ("Invalid API key for Google Gemini") without the connection module needing to know about display labels
+- PROVIDER_LABELS lives in ai-tools/types alongside AiProvider — they're tightly coupled (the label map uses AiProvider as its key type), and both are consumed by UI components within the ai-tools feature
+
+
+## [#21] Return provider models from connection and add model types
+**Type:** feature
+
+**Summary:** connectProvider now parses and returns the models array from both Gemini and Groq API responses on successful connection, with typed model interfaces for each provider.
+
+**Brainstorming:** Both Gemini and Groq list-models endpoints return useful model metadata alongside verifying the API key. Instead of discarding the response body, we can parse it and return the models array for later use (e.g., model selection dropdown). The two providers have different response shapes: Gemini wraps models in `{ models: [...] }`, Groq uses OpenAI-compatible `{ object, data: [...] }`. Each gets its own response and model type. The return type of `connectProvider` changes from `AiConnectionError | null` to `GeminiModel[] | GroqModel[] | AiConnectionError` — the store uses a type guard (`'code' in result`) to distinguish error from success.
+
+**Prompt:** connectGemini should return the models array. Create types for the response and models and return the models array. Do the same for Groq. connectProvider returns GeminiModel[] | GroqModel[] | AiConnectionError.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added GeminiModel (name, version, displayName, description, inputTokenLimit, outputTokenLimit, supportedGenerationMethods, temperature, topP, topK, maxTemperature, thinking), GeminiModelsResponse, GroqModel (id, object, created, owned_by, active, context_window, public_apps, max_completion_tokens), GroqModelsResponse
+- `features/ai-tools/ai-connection/connectProvider.ts` — connectGemini now parses response JSON and returns `GeminiModel[] | AiConnectionErrorCode`; connectGroq returns `GroqModel[] | AiConnectionErrorCode`; connectProvider return type changed to `GeminiModel[] | GroqModel[] | AiConnectionError`; error code (string) vs models array distinguished by `typeof result === 'string'`
+- `stores/aiStore.ts` — added `models` ref (`GeminiModel[] | GroqModel[]`); `isConnectionError` type guard using `'code' in result`; connect() stores models on success; disconnect() clears models to empty array
+
+**Key decisions & why:**
+- Separate types per provider (GeminiModel vs GroqModel) — the APIs return different shapes with different field names; a union type preserves the full information from each provider without lossy normalization
+- `typeof result === 'string'` inside connectGemini/connectGroq to distinguish error code from models array — clean and zero-overhead; error codes are always strings, model arrays are always objects
+- `isConnectionError` type guard in the store using `'code' in result` — cleanly narrows the union at the store boundary; the store doesn't need to know about individual model types
+- Models cleared on disconnect — prevents stale model data from a previous provider persisting after switching

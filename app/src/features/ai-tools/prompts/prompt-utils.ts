@@ -1,5 +1,18 @@
 import type { PromptInstructionStep, PromptInstructions, PromptScopeConfig } from "../types";
 
+export const JSON_SCHEMA_LABEL = 'Respond ONLY in this JSON schema:';
+
+export const OUTPUT_RULES_LABEL = 'OUTPUT RULES';
+
+
+export const JSON_OUTPUT_RULES: string[] = [
+  'Return ONLY valid JSON',
+  'Do not include markdown',
+  'Do not include commentary or explanations outside the JSON',
+  'Do not include trailing commas',
+  'Use double quotes for all strings',
+];
+
 export function getPromptList(title: string, list: string[]): string[] {
   const lines: string[] = [`${title}:`];
 
@@ -10,13 +23,20 @@ export function getPromptList(title: string, list: string[]): string[] {
   return lines;
 }
 
+export function getPromptNumberedList(title: string, list: string[]): string[] {
+  const lines: string[] = [`${title}:`];
+
+ 
+  list.forEach((listItem, index) => {
+    lines.push(`${index +1} ${listItem}`);
+  });
+
+  return lines;
+}
+
 export function getOutputRulesBlock(responseDirection: string): string {
-  const lines = getPromptList('OUTPUT RULES', [
-    'Return ONLY valid JSON',
-    'Do not include markdown',
-    'Do not include commentary or explanations outside the JSON',
-    'Do not include trailing commas',
-    'Use double quotes for all strings',
+  const lines = getPromptList(OUTPUT_RULES_LABEL, [
+    ...JSON_OUTPUT_RULES,
     responseDirection,
     'If evidence in the dataset is limited, keep the wording conservative and avoid overconfident conclusions',
   ]);
@@ -56,7 +76,7 @@ export function getInterpretationRulesBlock(additionalRules: string[]): string {
   return lines.join("\n");
 }
 
-function renderNumberedInstructions(steps: PromptInstructionStep[]): string {
+export function renderNumberedInstructions(steps: PromptInstructionStep[]): string {
   return steps
     .map((step, i) => {
       const number = i + 1;

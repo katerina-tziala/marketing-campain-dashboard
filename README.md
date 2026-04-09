@@ -28,20 +28,20 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
   - *Missing columns:* Lists every missing column by name (e.g. `budget, revenue`) and prompts to consult the template
   - *Invalid rows:* A structured table shows the row number, column name, and specific issue for every validation failure. If some rows are valid, the user can choose to **proceed with the valid rows** or go back and fix the file
 
-### AI Budget Optimizer (Gemini / Grok)
+### AI Budget Optimizer (Gemini / Groq)
 
-- Sends campaign data to AI provider (Google Gemini or Grok) for analysis
+- Sends campaign data to AI provider (Google Gemini or Groq) for analysis
 - Returns structured results: executive summary, recommendations with confidence badges, top performers, underperformers with action badges (Reduce / Pause / Restructure), quick wins with effort level, correlations, and risks with mitigations
 - Each recommendation includes reallocation amount, expected revenue/conversion impact, new ROI estimate, timeline, and success metrics
 - Confidence score for each recommendation (High / Medium / Low)
-- User enters their own API key in the AI Tools panel — supports Google Gemini and Grok (xAI)
+- User enters their own API key in the AI Tools panel — supports Google Gemini and Groq
 - **Connect** button with live verification before use
 - Currently uses mock responses for UI development (5 scenarios cycle on each Analyze click)
 
 ### Executive Summary Generator (AI)
 
 - Returns structured results: portfolio health score (0-100 with Excellent/Good/Needs Attention/Critical labels), bottom line summary, key metrics dashboard (8 metrics in grid), typed insights with emoji icons and metric highlights, numbered priority actions with urgency badges, channel summary with status indicators and budget share, and data correlations
-- Uses the same AI provider connection as the Budget Optimizer (Gemini or Grok)
+- Uses the same AI provider connection as the Budget Optimizer (Gemini or Groq)
 - Currently uses mock responses for UI development (5 scenarios cycle on each Summarize click)
 
 
@@ -86,7 +86,7 @@ npm run preview
 - **Chart.js** + **vue-chartjs**: charts & data visualization
 - **Tailwind CSS v3** + **SCSS**: styling with custom theme and dark mode
 - **PapaParse**: CSV parsing
-- **Google Gemini API**: AI-powered recommendations (free tier)
+- **Google Gemini API** + **Groq API**: AI-powered recommendations (free tiers)
 - **Vite**: build tool and dev server
 
 
