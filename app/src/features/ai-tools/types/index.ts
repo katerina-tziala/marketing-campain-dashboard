@@ -68,6 +68,7 @@ export type AiModel = {
   strength: string;
   strength_score: number;
   reason: string;
+  limitReached: boolean;
 };
 
 export type ModelSelectionResponse = {

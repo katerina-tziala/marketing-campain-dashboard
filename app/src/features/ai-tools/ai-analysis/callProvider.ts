@@ -1,8 +1,6 @@
 import type { AiProvider, AiAnalysisErrorCode } from '../types'
 import { parseJsonResponse } from '../ai-connection/shared'
 
-const ANALYSIS_TIMEOUT_MS = 60_000
-
 const TOKEN_LIMIT_PATTERNS = [
   'resource_exhausted',
   'rate_limit',
@@ -29,51 +27,24 @@ function errorCodeFromException(e: unknown): AiAnalysisErrorCode {
   return 'unknown'
 }
 
-async function fetchWithSignal(
-  input: RequestInfo,
-  init: RequestInit,
-  signal: AbortSignal,
-): Promise<Response> {
-  const timeoutId = setTimeout(() => {
-    if (!signal.aborted) {
-      (init.signal as AbortSignal | undefined) // already set below
-    }
-  }, ANALYSIS_TIMEOUT_MS)
-
-  const controller = new AbortController()
-
-  // Abort on external signal
-  const onAbort = () => controller.abort()
-  signal.addEventListener('abort', onAbort, { once: true })
-
-  // Abort on timeout
-  const timer = setTimeout(() => controller.abort(), ANALYSIS_TIMEOUT_MS)
-
-  try {
-    return await fetch(input, { ...init, signal: controller.signal })
-  } finally {
-    clearTimeout(timer)
-    clearTimeout(timeoutId)
-    signal.removeEventListener('abort', onAbort)
-  }
-}
-
 async function callGemini(
   apiKey: string,
   model: string,
   prompt: string,
   signal: AbortSignal,
 ): Promise<string> {
-  const res = await fetchWithSignal(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+  const modelId = model.replace(/^models\//, '')
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0 },
       }),
+      signal,
     },
-    signal,
   )
 
   if (!res.ok) {
@@ -92,7 +63,7 @@ async function callGroq(
   prompt: string,
   signal: AbortSignal,
 ): Promise<string> {
-  const res = await fetchWithSignal(
+  const res = await fetch(
     'https://api.groq.com/openai/v1/chat/completions',
     {
       method: 'POST',
@@ -103,10 +74,13 @@ async function callGroq(
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
+        temperature: 0,
+        top_p: 1,
+        frequency_penalty: 0,
+        presence_penalty: 0,
       }),
+      signal,
     },
-    signal,
   )
 
   if (!res.ok) {

@@ -67,6 +67,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   const activeTab = ref<AiAnalysisTab>('optimizer')
   const tokenLimitReached = ref(false)
+  const analysisActivated = ref(false)
 
   // ── Per-tab state ─────────────────────────────────────────────────────
 
@@ -149,7 +150,24 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Cooldown check ────────────────────────────────────────────────────
 
+  const cooldownTick = ref(0)
+  const cooldownTimers: Set<ReturnType<typeof setTimeout>> = new Set()
+
+  function scheduleCooldownExpiry(): void {
+    const timer = setTimeout(() => {
+      cooldownTimers.delete(timer)
+      cooldownTick.value++
+    }, COOLDOWN_MS)
+    cooldownTimers.add(timer)
+  }
+
+  function clearCooldownTimers(): void {
+    for (const timer of cooldownTimers) clearTimeout(timer)
+    cooldownTimers.clear()
+  }
+
   function canAnalyze(tab: AiAnalysisTab): boolean {
+    void cooldownTick.value // reactive dependency — triggers re-evaluation when cooldown expires
     const t = getTab(tab)
     const key = getCurrentCacheKey()
     if (!key) return false
@@ -211,6 +229,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const filteredChannels = campaignStore.selectedChannels.length > 0
       ? campaignStore.selectedChannels
       : undefined
+    console.log(data);
 
     if (tab === 'optimizer') {
       return generateBudgetOptimizerPrompt(
@@ -234,7 +253,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const message = ERROR_MESSAGES[code] ?? ERROR_MESSAGES.unknown
 
     if (code === 'token-limit') {
-      tokenLimitReached.value = true
+      if (aiStore.selectedModel) {
+        aiStore.markModelLimitReached(aiStore.selectedModel.model)
+      }
+      tokenLimitReached.value = aiStore.allModelsLimitReached
     }
 
     // Case 1: cached response exists — keep showing it
@@ -271,7 +293,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const t = getTab(tab)
 
     // Token limit: only allow cached responses
-    if (tokenLimitReached.value) {
+    if (tokenLimitReached.value || aiStore.selectedModelLimitReached) {
       const cached = t.cache.get(cacheKey)
       if (cached) {
         t.status = 'done'
@@ -356,6 +378,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       t.cache.set(cacheKey, result)
       t.cacheTimestamps.set(cacheKey, Date.now())
       t.cooldowns.set(cacheKey, Date.now())
+      scheduleCooldownExpiry()
       t.lastVisibleCacheKey = cacheKey
       t.controller = null
 
@@ -375,6 +398,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function analyze(tab: AiAnalysisTab): void {
     const t = getTab(tab)
     t.errorFallbackMessage = null
+    analysisActivated.value = true
     syncRefsFromTab(tab)
     executeAnalysis(tab, false)
   }
@@ -445,8 +469,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       return
     }
 
-    // Auto-call if first analyze completed and not token-limited
-    if (t.firstAnalyzeCompleted && !tokenLimitReached.value) {
+    // Auto-call if user has triggered analysis on any tab and not token-limited
+    if (analysisActivated.value && !tokenLimitReached.value) {
       executeAnalysis(tab, true)
     }
   }
@@ -455,7 +479,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function clearStateForNewCSV(): void {
     cancelAllRequests()
+    clearCooldownTimers()
     tokenLimitReached.value = false
+    analysisActivated.value = false
 
     for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
       const t = getTab(tab)
@@ -526,7 +552,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       const tab = activeTab.value
       const t = getTab(tab)
 
-      if (!t.firstAnalyzeCompleted) return
+      if (!analysisActivated.value) return
       if (!aiStore.aiPanelOpen) return
       if (!aiStore.provider || !aiStore.selectedModel) return
 
@@ -564,13 +590,23 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
         }
 
         // Token limit: don't auto-call
-        if (tokenLimitReached.value) return
+        if (tokenLimitReached.value || aiStore.selectedModelLimitReached) return
 
         // Auto-call
         executeAnalysis(tab, true)
       }, DEBOUNCE_MS)
     },
     { deep: true },
+  )
+
+  // Watch model changes — show cached data or auto-call
+  watch(
+    () => aiStore.selectedModel,
+    () => {
+      if (!analysisActivated.value) return
+      if (!aiStore.aiPanelOpen) return
+      evaluateTab(activeTab.value)
+    },
   )
 
   // Watch CSV upload — reset everything

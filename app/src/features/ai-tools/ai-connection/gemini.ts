@@ -1,6 +1,7 @@
 import type { GeminiModel, GeminiModelsResponse, AiModel, ModelSelectionResponse } from '../types'
-import { fetchWithTimeout, errorCodeFromStatus, parseJsonResponse } from './shared'
+import { errorCodeFromStatus, parseJsonResponse } from './shared'
 import { generateModelSelectionPrompt } from '../prompts'
+import { PROVIDER_LABELS } from '../types'
 
 function filterModels(models: GeminiModel[]): GeminiModel[] {
   const banned = [
@@ -35,7 +36,7 @@ function getOptimalModel(models: GeminiModel[]): string {
 }
 
 async function fetchModels(apiKey: string): Promise<GeminiModel[]> {
-  const res = await fetchWithTimeout(
+  const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`,
   )
   if (!res.ok) throw new Error(errorCodeFromStatus(res.status))
@@ -44,13 +45,14 @@ async function fetchModels(apiKey: string): Promise<GeminiModel[]> {
 }
 
 async function callGemini(apiKey: string, prompt: string, model: string): Promise<string> {
-  const res = await fetchWithTimeout(
+  const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0 },
       }),
     },
   )
@@ -61,6 +63,20 @@ async function callGemini(apiKey: string, prompt: string, model: string): Promis
   return body.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 }
 
+function buildFallbackModel(modelId: string): AiModel {
+  const displayName = modelId.replace(/^models\//, '').replace(/-/g, ' ')
+  return {
+    id: modelId,
+    model: modelId,
+    display_name: displayName,
+    provider: PROVIDER_LABELS.gemini,
+    strength: 'general-purpose',
+    strength_score: 7,
+    reason: 'Selected as the optimal available model',
+    limitReached: false,
+  }
+}
+
 export async function connectGemini(apiKey: string): Promise<AiModel[]> {
   const models = await fetchModels(apiKey)
 
@@ -68,16 +84,19 @@ export async function connectGemini(apiKey: string): Promise<AiModel[]> {
     throw new Error('no-models')
   }
 
-  const prompt = generateModelSelectionPrompt(models)
   const optimal = getOptimalModel(models)
-  const raw = await callGemini(apiKey, prompt, optimal)
-  const parsed = parseJsonResponse(raw) as ModelSelectionResponse
-  const selected = parsed.selected_models ?? []
 
-  if (selected.length === 0) {
-    throw new Error('no-models')
+  try {
+    const prompt = generateModelSelectionPrompt(models)
+    const raw = await callGemini(apiKey, prompt, optimal)
+    const parsed = parseJsonResponse(raw) as ModelSelectionResponse
+    const selected = parsed.selected_models ?? []
+
+    if (selected.length > 0) return selected.map((m) => ({ ...m, limitReached: false }))
+  } catch {
+    // AI selection failed — fall back to optimal model
   }
 
-  return selected
+  return [buildFallbackModel(optimal)]
 }
 

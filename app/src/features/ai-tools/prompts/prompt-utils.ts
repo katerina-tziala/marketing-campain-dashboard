@@ -37,6 +37,7 @@ export function getPromptNumberedList(title: string, list: string[]): string[] {
 export function getOutputRulesBlock(responseDirection: string): string {
   const lines = getPromptList(OUTPUT_RULES_LABEL, [
     ...JSON_OUTPUT_RULES,
+    'Response should match JSON schema EXACTLY',
     responseDirection,
     'If evidence in the dataset is limited, keep the wording conservative and avoid overconfident conclusions',
   ]);

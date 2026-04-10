@@ -12,14 +12,18 @@ const SELECTION_CRITERIA = [
   'good analytical capability for marketing/business data',
   'reliable structured output',
   'consistent performance',
+  'higher free-tier rate limits and token quotas (prefer models that allow sustained usage)',
+  'avoid experimental or preview models — they typically have very low rate limits and may become unavailable',
 ];
 
 const STRICT_RULES = [
   'Only choose models from the provided list',
-  'Do not invent models',
+  'Do NOT invent models',
   `The "model" field must match exactly the model identifier from the provided list`,
   'The model identifier may appear as "id" or "name" in the list — copy the exact value',
-  'Return exactly 3 models',
+  'Return exactly 5 models from the list only, unless fewer than 5 relevant models are available. In that case, return only the models found. Do not add or invent items to reach 5.',
+  'Deprioritize models with "preview" or "experimental" in their name — they have severely limited free-tier quotas',
+  'Prefer stable, generally-available models with high token limits',
 ];
 
 const FIELD_RULES: PromptInstructionStep[] = [
@@ -54,14 +58,15 @@ const OUTPUT_SCHEMA = `
  
 const VALIDATION_CHECKLIST = [
   'Every selected model exists in the provided list',
+  'Every returned item matches the JSON schema EXACTLY',
   'Every model value matches exactly an id or name from the list',
-  'Exactly 3 models are returned',
+  'Return up to 5 models from the list; fewer are allowed if fewer valid matches exist',
   'strength_score is between 1 and 10',
   'Output is valid JSON'
 ];
 
 export function generateModelSelectionPrompt(models: GeminiModel[] | GroqModel[]): string {
-  const sections = [`You are a model selection assistant.\nYour task is to choose the 3 best LLM models for a marketing analysis application.`,
+  const sections = [`You are a model selection assistant.\nYour task is to choose the 5 best LLM models for a marketing analysis application.`,
     getPromptList('APPLICATION USE CASE', APPLICATION_USE_CASE).join("\n"),
     getPromptList('SELECTION CRITERIA', SELECTION_CRITERIA).join("\n"),
     getPromptNumberedList('STRICT RULES', STRICT_RULES).join("\n"),

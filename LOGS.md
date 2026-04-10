@@ -1384,3 +1384,89 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - MVP scope trim — both features add complexity without meaningful value for a demo/presentation context; upload-replace is the only remaining must-have
+
+
+## [#28] Fix connection timeout and cooldown button re-enable
+**Type:** fix
+
+**Summary:** Increased model selection timeout from 10s to 30s to prevent connection timeouts on free-tier APIs, and fixed the Analyze/Summarize button not re-enabling after the 5-second cooldown.
+
+**Brainstorming:** Two issues. (1) The connection flow makes two API calls — fetching models (fast GET) and model selection (slow POST with AI prompt). Both used the same 10s timeout, but the model selection call on free-tier Gemini/Groq can take 15-30s especially on cold starts. Fix: add optional `timeoutMs` parameter to `fetchWithTimeout` and pass 30s for the model selection calls. (2) The `canAnalyze()` function used `Date.now()` to check cooldown expiry, but Vue computed properties only re-evaluate when a reactive dependency changes — time passing doesn't trigger re-evaluation. Fix: add a `cooldownTick` ref that increments via `setTimeout` after each cooldown expires, referenced inside `canAnalyze()` as a reactive dependency.
+
+**Prompt:** Fix connection timeout for model selection call (increase to 30s). Fix Analyze button not re-enabling after 5s cooldown.
+
+**What changed:**
+- `features/ai-tools/ai-connection/shared.ts` — added optional `timeoutMs` parameter to `fetchWithTimeout` (default 10s), exported `MODEL_SELECTION_TIMEOUT_MS` (30s)
+- `features/ai-tools/ai-connection/gemini.ts` — `callGemini` now passes `MODEL_SELECTION_TIMEOUT_MS` to `fetchWithTimeout`
+- `features/ai-tools/ai-connection/groq.ts` — `callGroq` now passes `MODEL_SELECTION_TIMEOUT_MS` to `fetchWithTimeout`
+- `stores/aiAnalysisStore.ts` — added `cooldownTick` ref + `scheduleCooldownExpiry()` (setTimeout that increments tick after 5s) + `clearCooldownTimers()` (cleanup on reset); `canAnalyze()` reads `cooldownTick.value` as reactive dependency; `executeAnalysis` calls `scheduleCooldownExpiry()` on success; `clearStateForNewCSV` calls `clearCooldownTimers()`
+
+**Key decisions & why:**
+- Optional timeout parameter vs separate function — keeps the API simple; the 10s default still applies to the fast model-list fetch, only the model selection call overrides to 30s
+- `cooldownTick` ref pattern — the lightest way to make a time-based check reactive in Vue; the `void cooldownTick.value` read inside `canAnalyze()` creates a reactive dependency without using the value, so the computed re-evaluates when the timeout fires
+
+
+## [#67] Fix and improve AI connection and analysis flow
+**Type:** fix
+
+**Summary:** Removed all API timeouts, fixed Gemini CORS error from duplicate `models/` prefix, added model selection fallback to optimal model, and added cross-tab auto-call activation.
+
+**Brainstorming:** Five issues addressed: (1) Timeouts are unnecessary — the browser and the store's AbortController already handle cancellation; removing them simplifies the code and avoids false timeout errors on slow connections. (2) Gemini CORS error — the AI model selection prompt may return model IDs with `models/` prefix (e.g. `models/gemini-2.0-flash`), and the analysis URL already has `models/` in the path, producing `models/models/...` — a 404 that manifests as CORS. Fix: strip prefix before building URL. (3) Model selection fallback — if the AI prompt returns no models or fails to parse, throwing `no-models` blocks connection entirely. Instead, fall back to the optimal model already chosen for the prompt call. (4) Cross-tab auto-call — previously each tab had its own `firstAnalyzeCompleted` flag, so analyzing on Optimizer then switching to Summary did nothing. Fix: shared `analysisActivated` flag set on any manual analyze, used by `evaluateTab` and the label-change watcher. (5) Cached indicator display deferred to polishing phase.
+
+**Prompt:** Fix/improve: remove all timeouts for API calls (connection and analysis), fix Gemini CORS error from duplicate models/ prefix, add model selection fallback to optimal model when AI prompt fails, add cross-tab auto-call so analyzing on one tab activates auto-calls on the other on tab switch.
+
+**What changed:**
+- `features/ai-tools/ai-connection/shared.ts` — removed `fetchWithTimeout`, `CONNECTION_TIMEOUT_MS`, and `MODEL_SELECTION_TIMEOUT_MS`; only `errorCodeFromStatus`, `errorCodeFromException`, `parseJsonResponse` remain
+- `features/ai-tools/ai-connection/gemini.ts` — replaced `fetchWithTimeout` with plain `fetch`; added `buildFallbackModel`; `connectGemini` wraps AI selection in try-catch and falls back to optimal model on failure
+- `features/ai-tools/ai-connection/groq.ts` — replaced `fetchWithTimeout` with plain `fetch`; added `buildFallbackModel`; `connectGroq` wraps AI selection in try-catch and falls back to optimal model on failure
+- `features/ai-tools/ai-analysis/callProvider.ts` — removed `ANALYSIS_TIMEOUT_MS` and `fetchWithSignal`; `callGemini`/`callGroq` now use plain `fetch` with external `signal`; `callGemini` strips `models/` prefix from model ID
+- `stores/aiAnalysisStore.ts` — added shared `analysisActivated` ref; set to `true` on manual `analyze()`; used in `evaluateTab` and label-change watcher instead of per-tab `firstAnalyzeCompleted`; reset in `clearStateForNewCSV`
+
+**Key decisions & why:**
+- Shared `analysisActivated` vs merging per-tab flags — a single shared flag is simpler and directly models the intent: "user has opted in to AI analysis"; per-tab `firstAnalyzeCompleted` kept for button label logic (Analyze vs Re-Analyze)
+- `buildFallbackModel` per provider — each provider builds a fallback with the correct `PROVIDER_LABELS` value and appropriate display name formatting (Gemini strips `models/` prefix, Groq uses ID as-is)
+- Strip `models/` prefix in analysis `callGemini` rather than at store level — keeps the fix close to where the URL is built, and the connection `getOptimalModel` already strips it independently
+
+
+## [#68] Per-model token limit tracking and 5-model selection
+**Type:** feature
+
+**Summary:** Updated model selection prompt to return 5 models (deprioritizing preview/experimental), added per-model `limitReached` tracking so token limits mark individual models instead of globally blocking, and global block only engages when all models are exhausted.
+
+**Brainstorming:** Gemini Pro Preview hits rate limits after ~3 calls on free tier (2 RPM, 32K TPM). Previously, any token-limit error set a global `tokenLimitReached` flag that permanently blocked all further calls. The fix has two parts: (1) select more models and steer the prompt away from preview/experimental ones with low quotas, and (2) track limits per model so the user can switch to another model and keep working. The global flag only activates when every model in the list is marked. Cache keys already include the model ID, so switching models and back naturally preserves previous responses.
+
+**Prompt:** Update model selection prompt to 5 models, deprioritize preview/experimental. Add limitReached on AiModel. Track per-model limits in aiStore. Only set global tokenLimitReached when all models exhausted. Add model change watcher for cache/auto-call. Preserve cached responses across model switches.
+
+**What was built:**
+- `features/ai-tools/prompts/model-selection-prompt.ts` — changed from 3 to 5 models; added selection criteria to prefer high free-tier limits and avoid preview/experimental models; updated strict rules, validation checklist, and intro
+- `features/ai-tools/types/index.ts` — added `limitReached: boolean` to `AiModel` type
+- `features/ai-tools/ai-connection/gemini.ts` — `connectGemini` initializes `limitReached: false` on all returned models (AI-selected and fallback)
+- `features/ai-tools/ai-connection/groq.ts` — `connectGroq` initializes `limitReached: false` on all returned models (AI-selected and fallback)
+- `stores/aiStore.ts` — added `selectedModelLimitReached` and `allModelsLimitReached` computed properties; added `markModelLimitReached(modelId)` action; exported all three
+- `stores/aiAnalysisStore.ts` — `handleRequestError` now calls `aiStore.markModelLimitReached` for the current model on token-limit; sets global `tokenLimitReached` only when `aiStore.allModelsLimitReached`; `executeAnalysis` guards on both global and per-model limit; label-change watcher guards on per-model limit; added model change watcher that triggers `evaluateTab` for cache/auto-call
+
+**Key decisions & why:**
+- Per-model `limitReached` on `AiModel` directly vs separate Map — mutating the model object is simpler and Vue reactivity picks it up via the `models` ref array; no need for a parallel data structure
+- Global flag only when all exhausted — allows the user to switch models and keep working; previous behavior was too aggressive
+- Model change watcher — ensures switching models immediately shows cached data or triggers auto-call, same as label/tab changes
+- 5 models with anti-preview criteria — gives more fallback options and steers away from the models most likely to hit free-tier walls
+
+
+## [#69] Set deterministic generation config for Gemini and Groq
+**Type:** update
+
+**Summary:** Pinned generation parameters to deterministic values on all Gemini and Groq API calls (connection + analysis) to ensure consistent, reproducible responses.
+
+**Brainstorming:** Both providers defaulted to non-zero temperature (Groq was 0.3, Gemini used the API default). This introduced randomness between identical prompts, making analysis results inconsistent across runs. Setting temperature to 0 (and Groq's additional sampling params to neutral values) eliminates this variance. Applied to all 4 call sites: analysis calls in `callProvider.ts` and connection-time model-selection calls in `gemini.ts`/`groq.ts`.
+
+**Prompt:** Set deterministic generation parameters — Gemini: `temperature: 0`; Groq: `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0` — on all API calls (connection and analysis).
+
+**What changed:**
+- `features/ai-tools/ai-analysis/callProvider.ts` — Gemini `callGemini`: added `generationConfig: { temperature: 0 }`; Groq `callGroq`: changed `temperature` from 0.3 to 0, added `top_p: 1`, `frequency_penalty: 0`, `presence_penalty: 0`
+- `features/ai-tools/ai-connection/gemini.ts` — `callGemini`: added `generationConfig: { temperature: 0 }` to model-selection call
+- `features/ai-tools/ai-connection/groq.ts` — `callGroq`: changed `temperature` from 0.3 to 0, added `top_p: 1`, `frequency_penalty: 0`, `presence_penalty: 0` to model-selection call
+
+**Key decisions & why:**
+- Applied to all 4 call sites (not just analysis) — model selection during connection also benefits from deterministic output for consistent model ranking
+- Gemini uses `generationConfig` wrapper — required by the Gemini API schema; temperature is nested inside it
+- Groq gets all 4 params explicitly — even though 0/1 are defaults for some, setting them explicitly documents intent and prevents any future API default changes from affecting behavior
