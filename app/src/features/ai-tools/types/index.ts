@@ -242,6 +242,26 @@ export type BudgetOptimizerResponse = {
   }[];
 };
 
+// ── AI Analysis types ─────────────────────────────────────────────────────
+
+export type AiAnalysisTab = 'optimizer' | 'summary';
+
+export type AiAnalysisStatus = 'idle' | 'loading' | 'done' | 'error';
+
+export type AiAnalysisErrorCode =
+  | 'network'
+  | 'timeout'
+  | 'rate-limit'
+  | 'token-limit'
+  | 'server-error'
+  | 'parse-error'
+  | 'unknown';
+
+export type AiAnalysisError = {
+  code: AiAnalysisErrorCode;
+  message: string;
+};
+
 export type ExecutiveSummaryResponse = {
   period?: string;
   health_score: {

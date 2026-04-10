@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider radio buttons + API key + connect with live verification + granular error handling) implemented for Google Gemini and Groq; connected state shows status bar + tabbed interface (Optimizer / Summary). Both AI tabs have full UI rendering all response sections with 5 cycling mock responses each, plus error state. Budget Optimizer: executive summary, recommendations, top/underperformers, quick wins, correlations, risks. Executive Summary: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations. Actual Gemini/Groq API calls and upload-replace flow are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place with full analysis flow: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider radio buttons + API key + connect with live verification + granular error handling) implemented for Google Gemini and Groq; connected state shows status bar + tabbed interface (Optimizer / Summary). Both AI tabs wired to real Gemini/Groq API calls via `aiAnalysisStore` with full flow logic: debounced auto-calls on label change, response caching (keyed by provider::model::sorted labels), data caching (buildBudgetOptimizerData/buildExecutiveSummaryData), request cancellation via AbortController, 5s cooldown per cache key, token/quota limit detection, panel open/close persistence, tab switch = panel reopen evaluation, CSV upload resets all analysis state, disconnect clears analysis. Budget Optimizer: executive summary, recommendations, top/underperformers, quick wins, correlations, risks. Executive Summary: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations. Upload-replace flow is next.
 
 ---
 
@@ -38,7 +38,8 @@ app/                        # Vue 3 + Vite project
 │   ├── stores/
 │   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
 │   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
-│   │   └── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[]), selectedModel (AiModel — highest strength_score); connect() delegates to connectProvider which fetches models + runs AI model selection; disconnect()
+│   │   ├── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[]), selectedModel (AiModel — highest strength_score), aiPanelOpen; connect() delegates to connectProvider; disconnect(); openPanel(); closePanel()
+│   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached; debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, token-limit protection, panel open/close + tab switch evaluation, CSV reset, disconnect reset
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -67,17 +68,20 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide()
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→400px); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
-│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected
+│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected; uses aiAnalysisStore.activeTab for tab routing
 │   │   │   │   ├── AiConnectionForm.vue    # Provider radio buttons (Gemini/Groq) + API key input (show/hide) + Connect button with spinner + inline error with contextual hint per error code; owns all user-facing error messages via ERROR_MESSAGES and ERROR_HINTS maps
-│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link
+│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link; disconnect clears analysis state via aiAnalysisStore
 │   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
-│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button; idle/loading/result states; renders full BudgetOptimizerResponse: executive summary, recommendations (confidence badge, amount, impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge), quick wins (effort badge), correlations, risks & mitigations; cycles through 5 mock responses
-│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button; idle/loading/result states; renders full ExecutiveSummaryResponse: health score (color-coded badge with score/100), bottom line, key metrics grid (8 metrics in 2-col layout), insights (typed cards with icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share), correlations; cycles through 5 mock responses
+│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button (cooldown-disabled); idle/loading/done/error states; renders full BudgetOptimizerResponse: executive summary, recommendations, top/underperformers, quick wins, correlations, risks; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
+│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button (cooldown-disabled); idle/loading/done/error states; renders full ExecutiveSummaryResponse: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
+│   │   │   ├── ai-analysis/
+│   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (60s timeout), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), parses JSON response
+│   │   │   │   └── index.ts            # Barrel export — only callProviderForAnalysis
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── shared.ts           # fetchWithTimeout (10s), errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules
 │   │   │   │   ├── gemini.ts           # connectGemini(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models or throw Error with error code); callGemini, filterModels, getOptimalModel (flash-first + latest version) are internal
@@ -85,7 +89,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; thin wrapper that delegates to connectGemini/connectGroq; catches errors and maps known error codes from message or falls back to errorCodeFromException
 │   │   │   │   └── index.ts            # Barrel export — only connectProvider
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel, ModelSelectionResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse + shared building blocks + prompt types + data/response types
+│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel, ModelSelectionResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError + shared building blocks + prompt types + data/response types
 │   │   │   ├── prompts/
 │   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
 │   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt
@@ -155,8 +159,6 @@ app/                        # Vue 3 + Vite project
 - [x] Auto-detection of columns (case-insensitive, 7 expected headers, extra columns ignored)
 - [x] Error handling: wrong file type and size shown inline; missing columns listed by name; invalid rows shown in a structured table with option to proceed with valid rows
 - [ ] Upload again / replace existing data (with confirmation warning)
-- [ ] Data persistence (memory vs sessionStorage vs localStorage)
-- [ ] Data preview before importing
 
 ### Campaign Performance Dashboard
 - [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
@@ -179,7 +181,7 @@ app/                        # Vue 3 + Vite project
 - [x] API key memory-only (not persisted to storage)
 - [x] Budget Optimizer tab — full UI for BudgetOptimizerResponse: executive summary, recommendations (confidence badge, reallocation amount, expected impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge: Reduce/Pause/Restructure), quick wins (effort badge), correlations, risks & mitigations; 5 mock responses cycle on each Analyze click
 - [x] Executive Summary tab — full UI for ExecutiveSummaryResponse: health score badge (Excellent/Good/Needs Attention/Critical with color + score/100), bottom line, key metrics grid (8 metrics), insights (typed cards with emoji icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share + one-liner), correlations; 5 mock responses cycle on each Summarize click
-- [ ] Configure actual AI prompts for Optimizer and Summary (replace demo stubs with real API calls)
+- [x] Configure actual AI prompts for Optimizer and Summary (real API calls via callProviderForAnalysis + aiAnalysisStore)
 - [x] Error handling for AI connection — granular error codes (invalid-key, network, timeout, rate-limit, server-error, unknown) with contextual hints in connection form; error state in both panels with message + hint
 
 ---

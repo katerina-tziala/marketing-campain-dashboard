@@ -1337,3 +1337,50 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Error message = error code — simple convention: provider functions throw `new Error('invalid-key')` or `new Error('no-models')`; no custom class needed since the message itself carries the structured information
 - ERROR_CODES Set for validation — ensures only legitimate error codes pass through; any other Error message (like "Gemini API error (500)") falls through to errorCodeFromException which classifies it as 'unknown'
+
+
+## [#26] AI Analysis Flow — Budget Optimizer + Executive Summary
+**Type:** feature
+
+**Summary:** Replaced mock response cycling with real Gemini/Groq API calls for both AI tabs, adding a full analysis flow with debouncing, caching, cancellation, cooldown, panel/tab lifecycle, and token-limit protection.
+
+**Brainstorming:** The spec required 15 behavioral rules covering first-manual-trigger, automatic label-change calls, response caching, data caching, request cancellation, cooldown, CSV reset, panel close/reopen, tab switching, error fallback, and token-limit detection. Key architecture decision: one shared Pinia store (`aiAnalysisStore`) with per-tab state stored in plain objects and synced to Vue refs for reactivity. A config-map approach keeps both tabs DRY — the only differences are which data builder and prompt generator to call. The `callProviderForAnalysis` function lives in a new `ai-analysis/` module separate from `ai-connection/` because analysis calls need external AbortSignal support and a longer timeout (60s vs 10s). Panel open/close state (`aiPanelOpen`) was moved to `aiStore` since it's cross-cutting. Tab switching was given the same evaluation logic as panel reopen. Labels use `"all"` as the cache key when no filters are active to avoid empty-string edge cases. Data caching (buildBudgetOptimizerData/buildExecutiveSummaryData) was added to avoid redundant computation when re-analyzing the same label combination.
+
+**Prompt:** Implement the Budget Optimizer AI flow with debounce, cancellation, caching, cooldown, panel reopen handling, CSV reset, token-limit protection, and the same flow for Executive Summary. Cache built data per label combination. Tab switching = panel reopen evaluation.
+
+**What was built:**
+- `features/ai-tools/ai-analysis/callProvider.ts` — `callProviderForAnalysis<T>()` with AbortSignal support, 60s timeout, token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit patterns), Gemini + Groq call paths
+- `features/ai-tools/ai-analysis/index.ts` — barrel export
+- `stores/aiAnalysisStore.ts` — shared Pinia store for both tabs; per-tab state (firstAnalyzeCompleted, status, response, error, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey, errorFallbackMessage); shared state (activeTab, tokenLimitReached); watchers for label changes (debounced) and CSV upload (reset); actions: analyze, setActiveTab, onPanelOpen, onPanelClose, clearStateForNewCSV, clearStateForDisconnect
+- `features/ai-tools/types/index.ts` — added AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError types
+- `stores/aiStore.ts` — added aiPanelOpen ref + openPanel() / closePanel() actions
+- `shell/AppShell.vue` — replaced local isAiOpen with aiStore.aiPanelOpen; wired panel open/close to analysisStore.onPanelOpen/onPanelClose
+- `features/ai-tools/components/AiToolsContent.vue` — uses analysisStore.activeTab for tab routing and setActiveTab for tab switching
+- `features/ai-tools/components/AiOptimizerPanel.vue` — replaced mock cycling with analysisStore; added cached indicator (timestamp), error fallback message, token-limit notice, cooldown-disabled button
+- `features/ai-tools/components/AiSummaryPanel.vue` — same treatment as optimizer panel
+- `features/ai-tools/components/AiConnectedStatus.vue` — disconnect now calls analysisStore.clearStateForDisconnect() before aiStore.disconnect()
+- `features/ai-tools/components/AiTabs.vue` — uses AiAnalysisTab type from types instead of local export
+
+**Key decisions & why:**
+- Single store with per-tab state objects — avoids duplicate store logic while keeping each tab's state independent; plain objects synced to refs because Maps and nested objects don't trigger Vue reactivity on their own
+- Separate `ai-analysis/` module from `ai-connection/` — analysis calls need external AbortSignal (for cancellation) and a 60s timeout; connection calls use internal 10s timeout with their own AbortController
+- `"all"` as key when no filters active — avoids empty-string edge case in cache keys; normalized labels are sorted so `["Email","Social"]` and `["Social","Email"]` produce the same key
+- Data cache keyed by labels only (per tab) — provider/model don't affect the preprocessed data; avoids redundant buildBudgetOptimizerData/buildExecutiveSummaryData when only provider changes
+- Global single-request rule — only one API request across both tabs at any time; switching tabs cancels the other tab's request and reverts it to its last known state
+- Error fallback with cached result — if a request fails but a cached response exists for the same key, the cached result stays visible with a warning message instead of showing an empty error state
+
+
+## [#27] Remove data persistence and data preview from checklist
+**Type:** update
+
+**Summary:** Removed "Data persistence" and "Data preview before importing" from the feature checklist — not needed for the MVP scope.
+
+**Brainstorming:** For an MBA assignment MVP, memory-only storage is sufficient (page refresh losing data is acceptable in a demo context), and data preview adds complexity without value since the error table already surfaces CSV issues. Upload-replace is the only remaining CSV feature that matters for usability.
+
+**Prompt:** Remove items 2 and 3 from the CSV checklist.
+
+**What changed:**
+- `CLAUDE.md` — removed "Data persistence (memory vs sessionStorage vs localStorage)" and "Data preview before importing" from the CSV Upload & Template checklist
+
+**Key decisions & why:**
+- MVP scope trim — both features add complexity without meaningful value for a demo/presentation context; upload-replace is the only remaining must-have

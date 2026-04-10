@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
+import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { SparklesIcon } from '../../../ui/icons'
-import { BUDGET_OPTIMIZER_MOCKS } from '../mocks'
-import type { BudgetOptimizerResponse } from '../types'
-
-type Status = 'idle' | 'loading' | 'done' | 'error'
 
 const campaignStore = useCampaignStore()
-const status = ref<Status>('idle')
-const mockIndex = ref(-1)
-const response = ref<BudgetOptimizerResponse | null>(null)
-const errorMessage = ref<string | null>(null)
+const analysisStore = useAiAnalysisStore()
+
+const status = computed(() => analysisStore.optimizerStatus)
+const response = computed(() => analysisStore.optimizerResponse)
+const error = computed(() => analysisStore.optimizerError)
+const errorFallback = computed(() => analysisStore.optimizerErrorFallback)
+const cacheTimestamp = computed(() => analysisStore.optimizerCacheTimestamp)
+const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 
 const confidenceClass = (level: string) =>
   `ai-confidence ai-confidence--${level.toLowerCase()}`
@@ -40,12 +41,18 @@ const analyzeLabel = computed(() =>
   status.value === 'done' || status.value === 'error' ? 'Re-Analyze' : 'Analyze',
 )
 
-async function analyze(): Promise<void> {
-  status.value = 'loading'
-  await new Promise<void>((resolve) => setTimeout(resolve, 1500))
-  mockIndex.value = (mockIndex.value + 1) % BUDGET_OPTIMIZER_MOCKS.length
-  response.value = BUDGET_OPTIMIZER_MOCKS[mockIndex.value]
-  status.value = 'done'
+const isButtonDisabled = computed(() =>
+  status.value === 'loading' || !canAnalyze.value,
+)
+
+const formattedCacheTime = computed(() => {
+  if (!cacheTimestamp.value) return null
+  const d = new Date(cacheTimestamp.value)
+  return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+})
+
+function handleAnalyze(): void {
+  analysisStore.analyze('optimizer')
 }
 </script>
 
@@ -59,16 +66,22 @@ async function analyze(): Promise<void> {
       </div>
       <button
         class="ai-panel__action"
-        :disabled="status === 'loading'"
-        @click="analyze"
+        :disabled="isButtonDisabled"
+        @click="handleAnalyze"
       >
         <SparklesIcon class="ai-panel__action-icon" />
         {{ analyzeLabel }}
       </button>
     </div>
 
+    <!-- Token limit message -->
+    <div v-if="analysisStore.tokenLimitReached && status !== 'done'" class="ai-panel__notice" role="status">
+      <p class="ai-panel__notice-text">AI generation is temporarily unavailable due to usage limits.</p>
+      <p class="ai-panel__notice-hint">Previously generated results are still available.</p>
+    </div>
+
     <!-- Idle -->
-    <div v-if="status === 'idle'" class="ai-panel__empty">
+    <div v-if="status === 'idle' && !analysisStore.tokenLimitReached" class="ai-panel__empty">
       <p class="ai-panel__empty-text">
         Get budget reallocation recommendations based on campaign performance.
         Identify underperforming channels and reallocate budget for higher ROI.
@@ -81,14 +94,24 @@ async function analyze(): Promise<void> {
       <p class="ai-panel__loader-text">Analyzing campaigns…</p>
     </div>
 
-    <!-- Error -->
-    <div v-else-if="status === 'error'" class="ai-panel__error" role="alert">
-      <p class="ai-panel__error-message">{{ errorMessage }}</p>
+    <!-- Error (no cached fallback) -->
+    <div v-else-if="status === 'error' && error" class="ai-panel__error" role="alert">
+      <p class="ai-panel__error-message">{{ error.message }}</p>
       <p class="ai-panel__error-hint">Click "Re-Analyze" to try again.</p>
     </div>
 
     <!-- Result -->
     <div v-else-if="response" class="ai-panel__result">
+
+      <!-- Error fallback message -->
+      <p v-if="errorFallback" class="ai-panel__fallback" role="status">
+        {{ errorFallback }}
+      </p>
+
+      <!-- Cached indicator -->
+      <p v-if="formattedCacheTime && !errorFallback" class="ai-panel__cache-indicator" role="status">
+        Cached result &bull; Generated at {{ formattedCacheTime }}
+      </p>
 
       <!-- Executive Summary -->
       <div class="ai-result-block">
@@ -400,6 +423,49 @@ async function analyze(): Promise<void> {
     display: flex;
     flex-direction: column;
     gap: theme('spacing.4');
+  }
+
+  &__notice {
+    background-color: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: theme('borderRadius.lg');
+    padding: theme('spacing.4');
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.1');
+    text-align: center;
+  }
+
+  &__notice-text {
+    font-size: theme('fontSize.sm');
+    color: #f59e0b;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  &__notice-hint {
+    font-size: theme('fontSize.xs');
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  &__fallback {
+    font-size: theme('fontSize.xs');
+    color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: theme('borderRadius.md');
+    padding: theme('spacing.2') theme('spacing.3');
+    margin: 0;
+    text-align: center;
+  }
+
+  &__cache-indicator {
+    font-size: theme('fontSize.xs');
+    color: #64748b;
+    margin: 0;
+    text-align: center;
+    font-style: italic;
   }
 }
 

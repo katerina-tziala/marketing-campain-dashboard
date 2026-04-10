@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
+import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { PROVIDER_LABELS } from '../types'
 
 const store = useAiStore()
+const analysisStore = useAiAnalysisStore()
 const providerLabel = computed(() =>
   store.provider ? PROVIDER_LABELS[store.provider] : '',
 )
+
+function handleDisconnect(): void {
+  analysisStore.clearStateForDisconnect()
+  store.disconnect()
+}
 </script>
 
 <template>
@@ -15,7 +22,7 @@ const providerLabel = computed(() =>
     <div class="ai-status__right">
       <span class="ai-status__dot" aria-hidden="true" />
       <span class="ai-status__text">Connected</span>
-      <button class="ai-status__disconnect" @click="store.disconnect()">Disconnect</button>
+      <button class="ai-status__disconnect" @click="handleDisconnect">Disconnect</button>
     </div>
   </div>
 </template>

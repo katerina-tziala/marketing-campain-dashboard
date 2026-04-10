@@ -21,6 +21,7 @@ export const useAiStore = defineStore('ai', () => {
   const connectionError = ref<AiConnectionError | null>(null)
   const models = ref<AiModel[]>([])
   const selectedModel = ref<AiModel | null>(null)
+  const aiPanelOpen = ref(false)
 
   async function connect(p: AiProvider, key: string): Promise<void> {
     isConnecting.value = true
@@ -50,5 +51,16 @@ export const useAiStore = defineStore('ai', () => {
     selectedModel.value = null
   }
 
-  return { provider, apiKey, isConnected, isConnecting, connectionError, models, selectedModel, connect, disconnect }
+  function openPanel(): void {
+    aiPanelOpen.value = true
+  }
+
+  function closePanel(): void {
+    aiPanelOpen.value = false
+  }
+
+  return {
+    provider, apiKey, isConnected, isConnecting, connectionError, models, selectedModel,
+    aiPanelOpen, connect, disconnect, openPanel, closePanel,
+  }
 })

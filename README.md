@@ -36,13 +36,27 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
 - Confidence score for each recommendation (High / Medium / Low)
 - User enters their own API key in the AI Tools panel — supports Google Gemini and Groq
 - **Connect** button with live verification before use
-- Currently uses mock responses for UI development (5 scenarios cycle on each Analyze click)
+- Real API calls to Gemini/Groq with full analysis flow (see below)
 
 ### Executive Summary Generator (AI)
 
 - Returns structured results: portfolio health score (0-100 with Excellent/Good/Needs Attention/Critical labels), bottom line summary, key metrics dashboard (8 metrics in grid), typed insights with emoji icons and metric highlights, numbered priority actions with urgency badges, channel summary with status indicators and budget share, and data correlations
 - Uses the same AI provider connection as the Budget Optimizer (Gemini or Groq)
-- Currently uses mock responses for UI development (5 scenarios cycle on each Summarize click)
+- Real API calls to Gemini/Groq with full analysis flow (see below)
+
+### AI Analysis Flow (shared by both tabs)
+
+- **Manual first trigger:** Opening the AI panel does not call AI automatically — the first call is always via the Analyze/Summarize button
+- **Automatic on label change:** After the first successful call, changing channel filters triggers automatic analysis (300ms debounce) for the active tab
+- **Response caching:** Responses are cached by provider + model + sorted channel labels; cached results are shown instantly with a "Cached result" indicator and original timestamp
+- **Data caching:** Preprocessed data (buildBudgetOptimizerData / buildExecutiveSummaryData) is cached per label combination to avoid redundant computation
+- **Request cancellation:** Changing labels or tabs cancels any in-flight request silently via AbortController; stale responses never update the UI
+- **Cooldown:** The Analyze/Summarize button is disabled for 5 seconds after a successful response on the same combination
+- **Tab switching:** Switching tabs applies the same evaluation as reopening the panel — show cached result if available, or auto-call if the tab had its first manual trigger
+- **Panel close/reopen:** Closing the panel preserves all state (cache, firstAnalyzeCompleted); reopening evaluates the current label combination
+- **CSV upload reset:** Uploading new data clears all caches, cooldowns, and analysis state; the AI connection stays active
+- **Token/quota limit:** If the provider reports usage limits (429), new uncached requests are blocked and a notice is shown; previously cached results remain available
+- **Error handling:** On failure, if a cached result exists it stays visible with a fallback message; otherwise an error state is shown
 
 
 ## Getting Started

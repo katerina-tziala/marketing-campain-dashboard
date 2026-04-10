@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { SlidersIcon, FileTextIcon } from '../../../ui/icons'
+import type { AiAnalysisTab } from '../types'
 
-export type AiTab = 'optimizer' | 'summary'
+const props = defineProps<{ activeTab: AiAnalysisTab }>()
+const emit = defineEmits<{ change: [tab: AiAnalysisTab] }>()
 
-const props = defineProps<{ activeTab: AiTab }>()
-const emit = defineEmits<{ change: [tab: AiTab] }>()
-
-const tabs: { id: AiTab; label: string }[] = [
+const tabs: { id: AiAnalysisTab; label: string }[] = [
   { id: 'optimizer', label: 'Optimizer' },
   { id: 'summary', label: 'Summary' },
 ]

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
+import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import AiConnectionForm from './AiConnectionForm.vue'
 import AiConnectedStatus from './AiConnectedStatus.vue'
-import AiTabs, { type AiTab } from './AiTabs.vue'
+import AiTabs from './AiTabs.vue'
 import AiOptimizerPanel from './AiOptimizerPanel.vue'
 import AiSummaryPanel from './AiSummaryPanel.vue'
 
 const store = useAiStore()
-const activeTab = ref<AiTab>('optimizer')
+const analysisStore = useAiAnalysisStore()
 </script>
 
 <template>
@@ -18,9 +18,9 @@ const activeTab = ref<AiTab>('optimizer')
   <!-- Connected: status bar + tabs + tab content -->
   <template v-else>
     <AiConnectedStatus />
-    <AiTabs :active-tab="activeTab" @change="activeTab = $event" />
+    <AiTabs :active-tab="analysisStore.activeTab" @change="analysisStore.setActiveTab($event)" />
     <div class="ai-tab-panel">
-      <AiOptimizerPanel v-if="activeTab === 'optimizer'" />
+      <AiOptimizerPanel v-if="analysisStore.activeTab === 'optimizer'" />
       <AiSummaryPanel v-else />
     </div>
   </template>

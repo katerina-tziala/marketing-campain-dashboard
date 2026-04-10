@@ -1,17 +1,25 @@
 <script setup lang="ts">
-import { provide, ref } from 'vue'
+import { provide, ref, watch } from 'vue'
 import { BaseButton, UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
 import { useCampaignStore } from '../stores/campaignStore'
+import { useAiStore } from '../stores/aiStore'
+import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
 import UploadModal from '../features/csv-file/components/UploadModal.vue'
 import { AiToolsDrawer } from '../features/ai-tools'
 
 const store = useCampaignStore()
+const aiStore = useAiStore()
+const analysisStore = useAiAnalysisStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
-const isAiOpen = ref(false)
 
 provide('openUploadModal', () => uploadModal.value?.open())
-provide('openAiPanel', () => { isAiOpen.value = true })
+provide('openAiPanel', () => { aiStore.openPanel(); analysisStore.onPanelOpen() })
+
+function onCloseAiPanel(): void {
+  aiStore.closePanel()
+  analysisStore.onPanelClose()
+}
 </script>
 
 <template>
@@ -31,7 +39,7 @@ provide('openAiPanel', () => { isAiOpen.value = true })
     </div>
 
     <!-- AI drawer — sibling to left column so it pushes everything left at lg+ -->
-    <AiToolsDrawer :open="isAiOpen" @close="isAiOpen = false" />
+    <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
 
     <UploadModal ref="uploadModal" />
     <ToastContainer />
