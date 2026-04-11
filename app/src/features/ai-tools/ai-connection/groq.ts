@@ -1,6 +1,7 @@
 import type { GroqModel, GroqModelsResponse, AiModel, ModelSelectionResponse } from '../types'
 import { errorCodeFromStatus, parseJsonResponse } from './shared'
-import { generateModelSelectionPrompt } from '../prompts'
+import { generateModelEvaluationPrompt } from '../prompts'
+import { rankModels } from '../utils/rankModels'
 import { PROVIDER_LABELS } from '../types'
 
 function filterModels(models: GroqModel[]): GroqModel[] {
@@ -10,7 +11,7 @@ function filterModels(models: GroqModel[]): GroqModel[] {
     "guard",
     "safeguard",
     "moderation",
-    "orpheus",
+    "orpheus", // guarded
   ]
 
   return models.filter((m) => {
@@ -81,12 +82,15 @@ export async function connectGroq(apiKey: string): Promise<AiModel[]> {
   const optimal = getOptimalModel(models)
 
   try {
-    const prompt = generateModelSelectionPrompt(models)
+    console.log('filtered models', models);
+    
+    const prompt = generateModelEvaluationPrompt(models)
+
+    console.log(prompt);
+    
     const raw = await callGroq(apiKey, prompt, optimal)
     const parsed = parseJsonResponse(raw) as ModelSelectionResponse
-    const selected = parsed.selected_models ?? []
-
-    if (selected.length > 0) return selected.map((m) => ({ ...m, limitReached: false }))
+    return rankModels(parsed, buildFallbackModel(optimal))
   } catch {
     // AI selection failed — fall back to optimal model
   }

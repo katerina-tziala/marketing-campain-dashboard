@@ -110,7 +110,7 @@ function handleAnalyze(): void {
 
       <!-- Cached indicator -->
       <p v-if="formattedCacheTime && !errorFallback" class="ai-panel__cache-indicator" role="status">
-        Cached result &bull; Generated at {{ formattedCacheTime }}
+        Cached result &bull; Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
       </p>
 
       <!-- Executive Summary -->

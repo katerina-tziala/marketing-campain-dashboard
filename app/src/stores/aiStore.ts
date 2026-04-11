@@ -53,6 +53,13 @@ export const useAiStore = defineStore('ai', () => {
     if (model) model.limitReached = true
   }
 
+  function selectNextAvailableModel(): boolean {
+    const next = models.value.find((m) => !m.limitReached)
+    if (!next) return false
+    selectedModel.value = next
+    return true
+  }
+
   function disconnect(): void {
     provider.value = null
     apiKey.value = ''
@@ -73,6 +80,6 @@ export const useAiStore = defineStore('ai', () => {
   return {
     provider, apiKey, isConnected, isConnecting, connectionError, models, selectedModel,
     selectedModelLimitReached, allModelsLimitReached,
-    aiPanelOpen, connect, disconnect, markModelLimitReached, openPanel, closePanel,
+    aiPanelOpen, connect, disconnect, markModelLimitReached, selectNextAvailableModel, openPanel, closePanel,
   }
 })

@@ -1470,3 +1470,72 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Applied to all 4 call sites (not just analysis) — model selection during connection also benefits from deterministic output for consistent model ranking
 - Gemini uses `generationConfig` wrapper — required by the Gemini API schema; temperature is nested inside it
 - Groq gets all 4 params explicitly — even though 0/1 are defaults for some, setting them explicitly documents intent and prevents any future API default changes from affecting behavior
+
+
+## [#70] Model evaluation prompt, silent model fallback, and model attribution
+**Type:** feature
+
+**Summary:** Switched to `generateModelEvaluationPrompt` for ranking up to 15 models, added silent model fallback on token-limit errors (retries with next best model transparently), and stamped each AI response with the model display_name shown alongside the cached timestamp.
+
+**Brainstorming:** The previous `generateModelSelectionPrompt` returned only 5 models and did not guarantee sort order. The new `generateModelEvaluationPrompt` evaluates all available models and returns up to 15, ranked by strength_score. Since the AI might not sort perfectly, a re-sort by `strength_score` desc is applied client-side. For token limits: previously the first failure would show an error to the user and block further requests. Now the flow is: mark model as exhausted → pick next highest-scored available model from the sorted list → retry the same call transparently. The user never sees the intermediate failure — only the final result. The global `tokenLimitReached` flag is only set when ALL models are exhausted. For attribution: added an optional `model` field to both response types, stamped with `display_name` on success, and shown in the cached indicator as "Generated at [time] with [model_name]". The default model (used for the evaluation prompt itself) gets its AI-assigned properties if it appears in the ranked response.
+
+**Prompt:** Use generateModelEvaluationPrompt instead of generateModelSelectionPrompt. Sort the returned models ranking with highest score first. In the response from AI save the model properties as well and show to the user the display_name too. If a model reaches the token limit then on the first failure select the next one in the list without showing the error to the user and try again the call. If all models reached their limit then the global flag for limit reached should be true.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added optional `model?: string` field to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse`
+- `features/ai-tools/ai-connection/gemini.ts` — switched to `generateModelEvaluationPrompt`, re-sort results by `strength_score` desc, update default model properties if it appears in ranked list
+- `features/ai-tools/ai-connection/groq.ts` — same changes as gemini.ts
+- `stores/aiStore.ts` — added `selectNextAvailableModel()` that picks next non-exhausted model from sorted list (returns false if none left)
+- `stores/aiAnalysisStore.ts` — `handleRequestError`: on token-limit, marks model, calls `selectNextAvailableModel`, retries silently; global flag only when all exhausted. `executeAnalysis`: pre-check tries next model instead of blocking. Stamps `result.model` with display_name on success. Label-change watcher: tries next model instead of blocking
+- `features/ai-tools/components/AiOptimizerPanel.vue` — cached indicator shows "Generated at [time] with [model_name]"
+- `features/ai-tools/components/AiSummaryPanel.vue` — same cached indicator update
+
+**Key decisions & why:**
+- Re-sort client-side after AI response — cannot fully trust the AI to return models in correct order despite the prompt requiring it
+- Silent retry is transparent — user sees only the final result with the model name, never intermediate failures; this avoids confusing error flashes
+- `selectNextAvailableModel` uses `Array.find` on the sorted models array — since models are sorted by strength_score desc, `find(!limitReached)` naturally picks the best available
+- `tokenLimitReached` set to `true` directly (not via computed) — only when `selectNextAvailableModel` returns false, meaning all models are exhausted
+- Default model properties updated from AI response — ensures the model used for evaluation gets accurate display_name/strength/reason from the AI instead of the generic fallback values
+
+
+## [#71] Store full AiModel in responses and extract rankModels utility
+**Type:** refactor
+
+**Summary:** Changed the `model` field on `BudgetOptimizerResponse` and `ExecutiveSummaryResponse` from `string` to `AiModel` so the full model properties are preserved per response. Extracted the shared ranking/sorting/optimal-update logic from both provider modules into a new `rankModels` utility.
+
+**Brainstorming:** Storing only `display_name` as a string lost all other model metadata (strength_score, reason, provider, etc.) per cached response. Switching to `AiModel` preserves everything. The ranking logic — sort by score, init limitReached, update optimal model's id/model from fallback — was duplicated identically in `gemini.ts` and `groq.ts`. Extracting it into `utils/rankModels.ts` removes duplication and keeps the connection modules focused on provider-specific fetch/call/filter logic.
+
+**Prompt:** Save the full AiModel in the ExecutiveSummaryResponse and BudgetOptimizerResponse. If the optimal model is in the list, assign the returned properties to it. Extract similar functionalities into the utils folder.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — changed `model?: string` to `model?: AiModel` on both response types
+- `features/ai-tools/utils/rankModels.ts` — new file: `rankModels(parsed, optimalModelId, fallback)` sorts models by strength_score desc, inits limitReached, updates optimal model entry with correct id/model from fallback
+- `features/ai-tools/ai-connection/gemini.ts` — replaced inline ranking logic with `rankModels()` call
+- `features/ai-tools/ai-connection/groq.ts` — same simplification
+- `stores/aiAnalysisStore.ts` — stamps `result.model` with full `AiModel` copy (spread) instead of just display_name string
+- `features/ai-tools/components/AiOptimizerPanel.vue` — reads `response.model.display_name` instead of `response.model`
+- `features/ai-tools/components/AiSummaryPanel.vue` — same template update
+
+**Key decisions & why:**
+- Full `AiModel` instead of string — preserves all metadata per cached response; future features can display strength, reason, etc. without re-querying
+- Spread copy (`{ ...aiStore.selectedModel }`) — prevents the response's model snapshot from mutating if the store's model changes later (e.g. limitReached toggled)
+- `rankModels` in utils, not in ai-connection — it's pure data transformation with no provider-specific logic, so it belongs in the shared utils folder
+
+
+## [#72] Guarantee rankModels always returns at least one model
+**Type:** update
+
+**Summary:** Updated `rankModels` to always include the fallback (optimal) model — if the AI response is empty or doesn't contain the optimal model, the fallback is added and the list re-sorted. Simplified both provider modules since `rankModels` now guarantees a non-empty result.
+
+**Brainstorming:** Previously `rankModels` returned an empty array when the AI response was empty, forcing the callers to check length and fall back manually. Since the fallback model is always available and always passed in, `rankModels` can guarantee at least one model by appending it when missing. This lets the callers simplify from a 4-line check-and-fallback to a single `return rankModels(...)`, with the catch block still providing the fallback for network/parse failures.
+
+**Prompt:** Update rankModels: pass the optimal we selected. If not in the list add it and return the sorted list. If in the list then return the sorted list. That way rankModels will return at least one model in case the response is empty.
+
+**What changed:**
+- `features/ai-tools/utils/rankModels.ts` — removed early `return []` for empty response; if optimal model not found in sorted list, pushes fallback and re-sorts
+- `features/ai-tools/ai-connection/gemini.ts` — simplified try block to single `return rankModels(...)` call (removed `selected.length` and `ranked.length` guards)
+- `features/ai-tools/ai-connection/groq.ts` — same simplification
+
+**Key decisions & why:**
+- Fallback added via push + re-sort rather than unshift — keeps the list properly sorted even when the fallback score (7) is higher than some AI-ranked models
+- Callers still keep the catch block with `[buildFallbackModel(optimal)]` — the catch covers network/parse failures where `rankModels` is never reached

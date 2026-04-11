@@ -256,7 +256,15 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       if (aiStore.selectedModel) {
         aiStore.markModelLimitReached(aiStore.selectedModel.model)
       }
-      tokenLimitReached.value = aiStore.allModelsLimitReached
+
+      // Silent fallback: try next available model without showing error
+      if (aiStore.selectNextAvailableModel()) {
+        executeAnalysis(tab, false)
+        return
+      }
+
+      // All models exhausted
+      tokenLimitReached.value = true
     }
 
     // Case 1: cached response exists — keep showing it
@@ -292,8 +300,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     const t = getTab(tab)
 
-    // Token limit: only allow cached responses
-    if (tokenLimitReached.value || aiStore.selectedModelLimitReached) {
+    // Token limit: try next model silently, or show cached if all exhausted
+    if (aiStore.selectedModelLimitReached) {
+      if (!aiStore.selectNextAvailableModel()) {
+        tokenLimitReached.value = true
+      }
+    }
+    if (tokenLimitReached.value) {
       const cached = t.cache.get(cacheKey)
       if (cached) {
         t.status = 'done'
@@ -368,6 +381,11 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
       // Check if this request was cancelled (stale)
       if (controller.signal.aborted) return
+
+      // Stamp the model that generated this response
+      if (aiStore.selectedModel) {
+        result.model = { ...aiStore.selectedModel }
+      }
 
       // Success
       t.status = 'done'
@@ -589,8 +607,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
           return
         }
 
-        // Token limit: don't auto-call
-        if (tokenLimitReached.value || aiStore.selectedModelLimitReached) return
+        // Token limit: try next model or stop
+        if (aiStore.selectedModelLimitReached) {
+          if (!aiStore.selectNextAvailableModel()) {
+            tokenLimitReached.value = true
+          }
+        }
+        if (tokenLimitReached.value) return
 
         // Auto-call
         executeAnalysis(tab, true)

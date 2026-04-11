@@ -194,6 +194,7 @@ export type BudgetOptimizerData = {
 };
 
 export type BudgetOptimizerResponse = {
+  model?: AiModel;
   period?: string;
   executive_summary: string;
   recommendations: {
@@ -264,6 +265,7 @@ export type AiAnalysisError = {
 };
 
 export type ExecutiveSummaryResponse = {
+  model?: AiModel;
   period?: string;
   health_score: {
     score: number;

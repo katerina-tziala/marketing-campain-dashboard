@@ -55,7 +55,8 @@ A web-based interactive dashboard for analyzing marketing campaign performance. 
 - **Tab switching:** Switching tabs applies the same evaluation as reopening the panel — show cached result if available, or auto-call if the tab had its first manual trigger
 - **Panel close/reopen:** Closing the panel preserves all state (cache, firstAnalyzeCompleted); reopening evaluates the current label combination
 - **CSV upload reset:** Uploading new data clears all caches, cooldowns, and analysis state; the AI connection stays active
-- **Token/quota limit:** If the provider reports usage limits (429), new uncached requests are blocked and a notice is shown; previously cached results remain available
+- **Silent model fallback:** If a model hits its token/quota limit (429), it is silently marked as exhausted and the next highest-ranked available model is selected — the request is retried transparently. The user only sees the final result with the model name that generated it. The global "limit reached" notice only appears when all models are exhausted
+- **Model attribution:** Each response shows "Generated at [time] with [model_name]" so users can see which model produced each result
 - **Error handling:** On failure, if a cached result exists it stays visible with a fallback message; otherwise an error state is shown
 
 
