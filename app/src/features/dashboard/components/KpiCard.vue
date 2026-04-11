@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 const props = defineProps<{
   label: string
-  value: number
+  value: number | null
   format: 'currency' | 'percentage' | 'number'
   accentColor: string
   secondaryLabel?: string
@@ -18,6 +18,7 @@ const secondaryColor = computed(() =>
 )
 
 const formatted = computed(() => {
+  if (props.value === null) return 'N/A'
   if (props.format === 'currency') {
     if (Math.abs(props.value) >= 1000) {
       return new Intl.NumberFormat('en', {

@@ -1,4 +1,4 @@
-import type { GroqModel, GroqModelsResponse, AiModel, ModelSelectionResponse } from '../types'
+import type { GroqModel, GroqModelsResponse, AiModel, RankedModelsResponse } from '../types'
 import { errorCodeFromStatus, parseJsonResponse } from './shared'
 import { generateModelEvaluationPrompt } from '../prompts'
 import { rankModels } from '../utils/rankModels'
@@ -89,7 +89,7 @@ export async function connectGroq(apiKey: string): Promise<AiModel[]> {
     console.log(prompt);
     
     const raw = await callGroq(apiKey, prompt, optimal)
-    const parsed = parseJsonResponse(raw) as ModelSelectionResponse
+    const parsed = parseJsonResponse(raw) as RankedModelsResponse
     return rankModels(parsed, buildFallbackModel(optimal))
   } catch {
     // AI selection failed — fall back to optimal model

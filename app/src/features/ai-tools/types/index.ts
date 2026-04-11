@@ -58,7 +58,7 @@ export type GroqModelsResponse = {
   data: GroqModel[];
 };
 
-// ── AI Model (from model selection prompt) ────────────────────────────────
+// ── AI Model (from model evaluation prompt) ──────────────────────────────
 
 export type AiModel = {
   id: string;
@@ -71,8 +71,8 @@ export type AiModel = {
   limitReached: boolean;
 };
 
-export type ModelSelectionResponse = {
-  selected_models: AiModel[];
+export type RankedModelsResponse = {
+  models: AiModel[];
 };
 
 // ── Prompt types ──────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export type CampainSummaryTotals = {
   revenue: number;
   roi: number;
   conversions: number;
-  cac: number;
+  cac: number | null;
   ctr: number;
   cvr: number;
 };

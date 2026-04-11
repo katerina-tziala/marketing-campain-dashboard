@@ -24,7 +24,7 @@ function deriveCampaignMetrics(
     roi: round2(safeDivide(c.revenue - c.budget, c.budget) * 100),
     ctr: round2(safeDivide(c.clicks, c.impressions) * 100),
     cvr: round2(safeDivide(c.conversions, c.clicks) * 100),
-    cac: round2(safeDivide(c.budget, c.conversions)),
+    cac: c.conversions > 0 ? round2(c.budget / c.conversions) : null,
     budgetShare: round2(safeDivide(c.budget, totalBudget) * 100),
     revenueShare: round2(safeDivide(c.revenue, totalRevenue) * 100),
   }
@@ -79,7 +79,7 @@ function aggregateChannels(
       roi: round2(safeDivide(acc.revenue - acc.budget, acc.budget) * 100),
       ctr: round2(safeDivide(acc.clicks, acc.impressions) * 100),
       cvr: round2(safeDivide(acc.conversions, acc.clicks) * 100),
-      cac: round2(safeDivide(acc.budget, acc.conversions)),
+      cac: acc.conversions > 0 ? round2(acc.budget / acc.conversions) : null,
       budgetShare: round2(safeDivide(acc.budget, totalBudget) * 100),
       revenueShare: round2(safeDivide(acc.revenue, totalRevenue) * 100),
     })
@@ -87,8 +87,6 @@ function aggregateChannels(
 
   return channels
 }
-
-// ── Main builder ────────────────────────────────────────────────────────────
 
 export function buildBudgetOptimizerData(
   rows: Campaign[],
@@ -104,7 +102,7 @@ export function buildBudgetOptimizerData(
     revenue: round2(totalRevenue),
     roi: round2(safeDivide(totalRevenue - totalBudget, totalBudget) * 100),
     conversions: totalConversions,
-    cac: round2(safeDivide(totalBudget, totalConversions)),
+    cac: totalConversions > 0 ? round2(totalBudget / totalConversions) : null,
     ctr: round2(safeDivide(totalClicks, totalImpressions) * 100),
     cvr: round2(safeDivide(totalConversions, totalClicks) * 100),
   }

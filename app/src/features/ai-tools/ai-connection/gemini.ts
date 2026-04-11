@@ -1,4 +1,4 @@
-import type { GeminiModel, GeminiModelsResponse, AiModel, ModelSelectionResponse } from '../types'
+import type { GeminiModel, GeminiModelsResponse, AiModel, RankedModelsResponse } from '../types'
 import { errorCodeFromStatus, parseJsonResponse } from './shared'
 import { generateModelEvaluationPrompt } from '../prompts'
 import { rankModels } from '../utils/rankModels'
@@ -93,7 +93,7 @@ export async function connectGemini(apiKey: string): Promise<AiModel[]> {
     const prompt = generateModelEvaluationPrompt(models)
       console.log(prompt);
     const raw = await callGemini(apiKey, prompt, optimal)
-    const parsed = parseJsonResponse(raw) as ModelSelectionResponse
+    const parsed = parseJsonResponse(raw) as RankedModelsResponse
     return rankModels(parsed,  buildFallbackModel(optimal))
   } catch {
     // AI selection failed — fall back to optimal model

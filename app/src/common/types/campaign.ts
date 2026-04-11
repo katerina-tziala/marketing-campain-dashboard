@@ -14,5 +14,5 @@ export interface CampaignKPIs {
   roi: number
   ctr: number
   cvr: number
-  cac: number
+  cac: number | null
 }

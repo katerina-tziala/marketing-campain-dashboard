@@ -370,6 +370,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     try {
       const prompt = buildPrompt(tab)
+console.log(prompt);
 
       const result = await callProviderForAnalysis<TabResponse>(
         aiStore.provider,

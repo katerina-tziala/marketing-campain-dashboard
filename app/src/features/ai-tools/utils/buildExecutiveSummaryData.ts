@@ -22,7 +22,7 @@ function deriveCampaignMetrics(c: Campaign): ExecutiveSummaryCampaign {
     revenue: round2(c.revenue),
     roi: round2(safeDivide(c.revenue - c.budget, c.budget) * 100),
     conversions: c.conversions,
-    cac: round2(safeDivide(c.budget, c.conversions)),
+    cac: c.conversions > 0 ? round2(c.budget / c.conversions) : null,
     ctr: round2(safeDivide(c.clicks, c.impressions) * 100),
     cvr: round2(safeDivide(c.conversions, c.clicks) * 100),
   }
@@ -73,7 +73,7 @@ function aggregateChannels(
       revenue: round2(acc.revenue),
       roi: round2(safeDivide(acc.revenue - acc.budget, acc.budget) * 100),
       conversions: acc.conversions,
-      cac: round2(safeDivide(acc.budget, acc.conversions)),
+      cac: acc.conversions > 0 ? round2(acc.budget / acc.conversions) : null,
       ctr: round2(safeDivide(acc.clicks, acc.impressions) * 100),
       cvr: round2(safeDivide(acc.conversions, acc.clicks) * 100),
       budgetShare: round2(safeDivide(acc.budget, totalBudget) * 100),
@@ -218,7 +218,7 @@ export function buildExecutiveSummaryData(
     revenue: round2(totalRevenue),
     roi: round2(safeDivide(totalRevenue - totalBudget, totalBudget) * 100),
     conversions: totalConversions,
-    cac: round2(safeDivide(totalBudget, totalConversions)),
+    cac: totalConversions > 0 ? round2(totalBudget / totalConversions) : null,
     ctr: round2(safeDivide(totalClicks, totalImpressions) * 100),
     cvr: round2(safeDivide(totalConversions, totalClicks) * 100),
   }

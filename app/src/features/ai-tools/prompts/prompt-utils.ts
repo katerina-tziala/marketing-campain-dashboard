@@ -17,7 +17,7 @@ export function getPromptList(title: string, list: string[]): string[] {
   const lines: string[] = [`${title}:`];
 
   for (const listItem of list) {
-    lines.push(`- ${listItem}`);
+    lines.push(` - ${listItem}`);
   }
 
   return lines;
@@ -28,7 +28,7 @@ export function getPromptNumberedList(title: string, list: string[]): string[] {
 
  
   list.forEach((listItem, index) => {
-    lines.push(`${index +1} ${listItem}`);
+    lines.push(` ${index +1} ${listItem}`);
   });
 
   return lines;

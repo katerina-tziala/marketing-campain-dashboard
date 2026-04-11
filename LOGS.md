@@ -1539,3 +1539,71 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Fallback added via push + re-sort rather than unshift — keeps the list properly sorted even when the fallback score (7) is higher than some AI-ranked models
 - Callers still keep the catch block with `[buildFallbackModel(optimal)]` — the catch covers network/parse failures where `rankModels` is never reached
+
+
+## [#73] Filter out weak models in rankModels
+**Type:** update
+
+**Summary:** Added a filter step in `rankModels` to remove all models with a `strength_score` below 6, ensuring only suitable models are available for AI analysis.
+
+**Brainstorming:** The model evaluation prompt scoring guidelines already define models below 6 as "generally unsuitable for this application." Filtering them out at the `rankModels` level ensures unsuitable models never reach the selection pool, regardless of what the AI returns. A simple `.filter()` before `.sort()` is the cleanest approach — no new abstractions needed.
+
+**Prompt:** Update rankModels to remove all models that have less than 6 strength_score.
+
+**What changed:**
+- `features/ai-tools/utils/rankModels.ts` — added `.filter((m) => m.strength_score >= 6)` before the sort step; updated JSDoc to reflect the new pipeline order
+- `CLAUDE.md` — updated architecture description for `rankModels.ts`
+
+**Key decisions & why:**
+- Filter placed before sort — no point sorting models that will be discarded
+- Threshold of 6 aligns with the scoring guidelines in `model-evaluation-prompt.ts` where below 6 means "generally unsuitable"
+- Fallback model is still added before filtering — if the fallback has a score >= 6 (default is 7) it survives; if not, the list may still contain other qualifying models
+
+
+## [#74] Rename ModelSelectionResponse → RankedModelsResponse, remove legacy model-selection prompt
+**Type:** refactor
+
+**Summary:** Renamed `ModelSelectionResponse` to `RankedModelsResponse` and `selected_models` to `models` across the codebase, and deleted the unused `model-selection-prompt.ts`.
+
+**Brainstorming:** The codebase had two model prompt files: `model-selection-prompt.ts` (legacy, selects top 5) and `model-evaluation-prompt.ts` (active, evaluates and ranks up to 20). Only `generateModelEvaluationPrompt` is imported — `generateModelSelectionPrompt` is dead code with no consumers. The legacy prompt was the original implementation that selected a fixed top-5 list. It was superseded by the evaluation prompt which introduced scoring (strength_score 1–10), richer evaluation criteria (reasoning ability, summarization, structured output, stability, rate limits), and support for up to 20 models. Both providers (Gemini and Groq) import exclusively from `model-evaluation-prompt.ts` via the prompts barrel export, which never re-exported the legacy prompt. The type name `ModelSelectionResponse` and field `selected_models` were holdovers from the legacy prompt's naming. Renaming to `RankedModelsResponse` with a `models` field better reflects the current evaluation-and-ranking semantics. The prompt schema output also needed updating from `selected_models` to `models` to match the new type so the AI response parses correctly into `RankedModelsResponse`.
+
+**Prompt:** Update ModelSelectionResponse to RankedModelsResponse and selected_models to models. Clean up model-selection prompt and justify in the logs why we will only use the model evaluation prompt based on current implementation.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — renamed `ModelSelectionResponse` → `RankedModelsResponse`, `selected_models` → `models`, updated comment
+- `features/ai-tools/utils/rankModels.ts` — updated import and usage to `RankedModelsResponse` and `parsed.models`
+- `features/ai-tools/ai-connection/gemini.ts` — updated import and cast to `RankedModelsResponse`
+- `features/ai-tools/ai-connection/groq.ts` — updated import and cast to `RankedModelsResponse`
+- `features/ai-tools/prompts/model-evaluation-prompt.ts` — updated output schema from `selected_models` to `models`
+- `features/ai-tools/prompts/model-selection-prompt.ts` — deleted (dead code)
+- `CLAUDE.md` — removed model-selection-prompt from architecture, updated type name
+
+**Key decisions & why:**
+- Deleted `model-selection-prompt.ts` rather than keeping it — it was never imported anywhere, the prompts barrel export excluded it, and keeping dead code adds confusion about which prompt is active
+- Renamed to `RankedModelsResponse` (not `ModelEvaluationResponse`) — the type describes the response shape (a ranked list of models), not the prompt that produced it; this keeps the type reusable if the prompt evolves
+- Updated the prompt schema output field to `models` — the AI response must match the TypeScript type for `parseJsonResponse(...) as RankedModelsResponse` to work correctly
+
+
+## [#75] Fix CAC returning 0 for zero-conversion campaigns — use null instead
+**Type:** fix
+
+**Summary:** Changed CAC calculation to return `null` instead of `0` when conversions are zero, preventing zero-conversion campaigns from appearing artificially efficient in AI analysis and dashboard display.
+
+**Brainstorming:** `safeDivide(budget, 0)` returns `0`, which makes a zero-conversion campaign look like it has the best possible acquisition cost (€0). This is semantically wrong — CAC is undefined when there are no conversions, not zero. The AI prompts receive this data as JSON and would misinterpret `cac: 0` as exceptional efficiency, potentially recommending budget increases for campaigns that produce no conversions at all. Three options: (1) `null` — signals "not computable", serializes to `null` in JSON which the AI can interpret correctly; (2) large sentinel like `Infinity` — doesn't serialize to valid JSON; (3) "N/A" string — breaks the numeric type. `null` is the cleanest: it's type-safe, serializes correctly, and the AI can distinguish "no data" from "zero cost." For the dashboard, `KpiCard` now shows "N/A" for null values. The `CampaignTable` already displayed '—' for zero-conversion CAC but its sort function returned 0 (sorting them to the top as "best"); changed to `Infinity` so they sort to the bottom instead. `safeDivide` itself was not changed — it's correct for ROI, CTR, CVR where 0 is a valid result (0% ROI means break-even, 0% CTR means no clicks).
+
+**Prompt:** Fix issues that fall in this case: CAC with zero conversions. budget / 0 should not become 0 in business terms. That makes a zero-conversion campaign look artificially efficient.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `CampainSummaryTotals.cac` changed from `number` to `number | null`
+- `common/types/campaign.ts` — `CampaignKPIs.cac` changed from `number` to `number | null`
+- `features/ai-tools/utils/buildBudgetOptimizerData.ts` — 3 CAC sites: per-campaign, per-channel, totals — all return `null` when conversions = 0
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — 3 CAC sites: per-campaign, per-channel, totals — all return `null` when conversions = 0
+- `stores/campaignStore.ts` — portfolio KPI CAC returns `null` when total conversions = 0
+- `features/dashboard/components/KpiCard.vue` — `value` prop accepts `number | null`, displays "N/A" for null
+- `features/dashboard/components/CampaignTable.vue` — CAC sort value uses `Infinity` instead of `0` for zero conversions, pushing them to the bottom
+
+**Key decisions & why:**
+- Used `null` over `0`, `Infinity`, or `"N/A"` — null is type-safe, serializes to valid JSON, and lets the AI distinguish "not computable" from "zero cost"
+- Did not change `safeDivide` — it's correct for ROI (0% = break-even), CTR (0% = no clicks), CVR (0% = no conversions from clicks); only CAC has the semantic mismatch where 0 is misleading
+- Used `Infinity` for sort (not `null`) in CampaignTable — `Infinity` sorts correctly with numeric comparison, pushing zero-conversion rows to the bottom of ascending sort (highest CAC = worst)
+- Inlined the check (`conversions > 0 ? round2(budget / conversions) : null`) rather than creating a utility — the pattern is simple and explicit at each call site

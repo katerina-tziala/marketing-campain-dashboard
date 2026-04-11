@@ -2,13 +2,13 @@ import type { BusinessContext } from "../types";
 import { getPromptList } from "./prompt-utils";
 
 const CONTEXT_DICTIONARY: Record<keyof BusinessContext, string | undefined> = {
-  period: 'PERIOD',
-  industry: 'INDUSTRY',
-  goal: 'BUSINESS_GOAL',
-  businessStage: 'BUSINESS_STAGE',
-  attributionModel: 'ATTRIBUTION_MODEL',
-  riskTolerance: 'RISK_TOLERANCE',
-  scalingTolerance: 'SCALING_TOLERANCE',
+  period: 'Period',
+  industry: 'Industry',
+  goal: 'Business Goal',
+  businessStage: 'Business stage',
+  attributionModel: 'Attribution Model',
+  riskTolerance: 'Risk Tolerance',
+  scalingTolerance: 'Scaling Tolerance',
   constraints: undefined,
 };
 
@@ -21,12 +21,12 @@ export function getBusinessContextLinesForPrompt(
   Object.entries(restContext).forEach(([key, value]) => {
     const text = CONTEXT_DICTIONARY[key as keyof BusinessContext];
     if (text && value !== undefined) {
-      lines.push(`${text}: ${value}`);
+      lines.push(` - ${text}: ${value}`);
     }
   });
 
   if (constraints?.length) {
-    lines.push('', ...getPromptList('CONSTRAINTS', constraints));
+    lines.push('', ...getPromptList('Constraints', constraints));
   }
 
   return lines;
@@ -36,10 +36,12 @@ export function getBusinessContextForPrompt(lines: string[]): string {
   if (lines.length === 1) {
     lines.push(
       "No additional business context provided.",
+      '',
       "Derive recommendations from the dataset only.",
-      "Keep assumptions conservative and avoid inferring strategy, constraints, or scaling tolerance beyond what the data clearly supports.",
+      "Avoid assumptions about strategy, budget constraints, market conditions, or scaling tolerance beyond what the data clearly supports.",
     );
   }
+ 
 
   return lines.join("\n");
 }
