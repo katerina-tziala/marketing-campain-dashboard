@@ -147,11 +147,17 @@ export type ConfidenceLevel = "High" | "Medium" | "Low";
 
 // ── Executive Summary types ────────────────────────────────────────────────
 
-export type ExecutiveSummaryChannel = CampainSummaryTotals & AllocationShare & {
+export type PerformanceDeltas = {
+  roiDelta: number;
+  cacDelta: number | null;
+  cvrDelta: number;
+};
+
+export type ExecutiveSummaryChannel = CampainSummaryTotals & AllocationShare & PerformanceDeltas & {
   channel: string;
 };
 
-export type ExecutiveSummaryCampaign = CampainSummaryTotals & {
+export type ExecutiveSummaryCampaign = CampainSummaryTotals & PerformanceDeltas & {
   campaign: string;
   channel: string;
 };

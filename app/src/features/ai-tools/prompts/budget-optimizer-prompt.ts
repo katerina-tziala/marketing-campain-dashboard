@@ -117,8 +117,8 @@ function generateBudgetOptimizerContext(
   const { allowBudgetExpansion, ...businessContext } = context ?? {};
 
   const lines = getBusinessContextLinesForPrompt(businessContext ?? {});
-  if (typeof allowBudgetExpansion === "boolean") {
-    lines.push(` - Allow budget expansion: ${allowBudgetExpansion ? "yes" : "no"}`);
+  if (allowBudgetExpansion === true) {
+    lines.push(` - Budget expansion is allowed.\nTotal portfolio budget may increase if supported by performance signals.`);
   }
 
   return getBusinessContextForPrompt(lines);

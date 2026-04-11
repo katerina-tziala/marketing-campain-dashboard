@@ -1607,3 +1607,36 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Did not change `safeDivide` — it's correct for ROI (0% = break-even), CTR (0% = no clicks), CVR (0% = no conversions from clicks); only CAC has the semantic mismatch where 0 is misleading
 - Used `Infinity` for sort (not `null`) in CampaignTable — `Infinity` sorts correctly with numeric comparison, pushing zero-conversion rows to the bottom of ascending sort (highest CAC = worst)
 - Inlined the check (`conversions > 0 ? round2(budget / conversions) : null`) rather than creating a utility — the pattern is simple and explicit at each call site
+
+
+## [#76] Rewrite buildExecutiveSummaryData with portfolio benchmarks, delta signals, and structured classification logic
+**Type:** refactor
+
+**Summary:** Rewrote the executive summary data builder with portfolio benchmark metrics, per-campaign/channel delta signals, structured campaign classification rules (top/underperforming with no-overlap guarantee), materiality-based channel ranking, priority-ordered key findings, minimum sample thresholds, and explicit empty dataset handling.
+
+**Brainstorming:** The previous implementation used simple ROI-based sorting for top/underperforming campaigns and budget-share sorting for channels. This produced weak classifications — a campaign could be both top and underperforming, there was no relative efficiency signal (delta vs portfolio), and key findings had ad-hoc priority ordering. The new rules introduce: (1) Portfolio benchmarks as baseline reference (ROI, CAC, CVR from totals); (2) Delta signals (roiDelta, cacDelta, cvrDelta) on every campaign and channel so the AI can see relative performance at a glance; (3) Structured top-campaign selection requiring BOTH ROI >= portfolio AND CAC <= portfolio; (4) Multi-signal underperforming detection (2+ of 4 conditions); (5) Explicit no-overlap guarantee (top takes precedence); (6) Minimum sample threshold (conversions >= 10 OR budget >= 2%) to prevent low-volume campaigns from skewing classifications; (7) Materiality score (60% budget + 40% revenue) for channel ranking instead of pure budget share; (8) Priority-ordered key findings (budget inefficiency > disproportionate revenue > campaign outperformance > concentration risk). CAC uses Infinity for zero conversions in this builder — enables natural comparison logic (Infinity > any threshold → never classified as efficient) and serializes to null in JSON for the AI prompt.
+
+**Prompt:** Fix the buildExecutiveSummaryData with detailed rules covering portfolio benchmarks, delta signals, campaign classification (top/underperforming), channel efficiency, key finding generation priority, division safety, empty dataset handling, materiality-based channel ranking, and minimum sample threshold.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added `PerformanceDeltas` type (roiDelta, cacDelta, cvrDelta); extended `ExecutiveSummaryChannel` and `ExecutiveSummaryCampaign` with it
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — complete rewrite:
+  - `computeCAC` — returns Infinity for zero conversions
+  - `computeCacDelta` — returns null when result is non-finite (Infinity - Infinity = NaN)
+  - `meetsMinSample` — conversions >= 10 OR budget >= 2% of portfolio
+  - `deriveCampaignMetrics` — now computes roiDelta, cacDelta, cvrDelta against portfolio benchmarks
+  - `aggregateChannels` — now receives benchmarks, computes channel deltas
+  - `splitChannels` — materiality score ranking (budgetShare × 0.6 + revenueShare × 0.4)
+  - `selectTopCampaigns` — ROI >= portfolio AND CAC <= portfolio, min sample, ranked by ROI desc → Revenue desc → Conversions desc
+  - `countUnderperformingSignals` — 4 conditions: ROI weakness, CAC inefficiency (gated on conversions >= 10), revenue-budget share gap, CVR weakness
+  - `selectUnderperformingCampaigns` — requires 2+ signals, excludes top campaigns, min sample
+  - `generateKeyFindings` — priority-ordered: budget inefficiency, disproportionate revenue, major outperformance, concentration risk
+  - `buildExecutiveSummaryData` — explicit empty dataset early return, benchmark-driven pipeline
+
+**Key decisions & why:**
+- CAC = Infinity (not null) for zero conversions in this builder — enables natural comparison semantics (Infinity is always > any threshold, so zero-conversion items never qualify as efficient); serializes to null in JSON for the AI, matching the existing prompt handling
+- `PerformanceDeltas` as a shared type — both campaign and channel types need the same delta fields; a shared type avoids duplication and makes the contract explicit
+- Top campaign precedence over underperforming — prevents contradictory classifications that would confuse the AI; when filtered datasets are small, underperforming list shrinks rather than overlapping
+- Underperforming CAC condition gated on conversions >= 10 — avoids penalizing campaigns whose zero/low conversion count makes CAC unreliable as an efficiency signal
+- Materiality score (60/40 budget-revenue blend) for channel ranking — pure budget share would miss high-revenue-efficiency channels; the blend surfaces channels that matter most to the business
+- Budget inefficiency as highest-priority finding — an active budget drain is more actionable than an outperformance signal
