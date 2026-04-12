@@ -66,6 +66,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
+│   │   ├── Spinner.vue         # Reusable spinner — size (sm/md) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
@@ -132,7 +133,7 @@ app/                        # Vue 3 + Vite project
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
 │   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/components.scss
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme, danger color token
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme, danger color token, spinner color tokens (primary/secondary arc + track)
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/
 └── package.json                # Locked via package-lock.json

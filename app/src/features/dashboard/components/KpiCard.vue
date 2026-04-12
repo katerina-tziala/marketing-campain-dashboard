@@ -69,7 +69,9 @@ const formatted = computed(() => {
 
 <style lang="scss" scoped>
 .kpi-card {
-  @apply card rounded-md p-4;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  @apply rounded-md shadow-sm p-4;
 
   &__label {
     @apply text-xs font-semibold uppercase tracking-widest;

@@ -25,6 +25,12 @@ export default {
           900: '#312e81',
           950: '#1e1b4b',
         },
+        spinner: {
+          primary:           '#6366f1',
+          'primary-track':   'rgba(99, 102, 241, 0.2)',
+          secondary:         '#ffffff',
+          'secondary-track': 'rgba(255, 255, 255, 0.3)',
+        },
       },
       fontFamily: {
         sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],

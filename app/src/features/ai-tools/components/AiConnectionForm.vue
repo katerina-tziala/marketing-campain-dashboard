@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
-import { BaseButton } from '../../../ui'
+import { BaseButton, Spinner } from '../../../ui'
 import type { AiProvider, AiConnectionErrorCode } from '../types'
 import { PROVIDER_LABELS } from '../types'
 
@@ -141,7 +141,7 @@ async function handleConnect(): Promise<void> {
         class="ai-conn__submit"
         :disabled="!apiKey.trim() || store.isConnecting"
       >
-        <span v-if="store.isConnecting" class="ai-conn__spinner" aria-hidden="true" />
+        <Spinner v-if="store.isConnecting" size="sm" variant="secondary" />
         {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
       </BaseButton>
     </form>
@@ -318,16 +318,6 @@ async function handleConnect(): Promise<void> {
     justify-content: center;
   }
 
-  &__spinner {
-    display: inline-block;
-    width: 0.875rem;
-    height: 0.875rem;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #ffffff;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
-  }
 }
 
 .help-enter-active,
@@ -341,7 +331,4 @@ async function handleConnect(): Promise<void> {
   opacity: 0;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 </style>

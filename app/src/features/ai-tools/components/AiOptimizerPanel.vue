@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { SparklesIcon } from '../../../ui/icons'
+import { Spinner } from '../../../ui'
 
 const campaignStore = useCampaignStore()
 const analysisStore = useAiAnalysisStore()
@@ -83,7 +84,7 @@ function formatRoi(value: number): string {
       <p class="ai-panel__notice-text">AI generation is temporarily unavailable due to usage limits.</p>
       <p class="ai-panel__notice-hint">Previously generated results are still available.</p>
     </div>
-
+ 
     <!-- Idle -->
     <div v-if="status === 'idle' && !analysisStore.tokenLimitReached" class="ai-panel__empty">
       <p class="ai-panel__empty-text">
@@ -94,7 +95,7 @@ function formatRoi(value: number): string {
 
     <!-- Loading -->
     <div v-else-if="status === 'loading'" class="ai-panel__loader">
-      <span class="ai-panel__spinner" aria-hidden="true" />
+      <Spinner />
       <p class="ai-panel__loader-text">Analyzing campaigns…</p>
     </div>
 
@@ -381,16 +382,6 @@ function formatRoi(value: number): string {
     background-color: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: theme('borderRadius.lg');
-  }
-
-  &__spinner {
-    display: block;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 2px solid rgba(99, 102, 241, 0.2);
-    border-top-color: #6366f1;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
   }
 
   &__loader-text {
@@ -852,7 +843,4 @@ function formatRoi(value: number): string {
   }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 </style>

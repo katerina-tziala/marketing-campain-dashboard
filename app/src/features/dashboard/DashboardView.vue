@@ -236,14 +236,13 @@ const funnelValues = computed(() => [
 }
 
 .chart-card {
-  @apply card p-5;
-  display: flex;
-  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  @apply rounded-md shadow-sm p-5 flex flex-col;
 
   &__title {
-    @apply section-title mb-4;
     color: var(--color-title);
-    flex-shrink: 0;
+    @apply text-base mb-4 shrink-0;
   }
 }
 
@@ -251,8 +250,8 @@ const funnelValues = computed(() => [
   @apply overflow-hidden;
 
   &__title {
-    @apply section-title px-5 pt-5 pb-3;
     color: var(--color-title);
+    @apply text-base px-5 pt-5 pb-3;
   }
 
   &__body {

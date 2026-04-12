@@ -1991,3 +1991,84 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Two providers represented — alternating Gemini and Groq across mocks reflects real usage and exercises both provider code paths during UI development
 - Model constants defined at file level — avoids repetition and keeps mock model data maintainable in one place per file
+
+
+## [#95] Extract spinner into BaseSpinner UI component
+**Type:** refactor
+
+**Summary:** Consolidated three duplicated inline spinner implementations into a single reusable `BaseSpinner.vue` component, removing repeated SCSS and `@keyframes spin` declarations.
+
+**Brainstorming:** Three files each defined their own spinner span + scoped SCSS block + `@keyframes spin`: `AiConnectionForm.vue` (small white button spinner, 0.875rem), `AiOptimizerPanel.vue` and `AiSummaryPanel.vue` (larger indigo panel spinner, 1.5rem). The two visual variants map cleanly to two props: `size` (sm/md) and `variant` (white/indigo). Placing the component in `src/ui/` keeps it alongside `BaseButton` and `BaseModal` as a generic, app-agnostic primitive. `aria-hidden="true"` is baked in since all use sites are decorative. The animation keyframes now live in one place.
+
+**Prompt:** Find all spinner instances across the codebase, create a reusable BaseSpinner UI component with size and variant props, replace all instances, and remove the duplicated local SCSS.
+
+**What was built:**
+- `src/ui/BaseSpinner.vue` — new component; `size` prop (sm: 0.875rem / md: 1.5rem, default md); `variant` prop (white / indigo, default indigo); `aria-hidden` baked in; single `@keyframes spin` scoped inside
+- `src/ui/index.ts` — added `BaseSpinner` to barrel export
+- `src/features/ai-tools/components/AiConnectionForm.vue` — replaced `<span class="ai-conn__spinner">` with `<BaseSpinner size="sm" variant="white" />`; removed `&__spinner` SCSS block and `@keyframes spin`
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced `<span class="ai-panel__spinner">` with `<BaseSpinner />`; removed `&__spinner` SCSS block and `@keyframes spin`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — replaced `<span class="ai-panel__spinner">` with `<BaseSpinner />`; removed `&__spinner` SCSS block and `@keyframes spin`
+
+**Key decisions & why:**
+- Two props instead of one — `size` and `variant` are orthogonal; keeping them separate avoids a combinatorial named-variant explosion and allows mixing (e.g. a future sm/indigo spinner in a button)
+- `aria-hidden` baked into the component — every current use site is purely decorative; callers that need an accessible label can override with an explicit attribute
+- Scoped `@keyframes spin` in the component — Vue scoped styles do not scope keyframe names, but the animation is defined once in one file rather than scattered across three
+
+
+## [#96] Rename BaseSpinner to Spinner with semantic variants and Tailwind @apply
+**Type:** refactor
+
+**Summary:** Renamed `BaseSpinner.vue` to `Spinner.vue`, replaced `white`/`indigo` variants with `primary`/`secondary`, moved all raw CSS values to Tailwind `@apply` rules, and added spinner color tokens and a custom animation to `tailwind.config.js`.
+
+**Brainstorming:** The previous component had raw hex and rgba values hardcoded in SCSS with no connection to the design system. The goal was to: (1) rename to match the shorter convention requested, (2) express colors as semantic variants (`primary`/`secondary`) rather than literal color names, (3) push all color and size values into the Tailwind config so they are maintainable in one place, and (4) use `@apply` throughout so the SCSS is purely structural. The `spinner` color group in the config holds four tokens — arc and track for each variant — which map directly to the `border-t-*` (arc) and `border-*` (track) utilities. The `animate-spinner` custom animation reuses Tailwind's built-in `spin` keyframe at 0.7s rather than redefining `@keyframes spin` in the component.
+
+**Prompt:** Rename the spinner component to just Spinner. Make variants primary and secondary. Use @apply rules instead of theming. Use the Tailwind library as much as possible. Add Tailwind classes that use those colors and move colors into the tailwind config.
+
+**What changed:**
+- `app/tailwind.config.js` — added `spinner` color tokens (`primary`, `primary-track`, `secondary`, `secondary-track`) and `animation.spinner` (`spin 0.7s linear infinite`)
+- `src/ui/Spinner.vue` — new file replacing `BaseSpinner.vue`; variants renamed to `primary`/`secondary`; all SCSS replaced with `@apply` using Tailwind utilities and the new config tokens
+- `src/ui/BaseSpinner.vue` — deleted
+- `src/ui/index.ts` — updated export from `BaseSpinner` to `Spinner`
+- `AiConnectionForm.vue` — updated import + usage: `variant="white"` → `variant="secondary"`
+- `AiOptimizerPanel.vue` — updated import + usage
+- `AiSummaryPanel.vue` — updated import + usage
+
+**Key decisions & why:**
+- Four distinct color tokens (`arc` + `track` per variant) — `border-t-*` sets the arc color and `border-*` sets the track; keeping them separate in the config lets each be adjusted independently without touching the component
+- `animate-spinner` in config, not `@keyframes` in SCSS — Tailwind already defines the `spin` keyframe; adding a custom animation utility reuses it and keeps the component style-free of any keyframe declarations
+- `primary`/`secondary` naming — decouples the variant label from any specific color, making the component resilient to theme changes
+
+
+## [#97] Fix cross-file @apply of custom component classes in Vue scoped styles
+**Type:** fix
+
+**Summary:** Replaced `@apply card` and `@apply section-title` references in scoped Vue component styles with their expanded CSS equivalents, fixing a PostCSS error triggered when the Tailwind config change invalidated the cache and forced reprocessing.
+
+**Brainstorming:** Tailwind v3 cannot resolve custom component classes (defined in `@layer components` in a separate file) when they appear in `@apply` inside another file's scoped style block — PostCSS processes each file independently. The classes `card` and `section-title` are defined in `src/styles/components.scss`. The config change from #96 invalidated Tailwind's cache, causing DashboardView.vue and KpiCard.vue to be reprocessed and the latent issue to surface. Fix: inline the CSS properties that each custom class would have contributed, using Tailwind utilities where possible.
+
+**Prompt:** fix [postcss] The `card` class does not exist. If `card` is a custom class, make sure it is defined within a `@layer` directive.
+
+**What changed:**
+- `src/features/dashboard/DashboardView.vue` — `.chart-card`: replaced `@apply card p-5` with expanded CSS vars + Tailwind utilities; `.chart-card__title`: replaced `@apply section-title mb-4` with direct `color` + `@apply text-base mb-4 shrink-0`; `.table-section__title`: replaced `@apply section-title px-5 pt-5 pb-3` with direct `color` + `@apply text-base px-5 pt-5 pb-3`
+- `src/features/dashboard/components/KpiCard.vue` — `.kpi-card`: replaced `@apply card rounded-md p-4` with expanded CSS vars + `@apply rounded-md shadow-sm p-4`
+
+**Key decisions & why:**
+- Expand inline rather than add `@layer components` wrappers in scoped blocks — `@layer` in scoped Vue styles interacts awkwardly with the scoped hash selector and is less readable; inlining is more explicit and avoids the coupling entirely
+- Grep for all other `@apply` usages of custom component class names to catch all instances in one pass — found and fixed three locations across two files
+
+
+## [#98] Fix animate-spinner @apply failure in Spinner.vue
+**Type:** fix
+
+**Summary:** Replaced `@apply animate-spinner` with Tailwind's built-in `animate-spin` plus an `animation-duration` override, and removed the unused `animation.spinner` extension from `tailwind.config.js`.
+
+**Brainstorming:** Custom `animation` extensions added to `theme.extend` in the Tailwind config don't resolve reliably via `@apply` in scoped Vue component styles — same root cause as the `card`/`section-title` issue in #97. The fix: use the existing built-in `animate-spin` utility (which is always available to `@apply`) and override only the duration with a single `animation-duration: 0.7s` CSS property. This avoids the config extension entirely and keeps the component free of raw keyframe declarations.
+
+**Prompt:** fix [postcss] The `animate-spinner` class does not exist.
+
+**What changed:**
+- `src/ui/Spinner.vue` — replaced `@apply animate-spinner` with `@apply animate-spin` + `animation-duration: 0.7s`
+- `app/tailwind.config.js` — removed `animation.spinner` extension (no longer needed)
+
+**Key decisions & why:**
+- `animate-spin` + `animation-duration` override instead of a config extension — built-in utilities always resolve in `@apply`; the only custom part is the 0.7s duration, which is a one-liner override and needs no config entry
