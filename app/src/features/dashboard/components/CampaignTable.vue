@@ -14,7 +14,7 @@ function getFieldValue(c: Campaign, field: SortField): number | string {
   if (field === 'roi') return c.budget > 0 ? (c.revenue - c.budget) / c.budget : 0
   if (field === 'ctr') return c.impressions > 0 ? c.clicks / c.impressions : 0
   if (field === 'cvr') return c.clicks > 0 ? c.conversions / c.clicks : 0
-  if (field === 'cac') return c.conversions > 0 ? c.budget / c.conversions : 0
+  if (field === 'cac') return c.conversions > 0 ? c.budget / c.conversions : Infinity
   return c[field as keyof Campaign]
 }
 

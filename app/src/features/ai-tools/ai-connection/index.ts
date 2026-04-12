@@ -1,0 +1,1 @@
+export { connectProvider } from './connectProvider'

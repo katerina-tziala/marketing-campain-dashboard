@@ -871,3 +871,812 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - UploadModal moved to AppShell — it is a global action reachable from both the header button and the empty state; AppShell is the correct owner for components that need to be accessible application-wide
 - provide/inject for EmptyState access — DashboardView injects openUploadModal from AppShell and passes it to EmptyState's @upload handler; avoids prop drilling or an event bus while keeping UploadModal encapsulated in AppShell
+
+
+## [#43] AI Assistant structural scaffold — push panel + modal
+**Type:** feature
+
+**Summary:** Added the AI Assistant entry point: a sparkles button in the dashboard header that opens a 400px push panel on lg+ screens and a modal on smaller screens, with stubbed Budget Optimizer and Executive Summary sections.
+
+**Brainstorming:** The trigger button belongs in DashboardView next to the "Campaign Performance" title since it is dashboard-specific. The lg breakpoint (1024px) was chosen because the dashboard already uses it as its primary structural breakpoint (charts switch from 1- to 2-column, KPI grid switches to 5-column). Below 1024px the layout is fully stacked, making a side panel impractical. Push layout was preferred over overlay so the dashboard content compresses rather than being covered. The panel is a CSS width transition (0→400px) on an outer wrapper with a sticky inner panel at height 100vh — this keeps the panel visible while the dashboard scrolls. On small screens the same open state drives a Teleport modal with a fade+scale transition, hidden at lg+ via a CSS media query. Body scroll is locked only in modal mode, checked via window.matchMedia. AiAssistantContent was extracted as a shared component used in both panel and modal. AppShell was restructured from a single centered flex column to a flex row at lg+ with app-shell__content (centered slot, max-width 1280px) and the drawer as siblings. overflow: hidden on app-shell__main was removed (replaced with overflow-x: clip on app-shell__content) to allow position: sticky to work on the panel.
+
+**Prompt:** Create the ai-integration feature structure. On the right side of the "Campaign Performance" title add a button with a sparkles icon and the text AI. The button should slide in a push panel from right to left on lg+ screens. On smaller screens it should be a modal. Title: AI Assistant. Panel width 400px. Push layout (dashboard compresses). Basic stub content with Budget Optimizer and Executive Summary sections. No close on backdrop click.
+
+**What was built:**
+- `ui/icons/SparklesIcon.vue` — sparkles SVG icon (Lucide-style, 24×24) for the AI button and panel/modal header
+- `ui/icons/index.ts` — added SparklesIcon export
+- `features/ai-assistant/components/AiAssistantContent.vue` — stub panel body: Budget Optimizer and Executive Summary section cards with disabled action buttons and a "configure API key" notice
+- `features/ai-assistant/components/AiAssistantDrawer.vue` — unified component: CSS width-transition push panel at lg+ (sticky, 100vh, border-left); Teleport modal with fade+scale transition at <lg; Escape key closes both; body scroll locked in modal mode only
+- `features/ai-assistant/index.ts` — barrel export for AiAssistantDrawer
+- `shell/AppShell.vue` — restructured app-shell__main to flex row at lg+; added app-shell__content wrapper (flex:1, max-width 1280px, centered); mounts AiAssistantDrawer as sibling to content; provides openAiPanel via provide()
+- `features/dashboard/DashboardView.vue` — added dashboard__title-row (flex row, space-between) wrapping the title and a ghost BaseButton with SparklesIcon + "AI" label; injects openAiPanel
+
+**Key decisions & why:**
+- lg (1024px) breakpoint — matches the existing structural breakpoint used throughout the dashboard; below lg the layout is fully stacked, making a side panel impractical
+- Push over overlay — user requirement; implemented via CSS width transition on outer wrapper so dashboard content naturally compresses without JS layout recalculation
+- position: sticky on inner panel — keeps the AI panel visible in the viewport while the user scrolls the dashboard; align-items: flex-start on the parent flex row is required for sticky to engage
+- overflow-x: clip instead of overflow: hidden — overflow: hidden on an ancestor breaks position: sticky; clip achieves horizontal clipping without creating a scroll container, leaving sticky intact
+- AiAssistantContent extracted — content is rendered in both panel and modal; extracting avoids duplication and gives a clean place to add real AI UI later
+- Modal hidden via CSS media query — the Teleport modal renders in body; a (min-width: 1024px) media query sets display:none, ensuring only the panel is visible on large screens without JS screen-size detection
+
+
+## [#44] Layout improvements — scrollable left column, non-sticky header, primary AI button
+**Type:** update
+
+**Summary:** Made the left column the scroll container at all screen sizes, removed the sticky header so it scrolls with content, and changed the AI button to the primary variant.
+
+**Brainstorming:** The user wanted three specific layout changes: (1) The AI button should visually stand out as a primary action rather than a ghost; since `primary` is the default BaseButton variant, the explicit `variant="ghost"` was simply removed. (2) The scrollable area should always be the left column — previously `height: 100vh; overflow: hidden` on `.app-shell` and `overflow-y: auto` on `.app-shell__left` were only applied at `lg+`; removing the media query wrapper makes the left column the scroll container on all screen sizes. (3) The header should scroll with the content rather than staying sticky — the `position: sticky; top: 0; z-index: 10` block on `.app-shell__header` was removed and `flex-shrink: 0` is no longer needed.
+
+**Prompt:** Improve layouts. AI button should be primary. Scrollable area should be the left side and header should also be scrollable.
+
+**What changed:**
+- `features/dashboard/DashboardView.vue` — removed `variant="ghost"` from the AI button (falls back to default primary variant)
+- `shell/AppShell.vue` — moved `height: 100vh; overflow: hidden` out of the lg media query to apply at all sizes; moved `overflow-y: auto` on `__left` out of the lg media query; removed `position: sticky; top: 0; z-index: 10` and `flex-shrink: 0` from `__header`
+
+**Key decisions & why:**
+- Primary is the default variant — removing the explicit `variant="ghost"` attribute is cleaner than setting `variant="primary"`, avoids redundancy
+- Scroll container at all sizes — consistent behavior across breakpoints; the drawer already uses Teleport on small screens so the side-by-side overflow model is safe to enable universally
+- Non-sticky header — user preference; the header scrolls away so more vertical space is available for dashboard content when scrolled
+
+
+## [#45] AI Tools — connection form, live verification, connected status, tabbed interface
+**Type:** feature
+
+**Summary:** Renamed the AI Assistant feature to AI Tools, introduced a Pinia aiStore for memory-only connection state, and replaced the stub content with a connection form (Google Gemini / Grok), live API key verification, a connected status bar, and a tabbed interface (Optimizer / Summary).
+
+**Brainstorming:** The feature needed four distinct states: (1) disconnected — show a form; (2) connecting — show spinner on the button; (3) connected — show status bar + tabs; (4) error — show inline message. Keeping all connection state in a dedicated Pinia store (aiStore) rather than local component state makes it available across the entire app, which will be needed when the Optimizer and Summary tabs actually call the AI APIs. Memory-only storage was chosen over sessionStorage/localStorage so API keys are never written to disk or browser storage. For provider support, Google Gemini (generativelanguage.googleapis.com) and Grok (api.x.ai, OpenAI-compatible) were chosen as both have free tiers. Connection verification uses a lightweight read-only endpoint on each provider (list models) that confirms the key is valid without consuming quota. The folder was renamed from ai-assistant to ai-tools and all component names updated for consistency. The drawer body padding was removed and moved into each child component so the status bar and tab bar can span the full panel width without negative-margin hacks.
+
+**Prompt:** Rename ai assistant to ai tools, update the title. When no connection is established display a message and a form with provider and api key fields and a Connect button. Connection state in a shared store. On connect, establish and verify the connection. When connected show provider name and green Connected text with green dot on the right under the header. Underneath two tabs: Optimizer and Summary, both with icons. Providers: Google Gemini and Grok (free API keys). Memory-only for security. Rename folders for consistency.
+
+**What was built:**
+- `stores/aiStore.ts` — new Pinia store; AiProvider type ('gemini' | 'grok'); PROVIDER_LABELS map; testGemini() and testGrok() async helpers; connect() action with isConnecting/connectionError; disconnect() action; all state memory-only
+- `ui/icons/SlidersIcon.vue` — new Lucide-style vertical sliders SVG icon for the Optimizer tab
+- `ui/icons/index.ts` — added SlidersIcon export
+- `features/ai-tools/components/AiConnectionForm.vue` — provider select (Gemini/Grok), API key input with show/hide toggle, Connect button with CSS spinner, inline error display; calls store.connect()
+- `features/ai-tools/components/AiConnectedStatus.vue` — full-width status bar with provider label, green pulsing dot, "Connected" text, and Disconnect link; calls store.disconnect()
+- `features/ai-tools/components/AiTabs.vue` — two tabs (Optimizer with SlidersIcon, Summary with FileTextIcon); role="tablist" / role="tab" ARIA; emits change event; active underline indicator
+- `features/ai-tools/components/AiToolsContent.vue` — orchestrates connection form vs connected state; manages activeTab ref; stub content for each tab panel
+- `features/ai-tools/components/AiToolsDrawer.vue` — renamed from AiAssistantDrawer; title updated to "AI Tools"; uses AiToolsContent; removed &__body padding (content manages its own layout)
+- `features/ai-tools/index.ts` — barrel export for AiToolsDrawer
+- `shell/AppShell.vue` — updated import from AiAssistantDrawer → AiToolsDrawer
+- `features/ai-assistant/` — deleted entire folder
+
+**Key decisions & why:**
+- Memory-only API key storage — user requirement; keys are never written to sessionStorage or localStorage, so they cannot be extracted from browser storage
+- Live verification on connect — a real API call (list models) confirms the key works before showing the connected state; avoids silent failures later when the AI features are used
+- Separate test helpers per provider — Gemini and Grok have different auth mechanisms (query param vs Bearer header) and different error status codes; separate functions keep the logic clean
+- Drawer body padding removed — status bar and tab bar need to span full panel width; moving padding into child components avoids negative-margin hacks
+- AiToolsContent as orchestrator — connection form, status bar, tabs, and tab panels are all in one component that reads store.isConnected; this keeps AiToolsDrawer unaware of connection state
+
+
+## [#46] AI Tools tabs — panel layout, demo responses, loader states
+**Type:** feature
+
+**Summary:** Replaced the stub tab content in AiToolsContent with two dedicated panel components (AiOptimizerPanel, AiSummaryPanel) each with a title, file subtitle, action button (SparklesIcon + "Analyze"/"Summarize"), idle state, loading spinner, and a structured demo response.
+
+**Brainstorming:** The two panels are similar in structure (head + state machine) but differ in content and eventual AI prompt/response format, so they were extracted into separate components rather than kept in one file. Each panel has three states: idle (dashed-border empty-state message), loading (centered spinner + label), and done (structured demo result). The demo uses a 2–2.5 second setTimeout to simulate AI latency. Button text was chosen as "Analyze" (Optimizer) and "Summarize" (Summary) — both are specific verb forms of what the action does, clearer than "Generate". SparklesIcon was reused for both buttons since it represents AI generation and the tabs already carry their own distinguishing icons. The reallocation table in the Optimizer demo shows channel, current budget, recommended budget, and delta with green/red colouring. The Summary demo shows three sections (Top Performers, Underperformers, Actionable Insights) with colour-coded section headings. TODOs for actual AI prompts and error handling were added to both component files and to the CLAUDE.md checklist.
+
+**Prompt:** Update the tabs. Summary: title "Executive Summary", subtitle with uploaded file name, initial state message, Summarize button (with icon) on right of title, loader on press, demo response. Optimizer: title "Budget Optimizer", subtitle with uploaded file name, initial state message, Analyze button (with icon) on right of title, loader on press, demo response. Add TODOs for configuring prompts and error handling.
+
+**What was built:**
+- `features/ai-tools/components/AiSummaryPanel.vue` — new; title + store.title subtitle + Summarize button (SparklesIcon); idle/loading/done state machine; demo result with Top Performers, Underperformers, Actionable Insights sections; TODO comments for real API call and error handling
+- `features/ai-tools/components/AiOptimizerPanel.vue` — new; title + store.title subtitle + Analyze button (SparklesIcon); idle/loading/done state machine; demo result with reallocation table (current vs recommended budget, delta coloured green/red), High Confidence badge, and rationale; TODO comments for real API call and error handling
+- `features/ai-tools/components/AiToolsContent.vue` — replaced inline stub sections with AiOptimizerPanel / AiSummaryPanel conditionally rendered by activeTab
+
+**Key decisions & why:**
+- "Analyze" / "Summarize" over "Generate" — more specific; "Generate" is vague, "Analyze" communicates what the Optimizer does (analyse campaign data), "Summarize" communicates what the Summary does (summarise performance)
+- Separate panel components — each tab will have its own AI prompt, response format, and eventually its own loading/error state; keeping them separate avoids a monolithic content component and gives a clean place to add real AI logic
+- Demo with realistic structure — the demo result uses the same layout (table, sections, badges) that will be needed for real responses, so switching to actual AI output only requires replacing the hardcoded data, not the template structure
+- TODOs in both code and CLAUDE.md — ensures neither prompt configuration nor error handling is forgotten across sessions
+
+
+## [#47] Replace AI modal with overlay panel; intensify text colors
+**Type:** update
+
+**Summary:** Replaced the teleported modal (<lg) with a fixed overlay panel on top of the dashboard; kept the push drawer at lg+; updated all AI panel text colors to #cbd5e1 for stronger contrast.
+
+**Brainstorming:** The previous implementation used a teleported modal at <lg and a push drawer at lg+. The modal was a centered dialog — the user wanted the small-screen version to behave more like the drawer (a panel sitting on top of the dashboard, not a centered dialog). The new overlay is a fixed panel anchored to the right with a semi-transparent backdrop. Clicking the backdrop or pressing Escape closes it. The content container is constrained to max-width 90vw and max-height 90vh. The push drawer at lg+ is preserved as-is. The body scroll lock was removed since the overlay doesn't need it. Text colors across all AI components were bumped from `var(--color-text-secondary)` (#94a3b8) to `#cbd5e1` to match `.data-table__td`, and the "AI Tools" header title was updated to `#cbd5e1` as well.
+
+**Prompt:** Update the side-panel structure: no longer a modal for smaller screens, the panel should overlay on top of the dashboard. Keep the drawer for lg+. Max allowed width and max allowed height of the content container should be 90% of the screen. Use more intense color for the text like the table uses, same for the "AI tools" header.
+
+**What changed:**
+- `features/ai-tools/components/AiToolsDrawer.vue` — replaced teleported modal with fixed overlay panel at <lg (right-anchored, backdrop, slide-in transition, 90vw/90vh constraints); push drawer at lg+ preserved; removed body scroll lock; title color set to #cbd5e1
+- `features/ai-tools/components/AiConnectionForm.vue` — text colors updated from `var(--color-text-secondary)` to `#cbd5e1`
+- `features/ai-tools/components/AiConnectedStatus.vue` — provider label and disconnect link colors updated to `#cbd5e1`
+- `features/ai-tools/components/AiTabs.vue` — inactive tab color updated to `#cbd5e1`
+- `features/ai-tools/components/AiOptimizerPanel.vue` — all secondary text colors updated to `#cbd5e1`
+- `features/ai-tools/components/AiSummaryPanel.vue` — all secondary text colors updated to `#cbd5e1`
+
+**Key decisions & why:**
+- Overlay instead of modal at <lg — panel sits on top of dashboard rather than being a centered dialog, maintaining the side-panel feel at all sizes
+- 5vh/5vw padding on the overlay wrapper — achieves the 90% max constraint naturally
+- `display: none` on drawer at <lg and on overlay at lg+ — ensures only one instance of AiToolsContent is in the DOM at a time per breakpoint, avoiding duplicate state
+- `#cbd5e1` for text — matches `.data-table__td` color, giving the AI panel the same visual weight as the campaign table
+
+
+## [#48] Executive summary data builder + shared math helpers
+**Type:** feature
+
+**Summary:** Implemented the calculation logic that transforms Campaign[] into a compact ExecutiveSummaryData payload for AI analysis, with shared math helpers and a reactive computed in the campaign store.
+
+**Brainstorming:** The campaign store already had inline safe-division logic for KPI computation. Rather than duplicating that, `safeDivide` and `round2` were extracted into `common/utils/math.ts` so both the store's existing KPIs and the new summary builder share the same primitives. The builder function itself is pure (no Vue/Pinia dependency) — it takes `Campaign[]` and an optional `period` string, returns `ExecutiveSummaryData`. This makes it deterministic and easy to unit test. The store exposes the result as a computed `executiveSummaryData` that reacts to `campaigns` (unfiltered — the AI gets the full portfolio, not the user's current filter state). Channel aggregation uses a Map for O(n) grouping. Top/underperforming campaign selection uses multi-key sorting (roi → revenue → conversions for top; roi → budget → revenue for underperforming). Key findings are generated programmatically from the aggregated data — disproportionate revenue/budget ratios, negative-ROI high-budget channels, standout campaign ROI, and concentration risk. Optional fields (period, otherChannelsSummary, keyFindings) are only included when they have meaningful content.
+
+**Prompt:** Implement the calculation logic that transforms validated campaign CSV rows into a compact executive-summary payload for AI analysis. Per-campaign metrics, portfolio totals, channel aggregation, top/underperforming selection, key findings. Store in campaignStore. Reuse existing logic where possible.
+
+**What was built:**
+- `common/utils/math.ts` — new; `safeDivide(n, d)` returns 0 when d=0; `round2(v)` rounds to 2 decimal places
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — new; main builder function: derives per-campaign metrics, aggregates channels, splits top/other channels, selects top and underperforming campaigns, generates key findings
+- `stores/campaignStore.ts` — refactored KPI computed to use `safeDivide`/`round2`; added `executiveSummaryData` computed that calls the builder on all campaigns
+- `features/ai-tools/prompts/index.ts` — fixed barrel export path (was `./executive-summary`, now `./executive-summary-prompt`)
+
+**Key decisions & why:**
+- Pure builder function with no Vue dependency — keeps the logic testable and decoupled; called on-demand at prompt time with filtered data
+- Not stored as a computed in the store — summary data is built when the AI prompt is triggered, using the current filtered campaigns, so the AI analysis matches what the user sees on the dashboard
+- Shared math helpers in `common/utils/` — `safeDivide` and `round2` are generic, not AI-specific; the store's existing KPI logic now uses them too, eliminating duplicated safe-division patterns
+- Multi-key sorting for campaign ranking — single-metric sorting would produce arbitrary tiebreaking; the spec's priority ordering (roi → revenue → conversions) gives deterministic, meaningful results
+- Optional fields excluded when empty — `period`, `otherChannelsSummary`, and `keyFindings` are omitted from the returned object when they carry no data, keeping the AI prompt payload clean
+
+
+## [#49] Budget Optimizer data builder
+**Type:** feature
+
+**Summary:** Added `buildBudgetOptimizerData` function to transform campaign rows into a structured `BudgetOptimizerData` object with per-campaign metrics, channel aggregation, and portfolio totals for the Budget Optimizer AI prompt.
+
+**Brainstorming:** The Budget Optimizer needs the same campaign data transformed into a different shape than the Executive Summary. Key differences: all campaigns and channels are included (no top-N slicing), campaigns carry full funnel metrics (impressions, clicks), both campaigns and channels are sorted by budget descending (not ROI), and there is no `otherChannelsSummary` split. The builder follows the same pattern as `buildExecutiveSummaryData` — pure function, no Vue dependency, reuses `safeDivide` and `round2` from `common/utils/math.ts`. The `Campaign` type already matches the input shape so no new input type is needed.
+
+**Prompt:** Generate the frontend data formatting logic for the Budget Optimizer AI feature. Transform validated campaign rows into `BudgetOptimizerData` with per-campaign metrics (ctr, cvr, cac, roi, budgetShare, revenueShare), channel-level aggregation, and portfolio totals. Use safe division, round to 2 decimals, sort by budget descending. Reuse existing codebase helpers.
+
+**What was built:**
+- `features/ai-tools/utils/buildBudgetOptimizerData.ts` — exports `buildBudgetOptimizerData(rows: Campaign[]): BudgetOptimizerData`; derives per-campaign metrics with budget/revenue shares, aggregates channels with full funnel metrics, computes portfolio totals with safe division
+
+**Key decisions & why:**
+- Reuses `Campaign` type as input instead of defining a new `CampaignRow` — the existing `Campaign` interface is structurally identical, avoids redundant types
+- All campaigns and channels included — the optimizer needs the full picture to recommend reallocations, unlike the summary which highlights top/bottom performers
+- Sorted by budget descending — the optimizer's primary concern is where money is allocated, so budget ordering is the natural default
+- Same architecture as executive summary builder — pure function, no store dependency, called on-demand with filtered data; keeps the two builders consistent and testable
+
+
+## [#50] Extract reusable building-block types for AI tools
+**Type:** refactor
+
+**Summary:** Extracted three shared type aliases (AllocationShare, FunnelMetrics, PortfolioCount) from duplicated inline fields across Executive Summary and Budget Optimizer types, improving composability without changing any runtime behavior.
+
+**Brainstorming:** Audited the ai-tools types file and found three patterns repeated across multiple types: budgetShare+revenueShare (4 places), impressions+clicks (2 places), and campaignCount+channelCount (2 places, one inline). Extracting these into named building blocks lets the domain types compose via intersection rather than re-declaring the same fields. The existing `CampainSummaryTotals` was already reused correctly and didn't need changes. The two Response types and BusinessContext were already clean. Renamed `ExecutiveSummaryPortfolio` to the more generic `PortfolioCount` since both Data types use the same shape. Verified no external imports of `ExecutiveSummaryPortfolio` existed before renaming.
+
+**Prompt:** Focus on types in ai tools. Read carefully the file and extend reusable models.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — extracted `AllocationShare` (budgetShare + revenueShare), `FunnelMetrics` (impressions + clicks), `PortfolioCount` (campaignCount + channelCount); composed `ExecutiveSummaryChannel`, `ExecutiveSummaryOtherChannelsSummary`, `BudgetOptimizerCampaign`, `BudgetOptimizerChannel`, and both Data types via intersection with these building blocks; added section comments for clarity
+
+**Key decisions & why:**
+- Three building blocks, not more — only extracted patterns that appeared in 2+ types; single-field patterns like `channel: string` were left inline to avoid over-abstraction
+- Renamed `ExecutiveSummaryPortfolio` → `PortfolioCount` — the shape is generic (not executive-summary-specific) and both Data types use it; the old name was never imported externally
+- Intersection composition (`&`) over interface extension — keeps each building block as a simple type alias that composes naturally with `&`, consistent with the existing pattern in the file
+
+
+## [#51] Extract ConfidenceLevel type alias
+**Type:** refactor
+
+**Summary:** Extracted `ConfidenceLevel = "High" | "Medium" | "Low"` as a shared type alias, replacing three inline string literal unions across the AI response types.
+
+**Brainstorming:** Audited all string literal unions in both Response types. Only the High/Medium/Low pattern was genuinely reused: `recommendations[].confidence` (capitalized), `quick_wins[].effort` (subset — Low | Medium), and `BudgetOptimizerCampaign.spendTier` (lowercase). The two timeline unions look similar but differ ("This Month" vs "This Quarter"), so they stay inline. Used `Lowercase<ConfidenceLevel>` for spendTier and `Exclude<ConfidenceLevel, "High">` for effort to derive from the single source of truth.
+
+**Prompt:** "High" | "Medium" | "Low" is repeated with small case types can we extract one type?
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added `ConfidenceLevel` type alias; `recommendations[].confidence` uses `ConfidenceLevel`, `quick_wins[].effort` uses `Exclude<ConfidenceLevel, "High">`, `BudgetOptimizerCampaign.spendTier` uses `Lowercase<ConfidenceLevel>`
+
+**Key decisions & why:**
+- Single extraction, not multiple — only the High/Medium/Low pattern was truly duplicated; other unions are unique or differ in values
+- `Lowercase<ConfidenceLevel>` for spendTier — derives from the same source instead of maintaining a separate lowercase union, keeping the two in sync
+- `Exclude<ConfidenceLevel, "High">` for effort — expresses the subset relationship explicitly; if ConfidenceLevel gains a value, effort stays intentionally constrained
+
+
+## [#52] Prompt builders — bug fixes, typo corrections, and architecture cleanup
+**Type:** refactor
+
+**Summary:** Fixed bugs in prompt output (stray quote, trailing braces, missing letter), corrected naming typos across all prompt files, extracted a shared scope builder into prompt-utils, and replaced indented template literals with clean section-array assembly.
+
+**Brainstorming:** A thorough review of the prompts folder revealed three categories of issues: (1) Bugs — a literal `'` leaked into the ANALYSIS INSTRUCTIONS header from `getAnalysisInstructions`, both `buildExecutiveSummaryPrompt` and `buildBudgetOptimizerPrompt` had an extra `}` from `getPromptList(...).join("\n")}}`where the template expression's closing brace was followed by a stray brace, and 'pportunities' was missing its leading 'o'. (2) Naming — `PromptIntructions` (missing 's'), `SUMMMARY_INSTRUCTIONS` (triple M), `getBExecutiveSummaryScopeByFilteredChannels` (stray B prefix), `busonessContext` (misspelled), and a double space in an interpretation rule string. (3) Architecture — the two scope functions were structurally identical (header + filtered/unfiltered branching + channel list + constraints), differing only in labels and wording. Extracted a `PromptScopeConfig` type and a shared `getScopeBlock` function parameterized by config. Both builders now declare a static config constant instead of a private function. Additionally, the template literal approach (`\`  ${block}\``) was injecting leading whitespace into every line of the prompt. Replaced with a sections array joined by `"\n\n"`, which produces clean output with no accidental indentation. Also fixed `let` → `const` in `getBusinessContextLinesForPrompt` by switching from spread reassignment to `push(...)`.
+
+**Prompt:** Read everything in prompts folder in ai-tools. Check for code improvements and better architecture. These are the functions that will generate our prompts.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — renamed `PromptIntructions` → `PromptInstructions`; added `PromptScopeConfig` type (label, filteredDescription, unfilteredDescription, filteredConstraints)
+- `features/ai-tools/prompts/prompt-utils.ts` — fixed stray quote in `getAnalysisInstructions`; removed unused `PromptList` import; added `getScopeBlock(config, channels)` shared scope builder; fixed double space in interpretation rules
+- `features/ai-tools/prompts/executive-summary-prompt.ts` — renamed `SUMMMARY_INSTRUCTIONS` → `SUMMARY_INSTRUCTIONS`; renamed `getBExecutiveSummaryScopeByFilteredChannels` → replaced with `SUMMARY_SCOPE_CONFIG` + `getScopeBlock`; fixed trailing `}` in health score list; replaced template literal with sections array join; updated all imports
+- `features/ai-tools/prompts/budget-optimizer-prompt.ts` — fixed 'pportunities' typo; renamed `busonessContext` → `businessContext`; replaced `getBudgetOptimizerScopeByFilteredChannels` with `OPTIMIZER_SCOPE_CONFIG` + `getScopeBlock`; fixed trailing `}` in array size list; folded loose "if fewer items" lines into the array size list; replaced template literal with sections array join; updated all imports
+- `features/ai-tools/prompts/business-context.ts` — changed `let lines` → `const lines` with `push(...)` instead of spread reassignment
+
+**Key decisions & why:**
+- `PromptScopeConfig` as a type — makes the scope builder's contract explicit; each prompt declares its config as a static constant, which is easier to read and review than a function body
+- Sections array instead of template literal — eliminates accidental indentation that was baked into every prompt line; `sections.join("\n\n")` gives consistent double-newline separation with zero leading whitespace
+- Shared `getScopeBlock` with config object — the two scope functions had identical structure with different strings; parameterizing by config eliminates the duplication while keeping each prompt's wording independently configurable
+- Folded loose lines into `ARRAY_SIZE_LIST` spread — the "if fewer items" / "do not fabricate" lines were free-floating strings in the template; moving them into the list array keeps them formatted consistently with the other items
+
+
+## [#53] Prompt files — formatting cleanup, array-size notes separation, rename build → generate
+**Type:** refactor
+
+**Summary:** Cleaned up formatting and whitespace across all prompt files, separated array-size notes from the list items in the budget optimizer prompt, and renamed `build*Prompt` → `generate*Prompt` for both prompt builders.
+
+**Brainstorming:** Three issues addressed: (1) Inconsistent formatting — mixed indentation (2-space vs 4-space), trailing whitespace, extra blank lines, missing trailing commas on array items, inconsistent semicolons. All four prompt files were rewritten with consistent 2-space indentation, trailing commas, and clean spacing. (2) In `buildBudgetOptimizerPrompt`, the three lines about array-size behaviour ("If fewer items exist…", "These are upper limits…", "Do not fabricate…") were merged into the `ARRAY_SIZE_LIST` as bullet items in the previous refactor, but they're actually notes *about* the list, not list items themselves. Extracted them into a separate `ARRAY_SIZE_NOTES` constant and assembled the block with the list followed by a blank line then the notes — preserving the semantic distinction. (3) The `build*Prompt` naming was discussed — `generate` better describes what these functions do (they generate a prompt string for AI consumption), while `build` is appropriate for the data builders in `utils/` which construct structured data from raw rows. Renaming keeps the two concerns distinct. The folder stays as `prompts/` — it's concise and clear. Moving into `utils/` would blur the separation between data transformation and prompt assembly.
+
+**Prompt:** Fix structure of files (spaces etc) in prompt files. In buildBudgetOptimizerPrompt you unified arraySizeItems but the array size list is part of a list and the 3 lines you added are notes — do not merge the lists. Also rename build → generate for prompt functions.
+
+**What changed:**
+- `features/ai-tools/prompts/prompt-utils.ts` — reformatted: consistent 2-space indentation, removed extra blank lines, added missing semicolons
+- `features/ai-tools/prompts/business-context.ts` — reformatted: removed leading blank line, consistent semicolons and trailing commas
+- `features/ai-tools/prompts/executive-summary-prompt.ts` — reformatted: multi-line imports, consistent trailing commas on all array items; renamed `buildExecutiveSummaryPrompt` → `generateExecutiveSummaryPrompt`
+- `features/ai-tools/prompts/budget-optimizer-prompt.ts` — reformatted: multi-line imports, consistent trailing commas; separated `ARRAY_SIZE_NOTES` from `ARRAY_SIZE_LIST`; assembled block with list then blank line then notes; renamed `buildBudgetOptimizerPrompt` → `generateBudgetOptimizerPrompt`
+- `features/ai-tools/prompts/index.ts` — updated barrel exports to use `generate*` names
+
+**Key decisions & why:**
+- `ARRAY_SIZE_NOTES` as a separate constant — the three lines are behavioural notes about the list, not list items; merging them would cause the AI to see "If fewer items exist" as an array-size guideline bullet, which misrepresents the intent
+- `build` → `generate` only for prompt functions — data builders (`buildExecutiveSummaryData`, `buildBudgetOptimizerData`) keep `build` since they construct structured payloads; prompt functions `generate` a string for AI consumption; the naming distinction mirrors the responsibility split
+- Keep `prompts/` folder name and location — `prompts/` is concise and clear; `prompt-generations/` is verbose; moving into `utils/` would blur the data-transformation vs prompt-assembly boundary
+
+
+## [#16] Budget Optimizer — mock responses and full UI
+**Type:** feature
+
+**Summary:** Created 5 mock BudgetOptimizerResponse objects and built the full result UI for the Budget Optimizer panel, replacing the hardcoded demo stub with structured rendering of all response sections.
+
+**Brainstorming:** The BudgetOptimizerResponse type has 7 distinct sections (executive_summary, recommendations, top_performers, underperformers, quick_wins, correlations, risks). Options considered: (1) extract each section into its own component — rejected because the sections are tightly coupled to this panel and not reused elsewhere; (2) render everything inside AiOptimizerPanel.vue — chosen for simplicity and consistency with the existing pattern; (3) create a generic "result renderer" — rejected as premature abstraction. For mock data, 5 scenarios were designed to cover different optimization strategies: aggressive reallocation, conservative tweaks, seasonal pivot, channel consolidation, and growth expansion. This variety ensures the UI handles diverse data shapes (different array lengths, different badge types, optional fields).
+
+**Prompt:** Based on the BudgetOptimizerResponse create 5 mock responses. Place mock data in a folder mocks in ai-tools. When clicking on analyze iterate through the 5 responses and show one each time. The plan is to identify and create all the components required for the UI.
+
+**What was built:**
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — 5 BudgetOptimizerResponse mock objects covering aggressive reallocation, conservative optimization, seasonal pivot, channel consolidation, and growth expansion scenarios
+- `features/ai-tools/mocks/index.ts` — barrel export for the mocks folder
+- `features/ai-tools/components/AiOptimizerPanel.vue` — complete rewrite: replaced hardcoded demo table with full structured rendering of all 7 BudgetOptimizerResponse sections; added mock cycling logic (mockIndex increments mod 5 on each Analyze click); button label changes to "Re-Analyze" after first result; new CSS for recommendation cards, performer cards, quick-win cards, correlation cards, risk cards, action badges (Reduce/Pause/Restructure), and effort badges (Low/Medium)
+
+**Key decisions & why:**
+- All rendering stays in AiOptimizerPanel.vue — sections are specific to this panel and not reused; extracting 7 sub-components would add indirection without value at this stage
+- Mock index starts at -1 and increments before use — ensures first click shows index 0 (the first mock) rather than skipping it
+- 5 diverse scenarios — covers different array lengths, confidence levels, action types, and optional fields to stress-test the UI layout
+- Button changes to "Re-Analyze" after first result — communicates to the user that they can cycle to a new analysis without confusion about repeated clicks
+- Reused existing CSS class patterns (ai-result-block, ai-confidence) and extended with new card types (ai-recommendation, ai-performer, ai-quick-win, ai-correlation, ai-risk) and generic ai-badge for action/effort labels
+
+
+## [#17] Executive Summary — mock responses and full UI
+**Type:** feature
+
+**Summary:** Created 5 mock ExecutiveSummaryResponse objects and built the full result UI for the Executive Summary panel, replacing the demo stub with structured rendering of all response sections.
+
+**Brainstorming:** The ExecutiveSummaryResponse type has 8 distinct sections (health_score, bottom_line, key_metrics, insights, priority_actions, channel_summary, correlations, additional_channels_note). Design decisions: (1) health score rendered as a large color-coded badge with score/100 — this is the hero element that sets the tone for the entire summary; (2) key metrics in a 2-column grid with special full-width treatment for "biggest opportunity" — provides scannable data density; (3) insight cards color-coded by type (performance/opportunity/warning/achievement) with inline metric highlight bar — each insight is self-contained with its supporting data point; (4) priority actions numbered with urgency badges (Immediate/This Quarter/Next Quarter) — conveys both order and time pressure; (5) channel summary with status dots (strong/moderate/weak) + budget share — quick portfolio overview. For mock data, 5 scenarios covering the full health_score spectrum: strong (82/Good), needs attention (48), excellent (91), critical (25), and growth phase (73/Good). Each has different insight types, action counts, and channel distributions to stress-test the layout.
+
+**Prompt:** Do the same and complete summary UI based on ExecutiveSummaryResponse. Create 5 mock responses, place in mocks folder, cycle through on Summarize click.
+
+**What was built:**
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — 5 ExecutiveSummaryResponse mock objects: strong portfolio (82/Good), needs attention (48), excellent performance (91), critical state (25), growth phase (73/Good)
+- `features/ai-tools/mocks/index.ts` — added executive summary mocks barrel export
+- `features/ai-tools/components/AiSummaryPanel.vue` — complete rewrite: replaced demo stub with full structured rendering of all ExecutiveSummaryResponse sections; mock cycling logic (mockIndex mod 5); button changes to "Re-Summarize" after first result; new CSS for health score badge, key metrics grid, insight cards (4 type-based color themes), priority action cards (numbered with urgency badge), channel cards (status badge), correlation cards
+
+**Key decisions & why:**
+- Health score as a hero badge with score/100 — immediately communicates portfolio state at a glance; color-coding (green/indigo/amber/red) maps to the 4 label tiers and provides instant visual assessment
+- Key metrics in a 2-column grid — maximizes information density in the narrow drawer width; "biggest opportunity" spans full width because it's typically a longer text value
+- Insight cards typed by color (performance=indigo, opportunity=green, warning=amber, achievement=purple) — helps users scan for what matters most to them; the inline metric highlight bar makes each insight self-contained
+- 5 mocks covering the full health score spectrum (25-91) — ensures the UI handles all 4 health labels (Excellent/Good/Needs Attention/Critical) and varying array lengths
+- Correlations use `so_what` field (not `implication` like Budget Optimizer) — matches the ExecutiveSummaryResponse type definition which uses different field names than BudgetOptimizerResponse
+
+
+## [#18] Rename Grok to Groq, rename test helpers to connect helpers, radio buttons for providers
+**Type:** update
+
+**Summary:** Renamed all Grok references to Groq across the codebase, renamed testGemini/testGrok to connectGemini/connectGroq, updated Groq API endpoint, and replaced the provider dropdown with radio buttons.
+
+**Brainstorming:** Three changes bundled together as they all touch the AI connection layer: (1) Grok → Groq is a naming correction — Groq is the cloud inference platform, distinct from xAI's Grok LLM; (2) test → connect renaming better describes the function's purpose — it's not a test utility, it's the actual connection handshake; (3) radio buttons vs dropdown — with only 2 providers, radio buttons show all options at a glance without requiring a click to reveal them, reducing interaction cost and making the choice more discoverable.
+
+**Prompt:** Update everything and all docs from grok to Groq. testGemini and testGroq rename to connectGemini and connectGroq. connectGroq should connect to https://api.groq.com/openai/v1/models. Change dropdown to radio buttons for providers since we only allow 2 integrations at the moment.
+
+**What changed:**
+- `stores/aiStore.ts` — `AiProvider` type `'grok'` → `'groq'`; `PROVIDER_LABELS.grok` → `PROVIDER_LABELS.groq` with label `'Groq'`; `testGemini` → `connectGemini`; `testGrok` → `connectGroq`; API endpoint changed from `https://api.x.ai/v1/models` to `https://api.groq.com/openai/v1/models`; `connect()` calls updated to use new function names
+- `features/ai-tools/components/AiConnectionForm.vue` — replaced `<select>` dropdown with `<fieldset>` containing two styled radio buttons; `value="grok"` → `value="groq"`; removed select CSS (appearance, background-image chevron, option styles); added radio button CSS (ai-conn__radios, ai-conn__radio, ai-conn__radio-input with custom dot, ai-conn__radio--active highlight)
+- `CLAUDE.md` — updated tech stack, status, architecture descriptions, and feature checklist to reflect Groq naming, radio buttons, and connectGemini/connectGroq helpers
+- `README.md` — updated all Grok → Groq references across AI Budget Optimizer, Executive Summary, and Tech Stack sections
+
+**Key decisions & why:**
+- Radio buttons with active highlight state — the `ai-conn__radio--active` class adds an indigo border and subtle background tint to the selected option, providing clear visual feedback without a separate indicator element
+- Custom radio input styling — native radio appearance is hidden; a custom circle with indigo dot on `:checked` matches the dark theme design system
+- `<fieldset>` + `<legend>` instead of `<div>` + `<label>` — semantically correct for a group of radio buttons; improves accessibility by associating the "Provider" label with the entire radio group
+
+
+## [#19] Granular error handling for AI connection and panels
+**Type:** feature
+
+**Summary:** Added comprehensive error handling for AI connection with 6 error codes, contextual user-facing hints per error type, 10s connection timeout, and error state in both Optimizer and Summary panels.
+
+**Brainstorming:** Identified 6 distinct error cases: (1) invalid API key (400/401/403) — user action needed: check/re-copy key; (2) network offline or DNS failure (TypeError from fetch) — user action: check internet; (3) request timeout (AbortError after 10s) — user action: check network, try again; (4) rate limited (429) — user action: wait and retry; (5) server error (5xx) — provider's fault, not user's; (6) unknown/unexpected — generic fallback. Each case gets a specific error code, a clear primary message, and a secondary hint explaining what the user can do. The connect button re-enables after error so user can immediately try again — no separate retry button needed. Both AI panels also get an error state for when real API calls are wired up later.
+
+**Prompt:** Add proper error handling for AI connection. Identify all cases where connection is lost, key is invalid, or something has gone wrong. Implement proper user feedback for each case. No retry button — re-enable connect button. All messages above the connect button.
+
+**What was built:**
+- `stores/aiStore.ts` — added `AiConnectionErrorCode` type (6 codes: invalid-key, network, timeout, rate-limit, server-error, unknown); `AiConnectionError` type (code + message); `ConnectionError` class extending Error with code; `handleHttpError` helper mapping HTTP status to specific codes with provider-aware messages; `fetchWithTimeout` wrapper with 10s AbortController timeout; `toConnectionError` converting any caught error to structured `AiConnectionError`; `connectionError` ref changed from `string | null` to `AiConnectionError | null`
+- `features/ai-tools/components/AiConnectionForm.vue` — added `ERROR_HINTS` map with contextual hint per error code; error display changed from single `<p>` to `<div>` with primary message + secondary hint; added `ai-conn__error-message` (red, 500 weight) and `ai-conn__error-hint` (slate, normal) CSS
+- `features/ai-tools/components/AiOptimizerPanel.vue` — added `'error'` to Status type; `errorMessage` ref; error block in template between loading and result; button shows "Re-Analyze" on error; error CSS (red tinted background, centered message + hint)
+- `features/ai-tools/components/AiSummaryPanel.vue` — same error state additions as Optimizer; hint says "Click Re-Summarize to try again"
+
+**Key decisions & why:**
+- 6 error codes rather than just message strings — allows the UI to show different hints per error type; also enables future logic (e.g., auto-disconnect on invalid key, skip retry on auth errors)
+- `fetchWithTimeout` using AbortController — fetch has no built-in timeout, so without this the spinner would hang forever on network issues; 10s is generous enough for slow connections but catches truly dead requests
+- `ConnectionError` class extending Error — allows typed error propagation through the try/catch chain; `toConnectionError` then converts any error (ConnectionError, DOMException, TypeError, or unknown) to a structured object
+- Error messages include provider name (e.g., "Invalid API key for Google Gemini") — when both providers are available, users need to know which one failed
+- Panels show error state with hint pointing to the button — no separate retry button, just re-enable the action button; keeps UI clean and consistent with the existing idle/loading/done flow
+
+
+## [#20] Extract AI connection logic into ai-tools feature module
+**Type:** refactor
+
+**Summary:** Moved all AI connection types, constants, and helper functions out of aiStore.ts into the ai-tools feature module, separating data (error codes) from presentation (user-facing messages).
+
+**Brainstorming:** The aiStore had grown to include HTTP logic, error mapping, timeout handling, and user-facing message strings — none of which belong in a Pinia store. Three changes: (1) move types (AiProvider, AiConnectionErrorCode, AiConnectionError) and PROVIDER_LABELS to ai-tools/types where all other AI feature types live; (2) extract connection logic (fetchWithTimeout, connectGemini, connectGroq, error code mapping) into a new ai-tools/ai-connection module with a single entry point `connectProvider(provider, key) → AiConnectionError | null`; (3) change AiConnectionError from `{ code, message }` to `{ code, provider }` — the helpers return structured data, and the UI component (AiConnectionForm) is the only place that constructs user-facing strings. This separates concerns: the connection module handles HTTP, the store manages state, and the UI owns the words.
+
+**Prompt:** Improve architecture. Move helper functions to ai-tools feature in an ai-connection folder. Move types to the ai-tools types folder. Error handling in helper functions should return proper properties for the UI and the UI component should handle the message for displaying to the user.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added AiProvider, PROVIDER_LABELS, AiConnectionErrorCode, AiConnectionError (now `{ code, provider }` with no message string)
+- `features/ai-tools/ai-connection/connectProvider.ts` — new file: fetchWithTimeout (10s AbortController), errorCodeFromStatus (HTTP status → error code), errorCodeFromException (JS error → error code), connectGemini, connectGroq, and `connectProvider` entry point returning `AiConnectionError | null`
+- `features/ai-tools/ai-connection/index.ts` — barrel export
+- `stores/aiStore.ts` — slimmed to pure store logic: imports types from ai-tools/types and connectProvider from ai-tools/ai-connection; no HTTP code, no error message strings, no timeout logic
+- `features/ai-tools/components/AiConnectionForm.vue` — now owns all user-facing strings: ERROR_MESSAGES map (code + provider → message via function) and ERROR_HINTS map (code → hint); imports types from ai-tools/types instead of aiStore
+- `features/ai-tools/components/AiConnectedStatus.vue` — imports PROVIDER_LABELS from ai-tools/types instead of aiStore
+
+**Key decisions & why:**
+- `AiConnectionError = { code, provider }` without message — separates data from presentation; the connection module doesn't know or care what the user sees; the UI component decides how to phrase each error
+- `connectProvider` returns `null` on success, `AiConnectionError` on failure (no throw) — the store just checks the result without try/catch, making the control flow cleaner and removing the need for the `ConnectionError` class and `toConnectionError` converter
+- `errorCodeFromStatus` and `errorCodeFromException` as pure mapping functions — simple input→output with no side effects; easy to reason about and test
+- ERROR_MESSAGES as functions `(provider) => string` — allows provider-aware messages ("Invalid API key for Google Gemini") without the connection module needing to know about display labels
+- PROVIDER_LABELS lives in ai-tools/types alongside AiProvider — they're tightly coupled (the label map uses AiProvider as its key type), and both are consumed by UI components within the ai-tools feature
+
+
+## [#21] Return provider models from connection and add model types
+**Type:** feature
+
+**Summary:** connectProvider now parses and returns the models array from both Gemini and Groq API responses on successful connection, with typed model interfaces for each provider.
+
+**Brainstorming:** Both Gemini and Groq list-models endpoints return useful model metadata alongside verifying the API key. Instead of discarding the response body, we can parse it and return the models array for later use (e.g., model selection dropdown). The two providers have different response shapes: Gemini wraps models in `{ models: [...] }`, Groq uses OpenAI-compatible `{ object, data: [...] }`. Each gets its own response and model type. The return type of `connectProvider` changes from `AiConnectionError | null` to `GeminiModel[] | GroqModel[] | AiConnectionError` — the store uses a type guard (`'code' in result`) to distinguish error from success.
+
+**Prompt:** connectGemini should return the models array. Create types for the response and models and return the models array. Do the same for Groq. connectProvider returns GeminiModel[] | GroqModel[] | AiConnectionError.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added GeminiModel (name, version, displayName, description, inputTokenLimit, outputTokenLimit, supportedGenerationMethods, temperature, topP, topK, maxTemperature, thinking), GeminiModelsResponse, GroqModel (id, object, created, owned_by, active, context_window, public_apps, max_completion_tokens), GroqModelsResponse
+- `features/ai-tools/ai-connection/connectProvider.ts` — connectGemini now parses response JSON and returns `GeminiModel[] | AiConnectionErrorCode`; connectGroq returns `GroqModel[] | AiConnectionErrorCode`; connectProvider return type changed to `GeminiModel[] | GroqModel[] | AiConnectionError`; error code (string) vs models array distinguished by `typeof result === 'string'`
+- `stores/aiStore.ts` — added `models` ref (`GeminiModel[] | GroqModel[]`); `isConnectionError` type guard using `'code' in result`; connect() stores models on success; disconnect() clears models to empty array
+
+**Key decisions & why:**
+- Separate types per provider (GeminiModel vs GroqModel) — the APIs return different shapes with different field names; a union type preserves the full information from each provider without lossy normalization
+- `typeof result === 'string'` inside connectGemini/connectGroq to distinguish error code from models array — clean and zero-overhead; error codes are always strings, model arrays are always objects
+- `isConnectionError` type guard in the store using `'code' in result` — cleanly narrows the union at the store boundary; the store doesn't need to know about individual model types
+- Models cleared on disconnect — prevents stale model data from a previous provider persisting after switching
+
+
+## [#22] AI model selection during connection + split provider files
+**Type:** feature
+
+**Summary:** Connection now fetches provider models, filters them, sends an AI model selection prompt using a default model, and stores the ranked AiModel[] with auto-selected best model. Provider logic split into separate gemini.ts and groq.ts files with shared utilities.
+
+**Brainstorming:** The connection flow needed to go beyond just verifying the API key — it should also determine the best model to use for subsequent prompts. The approach: (1) fetch all models from the provider API; (2) filter out non-text models (embeddings, image, audio, etc.); (3) send the filtered list to the AI itself using a default/fallback model and the existing `generateModelSelectionPrompt`; (4) parse the AI's structured JSON response into `AiModel[]`; (5) store the ranked list and auto-select the highest `strength_score`. New error case: `no-models` if the filter or AI selection returns nothing. The ai-connection folder was also growing — splitting into `gemini.ts`, `groq.ts`, and `shared.ts` keeps each provider's HTTP logic self-contained and the shared utilities (fetchWithTimeout, error code mapping, JSON parsing) reusable. The `connectProvider.ts` becomes a thin orchestrator.
+
+**Prompt:** Use filterGeminiModels and filterGroqModels to filter models on response. Use generateModelSelectionPrompt to get optimal models from AI. Connection should end when we get a response from the model selection prompt. If the list is empty throw a new error. Save in the store the models returned AND set as selected model the one with highest strength score. Use OUTPUT_SCHEMA to create the type for the final list. Split provider files per integration.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added AiModel type (id, model, display_name, provider, strength, strength_score, reason), ModelSelectionResponse type, added 'no-models' to AiConnectionErrorCode
+- `features/ai-tools/ai-connection/shared.ts` — new file: extracted fetchWithTimeout, errorCodeFromStatus, errorCodeFromException + new parseJsonResponse (strips markdown fences before JSON.parse)
+- `features/ai-tools/ai-connection/gemini.ts` — new file: filterGeminiModels, getDefaultGeminiModel (gemini-2.0-flash), connectGemini (list + filter), callGemini (POST to generateContent endpoint)
+- `features/ai-tools/ai-connection/groq.ts` — new file: filterGroqModels, getDefaultGroqModel (llama-3.3-70b-versatile), connectGroq (list + filter), callGroq (POST to chat/completions endpoint)
+- `features/ai-tools/ai-connection/connectProvider.ts` — rewritten as orchestrator: getDefaultModel, callAi (provider dispatcher), selectModels (generates prompt → calls AI → parses ModelSelectionResponse), connectProvider (fetch → filter → select → return AiModel[] or error)
+- `features/ai-tools/ai-connection/index.ts` — updated barrel exports
+- `stores/aiStore.ts` — models ref changed to AiModel[]; added selectedModel ref (AiModel | null); selectBestModel helper picks highest strength_score; connect() stores both; disconnect() clears both
+- `features/ai-tools/components/AiConnectionForm.vue` — added 'no-models' to ERROR_MESSAGES and ERROR_HINTS maps
+
+**Key decisions & why:**
+- Default models (gemini-2.0-flash / llama-3.3-70b-versatile) for the initial selection prompt — we need a model to ask "which model is best" before we know the answer; these are reliable mid-tier models available on both free tiers
+- `getDefaultGeminiModel` / `getDefaultGroqModel` as exported functions — centralizes the default model choice per provider; easy to update in one place if defaults change
+- `parseJsonResponse` strips markdown fences — AI models often wrap JSON in ```json blocks even when told not to; this handles that gracefully
+- `selectBestModel` using reduce on strength_score — simple, deterministic selection; the AI already ranked them so the highest score is always the first choice
+- Split into gemini.ts / groq.ts / shared.ts — each provider file owns its API specifics (endpoints, auth headers, request/response shapes, model filtering); shared.ts owns transport-level utilities; connectProvider.ts is a thin orchestrator that doesn't know HTTP details
+- `no-models` error code — covers both "provider returned no compatible models" and "AI selection returned empty" cases; UI explains to try a different provider
+
+
+## [#23] Dynamic optimal model selection — remove hardcoded defaults
+**Type:** update
+
+**Summary:** Replaced hardcoded DEFAULT_MODEL constants with dynamic `getOptimalModel` functions that pick the best model from the actual filtered models list returned by each provider's API.
+
+**Brainstorming:** The hardcoded defaults (gemini-2.0-flash, llama-3.3-70b-versatile) would go stale as providers add new models. Since we already have the filtered models list from the list-models API call, we can pick the best one programmatically. For Gemini: prefer "flash" models (cheaper/faster for a meta-prompt) then sort by version descending (latest first). For Groq: sort by `created` timestamp descending (most recently added). Both return the model identifier from the actual list, so the initial model selection prompt always uses a model the provider actually supports right now.
+
+**Prompt:** Is there a way to get the best model for the initial call without DEFAULT_MODEL hardcoded? What about calling the one with the latest version?
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — removed DEFAULT_MODEL constant and getDefaultGeminiModel; added getOptimalGeminiModel(models) which sorts filtered list by flash-preference then version descending, strips "models/" prefix; callGemini model param now required (no fallback)
+- `features/ai-tools/ai-connection/groq.ts` — removed DEFAULT_MODEL constant and getDefaultGroqModel; added getOptimalGroqModel(models) which sorts by created timestamp descending; callGroq model param now required
+- `features/ai-tools/ai-connection/connectProvider.ts` — getDefaultModel replaced with getOptimalModel(provider, models) that passes the filtered list to the provider-specific function; selectModels now receives the typed filtered models and calls getOptimalModel to pick the initial model
+
+**Key decisions & why:**
+- Flash-first for Gemini — flash models are faster and cheaper, ideal for a meta-prompt that just selects models; version sort as tiebreaker ensures we get the latest flash variant
+- Created-timestamp for Groq — Groq doesn't have a "flash" concept; most recently created model is the best proxy for "latest and most capable"
+- Model param now required on callGemini/callGroq — removes the hidden coupling to a default; every call site must explicitly choose which model to use
+
+
+## [#24] Refactor connectProvider — full flow inside each provider
+**Type:** refactor
+
+**Summary:** Moved the complete connection flow (fetch → filter → select models) into connectGemini and connectGroq, making connectProvider a thin try/catch wrapper with no branching logic.
+
+**Brainstorming:** connectProvider had if/else checks for provider at every step: fetching models, getting the optimal model, calling the AI. By pushing the entire flow into each provider's connect function, each provider owns its full lifecycle and connectProvider becomes a simple dispatcher. The provider functions now return `AiModel[]` on success or throw `ConnectionError` on failure — connectProvider catches and converts to `AiConnectionError`. This also means callGemini, callGroq, filterModels, getOptimalModel are no longer exported — they're internal implementation details of each provider module.
+
+**Prompt:** Refactor connectProvider. connectGemini should return the 3 final models or throw an error. Similar for connectGroq. That way we avoid if/else checks for the subsequent functionality and we do not need to export those functions.
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — connectGemini now handles the full flow: fetchModels → filterModels → getOptimalModel → callGemini → parseJsonResponse → return AiModel[]; throws ConnectionError (with error code) on failure; callGemini, filterModels, getOptimalModel are now internal (not exported)
+- `features/ai-tools/ai-connection/groq.ts` — same pattern: connectGroq owns the full flow; throws ConnectionError; internal helpers not exported
+- `features/ai-tools/ai-connection/connectProvider.ts` — reduced to a thin wrapper: delegates to connectGemini/connectGroq, catches ConnectionError → AiConnectionError; no more getOptimalModel, callAi, selectModels helpers
+- `features/ai-tools/ai-connection/index.ts` — barrel now only exports connectProvider
+
+**Key decisions & why:**
+- ConnectionError class in each provider file — each provider throws typed errors with AiConnectionErrorCode; connectProvider catches them uniformly without knowing provider internals
+- Provider functions return AiModel[] directly (no error codes in return type) — cleaner API: success = return, failure = throw; connectProvider does the conversion to the store-friendly AiConnectionError
+- callGemini/callGroq no longer exported — they're implementation details; if future features need to call the AI directly, they should go through a higher-level API that manages model selection and error handling
+
+
+## [#25] Remove ConnectionError class — use plain Error with error code as message
+**Type:** fix
+
+**Summary:** Replaced custom ConnectionError class with plain Error throws, using the error code string as the message. connectProvider checks error messages against known codes.
+
+**Brainstorming:** The ConnectionError class was duplicated in both provider files and added unnecessary complexity. Since the error codes are unique strings, we can throw `new Error('invalid-key')` and check `e.message` against a known set in connectProvider. This removes the custom class entirely while preserving the same error code mapping.
+
+**Prompt:** Can we avoid ConnectionError and throw normal error?
+
+**What changed:**
+- `features/ai-tools/ai-connection/gemini.ts` — removed ConnectionError class and its export; all throws now use `new Error(errorCode)` directly
+- `features/ai-tools/ai-connection/groq.ts` — same: removed ConnectionError class, use plain Error throws
+- `features/ai-tools/ai-connection/connectProvider.ts` — removed ConnectionError imports; added ERROR_CODES Set of all known AiConnectionErrorCode values; catch block checks if `e.message` is a known code (use directly) or falls back to `errorCodeFromException(e)` for network/timeout/unknown errors
+
+**Key decisions & why:**
+- Error message = error code — simple convention: provider functions throw `new Error('invalid-key')` or `new Error('no-models')`; no custom class needed since the message itself carries the structured information
+- ERROR_CODES Set for validation — ensures only legitimate error codes pass through; any other Error message (like "Gemini API error (500)") falls through to errorCodeFromException which classifies it as 'unknown'
+
+
+## [#26] AI Analysis Flow — Budget Optimizer + Executive Summary
+**Type:** feature
+
+**Summary:** Replaced mock response cycling with real Gemini/Groq API calls for both AI tabs, adding a full analysis flow with debouncing, caching, cancellation, cooldown, panel/tab lifecycle, and token-limit protection.
+
+**Brainstorming:** The spec required 15 behavioral rules covering first-manual-trigger, automatic label-change calls, response caching, data caching, request cancellation, cooldown, CSV reset, panel close/reopen, tab switching, error fallback, and token-limit detection. Key architecture decision: one shared Pinia store (`aiAnalysisStore`) with per-tab state stored in plain objects and synced to Vue refs for reactivity. A config-map approach keeps both tabs DRY — the only differences are which data builder and prompt generator to call. The `callProviderForAnalysis` function lives in a new `ai-analysis/` module separate from `ai-connection/` because analysis calls need external AbortSignal support and a longer timeout (60s vs 10s). Panel open/close state (`aiPanelOpen`) was moved to `aiStore` since it's cross-cutting. Tab switching was given the same evaluation logic as panel reopen. Labels use `"all"` as the cache key when no filters are active to avoid empty-string edge cases. Data caching (buildBudgetOptimizerData/buildExecutiveSummaryData) was added to avoid redundant computation when re-analyzing the same label combination.
+
+**Prompt:** Implement the Budget Optimizer AI flow with debounce, cancellation, caching, cooldown, panel reopen handling, CSV reset, token-limit protection, and the same flow for Executive Summary. Cache built data per label combination. Tab switching = panel reopen evaluation.
+
+**What was built:**
+- `features/ai-tools/ai-analysis/callProvider.ts` — `callProviderForAnalysis<T>()` with AbortSignal support, 60s timeout, token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit patterns), Gemini + Groq call paths
+- `features/ai-tools/ai-analysis/index.ts` — barrel export
+- `stores/aiAnalysisStore.ts` — shared Pinia store for both tabs; per-tab state (firstAnalyzeCompleted, status, response, error, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey, errorFallbackMessage); shared state (activeTab, tokenLimitReached); watchers for label changes (debounced) and CSV upload (reset); actions: analyze, setActiveTab, onPanelOpen, onPanelClose, clearStateForNewCSV, clearStateForDisconnect
+- `features/ai-tools/types/index.ts` — added AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError types
+- `stores/aiStore.ts` — added aiPanelOpen ref + openPanel() / closePanel() actions
+- `shell/AppShell.vue` — replaced local isAiOpen with aiStore.aiPanelOpen; wired panel open/close to analysisStore.onPanelOpen/onPanelClose
+- `features/ai-tools/components/AiToolsContent.vue` — uses analysisStore.activeTab for tab routing and setActiveTab for tab switching
+- `features/ai-tools/components/AiOptimizerPanel.vue` — replaced mock cycling with analysisStore; added cached indicator (timestamp), error fallback message, token-limit notice, cooldown-disabled button
+- `features/ai-tools/components/AiSummaryPanel.vue` — same treatment as optimizer panel
+- `features/ai-tools/components/AiConnectedStatus.vue` — disconnect now calls analysisStore.clearStateForDisconnect() before aiStore.disconnect()
+- `features/ai-tools/components/AiTabs.vue` — uses AiAnalysisTab type from types instead of local export
+
+**Key decisions & why:**
+- Single store with per-tab state objects — avoids duplicate store logic while keeping each tab's state independent; plain objects synced to refs because Maps and nested objects don't trigger Vue reactivity on their own
+- Separate `ai-analysis/` module from `ai-connection/` — analysis calls need external AbortSignal (for cancellation) and a 60s timeout; connection calls use internal 10s timeout with their own AbortController
+- `"all"` as key when no filters active — avoids empty-string edge case in cache keys; normalized labels are sorted so `["Email","Social"]` and `["Social","Email"]` produce the same key
+- Data cache keyed by labels only (per tab) — provider/model don't affect the preprocessed data; avoids redundant buildBudgetOptimizerData/buildExecutiveSummaryData when only provider changes
+- Global single-request rule — only one API request across both tabs at any time; switching tabs cancels the other tab's request and reverts it to its last known state
+- Error fallback with cached result — if a request fails but a cached response exists for the same key, the cached result stays visible with a warning message instead of showing an empty error state
+
+
+## [#27] Remove data persistence and data preview from checklist
+**Type:** update
+
+**Summary:** Removed "Data persistence" and "Data preview before importing" from the feature checklist — not needed for the MVP scope.
+
+**Brainstorming:** For an MBA assignment MVP, memory-only storage is sufficient (page refresh losing data is acceptable in a demo context), and data preview adds complexity without value since the error table already surfaces CSV issues. Upload-replace is the only remaining CSV feature that matters for usability.
+
+**Prompt:** Remove items 2 and 3 from the CSV checklist.
+
+**What changed:**
+- `CLAUDE.md` — removed "Data persistence (memory vs sessionStorage vs localStorage)" and "Data preview before importing" from the CSV Upload & Template checklist
+
+**Key decisions & why:**
+- MVP scope trim — both features add complexity without meaningful value for a demo/presentation context; upload-replace is the only remaining must-have
+
+
+## [#28] Fix connection timeout and cooldown button re-enable
+**Type:** fix
+
+**Summary:** Increased model selection timeout from 10s to 30s to prevent connection timeouts on free-tier APIs, and fixed the Analyze/Summarize button not re-enabling after the 5-second cooldown.
+
+**Brainstorming:** Two issues. (1) The connection flow makes two API calls — fetching models (fast GET) and model selection (slow POST with AI prompt). Both used the same 10s timeout, but the model selection call on free-tier Gemini/Groq can take 15-30s especially on cold starts. Fix: add optional `timeoutMs` parameter to `fetchWithTimeout` and pass 30s for the model selection calls. (2) The `canAnalyze()` function used `Date.now()` to check cooldown expiry, but Vue computed properties only re-evaluate when a reactive dependency changes — time passing doesn't trigger re-evaluation. Fix: add a `cooldownTick` ref that increments via `setTimeout` after each cooldown expires, referenced inside `canAnalyze()` as a reactive dependency.
+
+**Prompt:** Fix connection timeout for model selection call (increase to 30s). Fix Analyze button not re-enabling after 5s cooldown.
+
+**What changed:**
+- `features/ai-tools/ai-connection/shared.ts` — added optional `timeoutMs` parameter to `fetchWithTimeout` (default 10s), exported `MODEL_SELECTION_TIMEOUT_MS` (30s)
+- `features/ai-tools/ai-connection/gemini.ts` — `callGemini` now passes `MODEL_SELECTION_TIMEOUT_MS` to `fetchWithTimeout`
+- `features/ai-tools/ai-connection/groq.ts` — `callGroq` now passes `MODEL_SELECTION_TIMEOUT_MS` to `fetchWithTimeout`
+- `stores/aiAnalysisStore.ts` — added `cooldownTick` ref + `scheduleCooldownExpiry()` (setTimeout that increments tick after 5s) + `clearCooldownTimers()` (cleanup on reset); `canAnalyze()` reads `cooldownTick.value` as reactive dependency; `executeAnalysis` calls `scheduleCooldownExpiry()` on success; `clearStateForNewCSV` calls `clearCooldownTimers()`
+
+**Key decisions & why:**
+- Optional timeout parameter vs separate function — keeps the API simple; the 10s default still applies to the fast model-list fetch, only the model selection call overrides to 30s
+- `cooldownTick` ref pattern — the lightest way to make a time-based check reactive in Vue; the `void cooldownTick.value` read inside `canAnalyze()` creates a reactive dependency without using the value, so the computed re-evaluates when the timeout fires
+
+
+## [#67] Fix and improve AI connection and analysis flow
+**Type:** fix
+
+**Summary:** Removed all API timeouts, fixed Gemini CORS error from duplicate `models/` prefix, added model selection fallback to optimal model, and added cross-tab auto-call activation.
+
+**Brainstorming:** Five issues addressed: (1) Timeouts are unnecessary — the browser and the store's AbortController already handle cancellation; removing them simplifies the code and avoids false timeout errors on slow connections. (2) Gemini CORS error — the AI model selection prompt may return model IDs with `models/` prefix (e.g. `models/gemini-2.0-flash`), and the analysis URL already has `models/` in the path, producing `models/models/...` — a 404 that manifests as CORS. Fix: strip prefix before building URL. (3) Model selection fallback — if the AI prompt returns no models or fails to parse, throwing `no-models` blocks connection entirely. Instead, fall back to the optimal model already chosen for the prompt call. (4) Cross-tab auto-call — previously each tab had its own `firstAnalyzeCompleted` flag, so analyzing on Optimizer then switching to Summary did nothing. Fix: shared `analysisActivated` flag set on any manual analyze, used by `evaluateTab` and the label-change watcher. (5) Cached indicator display deferred to polishing phase.
+
+**Prompt:** Fix/improve: remove all timeouts for API calls (connection and analysis), fix Gemini CORS error from duplicate models/ prefix, add model selection fallback to optimal model when AI prompt fails, add cross-tab auto-call so analyzing on one tab activates auto-calls on the other on tab switch.
+
+**What changed:**
+- `features/ai-tools/ai-connection/shared.ts` — removed `fetchWithTimeout`, `CONNECTION_TIMEOUT_MS`, and `MODEL_SELECTION_TIMEOUT_MS`; only `errorCodeFromStatus`, `errorCodeFromException`, `parseJsonResponse` remain
+- `features/ai-tools/ai-connection/gemini.ts` — replaced `fetchWithTimeout` with plain `fetch`; added `buildFallbackModel`; `connectGemini` wraps AI selection in try-catch and falls back to optimal model on failure
+- `features/ai-tools/ai-connection/groq.ts` — replaced `fetchWithTimeout` with plain `fetch`; added `buildFallbackModel`; `connectGroq` wraps AI selection in try-catch and falls back to optimal model on failure
+- `features/ai-tools/ai-analysis/callProvider.ts` — removed `ANALYSIS_TIMEOUT_MS` and `fetchWithSignal`; `callGemini`/`callGroq` now use plain `fetch` with external `signal`; `callGemini` strips `models/` prefix from model ID
+- `stores/aiAnalysisStore.ts` — added shared `analysisActivated` ref; set to `true` on manual `analyze()`; used in `evaluateTab` and label-change watcher instead of per-tab `firstAnalyzeCompleted`; reset in `clearStateForNewCSV`
+
+**Key decisions & why:**
+- Shared `analysisActivated` vs merging per-tab flags — a single shared flag is simpler and directly models the intent: "user has opted in to AI analysis"; per-tab `firstAnalyzeCompleted` kept for button label logic (Analyze vs Re-Analyze)
+- `buildFallbackModel` per provider — each provider builds a fallback with the correct `PROVIDER_LABELS` value and appropriate display name formatting (Gemini strips `models/` prefix, Groq uses ID as-is)
+- Strip `models/` prefix in analysis `callGemini` rather than at store level — keeps the fix close to where the URL is built, and the connection `getOptimalModel` already strips it independently
+
+
+## [#68] Per-model token limit tracking and 5-model selection
+**Type:** feature
+
+**Summary:** Updated model selection prompt to return 5 models (deprioritizing preview/experimental), added per-model `limitReached` tracking so token limits mark individual models instead of globally blocking, and global block only engages when all models are exhausted.
+
+**Brainstorming:** Gemini Pro Preview hits rate limits after ~3 calls on free tier (2 RPM, 32K TPM). Previously, any token-limit error set a global `tokenLimitReached` flag that permanently blocked all further calls. The fix has two parts: (1) select more models and steer the prompt away from preview/experimental ones with low quotas, and (2) track limits per model so the user can switch to another model and keep working. The global flag only activates when every model in the list is marked. Cache keys already include the model ID, so switching models and back naturally preserves previous responses.
+
+**Prompt:** Update model selection prompt to 5 models, deprioritize preview/experimental. Add limitReached on AiModel. Track per-model limits in aiStore. Only set global tokenLimitReached when all models exhausted. Add model change watcher for cache/auto-call. Preserve cached responses across model switches.
+
+**What was built:**
+- `features/ai-tools/prompts/model-selection-prompt.ts` — changed from 3 to 5 models; added selection criteria to prefer high free-tier limits and avoid preview/experimental models; updated strict rules, validation checklist, and intro
+- `features/ai-tools/types/index.ts` — added `limitReached: boolean` to `AiModel` type
+- `features/ai-tools/ai-connection/gemini.ts` — `connectGemini` initializes `limitReached: false` on all returned models (AI-selected and fallback)
+- `features/ai-tools/ai-connection/groq.ts` — `connectGroq` initializes `limitReached: false` on all returned models (AI-selected and fallback)
+- `stores/aiStore.ts` — added `selectedModelLimitReached` and `allModelsLimitReached` computed properties; added `markModelLimitReached(modelId)` action; exported all three
+- `stores/aiAnalysisStore.ts` — `handleRequestError` now calls `aiStore.markModelLimitReached` for the current model on token-limit; sets global `tokenLimitReached` only when `aiStore.allModelsLimitReached`; `executeAnalysis` guards on both global and per-model limit; label-change watcher guards on per-model limit; added model change watcher that triggers `evaluateTab` for cache/auto-call
+
+**Key decisions & why:**
+- Per-model `limitReached` on `AiModel` directly vs separate Map — mutating the model object is simpler and Vue reactivity picks it up via the `models` ref array; no need for a parallel data structure
+- Global flag only when all exhausted — allows the user to switch models and keep working; previous behavior was too aggressive
+- Model change watcher — ensures switching models immediately shows cached data or triggers auto-call, same as label/tab changes
+- 5 models with anti-preview criteria — gives more fallback options and steers away from the models most likely to hit free-tier walls
+
+
+## [#69] Set deterministic generation config for Gemini and Groq
+**Type:** update
+
+**Summary:** Pinned generation parameters to deterministic values on all Gemini and Groq API calls (connection + analysis) to ensure consistent, reproducible responses.
+
+**Brainstorming:** Both providers defaulted to non-zero temperature (Groq was 0.3, Gemini used the API default). This introduced randomness between identical prompts, making analysis results inconsistent across runs. Setting temperature to 0 (and Groq's additional sampling params to neutral values) eliminates this variance. Applied to all 4 call sites: analysis calls in `callProvider.ts` and connection-time model-selection calls in `gemini.ts`/`groq.ts`.
+
+**Prompt:** Set deterministic generation parameters — Gemini: `temperature: 0`; Groq: `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0` — on all API calls (connection and analysis).
+
+**What changed:**
+- `features/ai-tools/ai-analysis/callProvider.ts` — Gemini `callGemini`: added `generationConfig: { temperature: 0 }`; Groq `callGroq`: changed `temperature` from 0.3 to 0, added `top_p: 1`, `frequency_penalty: 0`, `presence_penalty: 0`
+- `features/ai-tools/ai-connection/gemini.ts` — `callGemini`: added `generationConfig: { temperature: 0 }` to model-selection call
+- `features/ai-tools/ai-connection/groq.ts` — `callGroq`: changed `temperature` from 0.3 to 0, added `top_p: 1`, `frequency_penalty: 0`, `presence_penalty: 0` to model-selection call
+
+**Key decisions & why:**
+- Applied to all 4 call sites (not just analysis) — model selection during connection also benefits from deterministic output for consistent model ranking
+- Gemini uses `generationConfig` wrapper — required by the Gemini API schema; temperature is nested inside it
+- Groq gets all 4 params explicitly — even though 0/1 are defaults for some, setting them explicitly documents intent and prevents any future API default changes from affecting behavior
+
+
+## [#70] Model evaluation prompt, silent model fallback, and model attribution
+**Type:** feature
+
+**Summary:** Switched to `generateModelEvaluationPrompt` for ranking up to 15 models, added silent model fallback on token-limit errors (retries with next best model transparently), and stamped each AI response with the model display_name shown alongside the cached timestamp.
+
+**Brainstorming:** The previous `generateModelSelectionPrompt` returned only 5 models and did not guarantee sort order. The new `generateModelEvaluationPrompt` evaluates all available models and returns up to 15, ranked by strength_score. Since the AI might not sort perfectly, a re-sort by `strength_score` desc is applied client-side. For token limits: previously the first failure would show an error to the user and block further requests. Now the flow is: mark model as exhausted → pick next highest-scored available model from the sorted list → retry the same call transparently. The user never sees the intermediate failure — only the final result. The global `tokenLimitReached` flag is only set when ALL models are exhausted. For attribution: added an optional `model` field to both response types, stamped with `display_name` on success, and shown in the cached indicator as "Generated at [time] with [model_name]". The default model (used for the evaluation prompt itself) gets its AI-assigned properties if it appears in the ranked response.
+
+**Prompt:** Use generateModelEvaluationPrompt instead of generateModelSelectionPrompt. Sort the returned models ranking with highest score first. In the response from AI save the model properties as well and show to the user the display_name too. If a model reaches the token limit then on the first failure select the next one in the list without showing the error to the user and try again the call. If all models reached their limit then the global flag for limit reached should be true.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added optional `model?: string` field to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse`
+- `features/ai-tools/ai-connection/gemini.ts` — switched to `generateModelEvaluationPrompt`, re-sort results by `strength_score` desc, update default model properties if it appears in ranked list
+- `features/ai-tools/ai-connection/groq.ts` — same changes as gemini.ts
+- `stores/aiStore.ts` — added `selectNextAvailableModel()` that picks next non-exhausted model from sorted list (returns false if none left)
+- `stores/aiAnalysisStore.ts` — `handleRequestError`: on token-limit, marks model, calls `selectNextAvailableModel`, retries silently; global flag only when all exhausted. `executeAnalysis`: pre-check tries next model instead of blocking. Stamps `result.model` with display_name on success. Label-change watcher: tries next model instead of blocking
+- `features/ai-tools/components/AiOptimizerPanel.vue` — cached indicator shows "Generated at [time] with [model_name]"
+- `features/ai-tools/components/AiSummaryPanel.vue` — same cached indicator update
+
+**Key decisions & why:**
+- Re-sort client-side after AI response — cannot fully trust the AI to return models in correct order despite the prompt requiring it
+- Silent retry is transparent — user sees only the final result with the model name, never intermediate failures; this avoids confusing error flashes
+- `selectNextAvailableModel` uses `Array.find` on the sorted models array — since models are sorted by strength_score desc, `find(!limitReached)` naturally picks the best available
+- `tokenLimitReached` set to `true` directly (not via computed) — only when `selectNextAvailableModel` returns false, meaning all models are exhausted
+- Default model properties updated from AI response — ensures the model used for evaluation gets accurate display_name/strength/reason from the AI instead of the generic fallback values
+
+
+## [#71] Store full AiModel in responses and extract rankModels utility
+**Type:** refactor
+
+**Summary:** Changed the `model` field on `BudgetOptimizerResponse` and `ExecutiveSummaryResponse` from `string` to `AiModel` so the full model properties are preserved per response. Extracted the shared ranking/sorting/optimal-update logic from both provider modules into a new `rankModels` utility.
+
+**Brainstorming:** Storing only `display_name` as a string lost all other model metadata (strength_score, reason, provider, etc.) per cached response. Switching to `AiModel` preserves everything. The ranking logic — sort by score, init limitReached, update optimal model's id/model from fallback — was duplicated identically in `gemini.ts` and `groq.ts`. Extracting it into `utils/rankModels.ts` removes duplication and keeps the connection modules focused on provider-specific fetch/call/filter logic.
+
+**Prompt:** Save the full AiModel in the ExecutiveSummaryResponse and BudgetOptimizerResponse. If the optimal model is in the list, assign the returned properties to it. Extract similar functionalities into the utils folder.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — changed `model?: string` to `model?: AiModel` on both response types
+- `features/ai-tools/utils/rankModels.ts` — new file: `rankModels(parsed, optimalModelId, fallback)` sorts models by strength_score desc, inits limitReached, updates optimal model entry with correct id/model from fallback
+- `features/ai-tools/ai-connection/gemini.ts` — replaced inline ranking logic with `rankModels()` call
+- `features/ai-tools/ai-connection/groq.ts` — same simplification
+- `stores/aiAnalysisStore.ts` — stamps `result.model` with full `AiModel` copy (spread) instead of just display_name string
+- `features/ai-tools/components/AiOptimizerPanel.vue` — reads `response.model.display_name` instead of `response.model`
+- `features/ai-tools/components/AiSummaryPanel.vue` — same template update
+
+**Key decisions & why:**
+- Full `AiModel` instead of string — preserves all metadata per cached response; future features can display strength, reason, etc. without re-querying
+- Spread copy (`{ ...aiStore.selectedModel }`) — prevents the response's model snapshot from mutating if the store's model changes later (e.g. limitReached toggled)
+- `rankModels` in utils, not in ai-connection — it's pure data transformation with no provider-specific logic, so it belongs in the shared utils folder
+
+
+## [#72] Guarantee rankModels always returns at least one model
+**Type:** update
+
+**Summary:** Updated `rankModels` to always include the fallback (optimal) model — if the AI response is empty or doesn't contain the optimal model, the fallback is added and the list re-sorted. Simplified both provider modules since `rankModels` now guarantees a non-empty result.
+
+**Brainstorming:** Previously `rankModels` returned an empty array when the AI response was empty, forcing the callers to check length and fall back manually. Since the fallback model is always available and always passed in, `rankModels` can guarantee at least one model by appending it when missing. This lets the callers simplify from a 4-line check-and-fallback to a single `return rankModels(...)`, with the catch block still providing the fallback for network/parse failures.
+
+**Prompt:** Update rankModels: pass the optimal we selected. If not in the list add it and return the sorted list. If in the list then return the sorted list. That way rankModels will return at least one model in case the response is empty.
+
+**What changed:**
+- `features/ai-tools/utils/rankModels.ts` — removed early `return []` for empty response; if optimal model not found in sorted list, pushes fallback and re-sorts
+- `features/ai-tools/ai-connection/gemini.ts` — simplified try block to single `return rankModels(...)` call (removed `selected.length` and `ranked.length` guards)
+- `features/ai-tools/ai-connection/groq.ts` — same simplification
+
+**Key decisions & why:**
+- Fallback added via push + re-sort rather than unshift — keeps the list properly sorted even when the fallback score (7) is higher than some AI-ranked models
+- Callers still keep the catch block with `[buildFallbackModel(optimal)]` — the catch covers network/parse failures where `rankModels` is never reached
+
+
+## [#73] Filter out weak models in rankModels
+**Type:** update
+
+**Summary:** Added a filter step in `rankModels` to remove all models with a `strength_score` below 6, ensuring only suitable models are available for AI analysis.
+
+**Brainstorming:** The model evaluation prompt scoring guidelines already define models below 6 as "generally unsuitable for this application." Filtering them out at the `rankModels` level ensures unsuitable models never reach the selection pool, regardless of what the AI returns. A simple `.filter()` before `.sort()` is the cleanest approach — no new abstractions needed.
+
+**Prompt:** Update rankModels to remove all models that have less than 6 strength_score.
+
+**What changed:**
+- `features/ai-tools/utils/rankModels.ts` — added `.filter((m) => m.strength_score >= 6)` before the sort step; updated JSDoc to reflect the new pipeline order
+- `CLAUDE.md` — updated architecture description for `rankModels.ts`
+
+**Key decisions & why:**
+- Filter placed before sort — no point sorting models that will be discarded
+- Threshold of 6 aligns with the scoring guidelines in `model-evaluation-prompt.ts` where below 6 means "generally unsuitable"
+- Fallback model is still added before filtering — if the fallback has a score >= 6 (default is 7) it survives; if not, the list may still contain other qualifying models
+
+
+## [#74] Rename ModelSelectionResponse → RankedModelsResponse, remove legacy model-selection prompt
+**Type:** refactor
+
+**Summary:** Renamed `ModelSelectionResponse` to `RankedModelsResponse` and `selected_models` to `models` across the codebase, and deleted the unused `model-selection-prompt.ts`.
+
+**Brainstorming:** The codebase had two model prompt files: `model-selection-prompt.ts` (legacy, selects top 5) and `model-evaluation-prompt.ts` (active, evaluates and ranks up to 20). Only `generateModelEvaluationPrompt` is imported — `generateModelSelectionPrompt` is dead code with no consumers. The legacy prompt was the original implementation that selected a fixed top-5 list. It was superseded by the evaluation prompt which introduced scoring (strength_score 1–10), richer evaluation criteria (reasoning ability, summarization, structured output, stability, rate limits), and support for up to 20 models. Both providers (Gemini and Groq) import exclusively from `model-evaluation-prompt.ts` via the prompts barrel export, which never re-exported the legacy prompt. The type name `ModelSelectionResponse` and field `selected_models` were holdovers from the legacy prompt's naming. Renaming to `RankedModelsResponse` with a `models` field better reflects the current evaluation-and-ranking semantics. The prompt schema output also needed updating from `selected_models` to `models` to match the new type so the AI response parses correctly into `RankedModelsResponse`.
+
+**Prompt:** Update ModelSelectionResponse to RankedModelsResponse and selected_models to models. Clean up model-selection prompt and justify in the logs why we will only use the model evaluation prompt based on current implementation.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — renamed `ModelSelectionResponse` → `RankedModelsResponse`, `selected_models` → `models`, updated comment
+- `features/ai-tools/utils/rankModels.ts` — updated import and usage to `RankedModelsResponse` and `parsed.models`
+- `features/ai-tools/ai-connection/gemini.ts` — updated import and cast to `RankedModelsResponse`
+- `features/ai-tools/ai-connection/groq.ts` — updated import and cast to `RankedModelsResponse`
+- `features/ai-tools/prompts/model-evaluation-prompt.ts` — updated output schema from `selected_models` to `models`
+- `features/ai-tools/prompts/model-selection-prompt.ts` — deleted (dead code)
+- `CLAUDE.md` — removed model-selection-prompt from architecture, updated type name
+
+**Key decisions & why:**
+- Deleted `model-selection-prompt.ts` rather than keeping it — it was never imported anywhere, the prompts barrel export excluded it, and keeping dead code adds confusion about which prompt is active
+- Renamed to `RankedModelsResponse` (not `ModelEvaluationResponse`) — the type describes the response shape (a ranked list of models), not the prompt that produced it; this keeps the type reusable if the prompt evolves
+- Updated the prompt schema output field to `models` — the AI response must match the TypeScript type for `parseJsonResponse(...) as RankedModelsResponse` to work correctly
+
+
+## [#75] Fix CAC returning 0 for zero-conversion campaigns — use null instead
+**Type:** fix
+
+**Summary:** Changed CAC calculation to return `null` instead of `0` when conversions are zero, preventing zero-conversion campaigns from appearing artificially efficient in AI analysis and dashboard display.
+
+**Brainstorming:** `safeDivide(budget, 0)` returns `0`, which makes a zero-conversion campaign look like it has the best possible acquisition cost (€0). This is semantically wrong — CAC is undefined when there are no conversions, not zero. The AI prompts receive this data as JSON and would misinterpret `cac: 0` as exceptional efficiency, potentially recommending budget increases for campaigns that produce no conversions at all. Three options: (1) `null` — signals "not computable", serializes to `null` in JSON which the AI can interpret correctly; (2) large sentinel like `Infinity` — doesn't serialize to valid JSON; (3) "N/A" string — breaks the numeric type. `null` is the cleanest: it's type-safe, serializes correctly, and the AI can distinguish "no data" from "zero cost." For the dashboard, `KpiCard` now shows "N/A" for null values. The `CampaignTable` already displayed '—' for zero-conversion CAC but its sort function returned 0 (sorting them to the top as "best"); changed to `Infinity` so they sort to the bottom instead. `safeDivide` itself was not changed — it's correct for ROI, CTR, CVR where 0 is a valid result (0% ROI means break-even, 0% CTR means no clicks).
+
+**Prompt:** Fix issues that fall in this case: CAC with zero conversions. budget / 0 should not become 0 in business terms. That makes a zero-conversion campaign look artificially efficient.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `CampainSummaryTotals.cac` changed from `number` to `number | null`
+- `common/types/campaign.ts` — `CampaignKPIs.cac` changed from `number` to `number | null`
+- `features/ai-tools/utils/buildBudgetOptimizerData.ts` — 3 CAC sites: per-campaign, per-channel, totals — all return `null` when conversions = 0
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — 3 CAC sites: per-campaign, per-channel, totals — all return `null` when conversions = 0
+- `stores/campaignStore.ts` — portfolio KPI CAC returns `null` when total conversions = 0
+- `features/dashboard/components/KpiCard.vue` — `value` prop accepts `number | null`, displays "N/A" for null
+- `features/dashboard/components/CampaignTable.vue` — CAC sort value uses `Infinity` instead of `0` for zero conversions, pushing them to the bottom
+
+**Key decisions & why:**
+- Used `null` over `0`, `Infinity`, or `"N/A"` — null is type-safe, serializes to valid JSON, and lets the AI distinguish "not computable" from "zero cost"
+- Did not change `safeDivide` — it's correct for ROI (0% = break-even), CTR (0% = no clicks), CVR (0% = no conversions from clicks); only CAC has the semantic mismatch where 0 is misleading
+- Used `Infinity` for sort (not `null`) in CampaignTable — `Infinity` sorts correctly with numeric comparison, pushing zero-conversion rows to the bottom of ascending sort (highest CAC = worst)
+- Inlined the check (`conversions > 0 ? round2(budget / conversions) : null`) rather than creating a utility — the pattern is simple and explicit at each call site
+
+
+## [#76] Rewrite buildExecutiveSummaryData with portfolio benchmarks, delta signals, and structured classification logic
+**Type:** refactor
+
+**Summary:** Rewrote the executive summary data builder with portfolio benchmark metrics, per-campaign/channel delta signals, structured campaign classification rules (top/underperforming with no-overlap guarantee), materiality-based channel ranking, priority-ordered key findings, minimum sample thresholds, and explicit empty dataset handling.
+
+**Brainstorming:** The previous implementation used simple ROI-based sorting for top/underperforming campaigns and budget-share sorting for channels. This produced weak classifications — a campaign could be both top and underperforming, there was no relative efficiency signal (delta vs portfolio), and key findings had ad-hoc priority ordering. The new rules introduce: (1) Portfolio benchmarks as baseline reference (ROI, CAC, CVR from totals); (2) Delta signals (roiDelta, cacDelta, cvrDelta) on every campaign and channel so the AI can see relative performance at a glance; (3) Structured top-campaign selection requiring BOTH ROI >= portfolio AND CAC <= portfolio; (4) Multi-signal underperforming detection (2+ of 4 conditions); (5) Explicit no-overlap guarantee (top takes precedence); (6) Minimum sample threshold (conversions >= 10 OR budget >= 2%) to prevent low-volume campaigns from skewing classifications; (7) Materiality score (60% budget + 40% revenue) for channel ranking instead of pure budget share; (8) Priority-ordered key findings (budget inefficiency > disproportionate revenue > campaign outperformance > concentration risk). CAC uses Infinity for zero conversions in this builder — enables natural comparison logic (Infinity > any threshold → never classified as efficient) and serializes to null in JSON for the AI prompt.
+
+**Prompt:** Fix the buildExecutiveSummaryData with detailed rules covering portfolio benchmarks, delta signals, campaign classification (top/underperforming), channel efficiency, key finding generation priority, division safety, empty dataset handling, materiality-based channel ranking, and minimum sample threshold.
+
+**What was built:**
+- `features/ai-tools/types/index.ts` — added `PerformanceDeltas` type (roiDelta, cacDelta, cvrDelta); extended `ExecutiveSummaryChannel` and `ExecutiveSummaryCampaign` with it
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — complete rewrite:
+  - `computeCAC` — returns Infinity for zero conversions
+  - `computeCacDelta` — returns null when result is non-finite (Infinity - Infinity = NaN)
+  - `meetsMinSample` — conversions >= 10 OR budget >= 2% of portfolio
+  - `deriveCampaignMetrics` — now computes roiDelta, cacDelta, cvrDelta against portfolio benchmarks
+  - `aggregateChannels` — now receives benchmarks, computes channel deltas
+  - `splitChannels` — materiality score ranking (budgetShare × 0.6 + revenueShare × 0.4)
+  - `selectTopCampaigns` — ROI >= portfolio AND CAC <= portfolio, min sample, ranked by ROI desc → Revenue desc → Conversions desc
+  - `countUnderperformingSignals` — 4 conditions: ROI weakness, CAC inefficiency (gated on conversions >= 10), revenue-budget share gap, CVR weakness
+  - `selectUnderperformingCampaigns` — requires 2+ signals, excludes top campaigns, min sample
+  - `generateKeyFindings` — priority-ordered: budget inefficiency, disproportionate revenue, major outperformance, concentration risk
+  - `buildExecutiveSummaryData` — explicit empty dataset early return, benchmark-driven pipeline
+
+**Key decisions & why:**
+- CAC = Infinity (not null) for zero conversions in this builder — enables natural comparison semantics (Infinity is always > any threshold, so zero-conversion items never qualify as efficient); serializes to null in JSON for the AI, matching the existing prompt handling
+- `PerformanceDeltas` as a shared type — both campaign and channel types need the same delta fields; a shared type avoids duplication and makes the contract explicit
+- Top campaign precedence over underperforming — prevents contradictory classifications that would confuse the AI; when filtered datasets are small, underperforming list shrinks rather than overlapping
+- Underperforming CAC condition gated on conversions >= 10 — avoids penalizing campaigns whose zero/low conversion count makes CAC unreliable as an efficiency signal
+- Materiality score (60/40 budget-revenue blend) for channel ranking — pure budget share would miss high-revenue-efficiency channels; the blend surfaces channels that matter most to the business
+- Budget inefficiency as highest-priority finding — an active budget drain is more actionable than an outperformance signal
+
+
+
+## [#77] Rename generateBudgetOptimizerPrompt to generateBudgetOptimizationPrompt
+**Type:** update
+
+**Summary:** Renamed the function `generateBudgetOptimizerPrompt` to `generateBudgetOptimizationPrompt` and the source file from `budget-optimizer-prompt.ts` to `budget-optimization-prompt.ts` for naming consistency.
+
+**Brainstorming:** A simple rename across four locations: the function declaration, the barrel export, the store import, and the store call site. The file rename follows the function name to keep them in sync.
+
+**Prompt:** Rename generateBudgetOptimizerPrompt to generateBudgetOptimizationPrompt and rename the file too.
+
+**What changed:**
+- `budget-optimizer-prompt.ts` → `budget-optimization-prompt.ts` — file renamed
+- `budget-optimization-prompt.ts:277` — function declaration renamed to `generateBudgetOptimizationPrompt`
+- `prompts/index.ts:1` — barrel export updated to new name and file path
+- `aiAnalysisStore.ts:17,235` — import and call site updated to new name
+- `CLAUDE.md` — architecture entry updated to reflect new file and function name
+
+**Key decisions & why:**
+- All four references updated atomically — no intermediate broken state
+
+
+## [#78] Upload again / replace existing data with confirmation warning
+**Type:** feature
+
+**Summary:** Added a confirmation modal that gates the "Upload CSV" header button when campaign data already exists, warning the user that uploading will replace all current data and reset analysis.
+
+**Brainstorming:** The trigger already existed in the AppShell header. The question was how to intercept it. Three options considered: (A) reuse BaseModal as a confirm dialog, (B) add a warning step inside UploadModal, (C) window.confirm(). Option A was chosen — a dedicated ReplaceDataModal keeps UploadModal clean and the confirmation logic separate. The provide('openUploadModal') path remains untouched since EmptyState only appears when no data exists and needs no confirmation.
+
+**Prompt:** Implement Upload again / replace existing data (with confirmation warning). Reuse BaseModal as a confirm dialog. The trigger already exists in the header.
+
+**What was built:**
+- `csv-file/components/ReplaceDataModal.vue` — BaseModal with warning message, "Replace data" (primary) and "Cancel" (ghost) buttons; emits confirm/close
+- `AppShell.vue` — added showReplaceConfirm ref and onReplaceConfirm handler; header "Upload CSV" button now opens ReplaceDataModal instead of UploadModal directly; on confirm: closes modal and opens UploadModal; provide('openUploadModal') path unchanged
+
+**Key decisions & why:**
+- ReplaceDataModal is v-if (not v-show) — avoids mounting BaseModal's keyboard/scroll listeners when it's not visible
+- provide('openUploadModal') left unchanged — the EmptyState path has no data to replace, confirmation would be incorrect there
+- Warning copy mentions analysis reset — consistent with the existing CSV upload reset behaviour already implemented in aiAnalysisStore

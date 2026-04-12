@@ -3,11 +3,13 @@ import type { ChartData } from 'chart.js'
 import { computed, inject } from 'vue'
 import {
   BarChart,
+  BaseButton,
   CHART_COLORS,
   DonutChart,
   FunnelChart,
   GroupedBarChart,
-} from '../../ui/charts'
+  SparklesIcon,
+} from '../../ui'
 import { useCampaignStore } from '../../stores/campaignStore'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
@@ -17,6 +19,7 @@ import KpiCard from './components/KpiCard.vue'
 const store = useCampaignStore()
 
 const openUploadModal = inject<() => void>('openUploadModal')
+const openAiPanel = inject<() => void>('openAiPanel')
 
 // ── Shared campaign color map ──────────────────────────────────────────────────
 
@@ -103,7 +106,13 @@ const funnelValues = computed(() => [
   <div v-else class="dashboard">
     <!-- Header -->
     <div class="dashboard__header">
-      <h2 class="dashboard__title">Campaign Performance</h2>
+      <div class="dashboard__title-row">
+        <h2 class="dashboard__title">Campaign Performance</h2>
+        <BaseButton @click="openAiPanel?.()">
+          <SparklesIcon />
+          AI
+        </BaseButton>
+      </div>
       <p class="dashboard__subtitle">
         {{ store.title }} , {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
       </p>
@@ -198,6 +207,12 @@ const funnelValues = computed(() => [
 
   @media (min-width: 1280px) {
     padding: theme('spacing.6') 0;
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   &__title {

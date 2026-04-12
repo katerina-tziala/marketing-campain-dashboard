@@ -4,7 +4,7 @@
 
 An MBA assignment project: a web-based interactive dashboard for analyzing marketing campaign performance. Users upload campaign data via CSV and get KPI visualizations, channel comparisons, and AI-powered budget optimization recommendations via Google Gemini.
 
-**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling: file-level errors (type, size, empty) shown inline under the dropzone; missing columns listed by name inline; invalid rows shown in a structured table inside the modal with the option to proceed with valid rows or go back. Upload again / replace data and AI features are next.
+**Status:** Campaign Performance Dashboard implemented. CSV upload flow complete with full error handling. AI Tools panel in place with full analysis flow: AI button in dashboard header, push drawer at lg+ and fixed overlay at <lg (max 90vw/90vh). AI connection form (provider radio buttons + API key + connect with live verification + granular error handling) implemented for Google Gemini and Groq; connected state shows status bar + tabbed interface (Optimizer / Summary). Both AI tabs wired to real Gemini/Groq API calls via `aiAnalysisStore` with full flow logic: debounced auto-calls on label change, response caching (keyed by provider::model::sorted labels), data caching (buildBudgetOptimizerData/buildExecutiveSummaryData), request cancellation via AbortController, 5s cooldown per cache key, per-model token/quota limit tracking (limitReached on AiModel, global tokenLimitReached only when all models exhausted), silent model fallback on token-limit (marks model, picks next highest-scored available model, retries transparently — user only sees final result), model change watcher for cache/auto-call, panel open/close persistence, tab switch = panel reopen evaluation (shared analysisActivated flag — analyzing on one tab activates auto-calls on the other), CSV upload resets all analysis state, disconnect clears analysis. No timeouts on any API calls (connection or analysis). Deterministic generation config: Gemini `temperature: 0`; Groq `temperature: 0, top_p: 1, frequency_penalty: 0, presence_penalty: 0`. Gemini model ID `models/` prefix stripped for analysis calls. Model evaluation prompt (`generateModelEvaluationPrompt`) returns up to 20 ranked models (filtered to strength_score >= 6, re-sorted by strength_score desc), default model properties updated if it appears in AI response, failure falls back to optimal model. Response types include `model?: AiModel` stamped with full model properties on each result; panels show "Generated at [time] with [display_name]". Shared `rankModels` util extracts filtering/sorting/init/optimal-update logic used by both providers. Budget Optimizer: executive summary, recommendations, top/underperformers, quick wins, correlations, risks. Executive Summary: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations. Upload-replace flow is next.
 
 ---
 
@@ -19,7 +19,7 @@ An MBA assignment project: a web-based interactive dashboard for analyzing marke
 | Styling | Tailwind CSS v3 + SCSS (dark mode via `class` strategy) |
 | Charts | Chart.js + vue-chartjs |
 | CSV Parsing | PapaParse (upload direction only) |
-| AI | Google Gemini API (free tier) |
+| AI | Google Gemini API + Groq API (free tiers) |
 
 ---
 
@@ -31,11 +31,15 @@ app/                        # Vue 3 + Vite project
 │   ├── common/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
 │   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
+│   │   ├── utils/
+│   │   │   └── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
 │   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
-│   │   └── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   ├── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[] sorted by strength_score desc), selectedModel (AiModel — highest strength_score), aiPanelOpen; selectedModelLimitReached, allModelsLimitReached (computed); connect() delegates to connectProvider; disconnect(); markModelLimitReached(modelId); selectNextAvailableModel() — picks next highest-scored non-exhausted model, returns false if none left; openPanel(); closePanel()
+│   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached (global — only when all models exhausted), analysisActivated (cross-tab — analyzing on one tab activates auto-calls on the other); debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, silent model fallback on token-limit (marks model → selectNextAvailableModel → retries transparently, no error shown to user), stamps response.model with display_name on success, model change watcher for cache/auto-call, panel open/close + tab switch evaluation, CSV reset, disconnect reset
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -52,6 +56,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
 │   │   │   ├── FileTextIcon.vue
+│   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
+│   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
 │   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
 │   │   ├── toast/              # Toast notification module
@@ -62,10 +68,46 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — header (title + upload button when data loaded) + main slot + UploadModal + ToastContainer; provides openUploadModal via provide()
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
 │   ├── features/
+│   │   ├── ai-tools/               # AI Tools feature folder
+│   │   │   ├── components/
+│   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→400px); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
+│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected; uses aiAnalysisStore.activeTab for tab routing
+│   │   │   │   ├── AiConnectionForm.vue    # Provider radio buttons (Gemini/Groq) + API key input (show/hide) + Connect button with spinner + inline error with contextual hint per error code; owns all user-facing error messages via ERROR_MESSAGES and ERROR_HINTS maps
+│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link; disconnect clears analysis state via aiAnalysisStore
+│   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
+│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button (cooldown-disabled); idle/loading/done/error states; renders full BudgetOptimizerResponse: executive summary, recommendations, top/underperformers, quick wins, correlations, risks; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
+│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button (cooldown-disabled); idle/loading/done/error states; renders full ExecutiveSummaryResponse: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
+│   │   │   ├── ai-analysis/
+│   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (no timeout — relies on external signal), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), strips models/ prefix for Gemini, parses JSON response
+│   │   │   │   └── index.ts            # Barrel export — only callProviderForAnalysis
+│   │   │   ├── ai-connection/
+│   │   │   │   ├── shared.ts           # errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules (no timeouts)
+│   │   │   │   ├── gemini.ts           # connectGemini(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGemini, filterModels, getOptimalModel (flash-first + latest version), buildFallbackModel are internal
+│   │   │   │   ├── groq.ts             # connectGroq(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGroq, filterModels, getOptimalModel (most recent created), buildFallbackModel are internal
+│   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; thin wrapper that delegates to connectGemini/connectGroq; catches errors and maps known error codes from message or falls back to errorCodeFromException
+│   │   │   │   └── index.ts            # Barrel export — only connectProvider
+│   │   │   ├── types/
+│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel (incl. limitReached), RankedModelsResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError + shared building blocks (PerformanceDeltas for roiDelta/cacDelta/cvrDelta) + prompt types + data/response types
+│   │   │   ├── prompts/
+│   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
+│   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt
+│   │   │   │   ├── executive-summary-prompt.ts # generateExecutiveSummaryPrompt — assembles executive-summary AI prompt from ExecutiveSummaryData
+│   │   │   │   ├── budget-optimization-prompt.ts  # generateBudgetOptimizationPrompt — assembles budget-optimizer AI prompt from BudgetOptimizerData
+│   │   │   │   ├── model-evaluation-prompt.ts  # generateModelEvaluationPrompt — evaluates and ranks up to 20 models by strength_score
+│   │   │   │   └── index.ts                    # Barrel export for prompts
+│   │   │   ├── mocks/
+│   │   │   │   ├── budget-optimizer-mocks.ts    # 5 BudgetOptimizerResponse mock objects (aggressive reallocation, conservative, seasonal pivot, channel consolidation, growth expansion)
+│   │   │   │   ├── executive-summary-mocks.ts  # 5 ExecutiveSummaryResponse mock objects (strong portfolio, needs attention, excellent, critical, growth phase)
+│   │   │   │   └── index.ts                    # Barrel export for mocks
+│   │   │   ├── utils/
+│   │   │   │   ├── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — portfolio benchmarks, delta signals (roiDelta/cacDelta/cvrDelta), campaign classification (top: ROI+CAC vs portfolio, underperforming: 2+ signal threshold, no overlap), channel materiality ranking, priority-ordered key findings; min sample threshold, CAC=Infinity for zero conversions
+│   │   │   │   ├── buildBudgetOptimizerData.ts  # Transforms Campaign[] into BudgetOptimizerData — per-campaign metrics, channel aggregation, portfolio totals; called on-demand at prompt time with filtered data
+│   │   │   │   └── rankModels.ts                # rankModels(parsed, fallback) — filters out models with strength_score < 6, sorts by strength_score desc, inits limitReached, updates optimal model properties from AI response
+│   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal from AppShell
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
@@ -75,9 +117,10 @@ app/                        # Vue 3 + Vite project
 │   │       ├── types/
 │   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
 │   │       ├── components/
-│   │       │   ├── UploadModal.vue     # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
-│   │       │   ├── CsvUploadForm.vue   # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
-│   │       │   └── CsvErrorTable.vue    # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
+│   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
+│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — warns that uploading will replace current data; emits confirm/close; opened by AppShell header button when data exists
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
+│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/
@@ -118,9 +161,7 @@ app/                        # Vue 3 + Vite project
 - [x] Drag & drop + file picker upload
 - [x] Auto-detection of columns (case-insensitive, 7 expected headers, extra columns ignored)
 - [x] Error handling: wrong file type and size shown inline; missing columns listed by name; invalid rows shown in a structured table with option to proceed with valid rows
-- [ ] Upload again / replace existing data (with confirmation warning)
-- [ ] Data persistence (memory vs sessionStorage vs localStorage)
-- [ ] Data preview before importing
+- [x] Upload again / replace existing data (with confirmation warning)
 
 ### Campaign Performance Dashboard
 - [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
@@ -131,19 +172,20 @@ app/                        # Vue 3 + Vite project
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table
 
-### AI Budget Optimizer (Gemini)
-- [ ] Send campaign data to Gemini API
-- [ ] Return budget reallocation recommendations in natural language
-- [ ] Confidence score per recommendation (High / Medium / Low)
-- [ ] Settings page for user Gemini API key input
-- [ ] Test Connection button
-- [ ] Disabled state + message when no API key provided
-- [ ] Link to get a free key from Google AI Studio
-
-### Executive Summary Generator (AI)
-- [ ] One-click AI summary in 3–5 bullets
-- [ ] Highlight top and underperforming campaigns
-- [ ] Uses same Gemini connection as Budget Optimizer
+### AI Tools
+- [x] AI button in dashboard header (SparklesIcon + "AI" label, primary variant)
+- [x] Push drawer at lg+ (slides in from right, compresses dashboard; 400px wide)
+- [x] Fixed overlay at <lg (on top of dashboard; max 90vw/90vh; backdrop + slide-in transition)
+- [x] Escape key or backdrop click closes panel
+- [x] Connection form — provider radio buttons (Google Gemini / Groq), API key input with show/hide toggle, Connect button with spinner
+- [x] Live connection verification — Gemini: GET /v1beta/models; Groq: GET /openai/v1/models; inline error on failure
+- [x] Connected status bar — provider name + green dot + "Connected" + Disconnect link
+- [x] Tabbed interface — Optimizer tab (SlidersIcon) + Summary tab (FileTextIcon)
+- [x] API key memory-only (not persisted to storage)
+- [x] Budget Optimizer tab — full UI for BudgetOptimizerResponse: executive summary, recommendations (confidence badge, reallocation amount, expected impact, timeline, success metrics), top performers (ROI + unlock potential), underperformers (action badge: Reduce/Pause/Restructure), quick wins (effort badge), correlations, risks & mitigations; 5 mock responses cycle on each Analyze click
+- [x] Executive Summary tab — full UI for ExecutiveSummaryResponse: health score badge (Excellent/Good/Needs Attention/Critical with color + score/100), bottom line, key metrics grid (8 metrics), insights (typed cards with emoji icon + metric highlight), priority actions (numbered with urgency badge), channel summary (status badge + budget share + one-liner), correlations; 5 mock responses cycle on each Summarize click
+- [x] Configure actual AI prompts for Optimizer and Summary (real API calls via callProviderForAnalysis + aiAnalysisStore)
+- [x] Error handling for AI connection — granular error codes (invalid-key, network, timeout, rate-limit, server-error, unknown) with contextual hints in connection form; error state in both panels with message + hint
 
 ---
 
