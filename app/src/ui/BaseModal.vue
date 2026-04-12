@@ -89,18 +89,18 @@ onUnmounted(() => {
     padding: theme('spacing.2');
     cursor: pointer;
     outline: none;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
     transition: color 150ms ease, background-color 150ms ease;
     border-radius: theme('borderRadius.md');
     border: 2px solid transparent;
 
     &:hover {
-      color: #a5b4fc; 
-      background-color: rgba(99, 102, 241, 0.2);
+      color: theme('colors.primary.300');
+      background-color: color-mix(in srgb, theme('colors.primary.500') 20%, transparent);
     }
 
     &:focus-visible {
-      border: 2px solid #6366f1; 
+      border-color: theme('colors.primary.500');
     }
 
     svg {

@@ -48,7 +48,7 @@ const tabs: { id: AiAnalysisTab; label: string }[] = [
     cursor: pointer;
     font-size: theme('fontSize.sm');
     font-weight: 500;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     transition: color 150ms ease, border-color 150ms ease;
     margin-bottom: -1px;
 

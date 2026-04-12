@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
 import { BaseButton } from '../../../ui'
 import type { AiProvider, AiConnectionErrorCode } from '../types'
@@ -7,9 +7,16 @@ import { PROVIDER_LABELS } from '../types'
 
 const store = useAiStore()
 
-const selectedProvider = ref<AiProvider>('gemini')
+const selectedProvider = ref<AiProvider>('groq')
 const apiKey = ref('')
 const showKey = ref(false)
+const showHelp = ref(false)
+
+watch(selectedProvider, () => {
+  store.connectionError = null
+  apiKey.value = ''
+  showKey.value = false
+})
 
 const ERROR_MESSAGES: Record<AiConnectionErrorCode, (provider: AiProvider) => string> = {
   'invalid-key': (p) => `Invalid API key for ${PROVIDER_LABELS[p]}.`,
@@ -54,28 +61,62 @@ async function handleConnect(): Promise<void> {
     </p>
 
     <form class="ai-conn__form" @submit.prevent="handleConnect">
-      <fieldset class="ai-conn__field ai-conn__fieldset">
-        <legend class="ai-conn__label">Provider</legend>
+      <!-- Provider -->
+      <fieldset class="form-field ai-conn__fieldset">
+        <legend class="form-field__label">Provider</legend>
         <div class="ai-conn__radios">
-          <label class="ai-conn__radio" :class="{ 'ai-conn__radio--active': selectedProvider === 'gemini' }">
-            <input type="radio" v-model="selectedProvider" value="gemini" class="ai-conn__radio-input" />
-            <span class="ai-conn__radio-label">Google Gemini</span>
-          </label>
           <label class="ai-conn__radio" :class="{ 'ai-conn__radio--active': selectedProvider === 'groq' }">
             <input type="radio" v-model="selectedProvider" value="groq" class="ai-conn__radio-input" />
-            <span class="ai-conn__radio-label">Groq</span>
+            Groq
+          </label>
+          <label class="ai-conn__radio" :class="{ 'ai-conn__radio--active': selectedProvider === 'gemini' }">
+            <input type="radio" v-model="selectedProvider" value="gemini" class="ai-conn__radio-input" />
+            Google Gemini
           </label>
         </div>
       </fieldset>
 
-      <div class="ai-conn__field">
-        <label class="ai-conn__label" for="ai-key">API Key</label>
+      <!-- API Key -->
+      <div class="form-field">
+        <div class="ai-conn__key-header">
+          <label class="form-field__label" for="ai-key">API Key</label>
+          <button type="button" class="ai-conn__help-toggle" @click="showHelp = !showHelp">
+            {{ showHelp ? 'Hide instructions' : 'How to get your key?' }}
+          </button>
+        </div>
+        <Transition name="help">
+          <div v-if="showHelp" class="ai-conn__help-collapse">
+            <div class="ai-conn__help">
+              <template v-if="selectedProvider === 'groq'">
+                <p class="ai-conn__help-title">How to get your Groq API key</p>
+                <ol class="ai-conn__help-steps">
+                  <li>Go to the <strong>Groq Console</strong> and sign in.</li>
+                  <li>Open <strong>API Keys</strong> from the left sidebar.</li>
+                  <li>Click <strong>Create API Key</strong> and give it a name.</li>
+                  <li>Copy the key and paste it into the field below.</li>
+                </ol>
+                <p class="ai-conn__help-note">Some models may require your organization admin to accept additional terms before use.</p>
+              </template>
+              <template v-else>
+                <p class="ai-conn__help-title">How to get your Gemini API key</p>
+                <ol class="ai-conn__help-steps">
+                  <li>Go to <strong>Google AI Studio</strong> and sign in.</li>
+                  <li>Open <strong>API Keys</strong> from the left sidebar.</li>
+                  <li>Click <strong>Create API key</strong>.</li>
+                  <li>Copy the key and paste it into the field below.</li>
+                </ol>
+              </template>
+              <p class="ai-conn__help-note">Keep your API key private — never share it publicly.</p>
+            </div>
+          </div>
+        </Transition>
         <div class="ai-conn__key-wrap">
           <input
             id="ai-key"
             v-model="apiKey"
             :type="showKey ? 'text' : 'password'"
-            class="ai-conn__input"
+            class="ai-conn__input form-control"
+            :class="{ 'form-control--error': store.connectionError }"
             placeholder="Paste your API key"
             autocomplete="off"
             spellcheck="false"
@@ -89,11 +130,10 @@ async function handleConnect(): Promise<void> {
             {{ showKey ? 'Hide' : 'Show' }}
           </button>
         </div>
-      </div>
-
-      <div v-if="store.connectionError" class="ai-conn__error" role="alert">
-        <p class="ai-conn__error-message">{{ errorMessage }}</p>
-        <p v-if="errorHint" class="ai-conn__error-hint">{{ errorHint }}</p>
+        <template v-if="store.connectionError">
+          <p class="form-field__error" role="alert">{{ errorMessage }}</p>
+          <p v-if="errorHint" class="ai-conn__error-hint">{{ errorHint }}</p>
+        </template>
       </div>
 
       <BaseButton
@@ -117,7 +157,7 @@ async function handleConnect(): Promise<void> {
 
   &__intro {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: var(--color-text);
     line-height: 1.55;
     margin: 0;
   }
@@ -126,20 +166,6 @@ async function handleConnect(): Promise<void> {
     display: flex;
     flex-direction: column;
     gap: theme('spacing.4');
-  }
-
-  &__field {
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing[1.5]');
-  }
-
-  &__label {
-    font-size: theme('fontSize.xs');
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #cbd5e1;
   }
 
   &__fieldset {
@@ -158,80 +184,110 @@ async function handleConnect(): Promise<void> {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: theme('spacing[1.5]');
-    padding: theme('spacing[1.5]') theme('spacing.3');
+    padding: theme('spacing[2.5]') theme('spacing.3');
     background-color: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: theme('borderRadius.md');
     cursor: pointer;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    font-size: theme('fontSize.sm');
+    font-weight: 500;
+    color: var(--color-text);
+    transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease;
 
-    &:hover {
-      border-color: rgba(99, 102, 241, 0.4);
+    &:hover:not(.ai-conn__radio--active) {
+      border-color: color-mix(in srgb, theme('colors.primary.500') 50%, transparent);
+      color: var(--color-text);
     }
 
     &--active {
-      border-color: #6366f1;
-      background-color: rgba(99, 102, 241, 0.08);
+      background-color: theme('colors.primary.500');
+      border-color: theme('colors.primary.500');
+      color: white;
     }
   }
 
   &__radio-input {
-    appearance: none;
-    width: 0.875rem;
-    height: 0.875rem;
-    border: 2px solid var(--color-border);
-    border-radius: 50%;
-    flex-shrink: 0;
-    position: relative;
-    transition: border-color 150ms ease;
-
-    &:checked {
-      border-color: #6366f1;
-
-      &::after {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 0.375rem;
-        height: 0.375rem;
-        border-radius: 50%;
-        background-color: #6366f1;
-      }
-    }
-  }
-
-  &__radio-label {
-    font-size: theme('fontSize.sm');
-    color: var(--color-title);
-    font-weight: 500;
+    display: none;
   }
 
   &__input {
-    width: 100%;
-    background-color: var(--color-bg);
+    padding: theme('spacing[2.5]') theme('spacing.16') theme('spacing[2.5]') theme('spacing.3');
+  }
+
+  &__key-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__help-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: theme('fontSize.xs');
+    font-weight: 500;
+    color: theme('colors.primary.400');
+    padding: 0;
+    line-height: 1;
+
+    &:hover {
+      color: theme('colors.primary.300');
+    }
+  }
+
+  &__help-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    overflow: hidden;
+  }
+
+  &__help {
+    background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
     border: 1px solid var(--color-border);
     border-radius: theme('borderRadius.md');
-    color: var(--color-title);
-    font-size: theme('fontSize.sm');
-    padding: theme('spacing[1.5]') theme('spacing.3');
-    outline: none;
-    transition: border-color 150ms ease;
+    padding: theme('spacing.3') theme('spacing.4');
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing.2');
+    min-height: 0;
+    overflow: hidden;
+  }
 
-    &:focus {
-      border-color: #6366f1;
+  &__help-title {
+    font-size: theme('fontSize.xs');
+    font-weight: 600;
+    color: var(--color-title);
+    margin: 0;
+  }
+
+  &__help-steps {
+    font-size: theme('fontSize.xs');
+    color: var(--color-text);
+    margin: 0;
+    padding-left: theme('spacing.4');
+    line-height: 1.6;
+    list-style-type: decimal;
+
+    li + li {
+      margin-top: theme('spacing.1');
     }
+
+    strong {
+      font-weight: 600;
+    }
+  }
+
+  &__help-note {
+    font-size: theme('fontSize.xs');
+    color: var(--color-text-secondary);
+    margin: theme('spacing.1') 0 0;
+    line-height: 1.4;
   }
 
   &__key-wrap {
     position: relative;
     display: flex;
     align-items: center;
-  }
-
-  &__input {
-    padding-right: theme('spacing.16');
   }
 
   &__toggle {
@@ -242,35 +298,17 @@ async function handleConnect(): Promise<void> {
     cursor: pointer;
     font-size: theme('fontSize.xs');
     font-weight: 500;
-    color: #818cf8;
+    color: theme('colors.primary.400');
     padding: 0;
 
     &:hover {
-      color: #a5b4fc;
+      color: theme('colors.primary.300');
     }
-  }
-
-  &__error {
-    margin: 0;
-    padding: theme('spacing.2') theme('spacing.3');
-    background-color: rgba(248, 113, 113, 0.08);
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    border-radius: theme('borderRadius.md');
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.1');
-  }
-
-  &__error-message {
-    font-size: theme('fontSize.xs');
-    color: #f87171;
-    margin: 0;
-    font-weight: 500;
   }
 
   &__error-hint {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: var(--color-text-secondary);
     margin: 0;
     line-height: 1.4;
   }
@@ -290,6 +328,17 @@ async function handleConnect(): Promise<void> {
     animation: spin 0.7s linear infinite;
     flex-shrink: 0;
   }
+}
+
+.help-enter-active,
+.help-leave-active {
+  transition: grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease;
+}
+
+.help-enter-from,
+.help-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
 }
 
 @keyframes spin {

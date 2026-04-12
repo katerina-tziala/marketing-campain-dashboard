@@ -312,7 +312,7 @@ function handleSummarize(): void {
 
   &__subtitle {
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -360,7 +360,7 @@ function handleSummarize(): void {
 
   &__empty-text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.6;
     margin: 0;
     text-align: center;
@@ -389,7 +389,7 @@ function handleSummarize(): void {
 
   &__loader-text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
   }
 
@@ -501,7 +501,7 @@ function handleSummarize(): void {
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.6;
     margin: 0;
 
@@ -530,7 +530,7 @@ function handleSummarize(): void {
   &__label {
     font-size: theme('fontSize.sm');
     font-weight: 600;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
   }
 }
 
@@ -651,7 +651,7 @@ function handleSummarize(): void {
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.5;
   }
 
@@ -743,7 +743,7 @@ function handleSummarize(): void {
 
   &__metric {
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
     line-height: 1.4;
     padding-left: calc(1.25rem + theme('spacing.2'));

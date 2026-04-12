@@ -314,7 +314,7 @@ function handleAnalyze(): void {
 
   &__subtitle {
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -362,7 +362,7 @@ function handleAnalyze(): void {
 
   &__empty-text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.6;
     margin: 0;
     text-align: center;
@@ -391,7 +391,7 @@ function handleAnalyze(): void {
 
   &__loader-text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
   }
 
@@ -503,7 +503,7 @@ function handleAnalyze(): void {
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.6;
     margin: 0;
 
@@ -627,7 +627,7 @@ function handleAnalyze(): void {
   &__detail-value {
     font-size: theme('fontSize.xs');
     font-weight: 600;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
 
     &--positive {
       color: #10b981;
@@ -666,7 +666,7 @@ function handleAnalyze(): void {
     line-height: 1.4;
 
     strong {
-      color: #cbd5e1;
+      color: theme('colors.slate.300');
       font-weight: 600;
     }
   }
@@ -724,7 +724,7 @@ function handleAnalyze(): void {
 
   &__unlock {
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     line-height: 1.5;
     margin: 0;
 
@@ -842,7 +842,7 @@ function handleAnalyze(): void {
     line-height: 1.5;
 
     strong {
-      color: #cbd5e1;
+      color: theme('colors.slate.300');
       font-weight: 600;
     }
   }

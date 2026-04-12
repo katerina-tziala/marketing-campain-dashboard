@@ -74,7 +74,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→400px); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
 │   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected; uses aiAnalysisStore.activeTab for tab routing
-│   │   │   │   ├── AiConnectionForm.vue    # Provider radio buttons (Gemini/Groq) + API key input (show/hide) + Connect button with spinner + inline error with contextual hint per error code; owns all user-facing error messages via ERROR_MESSAGES and ERROR_HINTS maps
+│   │   │   │   ├── AiConnectionForm.vue    # Provider button toggles (Groq default, then Gemini) + API key input (show/hide) + collapsible "How to get your key?" help section (provider-specific numbered steps) + Connect button with spinner + inline error (form-control--error on input + form-field__error text + hint below); clears connectionError + apiKey + showKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form-field/form-control classes
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link; disconnect clears analysis state via aiAnalysisStore
 │   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button (cooldown-disabled); idle/loading/done/error states; renders full BudgetOptimizerResponse: executive summary, recommendations, top/underperformers, quick wins, correlations, risks; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
@@ -126,11 +126,13 @@ app/                        # Vue 3 + Vite project
 │   │       └── utils/
 │   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
 │   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
+│   ├── styles/
+│   │   └── components.scss     # @layer components — form classes (form-field, form-control, form-control--error), card, btn-primary, section-title, data-table; imported by style.scss
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
-│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode
+│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/components.scss
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme, danger color token
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/
 └── package.json                # Locked via package-lock.json

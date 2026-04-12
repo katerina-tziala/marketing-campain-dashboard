@@ -64,18 +64,18 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   background: none;
   padding: theme('spacing.2');
   cursor: pointer;
-  color: #cbd5e1;
+  color: var(--color-text);
   transition: color 150ms ease, background-color 150ms ease;
   border-radius: theme('borderRadius.md');
   border: 2px solid transparent;
 
   &:hover {
-    color: #a5b4fc;
-    background-color: rgba(99, 102, 241, 0.2);
+    color: theme('colors.primary.300');
+    background-color: color-mix(in srgb, theme('colors.primary.500') 20%, transparent);
   }
 
   &:focus-visible {
-    border-color: #6366f1;
+    border-color: theme('colors.primary.500');
   }
 
   svg {
@@ -138,7 +138,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   &__title {
     font-size: theme('fontSize.lg');
     font-weight: 600;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
   }
 }
@@ -198,7 +198,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   &__title {
     font-size: theme('fontSize.lg');
     font-weight: 600;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     margin: 0;
   }
 }

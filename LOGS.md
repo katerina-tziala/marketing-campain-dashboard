@@ -1699,3 +1699,220 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - CSS custom property `--control-border` chosen over shared `border-color` rule to avoid specificity conflicts between global and scoped styles — each field keeps its own border shorthand while the color is centrally controlled
 - `:focus-within` on `.form-control` covers the dropzone (label containing a hidden file input) — keyboard focus on the file input surfaces the same indigo border as the text field
 - Background tint on dropzone hover removed — both fields are now solid `var(--color-bg)`, so hover is a border-only change, consistent with the text input
+
+
+## [#80] AiConnectionForm: align styles with CsvUploadForm, button toggles, Groq default
+**Type:** refactor
+
+**Summary:** Aligned AiConnectionForm field styles with CsvUploadForm using shared global classes, replaced radio buttons with button toggles, moved Groq to first/default provider, and made error state inline below the API key field.
+
+**Brainstorming:** The form had its own label/field/error styles duplicating what is now in @layer components. Four problems to solve: (1) visual alignment — use form-field/form-field__label/form-field__error/form-control/form-control--error everywhere they apply; (2) radio → button toggles — hide the native radio input (keep for a11y), style the label as a filled toggle: inactive = border only with muted text, active = solid indigo + white text, hover-inactive = subtle indigo border; (3) error placement — move from the styled error box (outside the field flow) to inline below the API key input so the filled value stays visible and the form structure is not disrupted; (4) provider change → clear stale error — a watcher on selectedProvider sets store.connectionError = null so an error from one provider does not confuse the user when they switch.
+
+**Prompt:** AiConnectionForm should have the same styles as CsvUploadForm. Labels, fields, colors and error visual states should be the same. Upon error the form state should be maintained. Update radio buttons to look like button toggles. Move Groq connection as the first/default provider.
+
+**What changed:**
+- `AiConnectionForm.vue` — script: default selectedProvider changed to 'groq'; added watch(selectedProvider) that clears store.connectionError on change; template: fieldset/legend use form-field/form-field__label; radios reordered (Groq first); radio-input hidden (display:none), label styled as toggle; API key field uses form-field/form-field__label/form-control/form-control--error; error rendered as form-field__error + ai-conn__error-hint inside the field wrapper; old ai-conn__error box removed; scoped styles: removed __field/__label/__radio-input dot styles/__error/__error-message; __radio redesigned as button toggle; __input uses var(--control-border) for border; __error-hint kept for hint secondary text
+- `CLAUDE.md` — AiConnectionForm architecture entry updated
+
+**Key decisions & why:**
+- `display: none` on radio-input (not sr-only) — the label itself is the clickable toggle, so screen readers navigate by the label text and fieldset legend; the hidden input still carries the checked state for v-model
+- Error cleared on provider switch via direct store.connectionError = null — Pinia refs are writable from components; no new store action needed
+- Button toggle padding matches field__input (spacing[2.5] vertical) — visual height matches the API key field for a consistent form rhythm
+- Hint text kept as ai-conn__error-hint (secondary color, xs) below form-field__error — preserves the contextual guidance without introducing a new global class for a single use
+
+
+## [#81] Extract @layer components to dedicated file; centralize form colors in Tailwind config
+**Type:** refactor
+
+**Summary:** Moved all @layer component classes to a new src/styles/components.scss file, added a danger color token to tailwind.config.js, and eliminated all hardcoded hex values from form-related styles by using theme() references throughout.
+
+**Brainstorming:** Three problems: (1) @layer components was inline in style.scss, mixing global class definitions with theme tokens and base styles; (2) hardcoded hex values were scattered across style.scss, CsvUploadForm, and AiConnectionForm — #6366f1, #f43f5e, #818cf8, #a5b4fc appeared in multiple places; (3) form-control lacked border, width, and ::placeholder, so component scoped styles had to duplicate them. Solution: new src/styles/components.scss holds the full @layer components block and is imported via SCSS @import in style.scss. tailwind.config.js gets a danger token (DEFAULT: #f43f5e) so error colors use theme('colors.danger.DEFAULT'). form-control gains border: 2px solid var(--control-border), width: 100%, and ::placeholder — scoped input styles in both form components are now reduced to padding only. All remaining hex in component scoped styles replaced with theme() or CSS keywords.
+
+**Prompt:** Lets extract all form styles to layer components. I still see hover states placeholder styles in CsvUploadForm. Make sure borders are 2px. Do not use hardcoded colors in the code. Try to update tailwind config to centralize colors. Focus on forms only for now. Lets also make a new file for layer components and import it in styles.scss.
+
+**What was built:**
+- `src/styles/components.scss` (NEW) — @layer components block with form classes (form-field, form-field__label, form-field__error, form-control with border/width/placeholder/hover/focus, form-control--error) and existing non-form classes (card, btn-primary, section-title, data-table family); all form hex replaced with theme()
+- `tailwind.config.js` — danger color token added: DEFAULT: '#f43f5e'
+- `style.scss` — @layer components block removed; replaced with @import './styles/components'
+- `CsvUploadForm.vue` — .field__input reduced to padding only; .dropzone border removed (from form-control); --active and __link hex replaced with theme('colors.primary.500')
+- `AiConnectionForm.vue` — __input reduced to padding only; radio --active and hover hex replaced with theme() and color-mix(); __toggle hex replaced with theme('colors.primary.400'/'300')
+- `CLAUDE.md` — architecture updated: new styles/ folder entry, style.scss and tailwind.config.js descriptions updated
+
+**Key decisions & why:**
+- SCSS @import (not @use) chosen for the components file — @use requires placement before all other rules which conflicts with @tailwind directives already at the top of style.scss
+- danger token added to tailwind.config.js as a top-level semantic color (not nested under primary) — it's a distinct semantic meaning (error state), not a shade of indigo
+- border: 2px solid moved into .form-control globally — both form components now get consistent 2px borders without duplicating the declaration; radio toggles stay at 2px via their own scoped border
+- color-mix(in srgb, theme('colors.primary.500') 50%, transparent) for radio hover — avoids adding a semi-transparent color variant to tailwind config; PostCSS resolves theme() inside color-mix correctly
+- Spinner white border kept as CSS keyword 'white' — it's a universal constant for a spinner on any background, not a design token
+
+
+## [#82] Fix SCSS @import deprecation warning — switch to @use
+**Type:** fix
+
+**Summary:** Replaced deprecated SCSS @import with @use, moving it to the top of style.scss before @tailwind directives, which is the only valid position Dart Sass accepts for @use.
+
+**Brainstorming:** @use must be the first statement in a Dart Sass file (before all other rules including unknown at-rules like @tailwind). Moving @use before @tailwind directives is safe — PostCSS/Tailwind processes @layer components content independently of where it appears in source order.
+
+**Prompt:** Deprecation Warning [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+**What changed:**
+- `style.scss` — @use './styles/components' moved to top of file (before @tailwind directives); @import line removed; comment updated to reference the file path
+
+**Key decisions & why:**
+- @use placed before @tailwind directives — Dart Sass requires @use to precede all other statements; PostCSS handles @layer content regardless of source order so this has no functional impact
+
+
+## [#83] Centralize #cbd5e1 text color as slate.300 token in Tailwind config
+**Type:** refactor
+
+**Summary:** Added slate.300 color token to tailwind.config.js and replaced all 7 files that hardcoded #cbd5e1, ensuring side panel body text and table cell text are driven by the same single token.
+
+**Brainstorming:** #cbd5e1 (= Tailwind's slate-300) was the shared body/content text color used across the table (data-table__td), both AI panels, the drawer title and close button, the tabs, the connected status bar, and the funnel chart label. Since all these contexts want the same color, a single token ensures they stay in sync. Adding slate.300 to the theme extension (rather than importing Tailwind's full default palette) keeps the config minimal and intentional. replace_all on all 7 files eliminates every occurrence atomically.
+
+**Prompt:** Side panel text color should be the same as the text of the values in the table. Any color changes should go through tailwind config.
+
+**What changed:**
+- `tailwind.config.js` — slate.300: '#cbd5e1' added to theme.extend.colors
+- `styles/components.scss` — data-table__td color updated to theme('colors.slate.300')
+- `AiToolsDrawer.vue` — 3 occurrences replaced (ai-close-btn, ai-drawer__title, ai-overlay__title)
+- `AiConnectedStatus.vue` — 2 occurrences replaced (ai-status__provider, ai-status__disconnect)
+- `AiTabs.vue` — 1 occurrence replaced (ai-tabs__tab)
+- `AiOptimizerPanel.vue` — 8 occurrences replaced (subtitle, empty-text, loader-text, result-block__text, recommendation detail-value, metrics-text strong, performer unlock, risk mitigation strong)
+- `AiSummaryPanel.vue` — 7 occurrences replaced (subtitle, empty-text, loader-text, result-block__text, health-score__label, insight__text, priority__metric)
+- `FunnelChart.vue` — 1 occurrence replaced (funnel__label)
+
+**Key decisions & why:**
+- slate (not content or body) chosen as the token namespace — matches Tailwind's own naming for this shade and makes the value self-documenting to anyone familiar with Tailwind; other slate shades (#94a3b8 = slate-400, #64748b = slate-500) are candidates for future tokens when addressed
+- Only slate.300 added — user said "focus on forms" in the previous task; this task is specifically about the one shared content color; other hardcoded hex values left for a future pass
+
+
+## [#84] Set slate.300 as app default text; update modal and ghost button colors via theme()
+**Type:** refactor
+
+**Summary:** Changed --color-text to theme('colors.slate.300') so slate.300 is the app-wide default text color, updated ghost button and modal/drawer close button text from --color-text-secondary to --color-text, and replaced all remaining hardcoded hex in those components with theme() references.
+
+**Brainstorming:** Three things to wire up: (1) --color-text drives body { color } and form-control color — changing it to slate.300 makes every default text element pick up the token automatically; (2) ghost button was using --color-text-secondary (#94a3b8) which is dimmer than slate.300 — swapping to --color-text aligns it with the new default; (3) modal and drawer close buttons had the same --color-text-secondary starting color plus hardcoded hex for hover/focus — replaced with var(--color-text) and theme() equivalents. AiToolsDrawer has its own close button identical to BaseModal's that also needed the same treatment.
+
+**Prompt:** Do the same for modals and ghost buttons. Make sure this is the default text color for our app.
+
+**What changed:**
+- `style.scss` — --color-text changed from #f1f5f9 to theme('colors.slate.300'); PostCSS resolves to #cbd5e1 at build time
+- `BaseButton.vue` — ghost color changed to var(--color-text); ghost hover border-color to theme('colors.primary.500'); primary bg to theme('colors.primary.500'), hover to theme('colors.primary.600'); focus-visible outline to theme('colors.primary.500'); color: white replaces #ffffff
+- `BaseModal.vue` — close button color changed to var(--color-text); hover color to theme('colors.primary.300'), hover bg to color-mix(primary.500 20%); focus-visible border-color to theme('colors.primary.500')
+- `AiToolsDrawer.vue` — same close button updates as BaseModal; was already using slate.300 token (from previous pass) but still had hardcoded hex for hover/focus
+
+**Key decisions & why:**
+- --color-text updated via theme() in :root — PostCSS resolves theme() in CSS variable declarations the same as anywhere else; keeps the CSS variable linked to the single tailwind token rather than a second hardcoded copy
+- Ghost button uses var(--color-text) not theme('colors.slate.300') directly — CSS variables allow runtime theming; hardcoding theme() would break if --color-text is ever overridden per-context
+- --color-header-text left at #f1f5f9 — header intentionally uses a brighter white; user did not request changing it
+
+
+## [#85] Fix --color-text resolution and align body text to slate.300 across app
+**Type:** fix
+
+**Summary:** Fixed --color-text not resolving correctly (theme() is unreliable in CSS custom property declarations with Dart Sass) and corrected four body-text roles that were still explicitly using --color-text-secondary instead of inheriting the default text color.
+
+**Brainstorming:** Two root causes: (1) --color-text: theme('colors.slate.300') used a PostCSS function inside a CSS custom property declaration — Dart Sass passes custom property values through as opaque strings which should let PostCSS resolve theme(), but in practice this is unreliable across toolchain versions and was likely the primary reason ghost buttons, modal close buttons, and form controls were not showing slate.300. Fix: use #cbd5e1 directly with a /* slate.300 */ comment to keep the token traceable. (2) Several body-text roles explicitly set var(--color-text-secondary) (#94a3b8) rather than inheriting var(--color-text) — these needed to be corrected individually. Deliberately left as secondary: placeholder text, table th, error hints, dropzone icon, and any other intentionally muted/secondary UI text.
+
+**Prompt:** I want the default color of the text in the app, modals, side panels, ghost buttons to be exactly the same as the table values. this is not the case now fix it.
+
+**What changed:**
+- `style.scss` — --color-text changed from theme('colors.slate.300') to #cbd5e1 with /* slate.300 */ comment; fixes var(--color-text) resolution for all consumers
+- `ReplaceDataModal.vue` — __message color: var(--color-text-secondary) → var(--color-text)
+- `AiConnectionForm.vue` — __intro color: var(--color-text-secondary) → var(--color-text); __radio inactive color: var(--color-text-secondary) → var(--color-text)
+- `CsvUploadForm.vue` — dropzone __hint color: var(--color-text-secondary) → var(--color-text)
+
+**Key decisions & why:**
+- Hex value used directly for --color-text rather than theme() — theme() in CSS custom property declarations is not reliably resolved by Tailwind's PostCSS plugin across all Dart Sass versions; /* slate.300 */ comment preserves the token reference for maintainability
+- __error-hint, ::placeholder, __icon, data-table__th left as --color-text-secondary — these are intentionally muted UI roles that should remain visually subordinate to body text
+- Radio inactive state changed to --color-text — the unselected toggle should read at the same level as other body text; the contrast between inactive (slate.300) and active (white on indigo) is still clear
+
+
+## [#86] Add API key instructions and clear key on provider switch in AiConnectionForm
+**Type:** update
+
+**Summary:** Added a collapsible "How to get your key?" help section with provider-specific numbered steps, and clear the API key (and show/hide state) when the user switches providers.
+
+**Brainstorming:** Two small but complementary UX improvements. The help section reduces friction for first-time users who may not know where to obtain a Groq or Gemini key — it belongs near the API key field, toggled on demand so it does not clutter the form by default. The clear-on-switch behaviour prevents the previous provider's key from silently persisting in the input when the user changes their mind, which could lead to a confusing connect failure with a mismatched key.
+
+**Prompt:** Add instructions on how to connect AI (Gemini and Groq API key steps). Clear the API key when switching providers.
+
+**What changed:**
+- `AiConnectionForm.vue` — added `showHelp` ref; `watch(selectedProvider)` now also resets `apiKey` and `showKey`; template gains `ai-conn__key-header` row (label + help toggle button) and `ai-conn__help` collapsible block with provider-specific numbered steps and a privacy note; scoped styles add `__key-header`, `__help-toggle`, `__help`, `__help-title`, `__help-steps`, `__help-note`
+- `CLAUDE.md` — AiConnectionForm architecture description updated
+
+**Key decisions & why:**
+- Help section is collapsible — the form is already compact inside a side panel; showing steps inline by default would push the Connect button out of view; toggling on demand keeps the default state clean
+- Provider-specific steps shown via `v-if selectedProvider` — each provider has a different console URL and flow; a single generic description would be less useful
+- Groq note ("Some models may require additional terms acceptance") shown only for Groq — it is Groq-specific and not applicable to Gemini
+- Privacy note ("Keep your API key private") shown for both providers at the bottom of the help block — applies equally to both and reinforces good practice
+- `showKey` also reset on provider switch — avoids the previous key being briefly visible in plain text if the user had toggled it on before switching
+
+
+## [#87] Polish AI key instructions — unified wording and open/close transition
+**Type:** update
+
+**Summary:** Rewrote both provider instruction sets to share the same 4-step structure and phrasing, and added a max-height/opacity CSS transition on the help block open and close.
+
+**Brainstorming:** The original Groq and Gemini steps had different lengths (6 vs 5 steps) and inconsistent phrasing — one started with "Go to", the other mixed imperatives. Aligning both to 4 steps with identical sentence patterns ("Go to X and sign in / Open Y / Click Z / Copy and paste below") makes them feel like the same product. The transition used Vue's named `<Transition name="help">` with max-height 0→300px and opacity 0→1; this is the standard CSS approach for height animations since `height: auto` cannot be transitioned directly.
+
+**Prompt:** Make instructions more user friendly and similar in wording. Add a small transition when opening/closing instructions.
+
+**What changed:**
+- `AiConnectionForm.vue` — both instruction blocks rewritten to 4 parallel steps; Groq note reworded to plain English; `v-if` div wrapped in `<Transition name="help">`; `.help-enter-active/leave-active/enter-from/leave-to` transition rules added at bottom of scoped styles; split `.ai-conn` blocks consolidated into one
+
+**Key decisions & why:**
+- 4 steps for both providers — Groq's "give it a name" step folded into the Create step; both flows are structurally identical so the same count reinforces that
+- `max-height: 300px` as the expanded value — tall enough for the longest content (~4 steps + note); an exact pixel value is required because CSS cannot transition to `max-height: auto`
+- Transition rules placed outside `.ai-conn {}` — Vue's `<Transition>` injects classes on the element itself, not scoped to a parent selector; placing them at root level ensures the scoped attribute matches correctly
+
+
+## [#88] Fix step numbering and strong color in AI key instructions
+**Type:** fix
+
+**Summary:** Restored ol numbering (hidden by Tailwind's base reset) and removed the indigo color from strong tags inside steps so they no longer look like links.
+
+**Brainstorming:** Tailwind preflight sets list-style: none on all lists, which silently removed the decimal numbers from the ol. Fix: add list-style-type: decimal explicitly. The strong color was var(--color-title) (#a5b4fc, indigo) — the same hue used for links and headings — so bolded terms read as clickable. Fix: remove the color override entirely so strong inherits var(--color-text), keeping only font-weight: 600 for emphasis.
+
+**Prompt:** Make steps numbered. Do not color text cause it looks like links.
+
+**What changed:**
+- `AiConnectionForm.vue` — `__help-steps` gains `list-style-type: decimal`; `strong` rule drops `color: var(--color-title)`, keeps `font-weight: 600`
+
+**Key decisions & why:**
+- list-style-type: decimal on the ol rule rather than a utility class — the steps are scoped SCSS; explicit property keeps it co-located with the other list styles
+- strong color removed entirely rather than set to var(--color-text) — inheriting is simpler and ensures it always matches surrounding text even if the color token changes
+
+
+## [#89] Smoother help section transition using CSS grid collapse
+**Type:** fix
+
+**Summary:** Replaced the max-height transition with the CSS grid-template-rows 0fr→1fr technique to get a transition that animates to the element's actual height rather than an arbitrary ceiling.
+
+**Brainstorming:** max-height transition is jerky because the easing curve spans the full 0–300px range while the real content is ~160px tall — the element visually snaps through most of its travel instantly and the easing only appears near the top. The grid trick (grid-template-rows: 0fr → 1fr on the outer wrapper, min-height: 0 on the inner div) animates precisely to the content's natural height, making the easing feel correct all the way through. A wrapper div (ai-conn__help-collapse) is needed to separate the grid container (which gets the transition classes) from the visual box (ai-conn__help, which keeps its flex layout and visual styles). cubic-bezier(0.4, 0, 0.2, 1) is Material Design's standard easing — fast start, gentle deceleration.
+
+**Prompt:** Make transition smoother.
+
+**What changed:**
+- `AiConnectionForm.vue` — help content wrapped in new `ai-conn__help-collapse` div; `<Transition>` now targets the collapse wrapper; `__help-collapse` style: `overflow: hidden`; `__help` gains `min-height: 0`; transition rules replaced: `max-height`/`overflow` → `grid-template-rows`/`cubic-bezier(0.4, 0, 0.2, 1)`
+
+**Key decisions & why:**
+- Wrapper div required — the grid container and the visual box (flex layout + padding + border) must be separate elements; combining them would fight over display type during the transition
+- overflow: hidden on the wrapper, not the inner — the wrapper clips the growing/shrinking inner div; the inner div's own overflow: hidden clips text that would otherwise peek out at small heights before the border-radius takes effect
+- cubic-bezier(0.4, 0, 0.2, 1) over plain ease — standard deceleration curve; feels intentional rather than mechanical
+
+
+## [#90] Fix help section clipping at end of collapse transition
+**Type:** fix
+
+**Summary:** Moved display: grid and grid-template-rows: 1fr from the transition active classes to the permanent __help-collapse style so the grid is always set up, eliminating the layout discontinuity at the start and end of the animation.
+
+**Brainstorming:** The previous approach set display: grid only during the transition active phases. This meant the wrapper was a plain div at rest and switched to a grid container at the moment the transition fired — causing a layout recalculation mid-animation that made it appear to "stop" just before fully collapsing. With grid always active on __help-collapse, the leave transition starts from a stable grid-template-rows: 1fr and animates smoothly to 0fr with no display-type change. The transition rules now only need to declare the transition property and the from/to states.
+
+**Prompt:** It still looks like it is stopping just before collapsing, can we fix that?
+
+**What changed:**
+- `AiConnectionForm.vue` — `__help-collapse` gains `display: grid; grid-template-rows: 1fr`; `display: grid; grid-template-rows: 1fr` removed from `.help-enter-active/.help-leave-active`
+
+**Key decisions & why:**
+- Grid always on, not just during transition — removes the display-type switch that was causing the stutter at transition boundaries; the wrapper is always a single-row grid, so enter/leave just animate that one row between 0fr and 1fr

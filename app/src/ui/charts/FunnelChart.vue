@@ -85,7 +85,7 @@ const rows = computed(() =>
     width: 96px;
     flex-shrink: 0;
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     text-align: right;
   }
 

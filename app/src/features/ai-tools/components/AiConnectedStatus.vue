@@ -41,7 +41,7 @@ function handleDisconnect(): void {
   &__provider {
     font-size: theme('fontSize.sm');
     font-weight: 500;
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
   }
 
   &__right {
@@ -71,7 +71,7 @@ function handleDisconnect(): void {
     border: none;
     cursor: pointer;
     font-size: theme('fontSize.xs');
-    color: #cbd5e1;
+    color: theme('colors.slate.300');
     padding: 0;
     text-decoration: underline;
     text-underline-offset: 2px;

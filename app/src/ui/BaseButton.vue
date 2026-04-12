@@ -43,29 +43,29 @@ withDefaults(
   }
 
   &:focus-visible {
-    outline: 2px solid #6366f1;
+    outline: 2px solid theme('colors.primary.500');
     outline-offset: 2px;
   }
 
   // ── Variants ────────────────────────────────────────────────────────────────
 
   &--primary {
-    background-color: #6366f1;
-    color: #ffffff;
+    background-color: theme('colors.primary.500');
+    color: white;
     border: 1px solid transparent;
 
     &:not(:disabled):hover {
-      background-color: #4f46e5;
+      background-color: theme('colors.primary.600');
     }
   }
 
   &--ghost {
     background-color: transparent;
-    color: var(--color-text-secondary);
+    color: var(--color-text);
     border: 1px solid var(--color-border);
 
     &:not(:disabled):hover {
-      border-color: #6366f1;
+      border-color: theme('colors.primary.500');
       color: var(--color-title);
     }
   }

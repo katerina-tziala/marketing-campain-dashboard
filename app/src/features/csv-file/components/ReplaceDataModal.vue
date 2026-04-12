@@ -30,12 +30,12 @@ const emit = defineEmits<{
     display: flex;
     flex-direction: column;
     gap: theme('spacing.3');
-    max-width: 22rem;
+    max-width: 40vw;
   }
 
   &__message {
     font-size: theme('fontSize.sm');
-    color: var(--color-text-secondary);
+    color: var(--color-text);
     margin: 0;
     line-height: 1.6;
   }

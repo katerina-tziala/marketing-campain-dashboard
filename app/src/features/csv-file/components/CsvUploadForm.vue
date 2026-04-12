@@ -141,13 +141,7 @@ function handleSubmit(): void {
 // ── Fields ─────────────────────────────────────────────────────────────────────
 
 .field__input {
-  border: 1px solid var(--control-border);
   padding: theme('spacing[2.5]') theme('spacing.3');
-  width: 100%;
-
-  &::placeholder {
-    color: var(--color-text-secondary);
-  }
 }
 
 .dropzone {
@@ -157,12 +151,11 @@ function handleSubmit(): void {
   justify-content: center;
   gap: theme('spacing.2');
   padding: theme('spacing.8') theme('spacing.4');
-  border: 1.5px dashed var(--control-border);
   cursor: pointer;
   text-align: center;
 
   &--active {
-    --control-border: #6366f1;
+    --control-border: theme('colors.primary.500');
   }
 
   &__icon {
@@ -180,11 +173,11 @@ function handleSubmit(): void {
 
   &__hint {
     font-size: theme('fontSize.sm');
-    color: var(--color-text-secondary);
+    color: var(--color-text);
   }
 
   &__link {
-    color: #6366f1;
+    color: theme('colors.primary.500');
     text-decoration: underline;
   }
 

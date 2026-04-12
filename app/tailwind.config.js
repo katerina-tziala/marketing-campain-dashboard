@@ -1,10 +1,17 @@
 /** @type {import('tailwindcss').Config} */
+
 export default {
   content: ['./index.html', './src/**/*.{vue,ts}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        danger: {
+          DEFAULT: '#f43f5e',
+        },
+        slate: {
+          300: '#cbd5e1',
+        },
         primary: {
           50:  '#eef2ff',
           100: '#e0e7ff',
