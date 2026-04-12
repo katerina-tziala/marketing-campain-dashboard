@@ -5,13 +5,16 @@ export const JSON_SCHEMA_LABEL = 'Respond ONLY in this JSON schema:';
 export const OUTPUT_RULES_LABEL = 'OUTPUT RULES';
 
 
-export const JSON_OUTPUT_RULES: string[] = [
-  'Return ONLY valid JSON',
-  'Do not include markdown',
-  'Do not include commentary or explanations outside the JSON',
-  'Do not include trailing commas',
-  'Use double quotes for all strings',
+export const DATA_INTERPRETATION_RULES: string[] = [
+  'Use only the provided dataset and optional business context.',
+  'Do not invent metrics or unsupported conclusions.',
+  'If performance signals are mixed, reflect the uncertainty rather than forcing conclusions.',
+  'Interpret performance only within the provided analysis scope.',
+  'If the dataset is filtered, treat it as the full portfolio for this request.',
+  'Do not assume strategy, market conditions, or operational constraints beyond what the data supports.',
 ];
+ 
+
 
 export function getPromptList(title: string, list: string[]): string[] {
   const lines: string[] = [`${title}:`];
@@ -33,18 +36,7 @@ export function getPromptNumberedList(title: string, list: string[]): string[] {
 
   return lines;
 }
-
-export function getOutputRulesBlock(responseDirection: string): string {
-  const lines = getPromptList(OUTPUT_RULES_LABEL, [
-    ...JSON_OUTPUT_RULES,
-    'Response should match JSON schema EXACTLY',
-    responseDirection,
-    'If evidence in the dataset is limited, keep the wording conservative and avoid overconfident conclusions',
-  ]);
-
-  return lines.join("\n");
-}
-
+ 
 export function getPromptInstructions(instructions: PromptInstructions): string {
   const { role, task, objectives: { title, list } } = instructions;
 

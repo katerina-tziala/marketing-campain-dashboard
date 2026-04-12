@@ -3,7 +3,7 @@ This document describes the design and architecture of the Budget Optimization A
 
 The prompt is designed to operate consistently across multiple large language models while producing deterministic, structured outputs that can be safely integrated into the application interface. Its purpose is to identify actionable optimization opportunities while maintaining realistic operational constraints and minimizing execution risk.
 
-The prompt emphasizes conservative reasoning, structured analytical guidance, and strict output constraints. These design principles ensure that the generated recommendations remain credible, explainable, and safe to present within a production marketing dashboard environment.
+The prompt emphasizes conservative reasoning, structured analytical reasoning guidance, and strict output constraints. These design principles ensure that the generated recommendations remain credible, explainable, and safe to present within a production marketing dashboard environment.
  
 ## Purpose
 
@@ -51,20 +51,63 @@ Providing structured input data improves reliability by:
 All recommendations must be derived strictly from the provided dataset unless the user supplies additional business context.
 
 ### Business Context
+The prompt supports optional structured business context that can be provided by the user to influence how the optimization recommendations are generated.
 
-The business context section allows optional contextual information to be provided by the user. This context may include operational constraints, strategic priorities, or market considerations.
+The business context allows the model to incorporate strategic or operational constraints when interpreting campaign performance signals. When present, this context is injected into the prompt before the analysis instructions and may influence how the model evaluates scaling opportunities and risk tolerance.
 
-The prompt instructs the model to incorporate this information to refine its interpretation while ensuring that the underlying data signals remain the primary basis for optimization decisions.
+Supported context fields may include:
+
+- analysis period
+- industry
+- business goal
+- business stage
+- attribution model
+- risk tolerance
+- scaling tolerance
+- operational constraints
+
+If no context is provided, the prompt automatically inserts a default statement instructing the model to derive conclusions strictly from the dataset without making unsupported assumptions.
+
+#### Budget Expansion Context
+The optimizer also supports a specific optional flag allowing the model to consider portfolio budget expansion.
+
+When enabled, the prompt includes the instruction:
+
+> Budget expansion is allowed. Total portfolio budget may increase if performance signals clearly support additional investment.
+
+If this option is not enabled, the optimizer assumes that total portfolio budget should remain constant and only recommends reallocations between campaigns.
+
+This mechanism allows the system to safely control whether the optimizer is allowed to suggest new investment or only redistribution of existing budget.
 
 ### Optimization Scope
+The optimization scope defines the boundaries of the analysis. The prompt supports two scenarios.
 
-The optimization scope defines the boundaries of the analysis. The prompt supports two scenarios:
+#### Full Portfolio Optimization
 
-Full portfolio optimization, where all campaigns are eligible for budget reallocation.
+When no filters are applied, the model evaluates the entire marketing portfolio. All campaigns included in the dataset are eligible for budget reallocations.
 
-Scoped optimization, where channel filters restrict the campaigns that may be considered for budget changes.
+#### Scoped Optimization
 
-Explicit scope definition prevents the model from recommending budget reallocations outside the currently analyzed subset.
+When channel filters are applied, the dataset provided to the model represents only the selected subset of campaigns.
+
+In this case, the prompt instructs the model to treat the filtered dataset as the full analysis portfolio for the current request. The model must not recommend reallocating budget to campaigns or channels outside the filtered subset.
+
+This explicit scope definition prevents the model from generating recommendations that reference campaigns not included in the current analysis.
+
+### Data Interpretation Rules
+The prompt includes a shared set of data interpretation rules that define how the model should interpret the provided dataset before performing the analysis.
+
+These rules serve as a foundational guardrail to ensure that the model:
+
+- uses only the provided dataset and optional business context
+- avoids inventing unsupported metrics or external assumptions
+- interprets correlations conservatively rather than assuming causality
+- respects the defined analysis scope
+- treats filtered datasets as the complete portfolio for the current request when channel filters are applied
+
+These interpretation rules act as a first-level reasoning constraint before the model proceeds to the structured analysis instructions.
+
+Including this section improves cross-model consistency and reduces hallucinated insights.
 
 ### Analysis Instructions
 
@@ -78,25 +121,14 @@ The analysis instructions define the reasoning sequence the model should follow 
 
 This structured reasoning process improves analytical consistency and reduces variability across models.
 
-### Internal Analysis Checklist
-The prompt includes an internal checklist that the model must verify before generating the final response. This checklist ensures that the model evaluates the key optimization dimensions required for a credible recommendation.
-
-The checklist covers:
-
- - portfolio efficiency
- - campaign efficiency
- - allocation efficiency
- - scaling opportunities
- - optimization risks
-
-This validation step reduces incomplete or inconsistent outputs.
+The analysis instructions also require the model to identify likely funding sources and scaling targets before recommending budget transfers.
 
 ### Optimization Guardrails
 Optimization guardrails define operational constraints that prevent unrealistic or risky budget recommendations. These rules enforce limitations such as:
 
  - preventing excessive budget increases
  - avoiding trivial reallocations
- - respecting minimum reallocation thresholds
+ - preventing reallocations smaller than 5% of the source campaign budget unless they are explicitly framed as experimental tests
  - assuming diminishing returns when scaling spend
 
 These guardrails ensure that the generated recommendations remain operationally realistic and implementable.
@@ -113,13 +145,26 @@ The model is instructed to:
 
 These constraints reduce hallucinated performance projections and improve the credibility of the generated recommendations.
 
+### Internal Analysis Checklist
+The prompt includes an internal checklist that the model must verify before generating the final response. This checklist ensures that the model evaluates the key optimization dimensions required for a credible recommendation.
+
+The checklist covers:
+
+ - portfolio efficiency
+ - campaign efficiency
+ - allocation efficiency
+ - scaling opportunities
+ - optimization risks
+
+This validation step reduces incomplete or inconsistent outputs.
+
 ### Interpretation Rules
 Interpretation rules act as guardrails to prevent incorrect reasoning and unsupported conclusions. These rules enforce constraints such as:
 
- - using only the provided dataset and optional business context
- - avoiding unsupported assumptions or invented metrics
- - respecting the defined optimization scope
- - emphasizing conservative recommendations when evidence is limited
+- respecting the defined optimization scope
+- keeping filtered optimization analysis inside the selected channel subset
+- using conservative language when evidence is limited
+- avoiding contradictory classification of the same campaign as both a top performer and an underperformer
 
 These guardrails reduce hallucination risk and improve cross-model reliability.
 
@@ -167,6 +212,18 @@ This structured reasoning approach improves output stability by:
  - ensuring consistent evaluation of campaign efficiency signals
  - improving reliability across different LLM architectures
 
+## Filtered Portfolio Safety
+
+When channel filters are applied, the prompt includes explicit constraints to ensure that optimization recommendations remain valid within the filtered dataset.
+
+The model is instructed to:
+
+- treat the filtered dataset as the full analysis portfolio for the current request
+- avoid recommending budget reallocations outside the selected channels
+- avoid generalizing optimization conclusions to campaigns not included in the dataset
+
+These safeguards prevent the optimizer from generating invalid or misleading recommendations when users analyze only a subset of their marketing channels.
+
 ## Output Contract
 The Budget Optimization prompt enforces a strict output contract to ensure that model responses are predictable and compatible with the application interface.
 
@@ -198,11 +255,14 @@ The Budget Optimization prompt is integrated into the marketing campaign dashboa
 
 This function dynamically injects runtime data before sending the request to the selected language model.
 
-At execution time, the system populates the prompt with several inputs:
+At execution time, the system populates the prompt with several runtime inputs:
 
- - **Campaign performance data**, generated from the analytics layer and formatted into the structured dataset used by the prompt
- - **Optional business context**, supplied by the user when available
- - **Optimization scope**, which determines whether the model evaluates the full portfolio or a filtered subset of campaigns
+- **Campaign performance data**, generated from the analytics layer and formatted into the structured dataset used by the prompt
+- **Optional business context**, supplied by the user when available
+- **Budget expansion setting**, which determines whether the model may recommend increasing the total portfolio budget
+- **Optimization scope filters**, which determine whether the model evaluates the full portfolio or a filtered subset of campaigns
+
+If channel filters are applied, the prompt instructs the model to treat the filtered dataset as the full analysis portfolio for the current request and to avoid recommendations outside the selected scope.
 
 Once the prompt is constructed, it is sent to the configured language model provider. The system supports multiple models, allowing the application to run the prompt against providers such as Grok, Gemini, or other compatible models.
 

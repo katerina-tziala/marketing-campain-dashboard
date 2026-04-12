@@ -14,7 +14,7 @@ The Executive Summary prompt is structured into clearly defined sections that gu
 
 ### Role
 
-The prompt establishes a clear persona by positioning the model as a Chief Marketing Officer delivering a board-level briefing. This role anchors the tone and reasoning perspective of the model, encouraging strategic interpretation of the data rather than purely analytical reporting.
+The prompt establishes a clear persona by positioning the model as a Chief Marketing Officer delivering a board-level briefing. This role anchors the tone and reasoning perspective of the model, encouraging strategic interpretation of the data rather than purely analytical description.
 
 ### Task
 
@@ -22,7 +22,7 @@ The task section defines the expected output: a concise executive briefing that 
 
 ### Executive Questions
 
-The executive questions define the key business questions that leadership expects the summary to address. These questions guide the analytical focus of the model and ensure that insights remain decision-oriented rather than descriptive.
+The executive questions define the key business questions that leadership expects the summary to address. These questions guide the analytical focus of the summary and ensure that insights remain decision-oriented rather than descriptive.
 
 ### Input Data
 
@@ -36,18 +36,54 @@ Using structured data improves reliability by:
 
 ### Business Context
 
-The business context section allows optional contextual information to be provided by the user. This context may include strategic goals, market conditions, or operational constraints.
+The prompt supports optional structured business context that can be provided by the user to influence how the executive summary is interpreted. This context allows leadership priorities or operational considerations to be incorporated into the analysis.
 
-The prompt instructs the model to use this information to refine its interpretation without overriding the underlying data signals.
+Supported context fields may include:
+
+- analysis period
+- industry
+- business goal
+- business stage
+- attribution model
+- risk tolerance
+- scaling tolerance
+- operational constraints
+
+When provided, this context is injected into the prompt before the analytical reasoning instructions. The model may use this information to refine interpretation of performance signals and strategic implications.
+
+However, the prompt explicitly instructs the model that the underlying dataset remains the primary source of truth. Business context may influence interpretation but must not override the performance signals present in the data.
+
+If no business context is provided, the system automatically inserts a default instruction directing the model to derive conclusions strictly from the dataset and to avoid unsupported assumptions about strategy, constraints, or market conditions.
 
 ### Analysis Scope
 
 The analysis scope defines the boundaries of the evaluation. The prompt supports two scenarios:
 
-Full portfolio analysis, where the dataset represents the entire marketing portfolio
-Filtered analysis, where the user has applied channel or campaign filters
+**Full portfolio analysis**
 
-Explicitly defining the scope prevents the model from making incorrect generalizations when only a subset of the portfolio is analyzed.
+When no filters are applied, the dataset represents the entire marketing portfolio. The model evaluates all channels and campaigns contained in the dataset.
+
+**Filtered analysis**
+
+When channel filters are applied by the user, the dataset provided to the model represents only the selected subset of channels.
+
+In this case, the prompt explicitly instructs the model to treat the filtered dataset as the complete marketing portfolio for the current request. The model must interpret performance signals only within this subset and must not generalize conclusions to channels or campaigns outside the filtered scope unless the data clearly supports such conclusions.
+
+This mechanism ensures that insights remain valid when users analyze only a subset of their marketing portfolio.
+
+### Data Interpretation Rules
+
+The prompt includes a shared set of data interpretation rules that define how the model should interpret the provided dataset before performing the analysis.
+
+These rules act as foundational guardrails that ensure the model:
+
+- uses only the provided dataset and optional business context
+- avoids inventing unsupported metrics or assumptions
+- interprets correlations conservatively rather than assuming causality
+- respects the defined analysis scope
+- treats filtered datasets as the complete portfolio for the current request when filters are applied
+
+By introducing these rules before the analytical reasoning steps, the prompt reduces hallucination risk and improves consistency across different language models.
 
 ### Analysis Instructions
 
@@ -73,27 +109,29 @@ The prompt instructs the model to generate a portfolio health score ranging from
 
 The prompt also defines score interpretation ranges to stabilize how models classify overall portfolio health.
 
+The prompt also instructs the model to ensure that the health score label corresponds to the defined score ranges. This constraint stabilizes how different language models classify overall marketing performance.
+
 ### Interpretation Rules
 
 Interpretation rules act as guardrails to prevent incorrect reasoning. These rules enforce constraints such as:
 
-using only the provided dataset and optional context
-avoiding unsupported assumptions
-distinguishing correlations from causal relationships
-respecting the defined analysis scope
-avoiding inference about missing channels or campaigns
+ - using only the provided dataset and optional business context
+ - avoiding unsupported assumptions
+ - distinguishing correlations from causal relationships
+ - respecting the defined analysis scope
+ - avoiding inference about missing channels or campaigns
 
 These constraints reduce hallucination risk and improve cross-model reliability.
 
 ### Output Rules
-
 The output rules enforce strict formatting constraints for the model response. The prompt requires the model to return only valid JSON that matches the defined schema.
 
 Additional constraints ensure that:
 
- - no commentary or markdown is included
- - formatting rules are respected for currency and percentages
- - unsupported metrics are not invented
+- no commentary or markdown is included
+- formatting rules are respected for currency and percentages
+- unsupported metrics are not invented
+- monetary values follow the defined currency formatting rules
 
 These rules ensure the response can be parsed reliably by the application.
 
@@ -136,6 +174,18 @@ Structured reasoning improves output stability by:
  - reducing randomness in how models interpret the dataset
  - encouraging consistent analytical coverage of key performance dimensions
  - improving reliability across different LLM architectures
+
+## Filtered Portfolio Safety
+
+When channel filters are applied, the prompt includes explicit constraints that prevent the model from making conclusions about channels that are not included in the dataset.
+
+The model is instructed to:
+
+- treat the filtered dataset as the full portfolio for the current request
+- interpret findings only within the selected subset
+- avoid generalizing conclusions beyond the available data
+
+These safeguards ensure that executive summaries remain accurate even when leadership analyzes only a portion of the marketing portfolio.
 
 ## Output Contract
 The Executive Summary prompt enforces a strict output contract to ensure that model responses are predictable, machine-readable, and compatible with the application interface. Rather than allowing free-form natural language responses, the prompt requires the model to return a response that strictly follows a predefined JSON schema.

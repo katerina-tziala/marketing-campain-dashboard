@@ -1640,3 +1640,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Underperforming CAC condition gated on conversions >= 10 — avoids penalizing campaigns whose zero/low conversion count makes CAC unreliable as an efficiency signal
 - Materiality score (60/40 budget-revenue blend) for channel ranking — pure budget share would miss high-revenue-efficiency channels; the blend surfaces channels that matter most to the business
 - Budget inefficiency as highest-priority finding — an active budget drain is more actionable than an outperformance signal
+
+
+
+## [#77] Rename generateBudgetOptimizerPrompt to generateBudgetOptimizationPrompt
+**Type:** update
+
+**Summary:** Renamed the function `generateBudgetOptimizerPrompt` to `generateBudgetOptimizationPrompt` and the source file from `budget-optimizer-prompt.ts` to `budget-optimization-prompt.ts` for naming consistency.
+
+**Brainstorming:** A simple rename across four locations: the function declaration, the barrel export, the store import, and the store call site. The file rename follows the function name to keep them in sync.
+
+**Prompt:** Rename generateBudgetOptimizerPrompt to generateBudgetOptimizationPrompt and rename the file too.
+
+**What changed:**
+- `budget-optimizer-prompt.ts` → `budget-optimization-prompt.ts` — file renamed
+- `budget-optimization-prompt.ts:277` — function declaration renamed to `generateBudgetOptimizationPrompt`
+- `prompts/index.ts:1` — barrel export updated to new name and file path
+- `aiAnalysisStore.ts:17,235` — import and call site updated to new name
+- `CLAUDE.md` — architecture entry updated to reflect new file and function name
+
+**Key decisions & why:**
+- All four references updated atomically — no intermediate broken state

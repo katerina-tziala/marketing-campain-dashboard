@@ -48,7 +48,7 @@ Key deterministic design techniques include:
 
  - strict JSON schema enforcement
  - explicit formatting rules for currency values, percentages, and numerical metrics
- - instructions to return only the JSON response without additional commentary
+- instructions requiring the model to return only the JSON response without additional commentary
  - guardrails preventing unsupported assumptions or invented metrics
 
 These constraints significantly reduce response variability and ensure that model outputs remain predictable and safe to render directly within the application interface.
@@ -56,7 +56,7 @@ These constraints significantly reduce response variability and ensure that mode
 ## Structured Reasoning Design
 The prompts incorporate structured reasoning instructions that guide the model through a consistent analytical process before producing the final output.
 
-Rather than immediately generating a response, the model is instructed to internally analyze the provided dataset using a defined reasoning sequence. This approach improves analytical quality and reduces variability across different LLM architectures.
+Rather than immediately generating a response, the model is instructed to internally analyze the provided dataset using a defined reasoning sequence before producing the final output.This approach improves analytical quality and reduces variability across different LLM architectures.
 
 Typical reasoning steps include:
 
@@ -68,7 +68,7 @@ Typical reasoning steps include:
 
 By guiding the model through structured reasoning steps, the prompts reduce randomness in the analysis process and encourage consistent evaluation across different models.
 
-# Prompt Architecture Standard
+## Prompt Architecture Standard
 All prompts in the system follow a consistent structural pattern designed to improve readability, maintainability, and reliability across different language models.
 
 While the exact sections may vary depending on the task being performed, prompts generally follow a common architectural structure that separates context, reasoning instructions, constraints, and output requirements.

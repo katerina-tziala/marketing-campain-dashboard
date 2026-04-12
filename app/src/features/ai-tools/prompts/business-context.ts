@@ -35,10 +35,8 @@ export function getBusinessContextLinesForPrompt(
 export function getBusinessContextForPrompt(lines: string[]): string {
   if (lines.length === 1) {
     lines.push(
-      "No additional business context provided.",
-      '',
-      "Derive recommendations from the dataset only.",
-      "Avoid assumptions about strategy, budget constraints, market conditions, or scaling tolerance beyond what the data clearly supports.",
+      "No additional business context provided.", 
+      "Derive recommendations from the dataset only.", 
     );
   }
  

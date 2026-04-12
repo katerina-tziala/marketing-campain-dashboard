@@ -6,6 +6,7 @@ import type {
 } from "../types";
 import { getBusinessContextForPrompt, getBusinessContextLinesForPrompt } from "./business-context";
 import {
+  DATA_INTERPRETATION_RULES,
   getPromptInstructions,
   getPromptList,
   getScopeBlock,
@@ -96,7 +97,7 @@ const OPTIMIZER_SCOPE_CONFIG: PromptScopeConfig = {
   label: "OPTIMIZATION SCOPE",
   filteredDescription: [
     "Scoped optimization.",
-    "Channel filters are active.",
+    "Channel filtering is active.",
     "Recommendations must only optimize budget within the filtered subset.",
   ],
   unfilteredDescription: [
@@ -105,10 +106,11 @@ const OPTIMIZER_SCOPE_CONFIG: PromptScopeConfig = {
     "Recommendations may consider all campaigns included in the dataset.",
   ],
   filteredConstraints: [
-    "Do not recommend reallocating budget to campaigns or channels outside the selected scope.",
-    "Interpret performance only within the provided subset.",
-    "Do not generalize optimization conclusions to the full portfolio unless explicitly supported by the data.",
-  ],
+  "Treat the filtered dataset as the full analysis portfolio for this request.",
+  "Do not recommend reallocating budget to campaigns or channels outside the selected scope.",
+  "Interpret performance only within the provided subset.",
+  "Do not generalize optimization conclusions to the full portfolio unless explicitly supported by the data.",
+],
 };
 
 function generateBudgetOptimizerContext(
@@ -118,7 +120,8 @@ function generateBudgetOptimizerContext(
 
   const lines = getBusinessContextLinesForPrompt(businessContext ?? {});
   if (allowBudgetExpansion === true) {
-    lines.push(` - Budget expansion is allowed.\nTotal portfolio budget may increase if supported by performance signals.`);
+    lines.push(` - Budget expansion is allowed.`);
+    lines.push(`Total portfolio budget may increase if performance signals clearly support additional investment.`);
   }
 
   return getBusinessContextForPrompt(lines);
@@ -127,7 +130,7 @@ function generateBudgetOptimizerContext(
 
  const ANALYSIS_INSTRUCTIONS = [
   'Before generating the final response, internally analyze the dataset and determine the most realistic optimization opportunities.',
-  'Do not include internal reasoning in the output.',
+  'Do not include internal reasoning in the output.', 
   '',
   'Follow this reasoning process:',
   '',
@@ -174,21 +177,15 @@ function generateBudgetOptimizerContext(
   '',
   '   Avoid concentrating excessive budget into a single campaign unless the efficiency signal is exceptionally strong.',
   '',
-  '9. When evaluating scaling potential, assume diminishing returns as spend increases.',
-  '',
-  '10. Unless explicitly stated in the business context, assume total budget should remain constant.',
-  '',
-  '11. Prioritize recommendations that produce meaningful performance improvements rather than optimizing minor inefficiencies.',
-  '',
-  '12. If performance signals are mixed or evidence is limited, recommend controlled tests instead of aggressive reallocations.',
+  '9. Prioritize recommendations that produce meaningful performance improvements rather than optimizing minor inefficiencies.', 
 ];
    
 const GUARDRAILS_LIST = [ 
   "Do not recommend more than a 3x increase in budget for any campaign.",
-  "Avoid trivial reallocations unless framing a small adjustment as a test.",
-  'Do not recommend reallocations smaller than 5% of the source campaign budget unless clearly described as an experimental test.',
+  "Avoid trivial reallocations unless framing a small adjustment as a test.", 
   'Budget increases should assume performance efficiency may decline as scale increases.',
-  'Keep recommendations operationally realistic and implementable.'
+  'Keep recommendations operationally realistic and implementable.',
+  'Do not recommend reallocations smaller than 5% of the source campaign budget unless explicitly framed as a test.'
 ];
 
 const ESTIMATION_RULES = [ 
@@ -203,15 +200,8 @@ const ESTIMATION_RULES = [
  
  
 const INTERPRETATION_RULES = [
-  'If optimization scope is filtered, recommendations must remain entirely within the provided subset.',
-  'Keep recommendations realistic and operationally practical.',
-  'Use only the provided dataset and optional business context.',
-  'Do not invent metrics, unsupported conclusions, or external assumptions.',
-  'Do not overstate causality; describe patterns as correlations unless clearly supported by the data.',
-  'Mention campaign names only when materially relevant.', 
-  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.',
-  'Do not recommend reallocations smaller than 5% of the source campaign budget unless explicitly framed as a test.',
-  'Amount values must be positive numeric values and must not include currency symbols.',
+  'If the optimization scope is filtered, recommendations must remain entirely within the provided channel subset.',
+  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.', 
   'A campaign should not appear in both top_performers and underperformers unless mixed performance is explicitly explained.'
 ];
 
@@ -256,8 +246,7 @@ const JSON_OUTPUT_RULES: string[] = [
   'Do not include trailing commas',
   'Use double quotes for all strings', 
   'The final response must contain only the JSON object defined in the schema.',
-  'Do not wrap the JSON in text.',
-  'If evidence in the dataset is limited, keep the wording conservative and avoid overconfident conclusions',
+  'Do not wrap the JSON in text.', 
     '',
   'Formatting rules:',
   'Currency formatting rules apply only to textual fields.',
@@ -285,7 +274,7 @@ const JSON_OUTPUT_RULES: string[] = [
 
 
 
-export function generateBudgetOptimizerPrompt(
+export function generateBudgetOptimizationPrompt(
   data: BudgetOptimizerData,
   businessContext?: BudgetOptimizerContextInput,
   filteredChannels?: string[],
@@ -296,10 +285,11 @@ export function generateBudgetOptimizerPrompt(
     `INPUT DATA:\nThe following dataset summarizes campaign performance for budget optimization.\nUse only the information contained in this dataset unless business context explicitly adds additional information.\n${JSON.stringify(data, null, 2)}`,
     generateBudgetOptimizerContext(businessContext),
     getScopeBlock(OPTIMIZER_SCOPE_CONFIG, filteredChannels),
+    `${getPromptList('DATA INTERPRETATION RULES', DATA_INTERPRETATION_RULES).join("\n")}`,
     `ANALYSIS INSTRUCTIONS:\n${ANALYSIS_INSTRUCTIONS.join("\n")}`,
+    getPromptList('OPTIMIZATION GUARDRAILS:\nFollow these operational constraints when recommending budget changes.', GUARDRAILS_LIST).join("\n"),
+    `IMPACT ESTIMATION RULES:\n${getPromptList('When estimating expected impact from budget reallocations', ESTIMATION_RULES).join("\n")}`,
     `INTERNAL ANALYSIS CHECKLIST:\n${INTERNAL_ANALYSIS_CHECKLIST.join("\n")}`,
-   getPromptList('OPTIMIZATION GUARDRAILS:\nFollow these operational constraints when recommending budget changes', GUARDRAILS_LIST).join("\n"),
- `IMPACT ESTIMATION RULES:\n${getPromptList('When estimating expected impact from budget reallocations', ESTIMATION_RULES).join("\n")}`,
     `INTERPRETATION RULES:\n${getPromptList('Use the following guardrails', INTERPRETATION_RULES).join("\n")}`,
     `OUTPUT RULES:\n${JSON_OUTPUT_RULES.join("\n")}`,
     `RESPONSE SCHEMA:\n${OUTPUT_SCHEMA}`,
@@ -307,3 +297,4 @@ export function generateBudgetOptimizerPrompt(
 
   return sections.join("\n\n");
 }
+ 

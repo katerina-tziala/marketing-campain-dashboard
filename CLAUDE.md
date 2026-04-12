@@ -94,7 +94,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
 │   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt
 │   │   │   │   ├── executive-summary-prompt.ts # generateExecutiveSummaryPrompt — assembles executive-summary AI prompt from ExecutiveSummaryData
-│   │   │   │   ├── budget-optimizer-prompt.ts  # generateBudgetOptimizerPrompt — assembles budget-optimizer AI prompt from BudgetOptimizerData
+│   │   │   │   ├── budget-optimization-prompt.ts  # generateBudgetOptimizationPrompt — assembles budget-optimizer AI prompt from BudgetOptimizerData
 │   │   │   │   ├── model-evaluation-prompt.ts  # generateModelEvaluationPrompt — evaluates and ranks up to 20 models by strength_score
 │   │   │   │   └── index.ts                    # Barrel export for prompts
 │   │   │   ├── mocks/

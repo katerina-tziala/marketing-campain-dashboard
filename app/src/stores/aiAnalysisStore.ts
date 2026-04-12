@@ -14,7 +14,7 @@ import { useAiStore } from './aiStore'
 import { useCampaignStore } from './campaignStore'
 import { buildBudgetOptimizerData } from '../features/ai-tools/utils/buildBudgetOptimizerData'
 import { buildExecutiveSummaryData } from '../features/ai-tools/utils/buildExecutiveSummaryData'
-import { generateBudgetOptimizerPrompt } from '../features/ai-tools/prompts'
+import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
 import { callProviderForAnalysis } from '../features/ai-tools/ai-analysis'
 
@@ -232,7 +232,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     console.log(data);
 
     if (tab === 'optimizer') {
-      return generateBudgetOptimizerPrompt(
+      return generateBudgetOptimizationPrompt(
         data as BudgetOptimizerData,
         undefined,
         filteredChannels,

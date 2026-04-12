@@ -5,6 +5,7 @@ import type {
 } from "../types";
 import { generateBusinessContextForPrompt } from "./business-context";
 import {
+  DATA_INTERPRETATION_RULES,
   getPromptList,
   getScopeBlock,
 } from "./prompt-utils";
@@ -67,14 +68,17 @@ const OUTPUT_SCHEMA = `{
 
 const SUMMARY_SCOPE_CONFIG: PromptScopeConfig = {
   label: "ANALYSIS SCOPE",
-  filteredDescription: ["Filtered view."],
+  filteredDescription: [
+    "Filtered analysis scope.",
+    "Channel filters are active.",
+  ],
   unfilteredDescription: [
     "Full portfolio view.",
     "No channel filters applied.",
     'The dataset represents the complete marketing portfolio within the provided analysis scope.'
   ],
   filteredConstraints: [
-    "Do not recommend reallocating budget to campaigns or channels outside the selected scope.",
+    "Treat the filtered dataset as the full analysis portfolio for this request.",
     "Interpret findings only within this filtered subset.",
     "Do not generalize conclusions to the full portfolio unless explicitly supported by the data.",
   ],
@@ -86,7 +90,7 @@ const SUMMARY_SCOPE_CONFIG: PromptScopeConfig = {
   ];
 
  const TASK = [
-    'Your audience must understand overall marketing performance, major risks, and the most important next actions in under two minutes.',
+    'The audience must understand overall marketing performance, major risks, and the most important next actions in under two minutes.',
     'Transform the provided marketing dataset into a concise, executive-level performance summary.',
     'Focus on interpretation and business implications, not simply repeating raw metrics.'
   ];
@@ -106,19 +110,18 @@ const HEALTH_SCORE_LIST = [
   "0 to 49 = Critical\nSerious inefficiencies or major performance risks."
 ];
 
-const INTERPRETATION_RULES = [
-  'Respect the analysis scope.',
-  'Do not assume the dataset represents the entire marketing portfolio if filters are applied.',
+const INTERPRETATION_RULES = [ 
+  'If the analysis scope is filtered, interpret the dataset as the complete portfolio for this request.',
   'Use only the provided dataset and optional business context.',
   'Do not invent metrics, assumptions, or unsupported conclusions.',
-  'Describe relationships as correlations unless causality is clearly supported.',
-  'Mention campaign or channel names only when materially relevant.',
+  'Describe relationships as correlations unless causality is clearly supported.', 
   'Treat the topChannels list as the primary channels for analysis.',
   'Do not assume channels omitted from topChannels are unimportant unless the analysis scope explicitly indicates that no additional channels exist.',
   'Reflect mixed performance signals honestly and conservatively.',
   'If context is provided, use it to refine interpretation but not override the data.',
   'Include a time period only if explicitly provided in the context.',
-  'Derive best_channel, worst_channel, best_campaign, and biggest_opportunity only from the provided dataset and current analysis scope.'
+  'Derive best_channel, worst_channel, best_campaign, and biggest_opportunity only from the provided dataset and current analysis scope.',
+  'The health_score label must correspond to the defined score ranges in HEALTH SCORE GUIDANCE.'
 ];
 
 const INTERNAL_ANALYSIS_CHECKLIST = [
@@ -203,9 +206,7 @@ const JSON_OUTPUT_RULES: string[] = [
   'Do not include trailing commas',
   'Use double quotes for all strings', 
   'The final response must contain only the JSON object defined in the schema.',
-  'Do not wrap the JSON in text.',
-  'If evidence in the dataset is limited, keep the wording conservative and avoid overconfident conclusions',
-  'Do not invent unsupported metrics.', 
+  'Do not wrap the JSON in text.', 
   '',
   'Formatting rules:',
   'All monetary values must be formatted as euro currency strings. Example: €22,200',
@@ -226,10 +227,11 @@ export function generateExecutiveSummaryPrompt(
     `INPUT DATA:\nThe following dataset summarizes marketing performance for executive summary analysis.\nUse only the information contained in this dataset unless business context explicitly adds additional information.\n${JSON.stringify(summaryData, null, 2)}`,
     generateBusinessContextForPrompt(businessContext),
     getScopeBlock(SUMMARY_SCOPE_CONFIG, filteredChannels),
+    `${getPromptList('DATA INTERPRETATION RULES', DATA_INTERPRETATION_RULES).join("\n")}`,
     `ANALYSIS INSTRUCTIONS:\n${ANALYSIS_INSTRUCTIONS.join("\n")}`,
-    `INTERNAL ANALYSIS CHECKLIST:\n${INTERNAL_ANALYSIS_CHECKLIST.join("\n")}`,
-    getPromptList('HEALTH SCORE GUIDANCE', HEALTH_SCORE_LIST).join("\n"),
+      getPromptList('HEALTH SCORE GUIDANCE', HEALTH_SCORE_LIST).join("\n"),
     `INTERPRETATION RULES:\n${getPromptList('Use the following guardrails', INTERPRETATION_RULES).join("\n")}`,
+    `INTERNAL ANALYSIS CHECKLIST:\n${INTERNAL_ANALYSIS_CHECKLIST.join("\n")}`,
     `OUTPUT RULES:\n${JSON_OUTPUT_RULES.join("\n")}`,
     `RESPONSE SCHEMA:\n${OUTPUT_SCHEMA}`,
   ];

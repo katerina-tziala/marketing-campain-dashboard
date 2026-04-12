@@ -22,7 +22,7 @@ The final output is a ranked list of the strongest candidate models that can be 
 
 ## Prompt Architecture
 
-The Model Evaluation prompt is structured into clearly defined sections that guide the evaluation process and reduce ambiguity when ranking models. Each section contributes to stabilizing the evaluation behavior and ensuring consistent model selection results.
+The Model Evaluation prompt is structured into clearly defined sections that guide the evaluation process and reduce ambiguity when ranking models. Each section contributes to stabilizing the evaluation behavior, ensuring consistent model selection results, and enforcing deterministic outputs that can be reliably parsed by the application.
 
 ### Role
 The prompt defines the model as a model selection specialist. This role frames the task as a structured evaluation problem rather than a generative or creative task.
@@ -79,7 +79,7 @@ These rules ensure that:
  - the output contains no duplicate models
  - the number of returned models is limited
 
-The rules also deprioritize models labeled as preview, latest, or experimental. These models often have limited rate limits or unstable availability and are therefore less suitable for sustained application usage.
+The rules also instruct the model to deprioritize models labeled as preview, latest, or experimental. These models often have limited rate limits or unstable availability and are therefore less suitable for sustained application usage.
 
 ### Reasoning Design
 The prompt includes structured reasoning instructions that guide the model through a systematic evaluation process before producing the final ranked list.
@@ -97,8 +97,7 @@ These evaluation dimensions include:
 By guiding the model through a consistent reasoning process, the prompt improves the reliability of the evaluation results and reduces variability across different LLM architectures.
 
 ### Scoring Strategy
-Each evaluated model receives a strength score between 1 and 10 representing its suitability for the marketing analytics use case.
-
+Each evaluated model receives a strength score between 1 and 10 representing its suitability for the marketing analytics use case within the application.
 The scoring scale is defined as follows:
 
  - 10 – excellent capability for reasoning, summarization, and structured analysis
