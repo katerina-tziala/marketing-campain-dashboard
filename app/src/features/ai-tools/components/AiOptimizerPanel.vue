@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { SparklesIcon } from '../../../ui/icons'
-import { Spinner } from '../../../ui'
+import { Badge, Spinner } from '../../../ui'
+import type { BadgeVariant } from '../../../ui'
 
 const campaignStore = useCampaignStore()
 const analysisStore = useAiAnalysisStore()
@@ -15,27 +16,33 @@ const errorFallback = computed(() => analysisStore.optimizerErrorFallback)
 const cacheTimestamp = computed(() => analysisStore.optimizerCacheTimestamp)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 
-const confidenceClass = (level: string) =>
-  `ai-confidence ai-confidence--${level.toLowerCase()}`
+const confidenceVariant = (level: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
+    high: 'success',
+    medium: 'warning',
+    low: 'danger',
+  }
+  return map[level.toLowerCase()] ?? 'info'
+}
 
 const formatCurrency = (value: number) =>
   `€${value.toLocaleString('en-IE')}`
 
-const actionBadgeClass = (action: string) => {
-  const map: Record<string, string> = {
-    reduce: 'ai-badge--warning',
-    pause: 'ai-badge--danger',
-    restructure: 'ai-badge--info',
+const actionVariant = (action: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
+    reduce: 'warning',
+    pause: 'danger',
+    restructure: 'info',
   }
-  return `ai-badge ${map[action.toLowerCase()] ?? 'ai-badge--info'}`
+  return map[action.toLowerCase()] ?? 'info'
 }
 
-const effortBadgeClass = (effort: string) => {
-  const map: Record<string, string> = {
-    low: 'ai-badge--success',
-    medium: 'ai-badge--warning',
+const effortVariant = (effort: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
+    low: 'success',
+    medium: 'warning',
   }
-  return `ai-badge ${map[effort.toLowerCase()] ?? 'ai-badge--info'}`
+  return map[effort.toLowerCase()] ?? 'info'
 }
 
 const analyzeLabel = computed(() =>
@@ -138,7 +145,7 @@ function formatRoi(value: number): string {
         >
           <div class="ai-recommendation__head">
             <span class="ai-recommendation__action">{{ rec.action }}</span>
-            <span :class="confidenceClass(rec.confidence)">{{ rec.confidence }}</span>
+            <Badge :variant="confidenceVariant(rec.confidence)">{{ rec.confidence }}</Badge>
           </div>
 
           <div class="ai-recommendation__details">
@@ -218,7 +225,7 @@ function formatRoi(value: number): string {
             <span class="ai-performer__name">{{ perf.campaign }}</span>
             <div class="ai-performer__head-right">
               <span class="ai-performer__roi ai-performer__roi--negative">{{ perf.roi }}x ROI</span>
-              <span :class="actionBadgeClass(perf.recommended_action)">{{ perf.recommended_action }}</span>
+              <Badge :variant="actionVariant(perf.recommended_action)">{{ perf.recommended_action }}</Badge>
             </div>
           </div>
           <p class="ai-performer__insight">{{ perf.insight }}</p>
@@ -236,7 +243,7 @@ function formatRoi(value: number): string {
         >
           <div class="ai-quick-win__head">
             <span class="ai-quick-win__action">{{ qw.action }}</span>
-            <span :class="effortBadgeClass(qw.effort)">{{ qw.effort }} effort</span>
+            <Badge :variant="effortVariant(qw.effort)">{{ qw.effort }} effort</Badge>
           </div>
           <div class="ai-quick-win__details">
             <span class="ai-quick-win__impact">{{ qw.potential_impact }}</span>
@@ -491,70 +498,6 @@ function formatRoi(value: number): string {
       color: var(--color-title);
       font-weight: 600;
     }
-  }
-}
-
-// ── Confidence badge ─────────────────────────────────────────────────────────
-
-.ai-confidence {
-  font-size: theme('fontSize.xs');
-  font-weight: 600;
-  border-radius: theme('borderRadius.full');
-  padding: 2px theme('spacing.2');
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &--high {
-    color: #10b981;
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-  }
-
-  &--medium {
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-
-  &--low {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.25);
-  }
-}
-
-// ── Generic badge ────────────────────────────────────────────────────────────
-
-.ai-badge {
-  font-size: theme('fontSize.xs');
-  font-weight: 600;
-  border-radius: theme('borderRadius.full');
-  padding: 2px theme('spacing.2');
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &--success {
-    color: #10b981;
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-  }
-
-  &--warning {
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-
-  &--danger {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.25);
-  }
-
-  &--info {
-    color: #818cf8;
-    background-color: rgba(129, 140, 248, 0.1);
-    border: 1px solid rgba(129, 140, 248, 0.25);
   }
 }
 

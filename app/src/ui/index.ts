@@ -1,6 +1,8 @@
 export * from './charts'
 export * from './icons'
 export * from './toast'
+export { default as Badge } from './Badge.vue'
+export type { BadgeVariant } from './Badge.vue'
 export { default as BaseButton } from './BaseButton.vue'
 export { default as BaseModal } from './BaseModal.vue'
 export { default as Spinner } from './Spinner.vue'

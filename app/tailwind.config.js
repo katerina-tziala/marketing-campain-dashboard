@@ -7,6 +7,10 @@ export default {
     extend: {
       colors: {
         'panel-text': '#b5bdc9',
+        'badge-success': '#10b981',
+        'badge-warning': '#f59e0b',
+        'badge-danger':  '#f87171',
+        'badge-info':    '#818cf8',
         danger: {
           DEFAULT: '#f43f5e',
         },

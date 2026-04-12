@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { SparklesIcon } from '../../../ui/icons'
-import { Spinner } from '../../../ui'
+import { Badge, Spinner } from '../../../ui'
+import type { BadgeVariant } from '../../../ui'
 
 const campaignStore = useCampaignStore()
 const analysisStore = useAiAnalysisStore()
@@ -34,13 +35,13 @@ const channelStatusClass = (s: string) => {
   return `ai-channel-status ${map[s] ?? 'ai-channel-status--moderate'}`
 }
 
-const urgencyBadgeClass = (urgency: string) => {
-  const map: Record<string, string> = {
-    immediate: 'ai-badge--danger',
-    'this quarter': 'ai-badge--warning',
-    'next quarter': 'ai-badge--info',
+const urgencyVariant = (urgency: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
+    immediate: 'danger',
+    'this quarter': 'warning',
+    'next quarter': 'info',
   }
-  return `ai-badge ${map[urgency.toLowerCase()] ?? 'ai-badge--info'}`
+  return map[urgency.toLowerCase()] ?? 'info'
 }
 
 const insightTypeClass = (type: string) => {
@@ -235,7 +236,7 @@ function formatNumber(value: number): string {
           <div class="ai-priority__head">
             <span class="ai-priority__number">#{{ action.priority }}</span>
             <span class="ai-priority__action">{{ action.action }}</span>
-            <span :class="urgencyBadgeClass(action.urgency)">{{ action.urgency }}</span>
+            <Badge :variant="urgencyVariant(action.urgency)">{{ action.urgency }}</Badge>
           </div>
           <p class="ai-priority__outcome">{{ action.expected_outcome }}</p>
           <p class="ai-priority__metric">
@@ -764,41 +765,6 @@ function formatNumber(value: number): string {
       color: #818cf8;
       font-weight: 600;
     }
-  }
-}
-
-// ── Badge ────────────────────────────────────────────────────────────────────
-
-.ai-badge {
-  font-size: theme('fontSize.xs');
-  font-weight: 600;
-  border-radius: theme('borderRadius.full');
-  padding: 2px theme('spacing.2');
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &--success {
-    color: #10b981;
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-  }
-
-  &--warning {
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-
-  &--danger {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.25);
-  }
-
-  &--info {
-    color: #818cf8;
-    background-color: rgba(129, 140, 248, 0.1);
-    border: 1px solid rgba(129, 140, 248, 0.25);
   }
 }
 

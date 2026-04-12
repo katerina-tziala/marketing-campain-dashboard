@@ -2240,3 +2240,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Left accent border (3px solid, full opacity) gives a strong, immediate color signal — more effective than raising opacity on a thin 1px border
 - Metric value colored per type — the data highlight is the most prominent text in the card, so matching it to the type color reinforces the semantic meaning
 - Background raised to 0.10–0.12 (not higher) — keeps the card legible without competing with surrounding content in a tight panel
+
+
+## [#109] Extract Badge UI component with Tailwind color tokens
+**Type:** refactor
+
+**Summary:** Extracted the duplicated `ai-badge` / `ai-confidence` scoped styles from both AI panel components into a reusable `Badge.vue` UI component, moved badge colors into `tailwind.config.js`, and applied `@apply`-based styling with `capitalize` text transform.
+
+**Brainstorming:** Both `AiOptimizerPanel` and `AiSummaryPanel` contained identical `.ai-badge` style blocks with four color variants, plus `AiOptimizerPanel` had a separate `.ai-confidence` block that was structurally identical. All three were prime candidates for extraction into a shared component. The Badge component takes a `variant` prop (`success | warning | danger | info`), maps the confidence/action/effort/urgency semantics to variants in the parent via small helper functions, uses `@apply` for all Tailwind utilities, and adds `capitalize` so text casing is handled by the component rather than the caller. Colors moved to `tailwind.config.js` as flat `badge-*` keys (consistent with the `panel-text` flat-key pattern) so they work with Tailwind's `bg-color/opacity` JIT syntax in `@apply`.
+
+**Prompt:** There are many instances of ai-badge. Create a ui component badge with all variations. All text should be with first letter of each word capitalized. Use @apply rules for styling and move colors config in tailwind.config.
+
+**What was built / What changed:**
+- `app/src/ui/Badge.vue` — new component; `variant` prop (`success | warning | danger | info`); `@apply`-based styles; `capitalize` applied globally on `.badge`
+- `app/src/ui/index.ts` — exports `Badge` and `BadgeVariant`
+- `app/tailwind.config.js` — added `badge-success`, `badge-warning`, `badge-danger`, `badge-info` flat color tokens
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — imported `Badge` + `BadgeVariant`; replaced `confidenceClass/actionBadgeClass/effortBadgeClass` with `confidenceVariant/actionVariant/effortVariant` returning `BadgeVariant`; swapped three `<span :class>` usages for `<Badge :variant>`; removed `.ai-confidence` and `.ai-badge` style blocks
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — imported `Badge` + `BadgeVariant`; replaced `urgencyBadgeClass` with `urgencyVariant`; swapped `<span :class>` for `<Badge :variant>`; removed `.ai-badge` style block
+
+**Key decisions & why:**
+- Flat `badge-*` token keys in Tailwind config — consistent with existing `panel-text` flat-key pattern; required for PostCSS `theme()` resolution and Tailwind JIT `bg-color/opacity` syntax in `@apply`
+- `capitalize` on the component — removes the responsibility from every caller; single source of truth for badge text casing
+- Helper functions return `BadgeVariant` instead of a class string — type-safe, no string concatenation, template is cleaner
+- `ai-confidence` merged into `Badge` — structurally identical to `ai-badge`; the semantic difference (confidence level) is now expressed via the variant prop value, not a separate CSS class hierarchy
