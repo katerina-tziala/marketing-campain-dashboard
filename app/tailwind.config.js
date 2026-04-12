@@ -6,6 +6,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        'panel-text': '#b5bdc9',
         danger: {
           DEFAULT: '#f43f5e',
         },

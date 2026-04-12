@@ -307,7 +307,7 @@ function formatRoi(value: number): string {
 
   &__subtitle {
     font-size: theme('fontSize.xs');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -355,7 +355,7 @@ function formatRoi(value: number): string {
 
   &__empty-text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.6;
     margin: 0;
     text-align: center;
@@ -374,7 +374,7 @@ function formatRoi(value: number): string {
 
   &__loader-text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -398,7 +398,7 @@ function formatRoi(value: number): string {
 
   &__error-hint {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -428,7 +428,7 @@ function formatRoi(value: number): string {
 
   &__notice-hint {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -445,7 +445,7 @@ function formatRoi(value: number): string {
 
   &__cache-indicator {
     font-size: theme('fontSize.xs');
-    color: #8996a9;
+    color: theme('colors.panel-text');
     margin: 0;
     text-align: center;
     font-style: italic;
@@ -477,13 +477,13 @@ function formatRoi(value: number): string {
 
   &__period {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     font-weight: 500;
   }
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.6;
     margin: 0;
 
@@ -601,13 +601,13 @@ function formatRoi(value: number): string {
 
   &__detail-label {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
   }
 
   &__detail-value {
     font-size: theme('fontSize.xs');
     font-weight: 600;
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
 
     &--positive {
       color: #10b981;
@@ -616,7 +616,7 @@ function formatRoi(value: number): string {
 
   &__reasoning {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     line-height: 1.5;
     margin: 0;
     font-style: italic;
@@ -641,12 +641,12 @@ function formatRoi(value: number): string {
 
   &__metrics-text {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.4;
 
     strong {
-      color: theme('colors.slate.300');
+      color: theme('colors.panel-text');
       font-weight: 600;
     }
   }
@@ -697,14 +697,14 @@ function formatRoi(value: number): string {
 
   &__insight {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     line-height: 1.5;
     margin: 0;
   }
 
   &__unlock {
     font-size: theme('fontSize.xs');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.5;
     margin: 0;
 
@@ -758,7 +758,7 @@ function formatRoi(value: number): string {
 
   &__timeline {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     white-space: nowrap;
   }
 }
@@ -787,7 +787,7 @@ function formatRoi(value: number): string {
 
   &__implication {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.5;
   }
@@ -817,12 +817,12 @@ function formatRoi(value: number): string {
 
   &__mitigation {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.5;
 
     strong {
-      color: theme('colors.slate.300');
+      color: theme('colors.panel-text');
       font-weight: 600;
     }
   }

@@ -2189,3 +2189,54 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Scaled all dimensions together so the box shrinks proportionally without looking cramped
+
+
+## [#106] Unify panel text color via Tailwind token
+**Type:** update
+
+**Summary:** Added `panel.text` color token to Tailwind config and replaced all `slate.300` / `#94a3b8` / `#b5bdc9` / `#8996a9` text color literals in both panel components with `theme('colors.panel.text')`.
+
+**Prompt:** Change panel color of text to #b5bdc9. Add the color in tailwind.
+
+**What changed:**
+- `app/tailwind.config.js` — added `panel.text` color token
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced all body/secondary text color literals with `theme('colors.panel.text')`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same; also replaced the already-hardcoded `#b5bdc9` instances
+
+**Key decisions & why:**
+- Named token over a raw hex in CSS — single place to adjust the panel text color in the future
+- Functional colors (red, green, amber, indigo badges; title var; white button text) left untouched — those are semantic, not general text
+
+
+## [#107] Fix panel-text color token — use flat key
+**Type:** fix
+
+**Summary:** PostCSS can't resolve nested custom color paths like `theme('colors.panel.text')` at compile time; changed the Tailwind token to a flat `'panel-text'` key and updated all references in both panel files.
+
+**Prompt:** fix [plugin:vite:css] 'colors.panel.text' does not exist in your theme config.
+
+**What changed:**
+- `app/tailwind.config.js` — `panel: { text }` → `'panel-text'` flat key
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — `theme('colors.panel.text')` → `theme('colors.panel-text')` (all occurrences)
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same
+
+**Key decisions & why:**
+- Flat key avoids the nested object path resolution issue in PostCSS `theme()` — consistent with how other multi-word tokens (e.g. `primary-track`) are defined in this config
+
+
+## [#108] Intensify insight card colors in Executive Summary panel
+**Type:** update
+
+**Summary:** Increased the visual intensity of the four insight card types (performance, opportunity, warning, achievement) with higher-opacity backgrounds and borders, a solid 3px left accent border per type, and type-matched metric value text color.
+
+**Brainstorming:** The insight cards were barely visible — background opacity 0.05 and border opacity 0.15 made each type almost indistinguishable. The goal was more vivid differentiation without making the cards feel heavy. Three levers: (1) raise bg/border opacity, (2) add a solid left accent border as a strong color anchor, (3) color the metric highlight value to match the card type. The left border approach is a common pattern in dark UIs for type-coded cards — it anchors the color identity without flooding the card. Metric value coloring reinforces the type identity on the data that matters most.
+
+**Prompt:** In summary add more light/intense colors for the insights section.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — each insight modifier (`--performance`, `--opportunity`, `--warning`, `--achievement`) updated: bg opacity raised (0.05→0.10–0.12), border opacity raised (0.15→0.28–0.30), `border-left-width: 3px` + solid `border-left-color` added, `.ai-insight__metric-value` color scoped per type
+
+**Key decisions & why:**
+- Left accent border (3px solid, full opacity) gives a strong, immediate color signal — more effective than raising opacity on a thin 1px border
+- Metric value colored per type — the data highlight is the most prominent text in the card, so matching it to the type color reinforces the semantic meaning
+- Background raised to 0.10–0.12 (not higher) — keeps the card legible without competing with surrounding content in a tight panel

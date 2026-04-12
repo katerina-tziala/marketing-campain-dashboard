@@ -192,7 +192,7 @@ function formatNumber(value: number): string {
             <span class="ai-metric__label">Worst Channel</span>
             <span class="ai-metric__value ai-metric__value--negative">{{ response.key_metrics.worst_channel }}</span>
           </div>
-          <div class="ai-metric ai-metric--span">
+          <div class="ai-metric ai-metric--full">
             <span class="ai-metric__label">Best Campaign</span>
             <span class="ai-metric__value">{{ response.key_metrics.best_campaign }}</span>
           </div>
@@ -314,7 +314,7 @@ function formatNumber(value: number): string {
 
   &__subtitle {
     font-size: theme('fontSize.xs');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -362,7 +362,7 @@ function formatNumber(value: number): string {
 
   &__empty-text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.6;
     margin: 0;
     text-align: center;
@@ -381,7 +381,7 @@ function formatNumber(value: number): string {
 
   &__loader-text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -405,7 +405,7 @@ function formatNumber(value: number): string {
 
   &__error-hint {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -435,7 +435,7 @@ function formatNumber(value: number): string {
 
   &__notice-hint {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
   }
 
@@ -452,7 +452,7 @@ function formatNumber(value: number): string {
 
   &__cache-indicator {
     font-size: theme('fontSize.xs');
-    color: #a6b0bf;
+    color: theme('colors.panel-text');
     margin: 0;
     text-align: center;
     font-style: italic;
@@ -490,13 +490,13 @@ function formatNumber(value: number): string {
 
   &__period {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     font-weight: 500;
   }
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.6;
     margin: 0;
 
@@ -508,7 +508,7 @@ function formatNumber(value: number): string {
 
   &__note {
     font-size: theme('fontSize.xs');
-    color: #a6b0bf;
+    color: theme('colors.panel-text');
     line-height: 1.5;
     margin: 0;
     font-style: italic;
@@ -526,7 +526,7 @@ function formatNumber(value: number): string {
   &__label {
     font-size: theme('fontSize.xs');
     font-weight: 600;
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
   }
 }
 
@@ -604,7 +604,7 @@ function formatNumber(value: number): string {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #a6b0bf;
+    color: theme('colors.panel-text');
   }
 
   &__value {
@@ -647,7 +647,7 @@ function formatNumber(value: number): string {
 
   &__text {
     font-size: theme('fontSize.sm');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     line-height: 1.5;
   }
 
@@ -662,7 +662,7 @@ function formatNumber(value: number): string {
 
   &__metric-label {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     font-weight: 500;
   }
 
@@ -673,23 +673,39 @@ function formatNumber(value: number): string {
   }
 
   &--performance {
-    background-color: rgba(99, 102, 241, 0.05);
-    border-color: rgba(99, 102, 241, 0.15);
+    background-color: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.3);
+    border-left-width: 3px;
+    border-left-color: #6366f1;
+
+    .ai-insight__metric-value { color: #818cf8; }
   }
 
   &--opportunity {
-    background-color: rgba(16, 185, 129, 0.05);
-    border-color: rgba(16, 185, 129, 0.15);
+    background-color: rgba(16, 185, 129, 0.10);
+    border-color: rgba(16, 185, 129, 0.28);
+    border-left-width: 3px;
+    border-left-color: #10b981;
+
+    .ai-insight__metric-value { color: #10b981; }
   }
 
   &--warning {
-    background-color: rgba(245, 158, 11, 0.05);
-    border-color: rgba(245, 158, 11, 0.15);
+    background-color: rgba(245, 158, 11, 0.10);
+    border-color: rgba(245, 158, 11, 0.3);
+    border-left-width: 3px;
+    border-left-color: #f59e0b;
+
+    .ai-insight__metric-value { color: #f59e0b; }
   }
 
   &--achievement {
-    background-color: rgba(129, 140, 248, 0.05);
-    border-color: rgba(129, 140, 248, 0.15);
+    background-color: rgba(129, 140, 248, 0.12);
+    border-color: rgba(129, 140, 248, 0.3);
+    border-left-width: 3px;
+    border-left-color: #a5b4fc;
+
+    .ai-insight__metric-value { color: #a5b4fc; }
   }
 }
 
@@ -731,7 +747,7 @@ function formatNumber(value: number): string {
 
   &__outcome {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.5;
     padding-left: calc(1.25rem + theme('spacing.2'));
@@ -739,7 +755,7 @@ function formatNumber(value: number): string {
 
   &__metric {
     font-size: theme('fontSize.xs');
-    color: theme('colors.slate.300');
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.4;
     padding-left: calc(1.25rem + theme('spacing.2'));
@@ -822,13 +838,13 @@ function formatNumber(value: number): string {
 
   &__budget {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     font-weight: 500;
   }
 
   &__liner {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     line-height: 1.5;
     margin: 0;
   }
@@ -885,7 +901,7 @@ function formatNumber(value: number): string {
 
   &__implication {
     font-size: theme('fontSize.xs');
-    color: #94a3b8;
+    color: theme('colors.panel-text');
     margin: 0;
     line-height: 1.5;
   }
