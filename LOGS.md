@@ -1661,3 +1661,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - All four references updated atomically — no intermediate broken state
+
+
+## [#78] Upload again / replace existing data with confirmation warning
+**Type:** feature
+
+**Summary:** Added a confirmation modal that gates the "Upload CSV" header button when campaign data already exists, warning the user that uploading will replace all current data and reset analysis.
+
+**Brainstorming:** The trigger already existed in the AppShell header. The question was how to intercept it. Three options considered: (A) reuse BaseModal as a confirm dialog, (B) add a warning step inside UploadModal, (C) window.confirm(). Option A was chosen — a dedicated ReplaceDataModal keeps UploadModal clean and the confirmation logic separate. The provide('openUploadModal') path remains untouched since EmptyState only appears when no data exists and needs no confirmation.
+
+**Prompt:** Implement Upload again / replace existing data (with confirmation warning). Reuse BaseModal as a confirm dialog. The trigger already exists in the header.
+
+**What was built:**
+- `csv-file/components/ReplaceDataModal.vue` — BaseModal with warning message, "Replace data" (primary) and "Cancel" (ghost) buttons; emits confirm/close
+- `AppShell.vue` — added showReplaceConfirm ref and onReplaceConfirm handler; header "Upload CSV" button now opens ReplaceDataModal instead of UploadModal directly; on confirm: closes modal and opens UploadModal; provide('openUploadModal') path unchanged
+
+**Key decisions & why:**
+- ReplaceDataModal is v-if (not v-show) — avoids mounting BaseModal's keyboard/scroll listeners when it's not visible
+- provide('openUploadModal') left unchanged — the EmptyState path has no data to replace, confirmation would be incorrect there
+- Warning copy mentions analysis reset — consistent with the existing CSV upload reset behaviour already implemented in aiAnalysisStore

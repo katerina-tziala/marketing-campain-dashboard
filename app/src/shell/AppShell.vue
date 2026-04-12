@@ -6,15 +6,22 @@ import { useCampaignStore } from '../stores/campaignStore'
 import { useAiStore } from '../stores/aiStore'
 import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
 import UploadModal from '../features/csv-file/components/UploadModal.vue'
+import ReplaceDataModal from '../features/csv-file/components/ReplaceDataModal.vue'
 import { AiToolsDrawer } from '../features/ai-tools'
 
 const store = useCampaignStore()
 const aiStore = useAiStore()
 const analysisStore = useAiAnalysisStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
+const showReplaceConfirm = ref(false)
 
 provide('openUploadModal', () => uploadModal.value?.open())
 provide('openAiPanel', () => { aiStore.openPanel(); analysisStore.onPanelOpen() })
+
+function onReplaceConfirm(): void {
+  showReplaceConfirm.value = false
+  uploadModal.value?.open()
+}
 
 function onCloseAiPanel(): void {
   aiStore.closePanel()
@@ -28,7 +35,7 @@ function onCloseAiPanel(): void {
     <div class="app-shell__left">
       <header class="app-shell__header">
         <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
-        <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="uploadModal?.open()">
+        <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="showReplaceConfirm = true">
           <UploadIcon />
           Upload CSV
         </BaseButton>
@@ -42,6 +49,11 @@ function onCloseAiPanel(): void {
     <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
 
     <UploadModal ref="uploadModal" />
+    <ReplaceDataModal
+      v-if="showReplaceConfirm"
+      @confirm="onReplaceConfirm"
+      @close="showReplaceConfirm = false"
+    />
     <ToastContainer />
   </div>
 </template>

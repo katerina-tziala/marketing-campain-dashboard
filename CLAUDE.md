@@ -68,7 +68,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
 │   │   └── index.ts            # Barrel export for the full ui library
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
@@ -117,9 +117,10 @@ app/                        # Vue 3 + Vite project
 │   │       ├── types/
 │   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
 │   │       ├── components/
-│   │       │   ├── UploadModal.vue     # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
-│   │       │   ├── CsvUploadForm.vue   # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
-│   │       │   └── CsvErrorTable.vue    # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
+│   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
+│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — warns that uploading will replace current data; emits confirm/close; opened by AppShell header button when data exists
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
+│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/
@@ -160,7 +161,7 @@ app/                        # Vue 3 + Vite project
 - [x] Drag & drop + file picker upload
 - [x] Auto-detection of columns (case-insensitive, 7 expected headers, extra columns ignored)
 - [x] Error handling: wrong file type and size shown inline; missing columns listed by name; invalid rows shown in a structured table with option to proceed with valid rows
-- [ ] Upload again / replace existing data (with confirmation warning)
+- [x] Upload again / replace existing data (with confirmation warning)
 
 ### Campaign Performance Dashboard
 - [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
