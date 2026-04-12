@@ -1,4 +1,26 @@
-import type { ExecutiveSummaryResponse } from '../types'
+import type { AiModel, ExecutiveSummaryResponse } from '../types'
+
+const MOCK_GEMINI_FLASH: AiModel = {
+  id: 'gemini-2.0-flash',
+  model: 'gemini-2.0-flash',
+  display_name: 'Gemini 2.0 Flash',
+  provider: 'gemini',
+  strength: 'Fast and efficient for structured analysis tasks',
+  strength_score: 8,
+  reason: 'Best balance of speed and accuracy for executive summary generation',
+  limitReached: false,
+}
+
+const MOCK_GROQ_LLAMA: AiModel = {
+  id: 'llama-3.3-70b-versatile',
+  model: 'llama-3.3-70b-versatile',
+  display_name: 'Llama 3.3 70B',
+  provider: 'groq',
+  strength: 'High-quality reasoning with detailed analytical depth',
+  strength_score: 9,
+  reason: 'Strong analytical reasoning with comprehensive portfolio insights',
+  limitReached: false,
+}
 
 /**
  * 5 mock ExecutiveSummaryResponse objects for UI development.
@@ -8,6 +30,7 @@ import type { ExecutiveSummaryResponse } from '../types'
 // ── Mock 1: Strong Portfolio ─────────────────────────────────────────────────
 
 const strongPortfolio: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   health_score: {
     score: 82,
@@ -105,6 +128,7 @@ const strongPortfolio: ExecutiveSummaryResponse = {
 // ── Mock 2: Needs Attention ──────────────────────────────────────────────────
 
 const needsAttention: ExecutiveSummaryResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   health_score: {
     score: 48,
@@ -196,6 +220,7 @@ const needsAttention: ExecutiveSummaryResponse = {
 // ── Mock 3: Excellent Performance ────────────────────────────────────────────
 
 const excellentPerformance: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   health_score: {
     score: 91,
@@ -293,6 +318,7 @@ const excellentPerformance: ExecutiveSummaryResponse = {
 // ── Mock 4: Critical State ───────────────────────────────────────────────────
 
 const criticalState: ExecutiveSummaryResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   health_score: {
     score: 25,
@@ -391,6 +417,7 @@ const criticalState: ExecutiveSummaryResponse = {
 // ── Mock 5: Growth Phase ─────────────────────────────────────────────────────
 
 const growthPhase: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q2 2026',
   health_score: {
     score: 73,

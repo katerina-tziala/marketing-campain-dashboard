@@ -1,4 +1,26 @@
-import type { BudgetOptimizerResponse } from '../types'
+import type { AiModel, BudgetOptimizerResponse } from '../types'
+
+const MOCK_GEMINI_FLASH: AiModel = {
+  id: 'gemini-2.0-flash',
+  model: 'gemini-2.0-flash',
+  display_name: 'Gemini 2.0 Flash',
+  provider: 'gemini',
+  strength: 'Fast and efficient for structured analysis tasks',
+  strength_score: 8,
+  reason: 'Best balance of speed and accuracy for marketing budget analysis',
+  limitReached: false,
+}
+
+const MOCK_GROQ_LLAMA: AiModel = {
+  id: 'llama-3.3-70b-versatile',
+  model: 'llama-3.3-70b-versatile',
+  display_name: 'Llama 3.3 70B',
+  provider: 'groq',
+  strength: 'High-quality reasoning with detailed analytical depth',
+  strength_score: 9,
+  reason: 'Strong analytical reasoning with comprehensive budget optimization insights',
+  limitReached: false,
+}
 
 /**
  * 5 mock BudgetOptimizerResponse objects for UI development.
@@ -8,6 +30,7 @@ import type { BudgetOptimizerResponse } from '../types'
 // ── Mock 1: Aggressive Reallocation ──────────────────────────────────────────
 
 const aggressiveReallocation: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   executive_summary:
     'Your portfolio shows a 3.4x spread between best and worst ROI channels. ' +
@@ -160,6 +183,7 @@ const aggressiveReallocation: BudgetOptimizerResponse = {
 // ── Mock 2: Conservative Optimization ────────────────────────────────────────
 
 const conservativeOptimization: BudgetOptimizerResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   executive_summary:
     'Your marketing portfolio is broadly healthy with a 2.1x overall ROI. ' +
@@ -266,6 +290,7 @@ const conservativeOptimization: BudgetOptimizerResponse = {
 // ── Mock 3: Seasonal Pivot ───────────────────────────────────────────────────
 
 const seasonalPivot: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q2 2026 (Summer)',
   executive_summary:
     'With summer approaching, consumer behavior shifts toward mobile and social channels. ' +
@@ -406,6 +431,7 @@ const seasonalPivot: BudgetOptimizerResponse = {
 // ── Mock 4: Channel Consolidation ────────────────────────────────────────────
 
 const channelConsolidation: BudgetOptimizerResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   executive_summary:
     'Your budget is spread across 13 channels, diluting focus and making optimization difficult. ' +
@@ -546,6 +572,7 @@ const channelConsolidation: BudgetOptimizerResponse = {
 // ── Mock 5: Growth Expansion ─────────────────────────────────────────────────
 
 const growthExpansion: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   executive_summary:
     'Your top performers have significant headroom for scaling. Analysis suggests a 20% total budget increase ' +

@@ -1973,3 +1973,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Same `Math.round(value * 100)%` pattern as Summary panel — consistent ROI display format across both AI panels
 - Decimal multiplier storage (e.g., `3.9`) not percentage integer — consistent with `roi` fields in `top_performers` and `underperformers` which are already stored as multipliers
+
+
+## [#94] Add model field to all AI response mocks
+**Type:** update
+
+**Summary:** Added the optional `model?: AiModel` field to all 10 mock response objects (5 BudgetOptimizerResponse + 5 ExecutiveSummaryResponse) so that mocks fully represent the complete type shape.
+
+**Brainstorming:** Both response types include `model?: AiModel` which is stamped by the analysis store on real API responses. The mocks were missing this field, leaving them incomplete relative to the type definition. Two realistic mock models were defined (Gemini 2.0 Flash and Llama 3.3 70B via Groq) and alternated across mocks to reflect that either provider may generate a response.
+
+**Prompt:** The mock data for BudgetOptimizerResponse and ExecutiveSummaryResponse do not include optional properties model?: AiModel and period?: string — update the mocks to include all fields.
+
+**What changed:**
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — added `MOCK_GEMINI_FLASH` and `MOCK_GROQ_LLAMA` model constants; added `model` field to all 5 mocks (aggressiveReallocation/seasonalPivot/growthExpansion → Gemini Flash; conservativeOptimization/channelConsolidation → Groq Llama)
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — added `MOCK_GEMINI_FLASH` and `MOCK_GROQ_LLAMA` model constants; added `model` field to all 5 mocks (strongPortfolio/excellentPerformance/growthPhase → Gemini Flash; needsAttention/criticalState → Groq Llama)
+
+**Key decisions & why:**
+- Two providers represented — alternating Gemini and Groq across mocks reflects real usage and exercises both provider code paths during UI development
+- Model constants defined at file level — avoids repetition and keeps mock model data maintainable in one place per file
