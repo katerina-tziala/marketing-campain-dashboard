@@ -2072,3 +2072,120 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `animate-spin` + `animation-duration` override instead of a config extension — built-in utilities always resolve in `@apply`; the only custom part is the 0.7s duration, which is a one-liner override and needs no config entry
+
+
+## [#99] Add dev-mode mocks for instant UI iteration
+**Type:** update
+
+**Summary:** Added three named boolean flags (DEV_MOCK_CAMPAIGNS, DEV_MOCK_CONNECTED, DEV_MOCK_ANALYSIS) to pre-load campaign data, mock the AI connection state, and cycle through mock AI responses — so the side panel UI is immediately accessible without CSV upload or API credentials.
+
+**Brainstorming:** Working on side panel UI requires repeatedly going through CSV upload → AI connection form → analyze flow, which is slow. The fastest solution is to intercept at three points: (1) the campaign store initial state, (2) the AI store initial state, and (3) the AI analysis execution path. Each flag is a single boolean at the top of its store file with explicit TODO comments listing exactly what to remove when reverting. The mock analysis block sits inside executeAnalysis just before the real API call, runs a 700ms fake delay (so loading state is visible), then resolves with the next mock in a rotating index.
+
+**Prompt:** Add mock data in the store so I do not have to upload the file each time. When opening side panel mock connection state. When clicking on analyze or generate iterate in the mock data and return mock data. Add todos to revert the code without breaking anything.
+
+**What changed:**
+- `app/src/stores/campaignStore.ts` — added DEV_MOCK_CAMPAIGNS flag + MOCK_CAMPAINS import; initializes campaigns and title refs with mock data when true
+- `app/src/stores/aiStore.ts` — added DEV_MOCK_CONNECTED flag + MOCK_DEV_MODEL constant; initializes provider, apiKey, isConnected, models, selectedModel with mock values when true
+- `app/src/stores/aiAnalysisStore.ts` — added DEV_MOCK_ANALYSIS flag + BUDGET_OPTIMIZER_MOCKS/EXECUTIVE_SUMMARY_MOCKS imports + optimizerMockIndex/summaryMockIndex refs; intercepts executeAnalysis before the real API call to return the next mock response in rotation with a 700ms delay
+
+**Key decisions & why:**
+- Named boolean flags at file-top rather than env variables — simpler to flip, no build config changes needed, and the TODO comments are co-located with the flag
+- 700ms fake delay in mock analysis — makes the loading spinner visible so UI loading states can be inspected; short enough not to slow iteration
+- Rotating index (modulo array length) rather than random — predictable cycling means each click shows the next mock in sequence, making it easy to see all five variants in order
+- Mock model set to Gemini 2.0 Flash matching the existing budget-optimizer mock objects — consistent display_name shown in the "Generated at…" panel footer
+
+
+## [#100] Remove ai-result-block card wrapper, use h4 section headings
+**Type:** update
+
+**Summary:** Replaced the `.ai-result-block` card wrapper (bordered box with background/padding) with a flat `.ai-section` element in both panels, and converted all section labels from `<span>` to `<h4>` tags; renamed "Executive Summary" to "Summary" in the Budget Optimizer panel.
+
+**Brainstorming:** The card wrapper added visual noise with borders and backgrounds around every section. Removing it flattens the hierarchy so sections read as part of a continuous document rather than isolated boxes. The `<h4>` change is both semantic (correct heading level inside the panel) and visual — same indigo uppercase style, just a proper element. The rename from "Executive Summary" to "Summary" avoids redundancy since the panel itself is already called "Budget Optimizer".
+
+**Prompt:** Remove .ai-result-block card. No need for additional wrapper. Each section should have an h4 tag. Rename Executive Summary to Summary for budget optimization.
+
+**What changed:**
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced all `<div class="ai-result-block">` wrappers with `<section class="ai-section">`; replaced `<div class="ai-result-block__header"><span class="ai-result-block__label">` with `<h4 class="ai-section__title">`; renamed "Executive Summary" section label to "Summary"; replaced `.ai-result-block` CSS block with `.ai-section`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same structural changes across all seven sections; `.ai-result-block__note` renamed to `.ai-section__note`
+
+**Key decisions & why:**
+- `<section>` element instead of `<div>` for the wrapper — semantically correct for a named content region; pairs well with the `<h4>` heading inside it
+- Kept the same visual style (uppercase, indigo, letter-spacing) on the `h4` — only the element type changes, not the appearance
+- `.ai-section` has no border, background, or padding — content floats directly in the panel's flex column gap
+
+
+## [#101] Increase section spacing in AI panels
+**Type:** fix
+
+**Summary:** Bumped `.ai-panel__result` gap from `spacing.4` (16px) to `spacing.6` (24px) in both panels to better visually separate the flat sections now that the card borders are gone.
+
+**Brainstorming:** Without the card borders, sections needed more breathing room to read as distinct blocks. Increasing the flex gap on the result container is the minimal, correct change.
+
+**Prompt:** Increase spacing where each h4 is present to separate sections a bit better.
+
+**What changed:**
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — `.ai-panel__result` gap: spacing.4 → spacing.6
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — `.ai-panel__result` gap: spacing.4 → spacing.6
+
+**Key decisions & why:**
+- Gap on the result container rather than margin on individual sections — single change, consistent across all sections, no per-section overrides needed
+
+
+## [#102] Rearrange Portfolio Health section layout
+**Type:** fix
+
+**Summary:** Moved the health score badge to the top-right (where period was), placed period below the heading row, and kept the health label and reasoning underneath.
+
+**Brainstorming:** Simple reordering — score badge is more meaningful alongside the heading than the period date. Period as a secondary meta line reads naturally below the title.
+
+**Prompt:** Portfolio Health — move period under Portfolio Health, put health where period is now, health score underneath.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — reordered Portfolio Health section: score badge moves to `.ai-section__head` right slot; period becomes a standalone line below the head; health label and reasoning follow
+
+**Key decisions & why:**
+- Score badge in the head row pairs the key number with the section title — scannable at a glance
+- Period as a sub-line reads as secondary metadata, which is what it is
+
+
+## [#103] Stack health score label under badge
+**Type:** fix
+
+**Summary:** Grouped the health score label with its badge and stacked them vertically so the label ("Good", "Excellent" etc.) sits directly beneath the score box.
+
+**Prompt:** Health score should appear underneath health box.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — wrapped score badge and label in `.ai-health-score`; changed `.ai-health-score` to `flex-direction: column; align-items: flex-end` so label renders below the badge, right-aligned
+
+**Key decisions & why:**
+- `align-items: flex-end` keeps both badge and label right-aligned, matching their position in the section header
+- Reduced label font-size to `xs` to match the badge's compact scale
+
+
+## [#104] Place period directly under Portfolio Health heading
+**Type:** fix
+
+**Summary:** Wrapped the h4 and period in a `.ai-section__title-group` column so the period sits flush beneath the heading text rather than below the full header row.
+
+**Prompt:** Period should be exactly underneath the Portfolio Health.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — added `.ai-section__title-group` wrapper around h4 + period; added `flex-direction: column` CSS for that class
+
+**Key decisions & why:**
+- Left-side column group mirrors the same pattern used in `.ai-panel__titles` — heading + sub-label stacked vertically on the left, badge on the right
+
+
+## [#105] Reduce health score box size
+**Type:** fix
+
+**Summary:** Shrunk the health score badge — score value from 2xl to lg, /100 suffix from sm to xs, padding tightened from spacing.1/spacing.3 to 2px/spacing.2, border-radius from lg to md.
+
+**Prompt:** Make score box a bit smaller.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — reduced font sizes and padding on `.ai-health`
+
+**Key decisions & why:**
+- Scaled all dimensions together so the box shrinks proportionally without looking cramped

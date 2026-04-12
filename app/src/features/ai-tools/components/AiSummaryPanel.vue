@@ -140,36 +140,33 @@ function formatNumber(value: number): string {
         Cached result &bull; Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
       </p>
 
-      <!-- Health Score -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Portfolio Health</span>
-          <span v-if="response.period" class="ai-result-block__period">{{ response.period }}</span>
-        </div>
-
-        <div class="ai-health-score">
-          <div :class="healthScoreClass(response.health_score.label)">
-            <span class="ai-health__value">{{ response.health_score.score }}</span>
-            <span class="ai-health__max">/100</span>
+      <!-- Portfolio Health -->
+      <section class="ai-section">
+        <div class="ai-section__head">
+          <div class="ai-section__title-group">
+            <h4 class="ai-section__title">Portfolio Health</h4>
+            <span v-if="response.period" class="ai-section__period">{{ response.period }}</span>
           </div>
-          <span class="ai-health-score__label">{{ response.health_score.label }}</span>
+          <div class="ai-health-score">
+            <div :class="healthScoreClass(response.health_score.label)">
+              <span class="ai-health__value">{{ response.health_score.score }}</span>
+              <span class="ai-health__max">/100</span>
+            </div>
+            <span class="ai-health-score__label">{{ response.health_score.label }}</span>
+          </div>
         </div>
-        <p class="ai-result-block__text">{{ response.health_score.reasoning }}</p>
-      </div>
+        <p class="ai-section__text">{{ response.health_score.reasoning }}</p>
+      </section>
 
       <!-- Bottom Line -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Bottom Line</span>
-        </div>
-        <p class="ai-result-block__text">{{ response.bottom_line }}</p>
-      </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Bottom Line</h4>
+        <p class="ai-section__text">{{ response.bottom_line }}</p>
+      </section>
 
       <!-- Key Metrics -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Key Metrics</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Key Metrics</h4>
         <div class="ai-metrics-grid">
           <div class="ai-metric">
             <span class="ai-metric__label">Total Spend</span>
@@ -204,13 +201,11 @@ function formatNumber(value: number): string {
             <span class="ai-metric__value ai-metric__value--opportunity">{{ response.key_metrics.biggest_opportunity }}</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Insights -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Insights</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Insights</h4>
 
         <div
           v-for="(insight, i) in response.insights"
@@ -226,13 +221,11 @@ function formatNumber(value: number): string {
             <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Priority Actions -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Priority Actions</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Priority Actions</h4>
 
         <div
           v-for="(action, i) in response.priority_actions"
@@ -249,13 +242,11 @@ function formatNumber(value: number): string {
             <strong>Success metric:</strong> {{ action.success_metric }}
           </p>
         </div>
-      </div>
+      </section>
 
       <!-- Channel Summary -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Channel Summary</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Channel Summary</h4>
 
         <div
           v-for="(ch, i) in response.channel_summary"
@@ -272,16 +263,14 @@ function formatNumber(value: number): string {
           <p class="ai-channel__liner">{{ ch.one_liner }}</p>
         </div>
 
-        <p v-if="response.additional_channels_note" class="ai-result-block__note">
+        <p v-if="response.additional_channels_note" class="ai-section__note">
           {{ response.additional_channels_note }}
         </p>
-      </div>
+      </section>
 
       <!-- Correlations -->
-      <div v-if="response.correlations.length" class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Correlations</span>
-        </div>
+      <section v-if="response.correlations.length" class="ai-section">
+        <h4 class="ai-section__title">Correlations</h4>
 
         <div
           v-for="(corr, i) in response.correlations"
@@ -291,7 +280,7 @@ function formatNumber(value: number): string {
           <p class="ai-correlation__finding">{{ corr.finding }}</p>
           <p class="ai-correlation__implication">{{ corr.so_what }}</p>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -423,7 +412,7 @@ function formatNumber(value: number): string {
   &__result {
     display: flex;
     flex-direction: column;
-    gap: theme('spacing.4');
+    gap: theme('spacing.6');
   }
 
   &__notice {
@@ -463,37 +452,40 @@ function formatNumber(value: number): string {
 
   &__cache-indicator {
     font-size: theme('fontSize.xs');
-    color: #64748b;
+    color: #a6b0bf;
     margin: 0;
     text-align: center;
     font-style: italic;
   }
 }
 
-// ── Result blocks ────────────────────────────────────────────────────────────
+// ── Sections ─────────────────────────────────────────────────────────────────
 
-.ai-result-block {
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: theme('borderRadius.lg');
-  padding: theme('spacing.4');
+.ai-section {
   display: flex;
   flex-direction: column;
   gap: theme('spacing.3');
 
-  &__header {
+  &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: theme('spacing.2');
   }
 
-  &__label {
+  &__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: theme('spacing[0.5]');
+  }
+
+  &__title {
     font-size: theme('fontSize.xs');
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #818cf8;
+    margin: 0;
   }
 
   &__period {
@@ -516,7 +508,7 @@ function formatNumber(value: number): string {
 
   &__note {
     font-size: theme('fontSize.xs');
-    color: #64748b;
+    color: #a6b0bf;
     line-height: 1.5;
     margin: 0;
     font-style: italic;
@@ -527,11 +519,12 @@ function formatNumber(value: number): string {
 
 .ai-health-score {
   display: flex;
-  align-items: center;
-  gap: theme('spacing.3');
+  flex-direction: column;
+  align-items: flex-end;
+  gap: theme('spacing.1');
 
   &__label {
-    font-size: theme('fontSize.sm');
+    font-size: theme('fontSize.xs');
     font-weight: 600;
     color: theme('colors.slate.300');
   }
@@ -541,18 +534,18 @@ function formatNumber(value: number): string {
   display: inline-flex;
   align-items: baseline;
   gap: 2px;
-  padding: theme('spacing.1') theme('spacing.3');
-  border-radius: theme('borderRadius.lg');
+  padding: 2px theme('spacing.2');
+  border-radius: theme('borderRadius.md');
   border: 1px solid;
 
   &__value {
-    font-size: theme('fontSize.2xl');
+    font-size: theme('fontSize.lg');
     font-weight: 800;
     line-height: 1;
   }
 
   &__max {
-    font-size: theme('fontSize.sm');
+    font-size: theme('fontSize.xs');
     font-weight: 500;
     opacity: 0.6;
   }
@@ -611,7 +604,7 @@ function formatNumber(value: number): string {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: #a6b0bf;
   }
 
   &__value {

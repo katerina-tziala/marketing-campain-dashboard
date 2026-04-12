@@ -118,20 +118,18 @@ function formatRoi(value: number): string {
         Cached result &bull; Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
       </p>
 
-      <!-- Executive Summary -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Executive Summary</span>
-          <span v-if="response.period" class="ai-result-block__period">{{ response.period }}</span>
+      <!-- Summary -->
+      <section class="ai-section">
+        <div class="ai-section__head">
+          <h4 class="ai-section__title">Summary</h4>
+          <span v-if="response.period" class="ai-section__period">{{ response.period }}</span>
         </div>
-        <p class="ai-result-block__text">{{ response.executive_summary }}</p>
-      </div>
+        <p class="ai-section__text">{{ response.executive_summary }}</p>
+      </section>
 
       <!-- Recommendations -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Recommendations</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Recommendations</h4>
 
         <div
           v-for="(rec, i) in response.recommendations"
@@ -185,13 +183,11 @@ function formatRoi(value: number): string {
             </p>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Top Performers -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Top Performers</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Top Performers</h4>
 
         <div
           v-for="(perf, i) in response.top_performers"
@@ -207,13 +203,11 @@ function formatRoi(value: number): string {
             <strong>Unlock:</strong> {{ perf.unlock_potential }}
           </p>
         </div>
-      </div>
+      </section>
 
       <!-- Underperformers -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Underperformers</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Underperformers</h4>
 
         <div
           v-for="(perf, i) in response.underperformers"
@@ -229,13 +223,11 @@ function formatRoi(value: number): string {
           </div>
           <p class="ai-performer__insight">{{ perf.insight }}</p>
         </div>
-      </div>
+      </section>
 
       <!-- Quick Wins -->
-      <div class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Quick Wins</span>
-        </div>
+      <section class="ai-section">
+        <h4 class="ai-section__title">Quick Wins</h4>
 
         <div
           v-for="(qw, i) in response.quick_wins"
@@ -251,13 +243,11 @@ function formatRoi(value: number): string {
             <span class="ai-quick-win__timeline">{{ qw.timeline }}</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Correlations -->
-      <div v-if="response.correlations.length" class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Correlations</span>
-        </div>
+      <section v-if="response.correlations.length" class="ai-section">
+        <h4 class="ai-section__title">Correlations</h4>
 
         <div
           v-for="(corr, i) in response.correlations"
@@ -267,13 +257,11 @@ function formatRoi(value: number): string {
           <p class="ai-correlation__finding">{{ corr.finding }}</p>
           <p class="ai-correlation__implication">{{ corr.implication }}</p>
         </div>
-      </div>
+      </section>
 
       <!-- Risks -->
-      <div v-if="response.risks.length" class="ai-result-block">
-        <div class="ai-result-block__header">
-          <span class="ai-result-block__label">Risks & Mitigations</span>
-        </div>
+      <section v-if="response.risks.length" class="ai-section">
+        <h4 class="ai-section__title">Risks & Mitigations</h4>
 
         <div
           v-for="(risk, i) in response.risks"
@@ -285,7 +273,7 @@ function formatRoi(value: number): string {
             <strong>Mitigation:</strong> {{ risk.mitigation }}
           </p>
         </div>
-      </div>
+      </section>
     </div>
   </div>
 </template>
@@ -417,7 +405,7 @@ function formatRoi(value: number): string {
   &__result {
     display: flex;
     flex-direction: column;
-    gap: theme('spacing.4');
+    gap: theme('spacing.6');
   }
 
   &__notice {
@@ -457,37 +445,34 @@ function formatRoi(value: number): string {
 
   &__cache-indicator {
     font-size: theme('fontSize.xs');
-    color: #64748b;
+    color: #8996a9;
     margin: 0;
     text-align: center;
     font-style: italic;
   }
 }
 
-// ── Result blocks ────────────────────────────────────────────────────────────
+// ── Sections ─────────────────────────────────────────────────────────────────
 
-.ai-result-block {
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: theme('borderRadius.lg');
-  padding: theme('spacing.4');
+.ai-section {
   display: flex;
   flex-direction: column;
   gap: theme('spacing.3');
 
-  &__header {
+  &__head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: theme('spacing.2');
   }
 
-  &__label {
+  &__title {
     font-size: theme('fontSize.xs');
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: #818cf8;
+    margin: 0;
   }
 
   &__period {

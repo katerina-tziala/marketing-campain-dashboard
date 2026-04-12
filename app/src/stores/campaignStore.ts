@@ -2,11 +2,18 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Campaign } from '../common/types/campaign'
 import { safeDivide, round2 } from '../common/utils/math'
+// TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
+import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
+
+// TODO: DEV MOCK — revert before shipping.
+// To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
+// and reset the `campaigns` and `title` refs to [] and '' respectively.
+const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
-  const campaigns = ref<Campaign[]>([])
-  const title = ref<string>('')
+  const campaigns = ref<Campaign[]>(DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS : [])
+  const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
   const selectedChannels = ref<string[]>([])
 
   // Getters
