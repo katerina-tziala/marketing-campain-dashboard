@@ -67,27 +67,26 @@ function handleSubmit(): void {
   <!-- Body -->
   <div class="form-body">
     <!-- Campaign title -->
-    <div class="field">
-      <label class="field__label" for="campaign-title">Campaign Title</label>
+    <div class="form-field">
+      <label class="form-field__label" for="campaign-title">Campaign Title</label>
       <input
         id="campaign-title"
         :value="title"
-        class="field__input"
-        :class="{ 'field__input--error': titleError }"
+        class="field__input form-control"
+        :class="{ 'form-control--error': titleError }"
         type="text"
         placeholder="e.g. Q2 2025 Campaign"
         autocomplete="off"
         @input="emit('update:title', ($event.target as HTMLInputElement).value)"
       />
-      <p v-if="titleError" class="field__error">{{ titleError }}</p>
+      <p v-if="titleError" class="form-field__error">{{ titleError }}</p>
     </div>
-
     <!-- File drop zone -->
-    <div class="field">
-      <label class="field__label">CSV File</label>
+    <div class="form-field">
+      <label class="form-field__label">CSV File</label>
       <label
-        class="dropzone"
-        :class="{ 'dropzone--active': isDragging, 'dropzone--error': fileError || parseError }"
+        class="dropzone form-control"
+        :class="{ 'dropzone--active': isDragging, 'form-control--error': fileError || parseError }"
         for="csv-file-input"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
@@ -106,10 +105,9 @@ function handleSubmit(): void {
           @change="onFileChange"
         />
       </label>
-      <p v-if="fileError || parseError" class="field__error">{{ fileError || parseError }}</p>
+      <p v-if="fileError || parseError" class="form-field__error">{{ fileError || parseError }}</p>
     </div>
   </div>
-
   <!-- Footer -->
   <div class="form-footer">
     <BaseButton variant="ghost" class="form-footer__download" @click="emit('download-template')">
@@ -142,45 +140,13 @@ function handleSubmit(): void {
 
 // ── Fields ─────────────────────────────────────────────────────────────────────
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing[1.5]');
+.field__input {
+  border: 1px solid var(--control-border);
+  padding: theme('spacing[2.5]') theme('spacing.3');
+  width: 100%;
 
-  &__label {
-    font-size: theme('fontSize.sm');
-    font-weight: 500;
-    color: var(--color-title);
-  }
-
-  &__input {
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: theme('borderRadius.md');
-    padding: theme('spacing[2.5]') theme('spacing.3');
-    font-size: theme('fontSize.sm');
-    color: var(--color-text);
-    width: 100%;
-    transition: border-color 150ms ease;
-
-    &::placeholder {
-      color: var(--color-text-secondary);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: #6366f1;
-    }
-
-    &--error {
-      border-color: #f43f5e;
-    }
-  }
-
-  &__error {
-    font-size: theme('fontSize.xs');
-    color: #f43f5e;
-    margin: 0;
+  &::placeholder {
+    color: var(--color-text-secondary);
   }
 }
 
@@ -191,20 +157,12 @@ function handleSubmit(): void {
   justify-content: center;
   gap: theme('spacing.2');
   padding: theme('spacing.8') theme('spacing.4');
-  border: 1.5px dashed var(--color-border);
-  border-radius: theme('borderRadius.md');
+  border: 1.5px dashed var(--control-border);
   cursor: pointer;
-  transition: border-color 150ms ease, background-color 150ms ease;
   text-align: center;
 
-  &:hover,
   &--active {
-    border-color: #6366f1;
-    background-color: rgba(99, 102, 241, 0.05);
-  }
-
-  &--error {
-    border-color: #f43f5e;
+    --control-border: #6366f1;
   }
 
   &__icon {

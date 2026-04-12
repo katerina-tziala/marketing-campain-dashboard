@@ -1680,3 +1680,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - ReplaceDataModal is v-if (not v-show) — avoids mounting BaseModal's keyboard/scroll listeners when it's not visible
 - provide('openUploadModal') left unchanged — the EmptyState path has no data to replace, confirmation would be incorrect there
 - Warning copy mentions analysis reset — consistent with the existing CSV upload reset behaviour already implemented in aiAnalysisStore
+
+
+## [#79] CsvUploadForm: extract common field styles to @layer components
+**Type:** refactor
+
+**Summary:** Extracted shared form field styles (background, border-radius, font, hover/focus/error border states) into global `.form-control`, `.form-field`, `.form-field__label`, `.form-field__error` classes in `@layer components`; dropzone now has a solid darker background matching the title input.
+
+**Brainstorming:** Two problems to solve: (1) shared visual styles between text input and dropzone (background, border interaction states), and (2) border declarations differ (1px solid vs 1.5px dashed), making a single shared border rule impossible. The solution uses a CSS custom property `--control-border` set to `var(--color-border)` by default on `.form-control`, then overridden on `:hover`, `:focus`/`:focus-within`, and via `.form-control--error`. Each field's scoped style declares its own `border: <style> var(--control-border)` so the shape differs but the color is always driven by the global class. This avoids specificity conflicts entirely — there's no competing border-color declaration. `--active` on the dropzone sets the same custom property. The background tint on dropzone hover was removed since both fields now have a solid background and the hover state is purely a border color change.
+
+**Prompt:** Refactor CsvUploadForm: upload file field should have the same darker background as the campaign title and a solid background. Focus and hover states should be the same for fields. Extract common styles in the @layer components.
+
+**What changed:**
+- `style.scss` — added `.form-field`, `.form-field__label`, `.form-field__error`, `.form-control`, `.form-control--error` to `@layer components`; `.form-control` owns `--control-border` custom property and all hover/focus/error state changes
+- `CsvUploadForm.vue` — template: replaced `.field`/`.field__label`/`.field__error` with global classes; added `form-control` to both input and dropzone; replaced `field__input--error`/`dropzone--error` with `form-control--error`; scoped styles: removed `.field` block entirely; `.field__input` reduced to border + padding + placeholder; `.dropzone` reduced to layout + dashed border using `var(--control-border)` + sub-element styles; `--active` modifier sets `--control-border` directly
+
+**Key decisions & why:**
+- CSS custom property `--control-border` chosen over shared `border-color` rule to avoid specificity conflicts between global and scoped styles — each field keeps its own border shorthand while the color is centrally controlled
+- `:focus-within` on `.form-control` covers the dropzone (label containing a hidden file input) — keyboard focus on the file input surfaces the same indigo border as the text field
+- Background tint on dropzone hover removed — both fields are now solid `var(--color-bg)`, so hover is a border-only change, consistent with the text input
