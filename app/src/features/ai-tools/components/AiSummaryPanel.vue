@@ -151,7 +151,7 @@ function formatNumber(value: number): string {
           <div class="ai-health-score">
             <div :class="healthScoreClass(response.health_score.label)">
               <span class="ai-health__value">{{ response.health_score.score }}</span>
-              <span class="ai-health__max">/100</span>
+              <span class="ai-health__max">&nbsp;/ 100</span>
             </div>
             <span class="ai-health-score__label">{{ response.health_score.label }}</span>
           </div>
@@ -532,8 +532,7 @@ function formatNumber(value: number): string {
 }
 
 .ai-health {
-  display: inline-flex;
-  align-items: baseline;
+  display: inline-flex; 
   gap: 2px;
   padding: 2px theme('spacing.2');
   border-radius: theme('borderRadius.md');
@@ -676,7 +675,7 @@ function formatNumber(value: number): string {
   &--performance {
     background-color: rgba(99, 102, 241, 0.12);
     border-color: rgba(99, 102, 241, 0.3);
-    border-left-width: 3px;
+    border-left-width: 2px;
     border-left-color: #6366f1;
 
     .ai-insight__metric-value { color: #818cf8; }
@@ -685,7 +684,7 @@ function formatNumber(value: number): string {
   &--opportunity {
     background-color: rgba(16, 185, 129, 0.10);
     border-color: rgba(16, 185, 129, 0.28);
-    border-left-width: 3px;
+    border-left-width: 2px;
     border-left-color: #10b981;
 
     .ai-insight__metric-value { color: #10b981; }
@@ -694,7 +693,7 @@ function formatNumber(value: number): string {
   &--warning {
     background-color: rgba(245, 158, 11, 0.10);
     border-color: rgba(245, 158, 11, 0.3);
-    border-left-width: 3px;
+    border-left-width: 2px;
     border-left-color: #f59e0b;
 
     .ai-insight__metric-value { color: #f59e0b; }
@@ -703,7 +702,7 @@ function formatNumber(value: number): string {
   &--achievement {
     background-color: rgba(129, 140, 248, 0.12);
     border-color: rgba(129, 140, 248, 0.3);
-    border-left-width: 3px;
+    border-left-width: 2px;
     border-left-color: #a5b4fc;
 
     .ai-insight__metric-value { color: #a5b4fc; }

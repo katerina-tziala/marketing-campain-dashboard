@@ -14,7 +14,7 @@ withDefaults(defineProps<{
 
 <style lang="scss" scoped>
 .badge {
-  @apply text-xs font-semibold rounded-full border capitalize whitespace-nowrap flex-shrink-0 py-1 px-1.5;
+  @apply text-xs font-semibold rounded-full border capitalize whitespace-nowrap flex-shrink-0 py-1 px-2;
 
   &--success {
     @apply text-badge-success bg-badge-success/10 border-badge-success/25;

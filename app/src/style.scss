@@ -27,6 +27,10 @@
   box-sizing: border-box;
 }
 
+html {
+  background-color: var(--color-bg);
+}
+
 body {
   margin: 0;
   font-family: theme('fontFamily.sans');
@@ -34,7 +38,7 @@ body {
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease; 
 }
 
 #app {
