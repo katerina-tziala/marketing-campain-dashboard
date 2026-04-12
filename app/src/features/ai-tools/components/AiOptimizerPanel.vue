@@ -54,6 +54,10 @@ const formattedCacheTime = computed(() => {
 function handleAnalyze(): void {
   analysisStore.analyze('optimizer')
 }
+
+function formatRoi(value: number): string {
+  return `${Math.round(value * 100)}%`
+}
 </script>
 
 <template>
@@ -161,7 +165,7 @@ function handleAnalyze(): void {
             </div>
             <div class="ai-recommendation__row">
               <span class="ai-recommendation__detail-label">New ROI</span>
-              <span class="ai-recommendation__detail-value">{{ rec.expected_impact.new_roi_estimate }}</span>
+              <span class="ai-recommendation__detail-value">{{ formatRoi(rec.expected_impact.new_roi_estimate) }}</span>
             </div>
           </div>
 

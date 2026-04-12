@@ -1916,3 +1916,60 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Grid always on, not just during transition — removes the display-type switch that was causing the stutter at transition boundaries; the wrapper is always a single-row grid, so enter/leave just animate that one row between 0fr and 1fr
+
+
+## [#91] Change key_metrics numeric fields to number type with euro formatting
+**Type:** update
+
+**Summary:** Updated `ExecutiveSummaryResponse.key_metrics` so that `total_spend`, `total_revenue`, `overall_roi`, and `total_conversions` are typed as `number` instead of `string`, and added euro/number formatters to the Summary panel for display.
+
+**Brainstorming:** The fields were previously typed as `string` and the AI prompt schema already had them typed as `number`, so the type was inconsistent with the prompt. Changing to `number` aligns the TypeScript type with the prompt schema, enables proper formatting in the UI (euro symbol, locale-aware comma separators, ROI as multiplier), and removes the formatting responsibility from the AI model. The panel now owns all display formatting, which is cleaner.
+
+**Prompt:** Update the ExecutiveSummaryResponse with `key_metrics` having `total_spend`, `total_revenue`, `overall_roi`, and `total_conversions` as numbers. Handle formatting of numbers to euro.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `total_spend`, `total_revenue`, `overall_roi`, `total_conversions` in `key_metrics` changed from `string` to `number`
+- `features/ai-tools/prompts/executive-summary-prompt.ts` — updated `JSON_OUTPUT_RULES`: replaced "ROI values should be expressed as percentages. Example: 490%" with "overall_roi must be returned as a decimal multiplier. Example: 4.9 for a 490% return."
+- `features/ai-tools/components/AiSummaryPanel.vue` — added `formatEuro` (Intl.NumberFormat en-IE EUR, no decimals), `formatRoi` (appends "x"), `formatNumber` (Intl.NumberFormat en-IE) helpers; applied them to the four numeric key_metrics fields in the template
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — converted all 5 mock objects from string values to plain numbers for `total_spend`, `total_revenue`, `overall_roi`, `total_conversions`
+
+**Key decisions & why:**
+- `formatEuro` uses `en-IE` locale with `maximumFractionDigits: 0` — matches the locale already used in the panel's `formattedCacheTime` and produces `€102,800` style output without cents, appropriate for large budget figures
+- ROI stored as multiplier (e.g., `2.1`) not percentage integer — consistent with how `roi` is stored throughout the rest of the codebase (`CampainSummaryTotals`, `BudgetOptimizerCampaign`, etc.)
+
+
+## [#92] Format overall_roi as percentage in Executive Summary panel
+**Type:** fix
+
+**Summary:** Updated `formatRoi` in `AiSummaryPanel.vue` to display `overall_roi` as a percentage (e.g., `210%`) instead of a multiplier (e.g., `2.1x`).
+
+**Brainstorming:** The AI returns `overall_roi` as a decimal multiplier (e.g., `2.1`). Multiplying by 100 and appending `%` in the formatter gives the correct percentage display without changing the type or prompt. `Math.round` avoids floating-point noise (e.g., `2.1 * 100 = 210.00000000000003`).
+
+**Prompt:** When showing overall_roi add percentage symbol please.
+
+**What changed:**
+- `features/ai-tools/components/AiSummaryPanel.vue` — `formatRoi` updated: `\`${value}x\`` → `\`${Math.round(value * 100)}%\``
+
+**Key decisions & why:**
+- Conversion in formatter, not in type/prompt — the AI correctly returns a decimal multiplier; the display conversion is a UI concern only, so it belongs in the formatter
+- `Math.round` — prevents floating-point artifacts in the displayed value
+
+
+## [#93] Change new_roi_estimate to number type with percentage display in Budget Optimizer
+**Type:** update
+
+**Summary:** Updated `BudgetOptimizerResponse.expected_impact.new_roi_estimate` from `string` to `number`, fixed the prompt schema (removed erroneous quotes), added a decimal-multiplier output rule, and added `formatRoi` to the optimizer panel to display as percentage.
+
+**Brainstorming:** Mirrors the same pattern applied to `overall_roi` in the Summary panel. `new_roi_estimate` was typed as `string` but the prompt schema had it quoted as `"number"` (a string description), which was inconsistent and would produce strings from the AI. Changing to a proper numeric type and formatting in the UI keeps all ROI values consistent across both panels.
+
+**Prompt:** Update new_roi_estimate to number in BudgetOptimizerResponse and display the percentage symbol in the UI.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `new_roi_estimate` changed from `string` to `number`
+- `features/ai-tools/prompts/budget-optimization-prompt.ts` — fixed `"new_roi_estimate": "number"` → `"new_roi_estimate": number` in OUTPUT_SCHEMA; added rule: "new_roi_estimate must be returned as a decimal multiplier. Example: 4.9 for a 490% return."
+- `features/ai-tools/components/AiOptimizerPanel.vue` — added `formatRoi` helper (`Math.round(value * 100)%`); applied to `new_roi_estimate` in the New ROI row
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — converted all 12 `new_roi_estimate` string values to plain numbers across all 5 mocks
+
+**Key decisions & why:**
+- Same `Math.round(value * 100)%` pattern as Summary panel — consistent ROI display format across both AI panels
+- Decimal multiplier storage (e.g., `3.9`) not percentage integer — consistent with `roi` fields in `top_performers` and `underperformers` which are already stored as multipliers

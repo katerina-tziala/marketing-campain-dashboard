@@ -12,9 +12,9 @@ The system may have access to multiple LLM providers and model variants. Rather 
 
 The selected models must support the core capabilities required by the application, including:
 
- - generating executive marketing performance summaries
- - generating marketing budget optimization recommendations
- - producing reliable structured JSON responses
+- generating executive marketing performance summaries
+- generating marketing budget optimization recommendations
+- producing reliable structured JSON responses
 
 The evaluation process focuses on identifying models with strong reasoning capabilities, effective summarization performance, and reliable structured output generation. Additionally, the prompt prioritizes models that offer stable availability and sustainable usage limits, ensuring that the application can operate reliably under free-tier constraints.
 
@@ -39,8 +39,8 @@ The application use case section explains how the selected models will be used w
 
 The models must support two core analytical workflows:
 
- - executive summary generation for marketing campaign performance
- - marketing budget optimization analysis
+- executive summary generation for marketing campaign performance
+- marketing budget optimization analysis
 
 Providing this context helps the model evaluate reasoning ability, summarization capability, and structured output reliability.
 
@@ -49,12 +49,12 @@ The selection criteria define the capabilities that models must demonstrate to b
 
 These criteria include:
 
- - reasoning capability for analytical tasks
- - summarization capability
- - ability to analyze marketing and business performance data
- - reliable generation of structured JSON outputs
- - consistent performance across repeated requests
- - sustainable usage limits and rate limits
+- reasoning capability for analytical tasks
+- summarization capability
+- ability to analyze marketing and business performance data
+- reliable generation of structured JSON outputs
+- consistent performance across repeated requests
+- sustainable usage limits and rate limits
 
 These criteria ensure that the selected models can support the operational requirements of the application.
 
@@ -63,9 +63,9 @@ The prompt receives a dynamically generated list of available models from the sy
 
 Each model entry may contain metadata such as:
 
- - model identifier
- - provider name
- - descriptive information
+- model identifier
+- provider name
+- descriptive information
 
 The prompt strictly instructs the model to select only from this provided list. This prevents the model from inventing or suggesting unsupported models.
 
@@ -74,10 +74,10 @@ The strict rules section enforces important constraints that stabilize the evalu
 
 These rules ensure that:
 
- - only models present in the provided list can be selected
- - model identifiers must be copied exactly from the list
- - the output contains no duplicate models
- - the number of returned models is limited
+- only models present in the provided list can be selected
+- model identifiers must be copied exactly from the list
+- the output contains no duplicate models
+- the number of returned models is limited
 
 The rules also instruct the model to deprioritize models labeled as preview, latest, or experimental. These models often have limited rate limits or unstable availability and are therefore less suitable for sustained application usage.
 
@@ -88,11 +88,11 @@ Rather than immediately generating a response, the model is instructed to intern
 
 These evaluation dimensions include:
 
- - reasoning ability for analytical tasks
- - summarization capability
- - ability to produce structured outputs
- - stability and reliability
- - expected usage constraints such as token quotas and rate limits
+- reasoning ability for analytical tasks
+- summarization capability
+- ability to produce structured outputs
+- stability and reliability
+- expected usage constraints such as token quotas and rate limits
 
 By guiding the model through a consistent reasoning process, the prompt improves the reliability of the evaluation results and reduces variability across different LLM architectures.
 
@@ -100,10 +100,10 @@ By guiding the model through a consistent reasoning process, the prompt improves
 Each evaluated model receives a strength score between 1 and 10 representing its suitability for the marketing analytics use case within the application.
 The scoring scale is defined as follows:
 
- - 10 – excellent capability for reasoning, summarization, and structured analysis
- - 8–9 – very strong and reliable performance for the use case
- - 6–7 – acceptable performance with potential limitations
- - below 6 – generally unsuitable for the application
+- 10 – excellent capability for reasoning, summarization, and structured analysis
+- 8–9 – very strong and reliable performance for the use case
+- 6–7 – acceptable performance with potential limitations
+- below 6 – generally unsuitable for the application
 
 This scoring framework allows the model to compare candidates consistently and rank the strongest models.
 
@@ -112,10 +112,10 @@ Before producing the final output, the prompt instructs the model to perform an 
 
 This validation confirms that:
 
- - all returned models originate from the provided list
- - models are sorted by descending score
- - no duplicate models appear in the output
- - the number of models does not exceed the defined limit
+- all returned models originate from the provided list
+- models are sorted by descending score
+- no duplicate models appear in the output
+- the number of models does not exceed the defined limit
 
 This validation step reduces the likelihood of malformed or inconsistent responses.
 
@@ -126,12 +126,12 @@ The response contains a structured list of selected models ranked by suitability
 
 Each returned model entry includes:
 
- - the exact model identifier
- - a user-friendly display name
- - the provider name
- - a short capability label describing the model's strength
- - a strength score between 1 and 10
- - a short explanation of why the model was selected
+- the exact model identifier
+- a user-friendly display name
+- the provider name
+- a short capability label describing the model's strength
+- a strength score between 1 and 10
+- a short explanation of why the model was selected
 
 Strict output rules prevent the model from including additional commentary or modifying the schema structure. This ensures that the application can reliably parse the response and integrate the selected models into the system.
 

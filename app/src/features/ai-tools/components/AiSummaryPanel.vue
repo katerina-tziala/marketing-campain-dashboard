@@ -69,6 +69,18 @@ const formattedCacheTime = computed(() => {
 function handleSummarize(): void {
   analysisStore.analyze('summary')
 }
+
+function formatEuro(value: number): string {
+  return new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value)
+}
+
+function formatRoi(value: number): string {
+  return `${Math.round(value * 100)}%`
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-IE').format(value)
+}
 </script>
 
 <template>
@@ -160,19 +172,19 @@ function handleSummarize(): void {
         <div class="ai-metrics-grid">
           <div class="ai-metric">
             <span class="ai-metric__label">Total Spend</span>
-            <span class="ai-metric__value">{{ response.key_metrics.total_spend }}</span>
+            <span class="ai-metric__value">{{ formatEuro(response.key_metrics.total_spend) }}</span>
           </div>
           <div class="ai-metric">
             <span class="ai-metric__label">Total Revenue</span>
-            <span class="ai-metric__value">{{ response.key_metrics.total_revenue }}</span>
+            <span class="ai-metric__value">{{ formatEuro(response.key_metrics.total_revenue) }}</span>
           </div>
           <div class="ai-metric">
             <span class="ai-metric__label">Overall ROI</span>
-            <span class="ai-metric__value">{{ response.key_metrics.overall_roi }}</span>
+            <span class="ai-metric__value">{{ formatRoi(response.key_metrics.overall_roi) }}</span>
           </div>
           <div class="ai-metric">
             <span class="ai-metric__label">Conversions</span>
-            <span class="ai-metric__value">{{ response.key_metrics.total_conversions }}</span>
+            <span class="ai-metric__value">{{ formatNumber(response.key_metrics.total_conversions) }}</span>
           </div>
           <div class="ai-metric ai-metric--span">
             <span class="ai-metric__label">Best Channel</span>

@@ -6,7 +6,6 @@ The prompt is designed to operate consistently across multiple large language mo
 The prompt emphasizes conservative reasoning, structured analytical reasoning guidance, and strict output constraints. These design principles ensure that the generated recommendations remain credible, explainable, and safe to present within a production marketing dashboard environment.
  
 ## Purpose
-
 The Budget Optimization prompt generates practical budget reallocation recommendations based on structured marketing campaign performance data. Its goal is to identify realistic opportunities to improve portfolio efficiency while maintaining operational stability.
 
 Rather than simply summarizing campaign performance, the prompt guides the model to evaluate efficiency signals across campaigns and determine where budget should be reduced, increased, or reallocated. The recommendations prioritize measurable performance improvements while avoiding unrealistic scaling assumptions or aggressive optimization strategies.
@@ -16,7 +15,6 @@ The output is intended for marketing decision-makers who need actionable recomme
 The prompt is designed to operate in a model-agnostic manner, enabling consistent behavior across multiple large language model providers such as Grok, Gemini, and other compatible systems. To support reliable integration into the marketing dashboard, the prompt emphasizes clear instruction structure, reduced ambiguity, and deterministic JSON output. These constraints ensure that generated recommendations remain predictable, machine-readable, and safe to render directly within the application interface.
 
 ## Prompt Architecture
-
 The Budget Optimization prompt is structured into clearly defined sections that guide the model through a consistent analytical workflow. Each section exists to stabilize model behavior, reduce ambiguity, and improve cross-model reliability when generating optimization recommendations.
 
 ### Role
@@ -32,10 +30,10 @@ This framing ensures the model focuses on actionable optimization decisions, not
 ### Objectives
 The objectives outline the core optimization goals the model should prioritize when evaluating the dataset. These objectives guide the model to focus on key budget allocation signals, including:
 
- - identifying overfunded campaigns with weak efficiency
- - identifying underfunded campaigns with strong efficiency
- - reallocating budget toward stronger campaigns
- - detecting structural allocation imbalances across the portfolio
+- identifying overfunded campaigns with weak efficiency
+- identifying underfunded campaigns with strong efficiency
+- reallocating budget toward stronger campaigns
+- detecting structural allocation imbalances across the portfolio
 
 Explicit objectives reduce ambiguity and help ensure that the generated recommendations remain aligned with practical marketing optimization strategies.
 
@@ -44,9 +42,9 @@ The prompt receives structured campaign performance data dynamically from the ap
 
 Providing structured input data improves reliability by:
 
- - enabling deterministic interpretation of performance signals
- - reducing hallucination risk
- - encouraging consistent reasoning across models
+- enabling deterministic interpretation of performance signals
+- reducing hallucination risk
+- encouraging consistent reasoning across models
 
 All recommendations must be derived strictly from the provided dataset unless the user supplies additional business context.
 
@@ -83,11 +81,9 @@ This mechanism allows the system to safely control whether the optimizer is allo
 The optimization scope defines the boundaries of the analysis. The prompt supports two scenarios.
 
 #### Full Portfolio Optimization
-
 When no filters are applied, the model evaluates the entire marketing portfolio. All campaigns included in the dataset are eligible for budget reallocations.
 
 #### Scoped Optimization
-
 When channel filters are applied, the dataset provided to the model represents only the selected subset of campaigns.
 
 In this case, the prompt instructs the model to treat the filtered dataset as the full analysis portfolio for the current request. The model must not recommend reallocating budget to campaigns or channels outside the filtered subset.
@@ -110,14 +106,13 @@ These interpretation rules act as a first-level reasoning constraint before the 
 Including this section improves cross-model consistency and reduces hallucinated insights.
 
 ### Analysis Instructions
-
 The analysis instructions define the reasoning sequence the model should follow before generating recommendations. These instructions guide the model through structured evaluation steps including:
 
- - portfolio performance evaluation
- - campaign efficiency analysis
- - budget allocation comparisons
- - identification of scaling opportunities
- - detection of inefficient spend patterns
+- portfolio performance evaluation
+- campaign efficiency analysis
+- budget allocation comparisons
+- identification of scaling opportunities
+- detection of inefficient spend patterns
 
 This structured reasoning process improves analytical consistency and reduces variability across models.
 
@@ -126,10 +121,10 @@ The analysis instructions also require the model to identify likely funding sour
 ### Optimization Guardrails
 Optimization guardrails define operational constraints that prevent unrealistic or risky budget recommendations. These rules enforce limitations such as:
 
- - preventing excessive budget increases
- - avoiding trivial reallocations
- - preventing reallocations smaller than 5% of the source campaign budget unless they are explicitly framed as experimental tests
- - assuming diminishing returns when scaling spend
+- preventing excessive budget increases
+- avoiding trivial reallocations
+- preventing reallocations smaller than 5% of the source campaign budget unless they are explicitly framed as experimental tests
+- assuming diminishing returns when scaling spend
 
 These guardrails ensure that the generated recommendations remain operationally realistic and implementable.
 
@@ -138,10 +133,10 @@ The impact estimation rules govern how the model estimates the potential perform
 
 The model is instructed to:
 
- - assume diminishing returns as spend increases
- - avoid linear scaling assumptions
- - base projections on existing efficiency signals
- - keep estimated ROI within realistic ranges
+- assume diminishing returns as spend increases
+- avoid linear scaling assumptions
+- base projections on existing efficiency signals
+- keep estimated ROI within realistic ranges
 
 These constraints reduce hallucinated performance projections and improve the credibility of the generated recommendations.
 
@@ -150,11 +145,11 @@ The prompt includes an internal checklist that the model must verify before gene
 
 The checklist covers:
 
- - portfolio efficiency
- - campaign efficiency
- - allocation efficiency
- - scaling opportunities
- - optimization risks
+- portfolio efficiency
+- campaign efficiency
+- allocation efficiency
+- scaling opportunities
+- optimization risks
 
 This validation step reduces incomplete or inconsistent outputs.
 
@@ -173,47 +168,48 @@ The output rules enforce strict formatting constraints for the model response. T
 
 Additional rules ensure that:
 
- - no commentary or markdown is included
- - schema fields are not modified
- - formatting rules for percentages and numeric values are respected
- - unsupported metrics are not invented
+- no commentary or markdown is included
+- schema fields are not modified
+- numeric metrics such as spend, revenue, and budget reallocations are returned as numeric values
+- currency symbols are not included in numeric fields
+- unsupported metrics are not invented
 
 These rules ensure the response can be parsed reliably by the application.
 
 ### Response Schema
 The response schema defines the exact JSON structure that the model must return. The schema organizes the optimization output into structured components including:
 
- - executive optimization summary
- - recommended budget reallocations
- - top performing campaigns
- - underperforming campaigns
- - quick optimization opportunities
- - correlations across campaigns or channels
- - potential optimization risks
+- executive optimization summary
+- recommended budget reallocations
+- top performing campaigns
+- underperforming campaigns
+- quick optimization opportunities
+- correlations across campaigns or channels
+- potential optimization risks
 
 By enforcing a strict schema, the system ensures that generated outputs remain predictable and compatible with the application interface.
+Numeric financial metrics such as reallocated budget amounts, projected revenue impact, and ROI estimates are returned as numbers rather than formatted currency strings. Currency symbols and localized formatting are applied by the application interface when rendering the results in the dashboard.
 
 ## Reasoning Design
 The prompt incorporates structured reasoning instructions to guide the model through a consistent optimization process before producing the final recommendation set. Rather than generating immediate conclusions from the input data, the model is instructed to internally evaluate the dataset through a defined reasoning sequence.
 
 The reasoning process includes evaluating several dimensions of marketing performance:
 
- - overall portfolio performance
- - campaign efficiency signals
- - budget allocation efficiency
- - scaling opportunities
- - optimization risks
+- overall portfolio performance
+- campaign efficiency signals
+- budget allocation efficiency
+- scaling opportunities
+- optimization risks
 
 To further stabilize decision-making, the prompt instructs the model to identify funding sources and scaling targets before recommending reallocations. Funding sources represent campaigns where budget reductions may improve portfolio efficiency, while scaling targets represent campaigns that demonstrate stronger efficiency signals and may benefit from additional budget.
 
 This structured reasoning approach improves output stability by:
 
- - reducing randomness in optimization recommendations
- - ensuring consistent evaluation of campaign efficiency signals
- - improving reliability across different LLM architectures
+- reducing randomness in optimization recommendations
+- ensuring consistent evaluation of campaign efficiency signals
+- improving reliability across different LLM architectures
 
 ## Filtered Portfolio Safety
-
 When channel filters are applied, the prompt includes explicit constraints to ensure that optimization recommendations remain valid within the filtered dataset.
 
 The model is instructed to:
@@ -231,20 +227,20 @@ Rather than allowing free-form natural language responses, the prompt requires t
 
 The schema organizes the optimization output into structured sections including:
 
- - executive summary of optimization opportunities
- - recommended budget reallocations
- - top performing campaigns
- - underperforming campaigns
- - quick optimization opportunities
- - correlations across campaigns or channels
- - optimization risks
+- executive summary of optimization opportunities
+- recommended budget reallocations
+- top performing campaigns
+- underperforming campaigns
+- quick optimization opportunities
+- correlations across campaigns or channels
+- optimization risks
 
 Strict output rules prevent the model from generating unsupported responses by requiring that the output:
 
- - contain only valid JSON
- - match the schema exactly
- - avoid markdown formatting
- - avoid additional explanatory text
+- contain only valid JSON
+- match the schema exactly
+- avoid markdown formatting
+- avoid additional explanatory text
 
 By enforcing this deterministic output contract, the system ensures that responses remain stable, predictable, and safe to render directly in the marketing dashboard.
 
@@ -270,9 +266,9 @@ The model returns a response that must strictly follow the defined JSON schema. 
 
 The prompt design emphasizes:
 
- - **model-agnostic compatibility**, allowing the system to operate across multiple LLM providers
- - **deterministic output structure**, ensuring responses can be safely parsed and rendered
- - **tight instruction design**, reducing ambiguity and improving cross-model consistency
+- **model-agnostic compatibility**, allowing the system to operate across multiple LLM providers
+- **deterministic output structure**, ensuring responses can be safely parsed and rendered
+- **tight instruction design**, reducing ambiguity and improving cross-model consistency
 
 This architecture allows the application to maintain stable behavior even when switching between underlying AI models while ensuring that generated insights remain predictable and compatible with the dashboard interface.
  

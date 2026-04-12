@@ -211,7 +211,7 @@ export type BudgetOptimizerResponse = {
     expected_impact: {
       additional_revenue: number;
       additional_conversions: number;
-      new_roi_estimate: string;
+      new_roi_estimate: number;
     };
     confidence: ConfidenceLevel;
     reasoning: string;
@@ -307,10 +307,10 @@ export type ExecutiveSummaryResponse = {
     so_what: string;
   }[];
   key_metrics: {
-    total_spend: string;
-    total_revenue: string;
-    overall_roi: string;
-    total_conversions: string;
+    total_spend: number;
+    total_revenue: number;
+    overall_roi: number;
+    total_conversions: number;
     best_channel: string;
     worst_channel: string;
     best_campaign: string;
