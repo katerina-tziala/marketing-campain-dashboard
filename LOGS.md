@@ -2363,3 +2363,30 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `roiClass` imported from shared util in `AiSummaryPanel` — DRY: the same ROI → color logic exists in `CampaignTable` locally and now in the summary panel via the shared util; `CampaignTable` still uses local helpers (not yet migrated to the shared util)
 - `Correlation` extracted as shared type — both response types use the identical `{ finding, implication }` shape; a named type removes the duplication and makes the intent explicit
 - `clearStateForDisconnect` as a named alias — caller intent is clearer than calling `clearStateForNewCSV` from a disconnect handler; behavior is identical today but can diverge independently if needed
+
+
+## [#113] Reorganize styles into components/ and utilities/ subfolders
+**Type:** refactor
+
+**Summary:** Moved SCSS partials from a flat `styles/` directory into `styles/components/` and `styles/utilities/` subfolders, promoted `_roi.scss` to a utility, and introduced barrel `index.scss` files at each level.
+
+**Brainstorming:** The flat layout mixed component-scoped styles with utility-style rules in one directory with no structural signal of their role. Moving to two named subfolders makes the layer intent explicit and mirrors the Tailwind layer model. `_roi.scss` belongs in utilities because `.roi-text` and its modifiers are stateless, single-purpose color/weight helpers — not component definitions. A barrel per folder plus a root barrel keeps the import surface in `style.scss` to a single line. SASS `@use` namespace collision with two `index.scss` files was resolved by aliasing each with an explicit namespace (`as components`, `as utilities`) in the root barrel.
+
+**Prompt:** Refactor the styles folder: roi should be a utility. Group styles in 2 folders utilities and components. Create a barrel file in each folder. Create a barrel file in the styles folder that exports both layers.
+
+**What changed:**
+- `app/src/styles/components/` — new folder; received `_ai-summary.scss`, `_badge.scss`, `_button.scss`, `_card.scss`, `_forms.scss`, `_modal.scss`, `_table.scss` (moved from flat root)
+- `app/src/styles/components/index.scss` — new barrel; `@use` all component partials
+- `app/src/styles/utilities/` — new folder; received `_scrollbar.scss` (moved) and `_roi.scss` (moved + layer updated)
+- `app/src/styles/utilities/_roi.scss` — `@layer components` changed to `@layer utilities`
+- `app/src/styles/utilities/index.scss` — new barrel; `@use ./roi` and `@use ./scrollbar`
+- `app/src/styles/index.scss` — new root barrel; `@use ./components/index as components` + `@use ./utilities/index as utilities`
+- `app/src/styles/components.scss` — deleted (replaced by `components/index.scss`)
+- `app/src/styles/utilities.scss` — deleted (replaced by `utilities/index.scss`)
+- `app/src/style.scss` — two `@use` lines replaced with single `@use './styles/index'`
+- `CLAUDE.md` — architecture section updated to reflect new folder structure
+
+**Key decisions & why:**
+- `_roi.scss` promoted to `@layer utilities` — `.roi-text` and its modifiers are stateless color/weight helpers, not component definitions; utilities layer cascades after components which is correct for modifier-style classes
+- Explicit namespace aliases (`as components`, `as utilities`) in root barrel — SASS `@use` prohibits two modules sharing the same auto-derived namespace; aliasing is the minimal fix with zero impact on CSS output
+- Barrel files use `@use` not `@forward` — all partials are pure CSS side-effects with no exported SCSS members; `@use` is sufficient and avoids unnecessarily widening the member surface

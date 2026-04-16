@@ -131,20 +131,23 @@ app/                        # Vue 3 + Vite project
 │   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
 │   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
 │   ├── styles/
-│   │   ├── components.scss         # Entry point — @use imports for all SCSS partials; imported by style.scss
-│   │   ├── utilities.scss          # Entry point — @use imports for utility partials (scrollbar); imported by style.scss
-│   │   ├── _ai-summary.scss        # @layer components — .ai-panel, .ai-section, .ai-section__analysis-details
-│   │   ├── _badge.scss             # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
-│   │   ├── _button.scss            # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
-│   │   ├── _card.scss              # @layer components — .card, .card-secondary (with __head, __title, __content modifiers)
-│   │   ├── _forms.scss             # @layer components — .form, .form-field, .form-field__label, .form-control, .form-control--error, .form-field__error-container, .form-field__error, .form-field__error-hint
-│   │   ├── _modal.scss             # @layer components — .modal__body, .modal__footer
-│   │   ├── _roi.scss               # @layer components — .roi-text with .positive/.warning/.negative modifiers
-│   │   ├── _scrollbar.scss         # @layer utilities — .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface
-│   │   └── _table.scss             # @layer components — .data-table, .data-table__th, .data-table__tr, .data-table__td
+│   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss
+│   │   ├── components/
+│   │   │   ├── index.scss          # Barrel — @use all component partials
+│   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section, .ai-section__analysis-details
+│   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
+│   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
+│   │   │   ├── _card.scss          # @layer components — .card, .card-secondary (with __head, __title, __content modifiers)
+│   │   │   ├── _forms.scss         # @layer components — .form, .form-field, .form-field__label, .form-control, .form-control--error, .form-field__error-container, .form-field__error, .form-field__error-hint
+│   │   │   ├── _modal.scss         # @layer components — .modal__body, .modal__footer
+│   │   │   └── _table.scss         # @layer components — .data-table, .data-table__th, .data-table__tr, .data-table__td
+│   │   └── utilities/
+│   │       ├── index.scss          # Barrel — @use all utility partials
+│   │       ├── _roi.scss           # @layer utilities — .roi-text with .positive/.warning/.negative modifiers
+│   │       └── _scrollbar.scss     # @layer utilities — .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
-│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/components + styles/utilities
+│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/index
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
 ├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; danger (default + -5p), success, warning, typography (default/subtle/intense), surface (default/secondary), surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; badge colors moved to SCSS
 ├── postcss.config.js
