@@ -70,11 +70,12 @@ app/                        # Vue 3 + Vite project
 │   │   ├── types/
 │   │   │   └── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
+│   │   ├── FileDropzone.vue    # File drop zone — v-model (File|null), id?, accept?, hint? props; button element (not div role="button"); hidden input outside button (tabindex="-1"); hintId computed from id prop; aria-describedby on button when hint visible; hint text: "Drag & drop a {hint} file here or browse" (hint optional, omitted gives generic); browse-link styled as text-button-small (primary-400); hint color matches placeholder (typography-subtle); drag state internal; named error slot drives input-error via Comment-node detection; emits raw file; scoped @apply styles
 │   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
 │   │   ├── RadioToggle.vue     # Pill-style radio group — v-model, options ({value,label}[]), name? props; grid-template-columns driven by options.length; scoped non-BEM styles
 │   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
-│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; PasswordInput + RadioToggle added)
+│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; FileDropzone + PasswordInput + RadioToggle added)
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — flex col → flex row at lg+; app-shell__left (header + app-shell__main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; app-shell__main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   ├── features/
@@ -127,7 +128,7 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
-│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global field/form-control classes; plain buttons with .btn-primary/.btn-secondary-outline; footer stacks vertically at <480px
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
 │   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; plain buttons with .btn-primary/.btn-secondary-outline; Proceed only shown when validCampaigns > 0
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback

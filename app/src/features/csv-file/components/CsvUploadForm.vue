@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DownloadIcon, UploadIcon } from '../../../ui'
+import { DownloadIcon, UploadIcon, FileDropzone } from '../../../ui'
 
 const props = defineProps<{
   title: string
@@ -17,7 +17,6 @@ const emit = defineEmits<{
   'download-template': []
 }>()
 
-const isDragging = ref(false)
 const titleError = ref('')
 const fileError = ref('')
 
@@ -25,7 +24,7 @@ function isValidCsvFile(f: File): boolean {
   return f.name.toLowerCase().endsWith('.csv') || f.type === 'text/csv'
 }
 
-function setFile(f: File): void {
+function handleFileSelect(f: File): void {
   if (!isValidCsvFile(f)) {
     fileError.value = 'Only CSV files are accepted.'
     emit('update:file', null)
@@ -33,17 +32,6 @@ function setFile(f: File): void {
   }
   fileError.value = ''
   emit('update:file', f)
-}
-
-function onFileChange(e: Event): void {
-  const input = e.target as HTMLInputElement
-  if (input.files?.[0]) setFile(input.files[0])
-}
-
-function onDrop(e: DragEvent): void {
-  isDragging.value = false
-  const dropped = e.dataTransfer?.files[0]
-  if (dropped) setFile(dropped)
 }
 
 function handleSubmit(): void {
@@ -72,7 +60,7 @@ function handleSubmit(): void {
       <input
         id="campaign-title"
         :value="title"
-        class="field__input form-control"
+        class="form-control"
         :class="{ 'input-error': titleError }"
         type="text"
         placeholder="e.g. Q2 2025 Campaign"
@@ -83,29 +71,18 @@ function handleSubmit(): void {
     </div>
     <!-- File drop zone -->
     <div class="field">
-      <label class="field-label">CSV File</label>
-      <label
-        class="dropzone form-control"
-        :class="{ 'dropzone--active': isDragging, 'input-error': fileError || parseError }"
-        for="csv-file-input"
-        @dragover.prevent="isDragging = true"
-        @dragleave.prevent="isDragging = false"
-        @drop.prevent="onDrop"
+      <label class="field-label" for="csv-file">CSV File</label>
+      <FileDropzone
+        id="csv-file"
+        :modelValue="file"
+        accept=".csv,text/csv"
+        hint="CSV"
+        @update:modelValue="handleFileSelect"
       >
-        <UploadIcon class="dropzone__icon" />
-        <span v-if="file" class="dropzone__filename">{{ file.name }}</span>
-        <span v-else class="dropzone__hint">
-          Drag & drop a CSV file here, or <span class="dropzone__link">browse</span>
-        </span>
-        <input
-          id="csv-file-input"
-          type="file"
-          accept=".csv,text/csv"
-          class="dropzone__input"
-          @change="onFileChange"
-        />
-      </label>
-      <p v-if="fileError || parseError" class="field-error">{{ fileError || parseError }}</p>
+        <template v-if="fileError || parseError" #error>
+          <p class="field-error">{{ fileError || parseError }}</p>
+        </template>
+      </FileDropzone>
     </div>
   </div>
   <!-- Footer -->
@@ -136,54 +113,6 @@ function handleSubmit(): void {
   overflow-y: auto;
   width: 90vw;
   max-width: 640px;
-}
-
-// ── Fields ─────────────────────────────────────────────────────────────────────
-
-.field__input {
-  padding: theme('spacing[2.5]') theme('spacing.3');
-}
-
-.dropzone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: theme('spacing.2');
-  padding: theme('spacing.8') theme('spacing.4');
-  cursor: pointer;
-  text-align: center;
-
-  &--active {
-    --control-border: theme('colors.primary.500');
-  }
-
-  &__icon {
-    width: 1.75rem;
-    height: 1.75rem;
-    color: var(--color-text-secondary);
-  }
-
-  &__filename {
-    font-size: theme('fontSize.sm');
-    color: var(--color-title);
-    font-weight: 500;
-    word-break: break-all;
-  }
-
-  &__hint {
-    font-size: theme('fontSize.sm');
-    color: var(--color-text);
-  }
-
-  &__link {
-    color: theme('colors.primary.500');
-    text-decoration: underline;
-  }
-
-  &__input {
-    display: none;
-  }
 }
 
 // ── Footer ─────────────────────────────────────────────────────────────────────

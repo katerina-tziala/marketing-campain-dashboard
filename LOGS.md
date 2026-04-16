@@ -2504,3 +2504,62 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Explicit providerOptions array over Object.entries — PROVIDER_LABELS defines gemini first; Object.entries would silently flip the display order; explicit array is unambiguous
 - Inline style for grid-cols — options.length is dynamic; Tailwind arbitrary values are static and cannot be reactive; inline style is the correct tool here
 - fieldset + legend stay in AiConnectionForm — they are field structure (using global .field/.field-label), not part of the toggle control itself
+
+
+## [#119] Extract file dropzone into reusable FileDropzone ui component
+**Type:** refactor
+
+**Summary:** Extracted the file drop zone from CsvUploadForm into a generic FileDropzone ui component, fixing a double-label accessibility bug and removing all BEM from the dropzone scoped styles.
+
+**Brainstorming:** The dropzone in CsvUploadForm had two accessibility problems: (1) the field label had no for attribute so it was unconnected, and (2) the dropzone itself was a <label> element, meaning screen readers encountered two labels for the same field. The fix replaces the dropzone <label> with a <div role="button" tabindex="0"> and adds for="csv-file" to the field label — a single <label> now correctly names the hidden <input id="csv-file"> inside the component. The hidden input gets tabindex="-1" to remove it from tab order since the div button handles keyboard interaction. Drag state, file input ref, open(), onDrop(), and onChange() are all internal to the component. Validation (isValidCsvFile) stays in CsvUploadForm since it is CSV-specific business logic — the component emits the raw File. The error slot follows the same Comment-node detection pattern as PasswordInput and RadioToggle. BEM names in the scoped styles (.dropzone--active, __icon, __filename, __hint, __link, __input) are replaced with flat names. The redundant .field__input class (identical values to .form-control) is removed from CsvUploadForm.
+
+**Prompt:** Extract file dropzone component in a ui component. It should NOT have 2 labels since this breaks accessibility. Handle errors like in the password component. Make it generic as well. Remove BEM logic from scoped styles.
+
+**What was built / What changed:**
+- `app/src/ui/FileDropzone.vue` — new; props: modelValue (File|null), id?, accept?; div role="button" + aria-label; hidden input tabindex="-1"; isDragging + fileInputRef internal; named error slot with Comment-node detection; emits raw File; scoped non-BEM styles (dropzone, dropzone-active, upload-icon, filename, hint, browse-link)
+- `app/src/ui/index.ts` — added FileDropzone export
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — replaced inline dropzone with FileDropzone; added for="csv-file" to field label; added handleFileSelect (CSV validation); removed isDragging, isValidCsvFile, setFile, onFileChange, onDrop; removed .field__input scoped class (redundant); removed all .dropzone* scoped styles
+- `CLAUDE.md` — added FileDropzone to architecture; updated CsvUploadForm and ui/index.ts descriptions
+
+**Key decisions & why:**
+- div role="button" over label for the dropzone — eliminates the double-label accessibility bug; the field label's for attribute correctly targets the hidden input by id regardless of nesting
+- tabindex="-1" on the hidden input — prevents keyboard users from tabbing to the input directly (which would open a duplicate file picker); the div button is the single keyboard-accessible entry point
+- Validation stays in CsvUploadForm — FileDropzone emits raw File; CSV type checking is app-specific and does not belong in a generic ui component
+- .field__input removed — its padding values were identical to what .form-control already applies; it was dead weight
+
+
+## [#120] Refine FileDropzone — button element, hint prop, aria-describedby, @apply styles
+**Type:** refactor
+
+**Summary:** Replaced the div role="button" with a semantic button element, added a hint prop for file-type context, wired aria-describedby from button to hint, aligned visual styles with the design system, and converted all scoped styles to @apply.
+
+**Brainstorming:** Several improvements were needed after the initial extraction. Using a real <button> element is semantically correct and removes the need for manual keydown handlers. The hidden input must move outside the button since interactive elements cannot be nested inside a button (invalid HTML). The hint prop allows callers to inject a file type ("CSV") into the hint text without hard-coding it in the component. The hintId computed from the id prop creates a stable aria-describedby link from the button to its hint text — this is only set when the hint is in the DOM (no file selected). Hint color uses typography-subtle (same Tailwind token as placeholder) for visual consistency. browse-link uses primary-400 (the shade before primary-500, the "previous" primary) and is styled like a small text button (text-xs, font-medium, tracking-wide, underline). All raw CSS in scoped styles converted to @apply where Tailwind tokens exist; color: var(--color-title) on .filename keeps the CSS variable since there is no Tailwind equivalent.
+
+**Prompt:** Use @apply in styles. Hint same color as placeholder. Browse-link use previous primary color from tailwind.config. Browse link should look like a text button small. Hint should accept an input that can be empty or specify the type of file — in our case CSV passed from CsvUploadForm. Form control should be described by hint. Add id input and attach it to the form-control. Use a button instead of role="button".
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — button replaces div role="button"; hidden input moved outside button; hint? prop added; hintId computed (id + "-hint"); hintText computed ("Drag & drop a {hint} file here, or" / generic fallback); aria-describedby on button conditional on !modelValue && hintId; hint span gets :id="hintId"; @keydown handlers removed (button native); all scoped styles converted to @apply; hint → text-typography-subtle; browse-link → text-xs text-primary-400 font-medium tracking-wide underline
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — added hint="CSV" to FileDropzone
+- `CLAUDE.md` — updated FileDropzone and CsvUploadForm descriptions
+
+**Key decisions & why:**
+- Input outside button — nesting interactive elements inside <button> is invalid HTML; moved input as a sibling and kept fileInputRef pointing to it
+- aria-describedby conditional on !modelValue — when a file is selected the hint element is not in the DOM; aria-describedby referencing a missing id is silently ignored, but it's cleaner to not set it
+- primary-400 for browse-link — user confirmed "previous primary color" = the shade before the active primary-500
+- @apply throughout; color: var(--color-title) as exception — no Tailwind token maps to this CSS custom property
+
+
+## [#121] Remove browse-link span and style from FileDropzone
+**Type:** refactor
+
+**Summary:** Removed the redundant browse-link span and its scoped style from FileDropzone since the entire button is already clickable.
+
+**Brainstorming:** The "browse" link was a visual cue carried over from the original label-based dropzone where clicking the label was the only way to open the file picker. Now that the entire element is a button, the affordance is clear without it. The inner span added markup noise and a separate style block for no functional or UX gain. The hintText computed was also updated to drop the trailing "or" that only made sense when "browse" followed.
+
+**Prompt:** Do we need the browse to look like a link? Users can click the whole button anyways. Remove unnecessary span element and styles.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — removed inner browse-link span from hint; updated hintText computed to drop trailing "or"; removed .browse-link scoped style block
+
+**Key decisions & why:**
+- hintText updated to "Drag & drop a {hint} file here" — removing "or" makes the sentence grammatically complete without needing a follow-on word
