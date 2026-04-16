@@ -1,14 +1,14 @@
  @layer components {
- 
+
   .form {
     @apply flex flex-col gap-6;
   }
 
-  .form-field {
+  .field {
     @apply flex flex-col gap-2.5;
   }
 
-  .form-field__label {
+  .field-label {
     @apply text-sm font-medium text-primary-300;
   }
 
@@ -27,9 +27,9 @@
       text-primary-400
       bg-surface-secondary
       px-3
-      py-2.5; 
- 
-    
+      py-2.5;
+
+
     &::placeholder {
       @apply text-typography-subtle;
     }
@@ -38,29 +38,29 @@
         &:focus,
         &:focus-within,
         &:hover {
-          @apply border-primary-500;  
+          @apply border-primary-500;
         }
     }
 
     &:disabled {
       @apply opacity-80 cursor-not-allowed;
     }
- 
+
   }
 
-  .form-control--error {
-    @apply border-danger; 
+  .input-error {
+    @apply border-danger;
   }
 
-  .form-field__error-container {
+  .field-errors {
     @apply flex flex-col gap-1;
   }
 
-  .form-field__error {
-    @apply text-sm text-danger m-0; 
+  .field-error {
+    @apply text-sm text-danger m-0;
   }
 
-  .form-field__error-hint{
+  .field-error-hint {
      @apply text-sm text-typography-subtle;
   }
 }

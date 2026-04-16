@@ -2436,3 +2436,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ghost` → `.btn-secondary-outline` — the ghost style (transparent bg, primary border) matches the existing secondary outline class exactly; no visual change
 - `> button` instead of a shared class in EmptyState — the two buttons are the only direct children of `.empty-state__actions`; element selector is more direct and requires no extra markup
 - Deleted BaseButton.vue entirely — no remaining usages; keeping unused components creates maintenance burden and misleads future readers about available abstractions
+
+
+
+## [#116] Remove BEM from forms SCSS and update consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM element and modifier class names in `_forms.scss` with flat descriptive names, and updated the two components that consume those classes.
+
+**Brainstorming:** The forms SCSS used BEM element syntax (`form-field__label`, `form-field__error-container`, `form-field__error`, `form-field__error-hint`) and one BEM modifier (`form-control--error`). These are global utility classes, not block-scoped component styles, so BEM is the wrong convention here — flat names like `.field-label` and `.input-error` are cleaner and consistent with the direction established in other recent refactors (e.g. AiAnalysisState using plain scoped class names).
+
+**Prompt:** Update the forms file in styles/components to not use BEM. Update the respective components that use this.
+
+**What changed:**
+- `app/src/styles/components/_forms.scss` — renamed `.form-field` → `.field`, `.form-field__label` → `.field-label`, `.form-control--error` → `.input-error`, `.form-field__error-container` → `.field-errors`, `.form-field__error` → `.field-error`, `.form-field__error-hint` → `.field-error-hint`; `.form` and `.form-control` unchanged
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — updated all class references to match new names
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — updated all class references to match new names
+- `CLAUDE.md` — updated `_forms.scss` architecture entry and component descriptions for AiConnectionForm and CsvUploadForm
+
+**Key decisions & why:**
+- `.form` and `.form-control` kept unchanged — neither uses `__` or `--` BEM syntax; they are already flat
+- `.input-error` (not `.form-control-error`) — names the state, not the base class it modifies; reads as "this input has an error" rather than implying it extends `.form-control`
+- `.field-errors` (not `.field-error-container`) — shorter and self-descriptive; `-container` suffix adds no meaning

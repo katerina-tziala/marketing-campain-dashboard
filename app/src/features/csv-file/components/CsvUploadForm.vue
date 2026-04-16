@@ -67,26 +67,26 @@ function handleSubmit(): void {
   <!-- Body -->
   <div class="form-body">
     <!-- Campaign title -->
-    <div class="form-field">
-      <label class="form-field__label" for="campaign-title">Campaign Title</label>
+    <div class="field">
+      <label class="field-label" for="campaign-title">Campaign Title</label>
       <input
         id="campaign-title"
         :value="title"
         class="field__input form-control"
-        :class="{ 'form-control--error': titleError }"
+        :class="{ 'input-error': titleError }"
         type="text"
         placeholder="e.g. Q2 2025 Campaign"
         autocomplete="off"
         @input="emit('update:title', ($event.target as HTMLInputElement).value)"
       />
-      <p v-if="titleError" class="form-field__error">{{ titleError }}</p>
+      <p v-if="titleError" class="field-error">{{ titleError }}</p>
     </div>
     <!-- File drop zone -->
-    <div class="form-field">
-      <label class="form-field__label">CSV File</label>
+    <div class="field">
+      <label class="field-label">CSV File</label>
       <label
         class="dropzone form-control"
-        :class="{ 'dropzone--active': isDragging, 'form-control--error': fileError || parseError }"
+        :class="{ 'dropzone--active': isDragging, 'input-error': fileError || parseError }"
         for="csv-file-input"
         @dragover.prevent="isDragging = true"
         @dragleave.prevent="isDragging = false"
@@ -105,7 +105,7 @@ function handleSubmit(): void {
           @change="onFileChange"
         />
       </label>
-      <p v-if="fileError || parseError" class="form-field__error">{{ fileError || parseError }}</p>
+      <p v-if="fileError || parseError" class="field-error">{{ fileError || parseError }}</p>
     </div>
   </div>
   <!-- Footer -->

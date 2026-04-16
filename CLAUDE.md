@@ -78,7 +78,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
 │   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + generic Tabs + scrollable panel when connected; scrollbar-stable + scrollbar-on-surface utility classes on scroll container; uses aiAnalysisStore.activeTab for tab routing
-│   │   │   │   ├── AiConnectionForm.vue    # Provider pill toggles (Groq default, then Gemini) + API key input (show/hide via .btn-icon-secondary.btn-small) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (form-control--error + form-field__error-container/error/error-hint); clears connectionError + apiKey + showKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/form-field/form-control classes
+│   │   │   │   ├── AiConnectionForm.vue    # Provider pill toggles (Groq default, then Gemini) + API key input (show/hide via .btn-icon-secondary.btn-small) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (input-error + field-errors/field-error/field-error-hint); clears connectionError + apiKey + showKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/field/form-control classes
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore
 │   │   │   │   ├── AiAnalysisState.vue     # Shared analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, formattedCacheTime, modelName?; emit: analyze; slot: result content; handles header (title + action button), token-limit notice, idle/loading/error states, result wrapper with response-meta (cache time + model + AI disclaimer + error fallback); non-BEM scoped styles
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — wraps AiAnalysisState; renders full BudgetOptimizerResponse sections (summary, recommendations, top/underperformers, quick wins, correlations, risks) in default slot; owns optimizer-specific badge variant helpers and formatters; wired to aiAnalysisStore
@@ -123,7 +123,7 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
-│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global form-field/form-control classes; plain buttons with .btn-primary/.btn-secondary-outline; footer stacks vertically at <480px
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global field/form-control classes; plain buttons with .btn-primary/.btn-secondary-outline; footer stacks vertically at <480px
 │   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; plain buttons with .btn-primary/.btn-secondary-outline; Proceed only shown when validCampaigns > 0
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
@@ -138,7 +138,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
 │   │   │   ├── _card.scss          # @layer components — .card, .card-secondary (with __head, __title, __content modifiers)
-│   │   │   ├── _forms.scss         # @layer components — .form, .form-field, .form-field__label, .form-control, .form-control--error, .form-field__error-container, .form-field__error, .form-field__error-hint
+│   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal__body, .modal__footer
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table__th, .data-table__tr, .data-table__td
 │   │   └── utilities/

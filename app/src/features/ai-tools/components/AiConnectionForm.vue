@@ -84,8 +84,8 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
     </p>
     <form class="form" @submit.prevent="handleConnect">
       <!-- Provider -->
-      <fieldset class="form-field">
-        <legend class="form-field__label">Provider</legend>
+      <fieldset class="field">
+        <legend class="field-label">Provider</legend>
         <div class="ai-conn__radios">
          <label class="block">
             <input
@@ -109,9 +109,9 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
       </fieldset>
 
       <!-- API Key -->
-      <div class="form-field">
+      <div class="field">
         <div class="flex items-start justify-between">
-          <label class="form-field__label" for="ai-key">API Key</label>
+          <label class="field-label" for="ai-key">API Key</label>
           <button type="button" class="btn-icon-secondary btn-small" @click="showHelp = !showHelp">
             {{ showHelp ? 'Hide instructions' : 'How to get your key?' }}
           </button>
@@ -143,8 +143,7 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
             v-model="apiKey"
             :type="showKey ? 'text' : 'password'"
             class="form-control ai-conn__input"
-            :class="{ 'form-control--error': store.connectionError, 
-             }"
+            :class="{ 'input-error': store.connectionError }"
             placeholder="Paste your API key"
             autocomplete="off"
             spellcheck="false"
@@ -158,9 +157,9 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
             {{ showKey ? 'Hide' : 'Show' }}
           </button>
         </div>
-        <div v-if="store.connectionError" class="form-field__error-container">
-          <p class="form-field__error" role="alert">{{ errorMessage }}</p>
-          <p v-if="errorHint" class="form-field__error-hint">{{ errorHint }}</p>
+        <div v-if="store.connectionError" class="field-errors">
+          <p class="field-error" role="alert">{{ errorMessage }}</p>
+          <p v-if="errorHint" class="field-error-hint">{{ errorHint }}</p>
         </div>
       </div>
       <button class="btn-primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
