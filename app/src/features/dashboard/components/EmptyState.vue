@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { BaseButton, DownloadIcon, FileTextIcon, UploadIcon } from '../../../ui'
+import { DownloadIcon, FileTextIcon, UploadIcon } from '../../../ui'
 import { useDownloadTemplate } from '../../csv-file/composables/useDownloadTemplate'
 
 const { downloadTemplate } = useDownloadTemplate()
@@ -24,14 +24,14 @@ const emit = defineEmits<{
       Need a starting point? Download our sample template.
     </p>
     <div class="empty-state__actions">
-      <BaseButton variant="ghost" @click="downloadTemplate">
+      <button class="btn-secondary-outline" @click="downloadTemplate">
         <DownloadIcon />
         Download Template
-      </BaseButton>
-      <BaseButton variant="primary" @click="emit('upload')">
+      </button>
+      <button class="btn-primary" @click="emit('upload')">
         <UploadIcon />
         Upload CSV
-      </BaseButton>
+      </button>
     </div>
   </div>
 </template>
@@ -78,14 +78,14 @@ const emit = defineEmits<{
     width: 100%;
     max-width: 380px;
 
-    :deep(.base-btn) {
+    > button {
       flex: 1;
     }
 
     @media (max-width: 479px) {
       flex-direction: column;
 
-      :deep(.base-btn) {
+      > button {
         width: 100%;
       }
     }

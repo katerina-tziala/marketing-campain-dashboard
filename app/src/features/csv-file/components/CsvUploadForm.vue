@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { BaseButton, DownloadIcon, UploadIcon } from '../../../ui'
+import { DownloadIcon, UploadIcon } from '../../../ui'
 
 const props = defineProps<{
   title: string
@@ -110,16 +110,16 @@ function handleSubmit(): void {
   </div>
   <!-- Footer -->
   <div class="form-footer">
-    <BaseButton variant="ghost" class="form-footer__download" @click="emit('download-template')">
+    <button class="btn-secondary-outline form-footer__download" @click="emit('download-template')">
       <DownloadIcon />
       Download Template
-    </BaseButton>
+    </button>
 
-    <BaseButton variant="ghost" class="form-footer__cancel" :disabled="isLoading" @click="emit('close')">Cancel</BaseButton>
-    <BaseButton variant="primary" class="form-footer__upload" :disabled="isLoading" @click="handleSubmit">
+    <button class="btn-secondary-outline form-footer__cancel" :disabled="isLoading" @click="emit('close')">Cancel</button>
+    <button class="btn-primary form-footer__upload" :disabled="isLoading" @click="handleSubmit">
       <UploadIcon />
       {{ isLoading ? 'Uploading…' : 'Upload' }}
-    </BaseButton>
+    </button>
   </div>
 </template>
 

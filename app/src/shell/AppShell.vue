@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, ref, watch } from 'vue'
-import { BaseButton, UploadIcon } from '../ui'
+import { UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
 import { useCampaignStore } from '../stores/campaignStore'
 import { useAiStore } from '../stores/aiStore'

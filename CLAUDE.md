@@ -67,11 +67,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── types/
 │   │   │   └── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
-│   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; scoped @apply styles; icon slot
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
 │   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
-│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; Badge removed)
+│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; BaseButton + Badge removed)
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — flex col → flex row at lg+; app-shell__left (header + app-shell__main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; app-shell__main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   ├── features/
@@ -124,8 +123,8 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
-│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global form-field/form-control classes; BaseButton for all actions; footer stacks vertically at <480px
-│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; BaseButton for all actions; Proceed only shown when validCampaigns > 0
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global form-field/form-control classes; plain buttons with .btn-primary/.btn-secondary-outline; footer stacks vertically at <480px
+│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; plain buttons with .btn-primary/.btn-secondary-outline; Proceed only shown when validCampaigns > 0
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/

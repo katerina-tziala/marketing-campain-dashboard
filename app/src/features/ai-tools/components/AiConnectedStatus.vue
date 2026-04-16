@@ -31,7 +31,8 @@ function handleDisconnect(): void {
     justify-between
     gap-2
     py-2
-    px-6
+    pl-6
+    pr-4
     border-b
     border-surface-border
     w-full

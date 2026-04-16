@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BaseButton } from '../../../ui'
 import type { CsvRowError } from '../types'
 import type { Campaign } from '../../../common/types/campaign'
 
@@ -58,17 +57,16 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
 
   <!-- Footer -->
   <div class="error-footer">
-    <BaseButton
+    <button
       v-if="validCampaigns.length > 0"
-      variant="ghost"
-      class="error-footer__proceed"
+      class="btn-secondary-outline error-footer__proceed"
       @click="emit('proceed')"
     >
       Proceed with valid rows
-    </BaseButton>
+    </button>
 
-    <BaseButton variant="ghost" class="error-footer__cancel" @click="emit('close')">Cancel</BaseButton>
-    <BaseButton variant="primary" class="error-footer__back" @click="emit('back')">Back</BaseButton>
+    <button class="btn-secondary-outline error-footer__cancel" @click="emit('close')">Cancel</button>
+    <button class="btn-primary error-footer__back" @click="emit('back')">Back</button>
   </div>
 </template>
 

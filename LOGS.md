@@ -2412,3 +2412,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `modelName?: string` instead of full model object — only the display name is rendered; avoids coupling the wrapper to AiModel type
 - Non-BEM scoped classes in AiAnalysisState — user direction to move away from BEM; plain descriptive class names (panel-head, loader, error-box, etc.) are scoped so no global collision risk
 - Default slot for result — each panel's result markup is structurally different enough that a slot is cleaner than props; panels retain full control of their rendering
+
+
+## [#115] Replace BaseButton with plain buttons and global button classes
+**Type:** refactor
+
+**Summary:** Removed the BaseButton component and replaced all usages with plain `<button>` elements using the global `.btn-primary` and `.btn-secondary-outline` classes; ghost variant mapped to secondary outline.
+
+**Brainstorming:** BaseButton was a thin wrapper that added no value once global button classes existed — it simply replicated `.btn-primary` and a ghost style that is now `.btn-secondary-outline`. Eliminating the wrapper removes a layer of indirection, makes the class applied to each button explicit in the template, and reduces bundle size. The `:deep(.base-btn)` selectors in EmptyState were replaced with `> button` since the buttons are now direct children of the scoped element.
+
+**Prompt:** Find all BaseButton instances and replace them with buttons and proper styles from the button component in the styles folder. Ghost instances should be secondary buttons now.
+
+**What changed:**
+- `app/src/ui/BaseButton.vue` — deleted
+- `app/src/ui/index.ts` — removed BaseButton export
+- `app/src/shell/AppShell.vue` — removed unused BaseButton import (template already used a plain button)
+- `app/src/features/dashboard/components/EmptyState.vue` — replaced two BaseButton instances with plain buttons (.btn-secondary-outline, .btn-primary); replaced :deep(.base-btn) selectors with > button
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — replaced three BaseButton instances with plain buttons; removed BaseButton import
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — replaced three BaseButton instances with plain buttons; removed BaseButton import
+- `CLAUDE.md` — removed BaseButton entry, updated CsvUploadForm/CsvErrorTable descriptions, updated ui/index.ts note
+
+**Key decisions & why:**
+- `ghost` → `.btn-secondary-outline` — the ghost style (transparent bg, primary border) matches the existing secondary outline class exactly; no visual change
+- `> button` instead of a shared class in EmptyState — the two buttons are the only direct children of `.empty-state__actions`; element selector is more direct and requires no extra markup
+- Deleted BaseButton.vue entirely — no remaining usages; keeping unused components creates maintenance burden and misleads future readers about available abstractions
