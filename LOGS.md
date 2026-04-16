@@ -2708,3 +2708,119 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - formatCurrency (optimizer) unified into formatEuro using Intl.NumberFormat — more correct than the template literal approach it replaced
 - urgencyVariant merged with the optimizer's superset map (adds 'this month': 'opportunity') — no behaviour change for summary, which never passes that value
 - classROI left local in AiSummaryPanel — it is a thin wrapper around roiClass from common/utils/roi, not a formatting concern shared with the optimizer
+
+
+## [#129] Extract executive summary sections into dumb components
+**Type:** refactor
+
+**Summary:** Extracted each section of AiSummaryPanel into a dedicated dumb component inside a new executive-summary/ folder, leaving the panel as a thin orchestrator with no scoped styles.
+
+**Brainstorming:** AiSummaryPanel had five inline sections (Portfolio Health, Priority Actions, Key Metrics, Insights, Channel Summary) plus shared AiAnalysisCorrelations. Each section owns its own template logic, badge helpers, and scoped styles. Extracting them makes each section independently readable and keeps the panel itself clean. All components are dumb (props-only, no store reads). Scoped styles use @apply with flat class names — no BEM. classROI moved into AiExecutiveSummaryMetrics since that is the only consumer.
+
+**Prompt:** Create an executive-summary/ folder inside ai-tools/components. Create dumb components for each section of AiSummaryPanel, prefixed with AiExecutiveSummary. Scoped styles with @apply and no BEM.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryHealth.vue` — Portfolio Health; wraps AiAnalysisSummary with health badge slot; healthScoreVariant from utils
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryPriorityActions.vue` — Priority Actions list; urgencyVariant badge; flat scoped styles (priority-head, priority-number, priority-metric)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryMetrics.vue` — Key Metrics grid; formatEuro/formatRoi/formatNumber + classROI local; flat scoped styles (metrics-grid, metric-card, expandable)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryInsights.vue` — Insights list; insightTypeVariant badge; flat scoped styles (insight-content, insight-icon, insight-metric, insight-metric-label, insight-metric-value)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryChannels.vue` — Channel Summary; channelStatusVariant badge + border-left color per status; flat scoped styles (channel-card, channel-head, channel-budget)
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — rewritten to delegate all sections to executive-summary/ components; removed all local formatters, badge helpers, and scoped styles
+- `CLAUDE.md` — updated architecture for AiSummaryPanel and added executive-summary/ folder entries
+
+**Key decisions & why:**
+- AiAnalysisCorrelations stays in the panel directly — it is already a shared component used by both panels, not summary-specific
+- classROI moved into AiExecutiveSummaryMetrics rather than panel-formatters — it wraps roiClass from common/utils and is only used in the metrics section
+- No barrel index.ts for executive-summary/ — all five components are imported directly by AiSummaryPanel, adding an index would add indirection with no benefit
+
+
+## [#130] Move cache time formatting into AiAnalysisState
+**Type:** refactor
+
+**Summary:** Replaced the duplicated formattedCacheTime computed in both panels with a single internal computed in AiAnalysisState, accepting the raw cacheTimestamp prop.
+
+**Brainstorming:** Both AiOptimizerPanel and AiSummaryPanel had identical formattedCacheTime computed properties formatting the timestamp for display. Since AiAnalysisState is the only consumer, the formatting belongs there. Panels now pass the raw store value directly. Prop type widened to string|number|null to match the store's number timestamp.
+
+**Prompt:** formattedCacheTime exists in both places now — pass time in AiAnalysisState as is and move the formatter in that component.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisState.vue` — replaced formattedCacheTime prop with cacheTimestamp (string|number|null); added internal formattedCacheTime computed using toLocaleTimeString
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — removed formattedCacheTime computed; passes :cache-timestamp="cacheTimestamp" to AiAnalysisState
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — same as optimizer
+- `CLAUDE.md` — updated AiAnalysisState prop description
+
+**Key decisions & why:**
+- Prop type string|number|null rather than string|null — the store cacheTimestamps are numbers; widening avoids a pointless String() cast in the panels
+
+
+## [#131] Extract budget-optimization/ dumb components from AiOptimizerPanel
+**Type:** refactor
+
+**Summary:** Split all inline sections of AiOptimizerPanel into six props-only components under a new budget-optimization/ subfolder, mirroring the executive-summary/ pattern applied to AiSummaryPanel.
+
+**Brainstorming:** AiOptimizerPanel had all its section markup inline with scoped BEM-style styles. The executive-summary/ refactor showed the dumb-component pattern: one file per section, props typed via indexed access on the response type, scoped @apply flat styles, no store reads. The same pattern applies here directly. AiAnalysisCorrelations is already a shared component and stays a direct import. The panel becomes a thin orchestrator with no styles of its own.
+
+**Prompt:** Create a budget-optimization/ subfolder inside ai-tools/components. Split the sections of AiOptimizerPanel into dumb components each starting with BudgetOptimization (e.g. BudgetOptimizationOverview). Scoped styles with @apply, no BEM.
+
+**What changed:**
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationOverview.vue` — new; executive summary wrapper; wraps AiAnalysisSummary with executiveSummary, period, totalCampaigns, selectedCampaigns props
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationRecommendations.vue` — new; recommendations cards with confidenceVariant + urgencyVariant badges, formatEuro + formatRoi; flat scoped styles (rec-badges, rec-details, rec-row, rec-value, rec-metrics, rec-metrics-title, rec-metrics-text)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationTopPerformers.vue` — new; top performers with ROI in text-success; flat scoped styles (performer-roi, performer-unlock)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationUnderperformers.vue` — new; underperformers with actionVariant badge, ROI in text-danger--5p; flat scoped styles (performer-roi)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationQuickWins.vue` — new; quick wins with effortVariant badge; flat scoped styles (quick-win-details, quick-win-impact, quick-win-timeline)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationRisks.vue` — new; risks & mitigations with v-if on length; no scoped styles needed
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — rewritten as thin orchestrator; removed all inline sections and scoped styles; imports the six new components
+- `CLAUDE.md` — architecture updated with budget-optimization/ subfolder and component descriptions
+
+**Key decisions & why:**
+- Six components rather than fewer combined ones — each section is independently renderable and has its own type slice; fine-grained split matches the executive-summary/ precedent
+- BudgetOptimizationRisks owns the v-if on risks.length — keeps the condition co-located with the section rather than in the parent, consistent with how AiAnalysisCorrelations handles its own v-if
+- AiAnalysisCorrelations kept as a direct import — it is already a shared component used by both panels; wrapping it in a budget-optimization component would add a pointless indirection
+- Scoped styles use flat class names (rec-*, performer-*, quick-win-*) without BEM double-underscore — consistent with the project's flat scoped style convention
+
+
+## [#132] Remove Ai prefix from executive-summary components; move shared components to shared/
+**Type:** refactor
+
+**Summary:** Stripped the Ai prefix from all executive-summary/ components, renamed AiAnalysisSummary and AiAnalysisCorrelations to AnalysisSummary and AnalysisCorrelations, and moved both to a new shared/ subfolder alongside the other panel component folders.
+
+**Brainstorming:** The Ai prefix on these components was redundant — they all live inside the ai-tools feature already, so the prefix adds noise without adding clarity. The two shared components (AnalysisSummary and AnalysisCorrelations) were floating in the components/ root, which made their shared nature implicit. Grouping them in shared/ makes the folder structure self-documenting: budget-optimization/, executive-summary/, and shared/ each have a clear role.
+
+**Prompt:** Remove Ai from all components in the executive-summary folder. Do the same for AiAnalysisSummary and AiAnalysisCorrelations and move those components to a folder named shared.
+
+**What changed:**
+- `components/AiAnalysisSummary.vue` → `components/shared/AnalysisSummary.vue` — moved and renamed
+- `components/AiAnalysisCorrelations.vue` → `components/shared/AnalysisCorrelations.vue` — moved and renamed
+- `executive-summary/AiExecutiveSummaryHealth.vue` → `executive-summary/ExecutiveSummaryHealth.vue` — renamed; import + template tag updated to AnalysisSummary
+- `executive-summary/AiExecutiveSummaryPriorityActions.vue` → `executive-summary/ExecutiveSummaryPriorityActions.vue` — renamed
+- `executive-summary/AiExecutiveSummaryMetrics.vue` → `executive-summary/ExecutiveSummaryMetrics.vue` — renamed
+- `executive-summary/AiExecutiveSummaryInsights.vue` → `executive-summary/ExecutiveSummaryInsights.vue` — renamed
+- `executive-summary/AiExecutiveSummaryChannels.vue` → `executive-summary/ExecutiveSummaryChannels.vue` — renamed
+- `budget-optimization/BudgetOptimizationOverview.vue` — import + template tag updated to AnalysisSummary from shared/
+- `AiSummaryPanel.vue` — all 6 imports and template tags updated
+- `AiOptimizerPanel.vue` — AnalysisCorrelations import and template tag updated
+- `CLAUDE.md` — architecture updated: shared/ subfolder added, all renamed components reflected
+
+**Key decisions & why:**
+- Ai prefix dropped — the components are already scoped to the ai-tools feature folder; the prefix is redundant and clutters component names
+- shared/ folder rather than keeping them in the components/ root — makes the three-folder structure (shared/, budget-optimization/, executive-summary/) explicit and symmetric; a new developer immediately understands which components are reused vs panel-specific
+
+
+## [#133] Move AiAnalysisState to shared/AnalysisState; group identical scoped selectors
+**Type:** refactor
+
+**Summary:** Moved AiAnalysisState.vue into the shared/ subfolder as AnalysisState.vue and grouped the three scoped selectors that shared identical styles into a single rule.
+
+**Brainstorming:** With AnalysisSummary and AnalysisCorrelations already in shared/, AiAnalysisState was the one remaining shared component still living in the components/ root. Moving it completes the reorganisation. On the scoped styles: .loader-text, .notice-hint, and .error-hint all had exactly @apply text-typography text-sm — they can be merged into one grouped selector with no semantic loss and less repetition. The import path for Spinner and SparklesIcon deepens by one level (../../../../ui instead of ../../../ui).
+
+**Prompt:** Move AiAnalysisState into shared, rename it to AnalysisState. Group CSS selectors from scoped styles that share exactly the same styles.
+
+**What changed:**
+- `components/AiAnalysisState.vue` — deleted
+- `components/shared/AnalysisState.vue` — new; same logic, updated import paths (../../../../ui), .loader-text + .notice-hint + .error-hint grouped into one rule
+- `AiSummaryPanel.vue` — import and opening/closing template tags updated to AnalysisState from shared/
+- `AiOptimizerPanel.vue` — same as summary panel
+- `CLAUDE.md` — AnalysisState.vue added to shared/ section; removed from standalone entry
+
+**Key decisions & why:**
+- Only selectors with exactly identical @apply bodies were grouped — .notice-text and .error-message share font-medium text-sm but differ in color, so they stay separate

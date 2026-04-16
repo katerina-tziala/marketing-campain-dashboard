@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Spinner } from '../../../ui'
-import { SparklesIcon } from '../../../ui/icons'
-import type { AiAnalysisStatus, AiAnalysisError } from '../types'
+import { computed } from 'vue'
+import { Spinner } from '../../../../ui'
+import { SparklesIcon } from '../../../../ui/icons'
+import type { AiAnalysisStatus, AiAnalysisError } from '../../types'
 
-defineProps<{
+const props = defineProps<{
   title: string
   actionLabel: string
   idleText: string
@@ -14,11 +15,20 @@ defineProps<{
   tokenLimitReached: boolean
   isButtonDisabled: boolean
   hasResult: boolean
-  formattedCacheTime: string | null
+  cacheTimestamp: string | number | null
   modelName?: string
 }>()
 
 const emit = defineEmits<{ analyze: [] }>()
+
+const formattedCacheTime = computed(() => {
+  if (!props.cacheTimestamp) return null
+  return new Date(props.cacheTimestamp).toLocaleTimeString('en-IE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+})
 </script>
 
 <template>
@@ -84,7 +94,9 @@ const emit = defineEmits<{ analyze: [] }>()
   @apply flex flex-col items-center gap-4 p-8;
 }
 
-.loader-text {
+.loader-text,
+.notice-hint,
+.error-hint {
   @apply text-typography text-sm;
 }
 
@@ -104,10 +116,6 @@ const emit = defineEmits<{ analyze: [] }>()
   @apply text-warning font-medium text-sm;
 }
 
-.notice-hint {
-  @apply text-typography text-sm;
-}
-
 .error-box {
   @apply flex
     flex-col
@@ -122,10 +130,6 @@ const emit = defineEmits<{ analyze: [] }>()
 
 .error-message {
   @apply text-danger font-medium text-sm;
-}
-
-.error-hint {
-  @apply text-typography text-sm;
 }
 
 .result {
