@@ -86,9 +86,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (Groq first, providerOptions explicit array) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/field/form-control classes
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore
 │   │   │   │   ├── AiAnalysisCorrelations.vue # Shared correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
+│   │   │   │   ├── AiAnalysisSummary.vue # Shared section header — props: title, period?, totalCampaigns, selectedCampaigns; badge slot (optional right-side content, e.g. health score badge); default slot (body content); renders period + "N of M campaigns" count line; flat non-BEM scoped styles
 │   │   │   │   ├── AiAnalysisState.vue     # Shared analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, formattedCacheTime, modelName?; emit: analyze; slot: result content; handles header (title + action button), token-limit notice, idle/loading/error states, result wrapper with response-meta (cache time + model + AI disclaimer + error fallback); non-BEM scoped styles
-│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — wraps AiAnalysisState; renders full BudgetOptimizerResponse sections (summary, recommendations, top/underperformers, quick wins, AiAnalysisCorrelations, risks) in default slot; owns optimizer-specific badge variant helpers and formatters; wired to aiAnalysisStore
-│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — wraps AiAnalysisState; renders full ExecutiveSummaryResponse sections (portfolio health, priority actions, key metrics, insights, channel summary, AiAnalysisCorrelations) in default slot; owns summary-specific badge variant helpers and formatters; .roi-text + roiClass() for ROI values; wired to aiAnalysisStore
+│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — wraps AiAnalysisState; renders full BudgetOptimizerResponse sections (AiAnalysisSummarySection, recommendations, top/underperformers, quick wins, AiAnalysisCorrelations, risks) in default slot; owns optimizer-specific badge variant helpers and formatters; reads campaignStore for campaign counts; wired to aiAnalysisStore
+│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — wraps AiAnalysisState; renders full ExecutiveSummaryResponse sections (AiAnalysisSummarySection with health badge in #badge slot + bottom line in default slot, priority actions, key metrics, insights, channel summary, AiAnalysisCorrelations) in default slot; owns summary-specific badge variant helpers and formatters; .roi-text + roiClass() for ROI values; reads campaignStore for campaign counts; wired to aiAnalysisStore
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (no timeout — relies on external signal), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), strips models/ prefix for Gemini, parses JSON response
 │   │   │   │   └── index.ts            # Barrel export — only callProviderForAnalysis
@@ -140,13 +141,13 @@ app/                        # Vue 3 + Vite project
 │   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
-│   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section, .ai-section__analysis-details
+│   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
-│   │   │   ├── _card.scss          # @layer components — .card, .card-secondary (with __head, __title, __content modifiers)
+│   │   │   ├── _card.scss          # @layer components — .card, .card-secondary; flat child classes: .card-head, .card-title, .card-content
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal__body, .modal__footer
-│   │   │   └── _table.scss         # @layer components — .data-table, .data-table__th, .data-table__tr, .data-table__td
+│   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell
 │   │   └── utilities/
 │   │       ├── index.scss          # Barrel — @use all utility partials
 │   │       ├── _roi.scss           # @layer utilities — .roi-text with .positive/.warning/.negative modifiers

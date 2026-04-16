@@ -39,16 +39,16 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
       <table class="data-table">
         <thead>
           <tr>
-            <th class="data-table__th error-table__th error-table__th--row">Row</th>
-            <th class="data-table__th error-table__th error-table__th--col">Column</th>
-            <th class="data-table__th error-table__th">Issue</th>
+            <th class="data-table-header error-table__th error-table__th--row">Row</th>
+            <th class="data-table-header error-table__th error-table__th--col">Column</th>
+            <th class="data-table-header error-table__th">Issue</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(err, i) in rowErrors" :key="i" class="data-table__tr">
-            <td class="data-table__td error-table__td--row">{{ err.row }}</td>
-            <td class="data-table__td error-table__td--col">{{ err.column }}</td>
-            <td class="data-table__td">{{ err.issue }}</td>
+          <tr v-for="(err, i) in rowErrors" :key="i" class="data-table-row">
+            <td class="data-table-cell error-table__td--row">{{ err.row }}</td>
+            <td class="data-table-cell error-table__td--col">{{ err.column }}</td>
+            <td class="data-table-cell">{{ err.issue }}</td>
           </tr>
         </tbody>
       </table>

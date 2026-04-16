@@ -2583,3 +2583,105 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - v-if on length kept inside the component — both panels had the same guard; inlining it avoids requiring callers to add a v-if wrapper on every usage
 - No scoped styles — the section uses only global ai-section, card-secondary classes; no component-specific styling needed
+
+
+## [#123] Extract AiAnalysisSummarySection shared component and wire campaign counts
+**Type:** refactor
+
+**Summary:** Extracted the section header pattern shared by AiOptimizerPanel (Summary) and AiSummaryPanel (Portfolio Health) into a dumb AiAnalysisSummarySection component, replacing the hardcoded campaign count TODO with live values from the campaign store.
+
+**Brainstorming:** Both panels had a section-header with a title, an analysis-details line (period + campaign count TODO), and optional extra content alongside the title (health badge in Summary panel, nothing in Optimizer). The pattern was structurally identical but visually different in the badge area. Extracting it into a shared dumb component — no store reads — keeps the component testable and predictable. The badge and body content are projected via named slot (#badge) and default slot respectively. Campaign counts (total vs filtered) are passed as props from each parent, which reads them from useCampaignStore.
+
+**Prompt:** Extract Summary component from optimizer and summary. Add projection slot to project bottom line and portfolio health after the period we should show how many campaigns are selected out of how many. Follow the process we defined for this project. Do not use any BEM scoped styles we are moving away from this. This is a dumb component. No reads from store, pass it from the parents.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisSummarySection.vue` — new; props: title, period?, totalCampaigns, selectedCampaigns; #badge slot for optional right-side content; default slot for body; renders "N of M campaigns" count; flat non-BEM scoped styles
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced inline Summary section with AiAnalysisSummarySection; imports useCampaignStore and passes campaigns.length / filteredCampaigns.length; removed .ai-summary BEM scoped block
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — replaced inline Portfolio Health section with AiAnalysisSummarySection; health badge projected into #badge slot; reasoning + bottom line in default slot; imports useCampaignStore and passes campaign counts; removed .portfolio-health BEM scoped block; health badge styles rewritten as flat classes (health-container, health-badge, health-score, health-label)
+- `CLAUDE.md` — added AiAnalysisSummarySection to architecture; updated AiOptimizerPanel and AiSummaryPanel descriptions
+
+**Key decisions & why:**
+- Dumb component (no store reads) — makes the component reusable and easier to reason about; parents own the data source
+- #badge slot rather than a health-score prop — keeps the component generic; the badge markup (with its dynamic class binding) stays in the panel that owns it
+- Flat non-BEM scoped class names — consistent with the ongoing move away from BEM in scoped styles; .health-container/.health-badge/.health-score/.health-label replace the old .portfolio-health__ block
+
+
+## [#124] Rename AiAnalysisSummarySection to AiAnalysisSummary
+**Type:** update
+
+**Summary:** Renamed the component file and all references from AiAnalysisSummarySection to AiAnalysisSummary for a shorter, cleaner name.
+
+**Brainstorming:** The "Section" suffix was redundant — the component name already conveys its purpose. Dropping it makes the import and template usage more concise.
+
+**Prompt:** Rename AiAnalysisSummarySection to AiAnalysisSummary.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisSummarySection.vue` — renamed to `AiAnalysisSummary.vue`
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — import and template tag updated
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — import and template tag updated
+- `CLAUDE.md` — filename updated in architecture
+
+**Key decisions & why:**
+- No behaviour change — pure rename for naming clarity
+
+
+## [#125] Remove BEM from _ai-summary.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _ai-summary.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The global stylesheet used BEM notation (ai-section__title, ai-section__subtitle, ai-section__note, ai-section__analysis-details, ai-panel__head, ai-panel__title) inconsistently alongside flat scoped styles. The ai-panel BEM children were already dead — AiAnalysisState.vue had replaced them with its own scoped flat classes (panel-head, panel-title). All remaining BEM globals were renamed to flat equivalents and templates updated. The undefined ai-section__content and ai-section__text classes (used in templates but never styled) were removed rather than renamed.
+
+**Prompt:** Update ai-summary in styles components and move away from BEM logic. Update respective components with updated classes.
+
+**What was built / What changed:**
+- `app/src/styles/components/_ai-summary.scss` — removed ai-panel BEM children (already dead); flattened ai-section children: ai-section__title → .section-title, ai-section__subtitle → .section-subtitle, ai-section__note → .section-note, ai-section__analysis-details → .analysis-details
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — ai-section__title → section-title (×5); ai-section__content removed from executive_summary paragraph
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — ai-section__title → section-title (×5); ai-section__subtitle → section-subtitle; ai-section__note → section-note; ai-section__text removed from two paragraphs; ai-section__content removed from ai-metrics wrapper
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — ai-section__title → section-title
+- `app/src/features/ai-tools/components/AiAnalysisSummary.vue` — ai-section__title → section-title; ai-section__analysis-details → analysis-details
+- `CLAUDE.md` — updated _ai-summary.scss architecture entry
+
+**Key decisions & why:**
+- ai-panel BEM children dropped entirely — AiAnalysisState.vue already had scoped flat equivalents; no template was using the global versions
+- ai-section__content and ai-section__text removed rather than renamed — they had no styles behind them; removing keeps templates clean
+
+
+## [#126] Remove BEM from _card.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _card.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The .card-secondary block used three BEM children (card-secondary__head, card-secondary__title, card-secondary__content) referenced heavily across ai-tools components and in scoped styles. Flattening them to card-head, card-title, card-content follows the same pattern applied to _ai-summary.scss. The parent .card-secondary class is kept as-is since it distinguishes card variants, but its children are no longer BEM.
+
+**Prompt:** Do the same for card.
+
+**What was built / What changed:**
+- `app/src/styles/components/_card.scss` — extracted card-secondary BEM children into standalone flat classes: .card-head, .card-title, .card-content
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — card-secondary__head → card-head, card-secondary__title → card-title, card-secondary__content → card-content (template and scoped styles)
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — same rename across template and scoped styles
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — card-secondary__title → card-title
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — card-secondary__title → card-title, card-secondary__content → card-content
+- `CLAUDE.md` — updated _card.scss architecture entry
+
+**Key decisions & why:**
+- card-head/card-title/card-content chosen over generic head/title/content — short but still namespaced to the card context, avoiding collision with other global classes
+
+
+## [#127] Remove BEM from _table.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _table.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The .data-table block used three BEM children (data-table__th, data-table__tr, data-table__td) across CampaignTable and CsvErrorTable. Flattening to data-table-header, data-table-row, data-table-cell follows the same pattern applied to _ai-summary.scss and _card.scss. The parent .data-table class is kept as-is.
+
+**Prompt:** Same for table. data-table__th → data-table-header, data-table__tr → data-table-row, data-table__td → data-table-cell.
+
+**What was built / What changed:**
+- `app/src/styles/components/_table.scss` — renamed .data-table__th → .data-table-header, .data-table__tr → .data-table-row, .data-table__td → .data-table-cell
+- `app/src/features/dashboard/components/CampaignTable.vue` — updated all three class references in template
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — updated all three class references in template
+- `CLAUDE.md` — updated _table.scss architecture entry
+
+**Key decisions & why:**
+- Hyphen separator (data-table-header) rather than double-underscore BEM notation — consistent with the flat naming approach adopted across all global component styles

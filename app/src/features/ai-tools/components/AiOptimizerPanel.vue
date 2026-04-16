@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
+import { useCampaignStore } from '../../../stores/campaignStore'
 import AiAnalysisState from './AiAnalysisState.vue'
 import AiAnalysisCorrelations from './AiAnalysisCorrelations.vue'
+import AiAnalysisSummary from './AiAnalysisSummary.vue'
 import type { BadgeVariant } from '../../../ui/types/badge-variant'
 
 const analysisStore = useAiAnalysisStore()
+const campaignStore = useCampaignStore()
 
 const status = computed(() => analysisStore.optimizerStatus)
 const response = computed(() => analysisStore.optimizerResponse)
@@ -91,28 +94,25 @@ function handleAnalyze(): void {
     @analyze="handleAnalyze"
   >
     <!-- Summary -->
-    <section class="ai-section ai-summary">
-      <div class="ai-summary__head">
-        <h4 class="ai-section__title">Summary</h4>
-        <p class="ai-section__analysis-details">
-          <span v-if="response!.period">{{ response!.period }}
-            <!-- TODO -->
-            &nbsp;&bull;&nbsp;21 of 21 campaigns</span>
-        </p>
-      </div>
-      <p class="ai-section__content">{{ response!.executive_summary }}</p>
-    </section>
+    <AiAnalysisSummary
+      title="Summary"
+      :period="response!.period"
+      :total-campaigns="campaignStore.campaigns.length"
+      :selected-campaigns="campaignStore.filteredCampaigns.length"
+    >
+      <p>{{ response!.executive_summary }}</p>
+    </AiAnalysisSummary>
 
     <!-- Recommendations -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Recommendations</h4>
+      <h4 class="section-title">Recommendations</h4>
       <div
         v-for="(rec, i) in response!.recommendations"
         :key="i"
         class="card-secondary ai-recommendation"
       >
-        <div class="card-secondary__head">
-          <h5 class="card-secondary__title">{{ rec.action }}</h5>
+        <div class="card-head">
+          <h5 class="card-title">{{ rec.action }}</h5>
           <div class="badge-container">
             <span class="badge" :class="confidenceVariant(rec.confidence)">{{ rec.confidence }}</span>
             <span class="badge" :class="urgencyVariant(rec.timeline)">{{ rec.timeline }}</span>
@@ -140,10 +140,10 @@ function handleAnalyze(): void {
             </span>
           </p>
         </div>
-        <p class="card-secondary__content">{{ rec.reasoning }}</p>
-        <div class="card-secondary__content ai-recommendation__metrics">
+        <p class="card-content">{{ rec.reasoning }}</p>
+        <div class="card-content ai-recommendation__metrics">
           <h5 class="ai-recommendation__metrics-title">Success Metrics</h5>
-          <p class="card-secondary__content ai-recommendation__metrics-text">
+          <p class="card-content ai-recommendation__metrics-text">
             <strong>Measure:</strong> {{ rec.success_metrics.what_to_measure }}<br>
             <strong>Target:</strong> {{ rec.success_metrics.target }}<br>
             <strong>Review after:</strong> {{ rec.success_metrics.review_after }}
@@ -154,14 +154,14 @@ function handleAnalyze(): void {
 
     <!-- Top Performers -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Top Performers</h4>
+      <h4 class="section-title">Top Performers</h4>
       <div
         v-for="(perf, i) in response!.top_performers"
         :key="i"
         class="card-secondary ai-performer ai-performer--positive"
       >
-        <div class="card-secondary__head">
-          <h5 class="card-secondary__title">{{ perf.campaign }}</h5>
+        <div class="card-head">
+          <h5 class="card-title">{{ perf.campaign }}</h5>
           <span class="ai-performer__roi">{{ perf.roi }}x ROI</span>
         </div>
         <p class="ai-performer__insight">{{ perf.insight }}</p>
@@ -173,14 +173,14 @@ function handleAnalyze(): void {
 
     <!-- Underperformers -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Underperformers</h4>
+      <h4 class="section-title">Underperformers</h4>
       <div
         v-for="(perf, i) in response!.underperformers"
         :key="i"
         class="card-secondary ai-performer ai-performer--negative"
       >
-        <div class="card-secondary__head">
-          <h5 class="card-secondary__title">{{ perf.campaign }}</h5>
+        <div class="card-head">
+          <h5 class="card-title">{{ perf.campaign }}</h5>
           <span class="ai-performer__roi">{{ perf.roi }}x&nbsp;ROI</span>
           <span class="badge" :class="actionVariant(perf.recommended_action)">{{ perf.recommended_action }}</span>
         </div>
@@ -190,13 +190,13 @@ function handleAnalyze(): void {
 
     <!-- Quick Wins -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Quick Wins</h4>
+      <h4 class="section-title">Quick Wins</h4>
       <div
         v-for="(qw, i) in response!.quick_wins"
         :key="i"
         class="card-secondary ai-quick-win"
       >
-        <div class="card-secondary__content flex items-start gap-x-2">
+        <div class="card-content flex items-start gap-x-2">
           <p class="grow">{{ qw.action }}</p>
           <span class="badge" :class="effortVariant(qw.effort)">{{ qw.effort }} effort</span>
         </div>
@@ -212,13 +212,13 @@ function handleAnalyze(): void {
 
     <!-- Risks -->
     <section v-if="response!.risks.length" class="ai-section">
-      <h4 class="ai-section__title">Risks & Mitigations</h4>
+      <h4 class="section-title">Risks & Mitigations</h4>
       <div
         v-for="(risk, i) in response!.risks"
         :key="i"
         class="card-secondary"
       >
-        <h5 class="card-secondary__title text-warning">{{ risk.risk }}</h5>
+        <h5 class="card-title text-warning">{{ risk.risk }}</h5>
         <p class="ai-risk__mitigation">
           <strong>Mitigation:</strong> {{ risk.mitigation }}
         </p>
@@ -228,17 +228,6 @@ function handleAnalyze(): void {
 </template>
 
 <style lang="scss" scoped>
-// ── Summary ──────────────────────────────────────────────────────────────────
-.ai-summary {
-  &__head {
-    @apply flex flex-col gap-1 items-start justify-start;
-  }
-
-  .ai-section__title {
-    @apply pt-0.5;
-  }
-}
-
 // ── Recommendation card ───────────────────────────────────────────────────────
 .ai-recommendation {
   &__details {
@@ -290,7 +279,7 @@ function handleAnalyze(): void {
 
 // ── Performer card ────────────────────────────────────────────────────────────
 .ai-performer {
-  .card-secondary__head {
+  .card-head {
     @apply items-center;
   }
 

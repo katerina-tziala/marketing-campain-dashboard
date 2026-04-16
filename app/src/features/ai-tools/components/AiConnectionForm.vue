@@ -103,7 +103,7 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
         <Transition name="help">
           <div v-if="showHelp" class="ai-conn__help-collapse">
             <div class="card-secondary bg-surface-secondary/50">
-              <h5 class="card-secondary__title text-primary-300">
+              <h5 class="card-title text-primary-300">
                 {{ providerHelp[selectedProvider].title }}
               </h5>
               <ol class="ai-conn__help-steps">

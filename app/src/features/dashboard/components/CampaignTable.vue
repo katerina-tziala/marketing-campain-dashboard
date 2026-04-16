@@ -116,7 +116,7 @@ const columns: { key: SortField; label: string }[] = [
             v-for="col in columns"
             :key="col.key"
             scope="col"
-            class="data-table__th campaign-table__th"
+            class="data-table-header campaign-table__th"
             @click="sort(col.key)"
           >
             <span class="campaign-table__th-inner">
@@ -136,22 +136,22 @@ const columns: { key: SortField; label: string }[] = [
         <tr
           v-for="c in sortedCampaigns"
           :key="c.campaign"
-          class="data-table__tr"
+          class="data-table-row"
         >
-          <td class="data-table__td campaign-table__td--name">{{ c.campaign }}</td>
-          <td class="data-table__td">
+          <td class="data-table-cell campaign-table__td--name">{{ c.campaign }}</td>
+          <td class="data-table-cell">
             <span class="badge info whitespace-break-spaces">{{ c.channel }}</span>
           </td>
-          <td class="data-table__td">{{ eur(c.budget) }}</td>
-          <td class="data-table__td">{{ compactNumber(c.clicks) }}</td>
-          <td class="data-table__td">{{ ctr(c) }}</td>
-          <td class="data-table__td">{{ c.conversions.toLocaleString('en') }}</td>
-          <td class="data-table__td">{{ cvr(c) }}</td>
-          <td class="data-table__td campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
-          <td class="data-table__td campaign-table__td--roi" :class="roiClass(c)">
+          <td class="data-table-cell">{{ eur(c.budget) }}</td>
+          <td class="data-table-cell">{{ compactNumber(c.clicks) }}</td>
+          <td class="data-table-cell">{{ ctr(c) }}</td>
+          <td class="data-table-cell">{{ c.conversions.toLocaleString('en') }}</td>
+          <td class="data-table-cell">{{ cvr(c) }}</td>
+          <td class="data-table-cell campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
+          <td class="data-table-cell campaign-table__td--roi" :class="roiClass(c)">
             {{ roiFormatted(c) }}
           </td>
-          <td class="data-table__td">{{ cac(c) }}</td>
+          <td class="data-table-cell">{{ cac(c) }}</td>
         </tr>
       </tbody>
     </table>

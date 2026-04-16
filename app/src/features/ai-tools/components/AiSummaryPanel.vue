@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
+import { useCampaignStore } from '../../../stores/campaignStore'
 import { roiClass } from '../../../common/utils/roi'
 import AiAnalysisState from './AiAnalysisState.vue'
 import AiAnalysisCorrelations from './AiAnalysisCorrelations.vue'
+import AiAnalysisSummary from './AiAnalysisSummary.vue'
 import type { BadgeVariant } from '../../../ui/types/badge-variant'
 
 const analysisStore = useAiAnalysisStore()
+const campaignStore = useCampaignStore()
 
 const status = computed(() => analysisStore.summaryStatus)
 const response = computed(() => analysisStore.summaryResponse)
@@ -102,44 +105,41 @@ function handleSummarize(): void {
     @analyze="handleSummarize"
   >
     <!-- Portfolio Health -->
-    <section class="ai-section portfolio-health">
-      <div class="portfolio-health__head">
-        <div class="portfolio-health__title-container">
-          <h4 class="ai-section__title">Portfolio Health</h4>
-          <p class="ai-section__analysis-details">
-            <span v-if="response!.period">{{ response!.period }}
-              <!-- TODO -->
-              &nbsp;&bull;&nbsp;21 of 21 campaigns</span>
-          </p>
-        </div>
-        <div class="ai-health-container">
-          <div class="badge ai-health" :class="healthScoreClass(response!.health_score.label)">
-            <span class="ai-health__value">{{ response!.health_score.score }}</span>
+    <AiAnalysisSummary
+      title="Portfolio Health"
+      :period="response!.period"
+      :total-campaigns="campaignStore.campaigns.length"
+      :selected-campaigns="campaignStore.filteredCampaigns.length"
+    >
+      <template #badge>
+        <div class="health-container">
+          <div class="badge health-badge" :class="healthScoreClass(response!.health_score.label)">
+            <span class="health-score">{{ response!.health_score.score }}</span>
             <span>&nbsp;/&nbsp;100</span>
           </div>
-          <p class="badge-text ai-health-score__label" :class="healthScoreClass(response!.health_score.label)">{{ response!.health_score.label }}</p>
+          <p class="badge-text health-label" :class="healthScoreClass(response!.health_score.label)">{{ response!.health_score.label }}</p>
         </div>
-      </div>
-      <p class="ai-section__text">{{ response!.health_score.reasoning }}</p>
-      <h5 class="ai-section__subtitle -mb-2">Bottom Line</h5>
-      <p class="ai-section__text">{{ response!.bottom_line }}</p>
-    </section>
+      </template>
+      <p>{{ response!.health_score.reasoning }}</p>
+      <h5 class="section-subtitle -mb-2">Bottom Line</h5>
+      <p>{{ response!.bottom_line }}</p>
+    </AiAnalysisSummary>
 
     <!-- Priority Actions -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Priority Actions</h4>
+      <h4 class="section-title">Priority Actions</h4>
       <div
         v-for="(action, i) in response!.priority_actions"
         :key="i"
         class="card-secondary ai-priority"
       >
-        <div class="card-secondary__head">
+        <div class="card-head">
           <span class="ai-priority__number">#{{ action.priority }}</span>
-          <h5 class="card-secondary__title">{{ action.action }}</h5>
+          <h5 class="card-title">{{ action.action }}</h5>
           <span class="badge" :class="urgencyVariant(action.urgency)">{{ action.urgency }}</span>
         </div>
-        <p class="card-secondary__content px-2">{{ action.expected_outcome }}</p>
-        <p class="card-secondary__content ai-priority__metric">
+        <p class="card-content px-2">{{ action.expected_outcome }}</p>
+        <p class="card-content ai-priority__metric">
           <strong>Success metric:</strong> {{ action.success_metric }}
         </p>
       </div>
@@ -147,56 +147,56 @@ function handleSummarize(): void {
 
     <!-- Key Metrics -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Key Metrics</h4>
-      <div class="ai-section__content ai-metrics">
+      <h4 class="section-title">Key Metrics</h4>
+      <div class="ai-metrics">
         <div class="card-secondary ai-metric">
-          <h5 class="card-secondary__title">Total Spend</h5>
-          <span class="card-secondary__content ai-metric__value">{{ formatEuro(response!.key_metrics.total_spend) }}</span>
+          <h5 class="card-title">Total Spend</h5>
+          <span class="card-content ai-metric__value">{{ formatEuro(response!.key_metrics.total_spend) }}</span>
         </div>
         <div class="card-secondary ai-metric">
-          <h5 class="card-secondary__title">Total Revenue</h5>
-          <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatEuro(response!.key_metrics.total_revenue) }}</p>
+          <h5 class="card-title">Total Revenue</h5>
+          <p class="card-content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatEuro(response!.key_metrics.total_revenue) }}</p>
         </div>
         <div class="card-secondary ai-metric">
-          <h5 class="card-secondary__title">Overall ROI</h5>
-          <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatRoi(response!.key_metrics.overall_roi) }}</p>
+          <h5 class="card-title">Overall ROI</h5>
+          <p class="card-content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatRoi(response!.key_metrics.overall_roi) }}</p>
         </div>
         <div class="card-secondary ai-metric">
-          <h5 class="card-secondary__title">Conversions</h5>
-          <p class="card-secondary__content ai-metric__value">{{ formatNumber(response!.key_metrics.total_conversions) }}</p>
+          <h5 class="card-title">Conversions</h5>
+          <p class="card-content ai-metric__value">{{ formatNumber(response!.key_metrics.total_conversions) }}</p>
         </div>
         <div class="card-secondary ai-metric expandable">
-          <h5 class="card-secondary__title badge-text success">Best Channel</h5>
-          <p class="card-secondary__content">{{ response!.key_metrics.best_channel }}</p>
+          <h5 class="card-title badge-text success">Best Channel</h5>
+          <p class="card-content">{{ response!.key_metrics.best_channel }}</p>
         </div>
         <div class="card-secondary ai-metric expandable">
-          <h5 class="card-secondary__title badge-text danger">Worst Channel</h5>
-          <p class="card-secondary__content">{{ response!.key_metrics.worst_channel }}</p>
+          <h5 class="card-title badge-text danger">Worst Channel</h5>
+          <p class="card-content">{{ response!.key_metrics.worst_channel }}</p>
         </div>
         <div class="card-secondary ai-metric col-span-2">
-          <h5 class="card-secondary__title badge-text success">Best Campaign</h5>
-          <p class="card-secondary__content">{{ response!.key_metrics.best_campaign }}</p>
+          <h5 class="card-title badge-text success">Best Campaign</h5>
+          <p class="card-content">{{ response!.key_metrics.best_campaign }}</p>
         </div>
         <div class="card-secondary ai-metric col-span-2">
-          <h5 class="card-secondary__title badge-text opportunity">Biggest Opportunity</h5>
-          <p class="card-secondary__content">{{ response!.key_metrics.biggest_opportunity }}</p>
+          <h5 class="card-title badge-text opportunity">Biggest Opportunity</h5>
+          <p class="card-content">{{ response!.key_metrics.biggest_opportunity }}</p>
         </div>
       </div>
     </section>
 
     <!-- Insights -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Insights</h4>
+      <h4 class="section-title">Insights</h4>
       <div
         v-for="(insight, i) in response!.insights"
         :key="i"
         class="card-secondary ai-insight"
       >
-        <p class="card-secondary__content ai-insight__content">
+        <p class="card-content ai-insight__content">
           <span class="ai-insight__icon">{{ insight.icon }}</span>
           <span class="ai-insight__text">{{ insight.text }}</span>
         </p>
-        <p class="card-secondary__content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
+        <p class="card-content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
           <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
           <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
         </p>
@@ -205,20 +205,20 @@ function handleSummarize(): void {
 
     <!-- Channel Summary -->
     <section class="ai-section">
-      <h4 class="ai-section__title">Channel Summary</h4>
+      <h4 class="section-title">Channel Summary</h4>
       <div
         v-for="(ch, i) in response!.channel_summary"
         :key="i"
         class="card-secondary ai-channel" :class="channelStatusClass(ch.status)"
       >
-        <div class="card-secondary__head">
-          <h5 class="card-secondary__title">{{ ch.channel }}</h5>
+        <div class="card-head">
+          <h5 class="card-title">{{ ch.channel }}</h5>
           <span class="ai-channel__budget">{{ ch.budget_share }}</span>
           <span class="badge" :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
         </div>
-        <p class="card-secondary__content">{{ ch.one_liner }}</p>
+        <p class="card-content">{{ ch.one_liner }}</p>
       </div>
-      <p v-if="response!.additional_channels_note" class="ai-section__note px-1">
+      <p v-if="response!.additional_channels_note" class="section-note px-1">
         {{ response!.additional_channels_note }}
       </p>
     </section>
@@ -230,34 +230,20 @@ function handleSummarize(): void {
 
 <style lang="scss" scoped>
 // ── Health Score ──────────────────────────────────────────────────────────────
-.portfolio-health {
-  &__head {
-    @apply flex flex-row items-start justify-between;
-  }
+.health-container {
+  @apply flex flex-col gap-1 items-center justify-center;
+}
 
-  &__title-container {
-    @apply flex flex-col gap-1 items-start justify-start;
-  }
+.health-label {
+  @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
+}
 
-  .ai-section__title {
-    @apply pt-0.5;
-  }
+.health-badge {
+  @apply rounded-md inline-flex items-center justify-self-center;
+}
 
-  .ai-health-container {
-    @apply flex flex-col gap-1 items-center justify-center;
-  }
-
-  .ai-health-score__label {
-    @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
-  }
-
-  .ai-health {
-    @apply rounded-md inline-flex items-center justify-self-center;
-
-    &__value {
-      @apply text-lg font-extrabold leading-none;
-    }
-  }
+.health-score {
+  @apply text-lg font-extrabold leading-none;
 }
 
 // ── Key Metrics Grid ──────────────────────────────────────────────────────────
@@ -265,11 +251,11 @@ function handleSummarize(): void {
   @apply grid grid-cols-2 auto-rows-auto gap-2;
 
   .ai-metric {
-    > .card-secondary__title {
+    > .card-title {
       @apply shrink grow-0;
     }
 
-    > .card-secondary__content {
+    > .card-content {
       @apply grow shrink-0;
     }
   }
@@ -278,11 +264,11 @@ function handleSummarize(): void {
     .expandable {
       @apply col-span-2;
 
-      > .card-secondary__title {
+      > .card-title {
         @apply shrink grow-0;
       }
 
-      > .card-secondary__content {
+      > .card-content {
         @apply grow shrink-0;
       }
     }
@@ -292,11 +278,11 @@ function handleSummarize(): void {
     .expandable {
       @apply col-span-2;
 
-      > .card-secondary__title {
+      > .card-title {
         @apply shrink grow-0;
       }
 
-      > .card-secondary__content {
+      > .card-content {
         @apply grow shrink-0;
       }
     }
@@ -334,7 +320,7 @@ function handleSummarize(): void {
 
 // ── Priority action card ──────────────────────────────────────────────────────
 .ai-priority {
-  & > .card-secondary__head {
+  & > .card-head {
     @apply items-start;
   }
 
@@ -351,7 +337,7 @@ function handleSummarize(): void {
 .ai-channel {
   @apply border-2 border-l-transparent;
 
-  > .card-secondary__head {
+  > .card-head {
     @apply items-center;
   }
 
