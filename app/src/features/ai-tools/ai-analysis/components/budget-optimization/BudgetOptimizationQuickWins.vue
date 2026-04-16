@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '../../types'
-import { effortVariant } from '../../utils/analysis-badge-variants'
+import type { BudgetOptimizerResponse } from '../../../types'
+import { effortVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
   quickWins: BudgetOptimizerResponse['quick_wins']

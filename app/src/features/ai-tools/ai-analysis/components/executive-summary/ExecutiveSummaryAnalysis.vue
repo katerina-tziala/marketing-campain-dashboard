@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../stores/campaignStore'
-import AnalysisState from './shared/AnalysisState.vue'
-import AnalysisCorrelations from './shared/AnalysisCorrelations.vue'
-import ExecutiveSummaryHealth from './executive-summary/ExecutiveSummaryHealth.vue'
-import ExecutiveSummaryPriorityActions from './executive-summary/ExecutiveSummaryPriorityActions.vue'
-import ExecutiveSummaryMetrics from './executive-summary/ExecutiveSummaryMetrics.vue'
-import ExecutiveSummaryInsights from './executive-summary/ExecutiveSummaryInsights.vue'
-import ExecutiveSummaryChannels from './executive-summary/ExecutiveSummaryChannels.vue'
+import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
+import { useCampaignStore } from '../../../../../stores/campaignStore'
+import AnalysisState from '../shared/AnalysisState.vue'
+import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
+import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'
+import ExecutiveSummaryPriorityActions from './ExecutiveSummaryPriorityActions.vue'
+import ExecutiveSummaryMetrics from './ExecutiveSummaryMetrics.vue'
+import ExecutiveSummaryInsights from './ExecutiveSummaryInsights.vue'
+import ExecutiveSummaryChannels from './ExecutiveSummaryChannels.vue'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -50,8 +50,7 @@ function handleSummarize(): void {
       :health-score="response!.health_score"
       :bottom-line="response!.bottom_line"
       :period="response!.period"
-      :total-campaigns="campaignStore.campaigns.length"
-      :selected-campaigns="campaignStore.filteredCampaigns.length"
+      :scope="campaignStore.campaignScope"
     />
     <ExecutiveSummaryPriorityActions :actions="response!.priority_actions" />
     <ExecutiveSummaryMetrics :metrics="response!.key_metrics" />

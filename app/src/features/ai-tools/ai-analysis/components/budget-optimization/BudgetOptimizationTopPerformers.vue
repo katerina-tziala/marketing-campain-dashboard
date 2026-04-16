@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '../../types'
+import type { BudgetOptimizerResponse } from '../../../types'
 
 defineProps<{
   performers: BudgetOptimizerResponse['top_performers']
@@ -16,7 +16,7 @@ defineProps<{
     >
       <div class="card-head items-center">
         <h5 class="card-title">{{ perf.campaign }}</h5>
-        <span class="performer-roi text-success">{{ perf.roi }}x ROI</span>
+        <span class="performer-roi text-success">{{ perf.roi }}x&nbsp;ROI</span>
       </div>
       <p class="card-content">{{ perf.insight }}</p>
       <p class="card-content performer-unlock">

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AiProvider, AiConnectionError, AiModel } from '../features/ai-tools/types'
+import type { AiProviderType, AiConnectionError, AiModel } from '../features/ai-tools/types'
 import { connectProvider } from '../features/ai-tools/ai-connection'
 
 // TODO: DEV MOCK — revert before shipping.
@@ -30,7 +30,7 @@ function selectBestModel(models: AiModel[]): AiModel {
 }
 
 export const useAiStore = defineStore('ai', () => {
-  const provider = ref<AiProvider | null>(DEV_MOCK_CONNECTED ? 'gemini' : null)
+  const provider = ref<AiProviderType | null>(DEV_MOCK_CONNECTED ? 'gemini' : null)
   const apiKey = ref(DEV_MOCK_CONNECTED ? 'dev-mock-key' : '')
   const isConnected = ref(DEV_MOCK_CONNECTED)
   const isConnecting = ref(false)
@@ -39,7 +39,7 @@ export const useAiStore = defineStore('ai', () => {
   const selectedModel = ref<AiModel | null>(DEV_MOCK_CONNECTED ? { ...MOCK_DEV_MODEL } : null)
   const aiPanelOpen = ref(false)
 
-  async function connect(p: AiProvider, key: string): Promise<void> {
+  async function connect(p: AiProviderType, key: string): Promise<void> {
     isConnecting.value = true
     connectionError.value = null
     try {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Correlation } from '../types'
+import type { Correlation } from '../../../types'
 
 defineProps<{
   correlations: Correlation[]

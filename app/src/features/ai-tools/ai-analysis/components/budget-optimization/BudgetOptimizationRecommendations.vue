@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '../../types'
-import { confidenceVariant, urgencyVariant } from '../../utils/analysis-badge-variants'
-import { formatEuro, formatRoi } from '../../utils/panel-formatters'
+import type { BudgetOptimizerResponse } from '../../../types'
+import { confidenceVariant, urgencyVariant } from '../../../utils/analysis-badge-variants'
+import { formatEuro, formatRoi } from '../../../utils/panel-formatters'
 
 defineProps<{
   recommendations: BudgetOptimizerResponse['recommendations']

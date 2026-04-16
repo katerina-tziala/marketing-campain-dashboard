@@ -2824,3 +2824,235 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Only selectors with exactly identical @apply bodies were grouped — .notice-text and .error-message share font-medium text-sm but differ in color, so they stay separate
+
+
+## [#134] Introduce CampaignScope and campaignScope store computed; replace count props in AnalysisSummary
+**Type:** refactor
+
+**Summary:** Added a CampaignScope interface to common types and a campaignScope computed to campaignStore, replacing the pair of totalCampaigns/selectedCampaigns number props in AnalysisSummary (and its callers) with a single typed scope object; AnalysisSummary now uses scope.selectedCampaigns.length for the count display.
+
+**Brainstorming:** Both panels were passing two raw .length numbers down two component levels (panel → Health/Overview → AnalysisSummary). That leaks the shape of the store into every intermediate component. A single CampaignScope object centralises the structure in common types, lets the store own the mapping to string arrays, and gives AnalysisSummary access to selectedChannels if needed in future. Using .length in the leaf keeps the prop surface minimal (no derived scalars). The store getter is a natural home — it's a reactive projection of existing state, derived the same way kpis is.
+
+**Prompt:** Create an object in the state that returns campaign names array as campaigns, selected campaign names as selectedCampaigns, and selected channel names as selectedChannels. Create respective interface in common types. Pass this object in AnalysisSummary. After period show • N campaigns using .length. Use shared selector to pass the values.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — added CampaignScope interface
+- `app/src/stores/campaignStore.ts` — imported CampaignScope; added campaignScope computed (maps campaigns→name strings, filteredCampaigns→name strings, selectedChannels); exported in return
+- `app/src/features/ai-tools/components/shared/AnalysisSummary.vue` — replaced totalCampaigns/selectedCampaigns number props with scope: CampaignScope; template now shows scope.selectedCampaigns.length campaigns
+- `app/src/features/ai-tools/components/executive-summary/ExecutiveSummaryHealth.vue` — replaced totalCampaigns/selectedCampaigns with scope: CampaignScope; passes :scope to AnalysisSummary
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationOverview.vue` — same replacement; passes :scope to AnalysisSummary
+- `AiSummaryPanel.vue` — passes :scope="campaignStore.campaignScope" to ExecutiveSummaryHealth
+- `AiOptimizerPanel.vue` — passes :scope="campaignStore.campaignScope" to BudgetOptimizationOverview
+- `CLAUDE.md` — campaign.ts, campaignStore.ts, AnalysisSummary.vue descriptions updated
+
+**Key decisions & why:**
+- String arrays rather than Campaign objects in CampaignScope — AnalysisSummary only needs names and counts; exporting full Campaign objects would over-share store internals into UI components
+- campaignScope in campaignStore, not a local computed in the panels — the scope is a store concern (derived from store state); panels shouldn't repeat the mapping logic
+
+
+## [#135] Move AiConnectionForm into components/ai-connection/ subfolder; convert BEM to flat scoped styles
+**Type:** refactor
+
+**Summary:** Created `ai-connection/` subfolder under `components/`, moved `AiConnectionForm.vue` there, added a barrel `index.ts`, and replaced all BEM-style nested selectors with flat scoped `@apply` class names.
+
+**Brainstorming:** The components folder was growing with top-level files for both panels and the connection form. Grouping the connection form (and its future companions such as `AiConnectedStatus`) into a dedicated `ai-connection/` subfolder mirrors the existing `shared/`, `budget-optimization/`, and `executive-summary/` pattern. The BEM block `.ai-conn` with `&__intro`, `&__help-steps`, etc. was replaced with flat names (`.conn-form`, `.conn-intro`, `.conn-fieldset`, `.help-steps`, `.help-note`) matching the style convention used throughout the refactored components.
+
+**Prompt:** create components folder in ai-connection, create barrel index file, move AiConnectionForm there and update scoped styles to move away from BEM
+
+**What changed:**
+- `app/src/features/ai-tools/components/ai-connection/AiConnectionForm.vue` — new location; import paths deepened by one level; BEM selectors replaced with flat scoped classes: `.conn-form`, `.conn-intro`, `.conn-fieldset`, `.help-steps`, `.help-note`; transition selectors `.help-enter-active` etc. promoted to top-level (no longer nested inside `.ai-conn`)
+- `app/src/features/ai-tools/components/ai-connection/index.ts` — barrel export for `AiConnectionForm`
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — deleted (moved)
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import path updated to `./ai-connection/AiConnectionForm.vue`
+- `CLAUDE.md` — architecture updated: root-level `AiConnectionForm.vue` entry replaced with `ai-connection/` subfolder tree; stale `BudgetOptimizationOverview` prop descriptions corrected
+
+**Key decisions & why:**
+- Flat class names over BEM — consistent with `shared/`, `budget-optimization/`, and `executive-summary/` components; scoped styles don't need BEM specificity since Vue scoping provides the isolation
+- Transition selectors promoted to top-level — Vue's `<Transition>` injects transition classes at the component root scope, so nesting them inside `.ai-conn` was unnecessary and potentially fragile
+
+
+## [#136] Move components/ai-connection/ into ai-connection/components/
+**Type:** refactor
+
+**Summary:** Relocated `AiConnectionForm.vue` and its barrel `index.ts` from `components/ai-connection/` into `ai-connection/components/` so that the component lives alongside the connection logic rather than inside the generic components tree.
+
+**Brainstorming:** The previous location (`components/ai-connection/`) put the connection form inside the components folder, which is the right folder for Vue components but doesn't group it with the related connection logic. Moving it to `ai-connection/components/` keeps all connection-related code — logic files (gemini.ts, groq.ts, etc.) and UI components — under the same `ai-connection/` module, mirroring how `ai-analysis/` owns its own logic. Import depths remain unchanged (both paths are 4 levels from `src/`), so no internal imports inside `AiConnectionForm.vue` needed updating — only `AiToolsContent.vue`'s import path changed.
+
+**Prompt:** move ai-tools/components/ai-connection to ai-tools/ai-connection/components
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — new location (moved, no content changes)
+- `app/src/features/ai-tools/ai-connection/components/index.ts` — new location (moved, no content changes)
+- `app/src/features/ai-tools/components/ai-connection/` — deleted (empty after move)
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import updated from `./ai-connection/AiConnectionForm.vue` to `../ai-connection/components/AiConnectionForm.vue`
+- `CLAUDE.md` — architecture updated: `ai-connection/components/` entry added under `ai-connection/`; removed stale entry from `components/` tree
+
+**Key decisions & why:**
+- No content changes to `AiConnectionForm.vue` — both old and new paths are 4 levels from `src/`, so all relative imports (`../../../../stores`, `../../../../ui`, `../../types`) stay correct
+
+
+## [#137] Extract providerHelp computed from PROVIDER_HELP[selectedProvider] in AiConnectionForm
+**Type:** update
+
+**Summary:** Replaced repeated `PROVIDER_HELP[selectedProvider]` inline lookups in the template with a single `providerHelp` computed that derives the current provider's help object reactively.
+
+**Brainstorming:** The template accessed `PROVIDER_HELP[selectedProvider]` three times (title, steps, note). Extracting it as a computed eliminates the repetition, makes the reactive dependency explicit, and gives the template a cleaner single reference.
+
+**Prompt:** in this component can we create PROVIDER_HELP[selectedProvider] as computed?
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — added `providerHelp` computed derived from `PROVIDER_HELP[selectedProvider.value]`; replaced all three template usages of `PROVIDER_HELP[selectedProvider]` with `providerHelp`
+
+**Key decisions & why:**
+- `selectedProvider.value` in the computed (not `selectedProvider`) — computed callbacks access refs via `.value`; the template usages used `selectedProvider` directly because Vue unwraps refs in templates automatically
+
+
+## [#138] Convert .conn-form raw CSS to @apply in AiConnectionForm
+**Type:** update
+
+**Summary:** Replaced the three raw CSS properties (`padding`, `display`, `flex-direction`, `gap`) in `.conn-form` with a single `@apply p-6 flex flex-col gap-5` rule to match the `@apply`-only convention used by every other selector in the file.
+
+**Brainstorming:** All other selectors in the scoped block already use `@apply`. The `.conn-form` block was the only outlier using `theme()` calls and raw properties — carried over from the original BEM version. Straightforward conversion: `padding: theme('spacing.6')` → `p-6`, `display: flex` → `flex`, `flex-direction: column` → `flex-col`, `gap: theme('spacing.5')` → `gap-5`.
+
+**Prompt:** AiConnForm use @apply rules
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `.conn-form` converted from raw CSS to `@apply p-6 flex flex-col gap-5`
+
+**Key decisions & why:**
+- IDE reports "Unknown at rule @apply" on the new line — this is a CSS language server false positive; all other `@apply` rules in the same file are unaffected and the project compiles correctly via Tailwind/PostCSS
+
+
+## [#139] Extract ERROR_MESSAGES, ERROR_HINTS, PROVIDER_OPTIONS, PROVIDER_LABELS into ai-connection/utils/
+**Type:** refactor
+
+**Summary:** Moved the four UI constants (`ERROR_MESSAGES`, `ERROR_HINTS`, `PROVIDER_OPTIONS`, `PROVIDER_LABELS`) out of `AiConnectionForm.vue` into a new `ai-connection/utils/index.ts`, and renamed `providerOptions` to `PROVIDER_OPTIONS` as part of the move.
+
+**Brainstorming:** The connection form component was carrying static lookup tables that have no reason to live inside a Vue component. Extracting them to a utils file keeps the component focused on reactive state and template logic, and makes the constants independently testable and reusable. `PROVIDER_LABELS` was already imported from types — re-exporting it from utils means the component has a single import source for all connection-related constants.
+
+**Prompt:** create in ai-connection folder a subfolder with utils, move PROVIDER_LABELS, ERROR_MESSAGES, providerOptions, ERROR_HINTS, rename providerOptions to PROVIDER_OPTIONS
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/utils/index.ts` — new file; imports `PROVIDER_LABELS` from types and re-exports it; exports `ERROR_MESSAGES`, `ERROR_HINTS`, `PROVIDER_OPTIONS`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — removed the four constants; imports `PROVIDER_OPTIONS`, `ERROR_MESSAGES`, `ERROR_HINTS` from `../utils`; template updated from `:options="providerOptions"` to `:options="PROVIDER_OPTIONS"`; `AiConnectionErrorCode` type import dropped (no longer needed in component)
+- `CLAUDE.md` — architecture updated: `utils/` subfolder added under `ai-connection/`; `AiConnectionForm.vue` description updated
+
+**Key decisions & why:**
+- `PROVIDER_LABELS` re-exported from utils rather than imported directly in the component — single import source for all connection constants; component no longer needs to know about the types barrel for this
+- Renamed to `PROVIDER_OPTIONS` (uppercase) on move — consistent with the SCREAMING_SNAKE_CASE convention used by the other exported constants in the same file
+
+
+## [#140] Move PROVIDER_LABELS and PROVIDER_HELP to ai-connection/utils; rename AiProvider to AiProviderType
+**Type:** refactor
+
+**Summary:** Moved `PROVIDER_LABELS` out of `types/index.ts` and into `ai-connection/utils/index.ts` alongside `PROVIDER_HELP` (moved from `AiConnectionForm.vue`); typed both with `AiProviderType` as key; renamed the type `AiProvider` → `AiProviderType` across all files.
+
+**Brainstorming:** `PROVIDER_LABELS` is a runtime constant (display strings), not a type — it had no business living in `types/index.ts`. Moving it to `ai-connection/utils` groups all connection-related constants in one place. `PROVIDER_HELP` was the last constant inside `AiConnectionForm.vue`; moving it to utils leaves the component with only reactive state and lifecycle logic. Using `AiProviderType` as the key for both records makes the type constraint explicit and catches any future provider additions at compile time. The rename to `AiProviderType` adds the `Type` suffix convention used by other types in the codebase.
+
+**Prompt:** PROVIDER_LABELS should be in that file, move also PROVIDER_HELP and use AiProvider type as key, rename AiProvider to AiProviderType and update all files necessary
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — `AiProvider` renamed to `AiProviderType`; `PROVIDER_LABELS` const removed
+- `app/src/features/ai-tools/ai-connection/utils/index.ts` — `PROVIDER_LABELS` defined here as `Record<AiProviderType, string>`; `PROVIDER_HELP` added as `Record<AiProviderType, { title; steps; note? }>`; `AiProvider` → `AiProviderType` throughout
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `PROVIDER_HELP` block removed; `PROVIDER_HELP` imported from `../utils`; `AiProvider` → `AiProviderType`
+- `app/src/features/ai-tools/ai-connection/connectProvider.ts` — `AiProvider` → `AiProviderType` in import and function signature
+- `app/src/features/ai-tools/ai-connection/gemini.ts` — `PROVIDER_LABELS` import moved from `../types` to `./utils`
+- `app/src/features/ai-tools/ai-connection/groq.ts` — `PROVIDER_LABELS` import moved from `../types` to `./utils`
+- `app/src/features/ai-tools/ai-analysis/callProvider.ts` — `AiProvider` → `AiProviderType` in import and function signature
+- `app/src/stores/aiStore.ts` — `AiProvider` → `AiProviderType` in import and all usages
+- `app/src/features/ai-tools/components/AiConnectedStatus.vue` — `PROVIDER_LABELS` import moved from `../types` to `../ai-connection/utils`
+- `CLAUDE.md` — types/index.ts entry updated; utils/index.ts entry updated; AiConnectionForm.vue description updated
+
+**Key decisions & why:**
+- `Record<AiProviderType, ...>` as key type for both constants — exhaustiveness: TypeScript will error if a new provider is added to the union but not to the constant objects
+- `PROVIDER_LABELS` stays in `ai-connection/utils`, not exported from `types` — runtime values belong in utils, not type declaration files
+
+
+## [#141] Move AiConnectedStatus into ai-connection/components; convert BEM to flat scoped styles
+**Type:** refactor
+
+**Summary:** Relocated `AiConnectedStatus.vue` from the generic `components/` folder into `ai-connection/components/` alongside `AiConnectionForm.vue`, and replaced BEM class names (`.ai-status__provider`, `.ai-status__connected`) with flat scoped `@apply` classes.
+
+**Brainstorming:** `AiConnectedStatus` is tightly coupled to the AI connection module — it reads `PROVIDER_LABELS` from `ai-connection/utils` and calls `store.disconnect()`. Keeping it in the generic `components/` folder was inconsistent with the pattern established when `AiConnectionForm` was moved. Moving it into `ai-connection/components/` groups all connection-related UI in one place. The BEM names (`.ai-status__provider`, `.ai-status__connected`) were replaced with flat names (`.status-provider`, `.status-connected`) following the same convention used throughout the refactor.
+
+**Prompt:** Move `AiConnectedStatus.vue` from `ai-tools/components/` into `ai-tools/ai-connection/components/`. Update the barrel export in `ai-connection/components/index.ts` to include it. Update the import in `AiToolsContent.vue`. Convert scoped styles from BEM (`.ai-status__provider`, `.ai-status__connected`) to flat `@apply` classes.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — created at new location; BEM child classes renamed to `.status-provider` and `.status-connected`; `PROVIDER_LABELS` import path unchanged (already pointing to `../utils`); depth from `src/` unchanged so all other imports required no changes
+- `app/src/features/ai-tools/ai-connection/components/index.ts` — added `AiConnectedStatus` to barrel export
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — updated import path from `./AiConnectedStatus.vue` to `../ai-connection/components/AiConnectedStatus.vue`
+- `app/src/features/ai-tools/components/AiConnectedStatus.vue` — deleted
+- `CLAUDE.md` — removed `AiConnectedStatus` from `components/` listing; added it under `ai-connection/components/`; updated barrel export description
+
+**Key decisions & why:**
+- Flat class names `.status-provider` / `.status-connected` instead of keeping `.ai-status__provider` / `.ai-status__connected` — consistent with the flat-scoped-styles convention applied to all other refactored components in this session
+- No changes to import depth-sensitive paths inside the component — the file moved from `components/` to `ai-connection/components/`, both 4 levels deep from `src/`, so all `../../../../` prefixes remain valid
+
+
+## [#142] Move AiOptimizerPanel → BudgetOptimizationAnalysis; AiSummaryPanel → ExecutiveSummaryAnalysis
+**Type:** refactor
+
+**Summary:** Relocated the two tab orchestrator components into their respective section subfolders and renamed them to match the naming convention of their sibling components.
+
+**Brainstorming:** `AiOptimizerPanel` and `AiSummaryPanel` sat in the generic `components/` folder while all the section components they orchestrate live in `budget-optimization/` and `executive-summary/`. Moving the orchestrators into those subfolders collapses the distinction between "orchestrator" and "section components" — the whole tab is now self-contained in its folder. Renaming to `BudgetOptimizationAnalysis` / `ExecutiveSummaryAnalysis` removes the `Ai`/`Panel` prefix and aligns with the `BudgetOptimization*` / `ExecutiveSummary*` naming pattern already used by all sibling components.
+
+**Prompt:** Move `AiOptimizerPanel.vue` to `components/budget-optimization/` and rename it `BudgetOptimizationAnalysis.vue`. Move `AiSummaryPanel.vue` to `components/executive-summary/` and rename it `ExecutiveSummaryAnalysis.vue`. Update all imports and template references in `AiToolsContent.vue`. Delete the old files.
+
+**What changed:**
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationAnalysis.vue` — created; store imports updated from `../../../` to `../../../../`; shared component imports updated from `./shared/` to `../shared/`; section component imports flattened from `./budget-optimization/` to `./`
+- `app/src/features/ai-tools/components/executive-summary/ExecutiveSummaryAnalysis.vue` — created; same import depth adjustments; section imports flattened from `./executive-summary/` to `./`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced `AiOptimizerPanel` import and template usage with `BudgetOptimizationAnalysis`; replaced `AiSummaryPanel` with `ExecutiveSummaryAnalysis`
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — deleted
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — deleted
+- `CLAUDE.md` — removed old panel entries from `components/`; added `BudgetOptimizationAnalysis` and `ExecutiveSummaryAnalysis` as first entries in their respective subfolders
+
+**Key decisions & why:**
+- Orchestrators moved into section subfolders rather than kept in `components/` root — each tab's entire component tree is now self-contained in one folder, consistent with the `ai-connection/components/` pattern
+- Renamed to `*Analysis` suffix rather than keeping `*Panel` — `Panel` described the drawer slot role; `Analysis` describes what the component does, consistent with `AnalysisState`, `AnalysisSummary`, `AnalysisCorrelations`
+
+
+## [#143] Extract AiAnalysis — move Tabs + panel container out of AiToolsContent
+**Type:** refactor
+
+**Summary:** Extracted the tab bar and scrollable panel container from `AiToolsContent.vue` into a dedicated `AiAnalysis.vue` component, leaving `AiToolsContent` responsible only for the header and the connected/disconnected split.
+
+**Brainstorming:** `AiToolsContent` was mixing two concerns: the persistent shell (header + connected/disconnected routing) and the tab navigation logic (tab definitions, active-tab binding, panel switching). Splitting them gives each component a single responsibility. `AiAnalysis` owns everything inside the connected panel below the status bar: tab bar, scroll container, and tab content routing.
+
+**Prompt:** Create `AiAnalysis.vue` at the same level as `AiToolsContent.vue` and move the Tabs + scrollable container block (including the `BudgetOptimizationAnalysis`/`ExecutiveSummaryAnalysis` conditional) into it. Update `AiToolsContent` to use `<AiAnalysis />` instead. Remove the now-unused imports from `AiToolsContent`.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiAnalysis.vue` — created; owns `tabs` constant, `useAiAnalysisStore`, `Tabs`, `BudgetOptimizationAnalysis`, `ExecutiveSummaryAnalysis`; scoped `.panel-container` replaces old `.ai-content__panel--container`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced Tabs + panel block with `<AiAnalysis />`; removed `useAiAnalysisStore`, `BudgetOptimizationAnalysis`, `ExecutiveSummaryAnalysis`, `FileTextIcon`, `SlidersIcon`, `AiAnalysisTab`, `Tab`, `Tabs`, `tabs` constant; removed `.ai-content__panel--container` scoped style
+- `CLAUDE.md` — updated `AiToolsContent` description; added `AiAnalysis` entry
+
+**Key decisions & why:**
+- `AiAnalysis` sits at `components/` root alongside `AiToolsContent` rather than inside a subfolder — it is a layout/routing component, not a section component, so it does not belong in `budget-optimization/` or `executive-summary/`
+- Flat `.panel-container` name in `AiAnalysis` scoped styles — consistent with the flat-scoped convention applied throughout this refactor session
+
+
+## [#144] Move budget-optimization, executive-summary, shared, and AiAnalysis into ai-analysis/components
+**Type:** refactor
+
+**Summary:** Relocated all AI analysis UI — the tab switcher, shared section wrappers, and both tab component trees — from the generic `components/` folder into `ai-analysis/components/`, co-locating them with the analysis logic (`callProvider.ts`). Added a barrel `index.ts` that exports `AiAnalysis`.
+
+**Brainstorming:** The `components/` folder was a grab-bag: shell components (`AiToolsDrawer`, `AiToolsContent`) alongside the entire analysis UI subtree. Moving the analysis UI into `ai-analysis/components/` groups all analysis concerns — logic, types, and UI — into one module. `components/` is now only the drawer and content shell. The barrel export lets `AiToolsContent` import from the module boundary (`'../ai-analysis/components'`) rather than reaching into a specific file path.
+
+**Prompt:** Move `components/budget-optimization/`, `components/executive-summary/`, `components/shared/`, and `components/AiAnalysis.vue` into `ai-analysis/components/`. Create a barrel `ai-analysis/components/index.ts` exporting `AiAnalysis`. Update all import paths affected by the depth change. Update `AiToolsContent.vue` to import via the barrel.
+
+**What changed:**
+- `ai-analysis/components/AiAnalysis.vue` — moved from `components/`; store and ui imports incremented by one `../` level; `'../types'` → `'../../types'`
+- `ai-analysis/components/index.ts` — created; exports `AiAnalysis`
+- `ai-analysis/components/shared/AnalysisState.vue` — moved; `ui` imports: +1 level; `types` import: `'../../types'` → `'../../../types'`
+- `ai-analysis/components/shared/AnalysisSummary.vue` — moved; `common` import: +1 level
+- `ai-analysis/components/shared/AnalysisCorrelations.vue` — moved; pre-existing path bug (`'../types'` → `components/types`) fixed to `'../../../types'` (now correctly resolves to `ai-tools/types/`)
+- `ai-analysis/components/budget-optimization/*` — moved; store imports: +1 level; `types` and `utils` imports: `'../../'` → `'../../../'`; `common` imports: +1 level; `'../shared/'` relative stays valid
+- `ai-analysis/components/executive-summary/*` — moved; same depth corrections as budget-optimization
+- `ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — store imports: +1 level
+- `ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — store imports: +1 level
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import changed from `'./AiAnalysis.vue'` to `'../ai-analysis/components'` (barrel)
+- `CLAUDE.md` — removed analysis component tree from `components/` section; added full tree under `ai-analysis/components/`
+
+**Key decisions & why:**
+- All analysis UI moves together as a unit — partial moves would leave dangling relative imports between shared, section, and orchestrator components
+- Barrel export at `ai-analysis/components/index.ts` — `AiToolsContent` imports from the module boundary, insulated from internal folder reorganization
+- `'../shared/'` imports in section components require no change after the move — `shared/` is still a sibling folder of `budget-optimization/` and `executive-summary/` within `ai-analysis/components/`

@@ -1,11 +1,6 @@
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
-export type AiProvider = 'gemini' | 'groq';
-
-export const PROVIDER_LABELS: Record<AiProvider, string> = {
-  gemini: 'Google Gemini',
-  groq: 'Groq',
-};
+export type AiProviderType = 'gemini' | 'groq';
 
 export type AiConnectionErrorCode =
   | 'invalid-key'
@@ -18,7 +13,7 @@ export type AiConnectionErrorCode =
 
 export type AiConnectionError = {
   code: AiConnectionErrorCode;
-  provider: AiProvider;
+  provider: AiProviderType;
 };
 
 // ── Provider model types ──────────────────────────────────────────────────

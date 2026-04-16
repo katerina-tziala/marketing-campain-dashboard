@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiStore } from '../../../stores/aiStore'
-import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
-import { PROVIDER_LABELS } from '../types'
+import { useAiStore } from '../../../../stores/aiStore'
+import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
+import { PROVIDER_LABELS } from '../utils'
 
 const store = useAiStore()
 const analysisStore = useAiAnalysisStore()
@@ -18,8 +18,8 @@ function handleDisconnect(): void {
 
 <template>
   <div class="ai-status">
-    <p class="ai-status__provider">{{ providerLabel }}</p>
-    <p class="ai-status__connected">Connected</p>
+    <p class="status-provider">{{ providerLabel }}</p>
+    <p class="status-connected">Connected</p>
     <button class="btn-destructive-small" @click="handleDisconnect">Disconnect</button>
   </div>
 </template>
@@ -37,24 +37,24 @@ function handleDisconnect(): void {
     border-surface-border
     w-full
     bg-success/[0.05];
- 
-  &__provider {
-    @apply text-sm font-medium text-typography-intense grow;
-  }
+}
 
-  &__connected {
-    @apply text-xs font-semibold text-success relative;
+.status-provider {
+  @apply text-sm font-medium text-typography-intense grow;
+}
 
-    &::before {
-       content: "";
-      @apply inline-block
-        w-2
-        h-2
-        rounded-full
-        bg-success
-        mr-1.5
-        shadow-connection;
-    }
+.status-connected {
+  @apply text-xs font-semibold text-success relative;
+
+  &::before {
+    content: "";
+    @apply inline-block
+      w-2
+      h-2
+      rounded-full
+      bg-success
+      mr-1.5
+      shadow-connection;
   }
 }
 </style>

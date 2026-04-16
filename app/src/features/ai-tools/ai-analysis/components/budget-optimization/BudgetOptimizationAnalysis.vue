@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../stores/campaignStore'
-import AnalysisState from './shared/AnalysisState.vue'
-import AnalysisCorrelations from './shared/AnalysisCorrelations.vue'
-import BudgetOptimizationOverview from './budget-optimization/BudgetOptimizationOverview.vue'
-import BudgetOptimizationRecommendations from './budget-optimization/BudgetOptimizationRecommendations.vue'
-import BudgetOptimizationTopPerformers from './budget-optimization/BudgetOptimizationTopPerformers.vue'
-import BudgetOptimizationUnderperformers from './budget-optimization/BudgetOptimizationUnderperformers.vue'
-import BudgetOptimizationQuickWins from './budget-optimization/BudgetOptimizationQuickWins.vue'
-import BudgetOptimizationRisks from './budget-optimization/BudgetOptimizationRisks.vue'
+import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
+import { useCampaignStore } from '../../../../../stores/campaignStore'
+import AnalysisState from '../shared/AnalysisState.vue'
+import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
+import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
+import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
+import BudgetOptimizationTopPerformers from './BudgetOptimizationTopPerformers.vue'
+import BudgetOptimizationUnderperformers from './BudgetOptimizationUnderperformers.vue'
+import BudgetOptimizationQuickWins from './BudgetOptimizationQuickWins.vue'
+import BudgetOptimizationRisks from './BudgetOptimizationRisks.vue'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -48,10 +48,9 @@ function handleAnalyze(): void {
     @analyze="handleAnalyze"
   >
     <BudgetOptimizationOverview
-      :executive-summary="response!.executive_summary"
+      :summary="response!.executive_summary"
       :period="response!.period"
-      :total-campaigns="campaignStore.campaigns.length"
-      :selected-campaigns="campaignStore.filteredCampaigns.length"
+      :scope="campaignStore.campaignScope"
     />
     <BudgetOptimizationRecommendations :recommendations="response!.recommendations" />
     <BudgetOptimizationTopPerformers :performers="response!.top_performers" />

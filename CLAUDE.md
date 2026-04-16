@@ -30,14 +30,14 @@ app/                        # Vue 3 + Vite project
 ├── src/
 │   ├── common/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
-│   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
+│   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface + CampaignScope interface (campaigns/selectedCampaigns/selectedChannels string arrays)
 │   │   ├── utils/
 │   │   │   ├── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
 │   │   │   └── roi.ts          # roiValue(revenue, budget) → number; roiClass(roi) → 'positive'|'warning'|'negative'; formatROI(value) → string
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
-│   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
+│   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; campaignScope computed (CampaignScope — campaigns/selectedCampaigns/selectedChannels as string arrays); loadCampaigns action
 │   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
 │   │   ├── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[] sorted by strength_score desc), selectedModel (AiModel — highest strength_score), aiPanelOpen; selectedModelLimitReached, allModelsLimitReached (computed); connect() delegates to connectProvider; disconnect(); markModelLimitReached(modelId); selectNextAvailableModel() — picks next highest-scored non-exhausted model, returns false if none left; openPanel(); closePanel()
 │   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, errorFallbackMessage, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached (global — only when all models exhausted), analysisActivated (cross-tab — analyzing on one tab activates auto-calls on the other); debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, silent model fallback on token-limit (marks model → selectNextAvailableModel → retries transparently, no error shown to user), stamps response.model on success, model change watcher for cache/auto-call, setActiveTab cancels in-flight request on previous tab before switching, panel open/close + tab switch evaluation, clearStateForNewCSV (CSV reset), clearStateForDisconnect (delegates to clearStateForNewCSV); DEV_MOCK_ANALYSIS flag (currently true) cycles through 5 mocks per tab with 700ms simulated delay
@@ -82,39 +82,46 @@ app/                        # Vue 3 + Vite project
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
-│   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + generic Tabs + scrollable panel when connected; scrollbar-stable + scrollbar-on-surface utility classes on scroll container; uses aiAnalysisStore.activeTab for tab routing
-│   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (Groq first, providerOptions explicit array) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/field/form-control classes
-│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore
-│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — thin orchestrator; wraps AiAnalysisState; delegates all sections to budget-optimization/ components; reads campaignStore for campaign counts; wired to aiAnalysisStore; no scoped styles
-│   │   │   │   ├── AiSummaryPanel.vue      # Executive Summary tab — thin orchestrator; wraps AiAnalysisState; delegates all sections to executive-summary/ components; reads campaignStore for campaign counts; wired to aiAnalysisStore; no scoped styles
-│   │   │   │   ├── shared/                 # Shared components used by both panels — props-only, no store reads
-│   │   │   │   │   ├── AnalysisState.vue       # Analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, cacheTimestamp (string|number|null), modelName?; formats cacheTimestamp internally via computed; emit: analyze; slot: result content; handles header, token-limit notice, idle/loading/error/result states; grouped scoped styles
-│   │   │   │   │   ├── AnalysisSummary.vue     # Section header — props: title, period?, totalCampaigns, selectedCampaigns; #badge slot (optional right-side content); default slot (body); flat non-BEM scoped styles
-│   │   │   │   │   └── AnalysisCorrelations.vue # Correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
-│   │   │   │   ├── budget-optimization/    # Dumb section components for AiOptimizerPanel — all props-only, no store reads, scoped @apply flat styles
-│   │   │   │   │   ├── BudgetOptimizationOverview.vue        # Executive summary — props: executiveSummary, period?, totalCampaigns, selectedCampaigns; wraps AnalysisSummary
-│   │   │   │   │   ├── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; confidenceVariant + urgencyVariant badges; formatEuro + formatRoi
-│   │   │   │   │   ├── BudgetOptimizationTopPerformers.vue   # Top Performers — props: performers[]; ROI in text-success
-│   │   │   │   │   ├── BudgetOptimizationUnderperformers.vue # Underperformers — props: underperformers[]; actionVariant badge; ROI in text-danger--5p
-│   │   │   │   │   ├── BudgetOptimizationQuickWins.vue       # Quick Wins — props: quickWins[]; effortVariant badge
-│   │   │   │   │   └── BudgetOptimizationRisks.vue           # Risks & Mitigations — props: risks[]; v-if on length
-│   │   │   │   └── executive-summary/      # Dumb section components for AiSummaryPanel — all props-only, no store reads, scoped @apply flat styles
-│   │   │   │       ├── ExecutiveSummaryHealth.vue          # Portfolio Health — props: healthScore, bottomLine, period?, totalCampaigns, selectedCampaigns; wraps AnalysisSummary with health badge in #badge slot
-│   │   │   │       ├── ExecutiveSummaryPriorityActions.vue # Priority Actions — props: actions (priority_actions[]); urgencyVariant badge
-│   │   │   │       ├── ExecutiveSummaryMetrics.vue         # Key Metrics grid — props: metrics (key_metrics); formatEuro/formatRoi/formatNumber/classROI
-│   │   │   │       ├── ExecutiveSummaryInsights.vue        # Insights — props: insights[]; insightTypeVariant badge
-│   │   │   │       └── ExecutiveSummaryChannels.vue        # Channel Summary — props: channels[], additionalChannelsNote?; channelStatusVariant badge + border-left color
+│   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + AiAnalysis when connected; grid layout (status bar / tabs / scroll area)
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (no timeout — relies on external signal), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), strips models/ prefix for Gemini, parses JSON response
-│   │   │   │   └── index.ts            # Barrel export — only callProviderForAnalysis
+│   │   │   │   ├── index.ts            # Barrel export — only callProviderForAnalysis
+│   │   │   │   └── components/         # AI analysis UI — tab switcher, shared section wrappers, budget-optimization and executive-summary component trees
+│   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs (Summary/Optimizer) + scrollable container; reads aiAnalysisStore.activeTab; renders BudgetOptimizationAnalysis or ExecutiveSummaryAnalysis; flat scoped .panel-container style
+│   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
+│   │   │   │       ├── shared/                 # Shared components used by both tabs — props-only, no store reads
+│   │   │   │       │   ├── AnalysisState.vue       # Analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, cacheTimestamp (string|number|null), modelName?; formats cacheTimestamp internally via computed; emit: analyze; slot: result content; handles header, token-limit notice, idle/loading/error/result states; grouped scoped styles
+│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); shows selectedCampaigns.length in analysis-details line; no scoped styles
+│   │   │   │       │   └── AnalysisCorrelations.vue # Correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
+│   │   │   │       ├── budget-optimization/    # Budget Optimizer tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
+│   │   │   │       │   ├── BudgetOptimizationAnalysis.vue        # Budget Optimizer tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
+│   │   │   │       │   ├── BudgetOptimizationOverview.vue        # Executive summary — props: summary, period?, scope (CampaignScope); wraps AnalysisSummary
+│   │   │   │       │   ├── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; confidenceVariant + urgencyVariant badges; formatEuro + formatRoi
+│   │   │   │       │   ├── BudgetOptimizationTopPerformers.vue   # Top Performers — props: performers[]; ROI in text-success
+│   │   │   │       │   ├── BudgetOptimizationUnderperformers.vue # Underperformers — props: underperformers[]; actionVariant badge; ROI in text-danger--5p
+│   │   │   │       │   ├── BudgetOptimizationQuickWins.vue       # Quick Wins — props: quickWins[]; effortVariant badge
+│   │   │   │       │   └── BudgetOptimizationRisks.vue           # Risks & Mitigations — props: risks[]; v-if on length
+│   │   │   │       └── executive-summary/      # Executive Summary tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
+│   │   │   │           ├── ExecutiveSummaryAnalysis.vue        # Executive Summary tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
+│   │   │   │           ├── ExecutiveSummaryHealth.vue          # Portfolio Health — props: healthScore, bottomLine, period?, totalCampaigns, selectedCampaigns; wraps AnalysisSummary with health badge in #badge slot
+│   │   │   │           ├── ExecutiveSummaryPriorityActions.vue # Priority Actions — props: actions (priority_actions[]); urgencyVariant badge
+│   │   │   │           ├── ExecutiveSummaryMetrics.vue         # Key Metrics grid — props: metrics (key_metrics); formatEuro/formatRoi/formatNumber/classROI
+│   │   │   │           ├── ExecutiveSummaryInsights.vue        # Insights — props: insights[]; insightTypeVariant badge
+│   │   │   │           └── ExecutiveSummaryChannels.vue        # Channel Summary — props: channels[], additionalChannelsNote?; channelStatusVariant badge + border-left color
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── shared.ts           # errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules (no timeouts)
 │   │   │   │   ├── gemini.ts           # connectGemini(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGemini, filterModels, getOptimalModel (flash-first + latest version), buildFallbackModel are internal
 │   │   │   │   ├── groq.ts             # connectGroq(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGroq, filterModels, getOptimalModel (most recent created), buildFallbackModel are internal
 │   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; thin wrapper that delegates to connectGemini/connectGroq; catches errors and maps known error codes from message or falls back to errorCodeFromException
-│   │   │   │   └── index.ts            # Barrel export — only connectProvider
+│   │   │   │   ├── index.ts            # Barrel export — only connectProvider
+│   │   │   │   ├── components/         # Connection UI components
+│   │   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (PROVIDER_OPTIONS from utils) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; providerHelp computed from PROVIDER_HELP; imports PROVIDER_OPTIONS, PROVIDER_HELP, ERROR_MESSAGES, ERROR_HINTS from utils/; flat scoped styles (no BEM)
+│   │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore; flat scoped styles (no BEM)
+│   │   │   │   │   └── index.ts                # Barrel export — AiConnectionForm, AiConnectedStatus
+│   │   │   │   └── utils/              # Connection UI constants
+│   │   │   │       └── index.ts        # PROVIDER_LABELS (Record<AiProviderType, string>), PROVIDER_HELP (Record<AiProviderType, ...>), ERROR_MESSAGES, ERROR_HINTS, PROVIDER_OPTIONS
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel (incl. limitReached), RankedModelsResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError (code + message) + shared building blocks (PerformanceDeltas, CampainSummaryTotals, AllocationShare, FunnelMetrics, PortfolioCount, Correlation) + prompt types (PromptList, PromptInstructions, PromptInstructionStep, PromptScopeConfig, BusinessContext, BudgetOptimizerContextInput) + data types (ExecutiveSummaryData, BudgetOptimizerData) + response types (BudgetOptimizerResponse, ExecutiveSummaryResponse with additional_channels_note? and stricter icon union)
+│   │   │   │   └── index.ts            # AiProviderType, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel (incl. limitReached), RankedModelsResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError (code + message) + shared building blocks (PerformanceDeltas, CampainSummaryTotals, AllocationShare, FunnelMetrics, PortfolioCount, Correlation) + prompt types (PromptList, PromptInstructions, PromptInstructionStep, PromptScopeConfig, BusinessContext, BudgetOptimizerContextInput) + data types (ExecutiveSummaryData, BudgetOptimizerData) + response types (BudgetOptimizerResponse, ExecutiveSummaryResponse with additional_channels_note? and stricter icon union)
 │   │   │   ├── prompts/
 │   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
 │   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt

@@ -46,7 +46,8 @@ export default {
         surface: {
           DEFAULT: '#151b2e',
           // secondary: '#0d1226'
-          secondary: '#070913'
+          secondary: '#070913',
+          'secondary-10': '#070913'
           // modal: 
         },
         'surface-border': {

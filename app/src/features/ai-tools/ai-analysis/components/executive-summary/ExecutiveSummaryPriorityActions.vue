@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '../../types'
-import { urgencyVariant } from '../../utils/analysis-badge-variants'
+import type { ExecutiveSummaryResponse } from '../../../types'
+import { urgencyVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
   actions: ExecutiveSummaryResponse['priority_actions']

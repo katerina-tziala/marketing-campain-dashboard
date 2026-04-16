@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign } from '../common/types/campaign'
+import type { Campaign, CampaignScope } from '../common/types/campaign'
 import { safeDivide, round2 } from '../common/utils/math'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
@@ -43,6 +43,12 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns.value.reduce((s, c) => s + c.conversions, 0),
   )
 
+  const campaignScope = computed((): CampaignScope => ({
+    campaigns: campaigns.value.map((c) => c.campaign),
+    selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
+    selectedChannels: selectedChannels.value,
+  }))
+
   const kpis = computed(() => ({
     totalBudget: totalBudget.value,
     totalRevenue: totalRevenue.value,
@@ -78,6 +84,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns,
     selectedChannels,
     availableChannels,
+    campaignScope,
     kpis,
     totalImpressions,
     totalClicks,

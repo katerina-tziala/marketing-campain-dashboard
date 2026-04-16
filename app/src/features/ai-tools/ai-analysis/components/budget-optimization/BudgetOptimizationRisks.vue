@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '../../types'
+import type { BudgetOptimizerResponse } from '../../../types'
 
 defineProps<{
   risks: BudgetOptimizerResponse['risks']

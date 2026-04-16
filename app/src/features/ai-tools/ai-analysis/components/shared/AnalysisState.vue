@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Spinner } from '../../../../ui'
-import { SparklesIcon } from '../../../../ui/icons'
-import type { AiAnalysisStatus, AiAnalysisError } from '../../types'
+import { Spinner } from '../../../../../ui'
+import { SparklesIcon } from '../../../../../ui/icons'
+import type { AiAnalysisStatus, AiAnalysisError } from '../../../types'
 
 const props = defineProps<{
   title: string

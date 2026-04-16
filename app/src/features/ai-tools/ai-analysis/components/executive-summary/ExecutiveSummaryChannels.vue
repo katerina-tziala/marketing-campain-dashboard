@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '../../types'
-import { channelStatusVariant } from '../../utils/analysis-badge-variants'
+import type { ExecutiveSummaryResponse } from '../../../types'
+import { channelStatusVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
   channels: ExecutiveSummaryResponse['channel_summary']

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '../../types'
-import { roiClass } from '../../../../common/utils/roi'
-import { formatEuro, formatRoi, formatNumber } from '../../utils/panel-formatters'
+import type { ExecutiveSummaryResponse } from '../../../types'
+import { roiClass } from '../../../../../common/utils/roi'
+import { formatEuro, formatRoi, formatNumber } from '../../../utils/panel-formatters'
 
 defineProps<{
   metrics: ExecutiveSummaryResponse['key_metrics']

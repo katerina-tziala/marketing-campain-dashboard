@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { CampaignScope } from '../../../../../common/types/campaign'
+
 defineProps<{
   title: string
   period?: string | null
-  totalCampaigns: number
-  selectedCampaigns: number
+  scope: CampaignScope
 }>()
 </script>
 
@@ -13,7 +14,7 @@ defineProps<{
       <div class="flex flex-col gap-1 items-start justify-start">
         <h4 class="section-title">{{ title }}</h4>
         <p v-if="period" class="analysis-details">
-          {{ period }}&nbsp;&bull;&nbsp;{{ selectedCampaigns }} of {{ totalCampaigns }} campaigns
+          {{ period }} &bull;&nbsp;{{ scope.selectedCampaigns.length }} campaigns &bull;&nbsp;{{ scope.selectedChannels.length }} channels
         </p>
       </div>
       <slot name="badge" />

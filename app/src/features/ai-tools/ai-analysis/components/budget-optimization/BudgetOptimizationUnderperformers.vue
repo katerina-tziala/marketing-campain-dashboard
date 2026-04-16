@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '../../types'
-import { actionVariant } from '../../utils/analysis-badge-variants'
+import type { BudgetOptimizerResponse } from '../../../types'
+import { actionVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
   underperformers: BudgetOptimizerResponse['underperformers']
