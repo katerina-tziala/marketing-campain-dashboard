@@ -2563,3 +2563,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - hintText updated to "Drag & drop a {hint} file here" — removing "or" makes the sentence grammatically complete without needing a follow-on word
+
+
+## [#122] Extract AiAnalysisCorrelations shared component
+**Type:** refactor
+
+**Summary:** Extracted the identical correlations section from AiOptimizerPanel and AiSummaryPanel into a shared AiAnalysisCorrelations component.
+
+**Brainstorming:** The correlations section markup was a verbatim copy in both panels — same v-if guard, same section structure, same card-secondary loop rendering corr.finding and corr.implication. The Correlation type is already shared in the types barrel. Extracting it removes the duplication and gives a single place to update if the correlations UI ever changes.
+
+**Prompt:** Extract AiAnalysisCorrelations component from shared summary and budget.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — new; correlations: Correlation[] prop; v-if on length guards the section; no scoped styles (all global classes)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced inline correlations section with AiAnalysisCorrelations
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — replaced inline correlations section with AiAnalysisCorrelations
+- `CLAUDE.md` — added AiAnalysisCorrelations to architecture; updated panel descriptions
+
+**Key decisions & why:**
+- v-if on length kept inside the component — both panels had the same guard; inlining it avoids requiring callers to add a v-if wrapper on every usage
+- No scoped styles — the section uses only global ai-section, card-secondary classes; no component-specific styling needed

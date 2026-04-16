@@ -94,7 +94,7 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
 
       <!-- API Key -->
       <div class="field">
-        <div class="flex items-start justify-between">
+        <div class="flex items-center justify-between">
           <label class="field-label" for="ai-key">API Key</label>
           <button type="button" class="btn-icon-secondary btn-small" @click="showHelp = !showHelp">
             {{ showHelp ? 'Hide instructions' : 'How to get your key?' }}

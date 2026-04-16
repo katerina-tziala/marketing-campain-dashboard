@@ -85,8 +85,7 @@ function onChange(e: Event): void {
 }
 
 .filename {
-  @apply text-sm font-medium break-all;
-  color: var(--color-title);
+  @apply text-sm font-medium break-all text-typography-subtle;
 }
 
 .hint {

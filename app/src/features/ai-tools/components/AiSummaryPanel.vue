@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
 import { roiClass } from '../../../common/utils/roi'
 import AiAnalysisState from './AiAnalysisState.vue'
+import AiAnalysisCorrelations from './AiAnalysisCorrelations.vue'
 import type { BadgeVariant } from '../../../ui/types/badge-variant'
 
 const analysisStore = useAiAnalysisStore()
@@ -223,17 +224,7 @@ function handleSummarize(): void {
     </section>
 
     <!-- Correlations -->
-    <section v-if="response!.correlations.length" class="ai-section">
-      <h4 class="ai-section__title">Correlations</h4>
-      <div
-        v-for="(corr, i) in response!.correlations"
-        :key="i"
-        class="card-secondary"
-      >
-        <h5 class="card-secondary__title">{{ corr.finding }}</h5>
-        <p class="card-secondary__content">{{ corr.implication }}</p>
-      </div>
-    </section>
+    <AiAnalysisCorrelations :correlations="response!.correlations" />
   </AiAnalysisState>
 </template>
 
