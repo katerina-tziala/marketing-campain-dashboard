@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAiStore } from '../../../stores/aiStore'
-import { Spinner } from '../../../ui'
+import { Spinner, PasswordInput, RadioToggle } from '../../../ui'
 import type { AiProvider, AiConnectionErrorCode } from '../types'
 import { PROVIDER_LABELS } from '../types'
 
@@ -9,13 +9,11 @@ const store = useAiStore()
 
 const selectedProvider = ref<AiProvider>('groq')
 const apiKey = ref('')
-const showKey = ref(false)
 const showHelp = ref(false)
 
 watch(selectedProvider, () => {
   store.connectionError = null
   apiKey.value = ''
-  showKey.value = false
 })
 
 const ERROR_MESSAGES: Record<AiConnectionErrorCode, (provider: AiProvider) => string> = {
@@ -47,6 +45,11 @@ const errorMessage = computed(() =>
 const errorHint = computed(() =>
   store.connectionError ? ERROR_HINTS[store.connectionError.code] : null,
 )
+
+const providerOptions = [
+  { value: 'groq', label: PROVIDER_LABELS.groq },
+  { value: 'gemini', label: PROVIDER_LABELS.gemini },
+]
 
 async function handleConnect(): Promise<void> {
   if (!apiKey.value.trim()) return
@@ -86,26 +89,7 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
       <!-- Provider -->
       <fieldset class="field">
         <legend class="field-label">Provider</legend>
-        <div class="ai-conn__radios">
-         <label class="block">
-            <input
-              type="radio"
-              v-model="selectedProvider"
-              value="groq"
-              class="sr-only peer"
-            />
-            <span class="radio-text">Groq</span>
-          </label>
-            <label class="block">
-            <input
-              type="radio"
-              v-model="selectedProvider"
-              value="gemini"
-              class="radio-input sr-only"
-            />
-            <span class="radio-text">Google Gemini</span>
-          </label> 
-        </div>
+        <RadioToggle v-model="selectedProvider" :options="providerOptions" name="ai-provider" />
       </fieldset>
 
       <!-- API Key -->
@@ -137,30 +121,12 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
             </div>
           </div>
         </Transition>
-        <div class="ai-conn__key-wrap">
-          <input
-            id="ai-key"
-            v-model="apiKey"
-            :type="showKey ? 'text' : 'password'"
-            class="form-control ai-conn__input"
-            :class="{ 'input-error': store.connectionError }"
-            placeholder="Paste your API key"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <button
-            type="button"
-            class="btn-icon-secondary btn-small ai-conn__toggle"
-            :aria-label="showKey ? 'Hide key' : 'Show key'"
-            @click="showKey = !showKey"
-          >
-            {{ showKey ? 'Hide' : 'Show' }}
-          </button>
-        </div>
-        <div v-if="store.connectionError" class="field-errors">
-          <p class="field-error" role="alert">{{ errorMessage }}</p>
-          <p v-if="errorHint" class="field-error-hint">{{ errorHint }}</p>
-        </div>
+        <PasswordInput id="ai-key" v-model="apiKey" placeholder="Paste your API key">
+          <template v-if="store.connectionError" #error>
+            <p class="field-error" role="alert">{{ errorMessage }}</p>
+            <p v-if="errorHint" class="field-error-hint">{{ errorHint }}</p>
+          </template>
+        </PasswordInput>
       </div>
       <button class="btn-primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
         <Spinner v-if="store.isConnecting" size="sm" variant="secondary" />
@@ -185,38 +151,6 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
     @apply pt-3.5;
   }
  
-  &__radios {
-    @apply grid grid-rows-1 grid-cols-2 gap-0.5 rounded-md overflow-hidden bg-surface-secondary min-h-[2.625rem];
-  }
-  
-  .radio-text {
-    @apply w-full
-      flex
-      items-center
-      justify-center
-      h-full
-      text-center
-      cursor-pointer
-      font-medium
-      text-sm
-      tracking-wider
-      px-2
-      py-2.5
-      text-primary-400
-      hover:bg-primary-500
-      hover:text-white;
-  }
-
-    input[type='radio'] {
-    &:checked + .radio-text {
-      @apply bg-primary-600 text-white;
-    }
-
-    &:focus-visible + .radio-text {
-      @apply bg-primary-500 text-white;
-    }
-  }
- 
   &__help-steps {
     @apply text-sm
       text-typography
@@ -229,34 +163,6 @@ const providerHelp: Record<string, { title: string; steps: string[]; note?: stri
      @apply text-sm
       text-typography
       leading-5; 
-  }
- 
-  &__key-wrap {
-    @apply relative flex items-center;
- 
-    &:hover > .form-control,
-    &:focus-within > .form-control {
-       @apply border-primary-500;  
-    }
-  }
-
-  .ai-conn__input {
-    @apply pr-20;
-  }
- 
-  &__toggle {
-    @apply absolute
-      right-0
-      w-16
-      h-[2.625rem]
-      border;
-
-      &:not(:disabled) {
-        &:focus-visible  {
-          @apply border-transparent text-primary-400 bg-primary-500/20;
-        }
-     }
- 
   }
  
   .help-enter-active,

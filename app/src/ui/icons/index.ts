@@ -1,6 +1,8 @@
 export { default as ArrowLeftIcon } from './ArrowLeftIcon.vue'
 export { default as CloseIcon } from './CloseIcon.vue'
 export { default as DownloadIcon } from './DownloadIcon.vue'
+export { default as EyeIcon } from './EyeIcon.vue'
+export { default as EyeOffIcon } from './EyeOffIcon.vue'
 export { default as FileTextIcon } from './FileTextIcon.vue'
 export { default as SlidersIcon } from './SlidersIcon.vue'
 export { default as SparklesIcon } from './SparklesIcon.vue'

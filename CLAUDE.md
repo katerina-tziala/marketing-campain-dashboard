@@ -56,6 +56,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── ArrowLeftIcon.vue
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
+│   │   │   ├── EyeIcon.vue         # Show password icon
+│   │   │   ├── EyeOffIcon.vue      # Hide password icon
 │   │   │   ├── FileTextIcon.vue
 │   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
 │   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
@@ -68,9 +70,11 @@ app/                        # Vue 3 + Vite project
 │   │   ├── types/
 │   │   │   └── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
 │   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
+│   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
+│   │   ├── RadioToggle.vue     # Pill-style radio group — v-model, options ({value,label}[]), name? props; grid-template-columns driven by options.length; scoped non-BEM styles
 │   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
-│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; BaseButton + Badge removed)
+│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; PasswordInput + RadioToggle added)
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — flex col → flex row at lg+; app-shell__left (header + app-shell__main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; app-shell__main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   ├── features/
@@ -78,7 +82,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
 │   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + generic Tabs + scrollable panel when connected; scrollbar-stable + scrollbar-on-surface utility classes on scroll container; uses aiAnalysisStore.activeTab for tab routing
-│   │   │   │   ├── AiConnectionForm.vue    # Provider pill toggles (Groq default, then Gemini) + API key input (show/hide via .btn-icon-secondary.btn-small) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (input-error + field-errors/field-error/field-error-hint); clears connectionError + apiKey + showKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/field/form-control classes
+│   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (Groq first, providerOptions explicit array) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form/field/form-control classes
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore
 │   │   │   │   ├── AiAnalysisState.vue     # Shared analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, formattedCacheTime, modelName?; emit: analyze; slot: result content; handles header (title + action button), token-limit notice, idle/loading/error states, result wrapper with response-meta (cache time + model + AI disclaimer + error fallback); non-BEM scoped styles
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — wraps AiAnalysisState; renders full BudgetOptimizerResponse sections (summary, recommendations, top/underperformers, quick wins, correlations, risks) in default slot; owns optimizer-specific badge variant helpers and formatters; wired to aiAnalysisStore

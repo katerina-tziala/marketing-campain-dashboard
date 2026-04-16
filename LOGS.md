@@ -2458,3 +2458,49 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `.form` and `.form-control` kept unchanged — neither uses `__` or `--` BEM syntax; they are already flat
 - `.input-error` (not `.form-control-error`) — names the state, not the base class it modifies; reads as "this input has an error" rather than implying it extends `.form-control`
 - `.field-errors` (not `.field-error-container`) — shorter and self-descriptive; `-container` suffix adds no meaning
+
+
+## [#117] Extract password input into reusable ui component with slot-driven error
+**Type:** refactor
+
+**Summary:** Extracted the API key input with show/hide toggle from AiConnectionForm into a generic PasswordInput component in the ui lib, with EyeIcon/EyeOffIcon icons and an error slot instead of a hasError prop.
+
+**Brainstorming:** The key-wrap block in AiConnectionForm (input + toggle button + scoped show/hide state) was self-contained and generically useful for any secret/password field. Extracting it removes local state and styling from AiConnectionForm and makes the pattern reusable. For the error state, a hasError boolean prop was considered but rejected — it would require the parent to maintain a redundant boolean alongside the actual error content. A named error slot is cleaner: the parent projects the error markup directly, and the component detects whether the slot has meaningful content (filtering Vue Comment nodes produced by v-if="false") to apply the input-error class automatically.
+
+**Prompt:** Extract the ai-conn__key-wrap content into a password input component in the ui lib. Create icons for hide and show button. Instead of hasError, add content projection so we pass error from places where we use it.
+
+**What was built / What changed:**
+- `app/src/ui/icons/EyeIcon.vue` — new; inline SVG eye icon (show password), Lucide style
+- `app/src/ui/icons/EyeOffIcon.vue` — new; inline SVG eye-off icon (hide password), Lucide style
+- `app/src/ui/icons/index.ts` — added EyeIcon and EyeOffIcon exports
+- `app/src/ui/PasswordInput.vue` — new; v-model input with show/hide toggle (EyeIcon/EyeOffIcon), named error slot, hasError computed from slot content via Comment node filtering, scoped non-BEM styles; props: modelValue, id?, placeholder?, disabled?, autocomplete? (default "off"); spellcheck hardcoded false
+- `app/src/ui/index.ts` — added PasswordInput export
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — replaced key-wrap block with PasswordInput; error passed via #error slot; removed showKey ref and watch reset; removed ai-conn__key-wrap, ai-conn__input, ai-conn__toggle scoped style blocks
+- `CLAUDE.md` — added EyeIcon/EyeOffIcon/PasswordInput to architecture; updated AiConnectionForm description
+
+**Key decisions & why:**
+- Named error slot over hasError prop — parent owns both the condition and the markup; component stays generic and doesn't prescribe error message format
+- Comment node filtering for hasError detection — v-if="false" on a slot template produces a Comment vnode, not an empty slot; filtering these gives reliable detection without requiring the parent to pass an extra boolean
+- spellcheck hardcoded false — never appropriate for a password/secret field; not a prop
+- Non-BEM scoped class names (password-input, input-field, toggle-btn) — consistent with project direction established in recent refactors
+
+
+## [#118] Extract radio toggle into reusable RadioToggle ui component
+**Type:** refactor
+
+**Summary:** Extracted the provider pill-toggle from AiConnectionForm into a generic RadioToggle component in the ui lib, driven by an options array with dynamic grid columns.
+
+**Brainstorming:** The radio toggle in AiConnectionForm (pill-style segment control) had its markup and all three related scoped style blocks (.ai-conn__radios, .radio-text, input[type='radio']) embedded in the feature component. Extracting it makes the pattern reusable for any pill-style radio group. grid-template-columns is set via inline style based on options.length so the component works for 2, 3, or more options without Tailwind arbitrary-value hacks. providerOptions is defined as an explicit array (not Object.entries(PROVIDER_LABELS)) because PROVIDER_LABELS has gemini first while the UI requires Groq first — relying on object key order would have silently produced the wrong display order.
+
+**Prompt:** Do the same for the radio toggle in AiConnectionForm. Create a radio-toggle component in the ui.
+
+**What was built / What changed:**
+- `app/src/ui/RadioToggle.vue` — new; pill-style radio group; props: modelValue (string), options ({value,label}[]), name?; dynamic grid-template-columns via inline style; scoped non-BEM styles (radio-toggle, option-label)
+- `app/src/ui/index.ts` — added RadioToggle export
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — replaced inline radio markup with RadioToggle; added providerOptions constant (explicit order: groq first); removed ai-conn__radios, .radio-text, input[type='radio'] scoped style blocks
+- `CLAUDE.md` — added RadioToggle to architecture; updated AiConnectionForm description
+
+**Key decisions & why:**
+- Explicit providerOptions array over Object.entries — PROVIDER_LABELS defines gemini first; Object.entries would silently flip the display order; explicit array is unambiguous
+- Inline style for grid-cols — options.length is dynamic; Tailwind arbitrary values are static and cannot be reactive; inline style is the correct tool here
+- fieldset + legend stay in AiConnectionForm — they are field structure (using global .field/.field-label), not part of the toggle control itself

@@ -27,11 +27,7 @@
         @apply cursor-not-allowed opacity-50;
       }
   }
- 
-  .btn-small {
-    @apply text-xs px-2 py-1;
-  }
-
+  
   .btn-primary {
     @extend .btn;
     @apply bg-primary-600 text-white;
@@ -75,6 +71,10 @@
         @apply text-primary-400 border-primary-400;
       }
     }
+  }
+
+  .btn-small {
+    @apply text-xs px-2 py-1;
   }
 
   .btn-destructive-small {
