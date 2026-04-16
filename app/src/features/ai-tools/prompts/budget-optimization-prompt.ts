@@ -201,8 +201,9 @@ const ESTIMATION_RULES = [
  
 const INTERPRETATION_RULES = [
   'If the optimization scope is filtered, recommendations must remain entirely within the provided channel subset.',
-  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.', 
-  'A campaign should not appear in both top_performers and underperformers unless mixed performance is explicitly explained.'
+  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.',
+  'A campaign should not appear in both top_performers and underperformers unless mixed performance is explicitly explained.',
+  'Use ROI as the efficiency metric throughout the response. Do not introduce ROAS unless it is explicitly present in the provided dataset or business context.',
 ];
 
 const INTERNAL_ANALYSIS_CHECKLIST = [

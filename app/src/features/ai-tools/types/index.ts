@@ -199,6 +199,11 @@ export type BudgetOptimizerData = {
   keyFindings?: string[];
 };
 
+export type Correlation = { 
+    finding: string;
+    implication: string;
+  };
+
 export type BudgetOptimizerResponse = {
   model?: AiModel;
   period?: string;
@@ -240,10 +245,7 @@ export type BudgetOptimizerResponse = {
     potential_impact: string;
     timeline: string;
   }[];
-  correlations: {
-    finding: string;
-    implication: string;
-  }[];
+  correlations: Correlation[];
   risks: {
     risk: string;
     mitigation: string;
@@ -302,10 +304,7 @@ export type ExecutiveSummaryResponse = {
     one_liner: string;
   }[];
   additional_channels_note?: string;
-  correlations: {
-    finding: string;
-    so_what: string;
-  }[];
+  correlations: Correlation[];
   key_metrics: {
     total_spend: number;
     total_revenue: number;

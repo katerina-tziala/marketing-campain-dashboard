@@ -18,66 +18,41 @@ function handleDisconnect(): void {
 
 <template>
   <div class="ai-status">
-    <span class="ai-status__provider">{{ providerLabel }}</span>
-    <div class="ai-status__right">
-      <span class="ai-status__dot" aria-hidden="true" />
-      <span class="ai-status__text">Connected</span>
-      <button class="ai-status__disconnect" @click="handleDisconnect">Disconnect</button>
-    </div>
+    <p class="ai-status__provider">{{ providerLabel }}</p>
+    <p class="ai-status__connected">Connected</p>
+    <button class="btn-destructive-small" @click="handleDisconnect">Disconnect</button>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .ai-status {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: theme('spacing.3');
-  padding: theme('spacing.3') theme('spacing.6');
-  border-bottom: 1px solid var(--color-border);
-  background-color: rgba(16, 185, 129, 0.05);
-  flex-shrink: 0;
-
+  @apply flex
+    items-center
+    justify-between
+    gap-2
+    py-2
+    px-6
+    border-b
+    border-surface-border
+    w-full
+    bg-success/[0.05];
+ 
   &__provider {
-    font-size: theme('fontSize.sm');
-    font-weight: 500;
-    color: theme('colors.slate.300');
+    @apply text-sm font-medium text-typography-intense grow;
   }
 
-  &__right {
-    display: flex;
-    align-items: center;
-    gap: theme('spacing[1.5]');
-  }
+  &__connected {
+    @apply text-xs font-semibold text-success relative;
 
-  &__dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-    background-color: #10b981;
-    flex-shrink: 0;
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-  }
-
-  &__text {
-    font-size: theme('fontSize.xs');
-    font-weight: 600;
-    color: #10b981;
-  }
-
-  &__disconnect {
-    margin-left: theme('spacing.2');
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: theme('fontSize.xs');
-    color: theme('colors.slate.300');
-    padding: 0;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-
-    &:hover {
-      color: #f87171;
+    &::before {
+       content: "";
+      @apply inline-block
+        w-2
+        h-2
+        rounded-full
+        bg-success
+        mr-1.5
+        shadow-connection;
     }
   }
 }

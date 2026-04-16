@@ -51,7 +51,7 @@ const OUTPUT_SCHEMA = `{
   "correlations": [
     {
       "finding": "string — supported pattern across channels or campaigns",
-      "so_what": "string — business implication"
+      "implication": "string — business implication"
     }
   ],
   "key_metrics": {
@@ -167,6 +167,17 @@ const ANALYSIS_INSTRUCTIONS = [
   '    2. Channel-level performance',
   '    3. Campaign-level performance',
   '    4. Provided key findings',
+ '',
+  '   Focus only on high-impact signals that materially affect portfolio performance.',
+  '   High-impact signals typically involve:',
+  '   - large revenue contributions',
+  '   - significant ROI differences between channels',
+  '   - inefficient budget allocation',
+  '   - unusually high or low CAC',
+  '   - performance concentration in a small number of channels or campaigns.',
+  '',
+  '   Only include insights derived from these high-impact signals.',
+  '   Exclude minor observations that do not materially affect revenue, ROI, or acquisition efficiency.',
   '7. Score the overall health of the marketing portfolio from 0 to 100 considering:',
   '    1. profitability',
   '    2. efficiency',

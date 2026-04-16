@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useCampaignStore } from '../../../stores/campaignStore'
+import { computed } from 'vue' 
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
-import { SparklesIcon } from '../../../ui/icons'
-import { Badge, Spinner } from '../../../ui'
-import type { BadgeVariant } from '../../../ui'
-
-const campaignStore = useCampaignStore()
+import { SparklesIcon } from '../../../ui/icons'  
+import { roiClass } from '../../../common/utils/roi'  
+import { Spinner  } from '../../../ui' 
+import type { BadgeVariant } from '../../../ui/types/badge-variant'
+ 
 const analysisStore = useAiAnalysisStore()
 
 const status = computed(() => analysisStore.summaryStatus)
@@ -15,24 +14,25 @@ const error = computed(() => analysisStore.summaryError)
 const errorFallback = computed(() => analysisStore.summaryErrorFallback)
 const cacheTimestamp = computed(() => analysisStore.summaryCacheTimestamp)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
+const analysisActivated = computed(() => analysisStore.analysisActivated)
 
-const healthScoreClass = (label: string) => {
-  const map: Record<string, string> = {
-    excellent: 'ai-health--excellent',
-    good: 'ai-health--good',
-    'needs attention': 'ai-health--warning',
-    critical: 'ai-health--critical',
+const healthScoreClass = (label: string):BadgeVariant => {
+   const map: Record<string, BadgeVariant> = {
+    excellent: 'success',
+    good: 'info',
+    'needs attention': 'warning',
+    critical: 'danger',
   }
-  return `ai-health ${map[label.toLowerCase()] ?? 'ai-health--good'}`
+  return map[label.toLowerCase()] ?? 'info' 
 }
 
-const channelStatusClass = (s: string) => {
-  const map: Record<string, string> = {
-    strong: 'ai-channel-status--strong',
-    moderate: 'ai-channel-status--moderate',
-    weak: 'ai-channel-status--weak',
+const channelStatusClass = (s: string) => { 
+    const map: Record<string, BadgeVariant> = {
+    strong: 'success',
+    moderate: 'warning', 
+    weak: 'danger',
   }
-  return `ai-channel-status ${map[s] ?? 'ai-channel-status--moderate'}`
+  return map[s.toLowerCase()] ?? 'info'
 }
 
 const urgencyVariant = (urgency: string): BadgeVariant => {
@@ -45,18 +45,16 @@ const urgencyVariant = (urgency: string): BadgeVariant => {
 }
 
 const insightTypeClass = (type: string) => {
-  const map: Record<string, string> = {
-    performance: 'ai-insight--performance',
-    opportunity: 'ai-insight--opportunity',
-    warning: 'ai-insight--warning',
-    achievement: 'ai-insight--achievement',
+  const map: Record<string, BadgeVariant> = {
+    performance: 'info',
+    opportunity: 'opportunity',
+    warning: 'warning',
+    achievement: 'success',
   }
-  return `ai-insight ${map[type] ?? 'ai-insight--performance'}`
+  return `${map[type] ?? 'info'}`
 }
 
-const summarizeLabel = computed(() =>
-  status.value === 'done' || status.value === 'error' ? 'Re-Summarize' : 'Summarize',
-)
+const summarizeLabel = computed(() =>analysisActivated.value ? 'Re-Summarize' : 'Summarize')
 
 const isButtonDisabled = computed(() =>
   status.value === 'loading' || !canAnalyze.value,
@@ -80,29 +78,31 @@ function formatRoi(value: number): string {
   return `${Math.round(value * 100)}%`
 }
 
+function classROI(value: number): string {
+  return roiClass(Math.round(value * 100));
+}
+ 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-IE').format(value)
 }
+ 
 </script>
 
 <template>
   <div class="ai-panel">
     <!-- Header -->
-    <div class="ai-panel__head">
-      <div class="ai-panel__titles">
-        <h3 class="ai-panel__title">Executive Summary</h3>
-        <p class="ai-panel__subtitle">{{ campaignStore.title }}</p>
-      </div>
+    <div class="ai-panel__head"> 
+      <h3 class="ai-panel__title">Executive Summary</h3>
       <button
-        class="ai-panel__action"
+        class="btn-primary"
         :disabled="isButtonDisabled"
         @click="handleSummarize"
       >
-        <SparklesIcon class="ai-panel__action-icon" />
+        <SparklesIcon/>
         {{ summarizeLabel }}
       </button>
     </div>
-
+ 
     <!-- Token limit message -->
     <div v-if="analysisStore.tokenLimitReached && status !== 'done'" class="ai-panel__notice" role="status">
       <p class="ai-panel__notice-text">AI generation is temporarily unavailable due to usage limits.</p>
@@ -110,177 +110,174 @@ function formatNumber(value: number): string {
     </div>
 
     <!-- Idle -->
-    <div v-if="status === 'idle' && !analysisStore.tokenLimitReached" class="ai-panel__empty">
-      <p class="ai-panel__empty-text">
-        Generate a summary highlighting top and underperforming campaigns with actionable insights.
-      </p>
-    </div>
+    <p  v-if="status === 'idle' && !analysisStore.tokenLimitReached"  class="ai-panel__empty-text">
+      Generate a summary highlighting top and underperforming campaigns with actionable insights.
+    </p>
 
     <!-- Loading -->
     <div v-else-if="status === 'loading'" class="ai-panel__loader">
-      <Spinner />
+      <Spinner :size="'xxl'" />
       <p class="ai-panel__loader-text">Generating summary…</p>
     </div>
 
     <!-- Error (no cached fallback) -->
     <div v-else-if="status === 'error' && error" class="ai-panel__error" role="alert">
       <p class="ai-panel__error-message">{{ error.message }}</p>
-      <p class="ai-panel__error-hint">Click "Re-Summarize" to try again.</p>
+      <p class="ai-panel__error-hint">Click "{{ summarizeLabel }}" to try again.</p>
     </div>
 
     <!-- Result -->
     <div v-else-if="response" class="ai-panel__result">
-
-      <!-- Error fallback message -->
-      <p v-if="errorFallback" class="ai-panel__fallback" role="status">
-        {{ errorFallback }}
-      </p>
-
-      <!-- Cached indicator -->
-      <p v-if="formattedCacheTime && !errorFallback" class="ai-panel__cache-indicator" role="status">
-        Cached result &bull; Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
-      </p>
-
+      <!-- Model indicator -->
+      <div class="ai-panel__response-details">
+        <p v-if="formattedCacheTime" class="ai-panel__response-details-text" role="status">
+          Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
+        </p>
+        <p class="ai-panel__response-details-ai-disclaimer">AI can make mistakes</p>
+         <!-- Error fallback message -->
+        <p v-if="errorFallback" class="ai-panel__response-details-fallback" role="status">
+          {{ errorFallback }}
+        </p>
+      </div>
+       
       <!-- Portfolio Health -->
-      <section class="ai-section">
-        <div class="ai-section__head">
-          <div class="ai-section__title-group">
-            <h4 class="ai-section__title">Portfolio Health</h4>
-            <span v-if="response.period" class="ai-section__period">{{ response.period }}</span>
-          </div>
-          <div class="ai-health-score">
-            <div :class="healthScoreClass(response.health_score.label)">
-              <span class="ai-health__value">{{ response.health_score.score }}</span>
-              <span class="ai-health__max">&nbsp;/ 100</span>
+      <section class="ai-section portfolio-health"> 
+          <div class="portfolio-health__head">
+            <div class="portfolio-health__title-container">
+              <h4 class="ai-section__title">Portfolio Health</h4>
+              <p class="ai-section__analysis-details">
+                 <span v-if="response.period">{{ response.period }}
+                  <!-- TODO -->
+                  &nbsp;&bull;&nbsp;21 of 21 campaigns</span>
+              </p>
             </div>
-            <span class="ai-health-score__label">{{ response.health_score.label }}</span>
+            <div class="ai-health-container">
+              <div class="badge ai-health" :class="healthScoreClass(response.health_score.label)">
+              <span class="ai-health__value">{{ response.health_score.score }}</span>
+              <span>&nbsp;/&nbsp;100</span>
+            </div>
+            <p class="badge-text ai-health-score__label" :class="healthScoreClass(response.health_score.label)">{{ response.health_score.label }}</p>
           </div>
-        </div>
-        <p class="ai-section__text">{{ response.health_score.reasoning }}</p>
+            </div>
+          <p class="ai-section__text">{{ response.health_score.reasoning }}</p>
+          <h5 class="ai-section__subtitle -mb-2">Bottom Line</h5>
+          <p class="ai-section__text">{{ response.bottom_line }}</p>
       </section>
 
-      <!-- Bottom Line -->
+      <!-- Priority Actions -->
       <section class="ai-section">
-        <h4 class="ai-section__title">Bottom Line</h4>
-        <p class="ai-section__text">{{ response.bottom_line }}</p>
+        <h4 class="ai-section__title">Priority Actions</h4> 
+          <div
+            v-for="(action, i) in response.priority_actions"
+            :key="i"
+            class="card-secondary ai-priority"
+          >
+            <div class="card-secondary__head">
+              <span class="ai-priority__number">#{{ action.priority }}</span>
+              <h5 class="card-secondary__title">{{ action.action }}</h5>
+              <span class="badge" :class="urgencyVariant(action.urgency)">{{ action.urgency }}</span> 
+            </div>
+            <p class="card-secondary__content px-2">{{ action.expected_outcome }}</p>
+            <p class="card-secondary__content ai-priority__metric">
+              <strong>Success metric:</strong> {{ action.success_metric }}
+            </p>
+          </div> 
       </section>
 
       <!-- Key Metrics -->
       <section class="ai-section">
         <h4 class="ai-section__title">Key Metrics</h4>
-        <div class="ai-metrics-grid">
-          <div class="ai-metric">
-            <span class="ai-metric__label">Total Spend</span>
-            <span class="ai-metric__value">{{ formatEuro(response.key_metrics.total_spend) }}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric__label">Total Revenue</span>
-            <span class="ai-metric__value">{{ formatEuro(response.key_metrics.total_revenue) }}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric__label">Overall ROI</span>
-            <span class="ai-metric__value">{{ formatRoi(response.key_metrics.overall_roi) }}</span>
-          </div>
-          <div class="ai-metric">
-            <span class="ai-metric__label">Conversions</span>
-            <span class="ai-metric__value">{{ formatNumber(response.key_metrics.total_conversions) }}</span>
-          </div>
-          <div class="ai-metric ai-metric--span">
-            <span class="ai-metric__label">Best Channel</span>
-            <span class="ai-metric__value ai-metric__value--positive">{{ response.key_metrics.best_channel }}</span>
-          </div>
-          <div class="ai-metric ai-metric--span">
-            <span class="ai-metric__label">Worst Channel</span>
-            <span class="ai-metric__value ai-metric__value--negative">{{ response.key_metrics.worst_channel }}</span>
-          </div>
-          <div class="ai-metric ai-metric--full">
-            <span class="ai-metric__label">Best Campaign</span>
-            <span class="ai-metric__value">{{ response.key_metrics.best_campaign }}</span>
-          </div>
-          <div class="ai-metric ai-metric--full">
-            <span class="ai-metric__label">Biggest Opportunity</span>
-            <span class="ai-metric__value ai-metric__value--opportunity">{{ response.key_metrics.biggest_opportunity }}</span>
-          </div>
+        <div class="ai-section__content ai-metrics"> 
+            <div class="card-secondary ai-metric">
+              <h5 class="card-secondary__title">Total Spend</h5>
+              <span class="card-secondary__content ai-metric__value">{{ formatEuro(response.key_metrics.total_spend) }}</span>
+            </div>
+            <div class="card-secondary ai-metric">
+              <h5 class="card-secondary__title">Total Revenue</h5>
+              <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response.key_metrics.overall_roi)">{{ formatEuro(response.key_metrics.total_revenue) }}</p>
+            </div>
+            <div class="card-secondary ai-metric">
+              <h5 class="card-secondary__title">Overall ROI</h5>
+              <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response.key_metrics.overall_roi)">{{ formatRoi(response.key_metrics.overall_roi) }}</p>
+            </div>
+            <div class="card-secondary ai-metric">
+              <h5 class="card-secondary__title">Conversions</h5>
+              <p class="card-secondary__content ai-metric__value">{{ formatNumber(response.key_metrics.total_conversions) }}</p>
+            </div>
+            <div class="card-secondary ai-metric expandable">
+              <h5 class="card-secondary__title badge-text success">Best Channel</h5>
+              <p class="card-secondary__content">{{ response.key_metrics.best_channel }}</p>
+            </div>
+            <div class="card-secondary ai-metric expandable">
+              <h5 class="card-secondary__title badge-text danger">Worst Channel</h5>
+              <p class="card-secondary__content">{{ response.key_metrics.worst_channel }}</p>
+            </div>
+            <div class="card-secondary ai-metric col-span-2">
+              <h5 class="card-secondary__title badge-text success">Best Campaign</h5>
+              <p class="card-secondary__content">{{ response.key_metrics.best_campaign }}</p>
+            </div>
+            <div class="card-secondary ai-metric col-span-2">
+              <h5 class="card-secondary__title badge-text opportunity">Biggest Opportunity</h5>
+              <p class="card-secondary__content">{{ response.key_metrics.biggest_opportunity }}</p>
+            </div>
         </div>
       </section>
 
       <!-- Insights -->
       <section class="ai-section">
-        <h4 class="ai-section__title">Insights</h4>
-
-        <div
-          v-for="(insight, i) in response.insights"
-          :key="i"
-          :class="insightTypeClass(insight.type)"
-        >
-          <div class="ai-insight__head">
-            <span class="ai-insight__icon">{{ insight.icon }}</span>
-            <span class="ai-insight__text">{{ insight.text }}</span>
+        <h4 class="ai-section__title">Insights</h4> 
+          <div
+            v-for="(insight, i) in response.insights"
+            :key="i"
+            class="card-secondary ai-insight" 
+          >
+            <p class="card-secondary__content ai-insight__content">
+              <span class="ai-insight__icon">{{ insight.icon }}</span>
+              <span class="ai-insight__text">{{ insight.text }}</span>
+            </p>
+            <p class="card-secondary__content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
+              <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
+              <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
+            </p>
           </div>
-          <div class="ai-insight__metric">
-            <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
-            <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Priority Actions -->
-      <section class="ai-section">
-        <h4 class="ai-section__title">Priority Actions</h4>
-
-        <div
-          v-for="(action, i) in response.priority_actions"
-          :key="i"
-          class="ai-priority"
-        >
-          <div class="ai-priority__head">
-            <span class="ai-priority__number">#{{ action.priority }}</span>
-            <span class="ai-priority__action">{{ action.action }}</span>
-            <Badge :variant="urgencyVariant(action.urgency)">{{ action.urgency }}</Badge>
-          </div>
-          <p class="ai-priority__outcome">{{ action.expected_outcome }}</p>
-          <p class="ai-priority__metric">
-            <strong>Success metric:</strong> {{ action.success_metric }}
-          </p>
-        </div>
+      
       </section>
 
       <!-- Channel Summary -->
       <section class="ai-section">
         <h4 class="ai-section__title">Channel Summary</h4>
-
-        <div
-          v-for="(ch, i) in response.channel_summary"
-          :key="i"
-          class="ai-channel"
-        >
-          <div class="ai-channel__head">
-            <span class="ai-channel__name">{{ ch.channel }}</span>
-            <div class="ai-channel__head-right">
-              <span class="ai-channel__budget">{{ ch.budget_share }}</span>
-              <span :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
+   
+          <div
+            v-for="(ch, i) in response.channel_summary"
+            :key="i"
+            class="card-secondary ai-channel" :class="channelStatusClass(ch.status)"
+          >
+            <div class="card-secondary__head">
+                <h5 class="card-secondary__title">{{ ch.channel }}</h5>
+                <span class="ai-channel__budget">{{ ch.budget_share }}</span>
+                <span class="badge" :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
             </div>
+            <p class="card-secondary__content">{{ ch.one_liner }}</p>
           </div>
-          <p class="ai-channel__liner">{{ ch.one_liner }}</p>
-        </div>
-
-        <p v-if="response.additional_channels_note" class="ai-section__note">
-          {{ response.additional_channels_note }}
-        </p>
+          <p v-if="response.additional_channels_note" class="ai-section__note px-1">
+            {{ response.additional_channels_note }}
+          </p>
+       
       </section>
 
       <!-- Correlations -->
       <section v-if="response.correlations.length" class="ai-section">
         <h4 class="ai-section__title">Correlations</h4>
-
-        <div
-          v-for="(corr, i) in response.correlations"
-          :key="i"
-          class="ai-correlation"
-        >
-          <p class="ai-correlation__finding">{{ corr.finding }}</p>
-          <p class="ai-correlation__implication">{{ corr.so_what }}</p>
-        </div>
+      
+          <div
+            v-for="(corr, i) in response.correlations"
+            :key="i"
+            class="card-secondary"
+          >
+            <h5 class="card-secondary__title">{{ corr.finding }}</h5>
+            <p class="card-secondary__content">{{ corr.implication }}</p>
+          </div>
+     
       </section>
     </div>
   </div>
@@ -288,588 +285,236 @@ function formatNumber(value: number): string {
 
 <style lang="scss" scoped>
 .ai-panel {
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing.4');
-
-  &__head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: theme('spacing.3');
-  }
-
-  &__titles {
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.1');
-    min-width: 0;
-  }
-
-  &__title {
-    font-size: theme('fontSize.base');
-    font-weight: 700;
-    color: var(--color-title);
-    margin: 0;
-  }
-
-  &__subtitle {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__action {
-    display: inline-flex;
-    align-items: center;
-    gap: theme('spacing[1.5]');
-    padding: theme('spacing[1.5]') theme('spacing.3');
-    background-color: #6366f1;
-    color: #ffffff;
-    border: 1px solid transparent;
-    border-radius: theme('borderRadius.md');
-    font-size: theme('fontSize.sm');
-    font-weight: 500;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-    transition: background-color 150ms ease, opacity 150ms ease;
-
-    &:not(:disabled):hover {
-      background-color: #4f46e5;
-    }
-
-    &:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-  }
-
-  &__action-icon {
-    width: 0.875rem;
-    height: 0.875rem;
-    flex-shrink: 0;
-  }
-
-  &__empty {
-    background-color: var(--color-bg);
-    border: 1px dashed var(--color-border);
-    border-radius: theme('borderRadius.lg');
-    padding: theme('spacing.5');
-  }
-
   &__empty-text {
-    font-size: theme('fontSize.sm');
-    color: theme('colors.panel-text');
-    line-height: 1.6;
-    margin: 0;
-    text-align: center;
+    @apply text-typography-intense text-sm py-2 leading-5;
   }
 
   &__loader {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: theme('spacing.3');
-    padding: theme('spacing.8') theme('spacing.5');
-    background-color: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: theme('borderRadius.lg');
-  }
+    @apply flex flex-col items-center gap-4 p-8;
 
-  &__loader-text {
-    font-size: theme('fontSize.sm');
-    color: theme('colors.panel-text');
-    margin: 0;
+     &-text {
+      @apply text-typography text-sm;
+    }
+  }
+ 
+   &__notice {
+    @apply flex
+      flex-col
+      gap-1.5
+      text-center
+      p-4
+      rounded-lg
+      bg-warning/10
+      border
+      border-warning/15;
+
+    &-text {
+      @apply text-warning font-medium text-sm;
+    }
+
+    &-hint {
+      @apply text-typography text-sm;
+    }
   }
 
   &__error {
-    background-color: rgba(248, 113, 113, 0.06);
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    border-radius: theme('borderRadius.lg');
-    padding: theme('spacing.5');
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.1');
-    text-align: center;
-  }
+    @apply flex
+      flex-col
+      gap-1.5
+      text-center
+      p-4
+      rounded-lg
+      bg-danger/10
+      border
+      border-danger/15;
+ 
+    &-message {
+      @apply text-danger font-medium text-sm;
+    }
 
-  &__error-message {
-    font-size: theme('fontSize.sm');
-    color: #f87171;
-    font-weight: 500;
-    margin: 0;
-  }
-
-  &__error-hint {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-  }
-
-  &__result {
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.6');
-  }
-
-  &__notice {
-    background-color: rgba(245, 158, 11, 0.06);
-    border: 1px solid rgba(245, 158, 11, 0.2);
-    border-radius: theme('borderRadius.lg');
-    padding: theme('spacing.4');
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.1');
-    text-align: center;
-  }
-
-  &__notice-text {
-    font-size: theme('fontSize.sm');
-    color: #f59e0b;
-    font-weight: 500;
-    margin: 0;
-  }
-
-  &__notice-hint {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-  }
-
-  &__fallback {
-    font-size: theme('fontSize.xs');
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.06);
-    border: 1px solid rgba(245, 158, 11, 0.15);
-    border-radius: theme('borderRadius.md');
-    padding: theme('spacing.2') theme('spacing.3');
-    margin: 0;
-    text-align: center;
-  }
-
-  &__cache-indicator {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-    text-align: center;
-    font-style: italic;
-  }
-}
-
-// ── Sections ─────────────────────────────────────────────────────────────────
-
-.ai-section {
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing.3');
-
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: theme('spacing.2');
-  }
-
-  &__title-group {
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing[0.5]');
-  }
-
-  &__title {
-    font-size: theme('fontSize.xs');
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #818cf8;
-    margin: 0;
-  }
-
-  &__period {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    font-weight: 500;
-  }
-
-  &__text {
-    font-size: theme('fontSize.sm');
-    color: theme('colors.panel-text');
-    line-height: 1.6;
-    margin: 0;
-
-    strong {
-      color: var(--color-title);
-      font-weight: 600;
+     &-hint {
+      @apply text-typography text-sm;
     }
   }
+  
+  &__response-details {
+    @apply flex
+      flex-col
+      gap-1
+      text-xs
+      text-typography;
 
-  &__note {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    line-height: 1.5;
-    margin: 0;
-    font-style: italic;
+      &-text, &-ai-disclaimer {
+        @apply italic;
+      }
+
+      &-fallback {
+        @apply text-warning font-medium;
+      }
+    }
+
+  &__result {
+    @apply flex flex-col gap-6 pb-6; 
   }
 }
-
+ 
 // ── Health Score ──────────────────────────────────────────────────────────────
-
-.ai-health-score {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: theme('spacing.1');
-
-  &__label {
-    font-size: theme('fontSize.xs');
-    font-weight: 600;
-    color: theme('colors.panel-text');
-  }
-}
-
-.ai-health {
-  display: inline-flex; 
-  gap: 2px;
-  padding: 2px theme('spacing.2');
-  border-radius: theme('borderRadius.md');
-  border: 1px solid;
-
-  &__value {
-    font-size: theme('fontSize.lg');
-    font-weight: 800;
-    line-height: 1;
+.portfolio-health {
+  &__head {
+    @apply flex
+      flex-row
+      items-start
+      justify-between;
   }
 
-  &__max {
-    font-size: theme('fontSize.xs');
-    font-weight: 500;
-    opacity: 0.6;
+  &__title-container {
+   @apply  flex flex-col gap-1 items-start justify-start;
   }
 
-  &--excellent {
-    color: #10b981;
-    background-color: rgba(16, 185, 129, 0.1);
-    border-color: rgba(16, 185, 129, 0.25);
+  .ai-section__title {
+    @apply pt-0.5;
   }
 
-  &--good {
-    color: #6366f1;
-    background-color: rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.25);
+  .ai-health-container {
+    @apply  flex flex-col gap-1 items-center justify-center;
+  }
+ 
+  .ai-health-score__label {
+      @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
   }
 
-  &--warning {
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.25);
+  .ai-health {
+    @apply rounded-md inline-flex items-center justify-self-center;
+  
+    &__value {
+      @apply text-lg font-extrabold leading-none;
+    }
   }
-
-  &--critical {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.25);
-  }
+ 
 }
 
 // ── Key Metrics Grid ─────────────────────────────────────────────────────────
+ .ai-metrics {
+  @apply grid grid-cols-2 auto-rows-auto gap-2;
 
-.ai-metrics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: theme('spacing.2');
+ .ai-metric {
+ 
+      > .card-secondary__title {
+        @apply shrink grow-0;
+      }
+
+     > .card-secondary__content {
+        @apply grow shrink-0;
+      }
+      }
+ 
+
+  @media (min-width: 1024px) {
+     
+
+      .expandable {
+        @apply col-span-2;
+
+      > .card-secondary__title {
+        @apply shrink grow-0;
+      }
+
+     > .card-secondary__content {
+        @apply grow shrink-0;
+      }
+      }
+  }
+
+
+     @media (max-width: 640px) {
+       .expandable {
+        @apply col-span-2;
+
+      > .card-secondary__title {
+        @apply shrink grow-0;
+      }
+
+     > .card-secondary__content {
+        @apply grow shrink-0;
+      }
+      }
+  }
+
+     
+   @media (max-width: 420px) {
+   
+    .ai-metric {
+      @apply col-span-2;
+    }
+    }
 }
-
-.ai-metric {
-  padding: theme('spacing.2') theme('spacing.3');
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: theme('borderRadius.md');
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-
-  &--span {
-    grid-column: span 1;
-  }
-
-  &--full {
-    grid-column: 1 / -1;
-  }
-
-  &__label {
-    font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: theme('colors.panel-text');
-  }
-
-  &__value {
-    font-size: theme('fontSize.sm');
-    font-weight: 600;
-    color: var(--color-title);
-    line-height: 1.3;
-
-    &--positive { color: #10b981; }
-    &--negative { color: #f87171; }
-    &--opportunity { color: #818cf8; }
-  }
-}
-
+  
 // ── Insight card ─────────────────────────────────────────────────────────────
-
 .ai-insight {
-  padding: theme('spacing.3');
-  border-radius: theme('borderRadius.md');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing.2');
-  border: 1px solid;
-
-  & + & {
-    margin-top: theme('spacing.1');
-  }
-
-  &__head {
-    display: flex;
-    gap: theme('spacing.2');
-    align-items: flex-start;
+  &__content {
+    @apply flex items-start gap-2;
   }
 
   &__icon {
-    font-size: theme('fontSize.base');
-    line-height: 1.4;
-    flex-shrink: 0;
+    @apply text-xl pt-0.5 shrink-0 leading-6;
   }
-
-  &__text {
-    font-size: theme('fontSize.sm');
-    color: theme('colors.panel-text');
-    line-height: 1.5;
-  }
-
+ 
   &__metric {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: theme('spacing.1') theme('spacing.2');
-    background-color: rgba(255, 255, 255, 0.03);
-    border-radius: theme('borderRadius.sm');
+    @apply flex items-center justify-between gap-2 py-1 px-2 rounded-sm;
   }
 
   &__metric-label {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    font-weight: 500;
+      @apply grow;
   }
 
   &__metric-value {
-    font-size: theme('fontSize.sm');
-    font-weight: 700;
-    color: var(--color-title);
+    @apply font-semibold; 
   }
-
-  &--performance {
-    background-color: rgba(99, 102, 241, 0.12);
-    border-color: rgba(99, 102, 241, 0.3);
-    border-left-width: 2px;
-    border-left-color: #6366f1;
-
-    .ai-insight__metric-value { color: #818cf8; }
-  }
-
-  &--opportunity {
-    background-color: rgba(16, 185, 129, 0.10);
-    border-color: rgba(16, 185, 129, 0.28);
-    border-left-width: 2px;
-    border-left-color: #10b981;
-
-    .ai-insight__metric-value { color: #10b981; }
-  }
-
-  &--warning {
-    background-color: rgba(245, 158, 11, 0.10);
-    border-color: rgba(245, 158, 11, 0.3);
-    border-left-width: 2px;
-    border-left-color: #f59e0b;
-
-    .ai-insight__metric-value { color: #f59e0b; }
-  }
-
-  &--achievement {
-    background-color: rgba(129, 140, 248, 0.12);
-    border-color: rgba(129, 140, 248, 0.3);
-    border-left-width: 2px;
-    border-left-color: #a5b4fc;
-
-    .ai-insight__metric-value { color: #a5b4fc; }
-  }
+ 
 }
 
 // ── Priority action card ─────────────────────────────────────────────────────
-
 .ai-priority {
-  padding: theme('spacing.3');
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: theme('borderRadius.md');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing[1.5]');
-
-  & + & {
-    margin-top: theme('spacing.1');
+  &>.card-secondary__head {
+    @apply items-start;
   }
-
-  &__head {
-    display: flex;
-    align-items: flex-start;
-    gap: theme('spacing.2');
-  }
-
+ 
   &__number {
-    font-size: theme('fontSize.xs');
-    font-weight: 800;
-    color: #818cf8;
-    flex-shrink: 0;
-    min-width: 1.25rem;
-  }
-
-  &__action {
-    font-size: theme('fontSize.sm');
-    font-weight: 600;
-    color: var(--color-title);
-    line-height: 1.4;
-    flex: 1;
-  }
-
-  &__outcome {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-    line-height: 1.5;
-    padding-left: calc(1.25rem + theme('spacing.2'));
+    @apply font-extrabold text-sm min-w-5 text-primary-200;  
   }
 
   &__metric {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-    line-height: 1.4;
-    padding-left: calc(1.25rem + theme('spacing.2'));
-
-    strong {
-      color: #818cf8;
-      font-weight: 600;
-    }
+    @apply bg-primary-700/10 border-primary-700/25 py-1 px-2;
   }
+
 }
 
 // ── Channel card ─────────────────────────────────────────────────────────────
-
 .ai-channel {
-  padding: theme('spacing.3');
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: theme('borderRadius.md');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing[1.5]');
+  @apply border-2 border-l-transparent;
 
-  & + & {
-    margin-top: theme('spacing.1');
+  >.card-secondary__head {
+    @apply items-center;
   }
 
-  &__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: theme('spacing.2');
+  &.success {
+    @apply border-l-success;
   }
 
-  &__head-right {
-    display: flex;
-    align-items: center;
-    gap: theme('spacing.2');
-    flex-shrink: 0;
+  &.warning {
+    @apply border-l-warning;
   }
 
-  &__name {
-    font-size: theme('fontSize.sm');
-    font-weight: 600;
-    color: var(--color-title);
+  &.danger {
+    @apply border-l-danger--5p;
   }
-
+  &.info {
+    @apply border-l-primary-500; 
+  }
+  
   &__budget {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    font-weight: 500;
-  }
-
-  &__liner {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    line-height: 1.5;
-    margin: 0;
+    @apply text-xs font-semibold;
   }
 }
-
-.ai-channel-status {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-radius: theme('borderRadius.full');
-  padding: 2px theme('spacing[1.5]');
-
-  &--strong {
-    color: #10b981;
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.25);
-  }
-
-  &--moderate {
-    color: #f59e0b;
-    background-color: rgba(245, 158, 11, 0.1);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-  }
-
-  &--weak {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.25);
-  }
-}
-
-// ── Correlation card ─────────────────────────────────────────────────────────
-
-.ai-correlation {
-  padding: theme('spacing.3');
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: theme('borderRadius.md');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing[1.5]');
-
-  & + & {
-    margin-top: theme('spacing.1');
-  }
-
-  &__finding {
-    font-size: theme('fontSize.sm');
-    font-weight: 500;
-    color: var(--color-title);
-    margin: 0;
-    line-height: 1.4;
-  }
-
-  &__implication {
-    font-size: theme('fontSize.xs');
-    color: theme('colors.panel-text');
-    margin: 0;
-    line-height: 1.5;
-  }
-}
-
+ 
 </style>

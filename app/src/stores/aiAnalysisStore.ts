@@ -73,7 +73,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Shared state ──────────────────────────────────────────────────────
 
-  const activeTab = ref<AiAnalysisTab>('optimizer')
+  const activeTab = ref<AiAnalysisTab>('summary')
   const tokenLimitReached = ref(false)
   const analysisActivated = ref(false)
 
@@ -688,7 +688,7 @@ console.log(prompt);
     // Shared
     activeTab,
     tokenLimitReached,
-
+    analysisActivated,
     // Optimizer refs
     optimizerStatus,
     optimizerResponse,

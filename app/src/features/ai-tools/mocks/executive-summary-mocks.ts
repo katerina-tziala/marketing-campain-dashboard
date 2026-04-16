@@ -106,11 +106,11 @@ const strongPortfolio: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Owned channels average 12.6x ROI versus 2.1x for paid channels',
-      so_what: 'Every euro shifted from paid to owned audience growth compounds long-term returns.',
+      implication: 'Every euro shifted from paid to owned audience growth compounds long-term returns.',
     },
     {
       finding: 'Campaigns with CVR > 5% all have direct customer relationships (email, push, referral)',
-      so_what: 'First-party data drives the highest conversion rates — prioritize building these assets.',
+      implication: 'First-party data drives the highest conversion rates — prioritize building these assets.',
     },
   ],
   key_metrics: {
@@ -198,11 +198,11 @@ const needsAttention: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Budget allocation is inversely correlated with ROI — highest-spend channels have lowest returns',
-      so_what: 'The portfolio is structured to maximize reach rather than return. A fundamental rebalancing toward efficiency is needed.',
+      implication: 'The portfolio is structured to maximize reach rather than return. A fundamental rebalancing toward efficiency is needed.',
     },
     {
       finding: 'Campaigns targeting existing customers convert at 8x the rate of prospecting campaigns',
-      so_what: 'Retention and re-engagement spending should take priority over new customer acquisition until ROI stabilizes.',
+      implication: 'Retention and re-engagement spending should take priority over new customer acquisition until ROI stabilizes.',
     },
   ],
   key_metrics: {
@@ -296,11 +296,11 @@ const excellentPerformance: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Revenue growth outpaces budget growth by 2.3x',
-      so_what: 'The portfolio is getting more efficient over time — a sign that optimization efforts and audience building are compounding.',
+      implication: 'The portfolio is getting more efficient over time — a sign that optimization efforts and audience building are compounding.',
     },
     {
       finding: 'Channels with 6+ months of continuous investment show 40% higher ROI than newer ones',
-      so_what: 'Consistency pays off. Avoid frequent channel churn — let campaigns mature before judging them.',
+      implication: 'Consistency pays off. Avoid frequent channel churn — let campaigns mature before judging them.',
     },
   ],
   key_metrics: {
@@ -395,11 +395,11 @@ const criticalState: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Paid channel CPMs have increased 65% quarter-over-quarter while conversion rates fell 45%',
-      so_what: 'You are paying more to reach fewer converting customers — a classic sign of audience saturation or misaligned targeting.',
+      implication: 'You are paying more to reach fewer converting customers — a classic sign of audience saturation or misaligned targeting.',
     },
     {
       finding: 'The 3 profitable campaigns all target existing customers; all 14 loss-making campaigns target cold audiences',
-      so_what: 'Cold acquisition is broken across every channel. Until fixed, all incremental budget should go to retention and re-engagement.',
+      implication: 'Cold acquisition is broken across every channel. Until fixed, all incremental budget should go to retention and re-engagement.',
     },
   ],
   key_metrics: {
@@ -493,11 +493,11 @@ const growthPhase: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Channels with fresh creative (< 90 days old) convert at 2.4x the rate of stale campaigns',
-      so_what: 'Creative refresh cadence directly impacts conversion rates. Budget for quarterly creative production across all channels.',
+      implication: 'Creative refresh cadence directly impacts conversion rates. Budget for quarterly creative production across all channels.',
     },
     {
       finding: 'Subscriber-based channels (Email, Push) show zero CAC increase as volume scales',
-      so_what: 'Owned audiences are the most scalable asset — investment in subscriber growth has compounding returns with no marginal cost inflation.',
+      implication: 'Owned audiences are the most scalable asset — investment in subscriber growth has compounding returns with no marginal cost inflation.',
     },
   ],
   key_metrics: {
