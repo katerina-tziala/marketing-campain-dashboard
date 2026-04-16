@@ -5,7 +5,8 @@ import { useCampaignStore } from '../../../stores/campaignStore'
 import AiAnalysisState from './AiAnalysisState.vue'
 import AiAnalysisCorrelations from './AiAnalysisCorrelations.vue'
 import AiAnalysisSummary from './AiAnalysisSummary.vue'
-import type { BadgeVariant } from '../../../ui/types/badge-variant'
+import { confidenceVariant, urgencyVariant, actionVariant, effortVariant } from '../utils/analysis-badge-variants'
+import { formatEuro, formatRoi } from '../utils/panel-formatters'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -27,50 +28,6 @@ const formattedCacheTime = computed(() => {
   const d = new Date(cacheTimestamp.value)
   return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 })
-
-const confidenceVariant = (level: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    high: 'success',
-    medium: 'warning',
-    low: 'danger',
-  }
-  return map[level.toLowerCase()] ?? 'info'
-}
-
-const urgencyVariant = (urgency: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    immediate: 'danger',
-    'this quarter': 'warning',
-    'next quarter': 'info',
-    'this month': 'opportunity',
-  }
-  return map[urgency.toLowerCase()] ?? 'info'
-}
-
-const actionVariant = (action: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    reduce: 'warning',
-    pause: 'danger',
-    restructure: 'info',
-  }
-  return map[action.toLowerCase()] ?? 'info'
-}
-
-const effortVariant = (effort: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    low: 'success',
-    medium: 'warning',
-  }
-  return map[effort.toLowerCase()] ?? 'info'
-}
-
-function formatCurrency(value: number): string {
-  return `€${value.toLocaleString('en-IE')}`
-}
-
-function formatRoi(value: number): string {
-  return `${Math.round(value * 100)}%`
-}
 
 function handleAnalyze(): void {
   analysisStore.analyze('optimizer')
@@ -121,7 +78,7 @@ function handleAnalyze(): void {
         <div class="ai-recommendation__details">
           <p class="ai-recommendation__row">
             <span class="ai-recommendation__detail-label">Reallocation</span>
-            <span class="ai-recommendation__detail-value">{{ formatCurrency(rec.amount) }}</span>
+            <span class="ai-recommendation__detail-value">{{ formatEuro(rec.amount) }}</span>
           </p>
           <p class="ai-recommendation__row">
             <span class="ai-recommendation__detail-label">New ROI</span>
@@ -130,7 +87,7 @@ function handleAnalyze(): void {
           <p class="ai-recommendation__row">
             <span class="ai-recommendation__detail-label">Est. Revenue</span>
             <span class="ai-recommendation__detail-value text-success">
-              +{{ formatCurrency(rec.expected_impact.additional_revenue) }}
+              +{{ formatEuro(rec.expected_impact.additional_revenue) }}
             </span>
           </p>
           <p class="ai-recommendation__row">

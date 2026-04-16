@@ -2685,3 +2685,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Hyphen separator (data-table-header) rather than double-underscore BEM notation — consistent with the flat naming approach adopted across all global component styles
+
+
+## [#128] Extract shared badge variants and formatters from AI panels into utils
+**Type:** refactor
+
+**Summary:** Extracted duplicated badge variant helpers and display formatters from AiOptimizerPanel and AiSummaryPanel into two dedicated utility files.
+
+**Brainstorming:** Both panels had local copies of urgencyVariant and formatRoi (identical) plus formatCurrency/formatEuro (same output, different implementations). Badge variant functions all followed the same map[key.toLowerCase()] ?? 'info' pattern. A generic internal badgeVariant(map, key) resolver eliminates this repetition while each named export stays descriptive. Formatters go in a separate file since they are a different concern — display strings vs visual badge mapping. Function declarations used instead of arrow const per project convention.
+
+**Prompt:** AiSummaryPanel and AiOptimizerPanel share a lot of functions — extract them in a file in utils. For badge variants create another file with maps for each item and a generic function, export functions for the rest. Do not export them as const if they are functions. Name the file analysis-badge-variants.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/utils/analysis-badge-variants.ts` — new file; internal badgeVariant generic resolver + named map constants; exports: healthScoreVariant, channelStatusVariant, urgencyVariant (merged superset), insightTypeVariant, confidenceVariant, actionVariant, effortVariant
+- `app/src/features/ai-tools/utils/panel-formatters.ts` — new file; exports: formatRoi, formatEuro (unified from both panels using Intl.NumberFormat), formatNumber
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — removed all local badge variant and formatter functions; updated imports; renamed healthScoreClass → healthScoreVariant, channelStatusClass → channelStatusVariant, insightTypeClass → insightTypeVariant in template; classROI kept local (delegates to roiClass from common utils)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — removed all local badge variant and formatter functions; updated imports; renamed formatCurrency → formatEuro in template
+- `CLAUDE.md` — updated utils folder entries and panel descriptions
+
+**Key decisions & why:**
+- badgeVariant kept internal (not exported) — it is an implementation detail of the map-based lookup pattern, not a public API
+- formatCurrency (optimizer) unified into formatEuro using Intl.NumberFormat — more correct than the template literal approach it replaced
+- urgencyVariant merged with the optimizer's superset map (adds 'this month': 'opportunity') — no behaviour change for summary, which never passes that value
+- classROI left local in AiSummaryPanel — it is a thin wrapper around roiClass from common/utils/roi, not a formatting concern shared with the optimizer

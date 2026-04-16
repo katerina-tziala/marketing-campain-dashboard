@@ -6,7 +6,8 @@ import { roiClass } from '../../../common/utils/roi'
 import AiAnalysisState from './AiAnalysisState.vue'
 import AiAnalysisCorrelations from './AiAnalysisCorrelations.vue'
 import AiAnalysisSummary from './AiAnalysisSummary.vue'
-import type { BadgeVariant } from '../../../ui/types/badge-variant'
+import { healthScoreVariant, channelStatusVariant, urgencyVariant, insightTypeVariant } from '../utils/analysis-badge-variants'
+import { formatEuro, formatRoi, formatNumber } from '../utils/panel-formatters'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -29,58 +30,8 @@ const formattedCacheTime = computed(() => {
   return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 })
 
-const healthScoreClass = (label: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    excellent: 'success',
-    good: 'info',
-    'needs attention': 'warning',
-    critical: 'danger',
-  }
-  return map[label.toLowerCase()] ?? 'info'
-}
-
-const channelStatusClass = (s: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    strong: 'success',
-    moderate: 'warning',
-    weak: 'danger',
-  }
-  return map[s.toLowerCase()] ?? 'info'
-}
-
-const urgencyVariant = (urgency: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    immediate: 'danger',
-    'this quarter': 'warning',
-    'next quarter': 'info',
-  }
-  return map[urgency.toLowerCase()] ?? 'info'
-}
-
-const insightTypeClass = (type: string): BadgeVariant => {
-  const map: Record<string, BadgeVariant> = {
-    performance: 'info',
-    opportunity: 'opportunity',
-    warning: 'warning',
-    achievement: 'success',
-  }
-  return map[type] ?? 'info'
-}
-
-function formatEuro(value: number): string {
-  return new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value)
-}
-
-function formatRoi(value: number): string {
-  return `${Math.round(value * 100)}%`
-}
-
 function classROI(value: number): string {
   return roiClass(Math.round(value * 100))
-}
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-IE').format(value)
 }
 
 function handleSummarize(): void {
@@ -113,11 +64,11 @@ function handleSummarize(): void {
     >
       <template #badge>
         <div class="health-container">
-          <div class="badge health-badge" :class="healthScoreClass(response!.health_score.label)">
+          <div class="badge health-badge" :class="healthScoreVariant(response!.health_score.label)">
             <span class="health-score">{{ response!.health_score.score }}</span>
             <span>&nbsp;/&nbsp;100</span>
           </div>
-          <p class="badge-text health-label" :class="healthScoreClass(response!.health_score.label)">{{ response!.health_score.label }}</p>
+          <p class="badge-text health-label" :class="healthScoreVariant(response!.health_score.label)">{{ response!.health_score.label }}</p>
         </div>
       </template>
       <p>{{ response!.health_score.reasoning }}</p>
@@ -196,7 +147,7 @@ function handleSummarize(): void {
           <span class="ai-insight__icon">{{ insight.icon }}</span>
           <span class="ai-insight__text">{{ insight.text }}</span>
         </p>
-        <p class="card-content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
+        <p class="card-content ai-insight__metric badge-background badge-text" :class="insightTypeVariant(insight.type)">
           <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
           <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
         </p>
@@ -209,12 +160,12 @@ function handleSummarize(): void {
       <div
         v-for="(ch, i) in response!.channel_summary"
         :key="i"
-        class="card-secondary ai-channel" :class="channelStatusClass(ch.status)"
+        class="card-secondary ai-channel" :class="channelStatusVariant(ch.status)"
       >
         <div class="card-head">
           <h5 class="card-title">{{ ch.channel }}</h5>
           <span class="ai-channel__budget">{{ ch.budget_share }}</span>
-          <span class="badge" :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
+          <span class="badge" :class="channelStatusVariant(ch.status)">{{ ch.status }}</span>
         </div>
         <p class="card-content">{{ ch.one_liner }}</p>
       </div>
