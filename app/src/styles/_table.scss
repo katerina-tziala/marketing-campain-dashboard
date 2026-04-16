@@ -1,0 +1,26 @@
+ @layer components {
+ 
+  .data-table {
+    @apply w-full text-sm border-collapse;
+  }
+
+  .data-table__th {
+    @apply capitalize border-b border-primary-900 py-3 px-4 font-semibold tracking-wider text-left text-primary-300; 
+  }
+
+  .data-table__tr {
+    @apply  border-b  border-surface-border;
+
+    &:last-child { 
+      @apply border-b-0;
+    }
+
+    &:hover {
+      @apply bg-slate-100/5; 
+    }
+  }
+
+  .data-table__td {
+    @apply py-3 px-4 text-typography-intense; 
+  }
+}

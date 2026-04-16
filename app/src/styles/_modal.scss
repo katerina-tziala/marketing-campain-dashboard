@@ -1,0 +1,10 @@
+ @layer components {
+ 
+  .modal__body {
+    @apply flex flex-col gap-3 p-6 w-fit max-w-2xl;
+  }
+
+  .modal__footer {
+    @apply flex items-center justify-end gap-4 border-t border-surface-border py-5 px-6;
+  }
+}

@@ -1,0 +1,94 @@
+ @layer components {
+
+  .btn {
+    @apply
+      inline-flex
+      items-center
+      justify-center
+      cursor-pointer
+      outline-none 
+      border-2
+      border-transparent
+      rounded-md
+      transition-colors
+      duration-150
+      ease-in-out
+      whitespace-nowrap
+      gap-2
+      py-1
+      px-2.5
+      text-sm
+      font-medium
+      leading-6
+      tracking-wide
+      text-center;
+
+      &:disabled {
+        @apply cursor-not-allowed opacity-50;
+      }
+  }
+ 
+  .btn-primary {
+    @extend .btn;
+    @apply bg-primary-600 text-white;
+
+    &:not(:disabled)  {
+      &:focus-visible, &:hover  {
+        @apply border-primary-500 bg-primary-500;
+      } 
+    }
+  }
+
+  .btn-icon-secondary {
+    @extend .btn;
+ 
+    @apply text-xl
+      bg-none
+      p-1.5
+      text-primary-400;
+
+     > span {
+      @apply sr-only;
+     }
+
+     &:not(:disabled) {
+       &:hover {
+        @apply text-primary-400 bg-primary-500/20;
+      }
+
+      &:focus-visible  {
+        @apply border-primary-400;
+      }
+     }
+  }
+   
+  .btn-secondary-outline {
+    @extend .btn;
+     @apply text-primary-300 border-primary-300 border;
+    
+    &:not(:disabled) {
+       &:focus-visible, &:hover  {
+        @apply text-primary-400 border-primary-400;
+      }
+    }
+  }
+
+  .btn-destructive-small {
+     @extend .btn;
+    @apply text-typography text-xs px-2;
+
+   &:not(:disabled) {
+     &:hover {
+      @apply text-danger bg-danger/10;
+    }
+    
+    &:focus-visible  {
+      @apply border-danger text-danger bg-danger/10;
+    }
+   }
+  }
+
+  .btn-small {
+    @apply text-xs px-2 py-1;
+  }
+}

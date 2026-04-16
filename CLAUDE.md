@@ -32,7 +32,8 @@ app/                        # Vue 3 + Vite project
 │   │   ├── types/
 │   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
 │   │   ├── utils/
-│   │   │   └── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
+│   │   │   ├── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
+│   │   │   └── roi.ts          # roiValue(revenue, budget) → number; roiClass(roi) → 'positive'|'warning'|'negative'; formatROI(value) → string
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
@@ -64,10 +65,12 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── ToastNotification.vue  # Single error toast — role="alert", aria-live
 │   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
 │   │   │   └── index.ts        # Barrel export for toast
-│   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
-│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
-│   │   ├── Spinner.vue         # Reusable spinner — size (sm/md) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
-│   │   └── index.ts            # Barrel export for the full ui library
+│   │   ├── types/              # Shared UI type stubs (directory, reserved for future shared types)
+│   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; scoped @apply styles; icon slot
+│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
+│   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
+│   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
+│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; Badge removed)
 │   ├── shell/
 │   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
 │   ├── features/
@@ -77,7 +80,6 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected; uses aiAnalysisStore.activeTab for tab routing
 │   │   │   │   ├── AiConnectionForm.vue    # Provider button toggles (Groq default, then Gemini) + API key input (show/hide) + collapsible "How to get your key?" help section (provider-specific numbered steps) + Connect button with spinner + inline error (form-control--error on input + form-field__error text + hint below); clears connectionError + apiKey + showKey on provider change; owns ERROR_MESSAGES and ERROR_HINTS maps; uses global form-field/form-control classes
 │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link; disconnect clears analysis state via aiAnalysisStore
-│   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
 │   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button (cooldown-disabled); idle/loading/done/error states; renders full BudgetOptimizerResponse: executive summary, recommendations, top/underperformers, quick wins, correlations, risks; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
 │   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button (cooldown-disabled); idle/loading/done/error states; renders full ExecutiveSummaryResponse: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
 │   │   │   ├── ai-analysis/
@@ -128,12 +130,22 @@ app/                        # Vue 3 + Vite project
 │   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
 │   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
 │   ├── styles/
-│   │   └── components.scss     # @layer components — form classes (form-field, form-control, form-control--error), card, btn-primary, section-title, data-table; imported by style.scss
+│   │   ├── components.scss         # Entry point — @use imports for all SCSS partials; imported by style.scss
+│   │   ├── utilities.scss          # Entry point — @use imports for utility partials (scrollbar); imported by style.scss
+│   │   ├── _ai-summary.scss        # @layer components — .ai-panel, .ai-section, .ai-section__analysis-details
+│   │   ├── _badge.scss             # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
+│   │   ├── _button.scss            # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
+│   │   ├── _card.scss              # @layer components — .card, .card-secondary (with __head, __title, __content modifiers)
+│   │   ├── _forms.scss             # @layer components — .form, .form-field, .form-field__label, .form-control, .form-control--error, .form-field__error-container, .form-field__error, .form-field__error-hint
+│   │   ├── _modal.scss             # @layer components — .modal__body, .modal__footer
+│   │   ├── _roi.scss               # @layer components — .roi-text with .positive/.warning/.negative modifiers
+│   │   ├── _scrollbar.scss         # @layer utilities — .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface
+│   │   └── _table.scss             # @layer components — .data-table, .data-table__th, .data-table__tr, .data-table__td
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
-│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/components.scss
+│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/components + styles/utilities
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme, danger color token, spinner color tokens (primary/secondary arc + track)
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; danger (default + -5p), success, warning, typography (default/subtle/intense), surface (default/secondary), surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; badge colors moved to SCSS
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/
 └── package.json                # Locked via package-lock.json

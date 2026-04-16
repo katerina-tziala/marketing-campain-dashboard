@@ -8,6 +8,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
+    style="width: 1em; height: 1em; display: inline-block;"
   >
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />

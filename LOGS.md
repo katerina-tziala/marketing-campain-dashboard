@@ -2263,3 +2263,46 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `capitalize` on the component — removes the responsibility from every caller; single source of truth for badge text casing
 - Helper functions return `BadgeVariant` instead of a class string — type-safe, no string concatenation, template is cleaner
 - `ai-confidence` merged into `Badge` — structurally identical to `ai-badge`; the semantic difference (confidence level) is now expressed via the variant prop value, not a separate CSS class hierarchy
+
+
+## [#110] Modularize SCSS and refactor UI component layer
+**Type:** refactor
+
+**Summary:** Split the monolithic `components.scss` into individual SCSS partials per concern, extracted a `utilities.scss` entry file for utility classes, promoted `Tabs` to a generic reusable UI component (replacing the feature-specific `AiTabs.vue`), removed `Badge.vue` in favour of global CSS classes, added `roi.ts` shared utilities, extended `Spinner` with larger size variants, and cleaned up Tailwind tokens.
+
+**Brainstorming:** The single `components.scss` file was growing unwieldy — every component category dumped styles into one file, making it hard to navigate and reason about. Splitting by concern (button, badge, card, form, modal, table, roi, ai-summary, scrollbar) follows the same pattern already used in most style systems: one partial per semantic area, composed via a top-level entry file. A separate `utilities.scss` entry mirrors the Tailwind layer split (components vs utilities). `AiTabs.vue` was feature-locked; `Tabs.vue` in the UI library is generically useful — takes a typed `Tab<T>[]` prop with optional icon. `Badge.vue` as a Vue component added component overhead for what is essentially a styled `<span>`; moving to global `.badge` + `.badge-text`/`.badge-background` modifier classes (extended via `@extend`) is simpler and works in any template without an import. `roi.ts` extracts three ROI helpers (`roiValue`, `roiClass`, `formatROI`) that were likely duplicated across components. `Spinner` gained `lg/xl/xxl` sizes to cover full-panel loading states.
+
+**Prompt:** Split components.scss into individual SCSS partials per concern (badge, button, card, forms, modal, roi, scrollbar, table, ai-summary). Add a utilities.scss entry file for utility-layer classes. Replace the feature-specific AiTabs.vue with a generic reusable Tabs.vue in the UI library. Remove Badge.vue and move badge styling to global CSS classes. Add roi.ts shared utilities (roiValue, roiClass, formatROI) to common/utils. Extend Spinner with lg/xl/xxl size variants. Standardize icon sizing via inline style. Clean up Tailwind tokens — remove badge-* and panel-text flat keys, add danger.-5p, typography.intense, surface-border.secondary.
+
+**What changed:**
+- `app/src/styles/components.scss` — converted to entry file; replaced inline styles with `@use` imports for each partial
+- `app/src/styles/utilities.scss` — new entry file; imports `_scrollbar`
+- `app/src/styles/_ai-summary.scss` — new partial; `.ai-panel`, `.ai-section`, `.ai-section__analysis-details`
+- `app/src/styles/_badge.scss` — new partial; `.badge`, `.badge-text`, `.badge-background`; variants: success/warning/danger/info/opportunity; uses `@extend`
+- `app/src/styles/_button.scss` — new partial; `.btn` base + `.btn-primary`, `.btn-icon-secondary`, `.btn-secondary-outline`, `.btn-destructive-small`, `.btn-small`
+- `app/src/styles/_card.scss` — new partial; `.card`, `.card-secondary` with sub-elements
+- `app/src/styles/_forms.scss` — new partial; full form class set migrated from old `components.scss`
+- `app/src/styles/_modal.scss` — new partial; `.modal__body`, `.modal__footer`
+- `app/src/styles/_roi.scss` — new partial; `.roi-text` with `.positive`/`.warning`/`.negative` modifiers
+- `app/src/styles/_scrollbar.scss` — new partial; `.scrollbar-stable`, `.scrollbar-stable-both`, `.scrollbar-on-surface`
+- `app/src/styles/_table.scss` — new partial; `.data-table` and element classes migrated from old `components.scss`
+- `app/src/style.scss` — updated to import both `styles/components` and `styles/utilities`
+- `app/src/ui/Tabs.vue` — new generic tab component; `Tab<T>` type exported; `tabs` + `activeTab` props; `change` emit; optional icon per tab via `Component`; auto-selects first tab on mount
+- `app/src/ui/types/` — new directory stub for future shared UI types
+- `app/src/ui/Badge.vue` — deleted; badge styling moved to global CSS classes in `_badge.scss`
+- `app/src/features/ai-tools/components/AiTabs.vue` — deleted; replaced by generic `Tabs.vue`
+- `app/src/ui/BaseButton.vue` — refined with scoped `@apply` styles per variant
+- `app/src/ui/BaseModal.vue` — updated to use `.btn-icon-secondary` global class for close button
+- `app/src/ui/Spinner.vue` — added `lg`, `xl`, `xxl` size variants
+- `app/src/ui/icons/*.vue` — standardized all icons with `style="width: 1em; height: 1em; display: inline-block;"` inline sizing
+- `app/src/ui/index.ts` — removed `Badge`/`BadgeVariant` exports; added `Tabs` + `Tab` type exports
+- `app/src/common/utils/roi.ts` — new shared utility; `roiValue()`, `roiClass()`, `formatROI()`
+- `app/tailwind.config.js` — removed `badge-*` and `panel-text` flat tokens; added `danger.-5p`, `typography.intense`, `surface-border.secondary`, explicit `black`/`white` tokens
+
+**Key decisions & why:**
+- One partial per concern — mirrors Tailwind's own layer structure; each file is self-contained and easy to locate
+- `@extend` in `_badge.scss` — avoids duplicating the full modifier list on `.badge`; works correctly within a single `@layer components` block
+- `Tabs.vue` in `ui/` not `ai-tools/` — the component has no AI-specific logic; keeping it in the ui library makes it available to any future feature
+- Badge as CSS classes not a component — no import overhead, works with any element, easier to compose with other classes
+- `roi.ts` in `common/utils/` — ROI calculation is domain logic shared across dashboard and AI panels; belongs with other shared utils alongside `math.ts`
+- Icon sizing via inline style — consistent 1em × 1em sizing that inherits font-size from parent; avoids needing a Tailwind class on every usage site

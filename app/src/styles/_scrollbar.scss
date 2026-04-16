@@ -1,0 +1,28 @@
+ @layer utilities {
+  .scrollbar-stable {
+    scrollbar-gutter: stable;
+  }
+
+  .scrollbar-stable-both {
+    scrollbar-gutter: stable both-edges;
+  } 
+
+  .scrollbar-on-surface {
+    scrollbar-color: rgba(165, 180, 252, 0.7) rgba(13, 18, 38, 0.8);
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(13, 18, 38, 0.8);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(165, 180, 252, 0.7);
+      border-radius: 9999px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #818cf8;
+    }
+  }
+
+
+}

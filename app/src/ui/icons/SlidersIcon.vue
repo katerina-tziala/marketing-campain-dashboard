@@ -9,6 +9,7 @@
     stroke-width="2"
     stroke-linecap="round"
     stroke-linejoin="round"
+    style="width: 1em; height: 1em; display: inline-block;"
   >
     <line x1="4" y1="21" x2="4" y2="14" />
     <line x1="4" y1="10" x2="4" y2="3" />
