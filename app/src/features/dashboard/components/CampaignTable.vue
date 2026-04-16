@@ -140,7 +140,7 @@ const columns: { key: SortField; label: string }[] = [
         >
           <td class="data-table__td campaign-table__td--name">{{ c.campaign }}</td>
           <td class="data-table__td">
-            <span class="channel-badge">{{ c.channel }}</span>
+            <span class="badge info whitespace-break-spaces">{{ c.channel }}</span>
           </td>
           <td class="data-table__td">{{ eur(c.budget) }}</td>
           <td class="data-table__td">{{ compactNumber(c.clicks) }}</td>
@@ -197,14 +197,8 @@ const columns: { key: SortField; label: string }[] = [
 
     &--roi-positive { color: #10b981; }
     &--roi-warning  { color: #f59e0b; }
-    &--roi-negative { color: #f43f5e; }
+    &--roi-negative { color: #f55671; }
   }
 }
 
-.channel-badge {
-  @apply rounded-full px-2 py-0.5 text-xs font-medium;
-  border: 1px solid theme('colors.primary.700');
-  color: theme('colors.primary.400');
-  background-color: transparent;
-}
 </style>

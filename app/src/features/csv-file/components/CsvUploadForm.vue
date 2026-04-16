@@ -52,11 +52,11 @@ function handleSubmit(): void {
   let valid = true
 
   if (!props.title.trim()) {
-    titleError.value = 'Campaign title is required.'
+    titleError.value = 'Campaign title is required'
     valid = false
   }
   if (!props.file) {
-    fileError.value = 'Please select a CSV file.'
+    fileError.value = 'Please select a CSV file'
     valid = false
   }
   if (valid) emit('submit')

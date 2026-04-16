@@ -99,8 +99,8 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
 // ── Table ──────────────────────────────────────────────────────────────────────
 
 .error-table-wrapper {
-  border: 1px solid var(--color-border);
-  border-radius: theme('borderRadius.md');
+  // border: 1px solid var(--color-border);
+  // border-radius: theme('borderRadius.md');
   overflow: hidden;
   overflow-y: auto;
   max-height: 260px;

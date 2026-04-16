@@ -35,10 +35,10 @@ function onCloseAiPanel(): void {
     <div class="app-shell__left">
       <header class="app-shell__header">
         <h1 class="app-shell__title">Marketing Campaign Dashboard</h1>
-        <BaseButton v-if="store.campaigns.length > 0" variant="ghost" @click="showReplaceConfirm = true">
+        <button v-if="store.campaigns.length > 0" class="btn-secondary-outline" @click="showReplaceConfirm = true">
           <UploadIcon />
           Upload CSV
-        </BaseButton>
+        </button>
       </header>
       <main class="app-shell__main">
         <slot />

@@ -72,7 +72,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; Badge removed)
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
+│   │   └── AppShell.vue            # Top-level layout wrapper — flex col → flex row at lg+; app-shell__left (header + app-shell__main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; app-shell__main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
@@ -110,20 +110,20 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── rankModels.ts                # rankModels(parsed, fallback) — filters out models with strength_score < 6, sorts by strength_score desc, inits limitReached, updates optimal model properties from AI response
 │   │   │   └── index.ts            # Barrel export
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; AI button uses raw `<button class="btn-primary">`; table section uses global `.card` class
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
-│   │   │       ├── CampaignTable.vue   # Sortable campaign data table
+│   │   │       ├── CampaignTable.vue   # Sortable campaign data table; uses global data-table classes; channel cell uses `.badge.info` global CSS class; ROI coloring via scoped modifier classes (--roi-positive/warning/negative)
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
 │   │   └── csv-file/               # CSV feature folder
 │   │       ├── types/
-│   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
+│   │       │   └── index.ts        # CsvRowError (row/column/issue), CsvValidationErrorType (union), CsvValidationError (type + message + details? + rowErrors?), CsvParseResult
 │   │       ├── components/
 │   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
-│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — warns that uploading will replace current data; emits confirm/close; opened by AppShell header button when data exists
-│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
-│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
+│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
+│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; uses global form-field/form-control classes; BaseButton for all actions; footer stacks vertically at <480px
+│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; BaseButton for all actions; Proceed only shown when validCampaigns > 0
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/

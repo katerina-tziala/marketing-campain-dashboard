@@ -2306,3 +2306,29 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Badge as CSS classes not a component — no import overhead, works with any element, easier to compose with other classes
 - `roi.ts` in `common/utils/` — ROI calculation is domain logic shared across dashboard and AI panels; belongs with other shared utils alongside `math.ts`
 - Icon sizing via inline style — consistent 1em × 1em sizing that inherits font-size from parent; avoids needing a Tailwind class on every usage site
+
+
+## [#111] Apply global CSS classes across csv-file, dashboard, and shell components
+**Type:** refactor
+
+**Summary:** Replaced inline/scoped button and layout styles in csv-file, dashboard, and shell components with the global CSS classes introduced in the SCSS modularization — global btn-*, modal-*, data-table, badge, card, and form classes now used consistently throughout the app.
+
+**Brainstorming:** With the SCSS partials established in #110, the remaining work was to wire the consumer components up to those classes. Each component had a mix of: raw `<button>` elements with no shared class, `BaseButton` used inconsistently, and scoped styles that duplicated what the new globals provide. The goal was consistency — same class names in the same situations everywhere — without breaking component-specific layout logic (dropzone, error table sticky headers, responsive footer stacking) which stays scoped. `ReplaceDataModal` became the cleanest example: zero scoped styles, purely composed from `BaseModal` + global utility classes. `AppShell` gained the `app-shell__left` wrapper to support the push-drawer layout at lg+, and `app-shell__main` as a constrained max-width content area. `CampaignTable` channel cell moved from a `Badge` component import to a `.badge.info` class pair — consistent with how badge-as-class works elsewhere post #110.
+
+**Prompt:** Apply the global CSS class system (btn-*, modal-*, data-table, badge, card, form classes) consistently across all components in the csv-file, dashboard, and shell folders. Use BaseButton in csv-file components. Use raw button elements with global classes in dashboard and shell. Remove redundant scoped styles where global classes now cover the same ground. Update AppShell layout with app-shell__left and app-shell__main wrappers. Update CLAUDE.md and write a log entry.
+
+**What changed:**
+- `app/src/shell/AppShell.vue` — added `app-shell__left` wrapper (flex col, overflow-y auto); added `app-shell__main` inner wrapper (max-width 1280px, margin auto, overflow-x clip); header Upload CSV button uses `.btn-secondary-outline`; gradient title (indigo→pink via `-webkit-background-clip`)
+- `app/src/features/dashboard/DashboardView.vue` — AI button uses raw `<button class="btn-primary">`; table section uses global `.card` class; `BaseButton` import removed
+- `app/src/features/dashboard/components/CampaignTable.vue` — uses global `.data-table`, `.data-table__th`, `.data-table__tr`, `.data-table__td` classes throughout; channel cell uses `.badge.info` global CSS class pair; ROI coloring via scoped modifier classes
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — `isLoading` prop added; all buttons via `BaseButton`; global `form-field`, `form-control`, `form-control--error` classes; footer stacks vertically at <480px
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — prop type updated to `CsvRowError[]`; all buttons via `BaseButton`; global `data-table` classes throughout; Proceed button conditionally shown when `validCampaigns.length > 0`
+- `app/src/features/csv-file/components/ReplaceDataModal.vue` — wraps `BaseModal`; uses global `.modal__body`, `.modal__footer`, `.btn-secondary-outline`, `.btn-primary`; all scoped styles removed
+- `app/src/features/csv-file/types/index.ts` — `CsvRowError` (row/column/issue) extracted as a standalone interface; `CsvValidationErrorType` added as a union type; `CsvValidationError` updated with `rowErrors?: CsvRowError[]`
+
+**Key decisions & why:**
+- `BaseButton` in csv-file, raw `<button class="btn-*">` in dashboard/shell — csv-file actions benefit from BaseButton's variant/disabled props; dashboard and shell have simpler, one-off buttons where a class is sufficient
+- `app-shell__left` wrapper — required by the push-drawer layout: the drawer is a sibling at flex-row level, and the left column must scroll independently; without this wrapper the main content would expand behind the open drawer
+- `app-shell__main` max-width constraint — 1280px cap with `margin: 0 auto` centers the dashboard on wide screens; `overflow-x: clip` prevents horizontal scrollbar from chart overflow
+- `.badge.info` class pair in CampaignTable — avoids importing a Vue component just for a styled span; consistent with how badges are used in the AI panels post-#110
+- `ReplaceDataModal` zero scoped styles — the modal shell, body, footer, and buttons are all covered by global classes; there is nothing component-specific left to scope

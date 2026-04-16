@@ -2,8 +2,7 @@
 import type { ChartData } from 'chart.js'
 import { computed, inject } from 'vue'
 import {
-  BarChart,
-  BaseButton,
+  BarChart, 
   CHART_COLORS,
   DonutChart,
   FunnelChart,
@@ -108,10 +107,9 @@ const funnelValues = computed(() => [
     <div class="dashboard__header">
       <div class="dashboard__title-row">
         <h2 class="dashboard__title">Campaign Performance</h2>
-        <BaseButton @click="openAiPanel?.()">
-          <SparklesIcon />
-          AI
-        </BaseButton>
+        <button class="btn-primary" @click="openAiPanel?.()">
+          <SparklesIcon />AI
+        </button> 
       </div>
       <p class="dashboard__subtitle">
         {{ store.title }} , {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
