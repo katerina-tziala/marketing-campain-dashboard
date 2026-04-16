@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue' 
+import { computed } from 'vue'
 import { useAiAnalysisStore } from '../../../stores/aiAnalysisStore'
-import { SparklesIcon } from '../../../ui/icons'  
-import { roiClass } from '../../../common/utils/roi'  
-import { Spinner  } from '../../../ui' 
+import { roiClass } from '../../../common/utils/roi'
+import AiAnalysisState from './AiAnalysisState.vue'
 import type { BadgeVariant } from '../../../ui/types/badge-variant'
- 
+
 const analysisStore = useAiAnalysisStore()
 
 const status = computed(() => analysisStore.summaryStatus)
@@ -16,20 +15,30 @@ const cacheTimestamp = computed(() => analysisStore.summaryCacheTimestamp)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
-const healthScoreClass = (label: string):BadgeVariant => {
-   const map: Record<string, BadgeVariant> = {
+const actionLabel = computed(() => analysisActivated.value ? 'Re-Summarize' : 'Summarize')
+
+const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
+
+const formattedCacheTime = computed(() => {
+  if (!cacheTimestamp.value) return null
+  const d = new Date(cacheTimestamp.value)
+  return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+})
+
+const healthScoreClass = (label: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
     excellent: 'success',
     good: 'info',
     'needs attention': 'warning',
     critical: 'danger',
   }
-  return map[label.toLowerCase()] ?? 'info' 
+  return map[label.toLowerCase()] ?? 'info'
 }
 
-const channelStatusClass = (s: string) => { 
-    const map: Record<string, BadgeVariant> = {
+const channelStatusClass = (s: string): BadgeVariant => {
+  const map: Record<string, BadgeVariant> = {
     strong: 'success',
-    moderate: 'warning', 
+    moderate: 'warning',
     weak: 'danger',
   }
   return map[s.toLowerCase()] ?? 'info'
@@ -44,30 +53,14 @@ const urgencyVariant = (urgency: string): BadgeVariant => {
   return map[urgency.toLowerCase()] ?? 'info'
 }
 
-const insightTypeClass = (type: string) => {
+const insightTypeClass = (type: string): BadgeVariant => {
   const map: Record<string, BadgeVariant> = {
     performance: 'info',
     opportunity: 'opportunity',
     warning: 'warning',
     achievement: 'success',
   }
-  return `${map[type] ?? 'info'}`
-}
-
-const summarizeLabel = computed(() =>analysisActivated.value ? 'Re-Summarize' : 'Summarize')
-
-const isButtonDisabled = computed(() =>
-  status.value === 'loading' || !canAnalyze.value,
-)
-
-const formattedCacheTime = computed(() => {
-  if (!cacheTimestamp.value) return null
-  const d = new Date(cacheTimestamp.value)
-  return d.toLocaleTimeString('en-IE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-})
-
-function handleSummarize(): void {
-  analysisStore.analyze('summary')
+  return map[type] ?? 'info'
 }
 
 function formatEuro(value: number): string {
@@ -79,296 +72,180 @@ function formatRoi(value: number): string {
 }
 
 function classROI(value: number): string {
-  return roiClass(Math.round(value * 100));
+  return roiClass(Math.round(value * 100))
 }
- 
+
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('en-IE').format(value)
 }
- 
+
+function handleSummarize(): void {
+  analysisStore.analyze('summary')
+}
 </script>
 
 <template>
-  <div class="ai-panel">
-    <!-- Header -->
-    <div class="ai-panel__head"> 
-      <h3 class="ai-panel__title">Executive Summary</h3>
-      <button
-        class="btn-primary"
-        :disabled="isButtonDisabled"
-        @click="handleSummarize"
+  <AiAnalysisState
+    title="Executive Summary"
+    :action-label="actionLabel"
+    idle-text="Generate a summary highlighting top and underperforming campaigns with actionable insights."
+    loading-text="Generating summary…"
+    :status="status"
+    :error="error"
+    :error-fallback="errorFallback"
+    :token-limit-reached="analysisStore.tokenLimitReached"
+    :is-button-disabled="isButtonDisabled"
+    :has-result="!!response"
+    :formatted-cache-time="formattedCacheTime"
+    :model-name="response?.model?.display_name"
+    @analyze="handleSummarize"
+  >
+    <!-- Portfolio Health -->
+    <section class="ai-section portfolio-health">
+      <div class="portfolio-health__head">
+        <div class="portfolio-health__title-container">
+          <h4 class="ai-section__title">Portfolio Health</h4>
+          <p class="ai-section__analysis-details">
+            <span v-if="response!.period">{{ response!.period }}
+              <!-- TODO -->
+              &nbsp;&bull;&nbsp;21 of 21 campaigns</span>
+          </p>
+        </div>
+        <div class="ai-health-container">
+          <div class="badge ai-health" :class="healthScoreClass(response!.health_score.label)">
+            <span class="ai-health__value">{{ response!.health_score.score }}</span>
+            <span>&nbsp;/&nbsp;100</span>
+          </div>
+          <p class="badge-text ai-health-score__label" :class="healthScoreClass(response!.health_score.label)">{{ response!.health_score.label }}</p>
+        </div>
+      </div>
+      <p class="ai-section__text">{{ response!.health_score.reasoning }}</p>
+      <h5 class="ai-section__subtitle -mb-2">Bottom Line</h5>
+      <p class="ai-section__text">{{ response!.bottom_line }}</p>
+    </section>
+
+    <!-- Priority Actions -->
+    <section class="ai-section">
+      <h4 class="ai-section__title">Priority Actions</h4>
+      <div
+        v-for="(action, i) in response!.priority_actions"
+        :key="i"
+        class="card-secondary ai-priority"
       >
-        <SparklesIcon/>
-        {{ summarizeLabel }}
-      </button>
-    </div>
- 
-    <!-- Token limit message -->
-    <div v-if="analysisStore.tokenLimitReached && status !== 'done'" class="ai-panel__notice" role="status">
-      <p class="ai-panel__notice-text">AI generation is temporarily unavailable due to usage limits.</p>
-      <p class="ai-panel__notice-hint">Previously generated results are still available.</p>
-    </div>
-
-    <!-- Idle -->
-    <p  v-if="status === 'idle' && !analysisStore.tokenLimitReached"  class="ai-panel__empty-text">
-      Generate a summary highlighting top and underperforming campaigns with actionable insights.
-    </p>
-
-    <!-- Loading -->
-    <div v-else-if="status === 'loading'" class="ai-panel__loader">
-      <Spinner :size="'xxl'" />
-      <p class="ai-panel__loader-text">Generating summary…</p>
-    </div>
-
-    <!-- Error (no cached fallback) -->
-    <div v-else-if="status === 'error' && error" class="ai-panel__error" role="alert">
-      <p class="ai-panel__error-message">{{ error.message }}</p>
-      <p class="ai-panel__error-hint">Click "{{ summarizeLabel }}" to try again.</p>
-    </div>
-
-    <!-- Result -->
-    <div v-else-if="response" class="ai-panel__result">
-      <!-- Model indicator -->
-      <div class="ai-panel__response-details">
-        <p v-if="formattedCacheTime" class="ai-panel__response-details-text" role="status">
-          Generated at {{ formattedCacheTime }}<template v-if="response.model"> with {{ response.model.display_name }}</template>
-        </p>
-        <p class="ai-panel__response-details-ai-disclaimer">AI can make mistakes</p>
-         <!-- Error fallback message -->
-        <p v-if="errorFallback" class="ai-panel__response-details-fallback" role="status">
-          {{ errorFallback }}
+        <div class="card-secondary__head">
+          <span class="ai-priority__number">#{{ action.priority }}</span>
+          <h5 class="card-secondary__title">{{ action.action }}</h5>
+          <span class="badge" :class="urgencyVariant(action.urgency)">{{ action.urgency }}</span>
+        </div>
+        <p class="card-secondary__content px-2">{{ action.expected_outcome }}</p>
+        <p class="card-secondary__content ai-priority__metric">
+          <strong>Success metric:</strong> {{ action.success_metric }}
         </p>
       </div>
-       
-      <!-- Portfolio Health -->
-      <section class="ai-section portfolio-health"> 
-          <div class="portfolio-health__head">
-            <div class="portfolio-health__title-container">
-              <h4 class="ai-section__title">Portfolio Health</h4>
-              <p class="ai-section__analysis-details">
-                 <span v-if="response.period">{{ response.period }}
-                  <!-- TODO -->
-                  &nbsp;&bull;&nbsp;21 of 21 campaigns</span>
-              </p>
-            </div>
-            <div class="ai-health-container">
-              <div class="badge ai-health" :class="healthScoreClass(response.health_score.label)">
-              <span class="ai-health__value">{{ response.health_score.score }}</span>
-              <span>&nbsp;/&nbsp;100</span>
-            </div>
-            <p class="badge-text ai-health-score__label" :class="healthScoreClass(response.health_score.label)">{{ response.health_score.label }}</p>
-          </div>
-            </div>
-          <p class="ai-section__text">{{ response.health_score.reasoning }}</p>
-          <h5 class="ai-section__subtitle -mb-2">Bottom Line</h5>
-          <p class="ai-section__text">{{ response.bottom_line }}</p>
-      </section>
+    </section>
 
-      <!-- Priority Actions -->
-      <section class="ai-section">
-        <h4 class="ai-section__title">Priority Actions</h4> 
-          <div
-            v-for="(action, i) in response.priority_actions"
-            :key="i"
-            class="card-secondary ai-priority"
-          >
-            <div class="card-secondary__head">
-              <span class="ai-priority__number">#{{ action.priority }}</span>
-              <h5 class="card-secondary__title">{{ action.action }}</h5>
-              <span class="badge" :class="urgencyVariant(action.urgency)">{{ action.urgency }}</span> 
-            </div>
-            <p class="card-secondary__content px-2">{{ action.expected_outcome }}</p>
-            <p class="card-secondary__content ai-priority__metric">
-              <strong>Success metric:</strong> {{ action.success_metric }}
-            </p>
-          </div> 
-      </section>
-
-      <!-- Key Metrics -->
-      <section class="ai-section">
-        <h4 class="ai-section__title">Key Metrics</h4>
-        <div class="ai-section__content ai-metrics"> 
-            <div class="card-secondary ai-metric">
-              <h5 class="card-secondary__title">Total Spend</h5>
-              <span class="card-secondary__content ai-metric__value">{{ formatEuro(response.key_metrics.total_spend) }}</span>
-            </div>
-            <div class="card-secondary ai-metric">
-              <h5 class="card-secondary__title">Total Revenue</h5>
-              <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response.key_metrics.overall_roi)">{{ formatEuro(response.key_metrics.total_revenue) }}</p>
-            </div>
-            <div class="card-secondary ai-metric">
-              <h5 class="card-secondary__title">Overall ROI</h5>
-              <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response.key_metrics.overall_roi)">{{ formatRoi(response.key_metrics.overall_roi) }}</p>
-            </div>
-            <div class="card-secondary ai-metric">
-              <h5 class="card-secondary__title">Conversions</h5>
-              <p class="card-secondary__content ai-metric__value">{{ formatNumber(response.key_metrics.total_conversions) }}</p>
-            </div>
-            <div class="card-secondary ai-metric expandable">
-              <h5 class="card-secondary__title badge-text success">Best Channel</h5>
-              <p class="card-secondary__content">{{ response.key_metrics.best_channel }}</p>
-            </div>
-            <div class="card-secondary ai-metric expandable">
-              <h5 class="card-secondary__title badge-text danger">Worst Channel</h5>
-              <p class="card-secondary__content">{{ response.key_metrics.worst_channel }}</p>
-            </div>
-            <div class="card-secondary ai-metric col-span-2">
-              <h5 class="card-secondary__title badge-text success">Best Campaign</h5>
-              <p class="card-secondary__content">{{ response.key_metrics.best_campaign }}</p>
-            </div>
-            <div class="card-secondary ai-metric col-span-2">
-              <h5 class="card-secondary__title badge-text opportunity">Biggest Opportunity</h5>
-              <p class="card-secondary__content">{{ response.key_metrics.biggest_opportunity }}</p>
-            </div>
+    <!-- Key Metrics -->
+    <section class="ai-section">
+      <h4 class="ai-section__title">Key Metrics</h4>
+      <div class="ai-section__content ai-metrics">
+        <div class="card-secondary ai-metric">
+          <h5 class="card-secondary__title">Total Spend</h5>
+          <span class="card-secondary__content ai-metric__value">{{ formatEuro(response!.key_metrics.total_spend) }}</span>
         </div>
-      </section>
+        <div class="card-secondary ai-metric">
+          <h5 class="card-secondary__title">Total Revenue</h5>
+          <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatEuro(response!.key_metrics.total_revenue) }}</p>
+        </div>
+        <div class="card-secondary ai-metric">
+          <h5 class="card-secondary__title">Overall ROI</h5>
+          <p class="card-secondary__content ai-metric__value roi-text" :class="classROI(response!.key_metrics.overall_roi)">{{ formatRoi(response!.key_metrics.overall_roi) }}</p>
+        </div>
+        <div class="card-secondary ai-metric">
+          <h5 class="card-secondary__title">Conversions</h5>
+          <p class="card-secondary__content ai-metric__value">{{ formatNumber(response!.key_metrics.total_conversions) }}</p>
+        </div>
+        <div class="card-secondary ai-metric expandable">
+          <h5 class="card-secondary__title badge-text success">Best Channel</h5>
+          <p class="card-secondary__content">{{ response!.key_metrics.best_channel }}</p>
+        </div>
+        <div class="card-secondary ai-metric expandable">
+          <h5 class="card-secondary__title badge-text danger">Worst Channel</h5>
+          <p class="card-secondary__content">{{ response!.key_metrics.worst_channel }}</p>
+        </div>
+        <div class="card-secondary ai-metric col-span-2">
+          <h5 class="card-secondary__title badge-text success">Best Campaign</h5>
+          <p class="card-secondary__content">{{ response!.key_metrics.best_campaign }}</p>
+        </div>
+        <div class="card-secondary ai-metric col-span-2">
+          <h5 class="card-secondary__title badge-text opportunity">Biggest Opportunity</h5>
+          <p class="card-secondary__content">{{ response!.key_metrics.biggest_opportunity }}</p>
+        </div>
+      </div>
+    </section>
 
-      <!-- Insights -->
-      <section class="ai-section">
-        <h4 class="ai-section__title">Insights</h4> 
-          <div
-            v-for="(insight, i) in response.insights"
-            :key="i"
-            class="card-secondary ai-insight" 
-          >
-            <p class="card-secondary__content ai-insight__content">
-              <span class="ai-insight__icon">{{ insight.icon }}</span>
-              <span class="ai-insight__text">{{ insight.text }}</span>
-            </p>
-            <p class="card-secondary__content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
-              <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
-              <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
-            </p>
-          </div>
-      
-      </section>
+    <!-- Insights -->
+    <section class="ai-section">
+      <h4 class="ai-section__title">Insights</h4>
+      <div
+        v-for="(insight, i) in response!.insights"
+        :key="i"
+        class="card-secondary ai-insight"
+      >
+        <p class="card-secondary__content ai-insight__content">
+          <span class="ai-insight__icon">{{ insight.icon }}</span>
+          <span class="ai-insight__text">{{ insight.text }}</span>
+        </p>
+        <p class="card-secondary__content ai-insight__metric badge-background badge-text" :class="insightTypeClass(insight.type)">
+          <span class="ai-insight__metric-label">{{ insight.metric_highlight.label }}</span>
+          <span class="ai-insight__metric-value">{{ insight.metric_highlight.value }}</span>
+        </p>
+      </div>
+    </section>
 
-      <!-- Channel Summary -->
-      <section class="ai-section">
-        <h4 class="ai-section__title">Channel Summary</h4>
-   
-          <div
-            v-for="(ch, i) in response.channel_summary"
-            :key="i"
-            class="card-secondary ai-channel" :class="channelStatusClass(ch.status)"
-          >
-            <div class="card-secondary__head">
-                <h5 class="card-secondary__title">{{ ch.channel }}</h5>
-                <span class="ai-channel__budget">{{ ch.budget_share }}</span>
-                <span class="badge" :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
-            </div>
-            <p class="card-secondary__content">{{ ch.one_liner }}</p>
-          </div>
-          <p v-if="response.additional_channels_note" class="ai-section__note px-1">
-            {{ response.additional_channels_note }}
-          </p>
-       
-      </section>
+    <!-- Channel Summary -->
+    <section class="ai-section">
+      <h4 class="ai-section__title">Channel Summary</h4>
+      <div
+        v-for="(ch, i) in response!.channel_summary"
+        :key="i"
+        class="card-secondary ai-channel" :class="channelStatusClass(ch.status)"
+      >
+        <div class="card-secondary__head">
+          <h5 class="card-secondary__title">{{ ch.channel }}</h5>
+          <span class="ai-channel__budget">{{ ch.budget_share }}</span>
+          <span class="badge" :class="channelStatusClass(ch.status)">{{ ch.status }}</span>
+        </div>
+        <p class="card-secondary__content">{{ ch.one_liner }}</p>
+      </div>
+      <p v-if="response!.additional_channels_note" class="ai-section__note px-1">
+        {{ response!.additional_channels_note }}
+      </p>
+    </section>
 
-      <!-- Correlations -->
-      <section v-if="response.correlations.length" class="ai-section">
-        <h4 class="ai-section__title">Correlations</h4>
-      
-          <div
-            v-for="(corr, i) in response.correlations"
-            :key="i"
-            class="card-secondary"
-          >
-            <h5 class="card-secondary__title">{{ corr.finding }}</h5>
-            <p class="card-secondary__content">{{ corr.implication }}</p>
-          </div>
-     
-      </section>
-    </div>
-  </div>
+    <!-- Correlations -->
+    <section v-if="response!.correlations.length" class="ai-section">
+      <h4 class="ai-section__title">Correlations</h4>
+      <div
+        v-for="(corr, i) in response!.correlations"
+        :key="i"
+        class="card-secondary"
+      >
+        <h5 class="card-secondary__title">{{ corr.finding }}</h5>
+        <p class="card-secondary__content">{{ corr.implication }}</p>
+      </div>
+    </section>
+  </AiAnalysisState>
 </template>
 
 <style lang="scss" scoped>
-.ai-panel {
-  &__empty-text {
-    @apply text-typography-intense text-sm py-2 leading-5;
-  }
-
-  &__loader {
-    @apply flex flex-col items-center gap-4 p-8;
-
-     &-text {
-      @apply text-typography text-sm;
-    }
-  }
- 
-   &__notice {
-    @apply flex
-      flex-col
-      gap-1.5
-      text-center
-      p-4
-      rounded-lg
-      bg-warning/10
-      border
-      border-warning/15;
-
-    &-text {
-      @apply text-warning font-medium text-sm;
-    }
-
-    &-hint {
-      @apply text-typography text-sm;
-    }
-  }
-
-  &__error {
-    @apply flex
-      flex-col
-      gap-1.5
-      text-center
-      p-4
-      rounded-lg
-      bg-danger/10
-      border
-      border-danger/15;
- 
-    &-message {
-      @apply text-danger font-medium text-sm;
-    }
-
-     &-hint {
-      @apply text-typography text-sm;
-    }
-  }
-  
-  &__response-details {
-    @apply flex
-      flex-col
-      gap-1
-      text-xs
-      text-typography;
-
-      &-text, &-ai-disclaimer {
-        @apply italic;
-      }
-
-      &-fallback {
-        @apply text-warning font-medium;
-      }
-    }
-
-  &__result {
-    @apply flex flex-col gap-6 pb-6; 
-  }
-}
- 
 // ── Health Score ──────────────────────────────────────────────────────────────
 .portfolio-health {
   &__head {
-    @apply flex
-      flex-row
-      items-start
-      justify-between;
+    @apply flex flex-row items-start justify-between;
   }
 
   &__title-container {
-   @apply  flex flex-col gap-1 items-start justify-start;
+    @apply flex flex-col gap-1 items-start justify-start;
   }
 
   .ai-section__title {
@@ -376,80 +253,72 @@ function formatNumber(value: number): string {
   }
 
   .ai-health-container {
-    @apply  flex flex-col gap-1 items-center justify-center;
+    @apply flex flex-col gap-1 items-center justify-center;
   }
- 
+
   .ai-health-score__label {
-      @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
+    @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
   }
 
   .ai-health {
     @apply rounded-md inline-flex items-center justify-self-center;
-  
+
     &__value {
       @apply text-lg font-extrabold leading-none;
     }
   }
- 
 }
 
-// ── Key Metrics Grid ─────────────────────────────────────────────────────────
- .ai-metrics {
+// ── Key Metrics Grid ──────────────────────────────────────────────────────────
+.ai-metrics {
   @apply grid grid-cols-2 auto-rows-auto gap-2;
 
- .ai-metric {
- 
-      > .card-secondary__title {
-        @apply shrink grow-0;
-      }
+  .ai-metric {
+    > .card-secondary__title {
+      @apply shrink grow-0;
+    }
 
-     > .card-secondary__content {
-        @apply grow shrink-0;
-      }
-      }
- 
+    > .card-secondary__content {
+      @apply grow shrink-0;
+    }
+  }
 
   @media (min-width: 1024px) {
-     
-
-      .expandable {
-        @apply col-span-2;
+    .expandable {
+      @apply col-span-2;
 
       > .card-secondary__title {
         @apply shrink grow-0;
       }
 
-     > .card-secondary__content {
+      > .card-secondary__content {
         @apply grow shrink-0;
       }
-      }
+    }
   }
 
-
-     @media (max-width: 640px) {
-       .expandable {
-        @apply col-span-2;
+  @media (max-width: 640px) {
+    .expandable {
+      @apply col-span-2;
 
       > .card-secondary__title {
         @apply shrink grow-0;
       }
 
-     > .card-secondary__content {
+      > .card-secondary__content {
         @apply grow shrink-0;
       }
-      }
+    }
   }
 
-     
-   @media (max-width: 420px) {
-   
+  @media (max-width: 420px) {
     .ai-metric {
       @apply col-span-2;
     }
-    }
+  }
 }
-  
-// ── Insight card ─────────────────────────────────────────────────────────────
+
+// ── Insight card ──────────────────────────────────────────────────────────────
 .ai-insight {
   &__content {
     @apply flex items-start gap-2;
@@ -458,42 +327,40 @@ function formatNumber(value: number): string {
   &__icon {
     @apply text-xl pt-0.5 shrink-0 leading-6;
   }
- 
+
   &__metric {
     @apply flex items-center justify-between gap-2 py-1 px-2 rounded-sm;
   }
 
   &__metric-label {
-      @apply grow;
+    @apply grow;
   }
 
   &__metric-value {
-    @apply font-semibold; 
+    @apply font-semibold;
   }
- 
 }
 
-// ── Priority action card ─────────────────────────────────────────────────────
+// ── Priority action card ──────────────────────────────────────────────────────
 .ai-priority {
-  &>.card-secondary__head {
+  & > .card-secondary__head {
     @apply items-start;
   }
- 
+
   &__number {
-    @apply font-extrabold text-sm min-w-5 text-primary-200;  
+    @apply font-extrabold text-sm min-w-5 text-primary-200;
   }
 
   &__metric {
     @apply bg-primary-700/10 border-primary-700/25 py-1 px-2;
   }
-
 }
 
-// ── Channel card ─────────────────────────────────────────────────────────────
+// ── Channel card ──────────────────────────────────────────────────────────────
 .ai-channel {
   @apply border-2 border-l-transparent;
 
-  >.card-secondary__head {
+  > .card-secondary__head {
     @apply items-center;
   }
 
@@ -508,13 +375,13 @@ function formatNumber(value: number): string {
   &.danger {
     @apply border-l-danger--5p;
   }
+
   &.info {
-    @apply border-l-primary-500; 
+    @apply border-l-primary-500;
   }
-  
+
   &__budget {
     @apply text-xs font-semibold;
   }
 }
- 
 </style>

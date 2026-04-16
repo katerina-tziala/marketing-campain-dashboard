@@ -2390,3 +2390,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `_roi.scss` promoted to `@layer utilities` — `.roi-text` and its modifiers are stateless color/weight helpers, not component definitions; utilities layer cascades after components which is correct for modifier-style classes
 - Explicit namespace aliases (`as components`, `as utilities`) in root barrel — SASS `@use` prohibits two modules sharing the same auto-derived namespace; aliasing is the minimal fix with zero impact on CSS output
 - Barrel files use `@use` not `@forward` — all partials are pure CSS side-effects with no exported SCSS members; `@use` is sufficient and avoids unnecessarily widening the member surface
+
+
+## [#114] Extract shared panel state into AiAnalysisState component
+**Type:** refactor
+
+**Summary:** Extracted the duplicated header, notice, idle, loading, error, and response-meta blocks from AiOptimizerPanel and AiSummaryPanel into a new shared AiAnalysisState wrapper component with a default slot for panel-specific result content.
+
+**Brainstorming:** Both panels were near-identical in structure — only the title, button label, idle/loading text, and result sections differed. Every state block (token-limit notice, idle text, spinner, error box, response metadata) was copy-pasted. The natural boundary is: AiAnalysisState owns the shell and all state UI; each panel owns its result rendering in the default slot. Props cover the variable parts; the slot covers the result content. No BEM in AiAnalysisState per project direction to move away from BEM styling.
+
+**Prompt:** AiOptimizerPanel and AiSummaryPanel share the same logic of showing errors, and content. Extract this logic to a shared component with the name AiAnalysisState. Do not use BEM for styling.
+
+**What was built:**
+- `app/src/features/ai-tools/components/AiAnalysisState.vue` — new shared wrapper; props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, formattedCacheTime, modelName?; emit: analyze; default slot for result content; scoped non-BEM styles (panel-head, panel-title, idle-text, loader, loader-text, notice, notice-text, notice-hint, error-box, error-message, error-hint, result, response-meta, response-meta-text, response-meta-disclaimer, response-meta-fallback)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — refactored to wrap AiAnalysisState; retains only optimizer-specific computeds, badge helpers, and formatters; result sections moved into default slot; duplicate state/style blocks removed
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — refactored to wrap AiAnalysisState; retains only summary-specific computeds, badge helpers, and formatters; result sections moved into default slot; duplicate state/style blocks removed
+- `CLAUDE.md` — architecture updated with AiAnalysisState entry and revised panel descriptions
+
+**Key decisions & why:**
+- `hasResult: boolean` prop instead of passing response — AiAnalysisState does not need to know the response shape; the parent derives `!!response` and passes the boolean, keeping the wrapper type-agnostic
+- `modelName?: string` instead of full model object — only the display name is rendered; avoids coupling the wrapper to AiModel type
+- Non-BEM scoped classes in AiAnalysisState — user direction to move away from BEM; plain descriptive class names (panel-head, loader, error-box, etc.) are scoped so no global collision risk
+- Default slot for result — each panel's result markup is structurally different enough that a slot is cleaner than props; panels retain full control of their rendering
