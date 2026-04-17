@@ -15,7 +15,7 @@ const selectedChannelCount = computed(() =>
     : store.selectedChannels.length,
 )
 
-const showConnectedDot = computed(() => aiStore.isConnected)
+const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelOpen)
 </script>
 
 <template>
