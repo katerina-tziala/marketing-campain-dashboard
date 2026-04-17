@@ -2,14 +2,14 @@
 import type { ChartData } from 'chart.js'
 import { computed, inject } from 'vue'
 import {
-  BarChart, 
+  BarChart,
   CHART_COLORS,
   DonutChart,
   FunnelChart,
   GroupedBarChart,
-  SparklesIcon,
 } from '../../ui'
 import { useCampaignStore } from '../../stores/campaignStore'
+import DashboardHeader from './components/DashboardHeader.vue'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
@@ -104,19 +104,9 @@ const funnelValues = computed(() => [
   <!-- Dashboard -->
   <div v-else class="dashboard">
     <!-- Header -->
-    <div class="dashboard-section">
-      <div class="dashboard-title-row">
-        <h2 class="dashboard-title">Campaign Performance</h2>
-        <button class="btn-primary" @click="openAiPanel?.()">
-          <SparklesIcon />AI
-        </button> 
-      </div>
-      <p class="dashboard-details">
-        <span class="detail-item">{{ store.title }}</span>
-        <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
-        <!-- TODO add selected channels out of channels -->
-      </p>
-    </div>
+    <section class="dashboard-section">
+      <DashboardHeader @aiClick="openAiPanel?.()" />
+    </section>
     <!-- Channel Filter -->
     <section class="dashboard-section">
       <ChannelFilter
@@ -215,27 +205,7 @@ const funnelValues = computed(() => [
 }
 
 .dashboard-section {
-    @apply w-full
-    px-6
-    mx-auto 
-    max-w-7xl;
-}
-
-.dashboard-title-row {
-  @apply 
-  flex
-  items-start
-  justify-center
-  gap-x-4
-  gap-y-2;
-
-  .dashboard-title {
-    @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1; 
-  }
-}
-
-.dashboard-details {
-    @apply text-sm text-typography;
+  @apply w-full px-6 mx-auto max-w-7xl;
 }
 
 .kpi-grid {

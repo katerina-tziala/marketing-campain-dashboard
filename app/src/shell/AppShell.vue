@@ -64,7 +64,7 @@ function onCloseAiPanel(): void {
     gap-4
     shrink-0
     px-6
-    py-3.5
+    py-3
     shadow-md
     border-b
     border-primary-900;
@@ -74,6 +74,7 @@ function onCloseAiPanel(): void {
   @apply text-2xl
     font-extrabold
     m-0
+    leading-9
     bg-gradient-to-r
     from-primary-500
     to-secondary-500

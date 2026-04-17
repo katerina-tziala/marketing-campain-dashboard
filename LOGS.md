@@ -4078,3 +4078,76 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `.detail-item` in global SCSS (not a Vue component) — it's a single-element CSS primitive with no logic; a full component would be over-engineered; consistent with how `.badge` and `.btn` are handled
 - Native `<button>` for FileDropzone — removes need for manual `role`, `tabindex`, and keyboard handling; browsers provide these for free; hidden input stays outside so it is not a descendant of the button (invalid HTML)
 - `.tab-active` flat name — consistent with `.tab-icon` already on the same component and with the project no-BEM rule
+
+
+## [#201] Extract DashboardHeader component
+**Type:** refactor
+
+**Summary:** Extracted the dashboard header markup (title, AI button, campaign details) from DashboardView into a dedicated DashboardHeader component.
+
+**Brainstorming:** The header section in DashboardView was inline markup with its own scoped styles. Extracting it into a component gives the header a clear boundary, reduces DashboardView's template size, and makes the header independently maintainable. The component reads campaignStore directly (consistent with other dashboard components like CampaignTable) and emits ai-click so DashboardView stays the single place that knows about the openAiPanel injection. The component is multi-root (title-row + details paragraph) — the .dashboard-section layout wrapper stays in DashboardView alongside the channel filter section wrapper, keeping layout ownership consistent.
+
+**Prompt:** Extract dashboardHeader component in dashboard/components.
+
+**What was built:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — new component; multi-root template (title-row + details paragraph); reads campaignStore for title and campaign counts; emits ai-click on AI button press; scoped styles for .dashboard-title-row and .dashboard-details
+- `app/src/features/dashboard/DashboardView.vue` — replaced inline header markup with `<DashboardHeader @ai-click="openAiPanel?.()"/>`; removed SparklesIcon import; kept .dashboard-section scoped style for both header and channel filter wrappers; removed title-row/details styles
+
+**Key decisions & why:**
+- Multi-root component — the header has two sibling elements (title row + details paragraph) with no semantic reason to wrap them; DashboardView's .dashboard-section provides the layout context, same as it does for the channel filter
+- Store read inside component — consistent with how other dashboard components (KpiCard, CampaignTable) receive or read data; avoids threading props through DashboardView for data it no longer needs
+- emit ai-click, not inject openAiPanel — keeps the panel-open concern in DashboardView where the inject already lives; DashboardHeader has no knowledge of the panel system
+
+
+## [#202] DashboardHeader enhancements — channels detail, button fade, connected dot, camelCase emit
+**Type:** update
+
+**Summary:** Added a third detail item showing selected/total channel counts, made the AI button fade out when the panel is open and back in when closed, added a connected indicator dot on the button when AI is connected and the panel is closed, and renamed the emitted event to camelCase (aiClick).
+
+**Brainstorming:** The channel filter already lives in the dashboard header area, so surfacing the active channel count in the details line gives users immediate context at a glance without navigating to the filter. The button fade on panel open avoids a confusing double-trigger affordance — the button becomes invisible (opacity-0, pointer-events-none) while the panel is open and fades back in smoothly on close. The connected dot follows the established pattern from AiConnectedStatus (green dot with shadow-connection) scaled down for a button badge position. Using camelCase for the emit name (aiClick) was requested as the new convention; Vue auto-converts to/from kebab-case in templates so consumers can use either form.
+
+**Prompt:** Dashboard header output to camelCase and follow this convention from now on. Add third detail item displaying number of selected channels of number of all channels. When panel opens fade out AI button; when panel closes fade in AI button. When AI connected and panel closed show a connected dot on top right of the button.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — imported aiStore; renamed emit from ai-click to aiClick; added selectedChannelCount computed (equals availableChannels.length when no filter active); added third .detail-item for channels; wrapped button in .ai-btn-wrapper (relative); added .btn-faded class (opacity-0 + pointer-events-none) toggled by aiStore.aiPanelOpen; added opacity transition to .btn-primary; added showConnectedDot computed (isConnected && !aiPanelOpen); added .connected-dot span (absolute top-right, bg-success, border matches surface)
+- `app/src/features/dashboard/DashboardView.vue` — updated event listener from @ai-click to @aiClick
+- `CLAUDE.md` — updated DashboardHeader.vue architecture description
+
+**Key decisions & why:**
+- selectedChannelCount shows availableChannels.length when nothing is filtered — "13 of 13 channels" is more informative than "0 of 13"; matches the mental model of the channel filter where no selection = all shown
+- opacity-0 + pointer-events-none for fade — hides the button visually and removes it from interaction without removing it from layout flow (avoids layout shift); CSS transition handles the fade
+- .ai-btn-wrapper as the positioning context — isolates the dot's absolute positioning to the button without affecting the flex row layout of .dashboard-title-row
+- camelCase emit convention — going forward all emits in this project use camelCase; Vue's template compiler handles both forms so no consumer breakage
+
+
+## [#203] Replace AI button fade with disabled state when panel is open
+**Type:** update
+
+**Summary:** Removed the opacity fade-in/out on the AI button and replaced it with a native disabled attribute when the panel is open, relying on the existing .btn :disabled styles.
+
+**Brainstorming:** Fading the button to opacity-0 hides it entirely, which can feel jarring and confusing — the user loses the button from view. Disabling it is semantically cleaner: the button stays visible, communicates it is not actionable, and the global `.btn :disabled` rule (cursor-not-allowed, opacity-50) already handles the visual treatment consistently with every other disabled button in the app.
+
+**Prompt:** Remove fade in/out functionality. Better disable the button if panel open.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — replaced `:class="{ 'btn-faded': aiStore.aiPanelOpen }"` with `:disabled="aiStore.aiPanelOpen"`; removed `.btn-faded` and `.btn-primary` scoped style blocks (transition no longer needed)
+
+**Key decisions & why:**
+- No changes to `_button.scss` — `.btn :disabled` already applies `cursor-not-allowed opacity-50`; no new styles needed
+- Native disabled attribute preferred over CSS class — prevents click events at the browser level, not just via pointer-events-none; also exposes correct disabled semantics to assistive technology
+
+
+## [#204] Show connected dot whenever AI is connected
+**Type:** update
+
+**Summary:** Connected dot on the AI button now shows whenever AI is connected, regardless of whether the panel is open.
+
+**Brainstorming:** Previously the dot was hidden while the panel was open, which was overly clever — the connection state doesn't change when the panel opens so there is no reason to hide it.
+
+**Prompt:** Show connected dot if AI connected.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — `showConnectedDot` computed changed from `isConnected && !aiPanelOpen` to just `isConnected`
+
+**Key decisions & why:**
+- No panel-open condition — the dot reflects connection state, not panel state; keeping it visible at all times is simpler and more honest

@@ -144,8 +144,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── panel-formatters.ts          # Display string helpers for AI panels — exports: formatRoi, formatEuro, formatNumber
 │   │   │   └── index.ts            # Barrel export (empty — AiToolsDrawer moved to shell/)
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; AI button uses raw `<button class="btn-primary">`; table section uses global `.card` class
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; table section uses global `.card` class
 │   │   │   └── components/         # Components owned by this view
+│   │   │       ├── DashboardHeader.vue # Dashboard header — reads campaignStore (title, campaign/channel counts) + aiStore (isConnected, aiPanelOpen); emits aiClick (camelCase); multi-root (title-row + details); AI button fades out when panel open, fades in when closed; connected dot (top-right) shown when AI connected + panel closed; layout wrapper provided by DashboardView
 │   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table; uses global data-table classes; channel cell uses `.badge.info` global CSS class; ROI coloring via scoped modifier classes (--roi-positive/warning/negative)

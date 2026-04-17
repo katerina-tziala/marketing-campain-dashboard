@@ -19,7 +19,7 @@ function handleDisconnect(): void {
 <template>
   <div class="ai-status">
     <p class="status-provider">{{ providerLabel }}</p>
-    <p class="status-connected">Connected</p>
+    <p class="connected-dot status-connected">Connected</p>
     <button class="btn-destructive-small" @click="handleDisconnect">Disconnect</button>
   </div>
 </template>
@@ -46,15 +46,8 @@ function handleDisconnect(): void {
 .status-connected {
   @apply text-xs font-semibold text-success relative;
 
-  &::before {
-    content: "";
-    @apply inline-block
-      w-2
-      h-2
-      rounded-full
-      bg-success
-      mr-1.5
-      shadow-connection;
+  &::before { 
+    @apply mr-1.5;
   }
 }
 </style>
