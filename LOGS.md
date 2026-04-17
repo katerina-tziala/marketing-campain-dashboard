@@ -3116,3 +3116,35 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `& + &` combinator for the separator — only inserts the bullet between sibling `.detail-item` elements, so no leading bullet before the first item and no trailing bullet after the last; no conditional logic needed in the template
 - Empty `content: ''` with CSS-drawn circle (`w-1 h-1 rounded-full bg-typography-subtle align-middle`) — avoids unicode characters entirely; the circle is purely geometric and scales with the design token
 - `text-typography-subtle` color on the circle — visually de-emphasises the separator relative to the content text
+
+
+## [#148] Remove DEV_MOCK_ANALYSIS flag from aiAnalysisStore
+**Type:** update
+
+**Summary:** Removed the development mock flag and all associated mock code from `aiAnalysisStore.ts` so the store executes real AI API calls.
+
+**Brainstorming:** The `DEV_MOCK_ANALYSIS` flag was added during development to cycle through fixture responses without hitting the AI providers. It was always intended as a temporary scaffold with a TODO comment marking it for removal before shipping. Removing it means: the mock import, the flag constant, the two mock-index refs, the entire conditional block inside `executeAnalysis`, and an incidental `console.log(prompt)` left in the real code path.
+
+**Prompt:** Revert the DEV_MOCK_ANALYSIS flag in `aiAnalysisStore.ts`: remove the `BUDGET_OPTIMIZER_MOCKS`/`EXECUTIVE_SUMMARY_MOCKS` import, the `DEV_MOCK_ANALYSIS` constant and TODO comment, the `optimizerMockIndex`/`summaryMockIndex` refs and their TODO comment, the entire `if (DEV_MOCK_ANALYSIS)` block inside `executeAnalysis`, and the leftover `console.log(prompt)` in the real code path.
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — mock import removed; `DEV_MOCK_ANALYSIS` constant and comment removed; `optimizerMockIndex`/`summaryMockIndex` refs and comment removed; `if (DEV_MOCK_ANALYSIS)` block removed; `console.log(prompt)` removed
+
+**Key decisions & why:**
+- Removed `console.log(prompt)` in the same pass — it was a debug leftover in the real code path and should not reach production
+
+
+## [#149] Remove DEV_MOCK_CONNECTED flag from aiStore
+**Type:** update
+
+**Summary:** Removed the `DEV_MOCK_CONNECTED` development flag from `aiStore.ts` so the store initialises in the correct disconnected state, requiring the user to connect an AI provider before analysis can run.
+
+**Brainstorming:** The flag initialised `provider`, `apiKey`, `isConnected`, `models`, and `selectedModel` with mock values, bypassing the connection form entirely. Removing it restores the intended UX flow: user opens the AI panel → fills in the connection form → connects → then runs analysis. Console.log statements in both stores are retained intentionally for active development debugging.
+
+**Prompt:** Revert DEV_MOCK_CONNECTED in aiStore.ts — remove the flag constant, the MOCK_DEV_MODEL object, and reset all conditional initialisers to their real defaults (null/false/empty). Keep console.log statements.
+
+**What changed:**
+- `app/src/stores/aiStore.ts` — `DEV_MOCK_CONNECTED` constant, TODO comment, and `MOCK_DEV_MODEL` object removed; `provider`, `apiKey`, `isConnected`, `models`, `selectedModel` reset to real defaults (`null`, `''`, `false`, `[]`, `null`)
+
+**Key decisions & why:**
+- Console.log statements kept in both `aiStore.ts` and `aiAnalysisStore.ts` — intentionally retained for ongoing debugging during development

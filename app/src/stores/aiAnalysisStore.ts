@@ -17,14 +17,6 @@ import { buildExecutiveSummaryData } from '../features/ai-tools/utils/buildExecu
 import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
 import { callProviderForAnalysis } from '../features/ai-tools/ai-analysis'
-import { BUDGET_OPTIMIZER_MOCKS, EXECUTIVE_SUMMARY_MOCKS } from '../features/ai-tools/mocks'
-
-// TODO: DEV MOCK — revert before shipping.
-// To revert: set DEV_MOCK_ANALYSIS = false, then remove:
-//   - the import of BUDGET_OPTIMIZER_MOCKS / EXECUTIVE_SUMMARY_MOCKS above
-//   - the optimizerMockIndex and summaryMockIndex refs below
-//   - the entire "DEV_MOCK_ANALYSIS" block inside executeAnalysis
-const DEV_MOCK_ANALYSIS = true
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -76,10 +68,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const activeTab = ref<AiAnalysisTab>('summary')
   const tokenLimitReached = ref(false)
   const analysisActivated = ref(false)
-
-  // TODO: DEV MOCK — remove these two refs when reverting DEV_MOCK_ANALYSIS
-  const optimizerMockIndex = ref(0)
-  const summaryMockIndex = ref(0)
 
   // ── Per-tab state ─────────────────────────────────────────────────────
 
@@ -241,7 +229,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const filteredChannels = campaignStore.selectedChannels.length > 0
       ? campaignStore.selectedChannels
       : undefined
-    console.log(data);
+    console.log(data)
 
     if (tab === 'optimizer') {
       return generateBudgetOptimizationPrompt(
@@ -380,37 +368,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const controller = new AbortController()
     t.controller = controller
 
-    // TODO: DEV MOCK — remove this entire block when reverting DEV_MOCK_ANALYSIS
-    if (DEV_MOCK_ANALYSIS) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 700))
-      if (controller.signal.aborted) return
-
-      const mockResponse = tab === 'optimizer'
-        ? BUDGET_OPTIMIZER_MOCKS[optimizerMockIndex.value % BUDGET_OPTIMIZER_MOCKS.length]
-        : EXECUTIVE_SUMMARY_MOCKS[summaryMockIndex.value % EXECUTIVE_SUMMARY_MOCKS.length]
-
-      if (tab === 'optimizer') optimizerMockIndex.value++
-      else summaryMockIndex.value++
-
-      t.status = 'done'
-      t.response = mockResponse
-      t.error = null
-      t.errorFallbackMessage = null
-      t.firstAnalyzeCompleted = true
-      t.cache.set(cacheKey, mockResponse)
-      t.cacheTimestamps.set(cacheKey, Date.now())
-      t.cooldowns.set(cacheKey, Date.now())
-      scheduleCooldownExpiry()
-      t.lastVisibleCacheKey = cacheKey
-      t.controller = null
-      syncRefsFromTab(tab)
-      syncCacheTimestamp(tab)
-      return
-    }
-
     try {
       const prompt = buildPrompt(tab)
-console.log(prompt);
+      console.log(prompt)
 
       const result = await callProviderForAnalysis<TabResponse>(
         aiStore.provider,

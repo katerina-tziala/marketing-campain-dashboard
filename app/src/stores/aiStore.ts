@@ -3,40 +3,23 @@ import { ref, computed } from 'vue'
 import type { AiProviderType, AiConnectionError, AiModel } from '../features/ai-tools/types'
 import { connectProvider } from '../features/ai-tools/ai-connection'
 
-// TODO: DEV MOCK — revert before shipping.
-// To revert: set DEV_MOCK_CONNECTED = false, then remove the MOCK_DEV_MODEL constant
-// and the conditional initializers for provider, apiKey, isConnected, models, selectedModel.
-const DEV_MOCK_CONNECTED = true
-
-const MOCK_DEV_MODEL: AiModel = {
-  id: 'gemini-2.0-flash',
-  model: 'gemini-2.0-flash',
-  display_name: 'Gemini 2.0 Flash',
-  provider: 'gemini',
-  strength: 'Fast and efficient for structured analysis tasks',
-  strength_score: 8,
-  reason: 'Best balance of speed and accuracy for marketing budget analysis',
-  limitReached: false,
-}
-
 function isConnectionError(result: AiModel[] | AiConnectionError): result is AiConnectionError {
   return 'code' in result
 }
 
 function selectBestModel(models: AiModel[]): AiModel {
-  console.log(models);
-
+  console.log(models)
   return models.reduce((best, m) => m.strength_score > best.strength_score ? m : best)
 }
 
 export const useAiStore = defineStore('ai', () => {
-  const provider = ref<AiProviderType | null>(DEV_MOCK_CONNECTED ? 'gemini' : null)
-  const apiKey = ref(DEV_MOCK_CONNECTED ? 'dev-mock-key' : '')
-  const isConnected = ref(DEV_MOCK_CONNECTED)
+  const provider = ref<AiProviderType | null>(null)
+  const apiKey = ref('')
+  const isConnected = ref(false)
   const isConnecting = ref(false)
   const connectionError = ref<AiConnectionError | null>(null)
-  const models = ref<AiModel[]>(DEV_MOCK_CONNECTED ? [MOCK_DEV_MODEL] : [])
-  const selectedModel = ref<AiModel | null>(DEV_MOCK_CONNECTED ? { ...MOCK_DEV_MODEL } : null)
+  const models = ref<AiModel[]>([])
+  const selectedModel = ref<AiModel | null>(null)
   const aiPanelOpen = ref(false)
 
   async function connect(p: AiProviderType, key: string): Promise<void> {
