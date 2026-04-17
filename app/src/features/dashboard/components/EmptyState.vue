@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import { DownloadIcon, FileTextIcon, UploadIcon } from '../../../ui'
-import { useDownloadTemplate } from '../../csv-file/composables/useDownloadTemplate'
-
-const { downloadTemplate } = useDownloadTemplate()
+import { FileTextIcon } from '../../../ui'
+import FileActions from '../../csv-file/components/FileActions.vue'
 
 onMounted(() => { document.body.style.overflow = 'hidden' })
 onUnmounted(() => { document.body.style.overflow = '' })
 
-const emit = defineEmits<{
-  upload: []
-}>()
+const emit = defineEmits<{ upload: [] }>()
 </script>
 
 <template>
@@ -23,16 +19,7 @@ const emit = defineEmits<{
       Upload a CSV file to generate your campaign performance dashboard.<br />
       Need a starting point? Download our sample template.
     </p>
-    <div class="empty-state__actions">
-      <button class="btn-secondary-outline" @click="downloadTemplate">
-        <DownloadIcon />
-        Download Template
-      </button>
-      <button class="btn-primary" @click="emit('upload')">
-        <UploadIcon />
-        Upload CSV
-      </button>
-    </div>
+    <FileActions @upload="emit('upload')" />
   </div>
 </template>
 
@@ -70,25 +57,5 @@ const emit = defineEmits<{
     margin: 0;
   }
 
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: theme('spacing.6');
-    margin-top: theme('spacing.2');
-    width: 100%;
-    max-width: 380px;
-
-    > button {
-      flex: 1;
-    }
-
-    @media (max-width: 479px) {
-      flex-direction: column;
-
-      > button {
-        width: 100%;
-      }
-    }
-  }
 }
 </style>

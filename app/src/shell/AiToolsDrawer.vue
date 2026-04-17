@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import AiToolsContent from './AiToolsContent.vue'
+import AiToolsContent from '../features/ai-tools/components/AiToolsContent.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()
@@ -15,8 +15,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 <template>
   <!-- lg+: push drawer — width transitions 0 → 400px, compresses dashboard -->
-  <div class="ai-drawer" :class="{ 'ai-drawer--open': open }" aria-hidden="true">
-    <div class="ai-drawer__panel">
+  <div class="push-drawer" :class="{ open }" aria-hidden="true">
+    <div class="push-drawer-panel">
       <AiToolsContent @close="emit('close')"/>
     </div>
   </div>
@@ -25,10 +25,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <Transition name="ai-overlay">
     <div
       v-if="open"
-      class="ai-overlay"
+      class="overlay"
       @click.self="emit('close')"
     >
-      <div class="ai-overlay__panel">
+      <div class="overlay-panel">
         <AiToolsContent @close="emit('close')"/>
       </div>
     </div>
@@ -36,76 +36,70 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </template>
 
 <style lang="scss" scoped>
- 
+
 // ── Push drawer (lg+) ───────────────────────────────────────────────────────
-.ai-drawer {
+.push-drawer {
   @apply hidden;
 
   @media (min-width: 1024px) {
-    @apply block
-      overflow-hidden
-      shrink-0
-      w-0
-      ease-in-out
-      duration-300;
-
+    @apply block overflow-hidden shrink-0 w-0 ease-in-out duration-300;
     transition-property: width;
 
-    &--open { 
+    &.open {
       @apply w-[30rem];
     }
   }
+}
 
-  &__panel {
-    @apply
-      grid
-      grid-cols-1
-      grid-rows-[min-content_1fr]
-      h-screen
-      bg-surface
-      border
-      border-surface-border
-      overflow-hidden
-      sticky
-      top-0
-      w-full;
-  }
+.push-drawer-panel {
+  @apply
+    grid
+    grid-cols-1
+    grid-rows-[min-content_1fr]
+    h-screen
+    bg-surface
+    border
+    border-surface-border
+    overflow-hidden
+    sticky
+    top-0
+    w-full;
 }
 
 // ── Overlay (<lg) ───────────────────────────────────────────────────────────
-.ai-overlay {
-    @apply fixed
+.overlay {
+  @apply
+    fixed
     flex
     items-center
-    justify-center 
+    justify-center
     box-border
     overflow-hidden
     z-1000
     inset-0
     bg-black/[0.7]
     py-[5vh]
-    px-[5vw]; 
+    px-[5vw];
 
-  // Hidden on lg+ — drawer takes over
   @media (min-width: 1024px) {
     @apply hidden;
   }
+}
 
-  &__panel {
-    @apply
-      grid
-      grid-cols-1
-      grid-rows-[min-content_1fr]
-      w-full
-      bg-surface
-      border
-      border-surface-border
-      overflow-hidden
-      rounded-md
-      min-h-[50vh]
-      max-h-[92vh]
-      max-w-[92vh]
-      shadow-md;
-  }
+.overlay-panel {
+  @apply
+    grid
+    grid-cols-1
+    grid-rows-[min-content_1fr]
+    w-full
+    bg-surface
+    border
+    border-surface-border
+    overflow-hidden
+    rounded-md
+    min-h-[50vh]
+    max-h-[92vh]
+    max-w-[92vh]
+    shadow-md;
 }
 </style>

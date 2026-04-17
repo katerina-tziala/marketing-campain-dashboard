@@ -71,6 +71,10 @@ export default {
       boxShadow: {
         'connection': '0 0 5px rgba(16, 185, 129, 0.6)',
       },
+      screens: {
+        xs: '480px',
+        // '3xl': '1920px',
+      },
     },
   },
   plugins: [],

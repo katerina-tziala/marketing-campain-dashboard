@@ -77,11 +77,11 @@ app/                        # Vue 3 + Vite project
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; FileDropzone + PasswordInput + RadioToggle added)
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex col → flex row at lg+; app-shell__left (header + app-shell__main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; app-shell__main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
+│   │   ├── AppShell.vue            # Top-level layout wrapper — flat @apply styles (shell-left/shell-header/shell-title/shell-main); flex col → flex row at lg+; shell-left (header + shell-main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; shell-main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
+│   │   └── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close; flat @apply styles (push-drawer/push-drawer-panel/overlay/overlay-panel, open modifier class)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
 │   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + AiAnalysis when connected; grid layout (status bar / tabs / scroll area)
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (no timeout — relies on external signal), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), strips models/ prefix for Gemini, parses JSON response
@@ -139,11 +139,11 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── rankModels.ts                # rankModels(parsed, fallback) — filters out models with strength_score < 6, sorts by strength_score desc, inits limitReached, updates optimal model properties from AI response
 │   │   │   │   ├── analysis-badge-variants.ts   # Badge variant helpers for AI panels — internal badgeVariant(map, key) generic resolver; exports: healthScoreVariant, channelStatusVariant, urgencyVariant, insightTypeVariant, confidenceVariant, actionVariant, effortVariant
 │   │   │   │   └── panel-formatters.ts          # Display string helpers for AI panels — exports: formatRoi, formatEuro, formatNumber
-│   │   │   └── index.ts            # Barrel export
+│   │   │   └── index.ts            # Barrel export (empty — AiToolsDrawer moved to shell/)
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; AI button uses raw `<button class="btn-primary">`; table section uses global `.card` class
 │   │   │   └── components/         # Components owned by this view
-│   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
+│   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table; uses global data-table classes; channel cell uses `.badge.info` global CSS class; ROI coloring via scoped modifier classes (--roi-positive/warning/negative)
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
@@ -151,6 +151,7 @@ app/                        # Vue 3 + Vite project
 │   │       ├── types/
 │   │       │   └── index.ts        # CsvRowError (row/column/issue), CsvValidationErrorType (union), CsvValidationError (type + message + details? + rowErrors?), CsvParseResult
 │   │       ├── components/
+│   │       │   ├── FileActions.vue         # Download Template + Upload CSV button pair — emits upload; uses useDownloadTemplate; flat @apply scoped styles; responsive stacking at <480px
 │   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
 │   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px

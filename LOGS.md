@@ -3182,3 +3182,57 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `:has(input:disabled)` instead of a toggled modifier class — CSS derives the disabled visual from the native input state, no extra class binding needed on the wrapper
 - Help button left enabled — instructions should remain accessible while the user waits for a connection response
+
+
+## [#152] Move AiToolsDrawer to shell and refactor styles
+**Type:** refactor
+
+**Summary:** Moved `AiToolsDrawer.vue` from `features/ai-tools/components/` into `shell/` (where it belongs as a layout concern) and refactored both the drawer and `AppShell` styles from BEM to flat `@apply` class names.
+
+**Brainstorming:** The drawer is not a feature component — it is a shell-level layout primitive that decides how the AI panel is presented (push drawer vs. overlay). Placing it alongside `AppShell.vue` makes that responsibility explicit. The BEM style migration replaced `&__panel`/`&--open` nesting with flat class names (`push-drawer`, `push-drawer-panel`, `overlay`, `overlay-panel`, `.open` modifier) and `@apply` throughout both files, consistent with the non-BEM approach already used in the ai-connection and other components.
+
+**Prompt:** Move `AiToolsDrawer.vue` from `features/ai-tools/components/` to `shell/`. Update its import of `AiToolsContent` to the new relative path. Update `AppShell.vue` to import it locally instead of from the feature barrel. Refactor both files' scoped styles from BEM (`&__element`, `&--modifier`) to flat non-BEM class names using `@apply`. Remove the `AiToolsDrawer` export from `features/ai-tools/index.ts` and delete the original file.
+
+**What changed:**
+- `app/src/shell/AiToolsDrawer.vue` — new location; import path updated; BEM styles replaced with flat `@apply` classes (`push-drawer`, `push-drawer-panel`, `.open`, `overlay`, `overlay-panel`)
+- `app/src/shell/AppShell.vue` — import updated to local `./AiToolsDrawer.vue`; template class names updated (`shell-left`, `shell-header`, `shell-title`, `shell-main`); BEM block replaced with flat `@apply` scoped rules
+- `app/src/features/ai-tools/components/AiToolsDrawer.vue` — deleted (moved)
+- `app/src/features/ai-tools/index.ts` — `AiToolsDrawer` export removed (file now empty)
+
+**Key decisions & why:**
+- Drawer placed in `shell/` not `features/` — it is a layout decision (push vs. overlay), not an AI feature; co-locating it with `AppShell` keeps layout responsibilities in one place
+- Flat `@apply` class names — consistent with the non-BEM style convention already established in connection and analysis components
+- `.open` modifier class instead of `&--open` — simple boolean class toggle on the wrapper, no BEM suffix needed in scoped context
+
+
+## [#153] Fix DonutChart hidden legend label detection
+**Type:** fix
+
+**Summary:** Replaced `meta.data[i]?.hidden` with `!chart.getDataVisibility(i)` in the legend `generateLabels` callback — `Element` in Chart.js has no `hidden` property, making the previous access both a type error and a runtime no-op.
+
+**Brainstorming:** The `ChartMeta.data` array holds `Element` instances whose TypeScript type exposes no `hidden` field, so the optional-chain always resolved to `undefined ?? false`, meaning hidden state was never reflected in legend items. `chart.getDataVisibility(i)` is the correct Chart.js API for per-datapoint visibility. With `meta` now unused it was removed in the same pass.
+
+**Prompt:** Fix the TypeScript error on line 36 of DonutChart.vue — `meta.data[i]?.hidden` is not a valid Chart.js API. Use `chart.getDataVisibility(i)` instead, and remove the now-unused `meta` variable.
+
+**What changed:**
+- `app/src/ui/charts/DonutChart.vue` — `meta` variable removed; hidden check replaced with `!chart.getDataVisibility(i)`
+
+**Key decisions & why:**
+- `getDataVisibility(i)` is the Chart.js v3+ public API for checking per-point visibility — avoids reaching into internal element state
+
+
+## [#154] Extract FileActions component from EmptyState
+**Type:** refactor
+
+**Summary:** Extracted the "Download Template" and "Upload CSV" button pair from `EmptyState.vue` into a dedicated `FileActions.vue` component in the `csv-file` feature, co-locating it with the download logic it depends on.
+
+**Brainstorming:** The two buttons and their responsive layout are a self-contained unit tied to CSV file operations. Extracting them into `csv-file/components/FileActions.vue` keeps the composable and UI in the same feature, removes the cross-feature composable import from `EmptyState`, and makes the pair reusable. Styles moved from the BEM `&__actions` block in EmptyState into flat `@apply` scoped styles on `.file-actions` in the new component.
+
+**Prompt:** Create `FileActions.vue` in `csv-file/components/` with the Download Template and Upload CSV buttons. Move the layout styles there as flat @apply. Update EmptyState to import and use `<FileActions @upload="emit('upload')" />` and remove the now-redundant imports and style block.
+
+**What changed:**
+- `app/src/features/csv-file/components/FileActions.vue` — new component; Download Template + Upload CSV buttons; `useDownloadTemplate` called internally; emits `upload`; flat `@apply` scoped styles with <480px column stacking
+- `app/src/features/dashboard/components/EmptyState.vue` — replaced inline buttons with `<FileActions>`; removed `DownloadIcon`, `UploadIcon`, and `useDownloadTemplate` imports; removed `__actions` style block
+
+**Key decisions & why:**
+- Placed in `csv-file/components/` not `dashboard/` — the component owns CSV-specific actions and its composable lives there; dashboard just consumes it via an event
