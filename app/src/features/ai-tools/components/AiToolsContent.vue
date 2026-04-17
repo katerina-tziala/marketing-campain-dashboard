@@ -10,19 +10,19 @@ const emit = defineEmits<{ close: [] }>()
 </script>
 
 <template>
-    <div class="ai-content__header">
-      <SparklesIcon class="ai-content__header__icon" />
-      <h2 class="ai-content__header__title">AI Tools</h2>
+    <div class="ai-tools-header">
+      <SparklesIcon class="ai-tools-header-icon" />
+      <h2 class="ai-tools-title">AI Tools</h2>
       <button class="btn-icon-secondary" aria-label="Close AI panel" @click="emit('close')">
         <CloseIcon />
       </button>
     </div>
-    <div class="ai-content__content">
+    <div class="ai-tools-content">
     <!-- Not connected: show connection form -->
     <AiConnectionForm v-if="!store.isConnected" />
     <!-- Connected: status bar + tabs + tab content -->
     <template v-else>
-      <div class="ai-content__panel--connected">
+      <div class="ai-tools-analysis">
         <AiConnectedStatus />
         <AiAnalysis />
       </div>
@@ -31,7 +31,7 @@ const emit = defineEmits<{ close: [] }>()
 </template>
 
 <style lang="scss" scoped>
-.ai-content__header {
+.ai-tools-header {
    @apply flex
       items-center
       justify-start
@@ -40,21 +40,21 @@ const emit = defineEmits<{ close: [] }>()
       gap-2
       py-3
       px-4;
-
-  &__icon {
-    @apply text-primary-400 text-lg shrink-0;
-  }
-
-  &__title {
-    @apply grow text-primary-400 text-lg font-semibold m-0;
-  }
 }
 
-.ai-content__content {
+.ai-tools-header-icon {
+  @apply text-primary-400 text-lg shrink-0;
+}
+
+.ai-tools-title {
+   @apply grow text-primary-400 text-lg font-semibold m-0;
+}
+
+.ai-tools-content {
   @apply grow shrink-0 overflow-hidden;
 }
 
-.ai-content__panel--connected {
+.ai-tools-analysis {
    @apply h-full
     grid
     grid-cols-1

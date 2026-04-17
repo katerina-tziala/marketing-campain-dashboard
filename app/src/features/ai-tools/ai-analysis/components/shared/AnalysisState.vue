@@ -133,7 +133,7 @@ const formattedCacheTime = computed(() => {
 }
 
 .result {
-  @apply flex flex-col gap-6 pb-6;
+  @apply flex flex-col gap-6 pb-4;
 }
 
 .response-meta {

@@ -3056,3 +3056,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - All analysis UI moves together as a unit — partial moves would leave dangling relative imports between shared, section, and orchestrator components
 - Barrel export at `ai-analysis/components/index.ts` — `AiToolsContent` imports from the module boundary, insulated from internal folder reorganization
 - `'../shared/'` imports in section components require no change after the move — `shared/` is still a sibling folder of `budget-optimization/` and `executive-summary/` within `ai-analysis/components/`
+
+
+## [#145] UI polish — AiToolsContent layout, AnalysisState scoped styles, AiAnalysis tab order
+**Type:** update
+
+**Summary:** Polished the connected-state layout in `AiToolsContent`, reorganised scoped styles in `AnalysisState` into logical groups, and reordered the tabs in `AiAnalysis` so Summary appears before Optimizer.
+
+**Brainstorming:** After the structural refactors (#143, #144) the three shell/analysis components had minor inconsistencies: `AiToolsContent` lacked an explicit height-taking grid row for the scrollable panel, `AnalysisState` had scoped styles in arbitrary order making maintenance harder, and the tab array in `AiAnalysis` listed Optimizer before Summary which did not match the intended default (Summary is the first tab users see). All three changes are purely presentational — no logic, no props, no store changes.
+
+**Prompt:** Polish the AI tools panel UI. In `AiToolsContent.vue` refine the connected-state wrapper to use an explicit 3-row grid (`min-content min-content 1fr`) so the scrollable analysis area always fills remaining height, and tighten the container overflow handling. In `AnalysisState.vue` reorganise scoped styles into logical groups (header, states, result/meta). In `AiAnalysis.vue` reorder the tabs array so Summary (`FileTextIcon`) comes first and Optimizer (`SlidersIcon`) second.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — `.ai-tools-analysis` uses `grid-rows-[min-content_min-content_1fr]`; `.ai-tools-content` gets `grow shrink-0 overflow-hidden` to hand remaining height down to the grid
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — scoped styles regrouped: header block, state blocks (idle/loader/notice/error), result/meta block; no rule changes, ordering only
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — `tabs` array reordered: Summary first, Optimizer second; `v-if` on the panel container checks for `optimizer` explicitly, `v-else` falls through to `ExecutiveSummaryAnalysis`
+
+**Key decisions & why:**
+- `grid-rows-[min-content_min-content_1fr]` in `.ai-tools-analysis` — rows 1 and 2 (status bar and tab bar) shrink to content; row 3 (the panel container) gets all remaining height, enabling reliable `overflow-y-auto` inside `AiAnalysis`
+- Summary tab first — Summary is the higher-level view; presenting it as the default tab matches a top-down reading flow (overview → detail)
+- Style reorder only in `AnalysisState` — avoids any risk of specificity changes while making the file easier to scan

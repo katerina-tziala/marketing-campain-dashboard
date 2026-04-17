@@ -26,6 +26,7 @@ const tabs: Tab[] = [
 .panel-container {
   @apply p-4
     pr-3
+    h-full
     overflow-y-auto
     overflow-x-hidden;
 }
