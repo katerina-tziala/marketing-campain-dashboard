@@ -3076,3 +3076,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `grid-rows-[min-content_min-content_1fr]` in `.ai-tools-analysis` — rows 1 and 2 (status bar and tab bar) shrink to content; row 3 (the panel container) gets all remaining height, enabling reliable `overflow-y-auto` inside `AiAnalysis`
 - Summary tab first — Summary is the higher-level view; presenting it as the default tab matches a top-down reading flow (overview → detail)
 - Style reorder only in `AnalysisState` — avoids any risk of specificity changes while making the file easier to scan
+
+
+## [#146] Replace media queries with container queries in BudgetOptimizationRecommendations and ExecutiveSummaryMetrics
+**Type:** update
+
+**Summary:** Replaced viewport-based `@media` queries with `@container` queries in the two components that have responsive layout rules, so their layouts respond to the panel's actual available width rather than the viewport width.
+
+**Brainstorming:** Both components used `@media` rules to compensate for the fact that the AI panel changes width depending on context — at lg+ the push drawer is fixed at 30rem and compresses the dashboard, while below lg the overlay can be up to 90vw wide. Media queries can only approximate this: the same viewport width can produce different panel widths depending on whether the drawer is open or overlaying. Container queries solve this directly by measuring the element's own containing block. `BudgetOptimizationRecommendations` stacks the confidence/timeline badges vertically when the rec card is narrow; `ExecutiveSummaryMetrics` widens `expandable` and eventually full-width cards when the metrics grid is narrow. No logic changes — purely a layout responsiveness improvement.
+
+**Prompt:** Replace all `@media` queries in `BudgetOptimizationRecommendations.vue` and `ExecutiveSummaryMetrics.vue` with `@container` queries. In `BudgetOptimizationRecommendations`, make each `.card-secondary` rec card the container (`rec-card` class, `container-type: inline-size`) and use `@container (max-width: 460px)` for badge stacking instead of the two media queries (min-width 1024px and max-width 520px). In `ExecutiveSummaryMetrics`, make `.metrics-grid` the container and use `@container (max-width: 548px)` for `.expandable` col-span-2 and `@container (max-width: 360px)` for all `.metric-card` col-span-2.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — added `rec-card` class to the `v-for` card wrapper; `.rec-card { container-type: inline-size }` added to scoped styles; two `@media` rules in `.rec-badges` replaced with `@container (max-width: 460px)`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — `container-type: inline-size` added to `.metrics-grid`; three `@media` rules replaced with `@container (max-width: 548px)` (expandable) and `@container (max-width: 360px)` (all metric-cards full-width)
+- `CLAUDE.md` — updated component descriptions for both files
+
+**Key decisions & why:**
+- Container on the rec card (`rec-card`), not on `.card-head` — the card is the natural layout boundary; querying it means the threshold is the card's outer width, which is easy to reason about against the known drawer/overlay widths
+- Container on `.metrics-grid` directly — the grid is self-contained; no wrapper needed
+- `460px` threshold for badge stacking — push drawer content width is ~452px, small overlay (<520px viewport) is ~440px; 460px catches both without bleeding into medium overlays (521px+ → ~441px+ containers)
+- `548px` for `.expandable` — push drawer (~452px) and small-screen overlays (≤640px viewport → ≤548px container) both fall below this; medium overlays (641px+ viewport → 549px+ container) do not, matching the original two-breakpoint intent with a single threshold
+- VS Code reports a false-positive "Unknown at rule @apply" warning inside `@container` blocks — the CSS language server does not fully understand container queries; the code compiles and runs correctly
+
+
+## [#147] AnalysisSummary: render detail items as spans with CSS bullet separators
+**Type:** update
+
+**Summary:** Replaced the hardcoded `&bull;` HTML entities in the `analysis-details` line with semantic `<span class="detail-item">` elements and a CSS `::before` pseudo-element separator, removing presentational markup from the template.
+
+**Brainstorming:** The original template mixed content and presentation by embedding `&bull;&nbsp;` directly between the text nodes. Using separate `<span>` elements per item keeps the template clean and moves the separator entirely into CSS via `& + & { &::before { content: '\2022' } }`, which only inserts the bullet between adjacent items. Added scoped styles to the component (previously had none).
+
+**Prompt:** In `AnalysisSummary.vue`, replace the `analysis-details` paragraph content with three `<span class="detail-item">` elements (period, campaigns count, channels count). Remove the `&bull;&nbsp;` entities. Add scoped styles: `.detail-item` is `inline-block`; `& + &` adds `pl-3` and a `::before` pseudo-element with `content: '\2022'` and `pr-3 text-typography-subtle`.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — `analysis-details` paragraph now renders three `.detail-item` spans; `&bull;&nbsp;` entities removed; scoped styles added with `.detail-item` (`inline-block`) and `& + &::before` CSS bullet separator
+
+**Key decisions & why:**
+- `& + &` combinator for the separator — only inserts the bullet between sibling `.detail-item` elements, so no leading bullet before the first item and no trailing bullet after the last; no conditional logic needed in the template
+- Empty `content: ''` with CSS-drawn circle (`w-1 h-1 rounded-full bg-typography-subtle align-middle`) — avoids unicode characters entirely; the circle is purely geometric and scales with the design token
+- `text-typography-subtle` color on the circle — visually de-emphasises the separator relative to the content text

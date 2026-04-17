@@ -91,12 +91,12 @@ app/                        # Vue 3 + Vite project
 │   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
 │   │   │   │       ├── shared/                 # Shared components used by both tabs — props-only, no store reads
 │   │   │   │       │   ├── AnalysisState.vue       # Analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, cacheTimestamp (string|number|null), modelName?; formats cacheTimestamp internally via computed; emit: analyze; slot: result content; handles header, token-limit notice, idle/loading/error/result states; grouped scoped styles
-│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); shows selectedCampaigns.length in analysis-details line; no scoped styles
+│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); analysis-details renders period/campaigns/channels as .detail-item spans (inline-block); bullet separators via CSS ::before on & + & rule; scoped styles
 │   │   │   │       │   └── AnalysisCorrelations.vue # Correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
 │   │   │   │       ├── budget-optimization/    # Budget Optimizer tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
 │   │   │   │       │   ├── BudgetOptimizationAnalysis.vue        # Budget Optimizer tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
 │   │   │   │       │   ├── BudgetOptimizationOverview.vue        # Executive summary — props: summary, period?, scope (CampaignScope); wraps AnalysisSummary
-│   │   │   │       │   ├── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; confidenceVariant + urgencyVariant badges; formatEuro + formatRoi
+│   │   │   │       │   ├── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; confidenceVariant + urgencyVariant badges; formatEuro + formatRoi; rec-card container-type for badge stacking via @container (max-width: 460px)
 │   │   │   │       │   ├── BudgetOptimizationTopPerformers.vue   # Top Performers — props: performers[]; ROI in text-success
 │   │   │   │       │   ├── BudgetOptimizationUnderperformers.vue # Underperformers — props: underperformers[]; actionVariant badge; ROI in text-danger--5p
 │   │   │   │       │   ├── BudgetOptimizationQuickWins.vue       # Quick Wins — props: quickWins[]; effortVariant badge
@@ -105,7 +105,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │           ├── ExecutiveSummaryAnalysis.vue        # Executive Summary tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
 │   │   │   │           ├── ExecutiveSummaryHealth.vue          # Portfolio Health — props: healthScore, bottomLine, period?, totalCampaigns, selectedCampaigns; wraps AnalysisSummary with health badge in #badge slot
 │   │   │   │           ├── ExecutiveSummaryPriorityActions.vue # Priority Actions — props: actions (priority_actions[]); urgencyVariant badge
-│   │   │   │           ├── ExecutiveSummaryMetrics.vue         # Key Metrics grid — props: metrics (key_metrics); formatEuro/formatRoi/formatNumber/classROI
+│   │   │   │           ├── ExecutiveSummaryMetrics.vue         # Key Metrics grid — props: metrics (key_metrics); formatEuro/formatRoi/formatNumber/classROI; metrics-grid container-type for expandable/full-width breakpoints via @container
 │   │   │   │           ├── ExecutiveSummaryInsights.vue        # Insights — props: insights[]; insightTypeVariant badge
 │   │   │   │           └── ExecutiveSummaryChannels.vue        # Channel Summary — props: channels[], additionalChannelsNote?; channelStatusVariant badge + border-left color
 │   │   │   ├── ai-connection/

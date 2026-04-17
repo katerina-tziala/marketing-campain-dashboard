@@ -14,7 +14,7 @@ defineProps<{
     <div
       v-for="(rec, i) in recommendations"
       :key="i"
-      class="card-secondary"
+      class="card-secondary rec-card"
     >
       <div class="card-head">
         <h5 class="card-title">{{ rec.action }}</h5>
@@ -55,20 +55,24 @@ defineProps<{
 </template>
 
 <style lang="scss" scoped>
+.rec-card {
+  container-type: inline-size;
+}
+
 .rec-badges {
   @apply flex gap-2 items-center;
 
-  @media (min-width: 1024px) {
-    @apply flex-col;
-  }
-
-  @media (max-width: 520px) {
+  @container (max-width: 460px) {
     @apply flex-col;
   }
 }
 
 .rec-details {
-  @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-4 p-2;
+  @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-8 p-2;
+
+   @container (max-width: 460px) {
+    @apply gap-x-4;
+  }
 }
 
 .rec-row {

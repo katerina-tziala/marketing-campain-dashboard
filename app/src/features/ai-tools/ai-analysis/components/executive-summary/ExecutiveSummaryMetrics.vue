@@ -33,19 +33,19 @@ function classROI(value: number): string {
         <p class="card-content">{{ formatNumber(metrics.total_conversions) }}</p>
       </div>
       <div class="card-secondary metric-card expandable">
-        <h5 class="card-title badge-text success">Best Channel</h5>
+        <h5 class="card-title card-title-best">Best Channel</h5>
         <p class="card-content">{{ metrics.best_channel }}</p>
       </div>
       <div class="card-secondary metric-card expandable">
-        <h5 class="card-title badge-text danger">Worst Channel</h5>
+        <h5 class="card-title card-title-worst">Worst Channel</h5>
         <p class="card-content">{{ metrics.worst_channel }}</p>
       </div>
       <div class="card-secondary metric-card col-span-2">
-        <h5 class="card-title badge-text success">Best Campaign</h5>
+        <h5 class="card-title card-title-best">Best Campaign</h5>
         <p class="card-content">{{ metrics.best_campaign }}</p>
       </div>
       <div class="card-secondary metric-card col-span-2">
-        <h5 class="card-title badge-text opportunity">Biggest Opportunity</h5>
+        <h5 class="card-title card-title-opportunity">Biggest Opportunity</h5>
         <p class="card-content">{{ metrics.biggest_opportunity }}</p>
       </div>
     </div>
@@ -55,31 +55,28 @@ function classROI(value: number): string {
 <style lang="scss" scoped>
 .metrics-grid {
   @apply grid grid-cols-2 auto-rows-auto gap-2;
+  container-type: inline-size;
 
-  .metric-card {
-    > .card-title {
-      @apply shrink grow-0;
-    }
-
-    > .card-content {
-      @apply grow shrink-0;
-    }
+  .card-title-worst {
+    @apply text-danger--5p;
   }
 
-  @media (min-width: 1024px) {
-    .expandable {
+  .card-title-best {
+    @apply text-success;
+  }
+
+  .card-title-opportunity {
+    @apply text-primary-300;
+  }
+
+  @container (max-width: 540px) {
+    .metrics-grid .expandable {
       @apply col-span-2;
     }
   }
 
-  @media (max-width: 640px) {
-    .expandable {
-      @apply col-span-2;
-    }
-  }
-
-  @media (max-width: 420px) {
-    .metric-card {
+  @container (max-width: 360px) {
+    .metrics-grid .metric-card {
       @apply col-span-2;
     }
   }
