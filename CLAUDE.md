@@ -54,6 +54,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts        # Barrel export for charts
 │   │   ├── icons/              # Inline SVG icon components
 │   │   │   ├── ArrowLeftIcon.vue
+│   │   │   ├── ArrowUpIcon.vue     # Up arrow icon — used for sort direction indicator
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
 │   │   │   ├── EyeIcon.vue         # Show password icon
@@ -156,6 +157,8 @@ app/                        # Vue 3 + Vite project
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
 │   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
 │   │       │   ├── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; duplicateGroupCount prop: shows warning note + adapts proceed label ('Proceed with valid rows' or 'Review duplicate campaigns'); proceed visible when validCampaigns > 0 OR duplicateGroupCount > 0
+│   │       │   └── validation/
+│   │       │       └── DataErrorsTable.vue # Dumb table component — props: errors (CsvRowError[]); sortable Row column (asc/desc toggle); scrollable tbody (max-height 260px); flat @apply styles; no BEM
 │   │       │   └── CsvDuplicateTable.vue   # Multi-root (body + footer divs) — duplicate group resolution; shows groups by campaign name; radio selection per row; canProceed: validCampaigns.length > 0 OR at least one selection; emits proceed([Campaign[]]) with user-selected campaigns; Back/Proceed/Cancel buttons; local formatCurrency/formatNumber helpers; horizontal scroll for 8-column table
 │   │       ├── composables/
 │   │       │   ├── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
@@ -254,6 +257,11 @@ app/                        # Vue 3 + Vite project
 ### Git
 - **Never run git commands** — no git status, git add, git commit, git log, or any other git operation.
 - The user handles all git operations. When asked for a commit message, provide the text only — no commands.
+
+### Styling
+- **No BEM** — the project is moving away from BEM class naming.
+- When refactoring or creating any component, styles must use flat class names with `@apply` (Tailwind utility composition in SCSS).
+- Never introduce new BEM modifier classes (e.g. `__element`, `--modifier`). Replace any encountered during refactor work.
 
 ### Per interaction type
 

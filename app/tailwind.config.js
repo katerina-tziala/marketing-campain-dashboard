@@ -42,13 +42,16 @@ export default {
           800: '#3730a3',
           900: '#312e81',
           950: '#1e1b4b',
+          1000: '#0f0e25',
+          // 1050: '#0f0e25'
         },
         surface: {
           DEFAULT: '#151b2e',
           // secondary: '#0d1226'
           secondary: '#070913',
-          'secondary-10': '#070913'
+          'secondary-10': '#0d1226',
           // modal: 
+          '-10': '#101523',
         },
         'surface-border': {
           DEFAULT: '#1e2a4a',

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { CsvCampaign, CsvRowError } from '../types'
-import { getRowErrorMessage, getRowErrorSummaryWords } from '../utils/error-messages'
+import { getRowErrorSummaryWords } from '../utils/error-messages'
+import DataErrorsTable from './validation/DataErrorsTable.vue'
 
 const props = defineProps<{
   rowErrors: CsvRowError[]
@@ -53,24 +54,7 @@ const duplicateNote = computed(() => {
       {{ duplicateNote }}
     </p>
 
-    <div class="error-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="data-table-header error-table__th error-table__th--row">Row</th>
-            <th class="data-table-header error-table__th error-table__th--col">Column</th>
-            <th class="data-table-header error-table__th">Issue</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(err, i) in rowErrors" :key="i" class="data-table-row">
-            <td class="data-table-cell error-table__td--row">{{ err.row }}</td>
-            <td class="data-table-cell error-table__td--col">{{ err.column }}</td>
-            <td class="data-table-cell">{{ getRowErrorMessage(err) }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <DataErrorsTable :errors="rowErrors" />
   </div>
 
   <!-- Footer -->
@@ -117,34 +101,6 @@ const duplicateNote = computed(() => {
   color: var(--color-warning);
   line-height: 1.5;
   margin: 0;
-}
-
-// ── Table ──────────────────────────────────────────────────────────────────────
-
-.error-table-wrapper {
-  overflow: hidden;
-  overflow-y: auto;
-  max-height: 260px;
-}
-
-.error-table__th {
-  position: sticky;
-  top: 0;
-
-  &--row { width: 56px; }
-  &--col { width: 110px; }
-}
-
-.error-table__td {
-  &--row {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  &--col {
-    font-weight: 500;
-    color: #f43f5e;
-  }
 }
 
 // ── Footer ─────────────────────────────────────────────────────────────────────

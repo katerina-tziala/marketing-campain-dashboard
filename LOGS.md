@@ -3657,3 +3657,123 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `CsvCampaign extends Campaign` rather than a wrapper — direct field access throughout CSV parsing code; wrapper required destructuring at every use site
 - Mapper lives only in `UploadModal` — it is the single boundary between CSV parsing and the store; no other file needs to know about the mapping
 - `detect-campaign-duplication.ts` as a standalone file — single responsibility; testable in isolation; keeps `validate-campaign-data.ts` as an orchestrator
+
+
+## [178] Create DataErrorsTable dumb component
+**Type:** feature
+
+**Summary:** Created a new `validation/` folder inside `csv-file/components` with a dumb `DataErrorsTable.vue` that renders a sortable, scrollable error table using flat `@apply` styles and no BEM.
+
+**Brainstorming:** The existing `CsvErrorTable.vue` mixes layout, summary copy, footer actions, and table rendering into one multi-root component. Extracting the table as a standalone dumb component (`DataErrorsTable`) makes it independently reusable — it only receives `CsvRowError[]` and renders rows. Sorting is kept local (no store, no emits) since it is purely a display concern. Scrollability is achieved by constraining the wrapper div, leaving the table header sticky. Styles use flat class names with `@apply` exclusively — no BEM.
+
+**Prompt:** Create a `validation/` folder inside `csv-file/components`. Inside it, create `DataErrorsTable.vue` — a dumb component that only renders the error table. The Row column must be sortable (asc/desc). Table body must be scrollable. Use flat `@apply` styles, no BEM.
+
+**What was built:**
+- `csv-file/components/validation/DataErrorsTable.vue` — dumb table component; props: `errors: CsvRowError[]`; internal `sortDir` ref toggles asc/desc on the Row column; `sortedErrors` computed sorts by `err.row`; table wrapper has `overflow-y: auto` + `max-height: 260px`; sticky thead; flat `@apply` scoped styles; no BEM
+
+**Key decisions & why:**
+- Sort state kept local — purely a display concern, no parent needs to know the current sort direction
+- `validation/` subfolder — signals intent to group validation-related rendering components separately from the parent modal's multi-root components
+- Flat `@apply` only — aligns with the project-wide move away from BEM
+
+
+## [179] Use DataErrorsTable in CsvErrorTable
+**Type:** update
+
+**Summary:** Replaced the inline table markup in `CsvErrorTable.vue` with the new `DataErrorsTable` component and removed the now-dead table styles.
+
+**Brainstorming:** Straightforward swap — import the new component, replace the `<div class="error-table-wrapper"><table>...</table></div>` block with `<DataErrorsTable :errors="rowErrors" />`, drop the unused `getRowErrorMessage` import, and clean up the dead SCSS rules.
+
+**Prompt:** Replace the table rendering inside CsvErrorTable with the new DataErrorsTable component.
+
+**What changed:**
+- `csv-file/components/CsvErrorTable.vue` — imported `DataErrorsTable`; replaced inline table markup with `<DataErrorsTable :errors="rowErrors" />`; removed unused `getRowErrorMessage` import; removed dead `.error-table-wrapper`, `.error-table__th`, `.error-table__td` SCSS blocks
+
+**Key decisions & why:**
+- Removed `getRowErrorMessage` import entirely — it was only used inside the now-extracted table rows
+- Deleted all table-related scoped styles — they are now owned by `DataErrorsTable`
+
+
+## [180] Scrollable tbody only in DataErrorsTable
+**Type:** fix
+
+**Summary:** Moved scrolling from the wrapper to `tbody` so the scrollbar appears only beside the data rows, while the header stays fixed above with its background and bottom border intact.
+
+**Brainstorming:** The previous approach scrolled the entire `.table-wrapper` div, which dragged the `<thead>` along — solved with `sticky top-0` as a workaround. The cleaner approach is to set `tbody { display: block; overflow-y: auto }` and `tbody tr { display: table; table-layout: fixed; width: 100% }` so only the body scrolls. `thead` also becomes `display: table; width: 100%` to keep column widths in sync with `table-layout: fixed` on the table. Sticky is no longer needed; the header background is maintained with `bg-surface`.
+
+**Prompt:** Make only the table body scrollable. Header should stay visible with its background and bottom border. No scrollbar beside the header.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — removed `overflow-y: auto` / `max-height` from `.table-wrapper`; added `table-layout: fixed` on table; `thead` set to `display: table; w-full; bg-surface`; `tbody` set to `display: block; overflow-y: auto; max-height: 220px`; `tbody tr` set to `display: table; table-layout: fixed; w-full`; removed `thead th { sticky top-0 }`
+
+**Key decisions & why:**
+- `display: block` on `tbody` is the standard way to scroll only the body — requires syncing column widths via `table-layout: fixed` on both table and each `tbody tr`
+- `bg-surface` on `thead` — ensures the header has a solid background so it visually separates from the scrolling rows beneath
+- Removed sticky — no longer needed since the header is naturally above the scroll container
+
+
+## [181] Fix column alignment in DataErrorsTable
+**Type:** fix
+
+**Summary:** Added explicit widths to `td` cell classes to realign columns after the `tbody display: block` change broke automatic width inheritance.
+
+**Brainstorming:** With `tbody { display: block }`, thead and tbody are effectively separate table contexts — `table-layout: fixed` no longer propagates column widths from thead to tbody automatically. The fix is to mirror the same widths (`w-14`, `w-28`) on the `td` classes so both tables use identical column sizing.
+
+**Prompt:** Columns are misaligned after the scrollable tbody change. Fix alignment.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — added `w-14` to `.cell-row` and `w-28` to `.cell-col` to match thead column widths
+
+**Key decisions & why:**
+- Mirror widths on td classes rather than inline styles — keeps sizing in one place per column and consistent with the Tailwind @apply approach
+
+
+## [182] Revert DataErrorsTable to sticky header approach
+**Type:** fix
+
+**Summary:** Reverted to scrolling the whole wrapper with a sticky `thead` — simpler, maintains column alignment naturally, and keeps the header pinned with a solid background.
+
+**Brainstorming:** The `display: block` tbody approach broke column alignment because thead and tbody became separate layout contexts. The sticky header approach is simpler and correct: the wrapper scrolls, `thead th` gets `sticky top-0 bg-surface` so the header stays visible and its background covers scrolling content beneath it.
+
+**Prompt:** Maintain column widths and make header stay on top — scroll can be on the whole table.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — removed `display: block` tbody hacks; restored `overflow-y: auto; max-height: 260px` on `.table-wrapper`; `thead th` is `sticky top-0 bg-surface`; removed explicit widths from `.cell-row` / `.cell-col`
+
+**Key decisions & why:**
+- Sticky header on the wrapper scroll is the standard, alignment-safe solution — no width synchronization needed
+- `bg-surface` on `thead th` prevents row content from bleeding through the header when scrolling
+
+
+## [183] Add ArrowUpIcon to sort button in DataErrorsTable
+**Type:** update
+
+**Summary:** Created `ArrowUpIcon.vue`, exported it from the icons barrel, and replaced the `&#8593;` HTML entity in `DataErrorsTable` with the new icon component.
+
+**Brainstorming:** The sort button used a raw HTML entity for the arrow, which is inconsistent with the rest of the icon system. A proper SVG icon component matches the existing pattern (same style as `ArrowLeftIcon`) and inherits `currentColor` and `1em` sizing automatically.
+
+**Prompt:** Add an arrow icon to the sort button in DataErrorsTable.
+
+**What was built:**
+- `ui/icons/ArrowUpIcon.vue` — new inline SVG up arrow, same structure as `ArrowLeftIcon`
+- `ui/icons/index.ts` — exported `ArrowUpIcon`
+- `csv-file/components/validation/DataErrorsTable.vue` — imported `ArrowUpIcon`; replaced `&#8593;` span with `<ArrowUpIcon>` carrying the existing sort-icon / sort-icon--desc classes
+
+**Key decisions & why:**
+- Reused the rotate-180 class for descending — the icon is an up arrow that flips, consistent with the existing sort-icon--desc pattern
+
+
+## [184] Thicker stroke on ArrowUpIcon
+**Type:** fix
+
+**Summary:** Increased `stroke-width` from `2` to `2.5` in `ArrowUpIcon.vue` for a bolder appearance at small sizes.
+
+**Brainstorming:** At `1em` the arrow was too thin. A slight stroke increase makes it more legible without changing shape.
+
+**Prompt:** Make ArrowUpIcon lines a bit wider.
+
+**What changed:**
+- `ui/icons/ArrowUpIcon.vue` — `stroke-width` updated from `2` to `2.5`
+
+**Key decisions & why:**
+- `2.5` over `3` — enough to be visually bolder while staying consistent with the fine-line icon style used elsewhere
