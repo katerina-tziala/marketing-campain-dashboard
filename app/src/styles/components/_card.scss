@@ -9,10 +9,11 @@
       flex
       flex-col
       items-start
-      gap-2;
+      justify-stretch
+      gap-4;
 
 
-    .card-head {
+    .card-title {
       @apply w-full text-base font-medium tracking-widest text-primary-400; 
     }
 

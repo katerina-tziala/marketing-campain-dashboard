@@ -45,20 +45,8 @@ export default {
           1000: '#0f0e25',
           // 1050: '#0f0e25'
         },
-        secondary: {
-          // 50:  '#eef2ff',
-          // 100: '#e0e7ff',
-          // 200: '#c7d2fe',
-          // 300: '#a5b4fc',
-          // 400: '#818cf8',
-          500: '#ec4899',
-          // 600: '#4f46e5',
-          // 700: '#4338ca',
-          // 800: '#3730a3',
-          // 900: '#312e81',
-          // 950: '#1e1b4b',
-          // 1000: '#0f0e25',
-          // 1050: '#0f0e25'
+        secondary: { 
+          500: '#ec4899', 
         },
         surface: {
           DEFAULT: '#151b2e',
@@ -76,7 +64,7 @@ export default {
         spinner: {
           primary:           '#6366f1',
           'primary-track':   'rgba(99, 102, 241, 0.2)',
-          secondary:         '#ffffff',
+          secondary:         '#eef2ff',
           'secondary-track': 'rgba(255, 255, 255, 0.3)',
         },
       },

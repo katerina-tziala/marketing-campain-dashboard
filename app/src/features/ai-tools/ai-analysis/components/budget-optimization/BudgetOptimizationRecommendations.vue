@@ -62,7 +62,7 @@ defineProps<{
 .rec-badges {
   @apply flex gap-2 items-center;
 
-  @container (max-width: 460px) {
+  @container (max-width: 28.75rem) {
     @apply flex-col;
   }
 }
@@ -70,7 +70,7 @@ defineProps<{
 .rec-details {
   @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-8 p-2;
 
-   @container (max-width: 460px) {
+   @container (max-width: 28.75rem) {
     @apply gap-x-4;
   }
 }

@@ -69,13 +69,13 @@ function classROI(value: number): string {
     @apply text-primary-300;
   }
 
-  @container (max-width: 540px) {
+  @container (max-width: 33.75rem) {
     .metrics-grid .expandable {
       @apply col-span-2;
     }
   }
 
-  @container (max-width: 360px) {
+  @container (max-width: 22.5rem) {
     .metrics-grid .metric-card {
       @apply col-span-2;
     }

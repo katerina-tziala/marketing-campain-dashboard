@@ -4161,3 +4161,45 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - totalConversions added to CampaignKPIs rather than passed as a second prop — a single cohesive input is cleaner than two separate inputs; KPIs are logically a bundle
 - totalConversions kept on store root as well — funnel chart in DashboardView still needs store.totalConversions, totalImpressions, totalClicks directly
 - Formatting logic moves into DashboardKpis, not left in DashboardView — DashboardView should not know the display format of KPIs; that knowledge belongs in the component that renders them
+
+
+## [#205] Extract groupByChannel utility; expose channelTotals from campaignStore
+**Type:** refactor
+
+**Summary:** Extracted the repeated channel accumulation pattern into a shared common utility and exposed it as a computed on the campaign store, without touching any feature files.
+
+**Brainstorming:** Three places in the codebase compute the same Map-based channel accumulation (budget + revenue + impressions + clicks + conversions per channel): the revVsBudgetData chart computed in DashboardView, and the internal aggregateChannels functions in buildBudgetOptimizerData and buildExecutiveSummaryData. The chart only uses budget + revenue; the AI utils also compute derived metrics on top. The shared raw accumulation step — iterating campaigns and summing the five numeric fields per channel — is a pure data transformation with no feature dependencies, making it a natural fit for common/utils. Extracting it there lets all consumers eventually replace their inline loops. The store exposes it as channelTotals computed (keyed off filteredCampaigns) so feature components can consume it reactively without importing the utility directly. AI tools and DashboardView were not touched in this pass — they will be updated to use the new utility separately.
+
+**Prompt:** Chart data calculation in DashboardView seems to reuse functionality with other places — can we move those calculations into common utils? Scope: only common and stores, do not replace anything in other features for now.
+
+**What was built:**
+- `app/src/common/utils/campaign-aggregation.ts` — new file; exports ChannelTotals type and groupByChannel(campaigns) → Record<string, ChannelTotals>; pure accumulator with no derived metrics
+- `app/src/stores/campaignStore.ts` — imports groupByChannel; adds channelTotals computed (groupByChannel over filteredCampaigns); exposed in store return
+
+**Key decisions & why:**
+- All five fields in ChannelTotals (not just budget + revenue) — the chart only needs two, but the AI utils need all five; a partial accumulator would force a second pass or separate util
+- No derived metrics (roi, ctr, cvr, etc.) in the utility — those depend on rounding strategy and output type, which differ per consumer; the utility is intentionally a raw accumulator
+- Exposed via store computed rather than requiring feature components to import the util directly — store is already the data layer; channelTotals fits naturally alongside kpis and filteredCampaigns
+- AI tools files left unchanged — scoped to common and stores only for this pass
+
+
+## [#206] Extract DashboardCharts component; consolidate funnel totals into CampaignKPIs
+**Type:** refactor
+
+**Summary:** Extracted the charts section from DashboardView into DashboardCharts, which accepts campaigns, channelTotals, and kpis as props — and consolidated totalImpressions and totalClicks into CampaignKPIs so the funnel data travels with the single kpis object rather than as separate props.
+
+**Brainstorming:** The charts section in DashboardView contained all chart computeds (campaignColorMap, roiChartData, budgetCampaignData, revVsBudgetData, funnelValues) and the charts grid template — a natural extraction unit. Following the same pattern as DashboardKpis, the component accepts props rather than reading the store. The revVsBudgetData computed was a free win: instead of the inline byChannel loop, it uses the channelTotals prop (already provided by the store after the previous groupByChannel extraction), making the computation a straightforward Object.entries pass. For the funnel, the initial prop design had totalImpressions, totalClicks, totalConversions as three separate inputs. The user requested consolidation into kpis — this led to adding totalImpressions and totalClicks to CampaignKPIs (totalConversions was already there), so the funnel chart reads from props.kpis. This keeps DashboardCharts to three clean props: the campaign list for per-campaign charts, channelTotals for the grouped bar chart, and kpis for everything aggregate.
+
+**Prompt:** Create DashboardCharts component and move charts section there. Pass inputs in, will not read from store. Consolidate kpis.
+
+**What was built:**
+- `app/src/common/types/campaign.ts` — CampaignKPIs extended with totalImpressions and totalClicks
+- `app/src/stores/campaignStore.ts` — kpis computed now includes totalImpressions and totalClicks
+- `app/src/features/dashboard/components/DashboardCharts.vue` — new component; props: campaigns (Campaign[]), channelTotals (Record<string, ChannelTotals>), kpis (CampaignKPIs); all chart computeds internal; revVsBudgetData uses channelTotals prop directly; funnelValues reads from kpis; owns .charts-grid scoped style
+- `app/src/features/dashboard/DashboardView.vue` — removed chart imports (ChartData, chart components, CHART_COLORS), all chart computeds, and chart styles; added DashboardCharts; passes store.filteredCampaigns, store.channelTotals, store.kpis
+
+**Key decisions & why:**
+- totalImpressions and totalClicks added to CampaignKPIs — they are aggregate portfolio metrics; keeping them alongside totalConversions in one object avoids threading individual totals as separate props
+- revVsBudgetData uses channelTotals prop instead of inline loop — free win from the prior groupByChannel extraction; eliminates the last inline channel accumulation in the dashboard feature
+- Three props rather than one flat object — campaigns is a list (variable length, drives color mapping), channelTotals is a map keyed by channel name, kpis is a fixed-shape aggregate; splitting them by semantic type makes it clear what each chart computation depends on
+

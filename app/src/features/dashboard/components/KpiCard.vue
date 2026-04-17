@@ -11,7 +11,7 @@ defineProps<{
     role="region"
     :aria-label="label"
   >
-    <p class="card-head">{{ label }}</p> 
+    <p class="card-title">{{ label }}</p> 
     <p class="kpi-value">{{ value ?? 'N/A' }}</p>
     <p v-if="$slots.secondary" class="kpi-secondary">
       <slot name="secondary" />

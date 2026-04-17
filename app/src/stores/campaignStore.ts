@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Campaign, CampaignScope } from '../common/types/campaign'
 import { safeDivide, round2 } from '../common/utils/math'
+import { groupByChannel } from '../common/utils/campaign-aggregation'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
@@ -43,6 +44,8 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns.value.reduce((s, c) => s + c.conversions, 0),
   )
 
+  const channelTotals = computed(() => groupByChannel(filteredCampaigns.value))
+
   const campaignScope = computed((): CampaignScope => ({
     campaigns: campaigns.value.map((c) => c.campaign),
     selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
@@ -56,6 +59,8 @@ export const useCampaignStore = defineStore('campaigns', () => {
     ctr: round2(safeDivide(totalClicks.value, totalImpressions.value) * 100),
     cvr: round2(safeDivide(totalConversions.value, totalClicks.value) * 100),
     cac: totalConversions.value > 0 ? round2(totalBudget.value / totalConversions.value) : null,
+    totalImpressions: totalImpressions.value,
+    totalClicks: totalClicks.value,
     totalConversions: totalConversions.value,
   }))
 
@@ -87,6 +92,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     availableChannels,
     campaignScope,
     kpis,
+    channelTotals,
     totalImpressions,
     totalClicks,
     totalConversions,
