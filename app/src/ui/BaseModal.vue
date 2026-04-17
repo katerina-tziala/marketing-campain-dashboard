@@ -57,6 +57,7 @@ onUnmounted(() => {
 
 .modal {
   @apply w-fit
+    h-fit
     overflow-hidden
     rounded-md
     shadow-md

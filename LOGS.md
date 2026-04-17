@@ -3777,3 +3777,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `2.5` over `3` — enough to be visually bolder while staying consistent with the fine-line icon style used elsewhere
+
+
+## [#185] UI polish: extract DataErrorSummary, de-BEM modal classes, improve BaseModal accessibility
+**Type:** update
+
+**Summary:** Extracted a shared `DataErrorSummary` presentational component for CSV error screens, de-BEM'd modal global classes to flat names, and improved `BaseModal` with Teleport, accessibility attributes, and backdrop click-to-close.
+
+**Brainstorming:** Both `CsvErrorTable` and `CsvDuplicateTable` had inline summary blocks with identical structure (title + badge + body text) — extracting `DataErrorSummary` as a slot-driven presentational component removes the duplication and makes the pattern reusable. Modal global classes (`modal__body`, `modal__footer`) were BEM-style holdovers — renamed to flat `modal-body` / `modal-footer` consistent with the project's move away from BEM. `BaseModal` was missing `Teleport`, which meant it rendered in-tree rather than on `body`; also added proper ARIA attributes and backdrop click-to-close for completeness.
+
+**Prompt:** Read changed files on the feat/ui-polish branch and update CLAUDE.md and LOGS.md accordingly. This conversation is not logged.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorSummary.vue` — new presentational component; three named slots (title, badge, summary); no props, no scoped styles; used by both error screens
+- `csv-file/components/CsvErrorTable.vue` — replaced inline summary HTML with stacked `DataErrorSummary` instances rendered conditionally (invalid-only / partial-import / duplicate-notice)
+- `csv-file/components/CsvDuplicateTable.vue` — replaced inline summary/notice markup with a single `DataErrorSummary` block
+- `csv-file/components/validation/DataErrorsTable.vue` — refactored scoped styles to flat class names (`table-wrapper`, `col-row`, `col-campain`, `cell-row`, `cell-col`); thead uses `data-table-sticky-header`; sortable th uses `data-table-sortable-header`; removed hardcoded max-height from scoped style
+- `styles/components/_modal.scss` — renamed `modal__body` → `modal-body`, `modal__footer` → `modal-footer`; added `.modal-body` class definition
+- `ui/BaseModal.vue` — added `Teleport to="body"`; added `aria-modal="true"`, `role="dialog"`, `:aria-label="title"` on backdrop; added `@click.self` for backdrop click-to-close
+- `csv-file/components/ReplaceDataModal.vue` — updated to use flat `modal-body` / `modal-footer` class names
+
+**Key decisions & why:**
+- `DataErrorSummary` uses only named slots, no props — keeps it maximally flexible; callers own all content including badge variant
+- Flat modal class names (`modal-body` / `modal-footer`) over BEM — aligns with the established project direction away from BEM modifiers
+- `Teleport to="body"` on `BaseModal` — ensures the modal and its backdrop render above all page content regardless of stacking context

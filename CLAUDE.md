@@ -70,7 +70,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── types/
 │   │   │   └── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
-│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
+│   │   ├── BaseModal.vue       # Generic modal shell — Teleport to body; backdrop (click-to-close via @click.self, aria-modal/role="dialog"/aria-label); header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
 │   │   ├── FileDropzone.vue    # File drop zone — v-model (File|null), id?, accept?, hint? props; button element (not div role="button"); hidden input outside button (tabindex="-1"); hintId computed from id prop; aria-describedby on button when hint visible; hint text: "Drag & drop a {hint} file here or browse" (hint optional, omitted gives generic); browse-link styled as text-button-small (primary-400); hint color matches placeholder (typography-subtle); drag state internal; named error slot drives input-error via Comment-node detection; emits raw file; scoped @apply styles
 │   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
 │   │   ├── RadioToggle.vue     # Pill-style radio group — v-model, options ({value,label}[]), name? props; grid-template-columns driven by options.length; scoped non-BEM styles
@@ -154,12 +154,13 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── FileActions.vue         # Download Template + Upload CSV button pair — emits upload; uses useDownloadTemplate; flat @apply scoped styles; responsive stacking at <480px
 │   │       │   ├── UploadModal.vue         # Self-contained modal — view: 'form'|'row-errors'|'duplicate-rows'; open/close/parse/store; exposes only open(); sequential error handling: invalid_rows → row-errors view, then duplicate_campaigns → duplicate-rows view (or direct if no row errors)
-│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
+│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal-body, .modal-footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
 │   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
-│   │       │   ├── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; duplicateGroupCount prop: shows warning note + adapts proceed label ('Proceed with valid rows' or 'Review duplicate campaigns'); proceed visible when validCampaigns > 0 OR duplicateGroupCount > 0
+│   │       │   ├── CsvErrorTable.vue       # Multi-root (body + footer divs) — uses DataErrorSummary for error blocks (stacked: invalid-only / partial-import / duplicate-notice conditionally); scrollable table (CsvRowError[]); duplicateGroupCount prop: adapts proceed label ('Proceed with valid rows' or 'Review duplicate campaigns'); proceed visible when validCampaigns > 0 OR duplicateGroupCount > 0
 │   │       │   └── validation/
-│   │       │       └── DataErrorsTable.vue # Dumb table component — props: errors (CsvRowError[]); sortable Row column (asc/desc toggle); scrollable tbody (max-height 260px); flat @apply styles; no BEM
-│   │       │   └── CsvDuplicateTable.vue   # Multi-root (body + footer divs) — duplicate group resolution; shows groups by campaign name; radio selection per row; canProceed: validCampaigns.length > 0 OR at least one selection; emits proceed([Campaign[]]) with user-selected campaigns; Back/Proceed/Cancel buttons; local formatCurrency/formatNumber helpers; horizontal scroll for 8-column table
+│   │       │       ├── DataErrorSummary.vue # Presentational summary block — 3 named slots: title, badge, summary; no props, no scoped styles; used by CsvErrorTable and CsvDuplicateTable
+│   │       │       └── DataErrorsTable.vue # Dumb table component — props: errors (CsvRowError[]); sortable Row column (asc/desc toggle, data-table-sortable-header + data-table-sticky-header); flat @apply styles; no BEM
+│   │       │   └── CsvDuplicateTable.vue   # Multi-root (body + footer divs) — uses DataErrorSummary for duplicate header block; shows groups by campaign name; radio selection per row; canProceed: validCampaigns.length > 0 OR at least one selection; emits proceed([Campaign[]]) with user-selected campaigns; Back/Proceed/Cancel buttons; local formatCurrency/formatNumber helpers; horizontal scroll for 8-column table
 │   │       ├── composables/
 │   │       │   ├── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       │   └── useUploadModal.ts       # Upload modal composable — accepts modalRef (InstanceType<UploadModal>); uses campaignStore internally; hasCampaigns computed; requestUpload (opens modal or shows replace confirm based on hasCampaigns); onReplaceConfirm/closeReplaceConfirm; calls provide('openUploadModal') internally
@@ -180,7 +181,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
 │   │   │   ├── _card.scss          # @layer components — .card, .card-secondary; flat child classes: .card-head, .card-title, .card-content
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
-│   │   │   ├── _modal.scss         # @layer components — .modal__body, .modal__footer
+│   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell
 │   │   └── utilities/
 │   │       ├── index.scss          # Barrel — @use all utility partials

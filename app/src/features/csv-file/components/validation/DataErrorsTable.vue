@@ -63,12 +63,11 @@ const sortedErrors = computed(() =>
 
 <style lang="scss" scoped>
 .table-wrapper {
-  @apply overflow-y-auto;
-  max-height: 260px;
+  @apply overflow-auto;
 }
  
 .col-row {
-  @apply text-center w-8;
+  @apply text-center w-6;
 }
 
 .col-campain {

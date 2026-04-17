@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { CsvCampaign, CsvRowError } from '../types'
 import { getRowErrorSummaryWords } from '../utils/error-messages'
 import DataErrorsTable from './validation/DataErrorsTable.vue'
+import DataErrorSummary from './validation/DataErrorSummary.vue';
 
 const props = defineProps<{
   rowErrors: CsvRowError[]
@@ -24,113 +25,69 @@ const showProceed = computed(() => props.validCampaigns.length > 0 || props.dupl
 const proceedLabel = computed(() =>
   props.validCampaigns.length > 0 ? 'Proceed with valid rows' : 'Review duplicate campaigns',
 )
-const duplicateNote = computed(() => {
-  if (props.duplicateGroupCount === 0) return ''
-  const word = props.duplicateGroupCount === 1 ? 'name has' : 'names have'
-  return `${props.duplicateGroupCount} campaign ${word} duplicate rows that will need to be resolved in the next step.`
-})
+ 
 </script>
 
 <template>
   <!-- Body -->
   <div class="error-body">
-    <p v-if="validCampaigns.length === 0 && duplicateGroupCount === 0" class="error-summary">
-      <strong>{{ invalidRowCount }} {{ summaryWords.rowWord }}</strong>
-      {{ summaryWords.verb }} errors and could not be imported.
-      Please fix the issues below and upload the file again.
-    </p>
-    <p v-else class="error-summary">
-      <strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
-      {{ summaryWords.verb }} errors and
-      {{ summaryWords.wasWord }} skipped.
-      <template v-if="validCampaigns.length > 0">
-        You can proceed with the
-        <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>,
-        or go back and fix the file.
-      </template>
-    </p>
+    <div class="flex flex-col gap-4">
+      <DataErrorSummary v-if="validCampaigns.length === 0 && duplicateGroupCount === 0">
+        <template #title>Campaign data could not be imported</template>
+        <template #badge>
+          <span class="badge danger">Invalid data</span>
+        </template>
+        <template #summary>
+          <p>None of the rows could be imported because they contain errors.</p>
+          <p>Please fix the issues below and upload the file again.</p>
+        </template>
+      </DataErrorSummary>
 
-    <p v-if="duplicateNote" class="error-duplicate-note">
-      {{ duplicateNote }}
-    </p>
+      <DataErrorSummary  v-else>
+        <template #title>Some rows contain errors</template>
+        <template #badge>
+          <span class="badge warning">Partial import</span>
+        </template>
+        <template #summary>
+          <p><strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
+        {{ summaryWords.verb }} errors and
+        {{ summaryWords.wasWord }} skipped.</p>
+          <p>You can proceed with the <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>, or go back and fix the file.</p> 
+        </template>
+      </DataErrorSummary>
 
+      <DataErrorSummary v-if="duplicateGroupCount > 0">
+        <template #title>Duplicate campaign names</template>
+        <template #badge>
+           <span class="badge warning">Duplicate data</span>
+        </template>
+        <template #summary>
+          <p><strong>{{ duplicateGroupCount }} campaign {{ duplicateGroupCount === 1 ? 'name has' : 'names have' }}</strong> duplicate rows that will need to be resolved.</p>
+          <p>You will be asked to resolve these duplicates in the next step.</p>
+        </template>
+      </DataErrorSummary>
+    </div>
     <DataErrorsTable :errors="rowErrors" />
   </div>
-
-  <!-- Footer -->
-  <div class="error-footer">
-    <button
-      v-if="showProceed"
-      class="btn-secondary-outline error-footer__proceed"
-      @click="emit('proceed')"
-    >
-      {{ proceedLabel }}
-    </button>
-
-    <button class="btn-secondary-outline error-footer__cancel" @click="emit('close')">Cancel</button>
-    <button class="btn-primary error-footer__back" @click="emit('back')">Back</button>
+  <div class="modal-footer">
+    <button class="btn-primary min-w-24 xs:order-1" @click="emit('back')">Back</button>
+    <button v-if="showProceed" class="btn-secondary-outline xs:order-3 xs:mr-auto" @click="emit('proceed')">{{ proceedLabel }}</button>
+    <button class="btn-secondary-outline min-w-24 xs:order-2" @click="emit('close')">Cancel</button>
   </div>
 </template>
 
 <style lang="scss" scoped>
-// ── Body ───────────────────────────────────────────────────────────────────────
-
-.error-body {
-  padding: theme('spacing.6');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing.5');
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  width: 90vw;
-  max-width: 640px;
-}
-
-// ── Summary ────────────────────────────────────────────────────────────────────
-
-.error-summary {
-  font-size: theme('fontSize.sm');
-  color: var(--color-text);
-  line-height: 1.6;
-  margin: 0;
-}
-
-.error-duplicate-note {
-  font-size: theme('fontSize.sm');
-  color: var(--color-warning);
-  line-height: 1.5;
-  margin: 0;
-}
-
-// ── Footer ─────────────────────────────────────────────────────────────────────
-
-.error-footer {
-  display: flex;
-  align-items: center;
-  gap: theme('spacing.3');
-  padding: theme('spacing.4') theme('spacing.6');
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-
-  &__cancel {
-    margin-left: auto;
-  }
-
-  @media (max-width: 479px) {
-    flex-direction: column;
-    padding: theme('spacing.4');
-
-    .error-footer__back    { order: 1; }
-    .error-footer__proceed { order: 2; }
-    .error-footer__cancel  { order: 3; }
-
-    .error-footer__back,
-    .error-footer__proceed,
-    .error-footer__cancel {
-      width: 100%;
-      margin-left: 0;
-    }
-  }
+.error-body { 
+  @apply w-[90vw]
+    max-w-3xl
+    h-fit
+    max-h-screen
+    grid
+    grid-cols-1
+    grid-rows-[min-content_1fr]
+    gap-6
+    p-6
+    max-h-[75vh]
+    xs:max-h-[50vh];
 }
 </style>
