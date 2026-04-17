@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { BaseModal } from '../../../ui'
-import { parseCsv } from '../utils/parseCsv'
+import { parseCsv } from '../utils/parse-csv'
+import { getValidationErrorMessage } from '../utils/error-messages'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useDownloadTemplate } from '../composables/useDownloadTemplate'
 import type { Campaign } from '../../../common/types/campaign'
@@ -65,17 +66,6 @@ async function handleSubmit(): Promise<void> {
 
   const err = result.errors[0]
 
-  if (err.type === 'file_size' || err.type === 'empty_file') {
-    parseError.value = err.message
-    return
-  }
-
-  if (err.type === 'missing_columns') {
-    const cols = (err.details ?? []).join(', ')
-    parseError.value = `CSV file headers are missing: ${cols}. Please consult the template.`
-    return
-  }
-
   if (err.type === 'invalid_rows') {
     pendingTitle.value = title.value
     validCampaigns.value = result.campaigns
@@ -84,8 +74,7 @@ async function handleSubmit(): Promise<void> {
     return
   }
 
-  // Fallback for file_type errors not caught by the inline check
-  parseError.value = err.message
+  parseError.value = getValidationErrorMessage(err)
 }
 
 function handleBack(): void {

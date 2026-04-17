@@ -157,10 +157,14 @@ app/                        # Vue 3 + Vite project
 │   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
 │   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; plain buttons with .btn-primary/.btn-secondary-outline; Proceed only shown when validCampaigns > 0
 │   │       ├── composables/
-│   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
+│   │       │   ├── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
+│   │       │   └── useUploadModal.ts       # Upload modal composable — accepts modalRef (InstanceType<UploadModal>); uses campaignStore internally; hasCampaigns computed; requestUpload (opens modal or shows replace confirm based on hasCampaigns); onReplaceConfirm/closeReplaceConfirm; calls provide('openUploadModal') internally
 │   │       └── utils/
-│   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
-│   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
+│   │           ├── download-csv.ts         # Builds CSV string from Campaign[], triggers browser download
+│   │           ├── error-messages.ts       # All CSV validation display text — VALIDATION_ERROR_MESSAGES const map with {placeholder} syntax; getValidationErrorMessage(error); getRowErrorMessage(error); replacePlaceholders helper
+│   │           ├── parse-csv.ts            # PapaParse wrapper — file-level validation (type/size) + parse; delegates to validate-campaign-data
+│   │           ├── validate-campaign-data.ts # Campaign data validator — EXPECTED_HEADERS; column presence check; empty-file check; row-by-row validation; returns CsvParseResult (no display strings)
+│   │           └── validate-row-data.ts    # Per-row field validation — validateRow + three sub-validators (string/numeric/funnel); guard helpers; returns CsvRowError[]
 │   ├── styles/
 │   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss
 │   │   ├── components/

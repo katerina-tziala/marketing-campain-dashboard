@@ -1,7 +1,20 @@
-export interface CsvRowError {
-  row: number
+import type { Campaign } from "../../../common/types/campaign"
+
+export type CsvRowIssueType =
+  | 'empty'
+  | 'positive_number'
+  | 'non_negative_number'
+  | 'non_negative_integer'
+  | 'exceeds'
+
+export interface CsvFieldIssue {
   column: string
-  issue: string
+  issue: CsvRowIssueType
+  details?: string
+}
+
+export interface CsvRowError extends CsvFieldIssue {
+  row: number
 }
 
 export type CsvValidationErrorType =
@@ -10,15 +23,21 @@ export type CsvValidationErrorType =
   | 'empty_file'
   | 'missing_columns'
   | 'invalid_rows'
+  | 'parse_error'
 
 export interface CsvValidationError {
   type: CsvValidationErrorType
-  message: string
-  details?: string[]
+  detail?: string
+  missingColumns?: string[]
   rowErrors?: CsvRowError[]
 }
 
 export interface CsvParseResult {
-  campaigns: import('../../../common/types/campaign').Campaign[]
+  campaigns: Campaign[]
   errors: CsvValidationError[]
+}
+
+export interface ProcessRowsResult {
+  campaigns: Campaign[]
+  errors: CsvRowError[]
 }

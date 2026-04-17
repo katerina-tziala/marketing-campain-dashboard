@@ -3236,3 +3236,373 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Placed in `csv-file/components/` not `dashboard/` — the component owns CSV-specific actions and its composable lives there; dashboard just consumes it via an event
+
+
+## [#155] Extract useUploadModal composable from AppShell
+**Type:** refactor
+
+**Summary:** Extracted upload modal state and replace-confirm logic from `AppShell.vue` into `useUploadModal.ts` in `csv-file/composables/`, co-locating it with the feature it belongs to.
+
+**Brainstorming:** `AppShell` was holding `uploadModal` ref, `showReplaceConfirm`, `onReplaceConfirm`, and the `provide('openUploadModal')` call — all CSV upload concerns. Extracting them into a composable reduces AppShell to layout-only logic. The composable accepts `modalRef` as a parameter rather than creating it internally, so AppShell declares and owns the template ref (eliminating the "declared but never read" TS warning that occurs when a ref is only written via `ref="..."` in the template).
+
+**Prompt:** Create `useUploadModal.ts` in `csv-file/composables/`. It accepts a `modalRef: Ref<InstanceType<typeof UploadModal> | null>`, manages `showReplaceConfirm`, defines `openUploadModal` and `onReplaceConfirm`, calls `provide('openUploadModal', openUploadModal)`, and returns `{ showReplaceConfirm, onReplaceConfirm }`. Update AppShell to declare the ref locally and pass it to the composable.
+
+**What changed:**
+- `app/src/features/csv-file/composables/useUploadModal.ts` — new composable; accepts `modalRef`; manages replace-confirm state and open handlers; calls `provide('openUploadModal')` internally
+- `app/src/shell/AppShell.vue` — `uploadModal` ref declared locally and passed to `useUploadModal`; `showReplaceConfirm` and `onReplaceConfirm` destructured from composable; manual `provide('openUploadModal')` removed
+
+**Key decisions & why:**
+- `modalRef` passed as parameter rather than created inside the composable — the template ref must be declared in the component's setup scope for Vue's `ref="..."` binding to work; passing it in also makes the TS warning disappear since the ref is explicitly read at the call site
+- `provide` called inside the composable — it runs synchronously in setup context, so this is valid and keeps all upload-related wiring in one place
+
+
+## [#156] Move replace modal logic into useUploadModal
+**Type:** refactor
+
+**Summary:** Moved the replace-confirm decision logic and `useCampaignStore` dependency from `AppShell` into `useUploadModal`, exposing `hasCampaigns`, `requestUpload`, and `closeReplaceConfirm` so AppShell's template binds to composable-owned state only.
+
+**Brainstorming:** `AppShell` was still directly setting `showReplaceConfirm = true` in the template and importing `useCampaignStore` solely for the button condition. Both belong in the composable — it already owns `showReplaceConfirm` and the open logic, so it should also own the decision of whether to show replace confirm or open directly. Moving `useCampaignStore` in with a `hasCampaigns` computed removes the last campaign-related concern from AppShell.
+
+**Prompt:** Extend `useUploadModal` with `useCampaignStore` (for `hasCampaigns` computed), `requestUpload` (opens modal directly or sets `showReplaceConfirm` based on `hasCampaigns`), and `closeReplaceConfirm`. Update AppShell template to use `hasCampaigns`/`requestUpload`/`closeReplaceConfirm` and remove `useCampaignStore` import.
+
+**What changed:**
+- `app/src/features/csv-file/composables/useUploadModal.ts` — added `useCampaignStore`; `hasCampaigns` computed; `requestUpload` and `closeReplaceConfirm` functions; all five values returned
+- `app/src/shell/AppShell.vue` — `useCampaignStore` import and `store` removed; template updated to `v-if="hasCampaigns"`, `@click="requestUpload"`, `@close="closeReplaceConfirm"`
+
+**Key decisions & why:**
+- `requestUpload` centralises the open-vs-confirm decision in the composable — the template no longer needs to know about campaign state to decide what clicking "Upload CSV" does
+
+
+## [#157] Split parseCsv — extract validateCampaignData
+**Type:** refactor
+
+**Summary:** Extracted column and row validation logic from `parseCsv.ts` into a dedicated `validateCampaignData.ts`, leaving `parseCsv` responsible only for file-level checks and PapaParse invocation.
+
+**Brainstorming:** `parseCsv` was doing two distinct jobs: file I/O concerns (type/size guard + PapaParse) and data correctness concerns (column presence, row field validation, cross-field constraints). Separating them makes `validateCampaignData` independently testable and reusable if another file type (e.g. Excel/JSON) is added later — the data shape validation would not need to be re-implemented. `parseCsv` is now a thin adapter: validate the file, parse it, hand the rows to the validator.
+
+**Prompt:** Split `parseCsv.ts` — move `EXPECTED_HEADERS`, column validation, empty-file check, headerMap/get helper, and row validation into a new `validateCampaignData(data, fields): CsvParseResult` function in `validateCampaignData.ts`. Reduce `parseCsv` to file-level checks + PapaParse, calling `validateCampaignData` in the `complete` callback.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — new file; owns `EXPECTED_HEADERS`, column check, empty-file check, headerMap/get, row validation, and result assembly
+- `app/src/features/csv-file/utils/parseCsv.ts` — reduced to file type/size guards + PapaParse wrapper; delegates to `validateCampaignData`
+
+**Key decisions & why:**
+- `validateCampaignData` takes `(data, fields)` not a raw PapaParse result — keeps it decoupled from the parser, so it can be called from any source that produces rows and header field names
+
+
+## [#158] Add parse_error type for PapaParse failures
+**Type:** fix
+
+**Summary:** Replaced the semantically incorrect `'file_type'` error type used in the PapaParse `error` callback with a new `'parse_error'` type, and wired it into the UploadModal handler.
+
+**Brainstorming:** The PapaParse `error` callback fires when the parser itself fails — not when the file type is wrong (that check happens earlier). Reusing `'file_type'` was misleading. Adding `'parse_error'` makes the error union exhaustive and accurate. UploadModal already had a clean switch on error type; `parse_error` slots in alongside `file_size` and `empty_file` since all three show the message inline on the form.
+
+**Prompt:** Add `'parse_error'` to `CsvValidationErrorType`. Update the PapaParse error callback in `parseCsv.ts` to emit `type: 'parse_error'`. Handle it explicitly in `UploadModal.vue` alongside `file_size` and `empty_file`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `'parse_error'` added to `CsvValidationErrorType`
+- `app/src/features/csv-file/utils/parseCsv.ts` — PapaParse error callback type changed from `'file_type'` to `'parse_error'`
+- `app/src/features/csv-file/components/UploadModal.vue` — `parse_error` added to the inline-message condition alongside `file_size` and `empty_file`
+
+**Key decisions & why:**
+- `parse_error` grouped with `file_size`/`empty_file` in the handler — all three result in an inline form error with the raw message; no row table needed
+
+
+## [#159] Extract extractCampaignFields helper and remove debug log
+**Type:** fix
+
+**Summary:** Extracted the per-row field reading logic into a named `extractCampaignFields(row, headerMap)` function and removed the stray `console.log(row)` debug statement from `validateCampaignData.ts`.
+
+**Brainstorming:** The inline `get` helper and the seven field assignments were cohesive enough to pull into a named function — it improves readability, makes the row loop body shorter, and removes the need for the closure over `headerMap` inside `validateCampaignData`. The `console.log` was a debug leftover that should never have been committed; removing it is part of the same cleanup.
+
+**Prompt:** Create a `extractCampaignFields(row, headerMap)` function in `validateCampaignData.ts` that returns a `Campaign` object with all seven fields extracted and coerced. Replace the inline `get` helper and the seven `const` assignments in the `forEach` loop with a single destructured call to the new function. Remove the `console.log(row)` debug line.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — added `extractCampaignFields` function; replaced inline `get` helper + seven field `const` declarations with destructured call; removed `console.log(row)`
+
+**Key decisions & why:**
+- `extractCampaignFields` returns a full `Campaign` shape — lets TypeScript enforce all seven fields are present and correctly typed at the extraction boundary
+- `get` helper moved inside `extractCampaignFields` — it only makes sense in that context, no need to expose it further
+
+
+## [#160] Add isValidString, isNonNegativeNumber, isNonNegativeInteger helpers to validateCampaignData
+**Type:** update
+
+**Summary:** Added three named guard functions and replaced all inline validation expressions with calls to them throughout `validateCampaignData.ts`.
+
+**Brainstorming:** The validation conditions were correct but expressed as inline expressions — `!isNaN(x) && x >= 0 && Number.isInteger(x)`, `isNaN(budget) || budget <= 0`, etc. Extracting them into named predicates makes each validation line read as a business rule rather than a type-check expression. `isValidString` also adds explicit rejection of the literal strings `'undefined'` and `'null'` which raw CSV cells can contain after PapaParse stringification.
+
+**Prompt:** Add `isValidString(value?)`, `isNonNegativeNumber(value)`, and `isNonNegativeInteger(value)` functions to `validateCampaignData.ts` and use them to replace all inline validation expressions in the row validation loop.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — three guard functions added at the top; `campaign`/`channel` checks use `isValidString`; `budget` uses `!isNonNegativeNumber || budget === 0`; `impressions`/`clicks`/`conversions` use `isNonNegativeInteger`; `revenue` uses `!isNonNegativeNumber`
+
+**Key decisions & why:**
+- `budget` keeps a separate `=== 0` check alongside `isNonNegativeNumber` — budget must be strictly positive, while `isNonNegativeNumber` allows zero (shared with `revenue`)
+- `isValidString` rejects `'undefined'` and `'null'` literals — raw CSV cells can carry these strings after PapaParse stringification of missing values
+
+
+## [#161] Extract buildHeaderMap helper in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted the header map construction into a named `buildHeaderMap(fields)` function using `reduce`, replacing the imperative `forEach` mutation pattern.
+
+**Brainstorming:** The two-line `forEach` mutation was a minor but noisy side-effect pattern inside an otherwise functional pipeline. A named `reduce`-based function is self-documenting and has no mutable intermediate variable.
+
+**Prompt:** Create a `buildHeaderMap(fields: string[]): Record<string, string>` function using `reduce` and replace the inline `headerMap` construction in `validateCampaignData`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `buildHeaderMap` added; inline `forEach` mutation replaced with `const headerMap = buildHeaderMap(fields)`
+
+**Key decisions & why:**
+- `reduce` with an explicit `{}` accumulator keeps the function pure — no external mutation
+
+
+## [#162] Extract processRows function in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted the row iteration and per-row validation logic into a dedicated `processRows(data, headerMap)` function returning `{ campaigns, errors }`, leaving `validateCampaignData` as a thin coordinator for file-level checks.
+
+**Brainstorming:** `validateCampaignData` was mixing file-level concerns (missing columns, empty file) with row-level concerns (field extraction, cross-field validation, accumulation). Splitting them makes each function single-purpose. A `ProcessRowsResult` interface names the return shape explicitly.
+
+**Prompt:** Create a `processRows(data, headerMap)` function that owns the `forEach` loop, per-row field validation, and result accumulation, returning `{ campaigns: Campaign[], errors: CsvRowError[] }`. Replace the inline loop in `validateCampaignData` with a call to it.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `ProcessRowsResult` interface added; `processRows` function added with full row loop; `validateCampaignData` replaced its row section with `const { campaigns, errors: rowErrors } = processRows(data, headerMap)`
+
+**Key decisions & why:**
+- `ProcessRowsResult` is a local interface, not exported — it is only relevant to the internal split between `processRows` and `validateCampaignData`
+
+
+## [#163] Replace CsvRowError.issue string with typed CsvRowIssueType and extract error-messages util
+**Type:** update
+
+**Summary:** Replaced the free-form `issue: string` on `CsvRowError` with a `CsvRowIssueType` union and an optional `details` field, and moved all display messages into a new `error-messages.ts` utility with a `getRowErrorMessage` function.
+
+**Brainstorming:** A plain string `issue` field forces display logic into the data model — any consumer must know what strings are valid. A typed union makes issue codes exhaustive and refactor-safe. Separating the display message map into `error-messages.ts` keeps the types and validator free of presentation concerns. The `exceeds` issue type uses `details` to carry the field name being exceeded, so the message map stays a flat `Record` with no special cases.
+
+**Prompt:** Add `CsvRowIssueType` union to `types/index.ts`, update `CsvRowError.issue` to use it, add optional `details?: string`. Create `utils/error-messages.ts` with `ROW_ISSUE_MESSAGES` map and `getRowErrorMessage(error)` function. Update `validateCampaignData.ts` to push typed issue codes. Update `CsvErrorTable.vue` to display `getRowErrorMessage(err)`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `CsvRowIssueType` union added; `CsvRowError.issue` typed to it; `details?: string` added
+- `app/src/features/csv-file/utils/error-messages.ts` — new file; `ROW_ISSUE_MESSAGES` record + `getRowErrorMessage(error)` export
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — all `rowErrors.push` calls updated to use typed issue codes; `exceeds` issues include `details` field
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — imports `getRowErrorMessage`; template uses it instead of `err.issue`
+
+**Key decisions & why:**
+- `exceeds` is a single issue type with `details` carrying the field name — avoids proliferating `exceeds_impressions`/`exceeds_clicks` variants while keeping the message map flat
+- Display messages live only in `error-messages.ts` — types and validator have no knowledge of how issues are presented
+
+
+## [#164] Extract validateRow function in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted per-row field validation into a `validateRow(fields, rowNum)` function that returns only the errors for that row, leaving `processRows` as a thin accumulator loop.
+
+**Brainstorming:** The validation checks for all seven fields were inline inside the `forEach` in `processRows`, mixing iteration concerns with field-level rules. `validateRow` now has a single responsibility: given extracted field values and a row number, return any errors. `processRows` becomes a clean loop that extracts fields, delegates validation, and accumulates results.
+
+**Prompt:** Create a `validateRow(fields: Campaign, rowNum: number): CsvRowError[]` function containing all field checks. Update `processRows` to call it and use the returned errors array instead of an inline `rowErrors` accumulator.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `validateRow` added with all field checks; `processRows` forEach simplified to extract → validate → accumulate
+
+**Key decisions & why:**
+- `validateRow` takes a `Campaign` (already extracted) rather than a raw row + headerMap — keeps it decoupled from parsing, pure over typed values only
+
+
+## [#165] Split validateRow into validateStringFields, validateNumericFields, validateFunnelFields
+**Type:** update
+
+**Summary:** Split `validateRow` into three focused validators grouped by field type, with `validateRow` reduced to a one-liner that spreads all three results.
+
+**Brainstorming:** `validateRow` had a complexity of 14 from mixing string, numeric, and funnel (cross-field) checks. The natural grouping is: string fields (campaign/channel — empty check), numeric fields (budget/revenue — range checks), and funnel fields (impressions/clicks/conversions — integer + cross-field ordering constraints). Each group is independently testable. `validateRow` becomes a pure composition.
+
+**Prompt:** Split `validateRow` into `validateStringFields(campaign, channel, rowNum)`, `validateNumericFields(budget, revenue, rowNum)`, and `validateFunnelFields(impressions, clicks, conversions, rowNum)`, each returning `CsvRowError[]`. Reduce `validateRow` to spread all three.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — three focused validators added; `validateRow` reduced to a spread of all three results
+
+**Key decisions & why:**
+- Funnel fields grouped together because their cross-field ordering constraints (`clicks ≤ impressions`, `conversions ≤ clicks`) require shared validity flags — splitting them further would require passing those flags across boundaries
+
+
+## [#166] Move validateRow and helpers into validateRow.ts
+**Type:** update
+
+**Summary:** Extracted `validateRow`, `validateStringFields`, `validateNumericFields`, `validateFunnelFields`, and the three guard helpers into a new `validateRow.ts`, leaving `validateCampaignData.ts` importing only `validateRow`.
+
+**Brainstorming:** All row-level validation logic was inline in `validateCampaignData.ts` alongside the file/column-level checks. Moving it to its own file gives each file a single responsibility: `validateRow.ts` owns field rules, `validateCampaignData.ts` owns structural checks (headers, empty file) and result assembly.
+
+**Prompt:** Move `isValidString`, `isNonNegativeNumber`, `isNonNegativeInteger`, `validateStringFields`, `validateNumericFields`, `validateFunnelFields`, and `validateRow` into a new `utils/validateRow.ts`. Export only `validateRow`. Import it in `validateCampaignData.ts` and remove the moved functions.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRow.ts` — new file; owns all row-level validation logic; exports only `validateRow`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — removed all moved functions; imports `validateRow` from `./validateRow`
+
+**Key decisions & why:**
+- Only `validateRow` is exported — the three sub-validators and guard helpers are implementation details of the row validation module
+
+
+## [#167] Rename validateRow.ts to validateRowData.ts
+**Type:** update
+
+**Summary:** Renamed `validateRow.ts` to `validateRowData.ts` and updated the import in `validateCampaignData.ts`.
+
+**Brainstorming:** The new name is consistent with the `validateCampaignData` naming convention — both files describe what they validate, not just the action.
+
+**Prompt:** Rename `utils/validateRow.ts` to `utils/validateRowData.ts` and update the import path in `validateCampaignData.ts`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRow.ts` → renamed to `validateRowData.ts`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — import path updated to `./validateRowData`
+
+**Key decisions & why:**
+- Name aligned with `validateCampaignData` convention — file names describe the data being validated, not just the operation
+
+
+## [#168] Unify error handling — CsvFieldIssue type, sub-validators return field-only issues
+**Type:** update
+
+**Summary:** Added `CsvFieldIssue` as the base type for field-level validation results, made `CsvRowError` extend it, stripped `rowNum` from the three sub-validators so they return pure field issues, and updated `validateRow` to map issues to `CsvRowError` by adding `row`. Updated `error-messages.ts` to accept `CsvFieldIssue` instead of `CsvRowError`.
+
+**Brainstorming:** The sub-validators previously received `rowNum` only to construct the full `CsvRowError` shape — mixing structural row identity with field validation rules. Separating the two means sub-validators are purely about which fields are wrong and why; `validateRow` is the single place that stamps the row number. `getRowErrorMessage` only ever needed `issue` and `details`, so accepting `CsvFieldIssue` is more accurate than `CsvRowError`.
+
+**Prompt:** Add `CsvFieldIssue { column, issue, details? }` to types. Make `CsvRowError` extend it with `row`. Strip `rowNum` from `validateStringFields`, `validateNumericFields`, `validateFunnelFields` — return `CsvFieldIssue[]`. In `validateRow`, collect all issues then map to `CsvRowError[]` with `row: rowNum`. Update `error-messages.ts` to import and use `CsvFieldIssue`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `CsvFieldIssue` interface added; `CsvRowError` now extends it
+- `app/src/features/csv-file/utils/validateRowData.ts` — sub-validators return `CsvFieldIssue[]`, no `rowNum` param; `validateRow` maps issues to `CsvRowError[]`
+- `app/src/features/csv-file/utils/error-messages.ts` — `getRowErrorMessage` param type changed from `CsvRowError` to `CsvFieldIssue`
+
+**Key decisions & why:**
+- `CsvRowError extends CsvFieldIssue` rather than duplicating fields — keeps the type hierarchy explicit and `CsvErrorTable` continues to work unchanged since `CsvRowError` still satisfies `CsvFieldIssue`
+
+
+## [#169] Revert rowNum removal from sub-validators in validateRowData
+**Type:** fix
+
+**Summary:** Restored `rowNum` as a parameter in `validateStringFields`, `validateNumericFields`, and `validateFunnelFields` — sub-validators continue to return `CsvRowError[]` with `row` stamped directly.
+
+**Brainstorming:** The previous change stripped `rowNum` from sub-validators and moved the mapping to `validateRow`. The user confirmed `rowNum` should stay in the sub-validators. The `CsvFieldIssue` type and `getRowErrorMessage` signature update from #168 are retained — only the sub-validator signatures and return types are reverted.
+
+**Prompt:** Restore `rowNum` parameter and `CsvRowError[]` return type in all three sub-validators. Revert `validateRow` to spreading results directly.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRowData.ts` — `rowNum` restored in all sub-validators; return type reverted to `CsvRowError[]`; `validateRow` reverted to direct spread (no mapping)
+
+**Key decisions & why:**
+- `CsvFieldIssue` type and `getRowErrorMessage(error: CsvFieldIssue)` from #168 are kept — they are still accurate and useful for the display layer
+
+
+## [#170] Unify error types — missingColumns field, ProcessRowsResult moved to types
+**Type:** update
+
+**Summary:** Replaced the generic `details?: string[]` on `CsvValidationError` with a dedicated `missingColumns?: string[]` field, moved `ProcessRowsResult` from a local interface into `types/index.ts`, and updated all consumers.
+
+**Brainstorming:** `details` was a loosely-typed catch-all only ever used for missing column names. A named field is self-documenting and type-safe. `ProcessRowsResult` was a local interface in `validateCampaignData.ts` that duplicated the concept of a parse result — moving it to types makes it available to any future consumer and keeps all types in one place.
+
+**Prompt:** Replace `details?: string[]` with `missingColumns?: string[]` on `CsvValidationError`. Add `ProcessRowsResult` to `types/index.ts`. Remove the local `ProcessRowsResult` interface from `validateCampaignData.ts` and import it from types. Update `validateCampaignData.ts` to use `missingColumns` in the error object. Update `UploadModal.vue` to read `err.missingColumns`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `details?: string[]` replaced with `missingColumns?: string[]`; `ProcessRowsResult` exported
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — local `ProcessRowsResult` removed; imported from types; `missing_columns` error uses `missingColumns` field
+- `app/src/features/csv-file/components/UploadModal.vue` — `err.details` updated to `err.missingColumns`
+
+**Key decisions & why:**
+- `missingColumns` instead of `details` — the field name describes exactly what it carries; avoids the ambiguity of a generic `details` array
+
+
+## [#171] Move validation error messages to error-messages.ts
+**Type:** update
+
+**Summary:** Moved all hardcoded error message strings from `validateCampaignData.ts` into `error-messages.ts`, making it the single source of truth for all CSV validation display text.
+
+**Brainstorming:** `validateCampaignData.ts` still contained three inline string literals: `'CSV file headers are missing.'`, `'The CSV file contains no data rows.'`, and the dynamic invalid-rows message. These belong alongside the row-level issue messages in `error-messages.ts` so that any future text change has one place to go.
+
+**Prompt:** Move the three hardcoded error message strings from `validateCampaignData.ts` into `error-messages.ts`. Add a `VALIDATION_MESSAGES` constant for the static strings and a `getInvalidRowsMessage(count)` function for the dynamic one. Import and use them in `validateCampaignData.ts`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/error-messages.ts` — added `VALIDATION_MESSAGES` (missing_columns, empty_file) and `getInvalidRowsMessage(invalidRowCount)`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — imported `VALIDATION_MESSAGES` and `getInvalidRowsMessage`; replaced all three inline strings with the imported values
+
+**Key decisions & why:**
+- `VALIDATION_MESSAGES` as a plain object rather than a `Record<CsvValidationErrorType, string>` — not all error types have static messages (`invalid_rows` is dynamic), so a complete record would require a placeholder or a different type
+
+
+## [#172] Move all validation display text to error-messages.ts — consumed by UI
+**Type:** update
+
+**Summary:** Removed all display strings from the validation and parse layers; `error-messages.ts` now owns all message mapping via `getValidationErrorMessage`, which the UI calls directly.
+
+**Brainstorming:** `validateCampaignData.ts` and `parseCsv.ts` had no reason to know about display text — they only need to return typed error data. `UploadModal.vue` was also duplicating the missing-columns message inline. The fix is to strip `message` from `CsvValidationError`, add `detail?: string` for the one dynamic case (PapaParse error text), and centralise all string mapping in `getValidationErrorMessage` inside `error-messages.ts`. The UI then calls that one function for every non-`invalid_rows` case, which also eliminates the branching in `handleSubmit`.
+
+**Prompt:** Remove `message` from `CsvValidationError` and add `detail?: string`. Add `getValidationErrorMessage(error: CsvValidationError): string` to `error-messages.ts` covering all six error types. Strip all message strings from `validateCampaignData.ts` and `parseCsv.ts` — `parseCsv` carries the PapaParse message via `detail`. Update `UploadModal.vue` to call `getValidationErrorMessage(err)` instead of reading `err.message` or building the missing-columns string inline. Remove previous `VALIDATION_MESSAGES` / `getInvalidRowsMessage` exports.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `message: string` replaced with `detail?: string` on `CsvValidationError`
+- `app/src/features/csv-file/utils/error-messages.ts` — removed `VALIDATION_MESSAGES` and `getInvalidRowsMessage` exports; added `getValidationErrorMessage(error: CsvValidationError): string` covering all six error types
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — removed error-messages import; all error objects now carry only typed fields (no `message`)
+- `app/src/features/csv-file/utils/parseCsv.ts` — removed `message` from `file_type` and `file_size` errors; `parse_error` now uses `detail: err.message`
+- `app/src/features/csv-file/components/UploadModal.vue` — imports `getValidationErrorMessage`; `handleSubmit` reduced to one `invalid_rows` branch + a single `parseError.value = getValidationErrorMessage(err)` fallback
+
+**Key decisions & why:**
+- `detail?: string` instead of keeping `message` — `detail` signals "raw external data" (the PapaParse error string), distinct from a user-facing message which now lives only in `error-messages.ts`
+- `getValidationErrorMessage` handles all six types including `invalid_rows` — completeness, even though `UploadModal` currently doesn't call it for that case
+
+
+## [#173] Use placeholder pattern for variable content in validation error messages
+**Type:** update
+
+**Summary:** Replaced inline string interpolation in `getValidationErrorMessage` with a `{placeholder}` pattern — all message text lives in `VALIDATION_ERROR_MESSAGES`, variable content is substituted via `replacePlaceholders`.
+
+**Brainstorming:** The previous implementation mixed message text with logic inside the switch branches. The user wanted the text fully captured in a const map, with `{cols}`, `{count}`, `{rows}`, and `{detail}` as named placeholders substituted at call time. A small `replacePlaceholders` helper uses a regex replace to fill them in.
+
+**Prompt:** Move all display text into a `VALIDATION_ERROR_MESSAGES` const map. Use `{placeholder}` syntax for variable content (`{cols}`, `{count}`, `{rows}`, `{detail}`). Add `replacePlaceholders(template, values)` to resolve them. `getValidationErrorMessage` looks up the template, resolves values per error type, and returns the filled string.
+
+**What changed:**
+- `app/src/features/csv-file/utils/error-messages.ts` — added `VALIDATION_ERROR_MESSAGES` const map with `{placeholder}` syntax; added `replacePlaceholders` helper; `getValidationErrorMessage` now looks up template and substitutes values per error type
+
+**Key decisions & why:**
+- `{rows}` placeholder resolves to `'row'`/`'rows'` separately from `{count}` — keeps the full sentence in the template rather than splitting text across code
+
+
+## [#174] Rename csv-file/utils files to kebab-case
+**Type:** update
+
+**Summary:** Renamed all camelCase files in `csv-file/utils/` to kebab-case and updated every import path referencing them.
+
+**Brainstorming:** Four files were still camelCase (`downloadCsv.ts`, `parseCsv.ts`, `validateCampaignData.ts`, `validateRowData.ts`); `error-messages.ts` was already kebab-case. Renaming required updating imports in `useDownloadTemplate.ts`, `parse-csv.ts`, `validate-campaign-data.ts`, and `UploadModal.vue`.
+
+**Prompt:** Rename all files in `csv-file/utils/` to kebab-case. Update all import paths that reference the renamed files.
+
+**What changed:**
+- `csv-file/utils/downloadCsv.ts` → `download-csv.ts`
+- `csv-file/utils/parseCsv.ts` → `parse-csv.ts`
+- `csv-file/utils/validateCampaignData.ts` → `validate-campaign-data.ts`
+- `csv-file/utils/validateRowData.ts` → `validate-row-data.ts`
+- `csv-file/composables/useDownloadTemplate.ts` — import path updated
+- `csv-file/utils/parse-csv.ts` — import path updated
+- `csv-file/utils/validate-campaign-data.ts` — import path updated
+- `csv-file/components/UploadModal.vue` — import path updated
+- `CLAUDE.md` — architecture section updated with new file names and added missing `error-messages.ts` and `validate-row-data.ts` entries
+
+**Key decisions & why:**
+- All five utils now consistently kebab-case — matches the project convention used by SCSS partials, components, and the already-named `error-messages.ts`
+
+
+## [#175] Move inline pluralization logic from CsvErrorTable template to error-messages.ts
+**Type:** fix
+
+**Summary:** Extracted repeated ternary pluralization logic from `CsvErrorTable.vue`'s template into a `getRowErrorSummaryWords` function in `error-messages.ts`, consumed via a single `summaryWords` computed property.
+
+**Brainstorming:** The template contained five inline ternary expressions (`row/rows`, `contains/contain`, `was/were`, `totalRowWord`, `validRowWord`) duplicating the pluralization pattern already established in `error-messages.ts`. The fix centralises this logic in `error-messages.ts` as a typed `RowErrorSummaryWords` interface + `getRowErrorSummaryWords(invalidCount, validCount)` function. The component computes `summaryWords` once and the template only reads values from it.
+
+**Prompt:** `CsvErrorTable` includes duplicated logic with `error-messages`. Move the pluralization logic out of the template; keep only values in the template.
+
+**What changed:**
+- `csv-file/utils/error-messages.ts` — added `RowErrorSummaryWords` interface and `getRowErrorSummaryWords(invalidCount, validCount)` exported function
+- `csv-file/components/CsvErrorTable.vue` — imported `getRowErrorSummaryWords`; added `summaryWords` computed; replaced all five inline ternaries in the template with `summaryWords.*` bindings
+
+**Key decisions & why:**
+- Returned a plain object (`RowErrorSummaryWords`) rather than individual functions — a single `computed` call in the component is enough; no need for five separate imports
+- `totalRowWord` and `validRowWord` derived from their respective counts inside the helper — keeps all pluralization logic in one place

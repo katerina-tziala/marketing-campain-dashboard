@@ -1,27 +1,20 @@
 <script setup lang="ts">
-import { provide, ref, watch } from 'vue'
+import { provide, ref } from 'vue'
 import { UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
-import { useCampaignStore } from '../stores/campaignStore'
 import { useAiStore } from '../stores/aiStore'
 import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
+import { useUploadModal } from '../features/csv-file/composables/useUploadModal'
 import UploadModal from '../features/csv-file/components/UploadModal.vue'
 import ReplaceDataModal from '../features/csv-file/components/ReplaceDataModal.vue'
 import AiToolsDrawer from './AiToolsDrawer.vue'
 
-const store = useCampaignStore()
 const aiStore = useAiStore()
 const analysisStore = useAiAnalysisStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
-const showReplaceConfirm = ref(false)
+const { hasCampaigns, showReplaceConfirm, requestUpload, onReplaceConfirm, closeReplaceConfirm } = useUploadModal(uploadModal)
 
-provide('openUploadModal', () => uploadModal.value?.open())
 provide('openAiPanel', () => { aiStore.openPanel(); analysisStore.onPanelOpen() })
-
-function onReplaceConfirm(): void {
-  showReplaceConfirm.value = false
-  uploadModal.value?.open()
-}
 
 function onCloseAiPanel(): void {
   aiStore.closePanel()
@@ -35,7 +28,7 @@ function onCloseAiPanel(): void {
     <div class="shell-left">
       <header class="shell-header">
         <h1 class="shell-title">Marketing Campaign Dashboard</h1>
-        <button v-if="store.campaigns.length > 0" class="btn-secondary-outline" @click="showReplaceConfirm = true">
+        <button v-if="hasCampaigns" class="btn-secondary-outline" @click="requestUpload">
           <UploadIcon />
           Upload CSV
         </button>
@@ -52,7 +45,7 @@ function onCloseAiPanel(): void {
     <ReplaceDataModal
       v-if="showReplaceConfirm"
       @confirm="onReplaceConfirm"
-      @close="showReplaceConfirm = false"
+      @close="closeReplaceConfirm"
     />
     <ToastContainer />
   </div>

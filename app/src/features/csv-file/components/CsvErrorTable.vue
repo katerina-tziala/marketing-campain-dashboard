@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { CsvRowError } from '../types'
 import type { Campaign } from '../../../common/types/campaign'
+import { getRowErrorMessage, getRowErrorSummaryWords } from '../utils/error-messages'
 
 const props = defineProps<{
   rowErrors: CsvRowError[]
@@ -16,22 +17,23 @@ const emit = defineEmits<{
 
 const invalidRowCount = computed(() => new Set(props.rowErrors.map((e) => e.row)).size)
 const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.length)
+const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.value, props.validCampaigns.length))
 </script>
 
 <template>
   <!-- Body -->
   <div class="error-body">
     <p v-if="validCampaigns.length === 0" class="error-summary">
-      <strong>{{ invalidRowCount }} {{ invalidRowCount === 1 ? 'row' : 'rows' }}</strong>
-      {{ invalidRowCount === 1 ? 'contains' : 'contain' }} errors and could not be imported.
+      <strong>{{ invalidRowCount }} {{ summaryWords.rowWord }}</strong>
+      {{ summaryWords.verb }} errors and could not be imported.
       Please fix the issues below and upload the file again.
     </p>
     <p v-else class="error-summary">
-      <strong>{{ invalidRowCount }} of {{ totalRows }} {{ totalRows === 1 ? 'row' : 'rows' }}</strong>
-      {{ invalidRowCount === 1 ? 'contains' : 'contain' }} errors and
-      {{ invalidRowCount === 1 ? 'was' : 'were' }} skipped.
+      <strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
+      {{ summaryWords.verb }} errors and
+      {{ summaryWords.wasWord }} skipped.
       You can proceed with the
-      <strong>{{ validCampaigns.length }} valid {{ validCampaigns.length === 1 ? 'row' : 'rows' }}</strong>,
+      <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>,
       or go back and fix the file.
     </p>
 
@@ -48,7 +50,7 @@ const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.le
           <tr v-for="(err, i) in rowErrors" :key="i" class="data-table-row">
             <td class="data-table-cell error-table__td--row">{{ err.row }}</td>
             <td class="data-table-cell error-table__td--col">{{ err.column }}</td>
-            <td class="data-table-cell">{{ err.issue }}</td>
+            <td class="data-table-cell">{{ getRowErrorMessage(err) }}</td>
           </tr>
         </tbody>
       </table>

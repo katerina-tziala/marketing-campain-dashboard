@@ -1,4 +1,4 @@
-import { downloadCsv } from '../utils/downloadCsv'
+import { downloadCsv } from '../utils/download-csv'
 import { MOCK_CAMPAINS } from '../../../common/data/MOCK_CAMPAIN_DATA'
 import { useToastStore } from '../../../stores/toastStore'
 
