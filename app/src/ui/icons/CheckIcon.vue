@@ -10,7 +10,6 @@
     aria-hidden="true"
     style="width: 1em; height: 1em; display: inline-block;"
   >
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 </template>

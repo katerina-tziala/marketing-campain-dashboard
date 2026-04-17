@@ -2,19 +2,24 @@
 import { ref, computed } from 'vue'
 import type { CsvRowError } from '../../types'
 import { getRowErrorMessage } from '../../utils/error-messages'
-import { ArrowUpIcon } from '../../../../ui/icons'
+import { DataTableHeader } from '../../../../ui'
+import type { DataTableColumn } from '../../../../ui'
 
 const props = defineProps<{
   errors: CsvRowError[]
 }>()
 
-type SortDir = 'asc' | 'desc'
-
-const sortDir = ref<SortDir>('asc')
+const sortDir = ref<'asc' | 'desc'>('asc')
 
 function toggleSort() {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
 }
+
+const columns: DataTableColumn[] = [
+  { key: 'row', label: 'Row', sortable: true, ariaLabel: 'row index', class: 'text-center w-6' },
+  { key: 'column', label: 'Column', class: 'text-center' },
+  { key: 'issue', label: 'Issue', class: 'text-left' },
+]
 
 const sortedErrors = computed(() =>
   [...props.errors].sort((a, b) =>
@@ -25,27 +30,14 @@ const sortedErrors = computed(() =>
 
 <template>
   <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
-    <table class="data-table">
-      <thead class="data-table-sticky-header">
-        <tr>
-          <th class="data-table-sortable-header col-row">
-            <button
-              class="sort-btn"
-              type="button"
-              :aria-label="`Sort by row index ${sortDir === 'asc' ? 'descending' : 'ascending'}`"
-              @click="toggleSort"
-            >
-              Row
-              <ArrowUpIcon
-                class="sort-icon"
-                :class="{ 'desc': sortDir === 'desc', 'asc': sortDir === 'asc'  }"
-              />
-            </button>
-          </th>
-          <th class="data-table-header col-campain">Column</th>
-          <th class="data-table-header">Issue</th>
-        </tr>
-      </thead>
+    <table class="data-table stripped-odd">
+      <DataTableHeader
+        :columns="columns"
+        :sticky="true"
+        sort-key="row"
+        :sort-dir="sortDir"
+        @sort="toggleSort"
+      />
       <tbody>
         <tr
           v-for="(err, i) in sortedErrors"
@@ -53,19 +45,17 @@ const sortedErrors = computed(() =>
           class="data-table-row"
         >
           <td class="data-table-cell col-row cell-row">{{ err.row }}</td>
-          <td class="data-table-cell col-campain cell-col">{{ err.column }}</td>
-          <td class="data-table-cell">{{ getRowErrorMessage(err) }}</td>
+          <td class="data-table-cell col-campain">
+             <span class="badge danger">{{ err.column }}</span>
+          </td>
+          <td class="data-table-cell text-left">{{ getRowErrorMessage(err) }}</td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.table-wrapper {
-  @apply overflow-auto;
-}
- 
+<style lang="scss" scoped> 
 .col-row {
   @apply text-center w-6;
 }
@@ -77,8 +67,5 @@ const sortedErrors = computed(() =>
 .cell-row {
   @apply font-semibold tabular-nums;
 }
-
-.cell-col {
-  @apply font-medium text-danger;
-}
+ 
 </style>

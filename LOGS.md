@@ -3801,3 +3801,99 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `DataErrorSummary` uses only named slots, no props — keeps it maximally flexible; callers own all content including badge variant
 - Flat modal class names (`modal-body` / `modal-footer`) over BEM — aligns with the established project direction away from BEM modifiers
 - `Teleport to="body"` on `BaseModal` — ensures the modal and its backdrop render above all page content regardless of stacking context
+
+
+## [#186] Sort rows by row number within duplicate groups in CsvDuplicateTable
+**Type:** update
+
+**Summary:** Added asc/desc sort toggle on the Row column in `CsvDuplicateTable` so rows within each duplicate group can be sorted by row number.
+
+**Brainstorming:** The duplicate table shows rows grouped by campaign name. Sorting by row number helps users quickly orient themselves — especially in large files where duplicates may be far apart. The sort is applied per-group independently via a `sortedGroups` computed that maps each group's rows through a sort, leaving group order unchanged. Pattern mirrors `DataErrorsTable`.
+
+**Prompt:** CsvDuplicate table should sort grouped data by row.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — imported `ArrowUpIcon`; added `SortDir` type, `sortDir` ref, `toggleSort`, `sortedGroups` computed (sorts rows within each group by `rowNum`); Row `th` changed to `data-table-sortable-header` with sort button and `ArrowUpIcon`; `thead` gets `data-table-sticky-header`; `v-for` switched from `duplicateGroups` to `sortedGroups`
+
+**Key decisions & why:**
+- Sort per group (not global re-ordering of groups) — group identity is the primary structure; row sort is a secondary navigation aid within each group
+- Reused `data-table-sortable-header` / `data-table-sticky-header` global classes — consistent with `DataErrorsTable` and avoids new scoped styles
+
+
+## [#187] Add sorting by conversions and revenue to CsvDuplicateTable
+**Type:** update
+
+**Summary:** Extended the row sort in `CsvDuplicateTable` to support sorting by conversions and revenue, with a shared sort key + direction state so only one column is active at a time.
+
+**Brainstorming:** The existing single-column sort was refactored to a two-ref pattern (`sortKey` + `sortDir`) so multiple columns can share the same sort state cleanly. Switching to a new column resets direction to asc. A `sortIconClass(key)` helper drives the active/inactive visual state of each sort icon — inactive columns show the dimmed icon, active column shows bright asc/desc. Numeric sortable headers need right-aligned buttons, handled with a scoped `.col-sortable-num` rule adding `justify-end w-full` to the inner button.
+
+**Prompt:** Add sorting for revenue and conversions.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — replaced `sortDir`-only state with `sortKey` + `sortDir` refs; added `SortKey` type (`'rowNum' | 'conversions' | 'revenue'`); `toggleSort(key)` switches key (resets to asc) or toggles direction on same key; `sortIconClass(key)` returns asc/desc/empty class object; `sortedGroups` sorts by `a[sortKey] - b[sortKey]`; Conversions and Revenue th elements converted to `data-table-sortable-header col-sortable-num` with sort buttons; scoped `.col-sortable-num > button` adds `justify-end w-full` for right alignment
+
+**Key decisions & why:**
+- Single `sortKey` + `sortDir` over per-column state — only one column is ever active; simpler and matches standard table sort UX
+- `sortIconClass` helper over inline ternary — keeps template readable when the same expression is repeated across three columns
+- `.col-sortable-num` scoped class for right alignment — avoids touching the global `data-table-sortable-header` style which is left-aligned by default for the Row column
+
+
+## [#188] Refactor CsvDuplicateTable styles to match DataErrorsTable flat naming
+**Type:** refactor
+
+**Summary:** Replaced all BEM class names in `CsvDuplicateTable` with flat names and converted all style rules to `@apply`, matching the pattern established in `DataErrorsTable`.
+
+**Brainstorming:** The table had two BEM parent blocks (`duplicate-table__th` and `duplicate-table__td`) with element/modifier children, plus `duplicate-table__row` with BEM modifiers. These were all renamed to flat, semantic class names (`col-select`, `col-channel`, `col-num`, `cell-select`, `cell-row`, `cell-num`, `group-header`, `row-selectable`, `row-selected`) consistent with the project's move away from BEM. Style rules were rewritten with `@apply` throughout; `color-mix` values stay as direct CSS since there is no Tailwind `@apply` equivalent.
+
+**Prompt:** Update table styles in CsvDuplicateTable to match DataErrorsTable.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — renamed all BEM class names in template and styles to flat equivalents; rewrote style block using `@apply` throughout; removed `duplicate-table__th` and `duplicate-table__td` BEM parent blocks; `.duplicate-table__row` / `--selected` → `.row-selectable` / `.row-selected` (sibling class pattern instead of BEM modifier)
+
+**Key decisions & why:**
+- Sibling class `.row-selected` instead of BEM `&--selected` — flat modifier as an independent class matches the project direction; selector becomes `&.row-selected` in SCSS which is equally specific
+- Kept `color-mix` as direct CSS — no `@apply` equivalent; these two lines are the only exception to the `@apply`-throughout rule
+
+
+## [#189] Add DataTableHeader reusable thead component and migrate tables
+**Type:** feature
+
+**Summary:** Created a generic `DataTableHeader` UI component that owns all sortable-header styles, and migrated `CsvDuplicateTable` and `DataErrorsTable` to use it, removing the duplicated thead markup and moving the related styles out of `_table.scss`.
+
+**Brainstorming:** Both `CsvDuplicateTable` and `DataErrorsTable` repeated the same thead pattern — sortable and non-sortable headers, sticky support, sort icon state, right-aligned numeric columns. Extracting this into a `ui` component eliminates the duplication. The `data-table-sortable-header` and `data-table-sticky-header` styles moved to the component's scoped block since they are now exclusively used by it. `data-table-header` stayed global because `CampaignTable` still references it directly. Sort state stays in callers (stateless component). Right-aligned sort buttons use `class: 'th-right'` on the column definition, since `align` was removed by the linter in favor of passing the scoped class name directly.
+
+**Prompt:** Move all related styles from styles/table to DataTableHeader. Implement this in CsvDuplicateTable and DataErrorsTable. Instead of a new log, update #189.
+
+**What was built:**
+- `ui/DataTableHeader.vue` — renders `<thead>`; `columns: DataTableColumn[]` (key, label, sortable?, ariaLabel?, class?); `sticky` prop; `sortKey`/`sortDir` props; emits `sort: [key]`; sortable → `data-table-sortable-header` + button + ArrowUpIcon; non-sortable → `data-table-header`; scoped styles own `data-table-sortable-header`, `data-table-sticky-header`, and `.th-right`; exports `DataTableColumn` + `SortDir` types
+- `ui/index.ts` — added `DataTableHeader`, `DataTableColumn`, `SortDir` exports
+- `styles/components/_table.scss` — removed `data-table-sortable-header` and `data-table-sticky-header` blocks (now owned by `DataTableHeader`)
+- `csv-file/components/CsvDuplicateTable.vue` — replaced `<thead>` with `<DataTableHeader>`; removed `ArrowUpIcon` import and `sortIconClass`; added `columns` definition and `handleSort` wrapper; right-align via `class: 'th-right'`; removed `col-select`/`col-channel`/`col-num`/`col-sortable-num` scoped classes
+- `csv-file/components/validation/DataErrorsTable.vue` — replaced `<thead>` with `<DataTableHeader>`; removed `ArrowUpIcon` import; added `columns` definition; `@sort="toggleSort"` (single-column sort, key ignored)
+
+**Key decisions & why:**
+- `data-table-header` stays global — `CampaignTable` still uses it directly; moving it to scoped would silently break that component
+- `data-table-sortable-header` + `data-table-sticky-header` moved to scoped — safe; no other component uses them after this migration
+- Sort state stays in parent — callers own `sortKey`/`sortDir` refs; component is stateless and works with any sorting logic
+- `class: 'th-right'` instead of `align` prop — the linter removed `align` from `DataTableColumn`; passing the scoped class name directly through `class` achieves the same result since all elements in `DataTableHeader`'s template receive its scoped attribute
+- `ariaLabel` on `DataTableColumn` — covers th `aria-label` for empty headers (e.g. "Select") and the sort button label base text via `col.ariaLabel ?? col.label`
+
+
+## [#190] Add selection state indicators to CsvDuplicateTable
+**Type:** update
+
+**Summary:** Added a `CheckIcon` to each group header with per-group selection state styling, and a "Resolve duplicates (X/N)" progress indicator above the table that turns green when all groups are resolved.
+
+**Brainstorming:** The group header showed only the campaign name with no indication of resolved state. A check icon per group gives an immediate per-row signal; a global counter above the table tells users how many groups still need attention without scrolling through the whole list. When all groups are resolved the indicator turns green to signal readiness.
+
+**Prompt:** Add text next to grouped header to display how many are selected out of duplicates. Create a check icon and add it before group name in group header. Add above table an indicator "Resolve duplicates (1/3)" to match how many groups are resolved.
+
+**What changed:**
+- `ui/icons/CheckIcon.vue` — new inline SVG check icon (polyline `20 6 9 17 4 12`, stroke-width 2.5)
+- `ui/icons/index.ts` — added `CheckIcon` export
+- `csv-file/components/CsvDuplicateTable.vue` — imported `CheckIcon`; added `isGroupSelected` helper and `resolvedCount`/`allResolved` computeds; added `CheckIcon` before campaign name in `.group-header td` with muted/highlighted state; added `.resolve-indicator` bar above the table ("Resolve duplicates (X/N)", turns green when all resolved); updated `.duplicate-body` grid to `grid-rows-[min-content_min-content_1fr]`
+
+**Key decisions & why:**
+- `resolvedCount` uses `selections.value.size` directly — the map has one entry per resolved group by design (radio input, max 1 per group)
+- Green (`text-primary-400`) for resolved indicator state — clear positive signal without introducing a new color token
+- Grid row added for indicator — keeps the table's `1fr` row intact so it still fills available height

@@ -1,5 +1,7 @@
  @layer components {
-
+  .table-wrapper {
+    @apply overflow-auto;
+  }
 
   thead > tr > th {
     @apply border-b border-primary-900;
@@ -7,81 +9,29 @@
 
   .data-table {
    @apply w-full text-sm border-separate border-spacing-0 bg-primary-1000;
-  }
 
-  .data-table-header {
-    @apply capitalize
-    py-3 px-4
-    font-semibold
-    tracking-wider
-    text-left
-    text-primary-300
-    border-b
-    border-primary-500
-    bg-surface;
+   .stripped-odd {
+    tr:nth-child(odd) {
+      @apply bg-primary-800/10;
+    }
+   }
   }
-
+ 
   .data-table-row {
     &:last-child {
       @apply border-b-0;
-    }
-
-    // &:hover {
-    //   @apply bg-primary-500/20;
-    // }
+    } 
   }
 
   .data-table-cell {
-    @apply py-3 px-4 text-typography-intense border-b border-surface-border;
+    @apply py-2 px-4 text-center text-typography border-b border-surface-border;
   }
 
-  .data-table-sticky-header {
-    .data-table-header, .data-table-sortable-header {
-      @apply sticky top-0 z-10 bg-primary-1000;
+  .data-table.stripped-odd {
+   tr:nth-child(odd) {
+      @apply bg-primary-800/10;
     }
   }
+
  
-  tr:nth-child(odd) { 
-    @apply bg-primary-800/10;
-  }
-
-  .data-table-sortable-header {
-    @apply p-0 border-b border-primary-500;
-     
-    > button {
-      @apply flex
-        items-center
-        gap-1.5
-        cursor-pointer
-        bg-transparent
-        border-0
-        py-3
-        px-4
-        text-center
-        font-semibold
-        text-primary-300 
-        transition-transform
-        duration-150;
-
-        &:not(:disabled) {
-          &:hover,
-          &:focus-visible  {
-            @apply bg-primary-500/15;
-          }
-        }
-    
-     .sort-icon {
-        @apply text-base text-primary-100/40 inline-block transition-transform duration-150;
-
-        &.desc {
-          @apply text-primary-300  rotate-180;
-        }
-
-        &.asc {
-          @apply text-primary-300 ;
-        }
-      }
-    }
- 
-  }
 }

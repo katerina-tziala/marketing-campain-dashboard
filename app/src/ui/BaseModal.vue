@@ -63,10 +63,13 @@ onUnmounted(() => {
     shadow-md
     bg-surface
     border
-    border-surface-border;
+    border-surface-border
+    grid 
+    grid-cols-1
+    auto-rows-auto;
 
-  max-width: calc(100vw - 2rem);
-  max-height: calc(100vh - 2rem);
+  // max-width: calc(100vw - 2rem);
+  // max-height: calc(100vh - 2rem);
 
   &__header {
     @apply flex

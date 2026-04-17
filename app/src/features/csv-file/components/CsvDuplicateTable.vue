@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { CsvCampaign, CsvDuplicateGroup } from '../types'
-import DataErrorSummary from './validation/DataErrorSummary.vue';
+import DataErrorSummary from './validation/DataErrorSummary.vue'
+import { DataTableHeader, CheckIcon } from '../../../ui'
+import type { DataTableColumn } from '../../../ui'
 
 const props = defineProps<{
   duplicateGroups: CsvDuplicateGroup[]
@@ -14,6 +16,45 @@ const emit = defineEmits<{
   close: []
 }>()
 
+type SortKey = 'rowNum' | 'conversions' | 'revenue'
+
+const sortKey = ref<SortKey>('rowNum')
+const sortDir = ref<'asc' | 'desc'>('asc')
+
+function toggleSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+function handleSort(key: string): void {
+  toggleSort(key as SortKey)
+}
+
+const columns: DataTableColumn[] = [
+  { key: 'select', label: '', ariaLabel: 'Select', class: 'w-9' },
+  { key: 'rowNum', label: 'Row', sortable: true },
+  { key: 'channel', label: 'Channel', },
+  { key: 'budget', label: 'Budget',  },
+  { key: 'clicks', label: 'Clicks',  },
+  { key: 'impressions', label: 'Impressions', },
+  { key: 'conversions', label: 'Conversions', sortable: true,  },
+  { key: 'revenue', label: 'Revenue', sortable: true,  },
+]
+
+const sortedGroups = computed(() =>
+  props.duplicateGroups.map((group) => ({
+    ...group,
+    rows: [...group.rows].sort((a, b) => {
+      const dir = sortDir.value === 'asc' ? 1 : -1
+      return (a[sortKey.value] - b[sortKey.value]) * dir
+    }),
+  })),
+)
+
 const selections = ref<Map<string, number>>(new Map())
 
 const groupWord = computed(() =>
@@ -23,12 +64,19 @@ const verbWord = computed(() =>
   props.duplicateGroups.length === 1 ? 'appears' : 'appear',
 )
 
+const resolvedCount = computed(() => selections.value.size)
+const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length)
+
 const canProceed = computed(
   () => props.validCampaigns.length > 0 || selections.value.size > 0,
 )
 
 function isSelected(campaignName: string, rowNum: number): boolean {
   return selections.value.get(campaignName) === rowNum
+}
+
+function isGroupSelected(campaignName: string): boolean {
+  return selections.value.has(campaignName)
 }
 
 function selectRow(campaignName: string, rowNum: number): void {
@@ -67,38 +115,41 @@ function handleProceed(): void {
         <template #summary>
           <p><strong>{{ duplicateGroups.length }} {{ groupWord }}</strong>
       {{ verbWord }} more than once in the file.</p>
-          <p>Select one row per group to include in the import. Groups without a selection will be skipped.</p>
+          <p>Select one row from each group to include in the import. Groups without a selection will be skipped.</p>
           <p  v-if="validCampaigns.length === 0">Select at least one row to proceed.</p>
         </template>
-      </DataErrorSummary> 
- 
-    <div class="duplicate-table-wrapper">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th class="data-table-header duplicate-table__th--select" aria-label="Select"></th>
-            <th class="data-table-header duplicate-table__th--row">Row</th>
-            <th class="data-table-header duplicate-table__th--channel">Channel</th>
-            <th class="data-table-header duplicate-table__th--num">Budget</th>
-            <th class="data-table-header duplicate-table__th--num">Clicks</th>
-            <th class="data-table-header duplicate-table__th--num">Impressions</th>
-            <th class="data-table-header duplicate-table__th--num">Conversions</th>
-            <th class="data-table-header duplicate-table__th--num">Revenue</th>
-          </tr>
-        </thead>
+      </DataErrorSummary>
+      <p class="resolve-indicator" :class="{ resolved: resolvedCount > 0 }">
+        <span>Resolve duplicates ({{ resolvedCount }}/{{ duplicateGroups.length }})</span>
+      </p>
+      <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
+       <table class="data-table">
+        <DataTableHeader
+          :columns="columns"
+          :sticky="true"
+          :sort-key="sortKey"
+          :sort-dir="sortDir"
+          @sort="handleSort"
+        />
         <tbody>
-          <template v-for="group in duplicateGroups" :key="group.campaignName">
-            <tr class="duplicate-table__group-header">
-              <td colspan="8">{{ group.campaignName }}</td>
+          <template v-for="group in sortedGroups" :key="group.campaignName">
+            <tr class="group-header">
+              <td colspan="8" :class="{ selected: isGroupSelected(group.campaignName) }">
+               <span class="w-full flex items-center justify-start gap-2">
+                 <CheckIcon class="group-check-icon"  />
+                  <span>{{ group.campaignName }} ({{ group.rows.length }})</span>
+               </span>
+              </td>
             </tr>
             <tr
               v-for="entry in group.rows"
               :key="entry.rowNum"
-              class="data-table-row duplicate-table__row"
-              :class="{ 'duplicate-table__row--selected': isSelected(group.campaignName, entry.rowNum) }"
+              class="data-table-row row-selectable"
+              :class="{ 'row-selected': isSelected(group.campaignName, entry.rowNum) }"
               @click="selectRow(group.campaignName, entry.rowNum)"
             >
-              <td class="data-table-cell duplicate-table__td--select">
+              <td class="data-table-cell cell-select">
+                  <span class="flex items-center justify-center">
                 <input
                   type="radio"
                   :name="`group-${group.campaignName}`"
@@ -106,24 +157,23 @@ function handleProceed(): void {
                   :checked="isSelected(group.campaignName, entry.rowNum)"
                   :aria-label="`Select row ${entry.rowNum}`"
                   @change="selectRow(group.campaignName, entry.rowNum)"
-                />
+                /></span>
               </td>
-              <td class="data-table-cell duplicate-table__td--row">{{ entry.rowNum }}</td>
+              <td class="data-table-cell">{{ entry.rowNum }}</td>
               <td class="data-table-cell">
-                <span class="badge opportunity">{{ entry.channel }}</span>
+                <span class="badge info">{{ entry.channel }}</span>
               </td>
-              <td class="data-table-cell duplicate-table__td--num">{{ formatCurrency(entry.budget) }}</td>
-              <td class="data-table-cell duplicate-table__td--num">{{ formatNumber(entry.clicks) }}</td>
-              <td class="data-table-cell duplicate-table__td--num">{{ formatNumber(entry.impressions) }}</td>
-              <td class="data-table-cell duplicate-table__td--num">{{ formatNumber(entry.conversions) }}</td>
-              <td class="data-table-cell duplicate-table__td--num">{{ formatCurrency(entry.revenue) }}</td>
+              <td class="data-table-cell">{{ formatCurrency(entry.budget) }}</td>
+              <td class="data-table-cell">{{ formatNumber(entry.clicks) }}</td>
+              <td class="data-table-cell">{{ formatNumber(entry.impressions) }}</td>
+              <td class="data-table-cell">{{ formatNumber(entry.conversions) }}</td>
+              <td class="data-table-cell">{{ formatCurrency(entry.revenue) }}</td>
             </tr>
           </template>
         </tbody>
       </table>
     </div>
   </div>
-
   <!-- Footer -->
   <div class="modal-footer">
     <button class="btn-primary min-w-24 xs:order-1" @click="emit('back')">Back</button>
@@ -137,96 +187,86 @@ function handleProceed(): void {
 .duplicate-body {
   @apply w-[90vw]
     max-w-4xl
-    h-fit
     max-h-screen
     grid
     grid-cols-1
-    grid-rows-[min-content_1fr]
+    grid-rows-[min-content_min-content_1fr]
     gap-6
     p-6
+    h-fit
     max-h-[75vh]
     xs:max-h-[50vh];
 }
 
-// ── Summary ────────────────────────────────────────────────────────────────────
+.resolve-indicator {
+  @apply flex items-center gap-2 text-sm font-semibold text-typography-subtle -mb-3;
 
-.duplicate-summary {
-  font-size: theme('fontSize.sm');
-  color: var(--color-text);
-  line-height: 1.6;
-  margin: 0;
+  .resolve-indicator-icon {
+    @apply text-base shrink-0;
+  }
+
+  &.resolved {
+    @apply text-primary-400;
+  }
 }
 
-.duplicate-notice {
-  font-size: theme('fontSize.sm');
-  color: var(--color-warning);
-  line-height: 1.5;
-  margin: 0;
+.group-header td {
+  @apply py-3
+    px-4
+    text-sm
+    font-semibold
+    tracking-wide
+    text-typography-subtle
+    bg-surface-secondary
+    border-t
+    border-b
+    border-surface-border-secondary
+    items-center
+    gap-2;
+
+  .group-check-icon {
+    @apply text-base text-typography-subtle shrink-0;
+  }
+
+  &.selected {
+    @apply text-primary-400;
+
+    .group-check-icon {
+      @apply text-primary-400;
+    }
+  }
 }
 
-// ── Table ──────────────────────────────────────────────────────────────────────
 
-.duplicate-table-wrapper {
-  overflow: auto;
-  max-height: 320px;
+.group-selection-count {
+  @apply text-xs font-normal text-typography-subtle;
+
+  &.selected {
+    @apply text-indigo-400 font-medium;
+  }
 }
 
-.duplicate-table__group-header td {
-  padding: theme('spacing.2') theme('spacing.3');
-  font-size: theme('fontSize.xs');
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-subtle);
-  background-color: var(--color-surface-secondary);
-  border-top: 1px solid var(--color-border-secondary);
-  border-bottom: 1px solid var(--color-border-secondary);
+.cell-select {
+  @apply text-center;
+
+  input[type='radio'] {
+    @apply inline-block cursor-pointer accent-indigo-500 w-5 h-5 m-0;
+  }
 }
 
-.duplicate-table__row {
-  cursor: pointer;
-
-  &--selected {
-    background-color: color-mix(in srgb, theme('colors.indigo.500') 8%, transparent);
-
+.row-selectable {
+  &.row-selected {
+    @apply bg-primary-950;
     td {
-      border-top-color: color-mix(in srgb, theme('colors.indigo.500') 20%, transparent);
-      border-bottom-color: color-mix(in srgb, theme('colors.indigo.500') 20%, transparent);
+      @apply font-semibold;
+    }
+  }
+}
+
+ .data-table-row {
+    &:hover {
+      @apply bg-primary-800/35;
     }
   }
 
-  &:hover:not(&--selected) {
-    background-color: var(--color-surface-secondary);
-  }
-}
-
-.duplicate-table__th {
-  &--select  { width: 36px; }
-  &--row     { width: 56px; }
-  &--channel { width: 120px; }
-  &--num     { width: 90px; text-align: right; }
-}
-
-.duplicate-table__td {
-  &--select {
-    text-align: center;
-
-    input[type='radio'] {
-      accent-color: theme('colors.indigo.500');
-      cursor: pointer;
-      width: 15px;
-      height: 15px;
-    }
-  }
-
-  &--row {
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-  }
-
-  &--num {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-}
 </style>

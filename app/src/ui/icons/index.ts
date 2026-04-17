@@ -1,4 +1,5 @@
 export { default as ArrowLeftIcon } from './ArrowLeftIcon.vue'
+export { default as CheckIcon } from './CheckIcon.vue'
 export { default as ArrowUpIcon } from './ArrowUpIcon.vue'
 export { default as CloseIcon } from './CloseIcon.vue'
 export { default as DownloadIcon } from './DownloadIcon.vue'
