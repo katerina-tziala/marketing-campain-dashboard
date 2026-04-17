@@ -4118,3 +4118,46 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Native disabled over CSS class — prevents click events at the browser level; exposes correct semantics to assistive technology; no new styles needed since `.btn :disabled` already handles visual treatment
 - Connected dot hidden when panel open — the dot signals "click here to open the AI panel"; when the panel is already open the signal is redundant and clutters the disabled button
 - camelCase emit convention — going forward all emits in this project use camelCase
+
+
+## [#203] Refactor KpiCard — flat styles, slot projection, formatters, N/A fallback, roiClass coloring
+**Type:** refactor
+
+**Summary:** Full KpiCard refactor: removed BEM classes, extracted formatting logic into shared formatter functions, reduced props to label and value only, made secondary metrics slot-projected, moved all formatting calls to DashboardView, added N/A fallback for null/undefined, and wired ROI and CVR secondary coloring through roiClass + .roi-text.
+
+**Brainstorming:** KpiCard had three concerns tangled together: layout/styling, formatting logic (Intl.NumberFormat inline), and secondary metric composition (label + colored value + raw value for color derivation). Separating them keeps the card as a pure display shell. Formatting belongs in common/utils/formatters.ts — the compact variants (≥1000 → compact notation) are distinct from the existing simple formatCurrency/formatNumber which have a stable signature consumed by panel-formatters.ts, so they are added as separate functions. Secondary content is parent-specific and projected via slot so the card stays generic; the secondaryColor computed (which depended on secondaryRawValue) is removed entirely — the parent slot controls color directly. The N/A fallback stays on the card because it is a display safety net — callers should not have to guard null before passing. BEM class names (__label, __value, __secondary, __secondary-value) replaced with flat scoped names per the no-BEM project rule. accentColor was introduced to drive a CSS custom property (--accent) but after the style refactor nothing consumed var(--accent) anymore — it was pure dead weight and removed. For ROI and CVR coloring: the initial slot used inline hex colors and font-bold; these were replaced with class="roi-text" :class="roiClass(value)" which uses the existing global utility (.roi-text applies font-semibold; .positive/.warning/.negative apply success/warning/danger color). CVR uses the same thresholds as ROI — both are percentage metrics where higher is better.
+
+**Prompt:** Refactor KPI card move away from BEM styles. Check formatting functions in common/utils and reuse. Add formatting function for percentage. KPI card should accept value and label. Secondary KPI metrics should be projected so we do not need to pass labels and colors. Format value from parent component. N/A should be fallback value for null or undefined passed values. CVR lost its coloring add it back. Use roi formatting from common utils for roi color. Remove accentColor from KpiCard.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — added formatPercentage (toFixed(2)+'%'), formatCompactCurrency (compact EUR ≥1000 else 2-decimal EUR), formatCompactNumber (compact ≥1000 else localized)
+- `app/src/features/dashboard/components/KpiCard.vue` — props reduced to label and value (string|null|undefined); removed format/secondaryLabel/secondaryValue/secondaryRawValue/accentColor props; removed formatted and secondaryColor computeds; removed :style="{ '--accent': accentColor }"; value renders with ?? 'N/A' fallback; secondary section replaced with `<p v-if="$slots.secondary"><slot name="secondary"/></p>`; BEM classes replaced with flat scoped names: kpi-label, kpi-value, kpi-secondary
+- `app/src/features/dashboard/DashboardView.vue` — imports formatCompactCurrency, formatCompactNumber, formatPercentage, roiClass; all KpiCard usages updated: values pre-formatted by parent; accent-color removed from all cards; Revenue and Conversions cards use #secondary slot with roi-text + roiClass coloring; CAC passes null when cac is null
+
+**Key decisions & why:**
+- value typed as string|null|undefined — callers should not guard null before passing; the card owns the N/A display fallback
+- Secondary as slot not a sub-component — the content is a label + a colored span, trivial enough that a slot avoids a dedicated component for two lines of markup
+- roiClass for CVR as well as ROI — both are percentage metrics where higher is better; shared thresholds keep coloring logic in one place
+- accentColor removed without replacement — var(--accent) was unused after the style refactor; removing it entirely is cleaner than keeping a prop with no consumer
+- formatCompactCurrency/formatCompactNumber separate from formatCurrency/formatNumber — compact variants use different precision rules; existing simple formatters must not change signature
+
+
+## [#204] Extract DashboardKpis component; move totalConversions into CampaignKPIs
+**Type:** refactor
+
+**Summary:** Extracted the KPI cards section from DashboardView into a dedicated DashboardKpis component that accepts a single kpis prop, and moved totalConversions into the CampaignKPIs interface and kpis computed so the component needs only one input.
+
+**Brainstorming:** DashboardView was doing formatting work (importing formatters, roiClass) just for the KPI section — extracting it makes DashboardView a thinner orchestrator. The key API question was whether DashboardKpis should read the store directly or accept props. Props was the right choice: it keeps the component testable and decoupled, and a single kpis prop is cleaner than reading the store internally. The original concern was that totalConversions lives as a separate computed on the store root (not in kpis), which would mean a second prop. Rather than threading two separate inputs, totalConversions was added to CampaignKPIs so the component takes a single cohesive object. totalConversions stays exported from the store root as well since the funnel chart in DashboardView still needs it. The .kpi-grid scoped style moves from DashboardView into DashboardKpis where it belongs.
+
+**Prompt:** Extract DashboardKpis.vue component. It should not read from store but accept an input of kpis. totalConversions should be part of kpis when we get data from the store.
+
+**What was built:**
+- `app/src/common/types/campaign.ts` — CampaignKPIs interface extended with totalConversions: number
+- `app/src/stores/campaignStore.ts` — kpis computed now includes totalConversions: totalConversions.value
+- `app/src/features/dashboard/components/DashboardKpis.vue` — new component; props: kpis (CampaignKPIs); imports formatCompactCurrency, formatCompactNumber, formatPercentage, roiClass; renders 5 KpiCards with secondary slots for ROI and CVR; owns .kpi-grid scoped style
+- `app/src/features/dashboard/DashboardView.vue` — removed formatter/roiClass/KpiCard imports; added DashboardKpis import; replaced KPI section with `<DashboardKpis :kpis="store.kpis" />`; removed .kpi-grid scoped style
+
+**Key decisions & why:**
+- totalConversions added to CampaignKPIs rather than passed as a second prop — a single cohesive input is cleaner than two separate inputs; KPIs are logically a bundle
+- totalConversions kept on store root as well — funnel chart in DashboardView still needs store.totalConversions, totalImpressions, totalClicks directly
+- Formatting logic moves into DashboardKpis, not left in DashboardView — DashboardView should not know the display format of KPIs; that knowledge belongs in the component that renders them

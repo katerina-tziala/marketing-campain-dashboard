@@ -1,10 +1,29 @@
 @layer components {
   .card {
-    @apply rounded-md shadow-sm bg-surface border border-surface-border;
+    @apply rounded-md
+      shadow-md
+      bg-surface
+      border
+      border-surface-border
+      p-3
+      flex
+      flex-col
+      items-start
+      gap-2;
+
+
+    .card-head {
+      @apply w-full text-base font-medium tracking-widest text-primary-400; 
+    }
+
   }
 
   .card-secondary {
-    @apply p-3 flex flex-col gap-2 rounded-md text-sm shadow-sm bg-surface-secondary border border-surface-border-secondary;
+    @extend .card;
+    @apply text-sm
+      shadow-sm
+      bg-surface-secondary
+      border-surface-border-secondary;
   
     .card-head {
       @apply flex items-start justify-start gap-2;

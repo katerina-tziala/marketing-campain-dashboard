@@ -10,10 +10,10 @@ import {
 } from '../../ui'
 import { useCampaignStore } from '../../stores/campaignStore'
 import DashboardHeader from './components/DashboardHeader.vue'
+import DashboardKpis from './components/DashboardKpis.vue'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
-import KpiCard from './components/KpiCard.vue'
 
 const store = useCampaignStore()
 
@@ -116,49 +116,14 @@ const funnelValues = computed(() => [
         @clear-all="store.clearFilters"
       />
     </section>
-    <div class="overflow-y-auto scrollbar-stable-both scrollbar-on-surface data-visualization">
+    <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
+      <div class="dashboard-visualizations">
       <!-- KPI Cards -->
-      <div class="kpi-grid">
-        <KpiCard
-          label="Budget"
-          :value="store.kpis.totalBudget"
-          format="currency"
-          accent-color="#6366f1"
-        />
-        <KpiCard
-          label="Revenue"
-          :value="store.kpis.totalRevenue"
-          format="currency"
-          accent-color="#10b981"
-          secondary-label="ROI"
-          :secondary-value="`${store.kpis.roi.toFixed(1)}%`"
-          :secondary-raw-value="store.kpis.roi"
-        />
-        <KpiCard
-          label="Conversions"
-          :value="store.totalConversions"
-          format="number"
-          accent-color="#f59e0b"
-          secondary-label="CVR"
-          :secondary-value="`${store.kpis.cvr.toFixed(2)}%`"
-        />
-        <KpiCard
-          label="CTR"
-          :value="store.kpis.ctr"
-          format="percentage"
-          accent-color="#06b6d4"
-        />
-        <KpiCard
-          label="CAC"
-          :value="store.kpis.cac"
-          format="currency"
-          accent-color="#f43f5e"
-        />
-      </div>
+      <DashboardKpis :kpis="store.kpis" />
 
       <!-- Charts Grid -->
       <div class="charts-grid">
-        <div class="chart-card">
+        <div class="card chart-card">
           <h3 class="chart-card__title">ROI by Campaign</h3>
           <BarChart :chart-data="roiChartData" y-label="ROI (%)" :height="420" horizontal />
         </div>
@@ -186,6 +151,7 @@ const funnelValues = computed(() => [
           <CampaignTable :campaigns="store.filteredCampaigns" />
         </div>
       </div>
+      </div>
     </div>
   </div>
 
@@ -208,22 +174,33 @@ const funnelValues = computed(() => [
   @apply w-full px-6 mx-auto max-w-7xl;
 }
 
-.kpi-grid {
-  @apply grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5;
+.data-visualization {
+  @apply overflow-y-auto;
 }
 
+.dashboard-visualizations {
+  @apply w-full
+    px-3
+    mx-auto
+    max-w-7xl
+    flex
+    flex-col
+    gap-5;
+}
+
+ 
+
 .charts-grid {
-  @apply grid grid-cols-1 gap-6 lg:grid-cols-2;
+  @apply grid grid-cols-1 gap-5 lg:grid-cols-2;
 }
 
 .chart-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  @apply rounded-md shadow-sm p-5 flex flex-col;
+  // background-color: var(--color-surface);
+  // border: 1px solid var(--color-border);
+  // @apply rounded-md shadow-sm p-3 flex flex-col;
 
   &__title {
-    color: var(--color-title);
-    @apply text-base mb-4 shrink-0;
+    @apply text-base mb-4 shrink-0 text-primary-300;
   }
 }
 

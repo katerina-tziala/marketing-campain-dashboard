@@ -21,4 +21,5 @@ export interface CampaignKPIs {
   ctr: number
   cvr: number
   cac: number | null
+  totalConversions: number
 }

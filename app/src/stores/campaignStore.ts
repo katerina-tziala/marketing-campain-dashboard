@@ -56,6 +56,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     ctr: round2(safeDivide(totalClicks.value, totalImpressions.value) * 100),
     cvr: round2(safeDivide(totalConversions.value, totalClicks.value) * 100),
     cac: totalConversions.value > 0 ? round2(totalBudget.value / totalConversions.value) : null,
+    totalConversions: totalConversions.value,
   }))
 
   // Actions
