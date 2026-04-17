@@ -63,7 +63,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     overflow-hidden
     sticky
     top-0
-    w-full;
+    w-full
+    shadow-md;
 }
 
 // ── Overlay (<lg) ───────────────────────────────────────────────────────────

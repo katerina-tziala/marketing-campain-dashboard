@@ -4047,3 +4047,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Only two import paths needed updating because the barrel from #198 isolated all external consumers from the internal folder structure
+
+
+## [#200] UI polish — extract .detail-item, de-BEM components, accessibility improvements
+**Type:** update
+
+**Summary:** Extracted `.detail-item` as a global reusable SCSS component class, applied it across AnalysisSummary and DashboardView, de-BEMed Tabs and BaseModal, improved FileDropzone accessibility with a real `<button>` element, and applied several style tweaks across the shell and UI components.
+
+**Brainstorming:** Several components shared the same bullet-separated inline metadata pattern (AnalysisSummary analysis-details, DashboardView dashboard-details) but each had its own scoped implementation. Extracting `.detail-item` to a global partial makes this a reusable primitive. FileDropzone used `div[role="button"]` which is an accessibility antipattern — a native `<button>` is semantically correct and handles keyboard interaction natively. Tabs had a BEM modifier `.tab--active` which was replaced with flat `.tab-active` consistent with the project's no-BEM rule. BaseModal header classes were already partially de-BEMed in a prior commit; remaining scoped names are now flat. Button style: `.btn-secondary-outline` border weight dropped from `border-2` to `border` (1px) to match the visual weight of the outline variant; `.btn-small` became a standalone class so it can be extended independently.
+
+**Prompt:** Check the modified files, create a log entry for the changes, and update CLAUDE.md if necessary.
+
+**What changed:**
+- `app/src/styles/components/_detail-item.scss` — new file; `.detail-item` global component class (inline-block, pr-1.5) with bullet separator via `& + &::before` pseudo-element
+- `app/src/styles/components/index.scss` — added `@use './detail-item'`
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — removed scoped styles; analysis-details children are now `.detail-item` spans using the global class
+- `app/src/features/dashboard/DashboardView.vue` — `.dashboard-details` paragraph children use `.detail-item` spans
+- `app/src/styles/components/_button.scss` — `.btn-secondary-outline` uses `border` (1px) instead of `border-2`; `.btn-small` extracted as standalone class; `.btn-destructive-small` extends both `.btn` and `.btn-small`
+- `app/src/ui/Tabs.vue` — `.tab--active` BEM modifier replaced with flat `.tab-active`
+- `app/src/ui/BaseModal.vue` — header classes de-BEMed to `.modal-header` / `.modal-header-title`; `aria-modal`, `role="dialog"`, `:aria-label` moved to backdrop div; close button uses `.btn-icon-secondary`
+- `app/src/ui/FileDropzone.vue` — changed from `div[role="button"]` to native `<button>`; hidden file input moved outside button; `hintId` computed from id prop; `aria-describedby` only set when no file is selected
+- `app/src/ui/Spinner.vue` — template/script order normalised (template first)
+- `app/src/shell/AppShell.vue` — `provide('openUploadModal')` delegated to `useUploadModal` composable; `shell-main` overflow refined; gradient title (indigo→pink via `secondary-500`)
+- `app/src/shell/AiToolsDrawer.vue` — overlay-panel sizing tweaked; push-drawer-panel uses `grid-rows-[min-content_1fr]`
+- `app/src/features/dashboard/components/EmptyState.vue` — `onMounted`/`onUnmounted` hooks added to lock/unlock body overflow while empty state is visible
+- `app/src/stores/campaignStore.ts` — `campaignScope` computed (CampaignScope) added to store return
+- `app/tailwind.config.js` — `secondary-500` (#ec4899 pink) added for gradient title; `surface-secondary-10` token added
+
+**Key decisions & why:**
+- `.detail-item` in global SCSS (not a Vue component) — it's a single-element CSS primitive with no logic; a full component would be over-engineered; consistent with how `.badge` and `.btn` are handled
+- Native `<button>` for FileDropzone — removes need for manual `role`, `tabindex`, and keyboard handling; browsers provide these for free; hidden input stays outside so it is not a descendant of the button (invalid HTML)
+- `.tab-active` flat name — consistent with `.tab-icon` already on the same component and with the project no-BEM rule

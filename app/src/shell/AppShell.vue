@@ -35,7 +35,6 @@ function onCloseAiPanel(): void {
         <slot />
       </main>
     </div>
-
     <!-- AI drawer — sibling to left column so it pushes everything left at lg+ -->
     <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
 
@@ -51,33 +50,38 @@ function onCloseAiPanel(): void {
 
 <style lang="scss" scoped>
 .app-shell {
-  @apply flex flex-col h-screen overflow-hidden;
-
-  @media (min-width: 1024px) {
-    @apply flex-row;
-  }
+  @apply flex flex-row h-screen overflow-hidden;
 }
 
 .shell-left {
-  @apply flex flex-col flex-1 min-w-0 overflow-y-auto;
+  @apply grow shrink grid grid-cols-1 grid-rows-[min-content_1fr] overflow-hidden;
 }
 
 .shell-header {
-  @apply flex items-center justify-between gap-4 shrink-0 px-6 py-5;
-  background-color: var(--color-header-bg);
-  border-bottom: 1px solid var(--color-border);
+  @apply flex
+    items-center
+    justify-between
+    gap-4
+    shrink-0
+    px-6
+    py-3.5
+    shadow-md
+    border-b
+    border-primary-900;
 }
 
 .shell-title {
-  @apply text-2xl font-extrabold tracking-tight m-0;
-  background: linear-gradient(135deg, #818cf8 0%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  @apply text-2xl
+    font-extrabold
+    m-0
+    bg-gradient-to-r
+    from-primary-500
+    to-secondary-500
+    bg-clip-text
+    text-transparent;
 }
 
 .shell-main {
-  @apply flex flex-col flex-1 w-full mx-auto overflow-x-clip px-6;
-  max-width: 1280px;
+  @apply flex flex-col w-full mx-auto overflow-x-hidden overflow-y-hidden;
 }
 </style>

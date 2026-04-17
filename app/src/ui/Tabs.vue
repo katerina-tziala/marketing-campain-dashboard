@@ -29,13 +29,13 @@ onMounted(() => {
     <button
       v-for="tab in tabs"
       :key="tab.id"
-      class="tabs__tab"
-      :class="{ 'tabs__tab--active': activeTab === tab.id }"
+      class="tab"
+      :class="{ 'tab-active': activeTab === tab.id }"
       role="tab"
       :aria-selected="activeTab === tab.id"
       @click="emit('change', tab.id)"
     >
-      <component :is="tab.icon" class="tabs__icon" />
+      <component :is="tab.icon" class="tab-icon" />
       {{ tab.label }}
     </button>
   </div>
@@ -45,7 +45,9 @@ onMounted(() => {
 .tabs {
   @apply flex w-full border-b border-surface-border bg-surface-secondary/20;
 
-  &__tab {
+}
+
+.tab {
     @apply flex
       items-center
       justify-center
@@ -65,18 +67,18 @@ onMounted(() => {
       duration-150
       ease-in-out;
 
-    &:hover:not(&--active) {
-      color: var(--color-title); 
-      @apply bg-primary-500/10;
-    }
-
-    &--active {
+    &.tab-active {
       @apply text-primary-400 border-primary-500;
     }
-  }
 
-  &__icon {
-    @apply shrink-0 text-lg;
+    .tab-icon {
+     @apply shrink-0 text-lg;
+    }
+
+
+    &:hover:not(.tab-active) {
+      @apply bg-primary-500/10 text-primary-300;
+    }
+
   }
-}
 </style>

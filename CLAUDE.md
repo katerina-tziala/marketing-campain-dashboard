@@ -94,7 +94,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
 │   │   │   │       ├── shared/                 # Shared components used by both tabs — props-only, no store reads
 │   │   │   │       │   ├── AnalysisState.vue       # Analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, cacheTimestamp (string|number|null), modelName?; formats cacheTimestamp internally via computed; emit: analyze; slot: result content; handles header, token-limit notice, idle/loading/error/result states; grouped scoped styles
-│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); analysis-details renders period/campaigns/channels as .detail-item spans (inline-block); bullet separators via CSS ::before on & + & rule; scoped styles
+│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); analysis-details renders period/campaigns/channels as .detail-item spans; bullet separator from global _detail-item.scss; no scoped styles
 │   │   │   │       │   └── AnalysisCorrelations.vue # Correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
 │   │   │   │       ├── budget-optimization/    # Budget Optimizer tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
 │   │   │   │       │   ├── BudgetOptimizationAnalysis.vue        # Budget Optimizer tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
@@ -183,8 +183,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── index.scss          # Barrel — @use all component partials
 │   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
-│   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline, .btn-destructive-small, .btn-small
+│   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
 │   │   │   ├── _card.scss          # @layer components — .card, .card-secondary; flat child classes: .card-head, .card-title, .card-content
+│   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-typography-subtle)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell

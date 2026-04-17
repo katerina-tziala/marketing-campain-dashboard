@@ -21,9 +21,8 @@ const hintText = computed(() =>
   `Drag & drop a ${props.hint ? props.hint : ''} file here or browse`
 )
 
-const hasError = computed(() => {
-  if (!slots.error) return false
-  return slots.error().some(vnode => vnode.type !== Comment)
+const hasError = computed(() => { 
+  return slots.error
 })
 
 function open(): void {
@@ -43,7 +42,7 @@ function onChange(e: Event): void {
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-3">
     <button
       type="button"
       class="dropzone form-control"

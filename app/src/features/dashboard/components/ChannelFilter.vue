@@ -13,18 +13,17 @@ const emit = defineEmits<{
 <template>
   <div class="channel-filter" role="group" aria-label="Filter by channel">
     <button
-      class="filter-btn"
-      :class="selected.length === 0 ? 'filter-btn--active' : 'filter-btn--inactive'"
+      class="btn-icon-secondary filter-btn"
+      :class="selected.length === 0 ? 'active' : 'inactive'" 
       @click="emit('clearAll')"
     >
       All
     </button>
-
     <button
       v-for="channel in channels"
       :key="channel"
-      class="filter-btn"
-      :class="selected.includes(channel) ? 'filter-btn--active' : 'filter-btn--inactive'"
+      class="btn-icon-secondary filter-btn"
+      :class="selected.includes(channel) ? 'active' : 'inactive'"
       :aria-pressed="selected.includes(channel)"
       @click="emit('toggle', channel)"
     >
@@ -35,26 +34,29 @@ const emit = defineEmits<{
 
 <style lang="scss" scoped>
 .channel-filter {
-  @apply flex flex-wrap items-center gap-2;
+  @apply flex flex-wrap items-center gap-2.5;
 }
 
 .filter-btn {
-  @apply rounded-full border px-3 py-1 text-sm font-medium transition-colors
-         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2;
+  @apply rounded-full
+  border-2 
+  px-3
+  py-1
+  text-sm
+  font-medium
+  transition-colors
+  outline-none;
 
-  &--active {
-    @apply border-primary-400 bg-primary-500 text-white;
+  &.active {
+    @apply border-primary-500 bg-primary-500 text-white;
   }
 
-  &--inactive {
-    border-color: var(--color-border);
-    background-color: var(--color-surface);
-    color: var(--color-text-secondary);
-
-    &:hover {
-      border-color: theme('colors.primary.400');
-      color: var(--color-text);
-    }
+  &.inactive {
+    @apply border-surface-border
+    bg-surface
+    text-typography-subtle 
+    hover:border-primary-400
+    focus-within:border-primary-400;
   }
 }
 </style>

@@ -8,7 +8,7 @@ import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 // TODO: DEV MOCK — revert before shipping.
 // To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
 // and reset the `campaigns` and `title` refs to [] and '' respectively.
-const DEV_MOCK_CAMPAIGNS = false
+const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State

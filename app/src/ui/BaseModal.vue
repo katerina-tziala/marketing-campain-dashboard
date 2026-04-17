@@ -29,8 +29,8 @@ onUnmounted(() => {
   <Teleport to="body">
     <div class="modal-backdrop" aria-modal="true" role="dialog" :aria-label="title" @click.self="emit('close')">
       <div class="modal">
-        <div class="modal__header">
-          <h2 class="modal__title">{{ title }}</h2>
+        <div class="modal-header">
+          <h2 class="modal-header-title">{{ title }}</h2>
           <button class="btn-icon-secondary" aria-label="Close" @click="emit('close')">
             <CloseIcon /> 
           </button>
@@ -67,8 +67,9 @@ onUnmounted(() => {
     grid 
     grid-cols-1
     auto-rows-auto;
+}
 
-  &__header {
+  .modal-header {
     @apply flex
       items-start
       justify-between
@@ -79,8 +80,7 @@ onUnmounted(() => {
       px-4;
   }
 
-  &__title {
+  .modal-header-title {
     @apply text-primary-400 text-lg font-semibold m-0 pt-1;
   }
-}
 </style>

@@ -104,125 +104,138 @@ const funnelValues = computed(() => [
   <!-- Dashboard -->
   <div v-else class="dashboard">
     <!-- Header -->
-    <div class="dashboard__header">
-      <div class="dashboard__title-row">
-        <h2 class="dashboard__title">Campaign Performance</h2>
+    <div class="dashboard-section">
+      <div class="dashboard-title-row">
+        <h2 class="dashboard-title">Campaign Performance</h2>
         <button class="btn-primary" @click="openAiPanel?.()">
           <SparklesIcon />AI
         </button> 
       </div>
-      <p class="dashboard__subtitle">
-        {{ store.title }} , {{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns
+      <p class="dashboard-details">
+        <span class="detail-item">{{ store.title }}</span>
+        <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
+        <!-- TODO add selected channels out of channels -->
       </p>
     </div>
-
     <!-- Channel Filter -->
-    <ChannelFilter
-      :channels="store.availableChannels"
-      :selected="store.selectedChannels"
-      @toggle="store.toggleChannel"
-      @clear-all="store.clearFilters"
-    />
+    <section class="dashboard-section">
+      <ChannelFilter
+        :channels="store.availableChannels"
+        :selected="store.selectedChannels"
+        @toggle="store.toggleChannel"
+        @clear-all="store.clearFilters"
+      />
+    </section>
+    <div class="overflow-y-auto scrollbar-stable-both scrollbar-on-surface data-visualization">
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <KpiCard
+          label="Budget"
+          :value="store.kpis.totalBudget"
+          format="currency"
+          accent-color="#6366f1"
+        />
+        <KpiCard
+          label="Revenue"
+          :value="store.kpis.totalRevenue"
+          format="currency"
+          accent-color="#10b981"
+          secondary-label="ROI"
+          :secondary-value="`${store.kpis.roi.toFixed(1)}%`"
+          :secondary-raw-value="store.kpis.roi"
+        />
+        <KpiCard
+          label="Conversions"
+          :value="store.totalConversions"
+          format="number"
+          accent-color="#f59e0b"
+          secondary-label="CVR"
+          :secondary-value="`${store.kpis.cvr.toFixed(2)}%`"
+        />
+        <KpiCard
+          label="CTR"
+          :value="store.kpis.ctr"
+          format="percentage"
+          accent-color="#06b6d4"
+        />
+        <KpiCard
+          label="CAC"
+          :value="store.kpis.cac"
+          format="currency"
+          accent-color="#f43f5e"
+        />
+      </div>
 
-    <!-- KPI Cards -->
-    <div class="kpi-grid">
-      <KpiCard
-        label="Budget"
-        :value="store.kpis.totalBudget"
-        format="currency"
-        accent-color="#6366f1"
-      />
-      <KpiCard
-        label="Revenue"
-        :value="store.kpis.totalRevenue"
-        format="currency"
-        accent-color="#10b981"
-        secondary-label="ROI"
-        :secondary-value="`${store.kpis.roi.toFixed(1)}%`"
-        :secondary-raw-value="store.kpis.roi"
-      />
-      <KpiCard
-        label="Conversions"
-        :value="store.totalConversions"
-        format="number"
-        accent-color="#f59e0b"
-        secondary-label="CVR"
-        :secondary-value="`${store.kpis.cvr.toFixed(2)}%`"
-      />
-      <KpiCard
-        label="CTR"
-        :value="store.kpis.ctr"
-        format="percentage"
-        accent-color="#06b6d4"
-      />
-      <KpiCard
-        label="CAC"
-        :value="store.kpis.cac"
-        format="currency"
-        accent-color="#f43f5e"
-      />
+      <!-- Charts Grid -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3 class="chart-card__title">ROI by Campaign</h3>
+          <BarChart :chart-data="roiChartData" y-label="ROI (%)" :height="420" horizontal />
+        </div>
+
+        <div class="chart-card">
+          <h3 class="chart-card__title">Budget Allocation by Campaign</h3>
+          <DonutChart :chart-data="budgetCampaignData" :height="420" />
+        </div>
+
+        <div class="chart-card">
+          <h3 class="chart-card__title">Revenue vs Budget by Channel</h3>
+          <GroupedBarChart :chart-data="revVsBudgetData" y-label="Amount (€)" />
+        </div>
+
+        <div class="chart-card">
+          <h3 class="chart-card__title">Conversion Funnel</h3>
+          <FunnelChart :labels="funnelLabels" :values="funnelValues" />
+        </div>
+      </div>
+
+      <!-- Campaign Table -->
+      <div class="table-section card">
+        <h3 class="table-section__title">Campaign Details</h3>
+        <div class="table-section__body">
+          <CampaignTable :campaigns="store.filteredCampaigns" />
+        </div>
+      </div>
     </div>
-
-    <!-- Charts Grid -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3 class="chart-card__title">ROI by Campaign</h3>
-        <BarChart :chart-data="roiChartData" y-label="ROI (%)" :height="420" horizontal />
-      </div>
-
-      <div class="chart-card">
-        <h3 class="chart-card__title">Budget Allocation by Campaign</h3>
-        <DonutChart :chart-data="budgetCampaignData" :height="420" />
-      </div>
-
-      <div class="chart-card">
-        <h3 class="chart-card__title">Revenue vs Budget by Channel</h3>
-        <GroupedBarChart :chart-data="revVsBudgetData" y-label="Amount (€)" />
-      </div>
-
-      <div class="chart-card">
-        <h3 class="chart-card__title">Conversion Funnel</h3>
-        <FunnelChart :labels="funnelLabels" :values="funnelValues" />
-      </div>
-    </div>
-
-    <!-- Campaign Table -->
-    <div class="table-section card">
-      <h3 class="table-section__title">Campaign Details</h3>
-      <div class="table-section__body">
-        <CampaignTable :campaigns="store.filteredCampaigns" />
-      </div>
-    </div>
-
   </div>
 
 </template>
 
 <style lang="scss" scoped>
+
 .dashboard {
-  @apply space-y-6 pb-4;
-  padding: theme('spacing.6') theme('spacing.6');
+  @apply w-full
+  h-full
+  overflow-hidden
+  grid
+  grid-cols-1
+  grid-rows-[min_content-min-content_1fr]
+  pt-4
+  gap-y-5;
+}
 
-  @media (min-width: 1280px) {
-    padding: theme('spacing.6') 0;
-  }
+.dashboard-section {
+    @apply w-full
+    px-6
+    mx-auto 
+    max-w-7xl;
+}
 
-  &__title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.dashboard-title-row {
+  @apply 
+  flex
+  items-start
+  justify-center
+  gap-x-4
+  gap-y-2;
 
-  &__title {
-    @apply text-lg font-semibold tracking-tight;
-    color: var(--color-text-secondary);
-    margin: 0;
+  .dashboard-title {
+    @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1; 
   }
+}
 
-  &__subtitle {
-    @apply mt-1 text-sm;
-    color: var(--color-text-secondary);
-  }
+.dashboard-details {
+    @apply text-sm text-typography;
 }
 
 .kpi-grid {

@@ -11,11 +11,9 @@ const emit = defineEmits<{ upload: [] }>()
 
 <template>
   <div class="empty-state">
-    <div class="empty-state__icon">
-      <FileTextIcon />
-    </div>
-    <h2 class="empty-state__title">No campaign data yet</h2>
-    <p class="empty-state__description">
+    <FileTextIcon class="text-4xl inline-block text-primary-400/60" />
+    <h2 class="empty-state-title">No campaign data yet</h2>
+    <p class="empty-state-description">
       Upload a CSV file to generate your campaign performance dashboard.<br />
       Need a starting point? Download our sample template.
     </p>
@@ -24,38 +22,16 @@ const emit = defineEmits<{ upload: [] }>()
 </template>
 
 <style lang="scss" scoped>
+
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  flex: 1;
-  padding: theme('spacing.8');
-  gap: theme('spacing.4');
+  @apply flex flex-col items-center justify-center text-center p-8 gap-6 m-auto;
+}
 
-  &__icon {
-    color: var(--color-border);
+.empty-state-title {
+  @apply text-primary-400 text-xl font-semibold leading-6 tracking-wide;
+}
 
-    svg {
-      width: 4rem;
-      height: 4rem;
-    }
-  }
-
-  &__title {
-    font-size: theme('fontSize.xl');
-    font-weight: 600;
-    color: var(--color-title);
-    margin: 0;
-  }
-
-  &__description {
-    font-size: theme('fontSize.sm');
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0;
-  }
-
+.empty-state-description {
+  @apply text-typography text-sm leading-6 tracking-wide;
 }
 </style>

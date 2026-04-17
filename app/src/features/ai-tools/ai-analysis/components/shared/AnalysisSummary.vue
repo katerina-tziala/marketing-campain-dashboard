@@ -24,17 +24,3 @@ defineProps<{
     <slot />
   </section>
 </template>
-
-<style lang="scss" scoped>
-.detail-item {
-  @apply inline-block pr-1.5;
-
-  & + & {
-
-    &::before {
-      content: '';
-      @apply inline-block w-1 h-1 rounded-full bg-typography-subtle align-middle mr-1.5;
-    }
-  }
-}
-</style>

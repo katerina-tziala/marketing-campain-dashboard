@@ -23,6 +23,10 @@
       tracking-wide
       text-center;
 
+      > svg {
+        @apply text-lg;
+      }
+
       &:disabled {
         @apply cursor-not-allowed opacity-50;
       }
