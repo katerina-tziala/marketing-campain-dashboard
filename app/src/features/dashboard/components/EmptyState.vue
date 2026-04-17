@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { FileTextIcon } from '../../../ui'
-import FileActions from '../../csv-file/components/FileActions.vue'
+import { FileActions } from '../../data-transfer'
 
 onMounted(() => { document.body.style.overflow = 'hidden' })
 onUnmounted(() => { document.body.style.overflow = '' })

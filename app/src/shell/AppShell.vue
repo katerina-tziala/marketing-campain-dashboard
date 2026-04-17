@@ -4,9 +4,7 @@ import { UploadIcon } from '../ui'
 import { ToastContainer } from '../ui/toast'
 import { useAiStore } from '../stores/aiStore'
 import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
-import { useUploadModal } from '../features/csv-file/composables/useUploadModal'
-import UploadModal from '../features/csv-file/components/UploadModal.vue'
-import ReplaceDataModal from '../features/csv-file/components/ReplaceDataModal.vue'
+import { useUploadModal, UploadModal, ReplaceDataModal } from '../features/data-transfer'
 import AiToolsDrawer from './AiToolsDrawer.vue'
 
 const aiStore = useAiStore()

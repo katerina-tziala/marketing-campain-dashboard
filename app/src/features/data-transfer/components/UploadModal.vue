@@ -7,9 +7,9 @@ import { toCampaigns } from '../utils/map-campaign'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useDownloadTemplate } from '../composables/useDownloadTemplate'
 import type { CsvCampaign, CsvDuplicateGroup, CsvRowError } from '../types'
-import CsvUploadForm from './CsvUploadForm.vue'
-import CsvErrorTable from './CsvErrorTable.vue'
-import CsvDuplicateTable from './CsvDuplicateTable.vue'
+import UploadCampainData from './UploadCampainData.vue'
+import DisplayUploadErrorsStep from './DisplayUploadErrorsStep.vue'
+import ResolveDuplicationsStep from './ResolveDuplicationsStep.vue'
 
 const campaignStore = useCampaignStore()
 const { downloadTemplate } = useDownloadTemplate()
@@ -121,7 +121,7 @@ function handleProceedFromDuplicates(selected: CsvCampaign[]): void {
 
 <template>
   <BaseModal v-if="isOpen" title="Upload Campaign Data" @close="close">
-    <CsvUploadForm
+    <UploadCampainData
       v-if="view === 'form'"
       v-model:title="title"
       v-model:file="file"
@@ -131,7 +131,7 @@ function handleProceedFromDuplicates(selected: CsvCampaign[]): void {
       @close="close"
       @download-template="downloadTemplate"
     />
-    <CsvErrorTable
+    <DisplayUploadErrorsStep
       v-else-if="view === 'row-errors'"
       :row-errors="rowErrors"
       :valid-campaigns="validCampaigns"
@@ -140,7 +140,7 @@ function handleProceedFromDuplicates(selected: CsvCampaign[]): void {
       @proceed="handleProceedFromErrors"
       @close="close"
     />
-    <CsvDuplicateTable
+    <ResolveDuplicationsStep
       v-else
       :duplicate-groups="duplicateGroups"
       :valid-campaigns="validCampaigns"

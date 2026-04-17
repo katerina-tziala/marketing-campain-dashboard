@@ -3897,3 +3897,153 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `resolvedCount` uses `selections.value.size` directly — the map has one entry per resolved group by design (radio input, max 1 per group)
 - Green (`text-primary-400`) for resolved indicator state — clear positive signal without introducing a new color token
 - Grid row added for indicator — keeps the table's `1fr` row intact so it still fills available height
+
+
+## [#192] Extract format helpers to common/utils/formatters
+**Type:** refactor
+
+**Summary:** Moved `formatCurrency` and `formatNumber` out of `CsvDuplicateTable` into a new shared `common/utils/formatters.ts` so they can be reused across the codebase.
+
+**Brainstorming:** The two helpers had no component-specific logic and are generically useful anywhere currency or numbers need display formatting. `common/utils/` already holds `math.ts` and `roi.ts` for shared pure utilities — formatters belong there.
+
+**Prompt:** Move all format functions from CsvDuplicateTable to common/utils/formatters and import those from there.
+
+**What changed:**
+- `common/utils/formatters.ts` — new file; exports `formatCurrency(value)` and `formatNumber(value)`
+- `csv-file/components/CsvDuplicateTable.vue` — removed local `formatCurrency`/`formatNumber` definitions; added import from `../../../common/utils/formatters`
+
+**Key decisions & why:**
+- Placed in `common/utils/` not `csv-file/utils/` — no CSV-specific logic; available to dashboard, AI panels, or any future component that formats currency or counts
+
+
+## [#193] Extract duplicate table into CampainDuplicationsTable
+**Type:** refactor
+
+**Summary:** Extracted the grouped duplicate table and all its sorting/selection logic from `CsvDuplicateTable` into a new `CampainDuplicationsTable` component in `csv-file/components/validation/`.
+
+**Brainstorming:** `CsvDuplicateTable` was doing two jobs: orchestrating the modal shell (summary block, resolve indicator, footer) and owning the table's internal sort/selection state. Extracting the table into its own component in `validation/` alongside `DataErrorsTable` keeps the table logic self-contained and makes `CsvDuplicateTable` a thin orchestrator. The new component emits `change:[CsvCampaign[]]` on every selection so the parent can track resolved count and build the proceed payload without needing to reach into internal state.
+
+**Prompt:** Extract duplication table to csv-file/components/validation with name CampainDuplicationsTable.
+
+**What changed:**
+- `csv-file/components/validation/CampainDuplicationsTable.vue` — new component; owns `sortKey`/`sortDir`/`columns`/`sortedGroups`, `selections` Map, `isSelected`/`isGroupSelected`/`selectRow`; emits `change:[CsvCampaign[]]` on every `selectRow` call; owns all table-related scoped styles (group-header, cell-select, row-selectable, data-table-row hover)
+- `csv-file/components/CsvDuplicateTable.vue` — reduced to thin orchestrator; holds `selectedCampaigns` ref updated via `@change`; `resolvedCount`/`allResolved`/`canProceed` computed from that ref; `handleProceed` emits `selectedCampaigns.value` directly; removed all sorting/selection/formatting logic and imports
+
+**Key decisions & why:**
+- `change` emit carries the full `CsvCampaign[]` snapshot on every selection — parent needs the array for both the counter and the proceed payload; avoids exposing internal Map state
+- `allResolved` drives the indicator `.resolved` class in the parent (was `resolvedCount > 0` before — corrected to `allResolved` for accurate green state)
+
+
+## [#194] Extract DuplicateSummary component shared by CsvErrorTable and CsvDuplicateTable
+**Type:** refactor
+
+**Summary:** Extracted the duplicate-specific `DataErrorSummary` blocks used in both `CsvErrorTable` and `CsvDuplicateTable` into a shared `DuplicateSummary.vue` component in `validation/`.
+
+**Brainstorming:** Both components had a `DataErrorSummary` block describing duplicate campaign names — `CsvErrorTable` showed a notice ("will be resolved in the next step") and `CsvDuplicateTable` showed the resolution prompt ("select one row per group"). The structure (DataErrorSummary wrapper, badge, count-based grammar) was the same. Extracting into `DuplicateSummary` with a `variant` prop removes the duplication and centralises the duplicate messaging in one place consistent with how `DataErrorSummary` and `DataErrorsTable` already live in `validation/`.
+
+**Prompt:** CsvErrorTable and CsvDuplicateTable use same logic for duplications extract to errors.
+
+**What was built:**
+- `csv-file/components/validation/DuplicateSummary.vue` — new component; wraps `DataErrorSummary`; props: `count: number`, `variant?: 'notice' | 'resolve'` (default `'notice'`), `hasValidCampaigns?: boolean`; notice variant renders "will need to be resolved" messaging; resolve variant renders "select one row per group" messaging with danger badge when no valid campaigns exist
+- `csv-file/components/CsvErrorTable.vue` — replaced inline duplicate `DataErrorSummary` block with `<DuplicateSummary v-if="duplicateGroupCount > 0" :count="duplicateGroupCount" />`
+- `csv-file/components/CsvDuplicateTable.vue` — replaced inline duplicate `DataErrorSummary` block with `<DuplicateSummary :count="duplicateGroups.length" variant="resolve" :has-valid-campaigns="validCampaigns.length > 0" />`; removed now-unused `groupWord`/`verbWord` computeds
+
+**Key decisions & why:**
+- `variant` prop over two separate components — the two modes share enough structure (DataErrorSummary wrapper, count-based grammar) that a single component with a variant is simpler than two separate files
+- Default `variant='notice'` — the notice use case (CsvErrorTable) is the simpler one and the more likely reuse path; resolve is the explicit opt-in
+
+
+## [#195] Rename CsvDuplicateTable to ResolveDuplicationsStep
+**Type:** refactor
+
+**Summary:** Renamed `CsvDuplicateTable.vue` to `ResolveDuplicationsStep.vue` to better reflect its role as a modal step rather than a generic table component.
+
+**Brainstorming:** The old name described the data it handled (CSV duplicates); the new name describes what the user is doing at this point in the upload flow (resolving duplications). Consistent with the step-based mental model of the upload modal.
+
+**Prompt:** Rename CsvDuplicateTable to ResolveDuplicationsStep.
+
+**What changed:**
+- `csv-file/components/ResolveDuplicationsStep.vue` — new file; identical content to old `CsvDuplicateTable.vue`
+- `csv-file/components/CsvDuplicateTable.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `ResolveDuplicationsStep`
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#196] Rename CsvErrorTable to DisplayUploadErrorsStep
+**Type:** refactor
+
+**Summary:** Renamed `CsvErrorTable.vue` to `DisplayUploadErrorsStep.vue` to match the step-based naming convention established by `ResolveDuplicationsStep`.
+
+**Brainstorming:** Consistent with the rename of `CsvDuplicateTable` → `ResolveDuplicationsStep` in #195. Both components are modal steps in the upload flow; naming them as steps makes their role in `UploadModal` immediately clear.
+
+**Prompt:** Same CsvErrorTable TO DisplayUploadErrorsStep.
+
+**What changed:**
+- `csv-file/components/DisplayUploadErrorsStep.vue` — new file; identical content to old `CsvErrorTable.vue`
+- `csv-file/components/CsvErrorTable.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `DisplayUploadErrorsStep`
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#197] Rename CsvUploadForm to UploadCampainData
+**Type:** refactor
+
+**Summary:** Renamed `CsvUploadForm.vue` to `UploadCampainData.vue` to align with the step-based naming convention used across the CSV upload modal flow.
+
+**Brainstorming:** All modal view components in the upload flow are now named to reflect their role rather than their implementation detail. `UploadCampainData` is consistent with `DisplayUploadErrorsStep` and `ResolveDuplicationsStep`.
+
+**Prompt:** Rename UploadForm to UploadCampainData.
+
+**What changed:**
+- `csv-file/components/UploadCampainData.vue` — new file; identical content to old `CsvUploadForm.vue`
+- `csv-file/components/CsvUploadForm.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `UploadCampainData`
+- `CLAUDE.md` — architecture entry updated
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#198] Extract isValidCsvFile and create csv-file barrel index
+**Type:** refactor
+
+**Summary:** Consolidated the duplicated `isValidCsvFile` logic into `parse-csv.ts` and created a feature-level `index.ts` barrel for the `csv-file` feature so external consumers import from one place.
+
+**Brainstorming:** `isValidCsvFile` existed as an inline check in `parse-csv.ts` and as a local function in `UploadCampainData.vue`. The canonical home is `parse-csv.ts` since it is the file entry point for CSV handling. The barrel `index.ts` follows the same pattern as `ui/index.ts` — external features (`AppShell`, `EmptyState`) should import from the feature root, not reach into internal subfolders.
+
+**Prompt:** isValidCsvFile logic exists in 2 places — create and export the function from the parse-csv file. Create barrel index for csv-file feature and export everything consumed by other features.
+
+**What changed:**
+- `csv-file/utils/parse-csv.ts` — added exported `isValidCsvFile(f: File): boolean`; replaced inline condition with the function call
+- `csv-file/components/UploadCampainData.vue` — removed local `isValidCsvFile`; imports it from `../utils/parse-csv`
+- `csv-file/index.ts` — new barrel; exports `UploadModal`, `ReplaceDataModal`, `FileActions`, `useUploadModal`
+- `shell/AppShell.vue` — updated three deep imports to single `import { useUploadModal, UploadModal, ReplaceDataModal } from '../features/csv-file'`
+- `features/dashboard/components/EmptyState.vue` — updated deep import to `import { FileActions } from '../../csv-file'`
+- `CLAUDE.md` — architecture updated: `index.ts` entry added, `parse-csv.ts` and `UploadCampainData.vue` descriptions updated
+
+**Key decisions & why:**
+- `isValidCsvFile` lives in `parse-csv.ts` (not a separate util) because CSV file validation is the entry-point concern of that module
+- Barrel only exports what external code actually imports — internal components (`UploadCampainData`, `DisplayUploadErrorsStep`, `ResolveDuplicationsStep`) are not exported
+
+
+## [#199] Rename csv-file feature folder to data-transfer
+**Type:** refactor
+
+**Summary:** Renamed the `csv-file` feature folder to `data-transfer` and updated all external import paths.
+
+**Brainstorming:** Pure folder rename. The barrel `index.ts` created in #198 meant only two external import paths needed updating (`AppShell.vue` and `EmptyState.vue`). Internal relative imports within the feature are unaffected.
+
+**Prompt:** Rename csv-file to data-transfer.
+
+**What changed:**
+- `features/csv-file/` → `features/data-transfer/` — folder renamed; all internal files unchanged
+- `shell/AppShell.vue` — updated import path to `../features/data-transfer`
+- `features/dashboard/components/EmptyState.vue` — updated import path to `../../data-transfer`
+- `CLAUDE.md` — architecture entry updated
+
+**Key decisions & why:**
+- Only two import paths needed updating because the barrel from #198 isolated all external consumers from the internal folder structure

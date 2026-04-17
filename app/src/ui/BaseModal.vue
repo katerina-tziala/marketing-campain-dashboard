@@ -68,12 +68,9 @@ onUnmounted(() => {
     grid-cols-1
     auto-rows-auto;
 
-  // max-width: calc(100vw - 2rem);
-  // max-height: calc(100vh - 2rem);
-
   &__header {
     @apply flex
-      items-center
+      items-start
       justify-between
       border
       border-surface-border
@@ -83,7 +80,7 @@ onUnmounted(() => {
   }
 
   &__title {
-    @apply text-primary-400 text-lg font-semibold m-0;
+    @apply text-primary-400 text-lg font-semibold m-0 pt-1;
   }
 }
 </style>

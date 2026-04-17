@@ -4,8 +4,12 @@ import { validateCampaignData } from './validate-campaign-data'
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
 
+export function isValidCsvFile(f: File): boolean {
+  return f.name.toLowerCase().endsWith('.csv') || f.type === 'text/csv'
+}
+
 export function parseCsv(file: File): Promise<CsvParseResult> {
-  if (!file.name.toLowerCase().endsWith('.csv') && file.type !== 'text/csv') {
+  if (!isValidCsvFile(file)) {
     return Promise.resolve({
       campaigns: [],
       errors: [{ type: 'file_type' }],

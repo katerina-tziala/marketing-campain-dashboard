@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import type { CsvCampaign, CsvRowError } from '../types'
 import { getRowErrorSummaryWords } from '../utils/error-messages'
 import DataErrorsTable from './validation/DataErrorsTable.vue'
-import DataErrorSummary from './validation/DataErrorSummary.vue';
+import DataErrorSummary from './validation/DataErrorSummary.vue'
+import DuplicateSummary from './validation/DuplicateSummary.vue'
 
 const props = defineProps<{
   rowErrors: CsvRowError[]
@@ -20,12 +21,10 @@ const emit = defineEmits<{
 const invalidRowCount = computed(() => new Set(props.rowErrors.map((e) => e.row)).size)
 const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.length)
 const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.value, props.validCampaigns.length))
-
 const showProceed = computed(() => props.validCampaigns.length > 0 || props.duplicateGroupCount > 0)
 const proceedLabel = computed(() =>
   props.validCampaigns.length > 0 ? 'Proceed with valid rows' : 'Review duplicate campaigns',
 )
- 
 </script>
 
 <template>
@@ -43,7 +42,7 @@ const proceedLabel = computed(() =>
         </template>
       </DataErrorSummary>
 
-      <DataErrorSummary  v-else>
+      <DataErrorSummary v-else>
         <template #title>Some rows contain errors</template>
         <template #badge>
           <span class="badge warning">Partial import</span>
@@ -52,20 +51,11 @@ const proceedLabel = computed(() =>
           <p><strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
         {{ summaryWords.verb }} errors and
         {{ summaryWords.wasWord }} skipped.</p>
-          <p>You can proceed with the <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>, or go back and fix the file.</p> 
+          <p>You can proceed with the <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>, or go back and fix the file.</p>
         </template>
       </DataErrorSummary>
 
-      <DataErrorSummary v-if="duplicateGroupCount > 0">
-        <template #title>Duplicate campaign names</template>
-        <template #badge>
-           <span class="badge warning">Duplicate data</span>
-        </template>
-        <template #summary>
-          <p><strong>{{ duplicateGroupCount }} campaign {{ duplicateGroupCount === 1 ? 'name has' : 'names have' }}</strong> duplicate rows that will need to be resolved.</p>
-          <p>You will be asked to resolve these duplicates in the next step.</p>
-        </template>
-      </DataErrorSummary>
+      <DuplicateSummary v-if="duplicateGroupCount > 0" :count="duplicateGroupCount" />
     </div>
     <DataErrorsTable :errors="rowErrors" />
   </div>
@@ -77,7 +67,7 @@ const proceedLabel = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-.error-body { 
+.error-body {
   @apply w-[90vw]
     max-w-3xl
     h-fit

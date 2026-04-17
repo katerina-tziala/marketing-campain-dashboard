@@ -15,7 +15,7 @@ function toggleSort() {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
 }
 
-const columns: DataTableColumn[] = [
+const COLUMNS: DataTableColumn[] = [
   { key: 'row', label: 'Row', sortable: true, ariaLabel: 'row index', class: 'text-center w-6' },
   { key: 'column', label: 'Column', class: 'text-center' },
   { key: 'issue', label: 'Issue', class: 'text-left' },
@@ -32,7 +32,7 @@ const sortedErrors = computed(() =>
   <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
     <table class="data-table stripped-odd">
       <DataTableHeader
-        :columns="columns"
+        :columns="COLUMNS"
         :sticky="true"
         sort-key="row"
         :sort-dir="sortDir"

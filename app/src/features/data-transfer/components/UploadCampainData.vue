@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { DownloadIcon, UploadIcon, FileDropzone } from '../../../ui'
+import { isValidCsvFile } from '../utils/parse-csv'
 
 const props = defineProps<{
   title: string
@@ -19,10 +20,6 @@ const emit = defineEmits<{
 
 const titleError = ref('')
 const fileError = ref('')
-
-function isValidCsvFile(f: File): boolean {
-  return f.name.toLowerCase().endsWith('.csv') || f.type === 'text/csv'
-}
 
 function handleFileSelect(f: File): void {
   if (!isValidCsvFile(f)) {
@@ -50,10 +47,9 @@ function handleSubmit(): void {
   if (valid) emit('submit')
 }
 </script>
-
 <template>
   <!-- Body -->
-  <div class="form-body">
+  <div class="form form-body">
     <!-- Campaign title -->
     <div class="field">
       <label class="field-label" for="campaign-title">Campaign Title</label>
@@ -85,64 +81,21 @@ function handleSubmit(): void {
       </FileDropzone>
     </div>
   </div>
-  <!-- Footer -->
-  <div class="form-footer">
-    <button class="btn-secondary-outline form-footer__download" @click="emit('download-template')">
-      <DownloadIcon />
-      Download Template
-    </button>
-
-    <button class="btn-secondary-outline form-footer__cancel" :disabled="isLoading" @click="emit('close')">Cancel</button>
-    <button class="btn-primary form-footer__upload" :disabled="isLoading" @click="handleSubmit">
+  <div class="modal-footer">
+     <button class="btn-primary" :disabled="isLoading" @click="handleSubmit">
       <UploadIcon />
       {{ isLoading ? 'Uploading…' : 'Upload' }}
     </button>
+    <button class="btn-secondary-outline xs:order-3 xs:mr-auto" @click="emit('download-template')">
+      <DownloadIcon />
+      Download Template
+    </button>
+    <button class="btn-secondary-outline min-w-24 xs:order-2" @click="emit('close')">Cancel</button>
   </div>
 </template>
 
 <style lang="scss" scoped>
-// ── Body ───────────────────────────────────────────────────────────────────────
-
 .form-body {
-  padding: theme('spacing.6');
-  display: flex;
-  flex-direction: column;
-  gap: theme('spacing.5');
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  width: 90vw;
-  max-width: 640px;
-}
-
-// ── Footer ─────────────────────────────────────────────────────────────────────
-
-.form-footer {
-  display: flex;
-  align-items: center;
-  gap: theme('spacing.3');
-  padding: theme('spacing.4') theme('spacing.6');
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-
-  &__cancel {
-    margin-left: auto;
-  }
-
-  @media (max-width: 479px) {
-    flex-direction: column;
-    padding: theme('spacing.4');
-
-    .form-footer__upload   { order: 1; }
-    .form-footer__download { order: 2; }
-    .form-footer__cancel   { order: 3; }
-
-    .form-footer__upload,
-    .form-footer__download,
-    .form-footer__cancel {
-      width: 100%;
-      margin-left: 0;
-    }
-  }
+  @apply p-6 overflow-y-auto w-[90vw] max-w-2xl;
 }
 </style>
