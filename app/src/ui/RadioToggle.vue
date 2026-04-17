@@ -3,6 +3,7 @@ defineProps<{
   modelValue: string
   options: { value: string; label: string }[]
   name?: string
+  disabled?: boolean
 }>()
 
 defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -19,6 +20,7 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
         :name="name"
         :value="option.value"
         :checked="modelValue === option.value"
+        :disabled="disabled"
         class="sr-only"
         @change="$emit('update:modelValue', option.value)"
       />
@@ -45,12 +47,14 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
     tracking-wider
     px-2
     py-2.5
-    text-primary-300
-    hover:bg-primary-500
-    hover:text-white;
+    text-primary-300;
 }
 
 input[type='radio'] {
+  &:not(:disabled)+ .option-label {
+    @apply hover:bg-primary-500 hover:text-white;
+  }
+
   &:checked + .option-label {
     @apply bg-primary-600 text-white;
   }
@@ -58,5 +62,10 @@ input[type='radio'] {
   &:focus-visible + .option-label {
     @apply bg-primary-500 text-white;
   }
+
+  &:disabled + .option-label {
+    @apply opacity-50 cursor-not-allowed text-white;
+  }
 }
+ 
 </style>

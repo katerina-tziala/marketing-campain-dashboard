@@ -3148,3 +3148,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Console.log statements kept in both `aiStore.ts` and `aiAnalysisStore.ts` — intentionally retained for ongoing debugging during development
+
+
+## [#150] Disable API key input and help toggle while connecting
+**Type:** fix
+
+**Summary:** Disabled the API key `PasswordInput` and the "How to get your key?" button during connection, while leaving the provider `RadioToggle` interactive so the user can still switch providers.
+
+**Brainstorming:** While `isConnecting` is true the Connect button is already disabled and shows a spinner, but the key input and help toggle remained active. Disabling them prevents the user from mutating form state mid-request. The provider toggle is intentionally left enabled — switching provider while connecting cancels the request (the watch on `selectedProvider` clears the error and key, and the next submit will use the new provider).
+
+**Prompt:** While connecting, disable the API key input and the help toggle button. Keep the provider radio toggle enabled.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `:disabled="store.isConnecting"` added to `PasswordInput` and the "How to get your key?" button
+
+**Key decisions & why:**
+- Provider toggle left enabled — switching provider is a valid mid-flight action; the watch already resets key and error on change
+
+
+## [#151] Add disabled prop to RadioToggle
+**Type:** update
+
+**Summary:** Added a `disabled` prop to `RadioToggle` that disables all radio inputs and applies `opacity-50 pointer-events-none` via a CSS `:has()` selector on the wrapper.
+
+**Brainstorming:** The component had no disabled state at all — no prop, no visual, no native input attribute. Adding `:disabled` to each input handles keyboard/form interaction natively. The visual dimming uses `.radio-toggle:has(input:disabled)` so no extra class needs to be toggled on the wrapper — the CSS derives state directly from the inputs. No BEM modifier class needed.
+
+**Prompt:** Implement disabled state in RadioToggle — add a `disabled?` prop, pass it to each radio input, and reflect it visually without BEM modifier classes. Also remove the `:disabled` from the help toggle button in AiConnectionForm so instructions remain accessible during connecting.
+
+**What changed:**
+- `app/src/ui/RadioToggle.vue` — `disabled?` prop added; `:disabled="disabled"` on each input; `.radio-toggle:has(input:disabled)` scoped rule applies `opacity-50 pointer-events-none`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `:disabled="store.isConnecting"` removed from the help toggle button
+
+**Key decisions & why:**
+- `:has(input:disabled)` instead of a toggled modifier class — CSS derives the disabled visual from the native input state, no extra class binding needed on the wrapper
+- Help button left enabled — instructions should remain accessible while the user waits for a connection response

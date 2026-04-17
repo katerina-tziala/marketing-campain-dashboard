@@ -43,7 +43,7 @@ async function handleConnect(): Promise<void> {
       <!-- Provider -->
       <fieldset class="field conn-fieldset">
         <legend class="field-label">Provider</legend>
-        <RadioToggle v-model="selectedProvider" :options="PROVIDER_OPTIONS" name="ai-provider" />
+        <RadioToggle v-model="selectedProvider" :options="PROVIDER_OPTIONS" name="ai-provider" :disabled="store.isConnecting"/>
       </fieldset>
       <!-- API Key -->
       <div class="field">
@@ -74,7 +74,7 @@ async function handleConnect(): Promise<void> {
             </div>
           </div>
         </Transition>
-        <PasswordInput id="ai-key" v-model="apiKey" placeholder="Paste your API key">
+        <PasswordInput id="ai-key" v-model="apiKey" placeholder="Paste your API key" :disabled="store.isConnecting">
           <template v-if="store.connectionError" #error>
             <p class="field-error" role="alert">{{ errorMessage }}</p>
             <p v-if="errorHint" class="field-error-hint">{{ errorHint }}</p>

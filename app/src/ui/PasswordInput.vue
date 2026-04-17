@@ -25,7 +25,7 @@ const hasError = computed(() => {
 </script>
 
 <template>
-  <div class="password-input" :class="{ 'password-input--error': hasError }">
+  <div class="password-input" :class="{ 'password-input-error': hasError, 'disabled': disabled }">
     <input
       :id="id"
       :value="modelValue"
@@ -56,7 +56,7 @@ const hasError = computed(() => {
 .password-input {
   @apply relative flex items-center overflow-hidden;
 
-  &:not(.password-input--error) {
+  &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
       @apply border-primary-500;
