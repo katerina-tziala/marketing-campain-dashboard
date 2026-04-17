@@ -3,12 +3,13 @@ import { ref, watch } from 'vue'
 import { BaseModal } from '../../../ui'
 import { parseCsv } from '../utils/parse-csv'
 import { getValidationErrorMessage } from '../utils/error-messages'
+import { toCampaigns } from '../utils/map-campaign'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useDownloadTemplate } from '../composables/useDownloadTemplate'
-import type { Campaign } from '../../../common/types/campaign'
-import type { CsvRowError } from '../types'
+import type { CsvCampaign, CsvDuplicateGroup, CsvRowError } from '../types'
 import CsvUploadForm from './CsvUploadForm.vue'
 import CsvErrorTable from './CsvErrorTable.vue'
+import CsvDuplicateTable from './CsvDuplicateTable.vue'
 
 const campaignStore = useCampaignStore()
 const { downloadTemplate } = useDownloadTemplate()
@@ -29,6 +30,7 @@ function close(): void {
   parseError.value = ''
   rowErrors.value = []
   validCampaigns.value = []
+  duplicateGroups.value = []
 }
 
 defineExpose({ open })
@@ -43,12 +45,13 @@ const isLoading = ref(false)
 
 watch(file, () => { parseError.value = '' })
 
-// ── Error view state ───────────────────────────────────────────────────────────
+// ── View state ─────────────────────────────────────────────────────────────────
 
-const view = ref<'form' | 'row-errors'>('form')
+const view = ref<'form' | 'row-errors' | 'duplicate-rows'>('form')
 const pendingTitle = ref('')
-const validCampaigns = ref<Campaign[]>([])
+const validCampaigns = ref<CsvCampaign[]>([])
 const rowErrors = ref<CsvRowError[]>([])
+const duplicateGroups = ref<CsvDuplicateGroup[]>([])
 
 // ── Handlers ───────────────────────────────────────────────────────────────────
 
@@ -58,33 +61,60 @@ async function handleSubmit(): Promise<void> {
   const result = await parseCsv(file.value!)
   isLoading.value = false
 
-  if (result.errors.length === 0) {
-    campaignStore.loadCampaigns(title.value, result.campaigns)
+  const invalidRowsError = result.errors.find((e) => e.type === 'invalid_rows')
+  const duplicateError = result.errors.find((e) => e.type === 'duplicate_campaigns')
+
+  if (!invalidRowsError && !duplicateError) {
+    if (result.errors.length > 0) {
+      parseError.value = getValidationErrorMessage(result.errors[0])
+      return
+    }
+    campaignStore.loadCampaigns(title.value, toCampaigns(result.campaigns))
     close()
     return
   }
 
-  const err = result.errors[0]
+  pendingTitle.value = title.value
+  validCampaigns.value = result.campaigns
+  duplicateGroups.value = duplicateError?.duplicateGroups ?? []
 
-  if (err.type === 'invalid_rows') {
-    pendingTitle.value = title.value
-    validCampaigns.value = result.campaigns
-    rowErrors.value = err.rowErrors ?? []
+  if (invalidRowsError) {
+    rowErrors.value = invalidRowsError.rowErrors ?? []
     view.value = 'row-errors'
     return
   }
 
-  parseError.value = getValidationErrorMessage(err)
+  view.value = 'duplicate-rows'
 }
 
-function handleBack(): void {
+function handleBackFromErrors(): void {
   view.value = 'form'
   rowErrors.value = []
   validCampaigns.value = []
+  duplicateGroups.value = []
 }
 
-function handleProceed(): void {
-  campaignStore.loadCampaigns(pendingTitle.value, validCampaigns.value)
+function handleProceedFromErrors(): void {
+  if (duplicateGroups.value.length > 0) {
+    view.value = 'duplicate-rows'
+    return
+  }
+  campaignStore.loadCampaigns(pendingTitle.value, toCampaigns(validCampaigns.value))
+  close()
+}
+
+function handleBackFromDuplicates(): void {
+  if (rowErrors.value.length > 0) {
+    view.value = 'row-errors'
+    return
+  }
+  view.value = 'form'
+  validCampaigns.value = []
+  duplicateGroups.value = []
+}
+
+function handleProceedFromDuplicates(selected: CsvCampaign[]): void {
+  campaignStore.loadCampaigns(pendingTitle.value, toCampaigns([...validCampaigns.value, ...selected]))
   close()
 }
 </script>
@@ -102,11 +132,20 @@ function handleProceed(): void {
       @download-template="downloadTemplate"
     />
     <CsvErrorTable
-      v-else
+      v-else-if="view === 'row-errors'"
       :row-errors="rowErrors"
       :valid-campaigns="validCampaigns"
-      @back="handleBack"
-      @proceed="handleProceed"
+      :duplicate-group-count="duplicateGroups.length"
+      @back="handleBackFromErrors"
+      @proceed="handleProceedFromErrors"
+      @close="close"
+    />
+    <CsvDuplicateTable
+      v-else
+      :duplicate-groups="duplicateGroups"
+      :valid-campaigns="validCampaigns"
+      @back="handleBackFromDuplicates"
+      @proceed="handleProceedFromDuplicates"
       @close="close"
     />
   </BaseModal>

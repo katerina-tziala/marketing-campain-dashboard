@@ -17,6 +17,15 @@ export interface CsvRowError extends CsvFieldIssue {
   row: number
 }
 
+export interface CsvCampaign extends Campaign {
+  rowNum: number
+}
+
+export interface CsvDuplicateGroup {
+  campaignName: string
+  rows: CsvCampaign[]
+}
+
 export type CsvValidationErrorType =
   | 'file_type'
   | 'file_size'
@@ -24,20 +33,22 @@ export type CsvValidationErrorType =
   | 'missing_columns'
   | 'invalid_rows'
   | 'parse_error'
+  | 'duplicate_campaigns'
 
 export interface CsvValidationError {
   type: CsvValidationErrorType
   detail?: string
   missingColumns?: string[]
   rowErrors?: CsvRowError[]
+  duplicateGroups?: CsvDuplicateGroup[]
 }
 
 export interface CsvParseResult {
-  campaigns: Campaign[]
+  campaigns: CsvCampaign[]
   errors: CsvValidationError[]
 }
 
 export interface ProcessRowsResult {
-  campaigns: Campaign[]
+  campaigns: CsvCampaign[]
   errors: CsvRowError[]
 }

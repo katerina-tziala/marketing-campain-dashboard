@@ -1,6 +1,7 @@
 import type { Campaign } from '../../../common/types/campaign'
-import type { CsvParseResult, CsvRowError, ProcessRowsResult } from '../types'
+import type { CsvCampaign, CsvParseResult, CsvRowError, CsvValidationError, ProcessRowsResult } from '../types'
 import { validateRow } from './validate-row-data'
+import { detectCampaignDuplication } from './detect-campaign-duplication'
 
 const EXPECTED_HEADERS: (keyof Campaign)[] = [
   'campaign',
@@ -39,7 +40,7 @@ function processRows(
   data: Record<string, string>[],
   headerMap: Record<string, string>,
 ): ProcessRowsResult {
-  const campaigns: Campaign[] = []
+  const campaigns: CsvCampaign[] = []
   const errors: CsvRowError[] = []
 
   data.forEach((row, i) => {
@@ -50,7 +51,7 @@ function processRows(
     if (rowErrors.length > 0) {
       errors.push(...rowErrors)
     } else {
-      campaigns.push(fields)
+      campaigns.push({ ...fields, rowNum })
     }
   })
 
@@ -76,10 +77,14 @@ export function validateCampaignData(
   }
 
   // ── Row validation ─────────────────────────────────────────────────────────
-  const { campaigns, errors: rowErrors } = processRows(data, headerMap)
-  if (rowErrors.length > 0) {
-    return { campaigns, errors: [{ type: 'invalid_rows', rowErrors }] }
-  }
+  const { campaigns: validCampaigns, errors: rowErrors } = processRows(data, headerMap)
 
-  return { campaigns, errors: [] }
+  // ── Duplicate detection ────────────────────────────────────────────────────
+  const { unique, groups } = detectCampaignDuplication(validCampaigns)
+
+  const errors: CsvValidationError[] = []
+  if (rowErrors.length > 0) errors.push({ type: 'invalid_rows', rowErrors })
+  if (groups.length > 0) errors.push({ type: 'duplicate_campaigns', duplicateGroups: groups })
+
+  return { campaigns: unique, errors }
 }

@@ -3606,3 +3606,54 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Returned a plain object (`RowErrorSummaryWords`) rather than individual functions — a single `computed` call in the component is enough; no need for five separate imports
 - `totalRowWord` and `validRowWord` derived from their respective counts inside the helper — keeps all pluralization logic in one place
+
+
+## [#176] Add duplicate campaign detection and resolution UI to CSV upload flow
+**Type:** feature
+
+**Summary:** Extended CSV validation to detect rows with duplicate campaign names, added a new `CsvDuplicateTable` view where users select which row to keep per group, and wired the full sequential flow in `UploadModal` so both row errors and duplicates can coexist.
+
+**Brainstorming:** Duplicate detection needed to happen after row validation, operating on the set of valid rows only. `processRows` was updated to return row numbers alongside campaigns so duplicate groups can reference original file rows. `findDuplicateGroups` groups by case-insensitive campaign name and separates unique entries from groups of two or more. The `CsvParseResult` returns both `invalid_rows` and `duplicate_campaigns` errors independently, allowing `UploadModal` to handle them sequentially (row-errors view → duplicate-rows view). The proceed button in `CsvDuplicateTable` is disabled only when `validCampaigns.length === 0 AND no selections` — if valid non-duplicate campaigns exist, the user can always proceed (skipping unresolved groups). Two test CSV files were created: one with duplicates alongside valid unique campaigns, and one with only duplicate groups to exercise the disabled-proceed path.
+
+**Prompt:** Data validation should also check for duplicate campaigns. A new error type is needed. Users should see duplicate rows in a table and select one row per group. Groups should be shown by campaign name. A message should explain that duplicates are excluded until selected. This should also appear when there are partially correct campaigns. If there are only errors and duplicates with no selection, proceed must be disabled. Also create two test CSV files: one with 3 duplicate groups and valid data, one with only 3 duplicate groups.
+
+**What was built:**
+- `csv-file/types/index.ts` — added `CsvValidCampaignEntry` (rowNum + Campaign), `CsvDuplicateGroup` (campaignName + rows), `'duplicate_campaigns'` to `CsvValidationErrorType`, `duplicateGroups?` field on `CsvValidationError`; updated `ProcessRowsResult.campaigns` to `CsvValidCampaignEntry[]`
+- `csv-file/utils/validate-campaign-data.ts` — updated `processRows` to return `CsvValidCampaignEntry[]`; added `findDuplicateGroups` (case-insensitive grouping); updated `validateCampaignData` to accumulate both `invalid_rows` and `duplicate_campaigns` errors instead of early-returning on row errors
+- `csv-file/utils/error-messages.ts` — added `'duplicate_campaigns'` to `VALIDATION_ERROR_MESSAGES` record (required by `Record<CsvValidationErrorType, string>`)
+- `csv-file/components/CsvErrorTable.vue` — added `duplicateGroupCount` prop; `showProceed` computed (visible when validCampaigns > 0 OR duplicateGroupCount > 0); `proceedLabel` computed ('Proceed with valid rows' vs 'Review duplicate campaigns'); `duplicateNote` computed shown as warning text when duplicateGroupCount > 0
+- `csv-file/components/CsvDuplicateTable.vue` — new component; shows duplicate groups with radio selection per row; 8-column horizontally scrollable table; `canProceed` computed; emits `proceed([Campaign[]])` with only selected campaigns; Back/Cancel buttons
+- `csv-file/components/UploadModal.vue` — added `'duplicate-rows'` view, `duplicateGroups` ref; updated `handleSubmit` to detect both error types and route accordingly; separate `handleBackFromErrors`, `handleProceedFromErrors`, `handleBackFromDuplicates`, `handleProceedFromDuplicates` handlers
+- `test-data/duplicates-with-valid.csv` — 3 duplicate groups (Summer Blast ×2, SEO Drive ×3, Retargeting Push ×3) plus 4 valid unique campaigns
+- `test-data/duplicates-only.csv` — same 3 duplicate groups, no other valid data (exercises disabled-proceed state)
+
+**Key decisions & why:**
+- Both errors accumulated and returned together from `validateCampaignData` — allows `UploadModal` to decide routing; early-return would hide duplicates when row errors also exist
+- `processRows` returns row numbers in `CsvValidCampaignEntry` — needed so the duplicate table can display the original file row for each candidate row; row number is not part of `Campaign` and should not be
+- Proceed disabled only when `validCampaigns.length === 0 && selections.size === 0` — if there are already valid campaigns, the user can always proceed and skip unresolved groups; forcing all groups to be resolved before proceeding would be too strict
+- `findDuplicateGroups` uses case-insensitive name comparison — same campaign name in different casing is the same campaign from the user's perspective
+- Sequential views (row-errors then duplicate-rows) rather than combined — keeps each view focused; `Back` from duplicate-rows returns to row-errors when row errors exist, otherwise to form
+
+
+## [#177] Introduce CsvCampaign extended model with mapper boundary
+**Type:** refactor
+
+**Summary:** Replaced the `CsvValidCampaignEntry` wrapper with a `CsvCampaign` interface that extends `Campaign` with `rowNum`, extracted duplicate detection into `detect-campaign-duplication.ts`, and introduced a `map-campaign.ts` mapper that strips `rowNum` before data enters the store.
+
+**Brainstorming:** The `CsvValidCampaignEntry` wrapper (`{ rowNum, campaign }`) required unwrapping at every use site. Extending `Campaign` directly as `CsvCampaign` lets all CSV-internal code access fields without indirection while keeping `Campaign` clean for the rest of the app. The mapper (`toCampaign` / `toCampaigns`) is the single boundary — called only in `UploadModal` just before `campaignStore.loadCampaigns`. Duplicate detection moved to its own file as discussed, keeping `validate-campaign-data.ts` focused on orchestration.
+
+**Prompt:** Create an extended campaign model for CSV upload. Before storing in the campaign store, remove the extra field via a mapper function. Extract duplicate detection into a separate file `detect-campaign-duplication.ts`.
+
+**What changed:**
+- `csv-file/types/index.ts` — replaced `CsvValidCampaignEntry` with `CsvCampaign extends Campaign { rowNum: number }`; updated `CsvDuplicateGroup.rows`, `CsvParseResult.campaigns`, `ProcessRowsResult.campaigns` to `CsvCampaign[]`
+- `csv-file/utils/detect-campaign-duplication.ts` — new file; `detectCampaignDuplication(campaigns)` extracted from `validate-campaign-data.ts`
+- `csv-file/utils/map-campaign.ts` — new file; `toCampaign` destructures out `rowNum`; `toCampaigns` maps an array
+- `csv-file/utils/validate-campaign-data.ts` — `processRows` spreads `{ ...fields, rowNum }` into `CsvCampaign`; delegates to `detectCampaignDuplication`; removed `findDuplicateGroups`
+- `csv-file/components/CsvErrorTable.vue` — `validCampaigns` prop type updated to `CsvCampaign[]`
+- `csv-file/components/CsvDuplicateTable.vue` — all types updated to `CsvCampaign`; `entry.campaign.*` field accesses simplified to `entry.*` since fields are top-level; emits `CsvCampaign[]`
+- `csv-file/components/UploadModal.vue` — state types updated to `CsvCampaign[]`; `toCampaigns` called at every `campaignStore.loadCampaigns` call site
+
+**Key decisions & why:**
+- `CsvCampaign extends Campaign` rather than a wrapper — direct field access throughout CSV parsing code; wrapper required destructuring at every use site
+- Mapper lives only in `UploadModal` — it is the single boundary between CSV parsing and the store; no other file needs to know about the mapping
+- `detect-campaign-duplication.ts` as a standalone file — single responsibility; testable in isolation; keeps `validate-campaign-data.ts` as an orchestrator

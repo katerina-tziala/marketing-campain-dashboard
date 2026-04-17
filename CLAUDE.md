@@ -149,21 +149,24 @@ app/                        # Vue 3 + Vite project
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
 │   │   └── csv-file/               # CSV feature folder
 │   │       ├── types/
-│   │       │   └── index.ts        # CsvRowError (row/column/issue), CsvValidationErrorType (union), CsvValidationError (type + message + details? + rowErrors?), CsvParseResult
+│   │       │   └── index.ts        # CsvRowError (row/column/issue), CsvCampaign (extends Campaign + rowNum), CsvDuplicateGroup (campaignName + rows: CsvCampaign[]), CsvValidationErrorType (union incl. duplicate_campaigns), CsvValidationError (type + detail? + missingColumns? + rowErrors? + duplicateGroups?), CsvParseResult (campaigns: CsvCampaign[]), ProcessRowsResult (campaigns: CsvCampaign[])
 │   │       ├── components/
 │   │       │   ├── FileActions.vue         # Download Template + Upload CSV button pair — emits upload; uses useDownloadTemplate; flat @apply scoped styles; responsive stacking at <480px
-│   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
+│   │       │   ├── UploadModal.vue         # Self-contained modal — view: 'form'|'row-errors'|'duplicate-rows'; open/close/parse/store; exposes only open(); sequential error handling: invalid_rows → row-errors view, then duplicate_campaigns → duplicate-rows view (or direct if no row errors)
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal__body, .modal__footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
 │   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; CSV validation (isValidCsvFile) in handleFileSelect; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
-│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; uses global data-table classes; plain buttons with .btn-primary/.btn-secondary-outline; Proceed only shown when validCampaigns > 0
+│   │       │   ├── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + scrollable table (CsvRowError[]) + Back/Proceed/Cancel buttons; duplicateGroupCount prop: shows warning note + adapts proceed label ('Proceed with valid rows' or 'Review duplicate campaigns'); proceed visible when validCampaigns > 0 OR duplicateGroupCount > 0
+│   │       │   └── CsvDuplicateTable.vue   # Multi-root (body + footer divs) — duplicate group resolution; shows groups by campaign name; radio selection per row; canProceed: validCampaigns.length > 0 OR at least one selection; emits proceed([Campaign[]]) with user-selected campaigns; Back/Proceed/Cancel buttons; local formatCurrency/formatNumber helpers; horizontal scroll for 8-column table
 │   │       ├── composables/
 │   │       │   ├── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       │   └── useUploadModal.ts       # Upload modal composable — accepts modalRef (InstanceType<UploadModal>); uses campaignStore internally; hasCampaigns computed; requestUpload (opens modal or shows replace confirm based on hasCampaigns); onReplaceConfirm/closeReplaceConfirm; calls provide('openUploadModal') internally
 │   │       └── utils/
 │   │           ├── download-csv.ts         # Builds CSV string from Campaign[], triggers browser download
-│   │           ├── error-messages.ts       # All CSV validation display text — VALIDATION_ERROR_MESSAGES const map with {placeholder} syntax; getValidationErrorMessage(error); getRowErrorMessage(error); replacePlaceholders helper
+│   │           ├── error-messages.ts       # All CSV validation display text — VALIDATION_ERROR_MESSAGES const map (incl. duplicate_campaigns) with {placeholder} syntax; getValidationErrorMessage(error); getRowErrorMessage(error); getRowErrorSummaryWords(invalidCount, validCount) → RowErrorSummaryWords; replacePlaceholders helper
+│   │           ├── detect-campaign-duplication.ts # detectCampaignDuplication(campaigns: CsvCampaign[]) → { unique, groups } — case-insensitive name grouping; separates unique from duplicate groups
+│   │           ├── map-campaign.ts         # toCampaign(CsvCampaign) → Campaign; toCampaigns(CsvCampaign[]) → Campaign[] — strips rowNum before store; single mapping boundary in UploadModal
 │   │           ├── parse-csv.ts            # PapaParse wrapper — file-level validation (type/size) + parse; delegates to validate-campaign-data
-│   │           ├── validate-campaign-data.ts # Campaign data validator — EXPECTED_HEADERS; column presence check; empty-file check; row-by-row validation; returns CsvParseResult (no display strings)
+│   │           ├── validate-campaign-data.ts # Campaign data validator — EXPECTED_HEADERS; column presence check; empty-file check; processRows returns CsvCampaign[] (fields + rowNum spread); delegates duplicate detection to detect-campaign-duplication; returns CsvParseResult with both invalid_rows and duplicate_campaigns errors when applicable
 │   │           └── validate-row-data.ts    # Per-row field validation — validateRow + three sub-validators (string/numeric/funnel); guard helpers; returns CsvRowError[]
 │   ├── styles/
 │   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss

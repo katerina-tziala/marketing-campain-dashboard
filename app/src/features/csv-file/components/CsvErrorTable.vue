@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { CsvRowError } from '../types'
-import type { Campaign } from '../../../common/types/campaign'
+import type { CsvCampaign, CsvRowError } from '../types'
 import { getRowErrorMessage, getRowErrorSummaryWords } from '../utils/error-messages'
 
 const props = defineProps<{
   rowErrors: CsvRowError[]
-  validCampaigns: Campaign[]
+  validCampaigns: CsvCampaign[]
+  duplicateGroupCount: number
 }>()
 
 const emit = defineEmits<{
@@ -18,12 +18,22 @@ const emit = defineEmits<{
 const invalidRowCount = computed(() => new Set(props.rowErrors.map((e) => e.row)).size)
 const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.length)
 const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.value, props.validCampaigns.length))
+
+const showProceed = computed(() => props.validCampaigns.length > 0 || props.duplicateGroupCount > 0)
+const proceedLabel = computed(() =>
+  props.validCampaigns.length > 0 ? 'Proceed with valid rows' : 'Review duplicate campaigns',
+)
+const duplicateNote = computed(() => {
+  if (props.duplicateGroupCount === 0) return ''
+  const word = props.duplicateGroupCount === 1 ? 'name has' : 'names have'
+  return `${props.duplicateGroupCount} campaign ${word} duplicate rows that will need to be resolved in the next step.`
+})
 </script>
 
 <template>
   <!-- Body -->
   <div class="error-body">
-    <p v-if="validCampaigns.length === 0" class="error-summary">
+    <p v-if="validCampaigns.length === 0 && duplicateGroupCount === 0" class="error-summary">
       <strong>{{ invalidRowCount }} {{ summaryWords.rowWord }}</strong>
       {{ summaryWords.verb }} errors and could not be imported.
       Please fix the issues below and upload the file again.
@@ -32,9 +42,15 @@ const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.valu
       <strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
       {{ summaryWords.verb }} errors and
       {{ summaryWords.wasWord }} skipped.
-      You can proceed with the
-      <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>,
-      or go back and fix the file.
+      <template v-if="validCampaigns.length > 0">
+        You can proceed with the
+        <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>,
+        or go back and fix the file.
+      </template>
+    </p>
+
+    <p v-if="duplicateNote" class="error-duplicate-note">
+      {{ duplicateNote }}
     </p>
 
     <div class="error-table-wrapper">
@@ -60,11 +76,11 @@ const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.valu
   <!-- Footer -->
   <div class="error-footer">
     <button
-      v-if="validCampaigns.length > 0"
+      v-if="showProceed"
       class="btn-secondary-outline error-footer__proceed"
       @click="emit('proceed')"
     >
-      Proceed with valid rows
+      {{ proceedLabel }}
     </button>
 
     <button class="btn-secondary-outline error-footer__cancel" @click="emit('close')">Cancel</button>
@@ -96,11 +112,16 @@ const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.valu
   margin: 0;
 }
 
+.error-duplicate-note {
+  font-size: theme('fontSize.sm');
+  color: var(--color-warning);
+  line-height: 1.5;
+  margin: 0;
+}
+
 // ── Table ──────────────────────────────────────────────────────────────────────
 
 .error-table-wrapper {
-  // border: 1px solid var(--color-border);
-  // border-radius: theme('borderRadius.md');
   overflow: hidden;
   overflow-y: auto;
   max-height: 260px;
