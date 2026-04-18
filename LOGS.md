@@ -4294,3 +4294,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Flat hyphenated names instead of BEM — consistent with every other component in the project; scoped styles prevent collisions so the block prefix alone is sufficient
 - SCSS rules unnested — the `&__` nesting was the BEM-specific pattern; flat rules are more readable and make the no-BEM intent explicit
+
+
+## [#211] Disable upload form during submission; fix FileDropzone hasError detection
+**Type:** fix
+
+**Summary:** Disabled the title input and FileDropzone while a CSV upload is in progress, and fixed `hasError` in FileDropzone to correctly filter out Comment nodes so the error border only appears when an actual error message is slotted in.
+
+**Brainstorming:** Two independent bugs: (1) During `isLoading`, only the Upload button was disabled — the title field and file dropzone remained editable, allowing the user to change inputs mid-parse. Fix: pass `isLoading` as the `disabled` prop to both. (2) `hasError` was checking `slots.error` (a function reference), which is always truthy when the slot is defined. Vue renders a Comment node when a slotted `v-if` is false — the fix is to call the slot function and check whether any of the returned VNodes has a type other than `Comment`.
+
+**Prompt:** Upload form should be disabled while uploading the file. Add disabled properties to respective components if not existent. FileDropzone hasError is not working properly — fix it.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — added `disabled?: boolean` prop; `hasError` now calls `slots.error?.()` and filters out Comment nodes; button and hidden input get `:disabled="disabled"`; `open()` and `onDrop()` return early when disabled; `@dragover` guard added
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — title input gets `:disabled="isLoading"`; FileDropzone gets `:disabled="isLoading"`
+
+**Key decisions & why:**
+- Comment-node filtering for `hasError` — standard Vue pattern for detecting meaningful slot content when the slot uses `v-if`; `slots.error` alone is always truthy if the slot is declared
+- Cancel and Download Template buttons left enabled — user should always be able to cancel an in-progress upload or download the template; only data-entry fields are locked
+- Guard in `open()` and `onDrop()` in addition to `:disabled` on the button — the native `disabled` attribute stops click and keyboard, but drag-and-drop events fire independently of it

@@ -23,25 +23,23 @@ const toastStore = useToastStore()
 
 <style lang="scss" scoped>
 .toast-container {
-  @apply fixed bottom-6 right-6 z-full pointer-events-none;
+  @apply fixed bottom-6 right-6 z-[99999] pointer-events-none;
 }
 
 .toast-list {
   @apply flex flex-col gap-3 items-end;
 }
-
+ 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 250ms ease, transform 250ms ease;
+  @apply transition-opacity transition-transform duration-300 ease-in-out;
 }
 
 .toast-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
+  @apply opacity-0 translate-y-2;
 }
 
 .toast-leave-to {
-  opacity: 0;
-  transform: translateX(16px);
+  @apply opacity-0 translate-x-4;
 }
 </style>

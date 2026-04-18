@@ -61,6 +61,7 @@ function handleSubmit(): void {
         type="text"
         placeholder="e.g. Q2 2025 Campaign"
         autocomplete="off"
+        :disabled="isLoading"
         @input="emit('update:title', ($event.target as HTMLInputElement).value)"
       />
       <p v-if="titleError" class="field-error">{{ titleError }}</p>
@@ -71,6 +72,7 @@ function handleSubmit(): void {
       <FileDropzone
         id="csv-file"
         :modelValue="file"
+        :disabled="isLoading"
         accept=".csv,text/csv"
         hint="CSV"
         @update:modelValue="handleFileSelect"

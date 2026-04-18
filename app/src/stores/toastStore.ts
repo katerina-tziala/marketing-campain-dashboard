@@ -15,7 +15,7 @@ export const useToastStore = defineStore('toast', () => {
   function addToast(message: string, type: NotificationVariant = 'error'): void {
     const id = nextId++
     toasts.value.push({ id, message, type })
-    setTimeout(() => removeToast(id), 4000)
+    setTimeout(() => removeToast(id), 5000)
   }
 
   function removeToast(id: number): void {

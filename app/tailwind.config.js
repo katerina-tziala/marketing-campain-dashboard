@@ -72,8 +72,7 @@ export default {
         sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
       }, 
       zIndex: {
-        '1000': '1000',
-        'full': '99999',
+        '1000': '1000', 
       },
       boxShadow: {
         'connection': '0 0 5px rgba(16, 185, 129, 0.6)',

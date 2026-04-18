@@ -7,6 +7,7 @@ const props = defineProps<{
   id?: string
   accept?: string
   hint?: string
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: File] }>()
@@ -21,16 +22,19 @@ const hintText = computed(() =>
   `Drag & drop a ${props.hint ? props.hint : ''} file here or browse`
 )
 
-const hasError = computed(() => { 
-  return slots.error
+const hasError = computed(() => {
+  const nodes = slots.error?.()
+  return nodes?.some((n) => n.type !== Comment) ?? false
 })
 
 function open(): void {
+  if (props.disabled) return
   fileInputRef.value?.click()
 }
 
 function onDrop(e: DragEvent): void {
   isDragging.value = false
+  if (props.disabled) return
   const f = e.dataTransfer?.files[0]
   if (f) emit('update:modelValue', f)
 }
@@ -47,9 +51,10 @@ function onChange(e: Event): void {
       type="button"
       class="dropzone form-control"
       :class="{ 'dropzone-active': isDragging, 'input-error': hasError }"
+      :disabled="disabled"
       :aria-describedby="!modelValue && hintId ? hintId : undefined"
       @click="open"
-      @dragover.prevent="isDragging = true"
+      @dragover.prevent="!disabled && (isDragging = true)"
       @dragleave.prevent="isDragging = false"
       @drop.prevent="onDrop"
     >
@@ -62,6 +67,7 @@ function onChange(e: Event): void {
       ref="fileInputRef"
       type="file"
       :accept="accept"
+      :disabled="disabled"
       tabindex="-1"
       class="sr-only"
       @change="onChange"
