@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Campaign } from '../../../common/types/campaign'
+import { DataTableHeader } from '../../../ui'
+import type { DataTableColumn, SortDir } from '../../../ui'
+import { roiClass } from '../../../common/utils/roi';
+import { formatCompactNumber, formatCurrency } from '../../../common/utils/formatters';
 
 const props = defineProps<{ campaigns: Campaign[] }>()
 
 type SortField = keyof Campaign | 'roi' | 'ctr' | 'cvr' | 'cac'
-type SortDir = 'asc' | 'desc'
-
+ 
 const sortField = ref<SortField>('revenue')
 const sortDir = ref<SortDir>('desc')
 
@@ -17,12 +20,12 @@ function getFieldValue(c: Campaign, field: SortField): number | string {
   if (field === 'cac') return c.conversions > 0 ? c.budget / c.conversions : Infinity
   return c[field as keyof Campaign]
 }
-
-function sort(field: SortField) {
-  if (sortField.value === field) {
+ 
+function toggleSort(field: string) { 
+   if (sortField.value === field) {
     sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
   } else {
-    sortField.value = field
+    sortField.value = field as SortField
     sortDir.value = 'desc'
   }
 }
@@ -38,120 +41,87 @@ const sortedCampaigns = computed(() =>
   }),
 )
 
-function roiValue(c: Campaign) {
+function roiValue(c: Campaign) { 
   return c.budget > 0 ? ((c.revenue - c.budget) / c.budget) * 100 : 0
 }
 
 function roiFormatted(c: Campaign) {
   return c.budget > 0
     ? `${roiValue(c).toFixed(0)}%`
-    : '—'
+    : 'N/A'
 }
 
-function roiClass(c: Campaign) {
-  const r = roiValue(c)
-  if (r <= 0) return 'campaign-table__td--roi-negative'
-  if (r <= 50) return 'campaign-table__td--roi-warning'
-  return 'campaign-table__td--roi-positive'
+function getRoiClass(c: Campaign) {
+  const r = roiValue(c) 
+  return roiClass(r)
 }
 
 function ctr(c: Campaign) {
   return c.impressions > 0
     ? `${((c.clicks / c.impressions) * 100).toFixed(2)}%`
-    : '—'
+    : 'N/A'
 }
 
 function cvr(c: Campaign) {
   return c.clicks > 0
     ? `${((c.conversions / c.clicks) * 100).toFixed(2)}%`
-    : '—'
+    : 'N/A'
 }
 
 function cac(c: Campaign) {
   return c.conversions > 0
-    ? eur(c.budget / c.conversions, 2)
-    : '—'
+    ? formatCurrency(c.budget / c.conversions, 2)
+    : 'N/A'
 }
 
-function eur(val: number, decimals = 0) {
-  return new Intl.NumberFormat('en', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(val)
-}
-
-function compactNumber(val: number) {
-  if (val >= 1000) {
-    return new Intl.NumberFormat('en', {
-      notation: 'compact',
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(val)
-  }
-  return val.toLocaleString('en')
-}
-
-const columns: { key: SortField; label: string }[] = [
-  { key: 'campaign', label: 'Campaign' },
-  { key: 'channel', label: 'Channel' },
-  { key: 'budget', label: 'Budget' },
-  { key: 'clicks', label: 'Clicks' },
-  { key: 'ctr', label: 'CTR' },
-  { key: 'conversions', label: 'Conv.' },
-  { key: 'cvr', label: 'CVR' },
-  { key: 'revenue', label: 'Revenue' },
-  { key: 'roi', label: 'ROI' },
-  { key: 'cac', label: 'CAC' },
+const COLUMNS: DataTableColumn[] = [
+  { key: 'campaign', label: 'Campaign',  sortable: true,  },
+  { key: 'channel', label: 'Channel',  sortable: true, class:'text-center'},
+  { key: 'budget', label: 'Budget',  sortable: true, },
+  { key: 'clicks', label: 'Clicks',  sortable: true, },
+  { key: 'impressions', label: 'Impressions' ,  sortable: true,},
+  { key: 'ctr', label: 'CTR', ariaLabel:'Click-through rate',  sortable: true, },
+  { key: 'conversions', label: 'Conversions',  sortable: true, },
+  { key: 'cvr', label: 'CVR', ariaLabel:'Conversion rate',  sortable: true, },
+  { key: 'revenue', label: 'Revenue',  sortable: true, },
+  { key: 'cac', label: 'CAC', ariaLabel:'Customer acquisition cost', sortable: true, },
+  { key: 'roi', label: 'ROI',  sortable: true, },
 ]
+
 </script>
 
 <template>
-  <div class="campaign-table">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th
-            v-for="col in columns"
-            :key="col.key"
-            scope="col"
-            class="data-table-header campaign-table__th"
-            @click="sort(col.key)"
-          >
-            <span class="campaign-table__th-inner">
-              {{ col.label }}
-              <span
-                class="campaign-table__sort-icon"
-                :class="sortField === col.key ? 'campaign-table__sort-icon--active' : ''"
-              >
-                {{ sortField === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}
-              </span>
-            </span>
-          </th>
-        </tr>
-      </thead>
-
+  <div class="table-wrapper scrollbar-stable scrollbar-on-surface campaign-table">
+    <table class="data-table stripped-even">
+        <DataTableHeader
+        :columns="COLUMNS"
+        :sticky="true"
+        :sort-key="sortField"
+        :sort-dir="sortDir"
+         @sort="toggleSort" 
+      />
       <tbody>
         <tr
           v-for="c in sortedCampaigns"
           :key="c.campaign"
           class="data-table-row"
         >
-          <td class="data-table-cell campaign-table__td--name">{{ c.campaign }}</td>
-          <td class="data-table-cell">
+          <td class="data-table-cell campaign-table-td text-left">{{ c.campaign }}</td>
+          <td class="data-table-cell campaign-table-td text-center">
             <span class="badge info whitespace-break-spaces">{{ c.channel }}</span>
           </td>
-          <td class="data-table-cell">{{ eur(c.budget) }}</td>
-          <td class="data-table-cell">{{ compactNumber(c.clicks) }}</td>
-          <td class="data-table-cell">{{ ctr(c) }}</td>
-          <td class="data-table-cell">{{ c.conversions.toLocaleString('en') }}</td>
-          <td class="data-table-cell">{{ cvr(c) }}</td>
-          <td class="data-table-cell campaign-table__td--roi" :class="roiClass(c)">{{ eur(c.revenue) }}</td>
-          <td class="data-table-cell campaign-table__td--roi" :class="roiClass(c)">
+          <td class="data-table-cell campaign-table-td">{{ formatCurrency(c.budget) }}</td>
+          <td class="data-table-cell campaign-table-td">{{ formatCompactNumber(c.clicks) }}</td>
+          <td class="data-table-cell campaign-table-td">{{ formatCompactNumber(c.impressions) }}</td>
+          <td class="data-table-cell campaign-table-td">{{ ctr(c) }}</td>
+          <td class="data-table-cell campaign-table-td">{{ c.conversions.toLocaleString('en') }}</td>
+          <!-- roi-text :class="getRoiClass(c)" -->
+          <td class="data-table-cell campaign-table-td" >{{ cvr(c) }}</td>
+          <td class="data-table-cell campaign-table-td roi-text" :class="getRoiClass(c)">{{ formatCurrency(c.revenue) }}</td>   
+          <td class="data-table-cell campaign-table-td" >{{ cac(c) }}</td>
+          <td class="data-table-cell campaign-table-td roi-text" :class="getRoiClass(c)">
             {{ roiFormatted(c) }}
           </td>
-          <td class="data-table-cell">{{ cac(c) }}</td>
         </tr>
       </tbody>
     </table>
@@ -160,45 +130,10 @@ const columns: { key: SortField; label: string }[] = [
 
 <style lang="scss" scoped>
 .campaign-table {
-  &__th {
-    @apply cursor-pointer select-none whitespace-nowrap;
+    @apply w-full h-fit max-h-[45rem] overflow-auto; 
 
-    &:hover {
-      color: theme('colors.primary.400');
-    }
-  }
-
-  &__th-inner {
-    @apply flex items-center gap-1;
-  }
-
-  &__sort-icon {
-    @apply text-xs;
-    color: var(--color-border);
-
-    &--active {
-      color: theme('colors.primary.400');
-    }
-  }
-
-  &__td {
-    &--name {
-      font-weight: 600;
-    }
-
-    &--strong {
-      font-weight: 600;
-      color: var(--color-text);
-    }
-
-    &--roi {
-      @apply font-semibold;
-    }
-
-    &--roi-positive { color: #10b981; }
-    &--roi-warning  { color: #f59e0b; }
-    &--roi-negative { color: #f55671; }
+  .data-table-cell.campaign-table-td {
+    @apply py-3;
   }
 }
-
 </style>

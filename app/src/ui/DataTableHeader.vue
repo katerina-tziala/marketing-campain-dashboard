@@ -75,7 +75,8 @@ function sortAriaLabel(col: DataTableColumn): string {
 
 .data-table-header {
   @apply capitalize
-    py-2 px-4
+    py-4
+    px-4
     font-semibold
     tracking-wider
     text-primary-300
@@ -88,7 +89,7 @@ function sortAriaLabel(col: DataTableColumn): string {
   @apply p-0 border-b border-primary-500;
 
   > button {
-    @apply flex
+    @apply inline-flex
       items-center
       gap-1.5
       cursor-pointer
@@ -102,15 +103,9 @@ function sortAriaLabel(col: DataTableColumn): string {
       transition-transform
       duration-150;
 
-    &:not(:disabled) {
-      &:hover,
-      &:focus-visible {
-        @apply bg-primary-500/15;
-      }
-    }
-
     .sort-icon {
-      @apply text-base text-primary-100/40 inline-block transition-transform duration-150;
+      @apply text-base 
+      text-primary-1000 inline-block transition-transform duration-150;
 
       &.desc {
         @apply text-primary-300 rotate-180;
@@ -118,6 +113,17 @@ function sortAriaLabel(col: DataTableColumn): string {
 
       &.asc {
         @apply text-primary-300;
+      }
+    }
+
+
+    &:not(:disabled) {
+      &:hover,
+      &:focus-visible {
+        @apply bg-primary-500/15;
+        .sort-icon {
+           @apply text-primary-400
+        }
       }
     }
   }

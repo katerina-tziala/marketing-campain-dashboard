@@ -106,7 +106,6 @@ const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.tot
   container-type: inline-size;
 }
 
-
 .charts-grid {
   @apply grid grid-cols-1 gap-5 ;
 

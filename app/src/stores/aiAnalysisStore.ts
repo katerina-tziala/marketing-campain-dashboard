@@ -54,7 +54,7 @@ const ERROR_MESSAGES: Record<AiAnalysisErrorCode, string> = {
   'token-limit': 'AI generation is temporarily unavailable due to usage limits.',
   'server-error': 'The AI provider is experiencing issues. Try again later.',
   'parse-error': 'Could not parse the AI response. Try again.',
-  'unknown': 'Something went wrong. Try again.',
+  'unknown': 'Something went wrong.',
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────

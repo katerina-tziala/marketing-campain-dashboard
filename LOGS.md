@@ -4203,3 +4203,30 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - revVsBudgetData uses channelTotals prop instead of inline loop — free win from the prior groupByChannel extraction; eliminates the last inline channel accumulation in the dashboard feature
 - Three props rather than one flat object — campaigns is a list (variable length, drives color mapping), channelTotals is a map keyed by channel name, kpis is a fixed-shape aggregate; splitting them by semantic type makes it clear what each chart computation depends on
 
+
+
+
+## [#207] UI polish: table styles, responsive charts grid, dashboard layout, formatter and modal updates
+**Type:** update
+
+**Summary:** Polished the UI across several areas — table global classes with zebra striping, DataTableHeader class-prop refactor and scoped sticky styles, responsive 2-col charts grid via container query, dashboard layout restructure with max-width and overflow zones, formatCurrency decimals param, and ReplaceDataModal button order fix.
+
+**Brainstorming:** A batch of incremental UI polish changes across the dashboard: the table needed zebra-striping utilities that could be toggled per-table, the DataTableHeader's align prop was replaced with a generic class string to keep it flexible without special-casing right-alignment, the charts grid needed a container query so it collapses to one column when the drawer is open, the dashboard layout needed a stable scroll zone with max-width constraints to match the rest of the page, formatCurrency needed a decimals param to serve both integer (KPIs) and decimal (CAC) use cases, and the ReplaceDataModal button order was corrected so the primary action comes first.
+
+**Prompt:** Check the files I worked on and create a log.
+
+**What changed:**
+- `app/src/styles/components/_table.scss` — added `.table-wrapper` global class (overflow-auto); added `.data-table.stripped-odd` and `.data-table.stripped-even` modifier classes for zebra striping; removed sticky header from global scope (moved to DataTableHeader scoped styles)
+- `app/src/ui/DataTableHeader.vue` — replaced `align?: 'left'|'right'` prop with generic `class?: string` on DataTableColumn; `.data-table-sticky-header` moved to scoped styles (wraps `.data-table-header` and `.data-table-sortable-header` with sticky/z-index/bg); sort icon active/inactive color states refined
+- `app/src/features/dashboard/components/CampaignTable.vue` — table now uses `stripped-even` modifier class; scoped `.campaign-table-td` sets padding; table max-height set to 45rem
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `.charts-container` wrapper with `container-type: inline-size`; charts grid switches to 2 columns via `@container (min-width: 60rem)` query
+- `app/src/features/dashboard/DashboardView.vue` — layout restructured into sticky header/filter sections + scrollable `.data-visualization` zone; `.dashboard-visualizations` wraps KPIs + charts + table with max-width 7xl and flex-col gap; table card and title styles scoped inline
+- `app/src/common/utils/formatters.ts` — `formatCurrency` now accepts optional `decimals` param (default 0); locale changed from `'en-US'` to `'en'` for consistency with other formatters
+- `app/src/features/data-transfer/components/ReplaceDataModal.vue` — button order corrected to primary action first (Replace data), cancel second
+- `app/src/stores/aiAnalysisStore.ts` — minor update; debug `console.log` calls present in `buildPrompt` and `executeAnalysis`
+
+**Key decisions & why:**
+- `stripped-odd`/`stripped-even` as modifier classes on `.data-table` rather than always-on — different tables need different striping behavior (or none); keeps the base table neutral
+- `class?` string prop instead of `align?: 'left'|'right'` on DataTableColumn — more flexible without adding new special cases; callers pass Tailwind/global classes directly
+- `@container` query for charts grid instead of `@media` — charts grid width is determined by the available container (which shrinks when the AI drawer opens), not the viewport; media queries would not respond to drawer state
+- `data-visualization` as the scroll zone — header and channel filter stay sticky, only the chart/table area scrolls; max-width on the inner wrapper keeps content aligned with the rest of the page

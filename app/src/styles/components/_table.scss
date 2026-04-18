@@ -2,19 +2,9 @@
   .table-wrapper {
     @apply overflow-auto;
   }
-
-  thead > tr > th {
-    @apply border-b border-primary-900;
-  }
-
+ 
   .data-table {
    @apply w-full text-sm border-separate border-spacing-0 bg-primary-1000;
-
-   .stripped-odd {
-    tr:nth-child(odd) {
-      @apply bg-primary-800/10;
-    }
-   }
   }
  
   .data-table-row {
@@ -28,10 +18,14 @@
   }
 
   .data-table.stripped-odd {
-   tr:nth-child(odd) {
-      @apply bg-primary-800/10;
+   tr:nth-child(odd) { 
+      @apply bg-primary-800/5;
     }
   }
-
  
+  .data-table.stripped-even  {
+   tr:nth-child(even) {
+      @apply bg-primary-800/5;
+    }
+  }
 }

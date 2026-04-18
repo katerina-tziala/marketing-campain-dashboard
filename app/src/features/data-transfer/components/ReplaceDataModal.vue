@@ -17,8 +17,8 @@ const emit = defineEmits<{
       <p class="text-sm font-semibold text-primary-300">Do you want to continue?</p>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary-outline" @click="emit('close')">Cancel</button>
       <button class="btn-primary" @click="emit('confirm')">Replace data</button>
+      <button class="btn-secondary-outline" @click="emit('close')">Cancel</button>
     </div>
   </BaseModal>
 </template>

@@ -33,33 +33,27 @@ const openAiPanel = inject<() => void>('openAiPanel')
         @clear-all="store.clearFilters"
       />
     </section>
-    <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
+    <div class="scrollbar-stable-both scrollbar-on-surface data-visualization pb-8">
       <div class="dashboard-visualizations">
-      <!-- KPI Cards -->
-      <DashboardKpis :kpis="store.kpis" />
-
-      <!-- Charts -->
-      <DashboardCharts
-        :campaigns="store.filteredCampaigns"
-        :channel-totals="store.channelTotals"
-        :kpis="store.kpis"
-      />
-
-      <!-- Campaign Table -->
-      <div class="table-section card">
-        <h3 class="table-section__title">Campaign Details</h3>
-        <div class="table-section__body">
+        <!-- KPI Cards -->
+        <DashboardKpis :kpis="store.kpis" />
+        <!-- Charts -->
+        <DashboardCharts
+          :campaigns="store.filteredCampaigns"
+          :channel-totals="store.channelTotals"
+          :kpis="store.kpis"
+        />
+        <!-- Campaign Table -->
+        <div class="card table-card">
+          <h3 class="card-title table-card-title">Campaign Details</h3>
           <CampaignTable :campaigns="store.filteredCampaigns" />
         </div>
       </div>
-      </div>
     </div>
   </div>
-
 </template>
 
 <style lang="scss" scoped>
-
 .dashboard {
   @apply w-full
   h-full
@@ -89,17 +83,11 @@ const openAiPanel = inject<() => void>('openAiPanel')
     gap-5;
 }
 
-.table-section {
-  @apply overflow-hidden;
+.card.table-card {
+  @apply p-4;
+}
 
-  &__title {
-    color: var(--color-title);
-    @apply text-base px-5 pt-5 pb-3;
-  }
-
-  &__body {
-    @apply px-5 pb-5;
-    overflow-x: auto;
-  }
+.card-title.table-card-title {
+  @apply text-base shrink-0 font-normal text-primary-300;
 }
 </style>
