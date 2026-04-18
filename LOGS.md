@@ -4313,3 +4313,19 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Comment-node filtering for `hasError` — standard Vue pattern for detecting meaningful slot content when the slot uses `v-if`; `slots.error` alone is always truthy if the slot is declared
 - Cancel and Download Template buttons left enabled — user should always be able to cancel an in-progress upload or download the template; only data-entry fields are locked
 - Guard in `open()` and `onDrop()` in addition to `:disabled` on the button — the native `disabled` attribute stops click and keyboard, but drag-and-drop events fire independently of it
+
+
+## [#212] Fix FileDropzone hasError — plain function instead of computed
+**Type:** fix
+
+**Summary:** Changed `hasError` from a `computed` to a plain function so it re-evaluates on every render, which is required because Vue's computed cache does not track slot function calls reactively.
+
+**Brainstorming:** `computed()` only re-runs when its tracked reactive dependencies change. Calling `slots.error?.()` inside a computed doesn't register any reactive dependency — so the cached result never updates when the parent's `v-if` toggles slot content. A plain function called directly in the template runs fresh on every render cycle, picking up the current slot nodes correctly each time the parent re-renders with changed slot content.
+
+**Prompt:** File dropzone still is not applying hasError correctly.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — `hasError` converted from `computed<boolean>` to a plain `function hasError(): boolean`; template updated to call `hasError()` instead of referencing `hasError`
+
+**Key decisions & why:**
+- Plain function over computed — slot calls are not reactive dependencies; computed caching breaks the detection; a plain function in the template runs in the render tracking context and sees the correct slot nodes on every update

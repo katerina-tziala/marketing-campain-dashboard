@@ -22,10 +22,10 @@ const hintText = computed(() =>
   `Drag & drop a ${props.hint ? props.hint : ''} file here or browse`
 )
 
-const hasError = computed(() => {
+function hasError(): boolean {
   const nodes = slots.error?.()
   return nodes?.some((n) => n.type !== Comment) ?? false
-})
+}
 
 function open(): void {
   if (props.disabled) return
@@ -50,7 +50,7 @@ function onChange(e: Event): void {
     <button
       type="button"
       class="dropzone form-control"
-      :class="{ 'dropzone-active': isDragging, 'input-error': hasError }"
+      :class="{ 'dropzone-active': isDragging, 'input-error': hasError() }"
       :disabled="disabled"
       :aria-describedby="!modelValue && hintId ? hintId : undefined"
       @click="open"
