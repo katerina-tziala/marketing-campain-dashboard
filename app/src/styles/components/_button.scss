@@ -65,7 +65,7 @@
       }
      }
   }
-   
+
   .btn-secondary-outline {
     @extend .btn;
      @apply text-primary-300 border-primary-300 border;
@@ -96,4 +96,9 @@
    }
   }
 
+   .btn-icon-tertiary-xs {
+    @extend .btn-icon-secondary; 
+    @extend .btn-small;
+    @apply  py-1 px-1 text-typography;
+  }
 }

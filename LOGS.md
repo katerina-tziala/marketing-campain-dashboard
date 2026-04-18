@@ -4230,3 +4230,67 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `class?` string prop instead of `align?: 'left'|'right'` on DataTableColumn — more flexible without adding new special cases; callers pass Tailwind/global classes directly
 - `@container` query for charts grid instead of `@media` — charts grid width is determined by the available container (which shrinks when the AI drawer opens), not the viewport; media queries would not respond to drawer state
 - `data-visualization` as the scroll zone — header and channel filter stay sticky, only the chart/table area scrolls; max-width on the inner wrapper keeps content aligned with the rest of the page
+
+
+## [#208] Refactor toast notifications: variants, icons, flat styles, typed store helpers
+**Type:** refactor
+
+**Summary:** Refactored the toast system from a single error-only notification into a fully typed, multi-variant system — adding NotificationVariant type, four dedicated icon components, four typed store helpers, and replacing all BEM styles with flat @apply classes in both toast components.
+
+**Brainstorming:** The existing toast had a single hardcoded error variant with an inline SVG, BEM class names, and a generic addToast(message, type) API. The refactor covers four concerns: (1) type — a new NotificationVariant union replaces the inline 'error' literal, giving the system a shared vocabulary; (2) icons — the inline SVG in ToastNotification was replaced with dedicated icon components (AlertCircleIcon, CheckCircleIcon, AlertTriangleIcon, InfoIcon) following the same pattern as all other icons in the project; (3) store API — four typed helpers (showSuccessToast, showErrorToast, showWarningToast, showInfoToast) replace the generic addToast call at the call site level, while addToast stays as an internal helper so existing callers are not broken; (4) styles — BEM (toast__icon, toast__message, toast__close, toast-container__list) removed and replaced with flat @apply classes in both components, matching the project-wide convention. Colors match badge tokens exactly: bg/border/icon use the same success/danger--5p/warning/primary-500 opacity utilities.
+
+**Prompt:** Refactor toast notifications. Structure styles and move away from BEM. Any SVGs should be created as icons. Add variations: success, error, warning, info. Use same colors as badge. Create a notification type. Toast store should have 4 functions one per variation: showSuccessToast etc. Do not update useDownloadTemplate. Update styles of ToastContainer too.
+
+**What was built:**
+- `app/src/ui/types/notification-variant.ts` — new file; NotificationVariant = 'success' | 'error' | 'warning' | 'info'
+- `app/src/ui/icons/AlertCircleIcon.vue` — new icon; circle + exclamation — error variant
+- `app/src/ui/icons/CheckCircleIcon.vue` — new icon; circle + checkmark — success variant
+- `app/src/ui/icons/AlertTriangleIcon.vue` — new icon; triangle + exclamation — warning variant
+- `app/src/ui/icons/InfoIcon.vue` — new icon; circle + i — info variant
+- `app/src/ui/icons/index.ts` — added exports for all 4 new icons
+- `app/src/stores/toastStore.ts` — Toast.type updated to NotificationVariant; addToast kept as internal helper (existing callers unaffected); showSuccessToast / showErrorToast / showWarningToast / showInfoToast added as public API
+- `app/src/ui/toast/ToastNotification.vue` — variant prop added; icon resolved via static ICON_MAP computed; BEM removed, flat @apply styles; variant modifier classes (.success/.error/.warning/.info) drive bg + border + icon color matching badge tokens
+- `app/src/ui/toast/ToastContainer.vue` — passes variant prop from toast.type; BEM (toast-container__list) removed; flat @apply styles for container and list
+- `app/src/ui/index.ts` — exports NotificationVariant
+
+**Key decisions & why:**
+- addToast kept exported and default type preserved — useDownloadTemplate.ts was intentionally left unchanged; keeping addToast public avoids breaking it
+- Colors match badge tokens exactly (bg-success/10, border-success/25, text-success etc.) — user requested badge color parity; reusing existing token values keeps the system visually consistent without new tokens
+- ICON_MAP as a static Record rather than a switch/computed — resolves the icon component in one lookup; static so Vue can tree-shake unused icons if needed
+- flat modifier classes (.success etc.) on .toast rather than separate component per variant — variant is data, not structure; one component handles all four cases
+
+
+## [#209] Toast visual polish — solid background, larger icon, btn-icon-secondary close
+**Type:** update
+
+**Summary:** Updated toast appearance: solid `bg-surface-secondary` background replaces the transparent tint, borders are now variant-colored at `/50` opacity, the variant icon is bumped to `text-xl`, and the close button now uses the global `.btn-icon-secondary` class.
+
+**Brainstorming:** The previous toasts used a low-opacity tinted background (`bg-{color}/10`) which made them feel washed-out against the dark surface. Switching to `bg-surface-secondary` gives them the same solid, readable background as secondary cards. Borders at `/50` stay color-coded but are now clearly visible against the solid background. The icon needed to grow to match the heavier visual weight of the solid card. The close button already had a custom style that duplicated btn-icon-secondary behavior — replacing it with the global class removes the duplication and ensures it stays in sync with the rest of the UI.
+
+**Prompt:** Toasts should not be transparent. Background should be like secondary cards with updated border colors. Icon should be bigger. Close button should be like btn-icon-secondary.
+
+**What changed:**
+- `app/src/ui/toast/ToastNotification.vue` — background changed from `bg-{color}/10` to `bg-surface-secondary`; borders updated from `{color}/25` to `{color}/50`; icon size bumped from `text-base` to `text-xl`; close button now uses global `btn-icon-secondary` class with a scoped `.toast-close` trim (`-mt-0.5 -mr-0.5`) replacing the previous inline button styles
+
+**Key decisions & why:**
+- `bg-surface-secondary` for background — matches `.card-secondary` token exactly; no new tokens needed
+- Border opacity `/50` instead of full — full opacity borders felt too heavy against the solid background; `/50` keeps the color signal readable without overpowering the card
+- `.btn-icon-secondary` applied directly in template — it is a global class; applying it in template is cleaner than duplicating its rules in scoped SCSS
+
+
+## [#210] Remove all BEM class names from the codebase
+**Type:** refactor
+
+**Summary:** Replaced the only remaining BEM double-underscore class names in FunnelChart.vue with flat hyphenated names, completing the project-wide no-BEM cleanup.
+
+**Brainstorming:** A full codebase scan confirmed that `FunnelChart.vue` was the only file still using BEM syntax (`funnel__row`, `funnel__label`, etc. with `&__` nesting in SCSS). All other files already used flat hyphenated class names. The fix is a straightforward rename: collapse `block__element` into `block-element`, unnest the SCSS rules, and update the matching template class attributes. No logic changes needed.
+
+**Prompt:** Clean up any leftover BEM styles. Make sure the project does not follow that pattern. Update your instructions.
+
+**What changed:**
+- `app/src/ui/charts/FunnelChart.vue` — renamed all BEM classes to flat hyphenated names (`funnel__row` → `funnel-row`, `funnel__label` → `funnel-label`, `funnel__track` → `funnel-track`, `funnel__bar-wrap` → `funnel-bar-wrap`, `funnel__bar` → `funnel-bar`, `funnel__value` → `funnel-value`, `funnel__rate` → `funnel-rate`); SCSS block rules unnested into flat selectors
+- `CLAUDE.md` — Styling rule updated: wording changed from "moving away from BEM" to "does not use BEM — codebase fully cleaned"; rule now says to replace BEM immediately if encountered
+
+**Key decisions & why:**
+- Flat hyphenated names instead of BEM — consistent with every other component in the project; scoped styles prevent collisions so the block prefix alone is sufficient
+- SCSS rules unnested — the `&__` nesting was the BEM-specific pattern; flat rules are more readable and make the no-BEM intent explicit

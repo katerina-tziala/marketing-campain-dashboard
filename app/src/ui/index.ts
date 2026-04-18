@@ -1,6 +1,7 @@
 export * from './charts'
 export * from './icons'
 export * from './toast'
+export type { NotificationVariant } from './types/notification-variant'
 export { default as Tabs } from './Tabs.vue'
 export type { Tab } from './Tabs.vue'
 export { default as BaseModal } from './BaseModal.vue'

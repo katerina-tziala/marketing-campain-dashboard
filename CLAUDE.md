@@ -40,7 +40,7 @@ app/                        # Vue 3 + Vite project
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
 │   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs (incl. totalImpressions, totalClicks, totalConversions); channelTotals computed (Record<string, ChannelTotals> via groupByChannel); campaignScope computed (CampaignScope — campaigns/selectedCampaigns/selectedChannels as string arrays); loadCampaigns action
-│   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   ├── toastStore.ts       # Pinia store — toast queue; Toast type uses NotificationVariant; addToast(message, type) internal helper + 4 public helpers: showSuccessToast / showErrorToast / showWarningToast / showInfoToast; removeToast; 4s auto-dismiss
 │   │   ├── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[] sorted by strength_score desc), selectedModel (AiModel — highest strength_score), aiPanelOpen; selectedModelLimitReached, allModelsLimitReached (computed); connect() delegates to connectProvider; disconnect(); markModelLimitReached(modelId); selectNextAvailableModel() — picks next highest-scored non-exhausted model, returns false if none left; openPanel(); closePanel()
 │   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, errorFallbackMessage, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached (global — only when all models exhausted), analysisActivated (cross-tab — analyzing on one tab activates auto-calls on the other); debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, silent model fallback on token-limit (marks model → selectNextAvailableModel → retries transparently, no error shown to user), stamps response.model on success, model change watcher for cache/auto-call, setActiveTab cancels in-flight request on previous tab before switching, panel open/close + tab switch evaluation, clearStateForNewCSV (CSV reset), clearStateForDisconnect (delegates to clearStateForNewCSV)
 │   ├── router/
@@ -55,23 +55,28 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
 │   │   │   └── index.ts        # Barrel export for charts
 │   │   ├── icons/              # Inline SVG icon components
+│   │   │   ├── AlertCircleIcon.vue  # Circle with exclamation — error toast icon
+│   │   │   ├── AlertTriangleIcon.vue # Triangle with exclamation — warning toast icon
 │   │   │   ├── ArrowLeftIcon.vue
 │   │   │   ├── ArrowUpIcon.vue     # Up arrow icon — used for sort direction indicator
+│   │   │   ├── CheckCircleIcon.vue  # Circle with checkmark — success toast icon
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
 │   │   │   ├── EyeIcon.vue         # Show password icon
 │   │   │   ├── EyeOffIcon.vue      # Hide password icon
 │   │   │   ├── FileTextIcon.vue
+│   │   │   ├── InfoIcon.vue         # Circle with i — info toast icon
 │   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
 │   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
 │   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
 │   │   ├── toast/              # Toast notification module
-│   │   │   ├── ToastNotification.vue  # Single error toast — role="alert", aria-live
-│   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
+│   │   │   ├── ToastNotification.vue  # Toast component — props: message, variant (NotificationVariant); icon chosen by variant (AlertCircleIcon/CheckCircleIcon/AlertTriangleIcon/InfoIcon); border + bg + icon color match badge tokens; role="alert", aria-live; flat scoped @apply styles
+│   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body; passes variant from toast.type; flat scoped @apply styles
 │   │   │   └── index.ts        # Barrel export for toast
 │   │   ├── types/
-│   │   │   └── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
+│   │   │   ├── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
+│   │   │   └── notification-variant.ts # NotificationVariant type — 'success' | 'error' | 'warning' | 'info'; used by toastStore and ToastNotification
 │   │   ├── BaseModal.vue       # Generic modal shell — Teleport to body; backdrop (click-to-close via @click.self, aria-modal/role="dialog"/aria-label); header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
 │   │   ├── FileDropzone.vue    # File drop zone — v-model (File|null), id?, accept?, hint? props; button element (not div role="button"); hidden input outside button (tabindex="-1"); hintId computed from id prop; aria-describedby on button when hint visible; hint text: "Drag & drop a {hint} file here or browse" (hint optional, omitted gives generic); browse-link styled as text-button-small (primary-400); hint color matches placeholder (typography-subtle); drag state internal; named error slot drives input-error via Comment-node detection; emits raw file; scoped @apply styles
 │   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
@@ -79,7 +84,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   ├── DataTableHeader.vue # Reusable thead — columns: DataTableColumn[] (key, label, sortable?, align?: 'left'|'right', ariaLabel?, class?); sticky?: bool; sortKey?: string; sortDir?: SortDir; emits sort:[key]; non-sortable → data-table-header; sortable → data-table-sortable-header + ArrowUpIcon; right-align via scoped .th-right; exports DataTableColumn + SortDir types
-│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; FileDropzone + PasswordInput + RadioToggle added; DataTableHeader + DataTableColumn + SortDir added)
+│   │   └── index.ts            # Barrel export for the full ui library (exports Tabs + Tab type; FileDropzone + PasswordInput + RadioToggle added; DataTableHeader + DataTableColumn + SortDir added; NotificationVariant added)
 │   ├── shell/
 │   │   ├── AppShell.vue            # Top-level layout wrapper — flat @apply styles (shell-left/shell-header/shell-title/shell-main); flex col → flex row at lg+; shell-left (header + shell-main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; shell-main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   │   └── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close; flat @apply styles (push-drawer/push-drawer-panel/overlay/overlay-panel, open modifier class)
@@ -270,9 +275,9 @@ app/                        # Vue 3 + Vite project
 - The user handles all git operations. When asked for a commit message, provide the text only — no commands.
 
 ### Styling
-- **No BEM** — the project is moving away from BEM class naming.
-- When refactoring or creating any component, styles must use flat class names with `@apply` (Tailwind utility composition in SCSS).
-- Never introduce new BEM modifier classes (e.g. `__element`, `--modifier`). Replace any encountered during refactor work.
+- **No BEM** — the project does not use BEM class naming. The codebase has been fully cleaned of BEM.
+- All styles use flat class names with `@apply` (Tailwind utility composition in SCSS). No `__element` or `--modifier` suffixes.
+- Never introduce BEM in new code. If BEM is encountered anywhere, replace it immediately as part of the current task.
 
 ### Per interaction type
 

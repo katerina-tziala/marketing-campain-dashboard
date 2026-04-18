@@ -1,34 +1,34 @@
 <script setup lang="ts">
-import CloseIcon from '../icons/CloseIcon.vue'
+import { computed, type Component } from 'vue'
+import type { NotificationVariant } from '../types/notification-variant'
+import { AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '../icons'
 
-defineProps<{
+const props = defineProps<{
   message: string
+  variant: NotificationVariant
 }>()
 
 defineEmits<{
   dismiss: []
 }>()
+
+const ICON_MAP: Record<NotificationVariant, Component> = {
+  success: CheckCircleIcon,
+  error: AlertCircleIcon,
+  warning: AlertTriangleIcon,
+  info: InfoIcon,
+}
+
+const iconComponent = computed(() => ICON_MAP[props.variant])
 </script>
 
 <template>
-  <div class="toast" role="alert" aria-live="assertive">
-    <div class="toast__icon" aria-hidden="true">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-    </div>
-    <p class="toast__message">{{ message }}</p>
-    <button class="toast__close" aria-label="Dismiss notification" @click="$emit('dismiss')">
+  <div class="toast" :class="variant" role="alert" aria-live="assertive">
+    <span class="toast-icon" aria-hidden="true">
+      <component :is="iconComponent" />
+    </span>
+    <p class="toast-message">{{ message }}</p>
+    <button class="btn-icon-tertiary-xs toast-close" aria-label="Dismiss notification" @click="$emit('dismiss')">
       <CloseIcon />
     </button>
   </div>
@@ -36,63 +36,48 @@ defineEmits<{
 
 <style lang="scss" scoped>
 .toast {
-  display: flex;
-  align-items: flex-start;
-  gap: theme('spacing.3');
-  padding: theme('spacing.4');
-  background-color: #1e1a2e;
-  border: 1px solid #f43f5e;
-  border-radius: theme('borderRadius.md');
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  min-width: 280px;
-  max-width: 400px;
-  pointer-events: all;
+  @apply flex
+    items-start
+    gap-3
+    p-4
+    rounded-md
+    pointer-events-auto
+    min-w-[17.5rem]
+    max-w-[25rem]
+    border
+    bg-surface-secondary
+    shadow-lg;
 
-  &__icon {
-    flex-shrink: 0;
-    color: #f43f5e;
-
-    svg {
-      width: 1.1rem;
-      height: 1.1rem;
-      margin-top: 1px;
-    }
+  &.success {
+    @apply border-success/50;
+    .toast-icon { @apply text-success; }
   }
 
-  &__message {
-    flex: 1;
-    font-size: theme('fontSize.sm');
-    color: var(--color-text);
-    margin: 0;
-    line-height: 1.5;
+  &.error {
+    @apply border-danger--5p/50;
+    .toast-icon { @apply text-danger--5p; }
   }
 
-  &__close {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    transition: color 150ms ease;
-
-    &:hover {
-      color: var(--color-text);
-    }
-
-    &:focus-visible {
-      outline: 2px solid #6366f1;
-      outline-offset: 2px;
-      border-radius: 2px;
-    }
-
-    svg {
-      width: 0.875rem;
-      height: 0.875rem;
-    }
+  &.warning {
+    @apply border-warning/50;
+    .toast-icon { @apply text-warning; }
   }
+
+  &.info {
+    @apply border-primary-500/50;
+    .toast-icon { @apply text-primary-400; }
+  }
+}
+
+.toast-icon {
+  @apply shrink-0 text-xl mt-px;
+}
+
+.toast-message {
+  @apply flex-1 text-sm text-typography leading-relaxed m-0;
+}
+
+.toast-close {
+  @apply shrink-0 -mt-0.5 -mr-0.5;
 }
 </style>
