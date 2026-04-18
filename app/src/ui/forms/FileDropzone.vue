@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from 'vue'
-import UploadIcon from './icons/UploadIcon.vue'
+import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
   modelValue: File | null

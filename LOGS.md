@@ -4329,3 +4329,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Plain function over computed — slot calls are not reactive dependencies; computed caching breaks the detection; a plain function in the template runs in the render tracking context and sees the correct slot nodes on every update
+
+
+## [#213] Extract ui/forms/ module — FileDropzone, PasswordInput, RadioToggle
+**Type:** refactor
+
+**Summary:** Moved the three form input components from the `ui/` root into a dedicated `ui/forms/` subfolder with its own barrel, mirroring the existing `charts/`, `icons/`, and `toast/` module pattern.
+
+**Brainstorming:** The `ui/` root was mixing standalone layout components (BaseModal, Spinner, Tabs, DataTableHeader) with form-input components (FileDropzone, PasswordInput, RadioToggle). Grouping the form inputs into their own folder makes the library structure more navigable and consistent with the existing module pattern. The forms barrel re-exports from `ui/index.ts`, so no consumer imports change.
+
+**Prompt:** Create a folder forms in ui and move all form related components there.
+
+**What changed:**
+- `app/src/ui/forms/FileDropzone.vue` — moved from ui/ root; internal UploadIcon import updated from `./icons/` to `../icons/`
+- `app/src/ui/forms/PasswordInput.vue` — moved from ui/ root; no import path changes needed
+- `app/src/ui/forms/RadioToggle.vue` — moved from ui/ root; no import path changes needed
+- `app/src/ui/forms/index.ts` — new barrel; exports FileDropzone, PasswordInput, RadioToggle
+- `app/src/ui/index.ts` — replaced three individual form exports with `export * from './forms'`
+- `CLAUDE.md` — architecture updated; forms/ subfolder documented under ui/
+
+**Key decisions & why:**
+- Barrel re-export via `export * from './forms'` in ui/index.ts — all consumers import from the top-level ui barrel; no consumer files needed updating
+- Only relative path to fix was UploadIcon in FileDropzone — the other two components had no relative sibling imports
