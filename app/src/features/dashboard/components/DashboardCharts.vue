@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
 import { computed } from 'vue'
-import type { Campaign, CampaignKPIs } from '../../../common/types/campaign'
+import type { CampaignPerformance, CampaignKPIs } from '../../../common/types/campaign'
 import type { ChannelTotals } from '../../../common/utils/campaign-aggregation'
 import { BarChart, CHART_COLORS, DonutChart, FunnelChart, GroupedBarChart } from '../../../ui'
 
 const props = defineProps<{
-  campaigns: Campaign[]
+  campaigns: CampaignPerformance[]
   channelTotals: Record<string, ChannelTotals>
   kpis: CampaignKPIs
 }>()
@@ -22,9 +22,7 @@ const roiChartData = computed<ChartData<'bar'>>(() => ({
   datasets: [
     {
       label: 'ROI (%)',
-      data: props.campaigns.map((c) =>
-        c.budget > 0 ? +((c.revenue - c.budget) / c.budget * 100).toFixed(1) : 0,
-      ),
+      data: props.campaigns.map((c) => c.roi ?? 0),
       backgroundColor: props.campaigns.map((c) => campaignColorMap.value[c.campaign] + 'bf'),
       borderColor: props.campaigns.map((c) => campaignColorMap.value[c.campaign]),
       borderWidth: 1,

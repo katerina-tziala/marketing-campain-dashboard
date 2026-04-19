@@ -4539,3 +4539,20 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `formatCurrency` was not appropriate — conversions is a count, not a monetary value
+
+
+
+## [#225] Use pre-calculated roi in DashboardCharts
+**Type:** refactor
+
+**Summary:** Updated DashboardCharts to use `CampaignPerformance` prop type and read `c.roi` directly instead of recalculating inline.
+
+**Brainstorming:** After campaigns moved to `CampaignPerformance[]` in the store, DashboardCharts was still accepting `Campaign[]` and recalculating ROI inline with a duplicated formula. Straightforward fix: update the prop type and replace the inline calculation with the pre-calculated field.
+
+**Prompt:** DashboardCharts should use calculated values. Adjust the functions.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — prop type changed from `Campaign[]` to `CampaignPerformance[]`; `roiChartData` uses `c.roi ?? 0` instead of inline formula
+
+**Key decisions & why:**
+- `c.roi ?? 0` falls back to `0` when ROI is null (zero-budget campaign) — consistent with the previous inline behaviour which also returned 0 in that case
