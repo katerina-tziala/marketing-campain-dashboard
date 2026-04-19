@@ -4614,3 +4614,53 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `filteredTotals` kept as an intermediate computed rather than inlined into `kpis` — allows future reuse without recalculation
 - `buildExecutiveSummaryData.ts` / `buildBudgetOptimizerData.ts` not touched — their `totalX` locals are internal variables; they operate on raw `Campaign[]` with deliberate `Infinity`-based CAC for comparison logic and are not consumers of `CampaignKPIs`
 - Explicit `: CampaignKPIs` return type on `kpis` computed — catches shape mismatches at the store boundary
+
+
+## [#235] Add rowId to Campaign and wire through data transfer
+**Type:** update
+
+**Summary:** Added `rowId: number` to `Campaign` as a system-generated identity field, assigned from `rowNum` during CSV parsing, and set explicitly on all 21 mock campaigns.
+
+**Brainstorming:** `rowId` is not a CSV column — it's assigned by the system at parse time from the row's position in the file. `EXPECTED_HEADERS` and `CSV_HEADERS` are left unchanged since `rowId` is never in the uploaded or downloaded CSV. `extractCampaignFields` now receives `rowId` as a parameter (set to `rowNum` by `processRows`). `map-campaign.ts` requires no change — destructuring strips `rowNum` and naturally retains `rowId` on the campaign passed to the store.
+
+**Prompt:** Add a property rowId: number in Campaign model. Update data transfer logic to include this field.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `rowId: number` added to `Campaign`
+- `app/src/common/data/MOCK_CAMPAIN_DATA.ts` — `rowId: 1–21` added to all mock campaigns
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — `extractCampaignFields` accepts third `rowId: number` param and includes it in the returned `Campaign`; `processRows` passes `rowNum` as `rowId`
+
+**Key decisions & why:**
+- `rowId` placed on `Campaign` (not `CampaignMetrics`) — it's an identity field, not a numeric performance metric
+- `EXPECTED_HEADERS` / `CSV_HEADERS` unchanged — `rowId` is system-assigned, never user-supplied or exported
+- `map-campaign.ts` unchanged — rest-spread already keeps all `Campaign` fields including `rowId` after stripping `rowNum`
+
+
+## [#236] Rename Csv* types to CampainData* and remove CsvCampaign
+**Type:** refactor
+
+**Summary:** Renamed all `Csv*` data-transfer types to `CampainData*` to decouple from the CSV format, and removed `CsvCampaign` since `Campaign` (with `rowId`) now covers all its fields.
+
+**Brainstorming:** The data-transfer feature is intended to support multiple file formats in the future. Using `Csv` as a prefix tied the type names to a specific format. The new `CampainData` prefix is format-agnostic. `CsvCampaign` became unnecessary after `rowId` was added to `Campaign` in the previous session — it was `Campaign + rowNum`, but `rowId === rowNum`, making it a redundant wrapper. Removing it simplifies the entire data flow: `processRows` now pushes `Campaign` directly without the `rowNum` spread, `map-campaign.ts` became an identity function and was deleted, and all downstream consumers use `Campaign` directly.
+
+**Prompt:** data-transfer feature must support different file types in the future. Update models and move away from naming Csv.... use CampainData.... . Clean up unnecessary types like CsvCampain. Update consumers as well.
+
+**What was built:**
+- `app/src/features/data-transfer/types/index.ts` — all types renamed: `CsvRowIssueType` → `CampainDataRowIssueType`, `CsvFieldIssue` → `CampainDataFieldIssue`, `CsvRowError` → `CampainDataRowError`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`, `CsvValidationErrorType` → `CampainDataValidationErrorType`, `CsvValidationError` → `CampainDataValidationError`, `CsvParseResult` → `CampainDataParseResult`, `ProcessRowsResult` → `CampainDataProcessRowsResult`; `CsvCampaign` removed — `rows: Campaign[]` in `CampainDataDuplicateGroup`; `CampainDataParseResult.campaigns` and `CampainDataProcessRowsResult.campaigns` are `Campaign[]`
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — imports updated; `processRows` now pushes `fields` (Campaign) directly without `rowNum` spread; return types updated
+- `app/src/features/data-transfer/utils/detect-campaign-duplication.ts` — `CsvCampaign` replaced with `Campaign`; `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/utils/validate-row-data.ts` — `CsvRowError` → `CampainDataRowError` throughout
+- `app/src/features/data-transfer/utils/error-messages.ts` — all four `Csv*` type imports renamed
+- `app/src/features/data-transfer/utils/parse-csv.ts` — `CsvParseResult` → `CampainDataParseResult`
+- `app/src/features/data-transfer/utils/map-campaign.ts` — **deleted**; became identity function after `CsvCampaign` removal
+- `app/src/features/data-transfer/components/UploadModal.vue` — removed `toCampaigns` import; replaced all three call sites with direct value/spread; `CsvCampaign` → `Campaign`, `CsvRowError` → `CampainDataRowError`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/components/DisplayUploadErrorsStep.vue` — `CsvCampaign` → `Campaign`, `CsvRowError` → `CampainDataRowError`
+- `app/src/features/data-transfer/components/ResolveDuplicationsStep.vue` — `CsvCampaign` → `Campaign`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — type renames; `rowNum` → `rowId` throughout (SortKey, COLUMNS key, sort comparator, selection map, template bindings)
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — `CsvRowError` → `CampainDataRowError`
+
+**Key decisions & why:**
+- `CampainData` prefix chosen (not `Data` or `FileData`) — consistent with existing project naming convention (`CampainDuplicationsTable`, `MOCK_CAMPAINS`, etc.)
+- `CsvCampaign` removed entirely rather than renamed — with `rowId` on `Campaign`, the type added no new fields; keeping it would have been a redundant alias
+- `map-campaign.ts` deleted — once `CsvCampaign` was gone, `toCampaigns` became `(c: Campaign[]) => c`; dead code deleted rather than left as dead weight
+- `rowNum` local variable kept in `processRows` for the `+2` calculation clarity, but no longer spread onto the campaign object

@@ -1,7 +1,8 @@
-import type { CsvCampaign, CsvDuplicateGroup } from '../types'
+import type { Campaign } from '../../../common/types/campaign'
+import type { CampainDataDuplicateGroup } from '../types'
 
-function getGrouppedCampains(campaigns: CsvCampaign[]): Map<string, CsvCampaign[]>  {
-  const grouped = new Map<string, CsvCampaign[]>()
+function getGrouppedCampains(campaigns: Campaign[]): Map<string, Campaign[]> {
+  const grouped = new Map<string, Campaign[]>()
 
   for (const campaign of campaigns) {
     const key = campaign.campaign.toLowerCase().trim()
@@ -9,19 +10,17 @@ function getGrouppedCampains(campaigns: CsvCampaign[]): Map<string, CsvCampaign[
     grouped.get(key)!.push(campaign)
   }
 
-
   return grouped
 }
 
-
-export function detectCampaignDuplication(campaigns: CsvCampaign[]): {
-  unique: CsvCampaign[]
-  groups: CsvDuplicateGroup[]
+export function detectCampaignDuplication(campaigns: Campaign[]): {
+  unique: Campaign[]
+  groups: CampainDataDuplicateGroup[]
 } {
   const grouped = getGrouppedCampains(campaigns)
- 
-  const unique: CsvCampaign[] = []
-  const groups: CsvDuplicateGroup[] = []
+
+  const unique: Campaign[] = []
+  const groups: CampainDataDuplicateGroup[] = []
 
   for (const rows of grouped.values()) {
     if (rows.length === 1) {

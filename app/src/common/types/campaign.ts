@@ -16,6 +16,7 @@ export interface PerformanceMetrics {
 export interface CampaignKPIs extends CampaignMetrics, PerformanceMetrics {}
 
 export interface Campaign extends CampaignMetrics {
+  rowId: number
   campaign: string
   channel: string
 }

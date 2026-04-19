@@ -1,32 +1,28 @@
-import type { Campaign } from "../../../common/types/campaign"
+import type { Campaign } from '../../../common/types/campaign'
 
-export type CsvRowIssueType =
+export type CampainDataRowIssueType =
   | 'empty'
   | 'positive_number'
   | 'non_negative_number'
   | 'non_negative_integer'
   | 'exceeds'
 
-export interface CsvFieldIssue {
+export interface CampainDataFieldIssue {
   column: string
-  issue: CsvRowIssueType
+  issue: CampainDataRowIssueType
   details?: string
 }
 
-export interface CsvRowError extends CsvFieldIssue {
+export interface CampainDataRowError extends CampainDataFieldIssue {
   row: number
 }
 
-export interface CsvCampaign extends Campaign {
-  rowNum: number
-}
-
-export interface CsvDuplicateGroup {
+export interface CampainDataDuplicateGroup {
   campaignName: string
-  rows: CsvCampaign[]
+  rows: Campaign[]
 }
 
-export type CsvValidationErrorType =
+export type CampainDataValidationErrorType =
   | 'file_type'
   | 'file_size'
   | 'empty_file'
@@ -35,20 +31,20 @@ export type CsvValidationErrorType =
   | 'parse_error'
   | 'duplicate_campaigns'
 
-export interface CsvValidationError {
-  type: CsvValidationErrorType
+export interface CampainDataValidationError {
+  type: CampainDataValidationErrorType
   detail?: string
   missingColumns?: string[]
-  rowErrors?: CsvRowError[]
-  duplicateGroups?: CsvDuplicateGroup[]
+  rowErrors?: CampainDataRowError[]
+  duplicateGroups?: CampainDataDuplicateGroup[]
 }
 
-export interface CsvParseResult {
-  campaigns: CsvCampaign[]
-  errors: CsvValidationError[]
+export interface CampainDataParseResult {
+  campaigns: Campaign[]
+  errors: CampainDataValidationError[]
 }
 
-export interface ProcessRowsResult {
-  campaigns: CsvCampaign[]
-  errors: CsvRowError[]
+export interface CampainDataProcessRowsResult {
+  campaigns: Campaign[]
+  errors: CampainDataRowError[]
 }

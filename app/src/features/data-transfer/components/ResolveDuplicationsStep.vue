@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { CsvCampaign, CsvDuplicateGroup } from '../types'
+import type { Campaign } from '../../../common/types/campaign'
+import type { CampainDataDuplicateGroup } from '../types'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
 import CampainDuplicationsTable from './validation/CampainDuplicationsTable.vue'
 
 const props = defineProps<{
-  duplicateGroups: CsvDuplicateGroup[]
-  validCampaigns: CsvCampaign[]
+  duplicateGroups: CampainDataDuplicateGroup[]
+  validCampaigns: Campaign[]
 }>()
 
 const emit = defineEmits<{
   back: []
-  proceed: [selectedCampaigns: CsvCampaign[]]
+  proceed: [selectedCampaigns: Campaign[]]
   close: []
 }>()
 
-const selectedCampaigns = ref<CsvCampaign[]>([])
+const selectedCampaigns = ref<Campaign[]>([])
 
 const resolvedCount = computed(() => selectedCampaigns.value.length)
 const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length)
@@ -24,7 +25,7 @@ const canProceed = computed(
   () => props.validCampaigns.length > 0 || selectedCampaigns.value.length > 0,
 )
 
-function onSelectionChange(campaigns: CsvCampaign[]): void {
+function onSelectionChange(campaigns: Campaign[]): void {
   selectedCampaigns.value = campaigns
 }
 

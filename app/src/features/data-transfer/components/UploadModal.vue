@@ -3,10 +3,10 @@ import { ref, watch } from 'vue'
 import { BaseModal } from '../../../ui'
 import { parseCsv } from '../utils/parse-csv'
 import { getValidationErrorMessage } from '../utils/error-messages'
-import { toCampaigns } from '../utils/map-campaign'
 import { useCampaignStore } from '../../../stores/campaignStore'
 import { useDownloadTemplate } from '../composables/useDownloadTemplate'
-import type { CsvCampaign, CsvDuplicateGroup, CsvRowError } from '../types'
+import type { Campaign } from '../../../common/types/campaign'
+import type { CampainDataDuplicateGroup, CampainDataRowError } from '../types'
 import UploadCampainData from './UploadCampainData.vue'
 import DisplayUploadErrorsStep from './DisplayUploadErrorsStep.vue'
 import ResolveDuplicationsStep from './ResolveDuplicationsStep.vue'
@@ -49,9 +49,9 @@ watch(file, () => { parseError.value = '' })
 
 const view = ref<'form' | 'row-errors' | 'duplicate-rows'>('form')
 const pendingTitle = ref('')
-const validCampaigns = ref<CsvCampaign[]>([])
-const rowErrors = ref<CsvRowError[]>([])
-const duplicateGroups = ref<CsvDuplicateGroup[]>([])
+const validCampaigns = ref<Campaign[]>([])
+const rowErrors = ref<CampainDataRowError[]>([])
+const duplicateGroups = ref<CampainDataDuplicateGroup[]>([])
 
 // ── Handlers ───────────────────────────────────────────────────────────────────
 
@@ -69,7 +69,7 @@ async function handleSubmit(): Promise<void> {
       parseError.value = getValidationErrorMessage(result.errors[0])
       return
     }
-    campaignStore.loadCampaigns(title.value, toCampaigns(result.campaigns))
+    campaignStore.loadCampaigns(title.value, result.campaigns)
     close()
     return
   }
@@ -99,7 +99,7 @@ function handleProceedFromErrors(): void {
     view.value = 'duplicate-rows'
     return
   }
-  campaignStore.loadCampaigns(pendingTitle.value, toCampaigns(validCampaigns.value))
+  campaignStore.loadCampaigns(pendingTitle.value, validCampaigns.value)
   close()
 }
 
@@ -113,8 +113,8 @@ function handleBackFromDuplicates(): void {
   duplicateGroups.value = []
 }
 
-function handleProceedFromDuplicates(selected: CsvCampaign[]): void {
-  campaignStore.loadCampaigns(pendingTitle.value, toCampaigns([...validCampaigns.value, ...selected]))
+function handleProceedFromDuplicates(selected: Campaign[]): void {
+  campaignStore.loadCampaigns(pendingTitle.value, [...validCampaigns.value, ...selected])
   close()
 }
 </script>

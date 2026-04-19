@@ -1,6 +1,6 @@
-import type { CsvFieldIssue, CsvRowIssueType, CsvValidationError, CsvValidationErrorType } from '../types'
+import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType } from '../types'
 
-const ROW_ISSUE_MESSAGES: Record<CsvRowIssueType, string> = {
+const ROW_ISSUE_MESSAGES: Record<CampainDataRowIssueType, string> = {
   empty: 'Cannot be empty',
   positive_number: 'Must be a number greater than 0',
   non_negative_number: 'Must be a non-negative number',
@@ -8,7 +8,7 @@ const ROW_ISSUE_MESSAGES: Record<CsvRowIssueType, string> = {
   exceeds: 'Cannot exceed',
 }
 
-const VALIDATION_ERROR_MESSAGES: Record<CsvValidationErrorType, string> = {
+const VALIDATION_ERROR_MESSAGES: Record<CampainDataValidationErrorType, string> = {
   file_type: 'Only CSV files are accepted.',
   file_size: 'File exceeds the 2 MB size limit.',
   empty_file: 'The CSV file contains no data rows.',
@@ -22,7 +22,7 @@ function replacePlaceholders(template: string, values: Record<string, string>): 
   return template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '')
 }
 
-export function getRowErrorMessage(error: CsvFieldIssue): string {
+export function getRowErrorMessage(error: CampainDataFieldIssue): string {
   const base = ROW_ISSUE_MESSAGES[error.issue]
   return error.details ? `${base} ${error.details}` : base
 }
@@ -46,7 +46,7 @@ export function getRowErrorSummaryWords(invalidCount: number, validCount: number
   }
 }
 
-export function getValidationErrorMessage(error: CsvValidationError): string {
+export function getValidationErrorMessage(error: CampainDataValidationError): string {
   const template = VALIDATION_ERROR_MESSAGES[error.type]
 
   if (error.type === 'missing_columns') {

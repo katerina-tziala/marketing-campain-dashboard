@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { CsvRowError } from '../../types'
+import type { CampainDataRowError } from '../../types'
 import { getRowErrorMessage } from '../../utils/error-messages'
 import { DataTableHeader } from '../../../../ui'
 import type { DataTableColumn } from '../../../../ui'
 
 const props = defineProps<{
-  errors: CsvRowError[]
+  errors: CampainDataRowError[]
 }>()
 
 const sortDir = ref<'asc' | 'desc'>('asc')
