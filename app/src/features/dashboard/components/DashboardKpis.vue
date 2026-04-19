@@ -12,7 +12,6 @@ defineProps<{ kpis: CampaignKPIs }>()
 </script>
 
 <template>
-  <div class="kpi-container">
     <section class="kpi-grid">
       <KpiCard
         label="Budget"
@@ -43,17 +42,11 @@ defineProps<{ kpis: CampaignKPIs }>()
         :value="kpis.cac !== null ? formatCompactCurrency(kpis.cac) : null"
       />
     </section>
-  </div>
 </template>
 
 <style lang="scss" scoped>
-.kpi-container {
-  @apply w-full;
-  container-type: inline-size;
-}
-
 .kpi-grid {
-  @apply grid grid-cols-1 gap-4;
+  @apply w-full grid grid-cols-1 gap-4 mx-auto max-w-7xl px-4;
 
   @container (min-width: 22.5rem) {
     @apply grid-cols-2;

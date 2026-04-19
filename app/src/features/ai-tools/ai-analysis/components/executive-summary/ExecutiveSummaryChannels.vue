@@ -18,8 +18,8 @@ defineProps<{
       :class="channelStatusVariant(ch.status)"
     >
       <div class="card-head items-center">
-        <h5 class="card-title">{{ ch.channel }}</h5>
-        <span class="text-xs font-semibold">{{ ch.budget_share }}</span>
+        <h5 class="card-title pt-1">{{ ch.channel }}</h5>
+        <span class="text-xs font-bold leading-7">{{ ch.budget_share }}</span>
         <span class="badge" :class="channelStatusVariant(ch.status)">{{ ch.status }}</span>
       </div>
       <p class="card-content">{{ ch.one_liner }}</p>

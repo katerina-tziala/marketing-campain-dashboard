@@ -33,8 +33,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
         @clear-all="store.clearFilters"
       />
     </section>
-    <div class="scrollbar-stable-both scrollbar-on-surface data-visualization pb-8">
-      <div class="dashboard-visualizations">
+    <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
         <!-- KPI Cards -->
         <DashboardKpis :kpis="store.kpis" />
         <!-- Charts -->
@@ -44,11 +43,10 @@ const openAiPanel = inject<() => void>('openAiPanel')
           :kpis="store.kpis"
         />
         <!-- Campaign Table -->
-        <div class="card table-card">
+        <div class="card table-card max-h-full mx-auto max-w-7xl">
           <h3 class="card-title table-card-title">Campaign Details</h3>
           <CampaignTable :campaigns="store.filteredCampaigns" />
         </div>
-      </div>
     </div>
   </div>
 </template>
@@ -70,17 +68,11 @@ const openAiPanel = inject<() => void>('openAiPanel')
 }
 
 .data-visualization {
-  @apply overflow-y-auto;
-}
-
-.dashboard-visualizations {
-  @apply w-full
-    px-3
-    mx-auto
-    max-w-7xl
-    flex
+  @apply overflow-y-auto w-full flex
     flex-col
-    gap-5;
+    gap-5
+    pb-6;
+    container-type: inline-size;
 }
 
 .card.table-card {

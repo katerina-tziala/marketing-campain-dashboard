@@ -20,14 +20,24 @@
   }
 
   .card-secondary {
-    @extend .card;
-    @apply text-sm
+     @apply rounded-md
+      shadow-md
+      bg-surface
+      border
+      border-surface-border
+      p-3
+      flex
+      flex-col
+      items-start
+      justify-stretch
+      gap-3 
+      text-sm
       shadow-sm
       bg-surface-secondary
       border-surface-border-secondary;
   
     .card-head {
-      @apply flex items-start justify-start gap-2;
+      @apply w-full flex items-start justify-start gap-2;
     }
 
     .card-title {
@@ -35,7 +45,7 @@
     }
 
     .card-content {
-      @apply m-0 leading-5 text-typography;
+      @apply w-full m-0 leading-5 text-typography;
     }
   }
 

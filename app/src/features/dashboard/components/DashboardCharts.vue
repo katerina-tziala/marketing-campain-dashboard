@@ -75,7 +75,6 @@ const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.tot
 </script>
 
 <template>
-  <div class="charts-container">
   <div class="charts-grid">
     <div class="card chart-card">
       <h3 class="card-title chart-card-title">ROI by Campaign</h3>
@@ -97,17 +96,11 @@ const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.tot
       <FunnelChart :labels="funnelLabels" :values="funnelValues" class="w-full" />
     </div>
   </div>
-  </div>
 </template>
 
 <style lang="scss" scoped>
-.charts-container {
-  @apply w-full;
-  container-type: inline-size;
-}
-
 .charts-grid {
-  @apply grid grid-cols-1 gap-5 ;
+  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl px-4;;
 
   @container (min-width: 60rem) {
     @apply grid-cols-2;

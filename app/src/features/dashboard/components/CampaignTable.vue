@@ -130,7 +130,7 @@ const COLUMNS: DataTableColumn[] = [
 
 <style lang="scss" scoped>
 .campaign-table {
-    @apply w-full h-fit max-h-[45rem] overflow-auto; 
+    @apply w-full h-full overflow-auto; 
 
   .data-table-cell.campaign-table-td {
     @apply py-3;

@@ -23,27 +23,27 @@
   
   .badge-background {
       &.success {
-        @apply bg-success/10 border-success/25;
+        @apply bg-success/10 border-success/35;
       }
 
       &.warning {
-        @apply bg-warning/10 border-warning/25;
+        @apply bg-warning/10 border-warning/35;
       }
 
       &.danger {
-        @apply bg-danger--5p/10 border-danger--5p/25;
+        @apply bg-danger--5p/10 border-danger--5p/35;
       }
 
       &.info {
-        @apply bg-primary-500/10 border-primary-500/25;
+        @apply bg-primary-500/10 border-primary-500/35;
       }
 
       &.opportunity {
-        @apply bg-primary-300/10 border-primary-300/25;
+        @apply bg-primary-300/10 border-primary-300/35;
       }
   }
-
-   .badge {
+  
+  .badge {
     @apply text-xs
       font-semibold
       rounded-full

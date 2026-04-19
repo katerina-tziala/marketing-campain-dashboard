@@ -68,7 +68,7 @@ defineProps<{
 }
 
 .rec-details {
-  @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-8 p-2;
+  @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-8 p-2 w-full;
 
    @container (max-width: 28.75rem) {
     @apply gap-x-4;

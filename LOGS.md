@@ -4351,3 +4351,19 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Barrel re-export via `export * from './forms'` in ui/index.ts — all consumers import from the top-level ui barrel; no consumer files needed updating
 - Only relative path to fix was UploadIcon in FileDropzone — the other two components had no relative sibling imports
+
+
+## [#214] Move toast notifications to bottom-left
+**Type:** fix
+
+**Summary:** Repositioned the toast container from bottom-right to bottom-left, with matching leave animation direction.
+
+**Brainstorming:** Single-file change — update the fixed positioning class and items alignment in ToastContainer, then flip the leave animation to slide left instead of right to match the new position.
+
+**Prompt:** Toast messages should appear at the bottom left.
+
+**What changed:**
+- `app/src/ui/toast/ToastContainer.vue` — changed `right-6` → `left-6` on `.toast-container`, `items-end` → `items-start` on `.toast-list`, and `translate-x-4` → `-translate-x-4` on `.toast-leave-to`
+
+**Key decisions & why:**
+- Flipped leave translation to `-translate-x-4` so toasts slide out to the left, consistent with their anchor position

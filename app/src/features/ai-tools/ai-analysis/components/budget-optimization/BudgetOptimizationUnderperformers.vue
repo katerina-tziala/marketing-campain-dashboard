@@ -16,7 +16,7 @@ defineProps<{
       class="card-secondary"
     >
       <div class="card-head items-center">
-        <h5 class="card-title">{{ perf.campaign }}</h5>
+        <h5 class="card-title pt-1">{{ perf.campaign }}</h5>
         <span class="performer-roi text-danger--5p">{{ perf.roi }}x&nbsp;ROI</span>
         <span class="badge" :class="actionVariant(perf.recommended_action)">{{ perf.recommended_action }}</span>
       </div>
@@ -27,6 +27,6 @@ defineProps<{
 
 <style lang="scss" scoped>
 .performer-roi {
-  @apply text-xs font-bold whitespace-nowrap;
+  @apply text-xs leading-7 font-bold whitespace-nowrap;
 }
 </style>
