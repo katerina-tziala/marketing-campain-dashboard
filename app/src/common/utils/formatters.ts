@@ -1,12 +1,14 @@
 export function formatNumber(value: number): string {
-  return value.toLocaleString('en-US')
+  return value.toLocaleString('en')
 }
 
-export function formatPercentage(value: number): string {
+export function formatPercentage(value: number | null, fallback = 'N/A'): string {
+  if (value === null) return fallback
   return `${value.toFixed(2)}%`
 }
 
-export function formatCurrency(val: number, decimals = 0) {
+export function formatCurrency(val: number | null, decimals = 0, fallback = 'N/A'): string {
+  if (val === null) return fallback
   return new Intl.NumberFormat('en', {
     style: 'currency',
     currency: 'EUR',

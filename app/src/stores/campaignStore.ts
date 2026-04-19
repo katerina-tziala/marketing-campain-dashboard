@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign, CampaignScope } from '../common/types/campaign'
+import type { Campaign, CampaignPerformance, CampaignScope } from '../common/types/campaign'
 import { safeDivide, round2 } from '../common/utils/math'
 import { groupByChannel } from '../common/utils/campaign-aggregation'
+import { toCampaignPerformance } from '../common/utils/campaign-performance'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
@@ -13,7 +14,9 @@ const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
-  const campaigns = ref<Campaign[]>(DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS : [])
+  const campaigns = ref<CampaignPerformance[]>(
+    DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS.map(toCampaignPerformance) : [],
+  )
   const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
   const selectedChannels = ref<string[]>([])
 
@@ -80,7 +83,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
 
   function loadCampaigns(newTitle: string, newCampaigns: Campaign[]): void {
     title.value = newTitle
-    campaigns.value = newCampaigns
+    campaigns.value = newCampaigns.map(toCampaignPerformance)
     selectedChannels.value = []
   }
 

@@ -4367,3 +4367,175 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Flipped leave translation to `-translate-x-4` so toasts slide out to the left, consistent with their anchor position
+
+
+## [#215] Pre-calculate campaign metrics in store
+**Type:** refactor
+
+**Summary:** Introduced `CampaignPerformance` model that extends `Campaign` with pre-calculated roi, ctr, cvr, cac; the store now maps raw campaigns to this model on load so the table reads values directly instead of computing them inline.
+
+**Brainstorming:** The table was recalculating roi/ctr/cvr/cac inside helper functions and sort comparators on every render. Moving calculation to load time keeps the table as pure display logic and creates a single authoritative source for per-campaign derived metrics. `null` on zero-divisor (instead of the `safeDivide` zero fallback) correctly represents "not applicable" for display and sorting purposes.
+
+**Prompt:** When setting campaigns in the store we should calculate all values for campaigns that we display on the campaign table. Campaigns in the campaignStore will be of a new model called CampaignPerformance that extends Campaign. When setting the campaigns iterate through each one and calculate roi, ctr, cvr, cac — if dividers are zero values must be null.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — added `CampaignPerformance` interface extending `Campaign` with `roi/ctr/cvr/cac: number | null`
+- `app/src/common/utils/campaign-performance.ts` — new file; `toCampaignPerformance(c: Campaign): CampaignPerformance` calculates all four metrics with null on zero-divisor using `round2`
+- `app/src/stores/campaignStore.ts` — `campaigns` ref typed as `CampaignPerformance[]`; both mock init and `loadCampaigns` map through `toCampaignPerformance`
+- `app/src/features/dashboard/components/CampaignTable.vue` — prop changed to `CampaignPerformance[]`; removed all inline calculation helpers; reads `c.roi/ctr/cvr/cac` directly; `getFieldValue` simplified with null → 0 fallback (cac → Infinity)
+
+**Key decisions & why:**
+- `null` instead of `0` for zero-divisor cases: correctly distinguishes "not computable" from "zero value" for both display (shows N/A) and sorting (sorts as 0 or Infinity for CAC)
+- Did not use `safeDivide` in the converter — it returns `0`, not `null`, so inline null checks were needed
+- `CampaignPerformance extends Campaign` means all existing consumers typed as `Campaign[]` (charts, AI data builders) remain valid without changes
+- KPI aggregations in the store are untouched — they operate on filtered totals, not per-row derived values
+
+
+## [#216] Sort null campaign metrics last
+**Type:** fix
+
+**Summary:** Removed `Infinity` sentinel from CAC sorting; null metric values now always sort last regardless of direction.
+
+**Brainstorming:** Using `Infinity` as a sort proxy for null CAC is a marketing nonsense — CAC can't be infinite. Null means "not computable", so the correct UX is to push those rows to the bottom in both asc and desc. The comparator handles null explicitly before the direction logic.
+
+**Prompt:** Remove Infinity from campaign table. Null values should always sort last.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — `getFieldValue` return type widened to `number | string | null`, Infinity special-case removed; comparator handles null-last before applying sort direction
+
+**Key decisions & why:**
+- Null always last regardless of direction: null means no data, not a metric value — it should never compete with real values in either direction
+
+
+## [#217] Extract sort helpers into common/utils/sorting.ts
+**Type:** refactor
+
+**Summary:** Extracted null-safe sorting logic from CampaignTable into reusable utilities so the comparator is not inline ad-hoc code.
+
+**Brainstorming:** The sort comparator in CampaignTable had two distinct concerns — null handling and directional comparison. Splitting them into named functions makes each testable and reusable. `sortWithNullsLast` composes both into a single call site.
+
+**Prompt:** In common utils create a sorting.ts file. Create a function for the null checks, a function for the directional comparison, then use those to create a single sortWithNullsLast function. Use it in CampaignTable.
+
+**What was built:**
+- `app/src/common/utils/sorting.ts` — new file; `compareNullsLast(a, b)` returns 0/1/-1 or null if no nulls present; `compareDirectional(a, b, dir)` handles directional comparison; `sortWithNullsLast(a, b, dir)` composes both via `??`
+- `app/src/features/dashboard/components/CampaignTable.vue` — comparator body replaced with single `sortWithNullsLast` call
+
+**Key decisions & why:**
+- `compareNullsLast` returns `null` (not a number) when both values are non-null — signals "no null decision made", allowing `??` composition in `sortWithNullsLast`
+
+
+## [#218] Fix formatNumber locale
+**Type:** fix
+
+**Summary:** Changed `formatNumber` locale from `'en-US'` to `'en'` to match the rest of the formatters and the app's European context.
+
+**Brainstorming:** `formatCurrency` and `formatCompactNumber` already use `'en'`; `'en-US'` was inconsistent and wrong for a EUR-denominated European app.
+
+**Prompt:** formatNumber should not be en-US, app is for Europe.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — `formatNumber` locale changed from `'en-US'` to `'en'`
+
+**Key decisions & why:**
+- Used `'en'` to be consistent with all other formatters in the same file rather than introducing a new locale
+
+
+## [#219] Move null fallback into formatPercentage and formatCurrency
+**Type:** refactor
+
+**Summary:** `formatPercentage` and `formatCurrency` now accept `number | null` and an optional fallback string, removing inline null checks from call sites.
+
+**Brainstorming:** Null checks scattered in templates are noise — the formatter already owns the display contract, so it should own the null case too. A `fallback` parameter keeps it flexible without forcing a hardcoded 'N/A'.
+
+**Prompt:** formatPercentage and formatCurrency return string — pass a parameter for the default displayed value and move the null check there.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — `formatPercentage(value: number | null, fallback = 'N/A')` and `formatCurrency(val: number | null, decimals = 0, fallback = 'N/A')` handle null internally
+- `app/src/features/dashboard/components/CampaignTable.vue` — removed inline `c.ctr !== null ? ... : 'N/A'` ternaries for ctr, cvr, cac; now plain function calls
+
+**Key decisions & why:**
+- `fallback` defaults to `'N/A'` so all existing call sites are unaffected; callers can override if needed
+
+
+## [#220] Use formatPercentage for ROI in CampaignTable
+**Type:** fix
+
+**Summary:** ROI column now uses `formatPercentage` instead of an inline `toFixed(0)` expression, consistent with ctr and cvr columns.
+
+**Brainstorming:** Inline formatting bypassed the formatter and used 0 decimals instead of the app standard of 2.
+
+**Prompt:** ROI in table should use formatPercentage.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — ROI cell replaced inline ternary with `formatPercentage(c.roi)`
+
+**Key decisions & why:**
+- `formatPercentage` already handles null, so no ternary needed
+
+
+## [#221] Pre-calculate percentageClass on CampaignPerformance
+**Type:** refactor
+
+**Summary:** Moved ROI CSS class calculation out of the table template into the model; `roiClass` updated to handle null; `CampaignTable` derives a computed Map for class lookups.
+
+**Brainstorming:** The table was calling `roiClass` inline per row per render. Since `roi` is already pre-calculated on the model, the class can be derived at the same time. A computed Map in the table then gives O(1) lookup per row with no per-render function calls. `roiClass` needed to accept null to avoid callers guarding it externally.
+
+**Prompt:** Move roiClass into CampaignPerformance, rename to percentageClass. For the table create a computed value for roi class so we do not calculate each time. The function should also handle null.
+
+**What changed:**
+- `app/src/common/utils/roi.ts` — `roiClass(roi: number | null)` returns `''` for null
+- `app/src/common/types/campaign.ts` — `CampaignPerformance` gains `percentageClass: string`
+- `app/src/common/utils/campaign-performance.ts` — calculates `percentageClass: roiClass(roi)` after deriving roi; imports roiClass
+- `app/src/features/dashboard/components/CampaignTable.vue` — `percentageClassMap` computed (Map from sortedCampaigns); revenue and ROI columns use `percentageClassMap.get(c.campaign)`; roiClass import removed
+
+**Key decisions & why:**
+- `percentageClassMap` derived from `sortedCampaigns` (not `props.campaigns`) so it stays in sync with the rendered rows
+- `roiClass` returns `''` for null so bindings are clean with no ternary guards
+
+
+## [#222] Remove percentageClassMap — read c.percentageClass directly
+**Type:** fix
+
+**Summary:** Removed the intermediate `percentageClassMap` computed; template reads `c.percentageClass` directly from the model.
+
+**Prompt:** Do not use the map, use the function directly.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — `percentageClassMap` computed removed; revenue and ROI `:class` bindings use `c.percentageClass` directly
+
+**Key decisions & why:**
+- `percentageClass` is already on the model so a Map lookup adds no value — direct property access is simpler and just as efficient
+
+
+## [#223] Move percentageClass function to campaign-performance.ts
+**Type:** refactor
+
+**Summary:** Moved `roiClass` (renamed `percentageClass`) out of `roi.ts` into `campaign-performance.ts`; removed `percentageClass` from the `CampaignPerformance` model; table calls the function directly.
+
+**Brainstorming:** `percentageClass` is display logic tied to campaign metrics, not a general ROI utility. Keeping it in `campaign-performance.ts` groups it with its domain. The model doesn't need to store a CSS class string — the function is cheap and called only in the template.
+
+**Prompt:** Move the function to campaign-performance.ts so we eventually delete roi.ts. Do not put percentageClass on the model.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `percentageClass` field removed from `CampaignPerformance`
+- `app/src/common/utils/campaign-performance.ts` — `percentageClass(value: number|null): string` exported; `roiClass` import removed; `toCampaignPerformance` no longer sets `percentageClass`
+- `app/src/common/utils/roi.ts` — `roiClass` removed (now dead; to be deleted)
+- `app/src/features/dashboard/components/CampaignTable.vue` — imports `percentageClass` from `campaign-performance`; template uses `percentageClass(c.roi)` for revenue and ROI columns
+
+**Key decisions & why:**
+- Function lives in `campaign-performance.ts` rather than the model — CSS class derivation is view concern, not domain data
+- `roi.ts` left in place for now; `roiValue` and `formatROI` remain but are unused — full deletion is a follow-up
+
+
+## [#224] Use formatNumber for conversions in CampaignTable
+**Type:** fix
+
+**Summary:** Replaced inline `toLocaleString('en')` with `formatNumber` for the conversions column.
+
+**Prompt:** Use formatter for conversions, not toLocaleString.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — conversions cell uses `formatNumber(c.conversions)`; `formatNumber` added to import
+
+**Key decisions & why:**
+- `formatCurrency` was not appropriate — conversions is a count, not a monetary value

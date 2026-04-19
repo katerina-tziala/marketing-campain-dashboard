@@ -8,6 +8,13 @@ export interface Campaign {
   revenue: number
 }
 
+export interface CampaignPerformance extends Campaign {
+  roi: number | null
+  ctr: number | null
+  cvr: number | null
+  cac: number | null
+}
+
 export interface CampaignScope {
   campaigns: string[]
   selectedCampaigns: string[]
