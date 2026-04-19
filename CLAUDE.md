@@ -30,12 +30,11 @@ app/                        # Vue 3 + Vite project
 ├── src/
 │   ├── common/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
-│   │   │   └── campaign.ts     # Campaign interface + CampaignPerformance interface (extends Campaign — roi/ctr/cvr/cac: number|null, percentageClass: string, all calculated on load) + CampaignKPIs interface (incl. totalImpressions, totalClicks, totalConversions) + CampaignScope interface (campaigns/selectedCampaigns/selectedChannels string arrays)
+│   │   │   └── campaign.ts     # CampaignMetrics interface (budget/revenue/impressions/clicks/conversions: number) + Campaign extends CampaignMetrics (adds campaign/channel: string) + PerformanceMetrics interface (roi/ctr/cvr/cac: number|null) + CampaignPerformance extends Campaign + PerformanceMetrics (empty body) + CampaignKPIs extends CampaignMetrics + PerformanceMetrics (empty body) + CampaignScope interface (campaigns/selectedCampaigns/selectedChannels string arrays)
 │   │   ├── utils/
 │   │   │   ├── math.ts         # safeDivide + round2 — shared math helpers
-│   │   │   ├── campaign-performance.ts # percentageClass(value: number|null) → string (negative/warning/positive/empty) + toCampaignPerformance(Campaign) → CampaignPerformance — calculates roi/ctr/cvr/cac with null on zero-divisor; used by campaignStore on load
+│   │   │   ├── campaign-performance.ts # percentageClass(value: number|null) → string (negative/warning/positive/empty) + computePerformanceMetrics(CampaignMetrics) → PerformanceMetrics (roi/ctr/cvr/cac with null on zero-divisor) + aggregateCampaignMetrics(Campaign[]) → CampaignMetrics (sums numeric fields across array) + toCampaignPerformance(Campaign) → CampaignPerformance; used by campaignStore on load
 │   │   │   └── sorting.ts          # compareNullsLast(a, b) → number|null; compareDirectional(a, b, dir) → number; sortWithNullsLast(a, b, dir) → number — null-safe directional sort composing the two
-│   │   │   ├── roi.ts          # roiValue(revenue, budget) → number; roiClass(roi) → 'positive'|'warning'|'negative'; formatROI(value) → string
 │   │   │   ├── campaign-aggregation.ts # groupByChannel(campaigns) → Record<string, ChannelTotals>; ChannelTotals = { budget, revenue, impressions, clicks, conversions }; pure accumulator, no derived metrics
 │   │   │   └── formatters.ts   # formatCurrency(value) → '€N' (en-US, 0 decimals); formatNumber(value) → localized string; formatPercentage(value) → 'N.NN%'; formatCompactCurrency(value) → compact EUR with 1 decimal for ≥1000, 2 decimals otherwise; formatCompactNumber(value) → compact with 1 decimal for ≥1000, localized otherwise
 │   │   └── data/

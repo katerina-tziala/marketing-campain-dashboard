@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutiveSummaryResponse } from '../../../types'
-import { roiClass } from '../../../../../common/utils/roi'
+import { percentageClass } from '../../../../../common/utils/campaign-performance'
 import { formatEuro, formatRoi, formatNumber } from '../../../utils/panel-formatters'
 
 defineProps<{
@@ -8,7 +8,7 @@ defineProps<{
 }>()
 
 function classROI(value: number): string {
-  return roiClass(Math.round(value * 100))
+  return percentageClass(Math.round(value * 100))
 }
 </script>
 

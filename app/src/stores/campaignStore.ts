@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign, CampaignPerformance, CampaignScope } from '../common/types/campaign'
-import { safeDivide, round2 } from '../common/utils/math'
+import type { Campaign, CampaignKPIs, CampaignPerformance, CampaignScope } from '../common/types/campaign'
 import { groupByChannel } from '../common/utils/campaign-aggregation'
-import { toCampaignPerformance } from '../common/utils/campaign-performance'
+import { aggregateCampaignMetrics, computePerformanceMetrics, toCampaignPerformance } from '../common/utils/campaign-performance'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
@@ -31,21 +30,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
       : campaigns.value.filter((c) => selectedChannels.value.includes(c.channel)),
   )
 
-  const totalBudget = computed(() =>
-    filteredCampaigns.value.reduce((s, c) => s + c.budget, 0),
-  )
-  const totalRevenue = computed(() =>
-    filteredCampaigns.value.reduce((s, c) => s + c.revenue, 0),
-  )
-  const totalImpressions = computed(() =>
-    filteredCampaigns.value.reduce((s, c) => s + c.impressions, 0),
-  )
-  const totalClicks = computed(() =>
-    filteredCampaigns.value.reduce((s, c) => s + c.clicks, 0),
-  )
-  const totalConversions = computed(() =>
-    filteredCampaigns.value.reduce((s, c) => s + c.conversions, 0),
-  )
+  const filteredTotals = computed(() => aggregateCampaignMetrics(filteredCampaigns.value))
 
   const channelTotals = computed(() => groupByChannel(filteredCampaigns.value))
 
@@ -55,16 +40,9 @@ export const useCampaignStore = defineStore('campaigns', () => {
     selectedChannels: selectedChannels.value,
   }))
 
-  const kpis = computed(() => ({
-    totalBudget: totalBudget.value,
-    totalRevenue: totalRevenue.value,
-    roi: round2(safeDivide(totalRevenue.value - totalBudget.value, totalBudget.value) * 100),
-    ctr: round2(safeDivide(totalClicks.value, totalImpressions.value) * 100),
-    cvr: round2(safeDivide(totalConversions.value, totalClicks.value) * 100),
-    cac: totalConversions.value > 0 ? round2(totalBudget.value / totalConversions.value) : null,
-    totalImpressions: totalImpressions.value,
-    totalClicks: totalClicks.value,
-    totalConversions: totalConversions.value,
+  const kpis = computed((): CampaignKPIs => ({
+    ...filteredTotals.value,
+    ...computePerformanceMetrics(filteredTotals.value),
   }))
 
   // Actions
@@ -96,9 +74,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     campaignScope,
     kpis,
     channelTotals,
-    totalImpressions,
-    totalClicks,
-    totalConversions,
+    // actions
     toggleChannel,
     clearFilters,
     loadCampaigns,

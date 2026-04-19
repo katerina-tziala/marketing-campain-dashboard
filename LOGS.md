@@ -4556,3 +4556,61 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `c.roi ?? 0` falls back to `0` when ROI is null (zero-budget campaign) — consistent with the previous inline behaviour which also returned 0 in that case
+
+
+## [#226] Delete roi.ts
+**Type:** fix
+
+**Summary:** Removed `roi.ts` — all three of its functions (`roiValue`, `roiClass`, `formatROI`) were unused after previous refactoring moved `roiClass` to `campaign-performance.ts` as `percentageClass`.
+
+**Brainstorming:** Grep confirmed zero imports of `roi.ts` across the entire `src/` tree. Safe to delete.
+
+**Prompt:** Check roi.ts. If none of its functions are used please remove the file.
+
+**What changed:**
+- `app/src/common/utils/roi.ts` — deleted
+- `CLAUDE.md` — entry removed from architecture
+
+**Key decisions & why:**
+- No replacement needed — `percentageClass` in `campaign-performance.ts` covers the class derivation use case; `roiValue` and `formatROI` had no callers
+
+
+## [#227] Use PerformanceMetrics in CampaignPerformance
+**Type:** fix
+
+**Summary:** Removed the duplicated fields from `CampaignPerformance` and made it extend `PerformanceMetrics` instead.
+
+**Brainstorming:** `PerformanceMetrics` was already declared with the same four nullable fields. `CampaignPerformance` was simply re-declaring them inline. Extending the interface removes the duplication.
+
+**Prompt:** In campaign.ts use PerformanceMetrics to extend the models where necessary.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `CampaignPerformance` now extends `Campaign, PerformanceMetrics` with an empty body instead of redeclaring the four fields
+
+**Key decisions & why:**
+- `CampaignKPIs` was not changed — its metric fields are non-nullable (except `cac`) and represent aggregated portfolio values, not per-campaign calculated metrics, so `PerformanceMetrics` does not apply
+
+
+## [#228] Refactor campaign type hierarchy and metric calculation pipeline
+**Type:** refactor
+
+**Summary:** Extracted `CampaignMetrics` as the numeric base type, added `aggregateCampaignMetrics` and `computePerformanceMetrics` as a composable pipeline, collapsed `CampaignKPIs` to `extends CampaignMetrics, PerformanceMetrics {}`, and simplified the store to a single `filteredTotals` computed.
+
+**Brainstorming:** Several problems existed in parallel: the store recalculated roi/ctr/cvr/cac inline with wrong zero semantics (0 instead of null); `CampaignKPIs` duplicated the five numeric fields under `totalX` aliases, forcing redundant mappings everywhere; there was no reusable aggregation function, so every reduce was written inline. Solving them together — extract `CampaignMetrics`, add `aggregateCampaignMetrics` + `computePerformanceMetrics`, collapse `CampaignKPIs` — removed all the duplication in one coherent pass. Dead imports from the previously deleted `roi.ts` in `DashboardKpis.vue` and `ExecutiveSummaryMetrics.vue` were fixed as part of the same session.
+
+**Prompt:** CampaignKPIs should also extend PerformanceMetrics. In campaignStore there is also the same calculation for KPIs as in toCampaignPerformance — extract that part so we can use the same calculation. KPIs can also have null values — fix FE consumers. computePerformanceMetrics should accept the campaign model and use object destructuring. Check exported members of campaignStore — remove anything not consumed. Create a function in campaign-performance that accepts an array of campaigns and returns CampaignMetrics. Use this function in campaignStore. CampaignKPIs should extend CampaignMetrics and PerformanceMetrics — avoid multiple mappings. Update everything related to those.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `CampaignMetrics` interface added (budget/revenue/impressions/clicks/conversions); `Campaign extends CampaignMetrics`; `CampaignKPIs` collapsed to `extends CampaignMetrics, PerformanceMetrics {}`
+- `app/src/common/utils/campaign-performance.ts` — `computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics` extracted (null on zero-divisor); `aggregateCampaignMetrics(campaigns: Campaign[]): CampaignMetrics` added (single-pass reduce); `toCampaignPerformance` delegates to `computePerformanceMetrics`
+- `app/src/stores/campaignStore.ts` — five individual `totalX` computeds replaced by `filteredTotals` (via `aggregateCampaignMetrics`); `kpis` simplified to `{ ...filteredTotals.value, ...computePerformanceMetrics(filteredTotals.value) }: CampaignKPIs`; `totalImpressions/totalClicks/totalConversions` removed from public return (no external consumers); `safeDivide`/`round2` imports removed
+- `app/src/features/dashboard/components/DashboardKpis.vue` — broken `roiClass` import from deleted `roi.ts` replaced with `percentageClass`; `kpis.totalBudget/totalRevenue/totalConversions` → `kpis.budget/revenue/conversions`
+- `app/src/features/dashboard/components/DashboardCharts.vue` — `kpis.totalImpressions/totalClicks/totalConversions` → `kpis.impressions/clicks/conversions`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — broken `roiClass` import from deleted `roi.ts` replaced with `percentageClass`
+
+**Key decisions & why:**
+- `CampaignMetrics` accepts `Campaign[]` in `aggregateCampaignMetrics` — only numeric base fields matter for aggregation; `CampaignPerformance[]` would also work structurally but the base type is the correct constraint
+- `computePerformanceMetrics` uses null (not 0) for zero-divisor cases — consistent with per-campaign semantics; `safeDivide` returning 0 was semantically wrong for portfolio KPIs
+- `filteredTotals` kept as an intermediate computed rather than inlined into `kpis` — allows future reuse without recalculation
+- `buildExecutiveSummaryData.ts` / `buildBudgetOptimizerData.ts` not touched — their `totalX` locals are internal variables; they operate on raw `Campaign[]` with deliberate `Infinity`-based CAC for comparison logic and are not consumers of `CampaignKPIs`
+- Explicit `: CampaignKPIs` return type on `kpis` computed — catches shape mismatches at the store boundary

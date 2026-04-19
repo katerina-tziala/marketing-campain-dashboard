@@ -69,7 +69,7 @@ const revVsBudgetData = computed<ChartData<'bar'>>(() => {
 })
 
 const funnelLabels = ['Impressions', 'Clicks', 'Conversions']
-const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.totalClicks, props.kpis.totalConversions])
+const funnelValues = computed(() => [props.kpis.impressions, props.kpis.clicks, props.kpis.conversions])
 </script>
 
 <template>

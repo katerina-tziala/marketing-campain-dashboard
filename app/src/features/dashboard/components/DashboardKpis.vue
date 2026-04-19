@@ -5,7 +5,7 @@ import {
   formatCompactNumber,
   formatPercentage,
 } from '../../../common/utils/formatters'
-import { roiClass } from '../../../common/utils/roi'
+import { percentageClass } from '../../../common/utils/campaign-performance'
 import KpiCard from './KpiCard.vue'
 
 defineProps<{ kpis: CampaignKPIs }>()
@@ -15,22 +15,22 @@ defineProps<{ kpis: CampaignKPIs }>()
     <section class="kpi-grid">
       <KpiCard
         label="Budget"
-        :value="formatCompactCurrency(kpis.totalBudget)"
+        :value="formatCompactCurrency(kpis.budget)"
       />
       <KpiCard
         label="Revenue"
-        :value="formatCompactCurrency(kpis.totalRevenue)"
+        :value="formatCompactCurrency(kpis.revenue)"
       >
         <template #secondary>
-          ROI: <span class="roi-text" :class="roiClass(kpis.roi)">{{ formatPercentage(kpis.roi) }}</span>
+          ROI: <span class="roi-text" :class="percentageClass(kpis.roi)">{{ formatPercentage(kpis.roi) }}</span>
         </template>
       </KpiCard>
       <KpiCard
         label="Conversions"
-        :value="formatCompactNumber(kpis.totalConversions)"
+        :value="formatCompactNumber(kpis.conversions)"
       >
         <template #secondary>
-          CVR: <span class="roi-text" :class="roiClass(kpis.cvr)">{{ formatPercentage(kpis.cvr) }}</span>
+          CVR: <span class="roi-text" :class="percentageClass(kpis.cvr)">{{ formatPercentage(kpis.cvr) }}</span>
         </template>
       </KpiCard>
       <KpiCard

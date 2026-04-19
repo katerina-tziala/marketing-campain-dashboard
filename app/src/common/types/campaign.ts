@@ -1,6 +1,4 @@
-export interface Campaign {
-  campaign: string
-  channel: string
+export interface CampaignMetrics {
   budget: number
   impressions: number
   clicks: number
@@ -8,12 +6,21 @@ export interface Campaign {
   revenue: number
 }
 
-export interface CampaignPerformance extends Campaign {
+export interface PerformanceMetrics {
   roi: number | null
   ctr: number | null
   cvr: number | null
   cac: number | null
 }
+
+export interface CampaignKPIs extends CampaignMetrics, PerformanceMetrics {}
+
+export interface Campaign extends CampaignMetrics {
+  campaign: string
+  channel: string
+}
+ 
+export interface CampaignPerformance extends Campaign, PerformanceMetrics {}
 
 export interface CampaignScope {
   campaigns: string[]
@@ -21,14 +28,3 @@ export interface CampaignScope {
   selectedChannels: string[]
 }
 
-export interface CampaignKPIs {
-  totalBudget: number
-  totalRevenue: number
-  roi: number
-  ctr: number
-  cvr: number
-  cac: number | null
-  totalImpressions: number
-  totalClicks: number
-  totalConversions: number
-}
