@@ -1,12 +1,20 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign } from '../common/types/campaign'
+import type { Campaign, CampaignScope } from '../common/types/campaign'
 import { safeDivide, round2 } from '../common/utils/math'
+import { groupByChannel } from '../common/utils/campaign-aggregation'
+// TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
+import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
+
+// TODO: DEV MOCK — revert before shipping.
+// To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
+// and reset the `campaigns` and `title` refs to [] and '' respectively.
+const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
-  const campaigns = ref<Campaign[]>([])
-  const title = ref<string>('')
+  const campaigns = ref<Campaign[]>(DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS : [])
+  const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
   const selectedChannels = ref<string[]>([])
 
   // Getters
@@ -36,6 +44,14 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns.value.reduce((s, c) => s + c.conversions, 0),
   )
 
+  const channelTotals = computed(() => groupByChannel(filteredCampaigns.value))
+
+  const campaignScope = computed((): CampaignScope => ({
+    campaigns: campaigns.value.map((c) => c.campaign),
+    selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
+    selectedChannels: selectedChannels.value,
+  }))
+
   const kpis = computed(() => ({
     totalBudget: totalBudget.value,
     totalRevenue: totalRevenue.value,
@@ -43,6 +59,9 @@ export const useCampaignStore = defineStore('campaigns', () => {
     ctr: round2(safeDivide(totalClicks.value, totalImpressions.value) * 100),
     cvr: round2(safeDivide(totalConversions.value, totalClicks.value) * 100),
     cac: totalConversions.value > 0 ? round2(totalBudget.value / totalConversions.value) : null,
+    totalImpressions: totalImpressions.value,
+    totalClicks: totalClicks.value,
+    totalConversions: totalConversions.value,
   }))
 
   // Actions
@@ -71,7 +90,9 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns,
     selectedChannels,
     availableChannels,
+    campaignScope,
     kpis,
+    channelTotals,
     totalImpressions,
     totalClicks,
     totalConversions,

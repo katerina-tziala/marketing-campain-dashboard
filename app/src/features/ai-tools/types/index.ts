@@ -1,11 +1,6 @@
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
-export type AiProvider = 'gemini' | 'groq';
-
-export const PROVIDER_LABELS: Record<AiProvider, string> = {
-  gemini: 'Google Gemini',
-  groq: 'Groq',
-};
+export type AiProviderType = 'gemini' | 'groq';
 
 export type AiConnectionErrorCode =
   | 'invalid-key'
@@ -18,7 +13,7 @@ export type AiConnectionErrorCode =
 
 export type AiConnectionError = {
   code: AiConnectionErrorCode;
-  provider: AiProvider;
+  provider: AiProviderType;
 };
 
 // ── Provider model types ──────────────────────────────────────────────────
@@ -199,6 +194,11 @@ export type BudgetOptimizerData = {
   keyFindings?: string[];
 };
 
+export type Correlation = { 
+    finding: string;
+    implication: string;
+  };
+
 export type BudgetOptimizerResponse = {
   model?: AiModel;
   period?: string;
@@ -211,7 +211,7 @@ export type BudgetOptimizerResponse = {
     expected_impact: {
       additional_revenue: number;
       additional_conversions: number;
-      new_roi_estimate: string;
+      new_roi_estimate: number;
     };
     confidence: ConfidenceLevel;
     reasoning: string;
@@ -240,10 +240,7 @@ export type BudgetOptimizerResponse = {
     potential_impact: string;
     timeline: string;
   }[];
-  correlations: {
-    finding: string;
-    implication: string;
-  }[];
+  correlations: Correlation[];
   risks: {
     risk: string;
     mitigation: string;
@@ -302,15 +299,12 @@ export type ExecutiveSummaryResponse = {
     one_liner: string;
   }[];
   additional_channels_note?: string;
-  correlations: {
-    finding: string;
-    so_what: string;
-  }[];
+  correlations: Correlation[];
   key_metrics: {
-    total_spend: string;
-    total_revenue: string;
-    overall_roi: string;
-    total_conversions: string;
+    total_spend: number;
+    total_revenue: number;
+    overall_roi: number;
+    total_conversions: number;
     best_channel: string;
     worst_channel: string;
     best_campaign: string;

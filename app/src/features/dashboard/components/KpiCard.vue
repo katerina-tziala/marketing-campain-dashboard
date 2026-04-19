@@ -1,93 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
-const props = defineProps<{
+defineProps<{
   label: string
-  value: number | null
-  format: 'currency' | 'percentage' | 'number'
-  accentColor: string
-  secondaryLabel?: string
-  secondaryValue?: string
-  secondaryRawValue?: number
+  value: string | null | undefined
 }>()
-
-const secondaryColor = computed(() =>
-  props.secondaryRawValue !== undefined && props.secondaryRawValue <= 0
-    ? '#f43f5e'
-    : props.accentColor,
-)
-
-const formatted = computed(() => {
-  if (props.value === null) return 'N/A'
-  if (props.format === 'currency') {
-    if (Math.abs(props.value) >= 1000) {
-      return new Intl.NumberFormat('en', {
-        style: 'currency',
-        currency: 'EUR',
-        notation: 'compact',
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1,
-      }).format(props.value)
-    }
-    return new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(props.value)
-  }
-  if (props.format === 'percentage') {
-    return `${props.value.toFixed(2)}%`
-  }
-  // number — compact for large values
-  if (Math.abs(props.value) >= 1000) {
-    return new Intl.NumberFormat('en', {
-      notation: 'compact',
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(props.value)
-  }
-  return props.value.toLocaleString('en')
-})
 </script>
 
 <template>
   <div
-    class="kpi-card"
-    :style="{ '--accent': accentColor }"
+    class="card kpi-card"
     role="region"
     :aria-label="label"
   >
-    <p class="kpi-card__label">{{ label }}</p>
-    <p class="kpi-card__value">{{ formatted }}</p>
-    <p v-if="secondaryLabel && secondaryValue" class="kpi-card__secondary">
-      {{ secondaryLabel }}:
-      <span class="kpi-card__secondary-value" :style="{ color: secondaryColor }">{{ secondaryValue }}</span>
+    <p class="card-title">{{ label }}</p> 
+    <p class="kpi-value">{{ value ?? 'N/A' }}</p>
+    <p v-if="$slots.secondary" class="kpi-secondary">
+      <slot name="secondary" />
     </p>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .kpi-card {
-  @apply card rounded-md p-4;
+  @apply w-full gap-1;
+}
 
-  &__label {
-    @apply text-xs font-semibold uppercase tracking-widest;
-    color: var(--color-title);
-  }
+.kpi-value {
+  @apply grow text-xl font-bold text-typography-intense; 
+}
 
-  &__value {
-    @apply mt-2 text-2xl font-bold;
-    color: var(--color-text);
-  }
-
-  &__secondary {
-    @apply mt-1 text-xs;
-    color: var(--color-text-secondary);
-  }
-
-  &__secondary-value {
-    font-weight: 700;
-  }
+.kpi-secondary {
+  @apply text-xs text-typography shrink-0;
 }
 </style>

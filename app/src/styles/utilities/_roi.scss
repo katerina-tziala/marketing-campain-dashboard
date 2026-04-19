@@ -1,0 +1,19 @@
+@layer utilities {
+
+  .roi-text {
+    @apply font-semibold;
+
+    &.positive { 
+      @apply text-success;
+    }
+
+    &.warning  { 
+      @apply text-warning;
+    }
+ 
+    &.negative  { 
+      @apply text-danger;
+    }
+  }
+  
+}

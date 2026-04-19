@@ -1,4 +1,4 @@
-import type { AiProvider, AiAnalysisErrorCode } from '../types'
+import type { AiProviderType, AiAnalysisErrorCode } from '../types'
 import { parseJsonResponse } from '../ai-connection/shared'
 
 const TOKEN_LIMIT_PATTERNS = [
@@ -94,7 +94,7 @@ async function callGroq(
 }
 
 export async function callProviderForAnalysis<T>(
-  provider: AiProvider,
+  provider: AiProviderType,
   apiKey: string,
   model: string,
   prompt: string,

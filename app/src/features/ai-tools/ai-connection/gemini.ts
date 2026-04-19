@@ -2,7 +2,7 @@ import type { GeminiModel, GeminiModelsResponse, AiModel, RankedModelsResponse }
 import { errorCodeFromStatus, parseJsonResponse } from './shared'
 import { generateModelEvaluationPrompt } from '../prompts'
 import { rankModels } from '../utils/rankModels'
-import { PROVIDER_LABELS } from '../types'
+import { PROVIDER_LABELS } from './utils'
 
 function filterModels(models: GeminiModel[]): GeminiModel[] {
   const banned = [

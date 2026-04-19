@@ -1,0 +1,52 @@
+@layer components {
+  .card {
+    @apply rounded-md
+      shadow-md
+      bg-surface
+      border
+      border-surface-border
+      p-3
+      flex
+      flex-col
+      items-start
+      justify-stretch
+      gap-4;
+
+
+    .card-title {
+      @apply w-full text-base font-medium tracking-widest text-primary-400; 
+    }
+
+  }
+
+  .card-secondary {
+     @apply rounded-md
+      shadow-md
+      bg-surface
+      border
+      border-surface-border
+      p-3
+      flex
+      flex-col
+      items-start
+      justify-stretch
+      gap-3 
+      text-sm
+      shadow-sm
+      bg-surface-secondary
+      border-surface-border-secondary;
+  
+    .card-head {
+      @apply w-full flex items-start justify-start gap-2;
+    }
+
+    .card-title {
+      @apply grow font-semibold text-primary-200;
+    }
+
+    .card-content {
+      @apply w-full m-0 leading-5 text-typography;
+    }
+  }
+
+}

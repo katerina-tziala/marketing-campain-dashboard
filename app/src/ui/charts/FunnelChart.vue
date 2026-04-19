@@ -48,19 +48,19 @@ const rows = computed(() =>
     <div
       v-for="row in rows"
       :key="row.label"
-      class="funnel__row"
+      class="funnel-row"
     >
-      <span class="funnel__label">{{ row.label }}</span>
-      <div class="funnel__track">
-        <div class="funnel__bar-wrap">
+      <span class="funnel-label">{{ row.label }}</span>
+      <div class="funnel-track">
+        <div class="funnel-bar-wrap">
           <div
-            class="funnel__bar"
+            class="funnel-bar"
             :style="{ width: `${row.width}%`, backgroundColor: row.color }"
           >
-            <span class="funnel__value">{{ row.formatted }}</span>
+            <span class="funnel-value">{{ row.formatted }}</span>
           </div>
         </div>
-        <span v-if="row.rateLabel" class="funnel__rate">{{ row.rateLabel }}</span>
+        <span v-if="row.rateLabel" class="funnel-rate">{{ row.rateLabel }}</span>
       </div>
     </div>
   </div>
@@ -74,58 +74,58 @@ const rows = computed(() =>
   justify-content: center;
   gap: 20px;
   padding: 16px 0;
+}
 
-  &__row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+.funnel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-  &__label {
-    width: 96px;
-    flex-shrink: 0;
-    font-size: theme('fontSize.xs');
-    color: #cbd5e1;
-    text-align: right;
-  }
+.funnel-label {
+  width: 96px;
+  flex-shrink: 0;
+  font-size: theme('fontSize.xs');
+  color: theme('colors.slate.300');
+  text-align: right;
+}
 
-  &__track {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+.funnel-track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-  &__bar-wrap {
-    flex: 1;
-    display: flex;
-    justify-content: flex-start;
-  }
+.funnel-bar-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
 
-  &__bar {
-    height: 60px;
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    min-width: 64px;
-    transition: width 0.4s ease;
-  }
+.funnel-bar {
+  height: 60px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  min-width: 64px;
+  transition: width 0.4s ease;
+}
 
-  &__value {
-    font-size: theme('fontSize.sm');
-    font-weight: 700;
-    color: #fff;
-    white-space: nowrap;
-  }
+.funnel-value {
+  font-size: theme('fontSize.sm');
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
 
-  &__rate {
-    flex-shrink: 0;
-    width: 80px;
-    font-size: theme('fontSize.xs');
-    font-weight: 500;
-    color: #f59e0b;
-    white-space: nowrap;
-  }
+.funnel-rate {
+  flex-shrink: 0;
+  width: 80px;
+  font-size: theme('fontSize.xs');
+  font-weight: 500;
+  color: #f59e0b;
+  white-space: nowrap;
 }
 </style>

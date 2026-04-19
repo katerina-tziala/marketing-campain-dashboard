@@ -43,7 +43,7 @@ const OUTPUT_SCHEMA = `{
       "expected_impact": {
         "additional_revenue": number,
         "additional_conversions": number,
-        "new_roi_estimate": "string"
+        "new_roi_estimate": number
       },
       "confidence": "High | Medium | Low",
       "reasoning": "string",
@@ -201,8 +201,9 @@ const ESTIMATION_RULES = [
  
 const INTERPRETATION_RULES = [
   'If the optimization scope is filtered, recommendations must remain entirely within the provided channel subset.',
-  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.', 
-  'A campaign should not appear in both top_performers and underperformers unless mixed performance is explicitly explained.'
+  'If performance evidence is limited, use conservative language and emphasize testing rather than scaling.',
+  'A campaign should not appear in both top_performers and underperformers unless mixed performance is explicitly explained.',
+  'Use ROI as the efficiency metric throughout the response. Do not introduce ROAS unless it is explicitly present in the provided dataset or business context.',
 ];
 
 const INTERNAL_ANALYSIS_CHECKLIST = [
@@ -239,20 +240,21 @@ const JSON_OUTPUT_RULES: string[] = [
   'Return ONLY valid JSON',
   'The JSON response must strictly match the schema.',
   'Do not add fields, rename fields, or omit required fields.',
-    '', 
+  '',
   'Strict requirements:',
   'Do not include markdown',
   'Do not include commentary or explanations outside the JSON',
   'Do not include trailing commas',
-  'Use double quotes for all strings', 
+  'Use double quotes for all strings',
   'The final response must contain only the JSON object defined in the schema.',
-  'Do not wrap the JSON in text.', 
-    '',
+  'Do not wrap the JSON in text.',
+  '',
   'Formatting rules:',
-  'Currency formatting rules apply only to textual fields.',
+  'All monetary values must be returned as numbers.',
+  'Do not include currency symbols in numeric fields.',
   'Numeric fields defined as numbers in the schema must remain numeric.',
-  'Percentages must include the percent symbol: 4.36%',
-  'ROI values should be expressed as percentages. Example: 490%',
+  'Percentages may include the percent symbol only when the schema field is a string.',
+  'new_roi_estimate must be returned as a decimal multiplier. Example: 4.9 for a 490% return.',
   'Keep the response compact and decision-oriented',
   'If correlations are not clearly supported by the dataset, return an empty array.',
   `Include the "period" field only if a time period is explicitly provided in the business context.`,
@@ -271,8 +273,6 @@ const JSON_OUTPUT_RULES: string[] = [
   '',
   'If the dataset does not support a credible reallocation opportunity, return an empty recommendations array.'
 ];
-
-
 
 export function generateBudgetOptimizationPrompt(
   data: BudgetOptimizerData,

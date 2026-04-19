@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AiProvider, AiConnectionError, AiModel } from '../features/ai-tools/types'
+import type { AiProviderType, AiConnectionError, AiModel } from '../features/ai-tools/types'
 import { connectProvider } from '../features/ai-tools/ai-connection'
 
 function isConnectionError(result: AiModel[] | AiConnectionError): result is AiConnectionError {
@@ -8,13 +8,12 @@ function isConnectionError(result: AiModel[] | AiConnectionError): result is AiC
 }
 
 function selectBestModel(models: AiModel[]): AiModel {
-  console.log(models);
-  
+  console.log(models)
   return models.reduce((best, m) => m.strength_score > best.strength_score ? m : best)
 }
 
 export const useAiStore = defineStore('ai', () => {
-  const provider = ref<AiProvider | null>(null)
+  const provider = ref<AiProviderType | null>(null)
   const apiKey = ref('')
   const isConnected = ref(false)
   const isConnecting = ref(false)
@@ -23,7 +22,7 @@ export const useAiStore = defineStore('ai', () => {
   const selectedModel = ref<AiModel | null>(null)
   const aiPanelOpen = ref(false)
 
-  async function connect(p: AiProvider, key: string): Promise<void> {
+  async function connect(p: AiProviderType, key: string): Promise<void> {
     isConnecting.value = true
     connectionError.value = null
     try {

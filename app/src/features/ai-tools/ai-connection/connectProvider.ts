@@ -1,4 +1,4 @@
-import type { AiProvider, AiConnectionError, AiConnectionErrorCode, AiModel } from '../types'
+import type { AiProviderType, AiConnectionError, AiConnectionErrorCode, AiModel } from '../types'
 import { errorCodeFromException } from './shared'
 import { connectGemini } from './gemini'
 import { connectGroq } from './groq'
@@ -8,7 +8,7 @@ const ERROR_CODES: Set<string> = new Set<AiConnectionErrorCode>([
 ])
 
 export async function connectProvider(
-  provider: AiProvider,
+  provider: AiProviderType,
   apiKey: string,
 ): Promise<AiModel[] | AiConnectionError> {
   try {

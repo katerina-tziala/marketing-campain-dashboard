@@ -54,7 +54,7 @@ const ERROR_MESSAGES: Record<AiAnalysisErrorCode, string> = {
   'token-limit': 'AI generation is temporarily unavailable due to usage limits.',
   'server-error': 'The AI provider is experiencing issues. Try again later.',
   'parse-error': 'Could not parse the AI response. Try again.',
-  'unknown': 'Something went wrong. Try again.',
+  'unknown': 'Something went wrong.',
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Shared state ──────────────────────────────────────────────────────
 
-  const activeTab = ref<AiAnalysisTab>('optimizer')
+  const activeTab = ref<AiAnalysisTab>('summary')
   const tokenLimitReached = ref(false)
   const analysisActivated = ref(false)
 
@@ -229,7 +229,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const filteredChannels = campaignStore.selectedChannels.length > 0
       ? campaignStore.selectedChannels
       : undefined
-    console.log(data);
+    console.log(data)
 
     if (tab === 'optimizer') {
       return generateBudgetOptimizationPrompt(
@@ -370,7 +370,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     try {
       const prompt = buildPrompt(tab)
-console.log(prompt);
+      console.log(prompt)
 
       const result = await callProviderForAnalysis<TabResponse>(
         aiStore.provider,
@@ -648,7 +648,7 @@ console.log(prompt);
     // Shared
     activeTab,
     tokenLimitReached,
-
+    analysisActivated,
     // Optimizer refs
     optimizerStatus,
     optimizerResponse,

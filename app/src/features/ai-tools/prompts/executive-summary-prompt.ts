@@ -51,14 +51,14 @@ const OUTPUT_SCHEMA = `{
   "correlations": [
     {
       "finding": "string — supported pattern across channels or campaigns",
-      "so_what": "string — business implication"
+      "implication": "string — business implication"
     }
   ],
   "key_metrics": {
-    "total_spend": "string",
-    "total_revenue": "string",
-    "overall_roi": "string",
-    "total_conversions": "string",
+    "total_spend": number,
+    "total_revenue": number,
+    "overall_roi": number,
+    "total_conversions": number,
     "best_channel": "string",
     "worst_channel": "string",
     "best_campaign": "string",
@@ -167,6 +167,17 @@ const ANALYSIS_INSTRUCTIONS = [
   '    2. Channel-level performance',
   '    3. Campaign-level performance',
   '    4. Provided key findings',
+ '',
+  '   Focus only on high-impact signals that materially affect portfolio performance.',
+  '   High-impact signals typically involve:',
+  '   - large revenue contributions',
+  '   - significant ROI differences between channels',
+  '   - inefficient budget allocation',
+  '   - unusually high or low CAC',
+  '   - performance concentration in a small number of channels or campaigns.',
+  '',
+  '   Only include insights derived from these high-impact signals.',
+  '   Exclude minor observations that do not materially affect revenue, ROI, or acquisition efficiency.',
   '7. Score the overall health of the marketing portfolio from 0 to 100 considering:',
   '    1. profitability',
   '    2. efficiency',
@@ -204,17 +215,19 @@ const JSON_OUTPUT_RULES: string[] = [
   'Do not include markdown',
   'Do not include commentary or explanations outside the JSON',
   'Do not include trailing commas',
-  'Use double quotes for all strings', 
+  'Use double quotes for all strings',
   'The final response must contain only the JSON object defined in the schema.',
-  'Do not wrap the JSON in text.', 
+  'Do not wrap the JSON in text.',
   '',
   'Formatting rules:',
-  'All monetary values must be formatted as euro currency strings. Example: €22,200',
-  'Percentages must include the percent symbol: 4.36%',
-  'ROI values should be expressed as percentages. Example: 490%',
+  'All monetary values must be returned as numbers.',
+  'Do not include currency symbols in numeric fields.',
+  'Numeric fields defined as numbers in the schema must remain numeric.',
+  'Percentages may include the percent symbol only when the schema field is a string.',
   'If correlations are not clearly supported by the dataset, return an empty array.',
   'If the provided scope contains no channels outside topChannels, return an empty string for additional_channels_note.',
 ];
+
 export function generateExecutiveSummaryPrompt(
   summaryData: ExecutiveSummaryData,
   businessContext?: BusinessContext,

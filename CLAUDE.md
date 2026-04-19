@@ -30,16 +30,19 @@ app/                        # Vue 3 + Vite project
 ├── src/
 │   ├── common/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
-│   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface
+│   │   │   └── campaign.ts     # Campaign interface + CampaignKPIs interface (incl. totalImpressions, totalClicks, totalConversions) + CampaignScope interface (campaigns/selectedCampaigns/selectedChannels string arrays)
 │   │   ├── utils/
-│   │   │   └── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
+│   │   │   ├── math.ts         # safeDivide + round2 — shared math helpers (CAC uses inline null check instead of safeDivide)
+│   │   │   ├── roi.ts          # roiValue(revenue, budget) → number; roiClass(roi) → 'positive'|'warning'|'negative'; formatROI(value) → string
+│   │   │   ├── campaign-aggregation.ts # groupByChannel(campaigns) → Record<string, ChannelTotals>; ChannelTotals = { budget, revenue, impressions, clicks, conversions }; pure accumulator, no derived metrics
+│   │   │   └── formatters.ts   # formatCurrency(value) → '€N' (en-US, 0 decimals); formatNumber(value) → localized string; formatPercentage(value) → 'N.NN%'; formatCompactCurrency(value) → compact EUR with 1 decimal for ≥1000, 2 decimals otherwise; formatCompactNumber(value) → compact with 1 decimal for ≥1000, localized otherwise
 │   │   └── data/
 │   │       └── MOCK_CAMPAIN_DATA.ts # 21 mock campaigns across 13 real-world channels; exported as MOCK_CAMPAINS
 │   ├── stores/
-│   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs; loadCampaigns action
-│   │   ├── toastStore.ts       # Pinia store — toast queue; addToast / removeToast; 4s auto-dismiss
+│   │   ├── campaignStore.ts    # Pinia store — campaigns, title, filters, KPIs (incl. totalImpressions, totalClicks, totalConversions); channelTotals computed (Record<string, ChannelTotals> via groupByChannel); campaignScope computed (CampaignScope — campaigns/selectedCampaigns/selectedChannels as string arrays); loadCampaigns action
+│   │   ├── toastStore.ts       # Pinia store — toast queue; Toast type uses NotificationVariant; addToast(message, type) internal helper + 4 public helpers: showSuccessToast / showErrorToast / showWarningToast / showInfoToast; removeToast; 4s auto-dismiss
 │   │   ├── aiStore.ts          # Pinia store — provider, apiKey (memory-only), isConnected, isConnecting, connectionError (AiConnectionError), models (AiModel[] sorted by strength_score desc), selectedModel (AiModel — highest strength_score), aiPanelOpen; selectedModelLimitReached, allModelsLimitReached (computed); connect() delegates to connectProvider; disconnect(); markModelLimitReached(modelId); selectNextAvailableModel() — picks next highest-scored non-exhausted model, returns false if none left; openPanel(); closePanel()
-│   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached (global — only when all models exhausted), analysisActivated (cross-tab — analyzing on one tab activates auto-calls on the other); debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, silent model fallback on token-limit (marks model → selectNextAvailableModel → retries transparently, no error shown to user), stamps response.model with display_name on success, model change watcher for cache/auto-call, panel open/close + tab switch evaluation, CSV reset, disconnect reset
+│   │   └── aiAnalysisStore.ts  # Pinia store — shared AI analysis logic for both tabs (optimizer/summary); per-tab state: firstAnalyzeCompleted, status, response, error, errorFallbackMessage, cache, cacheTimestamps, dataCache, cooldowns, lastVisibleCacheKey; shared: activeTab, tokenLimitReached (global — only when all models exhausted), analysisActivated (cross-tab — analyzing on one tab activates auto-calls on the other); debounced label-change auto-calls (300ms), response caching (provider::model::sorted labels), data caching (labels), request cancellation (AbortController), 5s cooldown, silent model fallback on token-limit (marks model → selectNextAvailableModel → retries transparently, no error shown to user), stamps response.model on success, model change watcher for cache/auto-call, setActiveTab cancels in-flight request on previous tab before switching, panel open/close + tab switch evaluation, clearStateForNewCSV (CSV reset), clearStateForDisconnect (delegates to clearStateForNewCSV)
 │   ├── router/
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
@@ -52,44 +55,84 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
 │   │   │   └── index.ts        # Barrel export for charts
 │   │   ├── icons/              # Inline SVG icon components
+│   │   │   ├── AlertCircleIcon.vue  # Circle with exclamation — error toast icon
+│   │   │   ├── AlertTriangleIcon.vue # Triangle with exclamation — warning toast icon
 │   │   │   ├── ArrowLeftIcon.vue
+│   │   │   ├── ArrowUpIcon.vue     # Up arrow icon — used for sort direction indicator
+│   │   │   ├── CheckCircleIcon.vue  # Circle with checkmark — success toast icon
 │   │   │   ├── CloseIcon.vue
 │   │   │   ├── DownloadIcon.vue
+│   │   │   ├── EyeIcon.vue         # Show password icon
+│   │   │   ├── EyeOffIcon.vue      # Hide password icon
 │   │   │   ├── FileTextIcon.vue
+│   │   │   ├── InfoIcon.vue         # Circle with i — info toast icon
 │   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
 │   │   │   ├── SparklesIcon.vue    # AI / sparkles icon
 │   │   │   ├── UploadIcon.vue
 │   │   │   └── index.ts        # Barrel export for icons
 │   │   ├── toast/              # Toast notification module
-│   │   │   ├── ToastNotification.vue  # Single error toast — role="alert", aria-live
-│   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body
+│   │   │   ├── ToastNotification.vue  # Toast component — props: message, variant (NotificationVariant); icon chosen by variant (AlertCircleIcon/CheckCircleIcon/AlertTriangleIcon/InfoIcon); border + bg + icon color match badge tokens; role="alert", aria-live; flat scoped @apply styles
+│   │   │   ├── ToastContainer.vue     # Renders toast queue; Teleport to body; passes variant from toast.type; flat scoped @apply styles
 │   │   │   └── index.ts        # Barrel export for toast
-│   │   ├── BaseButton.vue      # Generic button — primary / ghost variants; icon slot
-│   │   ├── BaseModal.vue       # Generic modal shell — backdrop, header (title prop + close button), single default slot; Escape to close
-│   │   └── index.ts            # Barrel export for the full ui library
+│   │   ├── types/
+│   │   │   ├── badge-variant.ts    # BadgeVariant type — 'success' | 'warning' | 'danger' | 'info' | 'opportunity'; imported by both AI panel components
+│   │   │   └── notification-variant.ts # NotificationVariant type — 'success' | 'error' | 'warning' | 'info'; used by toastStore and ToastNotification
+│   │   ├── forms/              # Form input components
+│   │   │   ├── FileDropzone.vue    # File drop zone — v-model (File|null), id?, accept?, hint?, disabled? props; button element; hidden input (tabindex="-1"); hintId computed from id prop; hasError() plain function (Comment-node filtering) drives input-error class; disabled guards open/drop/drag handlers; named error slot; scoped @apply styles
+│   │   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
+│   │   │   ├── RadioToggle.vue     # Pill-style radio group — v-model, options ({value,label}[]), name?, disabled? props; grid-template-columns driven by options.length; scoped non-BEM styles
+│   │   │   └── index.ts            # Barrel export for forms module
+│   │   ├── BaseModal.vue       # Generic modal shell — Teleport to body; backdrop (click-to-close via @click.self, aria-modal/role="dialog"/aria-label); header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
+│   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
+│   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
+│   │   ├── DataTableHeader.vue # Reusable thead — columns: DataTableColumn[] (key, label, sortable?, align?: 'left'|'right', ariaLabel?, class?); sticky?: bool; sortKey?: string; sortDir?: SortDir; emits sort:[key]; non-sortable → data-table-header; sortable → data-table-sortable-header + ArrowUpIcon; right-align via scoped .th-right; exports DataTableColumn + SortDir types
+│   │   └── index.ts            # Barrel export for the full ui library; re-exports forms/* via ./forms barrel
 │   ├── shell/
-│   │   └── AppShell.vue            # Top-level layout wrapper — flex row at lg+ for push layout; header + app-shell__content (slot) + AiToolsDrawer; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button routes through ReplaceDataModal when data exists
+│   │   ├── AppShell.vue            # Top-level layout wrapper — flat @apply styles (shell-left/shell-header/shell-title/shell-main); flex col → flex row at lg+; shell-left (header + shell-main slot, flex col, overflow-y auto) + AiToolsDrawer sibling; shell-main has max-width 1280px centered; provides openUploadModal and openAiPanel via provide(); uses aiStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysisStore; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
+│   │   └── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close; flat @apply styles (push-drawer/push-drawer-panel/overlay/overlay-panel, open modifier class)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   ├── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→400px); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close
-│   │   │   │   ├── AiToolsContent.vue      # Root content — shows AiConnectionForm when disconnected; AiConnectedStatus + AiTabs + panel when connected; uses aiAnalysisStore.activeTab for tab routing
-│   │   │   │   ├── AiConnectionForm.vue    # Provider radio buttons (Gemini/Groq) + API key input (show/hide) + Connect button with spinner + inline error with contextual hint per error code; owns all user-facing error messages via ERROR_MESSAGES and ERROR_HINTS maps
-│   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot + "Connected" + Disconnect link; disconnect clears analysis state via aiAnalysisStore
-│   │   │   │   ├── AiTabs.vue              # Tab bar — Optimizer (SlidersIcon) + Summary (FileTextIcon); emits change event
-│   │   │   │   ├── AiOptimizerPanel.vue    # Budget Optimizer tab — title + file subtitle + Analyze/Re-Analyze button (cooldown-disabled); idle/loading/done/error states; renders full BudgetOptimizerResponse: executive summary, recommendations, top/underperformers, quick wins, correlations, risks; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
-│   │   │   │   └── AiSummaryPanel.vue      # Executive Summary tab — title + file subtitle + Summarize/Re-Summarize button (cooldown-disabled); idle/loading/done/error states; renders full ExecutiveSummaryResponse: health score, bottom line, key metrics, insights, priority actions, channel summary, correlations; cached indicator with timestamp, error fallback message, token-limit notice; wired to aiAnalysisStore
+│   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + AiAnalysis when connected; grid layout (status bar / tabs / scroll area)
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── callProvider.ts     # callProviderForAnalysis<T>(provider, apiKey, model, prompt, signal) → T; calls Gemini/Groq with AbortSignal support (no timeout — relies on external signal), token/quota limit detection (429, RESOURCE_EXHAUSTED, rate_limit), strips models/ prefix for Gemini, parses JSON response
-│   │   │   │   └── index.ts            # Barrel export — only callProviderForAnalysis
+│   │   │   │   ├── index.ts            # Barrel export — only callProviderForAnalysis
+│   │   │   │   └── components/         # AI analysis UI — tab switcher, shared section wrappers, budget-optimization and executive-summary component trees
+│   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs (Summary/Optimizer) + scrollable container; reads aiAnalysisStore.activeTab; renders BudgetOptimizationAnalysis or ExecutiveSummaryAnalysis; flat scoped .panel-container style
+│   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
+│   │   │   │       ├── shared/                 # Shared components used by both tabs — props-only, no store reads
+│   │   │   │       │   ├── AnalysisState.vue       # Analysis wrapper — props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, cacheTimestamp (string|number|null), modelName?; formats cacheTimestamp internally via computed; emit: analyze; slot: result content; handles header, token-limit notice, idle/loading/error/result states; grouped scoped styles
+│   │   │   │       │   ├── AnalysisSummary.vue     # Section header — props: title, period?, scope (CampaignScope); #badge slot (optional right-side content); default slot (body); analysis-details renders period/campaigns/channels as .detail-item spans; bullet separator from global _detail-item.scss; no scoped styles
+│   │   │   │       │   └── AnalysisCorrelations.vue # Correlations section — correlations: Correlation[] prop; v-if on length; no scoped styles (global classes only)
+│   │   │   │       ├── budget-optimization/    # Budget Optimizer tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
+│   │   │   │       │   ├── BudgetOptimizationAnalysis.vue        # Budget Optimizer tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
+│   │   │   │       │   ├── BudgetOptimizationOverview.vue        # Executive summary — props: summary, period?, scope (CampaignScope); wraps AnalysisSummary
+│   │   │   │       │   ├── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; confidenceVariant + urgencyVariant badges; formatEuro + formatRoi; rec-card container-type for badge stacking via @container (max-width: 460px)
+│   │   │   │       │   ├── BudgetOptimizationTopPerformers.vue   # Top Performers — props: performers[]; ROI in text-success
+│   │   │   │       │   ├── BudgetOptimizationUnderperformers.vue # Underperformers — props: underperformers[]; actionVariant badge; ROI in text-danger--5p
+│   │   │   │       │   ├── BudgetOptimizationQuickWins.vue       # Quick Wins — props: quickWins[]; effortVariant badge
+│   │   │   │       │   └── BudgetOptimizationRisks.vue           # Risks & Mitigations — props: risks[]; v-if on length
+│   │   │   │       └── executive-summary/      # Executive Summary tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
+│   │   │   │           ├── ExecutiveSummaryAnalysis.vue        # Executive Summary tab — thin orchestrator; wraps AnalysisState; delegates all sections to sibling components; reads campaignStore + aiAnalysisStore; no scoped styles
+│   │   │   │           ├── ExecutiveSummaryHealth.vue          # Portfolio Health — props: healthScore, bottomLine, period?, totalCampaigns, selectedCampaigns; wraps AnalysisSummary with health badge in #badge slot
+│   │   │   │           ├── ExecutiveSummaryPriorityActions.vue # Priority Actions — props: actions (priority_actions[]); urgencyVariant badge
+│   │   │   │           ├── ExecutiveSummaryMetrics.vue         # Key Metrics grid — props: metrics (key_metrics); formatEuro/formatRoi/formatNumber/classROI; metrics-grid container-type for expandable/full-width breakpoints via @container
+│   │   │   │           ├── ExecutiveSummaryInsights.vue        # Insights — props: insights[]; insightTypeVariant badge
+│   │   │   │           └── ExecutiveSummaryChannels.vue        # Channel Summary — props: channels[], additionalChannelsNote?; channelStatusVariant badge + border-left color
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── shared.ts           # errorCodeFromStatus, errorCodeFromException, parseJsonResponse — shared utilities for provider modules (no timeouts)
 │   │   │   │   ├── gemini.ts           # connectGemini(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGemini, filterModels, getOptimalModel (flash-first + latest version), buildFallbackModel are internal
 │   │   │   │   ├── groq.ts             # connectGroq(apiKey) → AiModel[] (full flow: fetch → filter → optimal model → AI selection prompt → return ranked models; falls back to optimal model on AI prompt failure); callGroq, filterModels, getOptimalModel (most recent created), buildFallbackModel are internal
 │   │   │   │   ├── connectProvider.ts  # connectProvider(provider, apiKey) → AiModel[] | AiConnectionError; thin wrapper that delegates to connectGemini/connectGroq; catches errors and maps known error codes from message or falls back to errorCodeFromException
-│   │   │   │   └── index.ts            # Barrel export — only connectProvider
+│   │   │   │   ├── index.ts            # Barrel export — only connectProvider
+│   │   │   │   ├── components/         # Connection UI components
+│   │   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (PROVIDER_OPTIONS from utils) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; providerHelp computed from PROVIDER_HELP; imports PROVIDER_OPTIONS, PROVIDER_HELP, ERROR_MESSAGES, ERROR_HINTS from utils/; flat scoped styles (no BEM)
+│   │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore; flat scoped styles (no BEM)
+│   │   │   │   │   └── index.ts                # Barrel export — AiConnectionForm, AiConnectedStatus
+│   │   │   │   └── utils/              # Connection UI constants
+│   │   │   │       └── index.ts        # PROVIDER_LABELS (Record<AiProviderType, string>), PROVIDER_HELP (Record<AiProviderType, ...>), ERROR_MESSAGES, ERROR_HINTS, PROVIDER_OPTIONS
 │   │   │   ├── types/
-│   │   │   │   └── index.ts            # AiProvider, PROVIDER_LABELS, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel (incl. limitReached), RankedModelsResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError + shared building blocks (PerformanceDeltas for roiDelta/cacDelta/cvrDelta) + prompt types + data/response types
+│   │   │   │   └── index.ts            # AiProviderType, AiConnectionErrorCode (incl. no-models), AiConnectionError, AiModel (incl. limitReached), RankedModelsResponse, GeminiModel, GeminiModelsResponse, GroqModel, GroqModelsResponse, AiAnalysisTab, AiAnalysisStatus, AiAnalysisErrorCode, AiAnalysisError (code + message) + shared building blocks (PerformanceDeltas, CampainSummaryTotals, AllocationShare, FunnelMetrics, PortfolioCount, Correlation) + prompt types (PromptList, PromptInstructions, PromptInstructionStep, PromptScopeConfig, BusinessContext, BudgetOptimizerContextInput) + data types (ExecutiveSummaryData, BudgetOptimizerData) + response types (BudgetOptimizerResponse, ExecutiveSummaryResponse with additional_channels_note? and stricter icon union)
 │   │   │   ├── prompts/
 │   │   │   │   ├── prompt-utils.ts             # Shared prompt helpers — getPromptList, getPromptInstructions, getAnalysisInstructions, getInterpretationRulesBlock, getOutputRulesBlock, getScopeBlock
 │   │   │   │   ├── business-context.ts         # Business context prompt block builder — getBusinessContextLinesForPrompt, getBusinessContextForPrompt, generateBusinessContextForPrompt
@@ -99,38 +142,73 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── index.ts                    # Barrel export for prompts
 │   │   │   ├── mocks/
 │   │   │   │   ├── budget-optimizer-mocks.ts    # 5 BudgetOptimizerResponse mock objects (aggressive reallocation, conservative, seasonal pivot, channel consolidation, growth expansion)
-│   │   │   │   ├── executive-summary-mocks.ts  # 5 ExecutiveSummaryResponse mock objects (strong portfolio, needs attention, excellent, critical, growth phase)
+│   │   │   │   ├── executive-summary-mocks.ts  # 5 ExecutiveSummaryResponse mock objects (strong portfolio, needs attention, excellent, critical, growth phase); each stamped with model (MOCK_GEMINI_FLASH or MOCK_GROQ_LLAMA) and period ('Q1/Q2 2026')
 │   │   │   │   └── index.ts                    # Barrel export for mocks
 │   │   │   ├── utils/
 │   │   │   │   ├── buildExecutiveSummaryData.ts # Transforms Campaign[] into ExecutiveSummaryData — portfolio benchmarks, delta signals (roiDelta/cacDelta/cvrDelta), campaign classification (top: ROI+CAC vs portfolio, underperforming: 2+ signal threshold, no overlap), channel materiality ranking, priority-ordered key findings; min sample threshold, CAC=Infinity for zero conversions
 │   │   │   │   ├── buildBudgetOptimizerData.ts  # Transforms Campaign[] into BudgetOptimizerData — per-campaign metrics, channel aggregation, portfolio totals; called on-demand at prompt time with filtered data
-│   │   │   │   └── rankModels.ts                # rankModels(parsed, fallback) — filters out models with strength_score < 6, sorts by strength_score desc, inits limitReached, updates optimal model properties from AI response
-│   │   │   └── index.ts            # Barrel export
+│   │   │   │   ├── rankModels.ts                # rankModels(parsed, fallback) — filters out models with strength_score < 6, sorts by strength_score desc, inits limitReached, updates optimal model properties from AI response
+│   │   │   │   ├── analysis-badge-variants.ts   # Badge variant helpers for AI panels — internal badgeVariant(map, key) generic resolver; exports: healthScoreVariant, channelStatusVariant, urgencyVariant, insightTypeVariant, confidenceVariant, actionVariant, effortVariant
+│   │   │   │   └── panel-formatters.ts          # Display string helpers for AI panels — exports: formatRoi, formatEuro, formatNumber
+│   │   │   └── index.ts            # Barrel export (empty — AiToolsDrawer moved to shell/)
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; table section uses global `.card` class
 │   │   │   └── components/         # Components owned by this view
-│   │   │       ├── EmptyState.vue      # No-data screen — download template + upload CSV buttons
-│   │   │       ├── KpiCard.vue         # Single KPI metric card
-│   │   │       ├── CampaignTable.vue   # Sortable campaign data table
+│   │   │       ├── DashboardHeader.vue # Dashboard header — reads campaignStore (title, campaign/channel counts) + aiStore (isConnected, aiPanelOpen); emits aiClick (camelCase); multi-root (title-row + details); AI button disabled when panel open; connected dot (top-right) shown when AI connected + panel closed; layout wrapper provided by DashboardView
+│   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CAC); owns .kpi-grid scoped style
+│   │   │       ├── DashboardCharts.vue # Charts section — props: campaigns (Campaign[]), channelTotals (Record<string, ChannelTotals>), kpis (CampaignKPIs); all chart computeds internal (campaignColorMap, roiChartData, budgetCampaignData, revVsBudgetData via channelTotals, funnelValues via kpis); owns .charts-grid scoped style
+│   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
+│   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot for projected secondary metric; flat scoped styles (no BEM)
+│   │   │       ├── CampaignTable.vue   # Sortable campaign data table; uses global data-table classes; channel cell uses `.badge.info` global CSS class; ROI coloring via scoped modifier classes (--roi-positive/warning/negative)
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
-│   │   └── csv-file/               # CSV feature folder
+│   │   └── data-transfer/          # CSV upload & data transfer feature folder
+│   │       ├── index.ts            # Barrel — exports UploadModal, ReplaceDataModal, FileActions, useUploadModal for external consumers
 │   │       ├── types/
-│   │       │   └── index.ts        # CsvValidationError, CsvParseResult types
+│   │       │   └── index.ts        # CsvRowError (row/column/issue), CsvCampaign (extends Campaign + rowNum), CsvDuplicateGroup (campaignName + rows: CsvCampaign[]), CsvValidationErrorType (union incl. duplicate_campaigns), CsvValidationError (type + detail? + missingColumns? + rowErrors? + duplicateGroups?), CsvParseResult (campaigns: CsvCampaign[]), ProcessRowsResult (campaigns: CsvCampaign[])
 │   │       ├── components/
-│   │       │   ├── UploadModal.vue         # Self-contained modal — open/close state, parse logic, store calls, download template; exposes only open()
-│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — warns that uploading will replace current data; emits confirm/close; opened by AppShell header button when data exists
-│   │       │   ├── CsvUploadForm.vue       # Multi-root (body + footer divs) — title input + dropzone + Upload/Cancel/Download buttons; v-model title & file; parseError prop
-│   │       │   └── CsvErrorTable.vue       # Multi-root (body + footer divs) — error summary + table + Back/Proceed/Cancel buttons
+│   │       │   ├── FileActions.vue         # Download Template + Upload CSV button pair — emits upload; uses useDownloadTemplate; flat @apply scoped styles; responsive stacking at <480px
+│   │       │   ├── UploadModal.vue         # Self-contained modal — view: 'form'|'row-errors'|'duplicate-rows'; open/close/parse/store; exposes only open(); sequential error handling: invalid_rows → row-errors view, then duplicate_campaigns → duplicate-rows view (or direct if no row errors)
+│   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps BaseModal; uses global .modal-body, .modal-footer, .btn-secondary-outline, .btn-primary; no scoped styles; emits confirm/close; opened by AppShell header button when data exists
+│   │       │   ├── UploadCampainData.vue   # Multi-root (body + footer divs) — title input + FileDropzone (hint="CSV", error via #error slot) + Upload/Cancel/Download buttons; v-model title & file; parseError + isLoading props; imports isValidCsvFile from parse-csv; field label has for="csv-file" linking to FileDropzone's hidden input; uses global field/form-control classes; footer stacks vertically at <480px
+│   │       │   ├── DisplayUploadErrorsStep.vue # Multi-root (body + footer divs) — uses DataErrorSummary for error blocks (stacked: invalid-only / partial-import) + DuplicateSummary for duplicate notice; scrollable table (CsvRowError[]); duplicateGroupCount prop: adapts proceed label ('Proceed with valid rows' or 'Review duplicate campaigns'); proceed visible when validCampaigns > 0 OR duplicateGroupCount > 0
+│   │       │   └── validation/
+│   │       │       ├── DataErrorSummary.vue # Presentational summary block — 3 named slots: title, badge, summary; no props, no scoped styles
+│   │       │       ├── DuplicateSummary.vue # Duplicate-specific summary block — wraps DataErrorSummary; props: count, variant ('notice'|'resolve', default 'notice'), hasValidCampaigns?; notice variant: "will be resolved in next step"; resolve variant: "select one row per group" with danger/warning badge toggle
+│   │       │       ├── DataErrorsTable.vue # Dumb table component — props: errors (CsvRowError[]); sortable Row column (asc/desc toggle, data-table-sortable-header + data-table-sticky-header); flat @apply styles; no BEM
+│   │       │       └── CampainDuplicationsTable.vue # Sortable grouped duplicate table — props: duplicateGroups (CsvDuplicateGroup[]); owns sort state (rowNum/conversions/revenue), selection Map, CheckIcon group headers; emits change:[CsvCampaign[]] on every selection; 8-column table with DataTableHeader; scoped group-header/cell-select/row-selectable styles
+│   │       │   └── ResolveDuplicationsStep.vue # Multi-root (body + footer divs) — uses DuplicateSummary (variant="resolve") + CampainDuplicationsTable; resolve-indicator shows resolvedCount/total (green when allResolved); canProceed: validCampaigns.length > 0 OR selectedCampaigns.length > 0; emits proceed([CsvCampaign[]]) with campaigns from @change; Back/Proceed/Cancel buttons
 │   │       ├── composables/
-│   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
+│   │       │   ├── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
+│   │       │   └── useUploadModal.ts       # Upload modal composable — accepts modalRef (InstanceType<UploadModal>); uses campaignStore internally; hasCampaigns computed; requestUpload (opens modal or shows replace confirm based on hasCampaigns); onReplaceConfirm/closeReplaceConfirm; calls provide('openUploadModal') internally
 │   │       └── utils/
-│   │           ├── downloadCsv.ts  # Builds CSV string from Campaign[], triggers browser download
-│   │           └── parseCsv.ts     # PapaParse wrapper — validates columns and rows, returns CsvParseResult
+│   │           ├── download-csv.ts         # Builds CSV string from Campaign[], triggers browser download
+│   │           ├── error-messages.ts       # All CSV validation display text — VALIDATION_ERROR_MESSAGES const map (incl. duplicate_campaigns) with {placeholder} syntax; getValidationErrorMessage(error); getRowErrorMessage(error); getRowErrorSummaryWords(invalidCount, validCount) → RowErrorSummaryWords; replacePlaceholders helper
+│   │           ├── detect-campaign-duplication.ts # detectCampaignDuplication(campaigns: CsvCampaign[]) → { unique, groups } — case-insensitive name grouping; separates unique from duplicate groups
+│   │           ├── map-campaign.ts         # toCampaign(CsvCampaign) → Campaign; toCampaigns(CsvCampaign[]) → Campaign[] — strips rowNum before store; single mapping boundary in UploadModal
+│   │           ├── parse-csv.ts            # PapaParse wrapper — exports isValidCsvFile(f) → bool; file-level validation (type/size) + parse; delegates to validate-campaign-data
+│   │           ├── validate-campaign-data.ts # Campaign data validator — EXPECTED_HEADERS; column presence check; empty-file check; processRows returns CsvCampaign[] (fields + rowNum spread); delegates duplicate detection to detect-campaign-duplication; returns CsvParseResult with both invalid_rows and duplicate_campaigns errors when applicable
+│   │           └── validate-row-data.ts    # Per-row field validation — validateRow + three sub-validators (string/numeric/funnel); guard helpers; returns CsvRowError[]
+│   ├── styles/
+│   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss
+│   │   ├── components/
+│   │   │   ├── index.scss          # Barrel — @use all component partials
+│   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
+│   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
+│   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
+│   │   │   ├── _card.scss          # @layer components — .card, .card-secondary; flat child classes: .card-head, .card-title, .card-content
+│   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-typography-subtle)
+│   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
+│   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
+│   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell
+│   │   └── utilities/
+│   │       ├── index.scss          # Barrel — @use all utility partials
+│   │       ├── _roi.scss           # @layer utilities — .roi-text with .positive/.warning/.negative modifiers
+│   │       └── _scrollbar.scss     # @layer utilities — .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
-│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode
+│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/index
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; danger (default + -5p), success, warning, typography (default/subtle/intense), surface (default/secondary), surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; badge colors moved to SCSS
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/
 └── package.json                # Locked via package-lock.json
@@ -197,6 +275,11 @@ app/                        # Vue 3 + Vite project
 ### Git
 - **Never run git commands** — no git status, git add, git commit, git log, or any other git operation.
 - The user handles all git operations. When asked for a commit message, provide the text only — no commands.
+
+### Styling
+- **No BEM** — the project does not use BEM class naming. The codebase has been fully cleaned of BEM.
+- All styles use flat class names with `@apply` (Tailwind utility composition in SCSS). No `__element` or `--modifier` suffixes.
+- Never introduce BEM in new code. If BEM is encountered anywhere, replace it immediately as part of the current task.
 
 ### Per interaction type
 

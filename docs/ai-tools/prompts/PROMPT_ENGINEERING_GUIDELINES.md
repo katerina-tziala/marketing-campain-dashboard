@@ -31,11 +31,11 @@ Different models interpret prompts differently due to variations in training dat
 
 These techniques include:
 
- - explicit role definition to anchor the model’s reasoning perspective
- - clear task framing that defines the expected analytical objective
- - structured reasoning instructions that guide how the model evaluates the provided data
- - strict schema constraints that standardize output structure
- - explicit guardrails that reduce ambiguity and prevent unsupported assumptions
+- explicit role definition to anchor the model’s reasoning perspective
+- clear task framing that defines the expected analytical objective
+- structured reasoning instructions that guide how the model evaluates the provided data
+- strict schema constraints that standardize output structure
+- explicit guardrails that reduce ambiguity and prevent unsupported assumptions
 
 These design choices improve cross-model reliability and allow the system to switch between model providers without requiring significant changes to prompt logic.
 
@@ -46,25 +46,27 @@ Each prompt defines strict output rules and formatting requirements that the mod
 
 Key deterministic design techniques include:
 
- - strict JSON schema enforcement
- - explicit formatting rules for currency values, percentages, and numerical metrics
+- strict JSON schema enforcement
+- explicit formatting rules for numeric metrics and percentage values
 - instructions requiring the model to return only the JSON response without additional commentary
- - guardrails preventing unsupported assumptions or invented metrics
+- guardrails preventing unsupported assumptions or invented metrics
 
 These constraints significantly reduce response variability and ensure that model outputs remain predictable and safe to render directly within the application interface.
+
+Financial metrics such as spend, revenue, and budget allocations are returned as numeric values. Currency symbols and localized formatting are applied by the application interface when rendering the results.
 
 ## Structured Reasoning Design
 The prompts incorporate structured reasoning instructions that guide the model through a consistent analytical process before producing the final output.
 
-Rather than immediately generating a response, the model is instructed to internally analyze the provided dataset using a defined reasoning sequence before producing the final output.This approach improves analytical quality and reduces variability across different LLM architectures.
+Rather than immediately generating a response, the model is instructed to internally analyze the provided dataset using a defined reasoning sequence before producing the final output. This approach improves analytical quality and reduces variability across different LLM architectures.
 
 Typical reasoning steps include:
 
- - evaluating portfolio-level performance signals
- - analyzing channel or campaign efficiency
- - identifying performance drivers or inefficiencies
- - evaluating allocation or optimization opportunities
- - prioritizing insights based on the strength of the available signals
+- evaluating portfolio-level performance signals
+- analyzing channel or campaign efficiency
+- identifying performance drivers or inefficiencies
+- evaluating allocation or optimization opportunities
+- prioritizing insights based on the strength of the available signals
 
 By guiding the model through structured reasoning steps, the prompts reduce randomness in the analysis process and encourage consistent evaluation across different models.
 
@@ -75,21 +77,20 @@ While the exact sections may vary depending on the task being performed, prompts
 
 Typical prompt components include:
 
- - **Role:** Defines the analytical persona the model should adopt when performing the task.
- - **Task:** Clarifies the objective of the prompt and the expected analytical outcome.
- - **Input Data:** Structured data provided dynamically by the application at runtime.
- - **Context or Scope:** Optional contextual information or filters that define the boundaries of the analysis.
- - **Analysis Instructions:** Structured reasoning steps guiding how the model should evaluate the provided data.
- - **Guardrails or Operational Constraints:** Rules that prevent unrealistic conclusions, unsupported assumptions, or invalid recommendations.
- - **Output Rules:** Strict formatting rules that enforce deterministic outputs.
- - **Response Schema:** A predefined JSON structure that the model must return.
+- **Role:** Defines the analytical persona the model should adopt when performing the task.
+- **Task:** Clarifies the objective of the prompt and the expected analytical outcome.
+- **Input Data:** Structured data provided dynamically by the application at runtime.
+- **Context or Scope:** Optional contextual information or filters that define the boundaries of the analysis.
+- **Analysis Instructions:** Structured reasoning steps guiding how the model should evaluate the provided data.
+- **Guardrails or Operational Constraints:** Rules that prevent unrealistic conclusions, unsupported assumptions, or invalid recommendations.
+- **Output Rules:** Strict formatting rules that enforce deterministic outputs.
+- **Response Schema:** A predefined JSON structure that the model must return.
 
 Depending on the analytical objective, prompts may also include specialized sections such as scoring guidelines, optimization guardrails, or evaluation criteria.
 
-Using a consistent architectural pattern improves cross-model reliability and makes prompts easier to maintain as the system evolves
+Using a consistent architectural pattern improves cross-model reliability and makes prompts easier to maintain as the system evolves.
 
 ## Benefits of the Prompt Design Framework
-
 Applying these prompt engineering principles provides several operational benefits for the AI features in the application.
 
 First, it improves cross-model reliability, allowing the system to run the same prompts across different LLM providers while maintaining consistent results.

@@ -1,4 +1,26 @@
-import type { BudgetOptimizerResponse } from '../types'
+import type { AiModel, BudgetOptimizerResponse } from '../types'
+
+const MOCK_GEMINI_FLASH: AiModel = {
+  id: 'gemini-2.0-flash',
+  model: 'gemini-2.0-flash',
+  display_name: 'Gemini 2.0 Flash',
+  provider: 'gemini',
+  strength: 'Fast and efficient for structured analysis tasks',
+  strength_score: 8,
+  reason: 'Best balance of speed and accuracy for marketing budget analysis',
+  limitReached: false,
+}
+
+const MOCK_GROQ_LLAMA: AiModel = {
+  id: 'llama-3.3-70b-versatile',
+  model: 'llama-3.3-70b-versatile',
+  display_name: 'Llama 3.3 70B',
+  provider: 'groq',
+  strength: 'High-quality reasoning with detailed analytical depth',
+  strength_score: 9,
+  reason: 'Strong analytical reasoning with comprehensive budget optimization insights',
+  limitReached: false,
+}
 
 /**
  * 5 mock BudgetOptimizerResponse objects for UI development.
@@ -8,6 +30,7 @@ import type { BudgetOptimizerResponse } from '../types'
 // ── Mock 1: Aggressive Reallocation ──────────────────────────────────────────
 
 const aggressiveReallocation: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   executive_summary:
     'Your portfolio shows a 3.4x spread between best and worst ROI channels. ' +
@@ -22,7 +45,7 @@ const aggressiveReallocation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 14200,
         additional_conversions: 112,
-        new_roi_estimate: '3.9x',
+        new_roi_estimate: 3.9,
       },
       confidence: 'High',
       reasoning:
@@ -42,7 +65,7 @@ const aggressiveReallocation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 8400,
         additional_conversions: 68,
-        new_roi_estimate: '3.5x',
+        new_roi_estimate: 3.5,
       },
       confidence: 'Medium',
       reasoning:
@@ -62,7 +85,7 @@ const aggressiveReallocation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 18000,
         additional_conversions: 240,
-        new_roi_estimate: '12.0x',
+        new_roi_estimate: 12.0,
       },
       confidence: 'High',
       reasoning:
@@ -160,6 +183,7 @@ const aggressiveReallocation: BudgetOptimizerResponse = {
 // ── Mock 2: Conservative Optimization ────────────────────────────────────────
 
 const conservativeOptimization: BudgetOptimizerResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   executive_summary:
     'Your marketing portfolio is broadly healthy with a 2.1x overall ROI. ' +
@@ -174,7 +198,7 @@ const conservativeOptimization: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 9600,
         additional_conversions: 150,
-        new_roi_estimate: '10.7x',
+        new_roi_estimate: 10.7,
       },
       confidence: 'High',
       reasoning:
@@ -194,7 +218,7 @@ const conservativeOptimization: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 5400,
         additional_conversions: 56,
-        new_roi_estimate: '5.2x',
+        new_roi_estimate: 5.2,
       },
       confidence: 'Medium',
       reasoning:
@@ -266,6 +290,7 @@ const conservativeOptimization: BudgetOptimizerResponse = {
 // ── Mock 3: Seasonal Pivot ───────────────────────────────────────────────────
 
 const seasonalPivot: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q2 2026 (Summer)',
   executive_summary:
     'With summer approaching, consumer behavior shifts toward mobile and social channels. ' +
@@ -280,7 +305,7 @@ const seasonalPivot: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 7800,
         additional_conversions: 54,
-        new_roi_estimate: '3.8x',
+        new_roi_estimate: 3.8,
       },
       confidence: 'Medium',
       reasoning:
@@ -300,7 +325,7 @@ const seasonalPivot: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 6800,
         additional_conversions: 85,
-        new_roi_estimate: '2.8x',
+        new_roi_estimate: 2.8,
       },
       confidence: 'Medium',
       reasoning:
@@ -320,7 +345,7 @@ const seasonalPivot: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 12000,
         additional_conversions: 190,
-        new_roi_estimate: '19.0x',
+        new_roi_estimate: 19.0,
       },
       confidence: 'High',
       reasoning:
@@ -406,6 +431,7 @@ const seasonalPivot: BudgetOptimizerResponse = {
 // ── Mock 4: Channel Consolidation ────────────────────────────────────────────
 
 const channelConsolidation: BudgetOptimizerResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   executive_summary:
     'Your budget is spread across 13 channels, diluting focus and making optimization difficult. ' +
@@ -420,7 +446,7 @@ const channelConsolidation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 22400,
         additional_conversions: 280,
-        new_roi_estimate: '7.0x',
+        new_roi_estimate: 7.0,
       },
       confidence: 'High',
       reasoning:
@@ -440,7 +466,7 @@ const channelConsolidation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 13500,
         additional_conversions: 140,
-        new_roi_estimate: '4.2x',
+        new_roi_estimate: 4.2,
       },
       confidence: 'High',
       reasoning:
@@ -460,7 +486,7 @@ const channelConsolidation: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 8200,
         additional_conversions: 36,
-        new_roi_estimate: '2.7x',
+        new_roi_estimate: 2.7,
       },
       confidence: 'Medium',
       reasoning:
@@ -546,6 +572,7 @@ const channelConsolidation: BudgetOptimizerResponse = {
 // ── Mock 5: Growth Expansion ─────────────────────────────────────────────────
 
 const growthExpansion: BudgetOptimizerResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   executive_summary:
     'Your top performers have significant headroom for scaling. Analysis suggests a 20% total budget increase ' +
@@ -560,7 +587,7 @@ const growthExpansion: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 13600,
         additional_conversions: 108,
-        new_roi_estimate: '3.4x',
+        new_roi_estimate: 3.4,
       },
       confidence: 'High',
       reasoning:
@@ -580,7 +607,7 @@ const growthExpansion: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 21600,
         additional_conversions: 240,
-        new_roi_estimate: '10.8x',
+        new_roi_estimate: 10.8,
       },
       confidence: 'Medium',
       reasoning:
@@ -600,7 +627,7 @@ const growthExpansion: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 15000,
         additional_conversions: 190,
-        new_roi_estimate: '7.0x',
+        new_roi_estimate: 7.0,
       },
       confidence: 'Medium',
       reasoning:
@@ -620,7 +647,7 @@ const growthExpansion: BudgetOptimizerResponse = {
       expected_impact: {
         additional_revenue: 13800,
         additional_conversions: 144,
-        new_roi_estimate: '4.6x',
+        new_roi_estimate: 4.6,
       },
       confidence: 'Medium',
       reasoning:

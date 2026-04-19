@@ -8,11 +8,12 @@ const toastStore = useToastStore()
 <template>
   <Teleport to="body">
     <div class="toast-container" aria-label="Notifications">
-      <TransitionGroup name="toast" tag="div" class="toast-container__list">
+      <TransitionGroup name="toast" tag="div" class="toast-list">
         <ToastNotification
           v-for="toast in toastStore.toasts"
           :key="toast.id"
           :message="toast.message"
+          :variant="toast.type"
           @dismiss="toastStore.removeToast(toast.id)"
         />
       </TransitionGroup>
@@ -22,34 +23,23 @@ const toastStore = useToastStore()
 
 <style lang="scss" scoped>
 .toast-container {
-  position: fixed;
-  bottom: theme('spacing.6');
-  right: theme('spacing.6');
-  z-index: 9999;
-  pointer-events: none;
-
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: theme('spacing.3');
-    align-items: flex-end;
-  }
+  @apply fixed bottom-6 left-6 z-[99999] pointer-events-none;
 }
 
-// ── Transition ─────────────────────────────────────────────────────────────────
-
+.toast-list {
+  @apply flex flex-col gap-3 items-start;
+}
+ 
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 250ms ease, transform 250ms ease;
+  @apply transition-opacity transition-transform duration-300 ease-in-out;
 }
 
 .toast-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
+  @apply opacity-0 translate-y-2;
 }
 
 .toast-leave-to {
-  opacity: 0;
-  transform: translateX(16px);
+  @apply opacity-0 -translate-x-4;
 }
 </style>

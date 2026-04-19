@@ -1,0 +1,30 @@
+@layer components {
+
+  .ai-panel {
+    @apply flex flex-col gap-4;
+  }
+
+  .ai-section {
+    @apply flex flex-col gap-3 text-sm;
+
+    p > strong {
+      @apply font-semibold text-primary-300;
+    }
+  }
+
+  .section-title {
+    @apply text-base font-bold tracking-wider m-0 text-primary-300;
+  }
+
+  .section-subtitle {
+    @apply text-sm tracking-wide font-semibold text-primary-200;
+  }
+
+  .section-note {
+    @apply italic m-0 leading-6;
+  }
+
+  .analysis-details {
+    @apply text-xs font-medium text-typography-subtle;
+  }
+}

@@ -1,4 +1,26 @@
-import type { ExecutiveSummaryResponse } from '../types'
+import type { AiModel, ExecutiveSummaryResponse } from '../types'
+
+const MOCK_GEMINI_FLASH: AiModel = {
+  id: 'gemini-2.0-flash',
+  model: 'gemini-2.0-flash',
+  display_name: 'Gemini 2.0 Flash',
+  provider: 'gemini',
+  strength: 'Fast and efficient for structured analysis tasks',
+  strength_score: 8,
+  reason: 'Best balance of speed and accuracy for executive summary generation',
+  limitReached: false,
+}
+
+const MOCK_GROQ_LLAMA: AiModel = {
+  id: 'llama-3.3-70b-versatile',
+  model: 'llama-3.3-70b-versatile',
+  display_name: 'Llama 3.3 70B',
+  provider: 'groq',
+  strength: 'High-quality reasoning with detailed analytical depth',
+  strength_score: 9,
+  reason: 'Strong analytical reasoning with comprehensive portfolio insights',
+  limitReached: false,
+}
 
 /**
  * 5 mock ExecutiveSummaryResponse objects for UI development.
@@ -8,6 +30,7 @@ import type { ExecutiveSummaryResponse } from '../types'
 // ── Mock 1: Strong Portfolio ─────────────────────────────────────────────────
 
 const strongPortfolio: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   health_score: {
     score: 82,
@@ -83,18 +106,18 @@ const strongPortfolio: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Owned channels average 12.6x ROI versus 2.1x for paid channels',
-      so_what: 'Every euro shifted from paid to owned audience growth compounds long-term returns.',
+      implication: 'Every euro shifted from paid to owned audience growth compounds long-term returns.',
     },
     {
       finding: 'Campaigns with CVR > 5% all have direct customer relationships (email, push, referral)',
-      so_what: 'First-party data drives the highest conversion rates — prioritize building these assets.',
+      implication: 'First-party data drives the highest conversion rates — prioritize building these assets.',
     },
   ],
   key_metrics: {
-    total_spend: '€102,800',
-    total_revenue: '€279,540',
-    overall_roi: '2.1x',
-    total_conversions: '5,369',
+    total_spend: 102800,
+    total_revenue: 279540,
+    overall_roi: 2.1,
+    total_conversions: 5369,
     best_channel: 'Push Notifications (19.0x ROI)',
     worst_channel: 'Display (0.87x ROI)',
     best_campaign: 'Web Push Re-engagement',
@@ -105,6 +128,7 @@ const strongPortfolio: ExecutiveSummaryResponse = {
 // ── Mock 2: Needs Attention ──────────────────────────────────────────────────
 
 const needsAttention: ExecutiveSummaryResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   health_score: {
     score: 48,
@@ -174,18 +198,18 @@ const needsAttention: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Budget allocation is inversely correlated with ROI — highest-spend channels have lowest returns',
-      so_what: 'The portfolio is structured to maximize reach rather than return. A fundamental rebalancing toward efficiency is needed.',
+      implication: 'The portfolio is structured to maximize reach rather than return. A fundamental rebalancing toward efficiency is needed.',
     },
     {
       finding: 'Campaigns targeting existing customers convert at 8x the rate of prospecting campaigns',
-      so_what: 'Retention and re-engagement spending should take priority over new customer acquisition until ROI stabilizes.',
+      implication: 'Retention and re-engagement spending should take priority over new customer acquisition until ROI stabilizes.',
     },
   ],
   key_metrics: {
-    total_spend: '€102,800',
-    total_revenue: '€92,520',
-    overall_roi: '0.9x',
-    total_conversions: '3,180',
+    total_spend: 102800,
+    total_revenue: 92520,
+    overall_roi: 0.9,
+    total_conversions: 3180,
     best_channel: 'Push Notifications (19.0x ROI)',
     worst_channel: 'CTV / OTT (0.87x ROI)',
     best_campaign: 'Web Push Re-engagement',
@@ -196,6 +220,7 @@ const needsAttention: ExecutiveSummaryResponse = {
 // ── Mock 3: Excellent Performance ────────────────────────────────────────────
 
 const excellentPerformance: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q1 2026',
   health_score: {
     score: 91,
@@ -271,18 +296,18 @@ const excellentPerformance: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Revenue growth outpaces budget growth by 2.3x',
-      so_what: 'The portfolio is getting more efficient over time — a sign that optimization efforts and audience building are compounding.',
+      implication: 'The portfolio is getting more efficient over time — a sign that optimization efforts and audience building are compounding.',
     },
     {
       finding: 'Channels with 6+ months of continuous investment show 40% higher ROI than newer ones',
-      so_what: 'Consistency pays off. Avoid frequent channel churn — let campaigns mature before judging them.',
+      implication: 'Consistency pays off. Avoid frequent channel churn — let campaigns mature before judging them.',
     },
   ],
   key_metrics: {
-    total_spend: '€102,800',
-    total_revenue: '€390,640',
-    overall_roi: '3.8x',
-    total_conversions: '7,842',
+    total_spend: 102800,
+    total_revenue: 390640,
+    overall_roi: 3.8,
+    total_conversions: 7842,
     best_channel: 'Push Notifications (19.0x ROI)',
     worst_channel: 'TikTok Awareness (1.4x ROI)',
     best_campaign: 'Web Push Re-engagement',
@@ -293,6 +318,7 @@ const excellentPerformance: ExecutiveSummaryResponse = {
 // ── Mock 4: Critical State ───────────────────────────────────────────────────
 
 const criticalState: ExecutiveSummaryResponse = {
+  model: MOCK_GROQ_LLAMA,
   period: 'Q1 2026',
   health_score: {
     score: 25,
@@ -369,18 +395,18 @@ const criticalState: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Paid channel CPMs have increased 65% quarter-over-quarter while conversion rates fell 45%',
-      so_what: 'You are paying more to reach fewer converting customers — a classic sign of audience saturation or misaligned targeting.',
+      implication: 'You are paying more to reach fewer converting customers — a classic sign of audience saturation or misaligned targeting.',
     },
     {
       finding: 'The 3 profitable campaigns all target existing customers; all 14 loss-making campaigns target cold audiences',
-      so_what: 'Cold acquisition is broken across every channel. Until fixed, all incremental budget should go to retention and re-engagement.',
+      implication: 'Cold acquisition is broken across every channel. Until fixed, all incremental budget should go to retention and re-engagement.',
     },
   ],
   key_metrics: {
-    total_spend: '€102,800',
-    total_revenue: '€41,120',
-    overall_roi: '0.4x',
-    total_conversions: '1,182',
+    total_spend: 102800,
+    total_revenue: 41120,
+    overall_roi: 0.4,
+    total_conversions: 1182,
     best_channel: 'Push Notifications (19.0x ROI)',
     worst_channel: 'CTV / OTT (0.2x ROI)',
     best_campaign: 'Web Push Re-engagement',
@@ -391,6 +417,7 @@ const criticalState: ExecutiveSummaryResponse = {
 // ── Mock 5: Growth Phase ─────────────────────────────────────────────────────
 
 const growthPhase: ExecutiveSummaryResponse = {
+  model: MOCK_GEMINI_FLASH,
   period: 'Q2 2026',
   health_score: {
     score: 73,
@@ -466,18 +493,18 @@ const growthPhase: ExecutiveSummaryResponse = {
   correlations: [
     {
       finding: 'Channels with fresh creative (< 90 days old) convert at 2.4x the rate of stale campaigns',
-      so_what: 'Creative refresh cadence directly impacts conversion rates. Budget for quarterly creative production across all channels.',
+      implication: 'Creative refresh cadence directly impacts conversion rates. Budget for quarterly creative production across all channels.',
     },
     {
       finding: 'Subscriber-based channels (Email, Push) show zero CAC increase as volume scales',
-      so_what: 'Owned audiences are the most scalable asset — investment in subscriber growth has compounding returns with no marginal cost inflation.',
+      implication: 'Owned audiences are the most scalable asset — investment in subscriber growth has compounding returns with no marginal cost inflation.',
     },
   ],
   key_metrics: {
-    total_spend: '€118,220',
-    total_revenue: '€319,194',
-    overall_roi: '2.7x',
-    total_conversions: '6,450',
+    total_spend: 118220,
+    total_revenue: 319194,
+    overall_roi: 2.7,
+    total_conversions: 6450,
     best_channel: 'Push Notifications (19.0x ROI)',
     worst_channel: 'Podcast (1.35x ROI)',
     best_campaign: 'Web Push Re-engagement',

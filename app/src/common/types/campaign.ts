@@ -8,6 +8,12 @@ export interface Campaign {
   revenue: number
 }
 
+export interface CampaignScope {
+  campaigns: string[]
+  selectedCampaigns: string[]
+  selectedChannels: string[]
+}
+
 export interface CampaignKPIs {
   totalBudget: number
   totalRevenue: number
@@ -15,4 +21,7 @@ export interface CampaignKPIs {
   ctr: number
   cvr: number
   cac: number | null
+  totalImpressions: number
+  totalClicks: number
+  totalConversions: number
 }

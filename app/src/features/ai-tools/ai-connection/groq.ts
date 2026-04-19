@@ -2,7 +2,7 @@ import type { GroqModel, GroqModelsResponse, AiModel, RankedModelsResponse } fro
 import { errorCodeFromStatus, parseJsonResponse } from './shared'
 import { generateModelEvaluationPrompt } from '../prompts'
 import { rankModels } from '../utils/rankModels'
-import { PROVIDER_LABELS } from '../types'
+import { PROVIDER_LABELS } from './utils'
 
 function filterModels(models: GroqModel[]): GroqModel[] {
   const banned = [

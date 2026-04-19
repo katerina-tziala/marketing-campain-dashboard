@@ -1680,3 +1680,2690 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - ReplaceDataModal is v-if (not v-show) — avoids mounting BaseModal's keyboard/scroll listeners when it's not visible
 - provide('openUploadModal') left unchanged — the EmptyState path has no data to replace, confirmation would be incorrect there
 - Warning copy mentions analysis reset — consistent with the existing CSV upload reset behaviour already implemented in aiAnalysisStore
+
+
+## [#79] CsvUploadForm: extract common field styles to @layer components
+**Type:** refactor
+
+**Summary:** Extracted shared form field styles (background, border-radius, font, hover/focus/error border states) into global `.form-control`, `.form-field`, `.form-field__label`, `.form-field__error` classes in `@layer components`; dropzone now has a solid darker background matching the title input.
+
+**Brainstorming:** Two problems to solve: (1) shared visual styles between text input and dropzone (background, border interaction states), and (2) border declarations differ (1px solid vs 1.5px dashed), making a single shared border rule impossible. The solution uses a CSS custom property `--control-border` set to `var(--color-border)` by default on `.form-control`, then overridden on `:hover`, `:focus`/`:focus-within`, and via `.form-control--error`. Each field's scoped style declares its own `border: <style> var(--control-border)` so the shape differs but the color is always driven by the global class. This avoids specificity conflicts entirely — there's no competing border-color declaration. `--active` on the dropzone sets the same custom property. The background tint on dropzone hover was removed since both fields now have a solid background and the hover state is purely a border color change.
+
+**Prompt:** Refactor CsvUploadForm: upload file field should have the same darker background as the campaign title and a solid background. Focus and hover states should be the same for fields. Extract common styles in the @layer components.
+
+**What changed:**
+- `style.scss` — added `.form-field`, `.form-field__label`, `.form-field__error`, `.form-control`, `.form-control--error` to `@layer components`; `.form-control` owns `--control-border` custom property and all hover/focus/error state changes
+- `CsvUploadForm.vue` — template: replaced `.field`/`.field__label`/`.field__error` with global classes; added `form-control` to both input and dropzone; replaced `field__input--error`/`dropzone--error` with `form-control--error`; scoped styles: removed `.field` block entirely; `.field__input` reduced to border + padding + placeholder; `.dropzone` reduced to layout + dashed border using `var(--control-border)` + sub-element styles; `--active` modifier sets `--control-border` directly
+
+**Key decisions & why:**
+- CSS custom property `--control-border` chosen over shared `border-color` rule to avoid specificity conflicts between global and scoped styles — each field keeps its own border shorthand while the color is centrally controlled
+- `:focus-within` on `.form-control` covers the dropzone (label containing a hidden file input) — keyboard focus on the file input surfaces the same indigo border as the text field
+- Background tint on dropzone hover removed — both fields are now solid `var(--color-bg)`, so hover is a border-only change, consistent with the text input
+
+
+## [#80] AiConnectionForm: align styles with CsvUploadForm, button toggles, Groq default
+**Type:** refactor
+
+**Summary:** Aligned AiConnectionForm field styles with CsvUploadForm using shared global classes, replaced radio buttons with button toggles, moved Groq to first/default provider, and made error state inline below the API key field.
+
+**Brainstorming:** The form had its own label/field/error styles duplicating what is now in @layer components. Four problems to solve: (1) visual alignment — use form-field/form-field__label/form-field__error/form-control/form-control--error everywhere they apply; (2) radio → button toggles — hide the native radio input (keep for a11y), style the label as a filled toggle: inactive = border only with muted text, active = solid indigo + white text, hover-inactive = subtle indigo border; (3) error placement — move from the styled error box (outside the field flow) to inline below the API key input so the filled value stays visible and the form structure is not disrupted; (4) provider change → clear stale error — a watcher on selectedProvider sets store.connectionError = null so an error from one provider does not confuse the user when they switch.
+
+**Prompt:** AiConnectionForm should have the same styles as CsvUploadForm. Labels, fields, colors and error visual states should be the same. Upon error the form state should be maintained. Update radio buttons to look like button toggles. Move Groq connection as the first/default provider.
+
+**What changed:**
+- `AiConnectionForm.vue` — script: default selectedProvider changed to 'groq'; added watch(selectedProvider) that clears store.connectionError on change; template: fieldset/legend use form-field/form-field__label; radios reordered (Groq first); radio-input hidden (display:none), label styled as toggle; API key field uses form-field/form-field__label/form-control/form-control--error; error rendered as form-field__error + ai-conn__error-hint inside the field wrapper; old ai-conn__error box removed; scoped styles: removed __field/__label/__radio-input dot styles/__error/__error-message; __radio redesigned as button toggle; __input uses var(--control-border) for border; __error-hint kept for hint secondary text
+- `CLAUDE.md` — AiConnectionForm architecture entry updated
+
+**Key decisions & why:**
+- `display: none` on radio-input (not sr-only) — the label itself is the clickable toggle, so screen readers navigate by the label text and fieldset legend; the hidden input still carries the checked state for v-model
+- Error cleared on provider switch via direct store.connectionError = null — Pinia refs are writable from components; no new store action needed
+- Button toggle padding matches field__input (spacing[2.5] vertical) — visual height matches the API key field for a consistent form rhythm
+- Hint text kept as ai-conn__error-hint (secondary color, xs) below form-field__error — preserves the contextual guidance without introducing a new global class for a single use
+
+
+## [#81] Extract @layer components to dedicated file; centralize form colors in Tailwind config
+**Type:** refactor
+
+**Summary:** Moved all @layer component classes to a new src/styles/components.scss file, added a danger color token to tailwind.config.js, and eliminated all hardcoded hex values from form-related styles by using theme() references throughout.
+
+**Brainstorming:** Three problems: (1) @layer components was inline in style.scss, mixing global class definitions with theme tokens and base styles; (2) hardcoded hex values were scattered across style.scss, CsvUploadForm, and AiConnectionForm — #6366f1, #f43f5e, #818cf8, #a5b4fc appeared in multiple places; (3) form-control lacked border, width, and ::placeholder, so component scoped styles had to duplicate them. Solution: new src/styles/components.scss holds the full @layer components block and is imported via SCSS @import in style.scss. tailwind.config.js gets a danger token (DEFAULT: #f43f5e) so error colors use theme('colors.danger.DEFAULT'). form-control gains border: 2px solid var(--control-border), width: 100%, and ::placeholder — scoped input styles in both form components are now reduced to padding only. All remaining hex in component scoped styles replaced with theme() or CSS keywords.
+
+**Prompt:** Lets extract all form styles to layer components. I still see hover states placeholder styles in CsvUploadForm. Make sure borders are 2px. Do not use hardcoded colors in the code. Try to update tailwind config to centralize colors. Focus on forms only for now. Lets also make a new file for layer components and import it in styles.scss.
+
+**What was built:**
+- `src/styles/components.scss` (NEW) — @layer components block with form classes (form-field, form-field__label, form-field__error, form-control with border/width/placeholder/hover/focus, form-control--error) and existing non-form classes (card, btn-primary, section-title, data-table family); all form hex replaced with theme()
+- `tailwind.config.js` — danger color token added: DEFAULT: '#f43f5e'
+- `style.scss` — @layer components block removed; replaced with @import './styles/components'
+- `CsvUploadForm.vue` — .field__input reduced to padding only; .dropzone border removed (from form-control); --active and __link hex replaced with theme('colors.primary.500')
+- `AiConnectionForm.vue` — __input reduced to padding only; radio --active and hover hex replaced with theme() and color-mix(); __toggle hex replaced with theme('colors.primary.400'/'300')
+- `CLAUDE.md` — architecture updated: new styles/ folder entry, style.scss and tailwind.config.js descriptions updated
+
+**Key decisions & why:**
+- SCSS @import (not @use) chosen for the components file — @use requires placement before all other rules which conflicts with @tailwind directives already at the top of style.scss
+- danger token added to tailwind.config.js as a top-level semantic color (not nested under primary) — it's a distinct semantic meaning (error state), not a shade of indigo
+- border: 2px solid moved into .form-control globally — both form components now get consistent 2px borders without duplicating the declaration; radio toggles stay at 2px via their own scoped border
+- color-mix(in srgb, theme('colors.primary.500') 50%, transparent) for radio hover — avoids adding a semi-transparent color variant to tailwind config; PostCSS resolves theme() inside color-mix correctly
+- Spinner white border kept as CSS keyword 'white' — it's a universal constant for a spinner on any background, not a design token
+
+
+## [#82] Fix SCSS @import deprecation warning — switch to @use
+**Type:** fix
+
+**Summary:** Replaced deprecated SCSS @import with @use, moving it to the top of style.scss before @tailwind directives, which is the only valid position Dart Sass accepts for @use.
+
+**Brainstorming:** @use must be the first statement in a Dart Sass file (before all other rules including unknown at-rules like @tailwind). Moving @use before @tailwind directives is safe — PostCSS/Tailwind processes @layer components content independently of where it appears in source order.
+
+**Prompt:** Deprecation Warning [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+
+**What changed:**
+- `style.scss` — @use './styles/components' moved to top of file (before @tailwind directives); @import line removed; comment updated to reference the file path
+
+**Key decisions & why:**
+- @use placed before @tailwind directives — Dart Sass requires @use to precede all other statements; PostCSS handles @layer content regardless of source order so this has no functional impact
+
+
+## [#83] Centralize #cbd5e1 text color as slate.300 token in Tailwind config
+**Type:** refactor
+
+**Summary:** Added slate.300 color token to tailwind.config.js and replaced all 7 files that hardcoded #cbd5e1, ensuring side panel body text and table cell text are driven by the same single token.
+
+**Brainstorming:** #cbd5e1 (= Tailwind's slate-300) was the shared body/content text color used across the table (data-table__td), both AI panels, the drawer title and close button, the tabs, the connected status bar, and the funnel chart label. Since all these contexts want the same color, a single token ensures they stay in sync. Adding slate.300 to the theme extension (rather than importing Tailwind's full default palette) keeps the config minimal and intentional. replace_all on all 7 files eliminates every occurrence atomically.
+
+**Prompt:** Side panel text color should be the same as the text of the values in the table. Any color changes should go through tailwind config.
+
+**What changed:**
+- `tailwind.config.js` — slate.300: '#cbd5e1' added to theme.extend.colors
+- `styles/components.scss` — data-table__td color updated to theme('colors.slate.300')
+- `AiToolsDrawer.vue` — 3 occurrences replaced (ai-close-btn, ai-drawer__title, ai-overlay__title)
+- `AiConnectedStatus.vue` — 2 occurrences replaced (ai-status__provider, ai-status__disconnect)
+- `AiTabs.vue` — 1 occurrence replaced (ai-tabs__tab)
+- `AiOptimizerPanel.vue` — 8 occurrences replaced (subtitle, empty-text, loader-text, result-block__text, recommendation detail-value, metrics-text strong, performer unlock, risk mitigation strong)
+- `AiSummaryPanel.vue` — 7 occurrences replaced (subtitle, empty-text, loader-text, result-block__text, health-score__label, insight__text, priority__metric)
+- `FunnelChart.vue` — 1 occurrence replaced (funnel__label)
+
+**Key decisions & why:**
+- slate (not content or body) chosen as the token namespace — matches Tailwind's own naming for this shade and makes the value self-documenting to anyone familiar with Tailwind; other slate shades (#94a3b8 = slate-400, #64748b = slate-500) are candidates for future tokens when addressed
+- Only slate.300 added — user said "focus on forms" in the previous task; this task is specifically about the one shared content color; other hardcoded hex values left for a future pass
+
+
+## [#84] Set slate.300 as app default text; update modal and ghost button colors via theme()
+**Type:** refactor
+
+**Summary:** Changed --color-text to theme('colors.slate.300') so slate.300 is the app-wide default text color, updated ghost button and modal/drawer close button text from --color-text-secondary to --color-text, and replaced all remaining hardcoded hex in those components with theme() references.
+
+**Brainstorming:** Three things to wire up: (1) --color-text drives body { color } and form-control color — changing it to slate.300 makes every default text element pick up the token automatically; (2) ghost button was using --color-text-secondary (#94a3b8) which is dimmer than slate.300 — swapping to --color-text aligns it with the new default; (3) modal and drawer close buttons had the same --color-text-secondary starting color plus hardcoded hex for hover/focus — replaced with var(--color-text) and theme() equivalents. AiToolsDrawer has its own close button identical to BaseModal's that also needed the same treatment.
+
+**Prompt:** Do the same for modals and ghost buttons. Make sure this is the default text color for our app.
+
+**What changed:**
+- `style.scss` — --color-text changed from #f1f5f9 to theme('colors.slate.300'); PostCSS resolves to #cbd5e1 at build time
+- `BaseButton.vue` — ghost color changed to var(--color-text); ghost hover border-color to theme('colors.primary.500'); primary bg to theme('colors.primary.500'), hover to theme('colors.primary.600'); focus-visible outline to theme('colors.primary.500'); color: white replaces #ffffff
+- `BaseModal.vue` — close button color changed to var(--color-text); hover color to theme('colors.primary.300'), hover bg to color-mix(primary.500 20%); focus-visible border-color to theme('colors.primary.500')
+- `AiToolsDrawer.vue` — same close button updates as BaseModal; was already using slate.300 token (from previous pass) but still had hardcoded hex for hover/focus
+
+**Key decisions & why:**
+- --color-text updated via theme() in :root — PostCSS resolves theme() in CSS variable declarations the same as anywhere else; keeps the CSS variable linked to the single tailwind token rather than a second hardcoded copy
+- Ghost button uses var(--color-text) not theme('colors.slate.300') directly — CSS variables allow runtime theming; hardcoding theme() would break if --color-text is ever overridden per-context
+- --color-header-text left at #f1f5f9 — header intentionally uses a brighter white; user did not request changing it
+
+
+## [#85] Fix --color-text resolution and align body text to slate.300 across app
+**Type:** fix
+
+**Summary:** Fixed --color-text not resolving correctly (theme() is unreliable in CSS custom property declarations with Dart Sass) and corrected four body-text roles that were still explicitly using --color-text-secondary instead of inheriting the default text color.
+
+**Brainstorming:** Two root causes: (1) --color-text: theme('colors.slate.300') used a PostCSS function inside a CSS custom property declaration — Dart Sass passes custom property values through as opaque strings which should let PostCSS resolve theme(), but in practice this is unreliable across toolchain versions and was likely the primary reason ghost buttons, modal close buttons, and form controls were not showing slate.300. Fix: use #cbd5e1 directly with a /* slate.300 */ comment to keep the token traceable. (2) Several body-text roles explicitly set var(--color-text-secondary) (#94a3b8) rather than inheriting var(--color-text) — these needed to be corrected individually. Deliberately left as secondary: placeholder text, table th, error hints, dropzone icon, and any other intentionally muted/secondary UI text.
+
+**Prompt:** I want the default color of the text in the app, modals, side panels, ghost buttons to be exactly the same as the table values. this is not the case now fix it.
+
+**What changed:**
+- `style.scss` — --color-text changed from theme('colors.slate.300') to #cbd5e1 with /* slate.300 */ comment; fixes var(--color-text) resolution for all consumers
+- `ReplaceDataModal.vue` — __message color: var(--color-text-secondary) → var(--color-text)
+- `AiConnectionForm.vue` — __intro color: var(--color-text-secondary) → var(--color-text); __radio inactive color: var(--color-text-secondary) → var(--color-text)
+- `CsvUploadForm.vue` — dropzone __hint color: var(--color-text-secondary) → var(--color-text)
+
+**Key decisions & why:**
+- Hex value used directly for --color-text rather than theme() — theme() in CSS custom property declarations is not reliably resolved by Tailwind's PostCSS plugin across all Dart Sass versions; /* slate.300 */ comment preserves the token reference for maintainability
+- __error-hint, ::placeholder, __icon, data-table__th left as --color-text-secondary — these are intentionally muted UI roles that should remain visually subordinate to body text
+- Radio inactive state changed to --color-text — the unselected toggle should read at the same level as other body text; the contrast between inactive (slate.300) and active (white on indigo) is still clear
+
+
+## [#86] Add API key instructions and clear key on provider switch in AiConnectionForm
+**Type:** update
+
+**Summary:** Added a collapsible "How to get your key?" help section with provider-specific numbered steps, and clear the API key (and show/hide state) when the user switches providers.
+
+**Brainstorming:** Two small but complementary UX improvements. The help section reduces friction for first-time users who may not know where to obtain a Groq or Gemini key — it belongs near the API key field, toggled on demand so it does not clutter the form by default. The clear-on-switch behaviour prevents the previous provider's key from silently persisting in the input when the user changes their mind, which could lead to a confusing connect failure with a mismatched key.
+
+**Prompt:** Add instructions on how to connect AI (Gemini and Groq API key steps). Clear the API key when switching providers.
+
+**What changed:**
+- `AiConnectionForm.vue` — added `showHelp` ref; `watch(selectedProvider)` now also resets `apiKey` and `showKey`; template gains `ai-conn__key-header` row (label + help toggle button) and `ai-conn__help` collapsible block with provider-specific numbered steps and a privacy note; scoped styles add `__key-header`, `__help-toggle`, `__help`, `__help-title`, `__help-steps`, `__help-note`
+- `CLAUDE.md` — AiConnectionForm architecture description updated
+
+**Key decisions & why:**
+- Help section is collapsible — the form is already compact inside a side panel; showing steps inline by default would push the Connect button out of view; toggling on demand keeps the default state clean
+- Provider-specific steps shown via `v-if selectedProvider` — each provider has a different console URL and flow; a single generic description would be less useful
+- Groq note ("Some models may require additional terms acceptance") shown only for Groq — it is Groq-specific and not applicable to Gemini
+- Privacy note ("Keep your API key private") shown for both providers at the bottom of the help block — applies equally to both and reinforces good practice
+- `showKey` also reset on provider switch — avoids the previous key being briefly visible in plain text if the user had toggled it on before switching
+
+
+## [#87] Polish AI key instructions — unified wording and open/close transition
+**Type:** update
+
+**Summary:** Rewrote both provider instruction sets to share the same 4-step structure and phrasing, and added a max-height/opacity CSS transition on the help block open and close.
+
+**Brainstorming:** The original Groq and Gemini steps had different lengths (6 vs 5 steps) and inconsistent phrasing — one started with "Go to", the other mixed imperatives. Aligning both to 4 steps with identical sentence patterns ("Go to X and sign in / Open Y / Click Z / Copy and paste below") makes them feel like the same product. The transition used Vue's named `<Transition name="help">` with max-height 0→300px and opacity 0→1; this is the standard CSS approach for height animations since `height: auto` cannot be transitioned directly.
+
+**Prompt:** Make instructions more user friendly and similar in wording. Add a small transition when opening/closing instructions.
+
+**What changed:**
+- `AiConnectionForm.vue` — both instruction blocks rewritten to 4 parallel steps; Groq note reworded to plain English; `v-if` div wrapped in `<Transition name="help">`; `.help-enter-active/leave-active/enter-from/leave-to` transition rules added at bottom of scoped styles; split `.ai-conn` blocks consolidated into one
+
+**Key decisions & why:**
+- 4 steps for both providers — Groq's "give it a name" step folded into the Create step; both flows are structurally identical so the same count reinforces that
+- `max-height: 300px` as the expanded value — tall enough for the longest content (~4 steps + note); an exact pixel value is required because CSS cannot transition to `max-height: auto`
+- Transition rules placed outside `.ai-conn {}` — Vue's `<Transition>` injects classes on the element itself, not scoped to a parent selector; placing them at root level ensures the scoped attribute matches correctly
+
+
+## [#88] Fix step numbering and strong color in AI key instructions
+**Type:** fix
+
+**Summary:** Restored ol numbering (hidden by Tailwind's base reset) and removed the indigo color from strong tags inside steps so they no longer look like links.
+
+**Brainstorming:** Tailwind preflight sets list-style: none on all lists, which silently removed the decimal numbers from the ol. Fix: add list-style-type: decimal explicitly. The strong color was var(--color-title) (#a5b4fc, indigo) — the same hue used for links and headings — so bolded terms read as clickable. Fix: remove the color override entirely so strong inherits var(--color-text), keeping only font-weight: 600 for emphasis.
+
+**Prompt:** Make steps numbered. Do not color text cause it looks like links.
+
+**What changed:**
+- `AiConnectionForm.vue` — `__help-steps` gains `list-style-type: decimal`; `strong` rule drops `color: var(--color-title)`, keeps `font-weight: 600`
+
+**Key decisions & why:**
+- list-style-type: decimal on the ol rule rather than a utility class — the steps are scoped SCSS; explicit property keeps it co-located with the other list styles
+- strong color removed entirely rather than set to var(--color-text) — inheriting is simpler and ensures it always matches surrounding text even if the color token changes
+
+
+## [#89] Smoother help section transition using CSS grid collapse
+**Type:** fix
+
+**Summary:** Replaced the max-height transition with the CSS grid-template-rows 0fr→1fr technique to get a transition that animates to the element's actual height rather than an arbitrary ceiling.
+
+**Brainstorming:** max-height transition is jerky because the easing curve spans the full 0–300px range while the real content is ~160px tall — the element visually snaps through most of its travel instantly and the easing only appears near the top. The grid trick (grid-template-rows: 0fr → 1fr on the outer wrapper, min-height: 0 on the inner div) animates precisely to the content's natural height, making the easing feel correct all the way through. A wrapper div (ai-conn__help-collapse) is needed to separate the grid container (which gets the transition classes) from the visual box (ai-conn__help, which keeps its flex layout and visual styles). cubic-bezier(0.4, 0, 0.2, 1) is Material Design's standard easing — fast start, gentle deceleration.
+
+**Prompt:** Make transition smoother.
+
+**What changed:**
+- `AiConnectionForm.vue` — help content wrapped in new `ai-conn__help-collapse` div; `<Transition>` now targets the collapse wrapper; `__help-collapse` style: `overflow: hidden`; `__help` gains `min-height: 0`; transition rules replaced: `max-height`/`overflow` → `grid-template-rows`/`cubic-bezier(0.4, 0, 0.2, 1)`
+
+**Key decisions & why:**
+- Wrapper div required — the grid container and the visual box (flex layout + padding + border) must be separate elements; combining them would fight over display type during the transition
+- overflow: hidden on the wrapper, not the inner — the wrapper clips the growing/shrinking inner div; the inner div's own overflow: hidden clips text that would otherwise peek out at small heights before the border-radius takes effect
+- cubic-bezier(0.4, 0, 0.2, 1) over plain ease — standard deceleration curve; feels intentional rather than mechanical
+
+
+## [#90] Fix help section clipping at end of collapse transition
+**Type:** fix
+
+**Summary:** Moved display: grid and grid-template-rows: 1fr from the transition active classes to the permanent __help-collapse style so the grid is always set up, eliminating the layout discontinuity at the start and end of the animation.
+
+**Brainstorming:** The previous approach set display: grid only during the transition active phases. This meant the wrapper was a plain div at rest and switched to a grid container at the moment the transition fired — causing a layout recalculation mid-animation that made it appear to "stop" just before fully collapsing. With grid always active on __help-collapse, the leave transition starts from a stable grid-template-rows: 1fr and animates smoothly to 0fr with no display-type change. The transition rules now only need to declare the transition property and the from/to states.
+
+**Prompt:** It still looks like it is stopping just before collapsing, can we fix that?
+
+**What changed:**
+- `AiConnectionForm.vue` — `__help-collapse` gains `display: grid; grid-template-rows: 1fr`; `display: grid; grid-template-rows: 1fr` removed from `.help-enter-active/.help-leave-active`
+
+**Key decisions & why:**
+- Grid always on, not just during transition — removes the display-type switch that was causing the stutter at transition boundaries; the wrapper is always a single-row grid, so enter/leave just animate that one row between 0fr and 1fr
+
+
+## [#91] Change key_metrics numeric fields to number type with euro formatting
+**Type:** update
+
+**Summary:** Updated `ExecutiveSummaryResponse.key_metrics` so that `total_spend`, `total_revenue`, `overall_roi`, and `total_conversions` are typed as `number` instead of `string`, and added euro/number formatters to the Summary panel for display.
+
+**Brainstorming:** The fields were previously typed as `string` and the AI prompt schema already had them typed as `number`, so the type was inconsistent with the prompt. Changing to `number` aligns the TypeScript type with the prompt schema, enables proper formatting in the UI (euro symbol, locale-aware comma separators, ROI as multiplier), and removes the formatting responsibility from the AI model. The panel now owns all display formatting, which is cleaner.
+
+**Prompt:** Update the ExecutiveSummaryResponse with `key_metrics` having `total_spend`, `total_revenue`, `overall_roi`, and `total_conversions` as numbers. Handle formatting of numbers to euro.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `total_spend`, `total_revenue`, `overall_roi`, `total_conversions` in `key_metrics` changed from `string` to `number`
+- `features/ai-tools/prompts/executive-summary-prompt.ts` — updated `JSON_OUTPUT_RULES`: replaced "ROI values should be expressed as percentages. Example: 490%" with "overall_roi must be returned as a decimal multiplier. Example: 4.9 for a 490% return."
+- `features/ai-tools/components/AiSummaryPanel.vue` — added `formatEuro` (Intl.NumberFormat en-IE EUR, no decimals), `formatRoi` (appends "x"), `formatNumber` (Intl.NumberFormat en-IE) helpers; applied them to the four numeric key_metrics fields in the template
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — converted all 5 mock objects from string values to plain numbers for `total_spend`, `total_revenue`, `overall_roi`, `total_conversions`
+
+**Key decisions & why:**
+- `formatEuro` uses `en-IE` locale with `maximumFractionDigits: 0` — matches the locale already used in the panel's `formattedCacheTime` and produces `€102,800` style output without cents, appropriate for large budget figures
+- ROI stored as multiplier (e.g., `2.1`) not percentage integer — consistent with how `roi` is stored throughout the rest of the codebase (`CampainSummaryTotals`, `BudgetOptimizerCampaign`, etc.)
+
+
+## [#92] Format overall_roi as percentage in Executive Summary panel
+**Type:** fix
+
+**Summary:** Updated `formatRoi` in `AiSummaryPanel.vue` to display `overall_roi` as a percentage (e.g., `210%`) instead of a multiplier (e.g., `2.1x`).
+
+**Brainstorming:** The AI returns `overall_roi` as a decimal multiplier (e.g., `2.1`). Multiplying by 100 and appending `%` in the formatter gives the correct percentage display without changing the type or prompt. `Math.round` avoids floating-point noise (e.g., `2.1 * 100 = 210.00000000000003`).
+
+**Prompt:** When showing overall_roi add percentage symbol please.
+
+**What changed:**
+- `features/ai-tools/components/AiSummaryPanel.vue` — `formatRoi` updated: `\`${value}x\`` → `\`${Math.round(value * 100)}%\``
+
+**Key decisions & why:**
+- Conversion in formatter, not in type/prompt — the AI correctly returns a decimal multiplier; the display conversion is a UI concern only, so it belongs in the formatter
+- `Math.round` — prevents floating-point artifacts in the displayed value
+
+
+## [#93] Change new_roi_estimate to number type with percentage display in Budget Optimizer
+**Type:** update
+
+**Summary:** Updated `BudgetOptimizerResponse.expected_impact.new_roi_estimate` from `string` to `number`, fixed the prompt schema (removed erroneous quotes), added a decimal-multiplier output rule, and added `formatRoi` to the optimizer panel to display as percentage.
+
+**Brainstorming:** Mirrors the same pattern applied to `overall_roi` in the Summary panel. `new_roi_estimate` was typed as `string` but the prompt schema had it quoted as `"number"` (a string description), which was inconsistent and would produce strings from the AI. Changing to a proper numeric type and formatting in the UI keeps all ROI values consistent across both panels.
+
+**Prompt:** Update new_roi_estimate to number in BudgetOptimizerResponse and display the percentage symbol in the UI.
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — `new_roi_estimate` changed from `string` to `number`
+- `features/ai-tools/prompts/budget-optimization-prompt.ts` — fixed `"new_roi_estimate": "number"` → `"new_roi_estimate": number` in OUTPUT_SCHEMA; added rule: "new_roi_estimate must be returned as a decimal multiplier. Example: 4.9 for a 490% return."
+- `features/ai-tools/components/AiOptimizerPanel.vue` — added `formatRoi` helper (`Math.round(value * 100)%`); applied to `new_roi_estimate` in the New ROI row
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — converted all 12 `new_roi_estimate` string values to plain numbers across all 5 mocks
+
+**Key decisions & why:**
+- Same `Math.round(value * 100)%` pattern as Summary panel — consistent ROI display format across both AI panels
+- Decimal multiplier storage (e.g., `3.9`) not percentage integer — consistent with `roi` fields in `top_performers` and `underperformers` which are already stored as multipliers
+
+
+## [#94] Add model field to all AI response mocks
+**Type:** update
+
+**Summary:** Added the optional `model?: AiModel` field to all 10 mock response objects (5 BudgetOptimizerResponse + 5 ExecutiveSummaryResponse) so that mocks fully represent the complete type shape.
+
+**Brainstorming:** Both response types include `model?: AiModel` which is stamped by the analysis store on real API responses. The mocks were missing this field, leaving them incomplete relative to the type definition. Two realistic mock models were defined (Gemini 2.0 Flash and Llama 3.3 70B via Groq) and alternated across mocks to reflect that either provider may generate a response.
+
+**Prompt:** The mock data for BudgetOptimizerResponse and ExecutiveSummaryResponse do not include optional properties model?: AiModel and period?: string — update the mocks to include all fields.
+
+**What changed:**
+- `features/ai-tools/mocks/budget-optimizer-mocks.ts` — added `MOCK_GEMINI_FLASH` and `MOCK_GROQ_LLAMA` model constants; added `model` field to all 5 mocks (aggressiveReallocation/seasonalPivot/growthExpansion → Gemini Flash; conservativeOptimization/channelConsolidation → Groq Llama)
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — added `MOCK_GEMINI_FLASH` and `MOCK_GROQ_LLAMA` model constants; added `model` field to all 5 mocks (strongPortfolio/excellentPerformance/growthPhase → Gemini Flash; needsAttention/criticalState → Groq Llama)
+
+**Key decisions & why:**
+- Two providers represented — alternating Gemini and Groq across mocks reflects real usage and exercises both provider code paths during UI development
+- Model constants defined at file level — avoids repetition and keeps mock model data maintainable in one place per file
+
+
+## [#95] Extract spinner into BaseSpinner UI component
+**Type:** refactor
+
+**Summary:** Consolidated three duplicated inline spinner implementations into a single reusable `BaseSpinner.vue` component, removing repeated SCSS and `@keyframes spin` declarations.
+
+**Brainstorming:** Three files each defined their own spinner span + scoped SCSS block + `@keyframes spin`: `AiConnectionForm.vue` (small white button spinner, 0.875rem), `AiOptimizerPanel.vue` and `AiSummaryPanel.vue` (larger indigo panel spinner, 1.5rem). The two visual variants map cleanly to two props: `size` (sm/md) and `variant` (white/indigo). Placing the component in `src/ui/` keeps it alongside `BaseButton` and `BaseModal` as a generic, app-agnostic primitive. `aria-hidden="true"` is baked in since all use sites are decorative. The animation keyframes now live in one place.
+
+**Prompt:** Find all spinner instances across the codebase, create a reusable BaseSpinner UI component with size and variant props, replace all instances, and remove the duplicated local SCSS.
+
+**What was built:**
+- `src/ui/BaseSpinner.vue` — new component; `size` prop (sm: 0.875rem / md: 1.5rem, default md); `variant` prop (white / indigo, default indigo); `aria-hidden` baked in; single `@keyframes spin` scoped inside
+- `src/ui/index.ts` — added `BaseSpinner` to barrel export
+- `src/features/ai-tools/components/AiConnectionForm.vue` — replaced `<span class="ai-conn__spinner">` with `<BaseSpinner size="sm" variant="white" />`; removed `&__spinner` SCSS block and `@keyframes spin`
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced `<span class="ai-panel__spinner">` with `<BaseSpinner />`; removed `&__spinner` SCSS block and `@keyframes spin`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — replaced `<span class="ai-panel__spinner">` with `<BaseSpinner />`; removed `&__spinner` SCSS block and `@keyframes spin`
+
+**Key decisions & why:**
+- Two props instead of one — `size` and `variant` are orthogonal; keeping them separate avoids a combinatorial named-variant explosion and allows mixing (e.g. a future sm/indigo spinner in a button)
+- `aria-hidden` baked into the component — every current use site is purely decorative; callers that need an accessible label can override with an explicit attribute
+- Scoped `@keyframes spin` in the component — Vue scoped styles do not scope keyframe names, but the animation is defined once in one file rather than scattered across three
+
+
+## [#96] Rename BaseSpinner to Spinner with semantic variants and Tailwind @apply
+**Type:** refactor
+
+**Summary:** Renamed `BaseSpinner.vue` to `Spinner.vue`, replaced `white`/`indigo` variants with `primary`/`secondary`, moved all raw CSS values to Tailwind `@apply` rules, and added spinner color tokens and a custom animation to `tailwind.config.js`.
+
+**Brainstorming:** The previous component had raw hex and rgba values hardcoded in SCSS with no connection to the design system. The goal was to: (1) rename to match the shorter convention requested, (2) express colors as semantic variants (`primary`/`secondary`) rather than literal color names, (3) push all color and size values into the Tailwind config so they are maintainable in one place, and (4) use `@apply` throughout so the SCSS is purely structural. The `spinner` color group in the config holds four tokens — arc and track for each variant — which map directly to the `border-t-*` (arc) and `border-*` (track) utilities. The `animate-spinner` custom animation reuses Tailwind's built-in `spin` keyframe at 0.7s rather than redefining `@keyframes spin` in the component.
+
+**Prompt:** Rename the spinner component to just Spinner. Make variants primary and secondary. Use @apply rules instead of theming. Use the Tailwind library as much as possible. Add Tailwind classes that use those colors and move colors into the tailwind config.
+
+**What changed:**
+- `app/tailwind.config.js` — added `spinner` color tokens (`primary`, `primary-track`, `secondary`, `secondary-track`) and `animation.spinner` (`spin 0.7s linear infinite`)
+- `src/ui/Spinner.vue` — new file replacing `BaseSpinner.vue`; variants renamed to `primary`/`secondary`; all SCSS replaced with `@apply` using Tailwind utilities and the new config tokens
+- `src/ui/BaseSpinner.vue` — deleted
+- `src/ui/index.ts` — updated export from `BaseSpinner` to `Spinner`
+- `AiConnectionForm.vue` — updated import + usage: `variant="white"` → `variant="secondary"`
+- `AiOptimizerPanel.vue` — updated import + usage
+- `AiSummaryPanel.vue` — updated import + usage
+
+**Key decisions & why:**
+- Four distinct color tokens (`arc` + `track` per variant) — `border-t-*` sets the arc color and `border-*` sets the track; keeping them separate in the config lets each be adjusted independently without touching the component
+- `animate-spinner` in config, not `@keyframes` in SCSS — Tailwind already defines the `spin` keyframe; adding a custom animation utility reuses it and keeps the component style-free of any keyframe declarations
+- `primary`/`secondary` naming — decouples the variant label from any specific color, making the component resilient to theme changes
+
+
+## [#97] Fix cross-file @apply of custom component classes in Vue scoped styles
+**Type:** fix
+
+**Summary:** Replaced `@apply card` and `@apply section-title` references in scoped Vue component styles with their expanded CSS equivalents, fixing a PostCSS error triggered when the Tailwind config change invalidated the cache and forced reprocessing.
+
+**Brainstorming:** Tailwind v3 cannot resolve custom component classes (defined in `@layer components` in a separate file) when they appear in `@apply` inside another file's scoped style block — PostCSS processes each file independently. The classes `card` and `section-title` are defined in `src/styles/components.scss`. The config change from #96 invalidated Tailwind's cache, causing DashboardView.vue and KpiCard.vue to be reprocessed and the latent issue to surface. Fix: inline the CSS properties that each custom class would have contributed, using Tailwind utilities where possible.
+
+**Prompt:** fix [postcss] The `card` class does not exist. If `card` is a custom class, make sure it is defined within a `@layer` directive.
+
+**What changed:**
+- `src/features/dashboard/DashboardView.vue` — `.chart-card`: replaced `@apply card p-5` with expanded CSS vars + Tailwind utilities; `.chart-card__title`: replaced `@apply section-title mb-4` with direct `color` + `@apply text-base mb-4 shrink-0`; `.table-section__title`: replaced `@apply section-title px-5 pt-5 pb-3` with direct `color` + `@apply text-base px-5 pt-5 pb-3`
+- `src/features/dashboard/components/KpiCard.vue` — `.kpi-card`: replaced `@apply card rounded-md p-4` with expanded CSS vars + `@apply rounded-md shadow-sm p-4`
+
+**Key decisions & why:**
+- Expand inline rather than add `@layer components` wrappers in scoped blocks — `@layer` in scoped Vue styles interacts awkwardly with the scoped hash selector and is less readable; inlining is more explicit and avoids the coupling entirely
+- Grep for all other `@apply` usages of custom component class names to catch all instances in one pass — found and fixed three locations across two files
+
+
+## [#98] Fix animate-spinner @apply failure in Spinner.vue
+**Type:** fix
+
+**Summary:** Replaced `@apply animate-spinner` with Tailwind's built-in `animate-spin` plus an `animation-duration` override, and removed the unused `animation.spinner` extension from `tailwind.config.js`.
+
+**Brainstorming:** Custom `animation` extensions added to `theme.extend` in the Tailwind config don't resolve reliably via `@apply` in scoped Vue component styles — same root cause as the `card`/`section-title` issue in #97. The fix: use the existing built-in `animate-spin` utility (which is always available to `@apply`) and override only the duration with a single `animation-duration: 0.7s` CSS property. This avoids the config extension entirely and keeps the component free of raw keyframe declarations.
+
+**Prompt:** fix [postcss] The `animate-spinner` class does not exist.
+
+**What changed:**
+- `src/ui/Spinner.vue` — replaced `@apply animate-spinner` with `@apply animate-spin` + `animation-duration: 0.7s`
+- `app/tailwind.config.js` — removed `animation.spinner` extension (no longer needed)
+
+**Key decisions & why:**
+- `animate-spin` + `animation-duration` override instead of a config extension — built-in utilities always resolve in `@apply`; the only custom part is the 0.7s duration, which is a one-liner override and needs no config entry
+
+
+## [#99] Add dev-mode mocks for instant UI iteration
+**Type:** update
+
+**Summary:** Added three named boolean flags (DEV_MOCK_CAMPAIGNS, DEV_MOCK_CONNECTED, DEV_MOCK_ANALYSIS) to pre-load campaign data, mock the AI connection state, and cycle through mock AI responses — so the side panel UI is immediately accessible without CSV upload or API credentials.
+
+**Brainstorming:** Working on side panel UI requires repeatedly going through CSV upload → AI connection form → analyze flow, which is slow. The fastest solution is to intercept at three points: (1) the campaign store initial state, (2) the AI store initial state, and (3) the AI analysis execution path. Each flag is a single boolean at the top of its store file with explicit TODO comments listing exactly what to remove when reverting. The mock analysis block sits inside executeAnalysis just before the real API call, runs a 700ms fake delay (so loading state is visible), then resolves with the next mock in a rotating index.
+
+**Prompt:** Add mock data in the store so I do not have to upload the file each time. When opening side panel mock connection state. When clicking on analyze or generate iterate in the mock data and return mock data. Add todos to revert the code without breaking anything.
+
+**What changed:**
+- `app/src/stores/campaignStore.ts` — added DEV_MOCK_CAMPAIGNS flag + MOCK_CAMPAINS import; initializes campaigns and title refs with mock data when true
+- `app/src/stores/aiStore.ts` — added DEV_MOCK_CONNECTED flag + MOCK_DEV_MODEL constant; initializes provider, apiKey, isConnected, models, selectedModel with mock values when true
+- `app/src/stores/aiAnalysisStore.ts` — added DEV_MOCK_ANALYSIS flag + BUDGET_OPTIMIZER_MOCKS/EXECUTIVE_SUMMARY_MOCKS imports + optimizerMockIndex/summaryMockIndex refs; intercepts executeAnalysis before the real API call to return the next mock response in rotation with a 700ms delay
+
+**Key decisions & why:**
+- Named boolean flags at file-top rather than env variables — simpler to flip, no build config changes needed, and the TODO comments are co-located with the flag
+- 700ms fake delay in mock analysis — makes the loading spinner visible so UI loading states can be inspected; short enough not to slow iteration
+- Rotating index (modulo array length) rather than random — predictable cycling means each click shows the next mock in sequence, making it easy to see all five variants in order
+- Mock model set to Gemini 2.0 Flash matching the existing budget-optimizer mock objects — consistent display_name shown in the "Generated at…" panel footer
+
+
+## [#100] Remove ai-result-block card wrapper, use h4 section headings
+**Type:** update
+
+**Summary:** Replaced the `.ai-result-block` card wrapper (bordered box with background/padding) with a flat `.ai-section` element in both panels, and converted all section labels from `<span>` to `<h4>` tags; renamed "Executive Summary" to "Summary" in the Budget Optimizer panel.
+
+**Brainstorming:** The card wrapper added visual noise with borders and backgrounds around every section. Removing it flattens the hierarchy so sections read as part of a continuous document rather than isolated boxes. The `<h4>` change is both semantic (correct heading level inside the panel) and visual — same indigo uppercase style, just a proper element. The rename from "Executive Summary" to "Summary" avoids redundancy since the panel itself is already called "Budget Optimizer".
+
+**Prompt:** Remove .ai-result-block card. No need for additional wrapper. Each section should have an h4 tag. Rename Executive Summary to Summary for budget optimization.
+
+**What changed:**
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced all `<div class="ai-result-block">` wrappers with `<section class="ai-section">`; replaced `<div class="ai-result-block__header"><span class="ai-result-block__label">` with `<h4 class="ai-section__title">`; renamed "Executive Summary" section label to "Summary"; replaced `.ai-result-block` CSS block with `.ai-section`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same structural changes across all seven sections; `.ai-result-block__note` renamed to `.ai-section__note`
+
+**Key decisions & why:**
+- `<section>` element instead of `<div>` for the wrapper — semantically correct for a named content region; pairs well with the `<h4>` heading inside it
+- Kept the same visual style (uppercase, indigo, letter-spacing) on the `h4` — only the element type changes, not the appearance
+- `.ai-section` has no border, background, or padding — content floats directly in the panel's flex column gap
+
+
+## [#101] Increase section spacing in AI panels
+**Type:** fix
+
+**Summary:** Bumped `.ai-panel__result` gap from `spacing.4` (16px) to `spacing.6` (24px) in both panels to better visually separate the flat sections now that the card borders are gone.
+
+**Brainstorming:** Without the card borders, sections needed more breathing room to read as distinct blocks. Increasing the flex gap on the result container is the minimal, correct change.
+
+**Prompt:** Increase spacing where each h4 is present to separate sections a bit better.
+
+**What changed:**
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — `.ai-panel__result` gap: spacing.4 → spacing.6
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — `.ai-panel__result` gap: spacing.4 → spacing.6
+
+**Key decisions & why:**
+- Gap on the result container rather than margin on individual sections — single change, consistent across all sections, no per-section overrides needed
+
+
+## [#102] Rearrange Portfolio Health section layout
+**Type:** fix
+
+**Summary:** Moved the health score badge to the top-right (where period was), placed period below the heading row, and kept the health label and reasoning underneath.
+
+**Brainstorming:** Simple reordering — score badge is more meaningful alongside the heading than the period date. Period as a secondary meta line reads naturally below the title.
+
+**Prompt:** Portfolio Health — move period under Portfolio Health, put health where period is now, health score underneath.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — reordered Portfolio Health section: score badge moves to `.ai-section__head` right slot; period becomes a standalone line below the head; health label and reasoning follow
+
+**Key decisions & why:**
+- Score badge in the head row pairs the key number with the section title — scannable at a glance
+- Period as a sub-line reads as secondary metadata, which is what it is
+
+
+## [#103] Stack health score label under badge
+**Type:** fix
+
+**Summary:** Grouped the health score label with its badge and stacked them vertically so the label ("Good", "Excellent" etc.) sits directly beneath the score box.
+
+**Prompt:** Health score should appear underneath health box.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — wrapped score badge and label in `.ai-health-score`; changed `.ai-health-score` to `flex-direction: column; align-items: flex-end` so label renders below the badge, right-aligned
+
+**Key decisions & why:**
+- `align-items: flex-end` keeps both badge and label right-aligned, matching their position in the section header
+- Reduced label font-size to `xs` to match the badge's compact scale
+
+
+## [#104] Place period directly under Portfolio Health heading
+**Type:** fix
+
+**Summary:** Wrapped the h4 and period in a `.ai-section__title-group` column so the period sits flush beneath the heading text rather than below the full header row.
+
+**Prompt:** Period should be exactly underneath the Portfolio Health.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — added `.ai-section__title-group` wrapper around h4 + period; added `flex-direction: column` CSS for that class
+
+**Key decisions & why:**
+- Left-side column group mirrors the same pattern used in `.ai-panel__titles` — heading + sub-label stacked vertically on the left, badge on the right
+
+
+## [#105] Reduce health score box size
+**Type:** fix
+
+**Summary:** Shrunk the health score badge — score value from 2xl to lg, /100 suffix from sm to xs, padding tightened from spacing.1/spacing.3 to 2px/spacing.2, border-radius from lg to md.
+
+**Prompt:** Make score box a bit smaller.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — reduced font sizes and padding on `.ai-health`
+
+**Key decisions & why:**
+- Scaled all dimensions together so the box shrinks proportionally without looking cramped
+
+
+## [#106] Unify panel text color via Tailwind token
+**Type:** update
+
+**Summary:** Added `panel.text` color token to Tailwind config and replaced all `slate.300` / `#94a3b8` / `#b5bdc9` / `#8996a9` text color literals in both panel components with `theme('colors.panel.text')`.
+
+**Prompt:** Change panel color of text to #b5bdc9. Add the color in tailwind.
+
+**What changed:**
+- `app/tailwind.config.js` — added `panel.text` color token
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced all body/secondary text color literals with `theme('colors.panel.text')`
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same; also replaced the already-hardcoded `#b5bdc9` instances
+
+**Key decisions & why:**
+- Named token over a raw hex in CSS — single place to adjust the panel text color in the future
+- Functional colors (red, green, amber, indigo badges; title var; white button text) left untouched — those are semantic, not general text
+
+
+## [#107] Fix panel-text color token — use flat key
+**Type:** fix
+
+**Summary:** PostCSS can't resolve nested custom color paths like `theme('colors.panel.text')` at compile time; changed the Tailwind token to a flat `'panel-text'` key and updated all references in both panel files.
+
+**Prompt:** fix [plugin:vite:css] 'colors.panel.text' does not exist in your theme config.
+
+**What changed:**
+- `app/tailwind.config.js` — `panel: { text }` → `'panel-text'` flat key
+- `src/features/ai-tools/components/AiOptimizerPanel.vue` — `theme('colors.panel.text')` → `theme('colors.panel-text')` (all occurrences)
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — same
+
+**Key decisions & why:**
+- Flat key avoids the nested object path resolution issue in PostCSS `theme()` — consistent with how other multi-word tokens (e.g. `primary-track`) are defined in this config
+
+
+## [#108] Intensify insight card colors in Executive Summary panel
+**Type:** update
+
+**Summary:** Increased the visual intensity of the four insight card types (performance, opportunity, warning, achievement) with higher-opacity backgrounds and borders, a solid 3px left accent border per type, and type-matched metric value text color.
+
+**Brainstorming:** The insight cards were barely visible — background opacity 0.05 and border opacity 0.15 made each type almost indistinguishable. The goal was more vivid differentiation without making the cards feel heavy. Three levers: (1) raise bg/border opacity, (2) add a solid left accent border as a strong color anchor, (3) color the metric highlight value to match the card type. The left border approach is a common pattern in dark UIs for type-coded cards — it anchors the color identity without flooding the card. Metric value coloring reinforces the type identity on the data that matters most.
+
+**Prompt:** In summary add more light/intense colors for the insights section.
+
+**What changed:**
+- `src/features/ai-tools/components/AiSummaryPanel.vue` — each insight modifier (`--performance`, `--opportunity`, `--warning`, `--achievement`) updated: bg opacity raised (0.05→0.10–0.12), border opacity raised (0.15→0.28–0.30), `border-left-width: 3px` + solid `border-left-color` added, `.ai-insight__metric-value` color scoped per type
+
+**Key decisions & why:**
+- Left accent border (3px solid, full opacity) gives a strong, immediate color signal — more effective than raising opacity on a thin 1px border
+- Metric value colored per type — the data highlight is the most prominent text in the card, so matching it to the type color reinforces the semantic meaning
+- Background raised to 0.10–0.12 (not higher) — keeps the card legible without competing with surrounding content in a tight panel
+
+
+## [#109] Extract Badge UI component with Tailwind color tokens
+**Type:** refactor
+
+**Summary:** Extracted the duplicated `ai-badge` / `ai-confidence` scoped styles from both AI panel components into a reusable `Badge.vue` UI component, moved badge colors into `tailwind.config.js`, and applied `@apply`-based styling with `capitalize` text transform.
+
+**Brainstorming:** Both `AiOptimizerPanel` and `AiSummaryPanel` contained identical `.ai-badge` style blocks with four color variants, plus `AiOptimizerPanel` had a separate `.ai-confidence` block that was structurally identical. All three were prime candidates for extraction into a shared component. The Badge component takes a `variant` prop (`success | warning | danger | info`), maps the confidence/action/effort/urgency semantics to variants in the parent via small helper functions, uses `@apply` for all Tailwind utilities, and adds `capitalize` so text casing is handled by the component rather than the caller. Colors moved to `tailwind.config.js` as flat `badge-*` keys (consistent with the `panel-text` flat-key pattern) so they work with Tailwind's `bg-color/opacity` JIT syntax in `@apply`.
+
+**Prompt:** There are many instances of ai-badge. Create a ui component badge with all variations. All text should be with first letter of each word capitalized. Use @apply rules for styling and move colors config in tailwind.config.
+
+**What was built / What changed:**
+- `app/src/ui/Badge.vue` — new component; `variant` prop (`success | warning | danger | info`); `@apply`-based styles; `capitalize` applied globally on `.badge`
+- `app/src/ui/index.ts` — exports `Badge` and `BadgeVariant`
+- `app/tailwind.config.js` — added `badge-success`, `badge-warning`, `badge-danger`, `badge-info` flat color tokens
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — imported `Badge` + `BadgeVariant`; replaced `confidenceClass/actionBadgeClass/effortBadgeClass` with `confidenceVariant/actionVariant/effortVariant` returning `BadgeVariant`; swapped three `<span :class>` usages for `<Badge :variant>`; removed `.ai-confidence` and `.ai-badge` style blocks
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — imported `Badge` + `BadgeVariant`; replaced `urgencyBadgeClass` with `urgencyVariant`; swapped `<span :class>` for `<Badge :variant>`; removed `.ai-badge` style block
+
+**Key decisions & why:**
+- Flat `badge-*` token keys in Tailwind config — consistent with existing `panel-text` flat-key pattern; required for PostCSS `theme()` resolution and Tailwind JIT `bg-color/opacity` syntax in `@apply`
+- `capitalize` on the component — removes the responsibility from every caller; single source of truth for badge text casing
+- Helper functions return `BadgeVariant` instead of a class string — type-safe, no string concatenation, template is cleaner
+- `ai-confidence` merged into `Badge` — structurally identical to `ai-badge`; the semantic difference (confidence level) is now expressed via the variant prop value, not a separate CSS class hierarchy
+
+
+## [#110] Modularize SCSS and refactor UI component layer
+**Type:** refactor
+
+**Summary:** Split the monolithic `components.scss` into individual SCSS partials per concern, extracted a `utilities.scss` entry file for utility classes, promoted `Tabs` to a generic reusable UI component (replacing the feature-specific `AiTabs.vue`), removed `Badge.vue` in favour of global CSS classes, added `roi.ts` shared utilities, extended `Spinner` with larger size variants, and cleaned up Tailwind tokens.
+
+**Brainstorming:** The single `components.scss` file was growing unwieldy — every component category dumped styles into one file, making it hard to navigate and reason about. Splitting by concern (button, badge, card, form, modal, table, roi, ai-summary, scrollbar) follows the same pattern already used in most style systems: one partial per semantic area, composed via a top-level entry file. A separate `utilities.scss` entry mirrors the Tailwind layer split (components vs utilities). `AiTabs.vue` was feature-locked; `Tabs.vue` in the UI library is generically useful — takes a typed `Tab<T>[]` prop with optional icon. `Badge.vue` as a Vue component added component overhead for what is essentially a styled `<span>`; moving to global `.badge` + `.badge-text`/`.badge-background` modifier classes (extended via `@extend`) is simpler and works in any template without an import. `roi.ts` extracts three ROI helpers (`roiValue`, `roiClass`, `formatROI`) that were likely duplicated across components. `Spinner` gained `lg/xl/xxl` sizes to cover full-panel loading states.
+
+**Prompt:** Split components.scss into individual SCSS partials per concern (badge, button, card, forms, modal, roi, scrollbar, table, ai-summary). Add a utilities.scss entry file for utility-layer classes. Replace the feature-specific AiTabs.vue with a generic reusable Tabs.vue in the UI library. Remove Badge.vue and move badge styling to global CSS classes. Add roi.ts shared utilities (roiValue, roiClass, formatROI) to common/utils. Extend Spinner with lg/xl/xxl size variants. Standardize icon sizing via inline style. Clean up Tailwind tokens — remove badge-* and panel-text flat keys, add danger.-5p, typography.intense, surface-border.secondary.
+
+**What changed:**
+- `app/src/styles/components.scss` — converted to entry file; replaced inline styles with `@use` imports for each partial
+- `app/src/styles/utilities.scss` — new entry file; imports `_scrollbar`
+- `app/src/styles/_ai-summary.scss` — new partial; `.ai-panel`, `.ai-section`, `.ai-section__analysis-details`
+- `app/src/styles/_badge.scss` — new partial; `.badge`, `.badge-text`, `.badge-background`; variants: success/warning/danger/info/opportunity; uses `@extend`
+- `app/src/styles/_button.scss` — new partial; `.btn` base + `.btn-primary`, `.btn-icon-secondary`, `.btn-secondary-outline`, `.btn-destructive-small`, `.btn-small`
+- `app/src/styles/_card.scss` — new partial; `.card`, `.card-secondary` with sub-elements
+- `app/src/styles/_forms.scss` — new partial; full form class set migrated from old `components.scss`
+- `app/src/styles/_modal.scss` — new partial; `.modal__body`, `.modal__footer`
+- `app/src/styles/_roi.scss` — new partial; `.roi-text` with `.positive`/`.warning`/`.negative` modifiers
+- `app/src/styles/_scrollbar.scss` — new partial; `.scrollbar-stable`, `.scrollbar-stable-both`, `.scrollbar-on-surface`
+- `app/src/styles/_table.scss` — new partial; `.data-table` and element classes migrated from old `components.scss`
+- `app/src/style.scss` — updated to import both `styles/components` and `styles/utilities`
+- `app/src/ui/Tabs.vue` — new generic tab component; `Tab<T>` type exported; `tabs` + `activeTab` props; `change` emit; optional icon per tab via `Component`; auto-selects first tab on mount
+- `app/src/ui/types/` — new directory stub for future shared UI types
+- `app/src/ui/Badge.vue` — deleted; badge styling moved to global CSS classes in `_badge.scss`
+- `app/src/features/ai-tools/components/AiTabs.vue` — deleted; replaced by generic `Tabs.vue`
+- `app/src/ui/BaseButton.vue` — refined with scoped `@apply` styles per variant
+- `app/src/ui/BaseModal.vue` — updated to use `.btn-icon-secondary` global class for close button
+- `app/src/ui/Spinner.vue` — added `lg`, `xl`, `xxl` size variants
+- `app/src/ui/icons/*.vue` — standardized all icons with `style="width: 1em; height: 1em; display: inline-block;"` inline sizing
+- `app/src/ui/index.ts` — removed `Badge`/`BadgeVariant` exports; added `Tabs` + `Tab` type exports
+- `app/src/common/utils/roi.ts` — new shared utility; `roiValue()`, `roiClass()`, `formatROI()`
+- `app/tailwind.config.js` — removed `badge-*` and `panel-text` flat tokens; added `danger.-5p`, `typography.intense`, `surface-border.secondary`, explicit `black`/`white` tokens
+
+**Key decisions & why:**
+- One partial per concern — mirrors Tailwind's own layer structure; each file is self-contained and easy to locate
+- `@extend` in `_badge.scss` — avoids duplicating the full modifier list on `.badge`; works correctly within a single `@layer components` block
+- `Tabs.vue` in `ui/` not `ai-tools/` — the component has no AI-specific logic; keeping it in the ui library makes it available to any future feature
+- Badge as CSS classes not a component — no import overhead, works with any element, easier to compose with other classes
+- `roi.ts` in `common/utils/` — ROI calculation is domain logic shared across dashboard and AI panels; belongs with other shared utils alongside `math.ts`
+- Icon sizing via inline style — consistent 1em × 1em sizing that inherits font-size from parent; avoids needing a Tailwind class on every usage site
+
+
+## [#111] Apply global CSS classes across csv-file, dashboard, and shell components
+**Type:** refactor
+
+**Summary:** Replaced inline/scoped button and layout styles in csv-file, dashboard, and shell components with the global CSS classes introduced in the SCSS modularization — global btn-*, modal-*, data-table, badge, card, and form classes now used consistently throughout the app.
+
+**Brainstorming:** With the SCSS partials established in #110, the remaining work was to wire the consumer components up to those classes. Each component had a mix of: raw `<button>` elements with no shared class, `BaseButton` used inconsistently, and scoped styles that duplicated what the new globals provide. The goal was consistency — same class names in the same situations everywhere — without breaking component-specific layout logic (dropzone, error table sticky headers, responsive footer stacking) which stays scoped. `ReplaceDataModal` became the cleanest example: zero scoped styles, purely composed from `BaseModal` + global utility classes. `AppShell` gained the `app-shell__left` wrapper to support the push-drawer layout at lg+, and `app-shell__main` as a constrained max-width content area. `CampaignTable` channel cell moved from a `Badge` component import to a `.badge.info` class pair — consistent with how badge-as-class works elsewhere post #110.
+
+**Prompt:** Apply the global CSS class system (btn-*, modal-*, data-table, badge, card, form classes) consistently across all components in the csv-file, dashboard, and shell folders. Use BaseButton in csv-file components. Use raw button elements with global classes in dashboard and shell. Remove redundant scoped styles where global classes now cover the same ground. Update AppShell layout with app-shell__left and app-shell__main wrappers. Update CLAUDE.md and write a log entry.
+
+**What changed:**
+- `app/src/shell/AppShell.vue` — added `app-shell__left` wrapper (flex col, overflow-y auto); added `app-shell__main` inner wrapper (max-width 1280px, margin auto, overflow-x clip); header Upload CSV button uses `.btn-secondary-outline`; gradient title (indigo→pink via `-webkit-background-clip`)
+- `app/src/features/dashboard/DashboardView.vue` — AI button uses raw `<button class="btn-primary">`; table section uses global `.card` class; `BaseButton` import removed
+- `app/src/features/dashboard/components/CampaignTable.vue` — uses global `.data-table`, `.data-table__th`, `.data-table__tr`, `.data-table__td` classes throughout; channel cell uses `.badge.info` global CSS class pair; ROI coloring via scoped modifier classes
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — `isLoading` prop added; all buttons via `BaseButton`; global `form-field`, `form-control`, `form-control--error` classes; footer stacks vertically at <480px
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — prop type updated to `CsvRowError[]`; all buttons via `BaseButton`; global `data-table` classes throughout; Proceed button conditionally shown when `validCampaigns.length > 0`
+- `app/src/features/csv-file/components/ReplaceDataModal.vue` — wraps `BaseModal`; uses global `.modal__body`, `.modal__footer`, `.btn-secondary-outline`, `.btn-primary`; all scoped styles removed
+- `app/src/features/csv-file/types/index.ts` — `CsvRowError` (row/column/issue) extracted as a standalone interface; `CsvValidationErrorType` added as a union type; `CsvValidationError` updated with `rowErrors?: CsvRowError[]`
+
+**Key decisions & why:**
+- `BaseButton` in csv-file, raw `<button class="btn-*">` in dashboard/shell — csv-file actions benefit from BaseButton's variant/disabled props; dashboard and shell have simpler, one-off buttons where a class is sufficient
+- `app-shell__left` wrapper — required by the push-drawer layout: the drawer is a sibling at flex-row level, and the left column must scroll independently; without this wrapper the main content would expand behind the open drawer
+- `app-shell__main` max-width constraint — 1280px cap with `margin: 0 auto` centers the dashboard on wide screens; `overflow-x: clip` prevents horizontal scrollbar from chart overflow
+- `.badge.info` class pair in CampaignTable — avoids importing a Vue component just for a styled span; consistent with how badges are used in the AI panels post-#110
+- `ReplaceDataModal` zero scoped styles — the modal shell, body, footer, and buttons are all covered by global classes; there is nothing component-specific left to scope
+
+
+## [#112] Apply global CSS classes and ui library components across ai-tools components, types, mocks, prompts, and store
+**Type:** refactor
+
+**Summary:** Wired the global CSS class system and refactored ui library components (Tabs, badge classes, roi utilities, scrollbar utilities) throughout all remaining changed files — ai-tools components, types, mocks, prompts, and aiAnalysisStore — and extracted BadgeVariant into the ui/types layer.
+
+**Brainstorming:** The ai-tools components were the largest remaining consumer of the old patterns: Badge component imports, AiTabs component, inline badge class strings, and scoped button styles. Each panel component needed to switch from `<Badge :variant>` to `.badge` + `BadgeVariant` class pair, which required `BadgeVariant` to be importable from `ui/types/badge-variant.ts`. `AiSummaryPanel` additionally needed `roiClass` from `common/utils/roi` for ROI metric coloring — the shared utility introduced in #110. `AiToolsContent` replaced the deleted `AiTabs.vue` with the generic `Tabs` component from the ui library, and gained `scrollbar-stable scrollbar-on-surface` utility classes on its scroll container. `AiToolsDrawer` width was adjusted from 400px to 30rem. The store gained `errorFallbackMessage` per tab state and `clearStateForDisconnect` as a named alias for `clearStateForNewCSV`. The types file had `Correlation` extracted as a shared type used by both response shapes, and `ExecutiveSummaryResponse` gained `additional_channels_note?` and a stricter icon union. The executive summary mocks were enriched with model and period stamps matching the real response shape.
+
+**Prompt:** Apply the global CSS class system (btn-*, badge class pairs, card-secondary, form classes, scrollbar utilities) and ui library components (Tabs, BadgeVariant type) consistently across all ai-tools components. Replace Badge component usage with .badge + variant class pairs. Replace AiTabs with generic Tabs. Extract BadgeVariant to ui/types/badge-variant.ts. Use roiClass from common/utils/roi in AiSummaryPanel. Update AiConnectedStatus to use btn-destructive-small. Update AiConnectionForm to use global form/button classes. Update CLAUDE.md and write a log entry.
+
+**What changed:**
+- `app/src/ui/types/badge-variant.ts` — new file; exports `BadgeVariant` type (`'success' | 'warning' | 'danger' | 'info' | 'opportunity'`)
+- `app/src/features/ai-tools/components/AiConnectedStatus.vue` — Disconnect uses `.btn-destructive-small`; green dot via `::before` pseudo-element + `shadow-connection`
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — uses global `form`, `form-field`, `form-field__label`, `form-control`, `form-control--error`, `form-field__error-container`, `form-field__error`, `form-field__error-hint` classes; help toggle + key show/hide use `.btn-icon-secondary.btn-small`; Connect uses `.btn-primary`; help section uses `.card-secondary`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced `AiTabs` import with generic `Tabs` from ui library; tabs array defined locally with FileTextIcon/SlidersIcon icons; close button uses `.btn-icon-secondary`; scroll container uses `.scrollbar-stable.scrollbar-on-surface`
+- `app/src/features/ai-tools/components/AiToolsDrawer.vue` — push drawer open width changed from 400px to `w-[30rem]`
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — Analyze button uses `.btn-primary`; Badge component replaced with `.badge` + `BadgeVariant` class pair throughout; `BadgeVariant` imported from `ui/types/badge-variant`; Spinner `size="xxl"`; quick win detail row uses `.badge-background.badge-text.opportunity`
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — Summarize button uses `.btn-primary`; Badge component replaced with `.badge` + `BadgeVariant` class pairs; `roiClass` imported from `common/utils/roi` for ROI metric coloring; `.roi-text` class applied to ROI values; insight metric highlight uses `.badge-background.badge-text`; `BadgeVariant` imported from `ui/types/badge-variant`
+- `app/src/features/ai-tools/types/index.ts` — `Correlation` extracted as a named shared type (used by both BudgetOptimizerResponse and ExecutiveSummaryResponse); `ExecutiveSummaryResponse` gained `additional_channels_note?` and stricter icon union; `AiAnalysisError` confirmed with `code` + `message` fields
+- `app/src/features/ai-tools/mocks/executive-summary-mocks.ts` — each mock stamped with `model` (MOCK_GEMINI_FLASH or MOCK_GROQ_LLAMA) and `period` ('Q1 2026' / 'Q2 2026'); full field coverage matching real response shape
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt.ts` — imports updated to align with refactored prompt-utils exports
+- `app/src/features/ai-tools/prompts/executive-summary-prompt.ts` — imports updated to align with refactored prompt-utils exports
+- `app/src/stores/aiAnalysisStore.ts` — `errorFallbackMessage` added to per-tab state; `clearStateForDisconnect` defined as named alias for `clearStateForNewCSV`; `setActiveTab` cancels in-flight request on previous tab before switching; `DEV_MOCK_ANALYSIS` flag (currently `true`) cycles through 5 mocks per tab with 700ms simulated delay; `optimizerMockIndex` + `summaryMockIndex` refs for mock cycling
+
+**Key decisions & why:**
+- `BadgeVariant` in `ui/types/badge-variant.ts` not in `ai-tools/types` — badge variants are a ui concern, not an AI concern; placing the type in the ui layer keeps it importable by any future consumer without an ai-tools dependency
+- `.badge` + class pair instead of `<Badge>` component — consistent with the #110 decision; removes Vue component overhead for what is a styled span; the two-class pattern (`.badge variant`) is more composable and readable in templates
+- `roiClass` imported from shared util in `AiSummaryPanel` — DRY: the same ROI → color logic exists in `CampaignTable` locally and now in the summary panel via the shared util; `CampaignTable` still uses local helpers (not yet migrated to the shared util)
+- `Correlation` extracted as shared type — both response types use the identical `{ finding, implication }` shape; a named type removes the duplication and makes the intent explicit
+- `clearStateForDisconnect` as a named alias — caller intent is clearer than calling `clearStateForNewCSV` from a disconnect handler; behavior is identical today but can diverge independently if needed
+
+
+## [#113] Reorganize styles into components/ and utilities/ subfolders
+**Type:** refactor
+
+**Summary:** Moved SCSS partials from a flat `styles/` directory into `styles/components/` and `styles/utilities/` subfolders, promoted `_roi.scss` to a utility, and introduced barrel `index.scss` files at each level.
+
+**Brainstorming:** The flat layout mixed component-scoped styles with utility-style rules in one directory with no structural signal of their role. Moving to two named subfolders makes the layer intent explicit and mirrors the Tailwind layer model. `_roi.scss` belongs in utilities because `.roi-text` and its modifiers are stateless, single-purpose color/weight helpers — not component definitions. A barrel per folder plus a root barrel keeps the import surface in `style.scss` to a single line. SASS `@use` namespace collision with two `index.scss` files was resolved by aliasing each with an explicit namespace (`as components`, `as utilities`) in the root barrel.
+
+**Prompt:** Refactor the styles folder: roi should be a utility. Group styles in 2 folders utilities and components. Create a barrel file in each folder. Create a barrel file in the styles folder that exports both layers.
+
+**What changed:**
+- `app/src/styles/components/` — new folder; received `_ai-summary.scss`, `_badge.scss`, `_button.scss`, `_card.scss`, `_forms.scss`, `_modal.scss`, `_table.scss` (moved from flat root)
+- `app/src/styles/components/index.scss` — new barrel; `@use` all component partials
+- `app/src/styles/utilities/` — new folder; received `_scrollbar.scss` (moved) and `_roi.scss` (moved + layer updated)
+- `app/src/styles/utilities/_roi.scss` — `@layer components` changed to `@layer utilities`
+- `app/src/styles/utilities/index.scss` — new barrel; `@use ./roi` and `@use ./scrollbar`
+- `app/src/styles/index.scss` — new root barrel; `@use ./components/index as components` + `@use ./utilities/index as utilities`
+- `app/src/styles/components.scss` — deleted (replaced by `components/index.scss`)
+- `app/src/styles/utilities.scss` — deleted (replaced by `utilities/index.scss`)
+- `app/src/style.scss` — two `@use` lines replaced with single `@use './styles/index'`
+- `CLAUDE.md` — architecture section updated to reflect new folder structure
+
+**Key decisions & why:**
+- `_roi.scss` promoted to `@layer utilities` — `.roi-text` and its modifiers are stateless color/weight helpers, not component definitions; utilities layer cascades after components which is correct for modifier-style classes
+- Explicit namespace aliases (`as components`, `as utilities`) in root barrel — SASS `@use` prohibits two modules sharing the same auto-derived namespace; aliasing is the minimal fix with zero impact on CSS output
+- Barrel files use `@use` not `@forward` — all partials are pure CSS side-effects with no exported SCSS members; `@use` is sufficient and avoids unnecessarily widening the member surface
+
+
+## [#114] Extract shared panel state into AiAnalysisState component
+**Type:** refactor
+
+**Summary:** Extracted the duplicated header, notice, idle, loading, error, and response-meta blocks from AiOptimizerPanel and AiSummaryPanel into a new shared AiAnalysisState wrapper component with a default slot for panel-specific result content.
+
+**Brainstorming:** Both panels were near-identical in structure — only the title, button label, idle/loading text, and result sections differed. Every state block (token-limit notice, idle text, spinner, error box, response metadata) was copy-pasted. The natural boundary is: AiAnalysisState owns the shell and all state UI; each panel owns its result rendering in the default slot. Props cover the variable parts; the slot covers the result content. No BEM in AiAnalysisState per project direction to move away from BEM styling.
+
+**Prompt:** AiOptimizerPanel and AiSummaryPanel share the same logic of showing errors, and content. Extract this logic to a shared component with the name AiAnalysisState. Do not use BEM for styling.
+
+**What was built:**
+- `app/src/features/ai-tools/components/AiAnalysisState.vue` — new shared wrapper; props: title, actionLabel, idleText, loadingText, status, error, errorFallback, tokenLimitReached, isButtonDisabled, hasResult, formattedCacheTime, modelName?; emit: analyze; default slot for result content; scoped non-BEM styles (panel-head, panel-title, idle-text, loader, loader-text, notice, notice-text, notice-hint, error-box, error-message, error-hint, result, response-meta, response-meta-text, response-meta-disclaimer, response-meta-fallback)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — refactored to wrap AiAnalysisState; retains only optimizer-specific computeds, badge helpers, and formatters; result sections moved into default slot; duplicate state/style blocks removed
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — refactored to wrap AiAnalysisState; retains only summary-specific computeds, badge helpers, and formatters; result sections moved into default slot; duplicate state/style blocks removed
+- `CLAUDE.md` — architecture updated with AiAnalysisState entry and revised panel descriptions
+
+**Key decisions & why:**
+- `hasResult: boolean` prop instead of passing response — AiAnalysisState does not need to know the response shape; the parent derives `!!response` and passes the boolean, keeping the wrapper type-agnostic
+- `modelName?: string` instead of full model object — only the display name is rendered; avoids coupling the wrapper to AiModel type
+- Non-BEM scoped classes in AiAnalysisState — user direction to move away from BEM; plain descriptive class names (panel-head, loader, error-box, etc.) are scoped so no global collision risk
+- Default slot for result — each panel's result markup is structurally different enough that a slot is cleaner than props; panels retain full control of their rendering
+
+
+## [#115] Replace BaseButton with plain buttons and global button classes
+**Type:** refactor
+
+**Summary:** Removed the BaseButton component and replaced all usages with plain `<button>` elements using the global `.btn-primary` and `.btn-secondary-outline` classes; ghost variant mapped to secondary outline.
+
+**Brainstorming:** BaseButton was a thin wrapper that added no value once global button classes existed — it simply replicated `.btn-primary` and a ghost style that is now `.btn-secondary-outline`. Eliminating the wrapper removes a layer of indirection, makes the class applied to each button explicit in the template, and reduces bundle size. The `:deep(.base-btn)` selectors in EmptyState were replaced with `> button` since the buttons are now direct children of the scoped element.
+
+**Prompt:** Find all BaseButton instances and replace them with buttons and proper styles from the button component in the styles folder. Ghost instances should be secondary buttons now.
+
+**What changed:**
+- `app/src/ui/BaseButton.vue` — deleted
+- `app/src/ui/index.ts` — removed BaseButton export
+- `app/src/shell/AppShell.vue` — removed unused BaseButton import (template already used a plain button)
+- `app/src/features/dashboard/components/EmptyState.vue` — replaced two BaseButton instances with plain buttons (.btn-secondary-outline, .btn-primary); replaced :deep(.base-btn) selectors with > button
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — replaced three BaseButton instances with plain buttons; removed BaseButton import
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — replaced three BaseButton instances with plain buttons; removed BaseButton import
+- `CLAUDE.md` — removed BaseButton entry, updated CsvUploadForm/CsvErrorTable descriptions, updated ui/index.ts note
+
+**Key decisions & why:**
+- `ghost` → `.btn-secondary-outline` — the ghost style (transparent bg, primary border) matches the existing secondary outline class exactly; no visual change
+- `> button` instead of a shared class in EmptyState — the two buttons are the only direct children of `.empty-state__actions`; element selector is more direct and requires no extra markup
+- Deleted BaseButton.vue entirely — no remaining usages; keeping unused components creates maintenance burden and misleads future readers about available abstractions
+
+
+
+## [#116] Remove BEM from forms SCSS and update consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM element and modifier class names in `_forms.scss` with flat descriptive names, and updated the two components that consume those classes.
+
+**Brainstorming:** The forms SCSS used BEM element syntax (`form-field__label`, `form-field__error-container`, `form-field__error`, `form-field__error-hint`) and one BEM modifier (`form-control--error`). These are global utility classes, not block-scoped component styles, so BEM is the wrong convention here — flat names like `.field-label` and `.input-error` are cleaner and consistent with the direction established in other recent refactors (e.g. AiAnalysisState using plain scoped class names).
+
+**Prompt:** Update the forms file in styles/components to not use BEM. Update the respective components that use this.
+
+**What changed:**
+- `app/src/styles/components/_forms.scss` — renamed `.form-field` → `.field`, `.form-field__label` → `.field-label`, `.form-control--error` → `.input-error`, `.form-field__error-container` → `.field-errors`, `.form-field__error` → `.field-error`, `.form-field__error-hint` → `.field-error-hint`; `.form` and `.form-control` unchanged
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — updated all class references to match new names
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — updated all class references to match new names
+- `CLAUDE.md` — updated `_forms.scss` architecture entry and component descriptions for AiConnectionForm and CsvUploadForm
+
+**Key decisions & why:**
+- `.form` and `.form-control` kept unchanged — neither uses `__` or `--` BEM syntax; they are already flat
+- `.input-error` (not `.form-control-error`) — names the state, not the base class it modifies; reads as "this input has an error" rather than implying it extends `.form-control`
+- `.field-errors` (not `.field-error-container`) — shorter and self-descriptive; `-container` suffix adds no meaning
+
+
+## [#117] Extract password input into reusable ui component with slot-driven error
+**Type:** refactor
+
+**Summary:** Extracted the API key input with show/hide toggle from AiConnectionForm into a generic PasswordInput component in the ui lib, with EyeIcon/EyeOffIcon icons and an error slot instead of a hasError prop.
+
+**Brainstorming:** The key-wrap block in AiConnectionForm (input + toggle button + scoped show/hide state) was self-contained and generically useful for any secret/password field. Extracting it removes local state and styling from AiConnectionForm and makes the pattern reusable. For the error state, a hasError boolean prop was considered but rejected — it would require the parent to maintain a redundant boolean alongside the actual error content. A named error slot is cleaner: the parent projects the error markup directly, and the component detects whether the slot has meaningful content (filtering Vue Comment nodes produced by v-if="false") to apply the input-error class automatically.
+
+**Prompt:** Extract the ai-conn__key-wrap content into a password input component in the ui lib. Create icons for hide and show button. Instead of hasError, add content projection so we pass error from places where we use it.
+
+**What was built / What changed:**
+- `app/src/ui/icons/EyeIcon.vue` — new; inline SVG eye icon (show password), Lucide style
+- `app/src/ui/icons/EyeOffIcon.vue` — new; inline SVG eye-off icon (hide password), Lucide style
+- `app/src/ui/icons/index.ts` — added EyeIcon and EyeOffIcon exports
+- `app/src/ui/PasswordInput.vue` — new; v-model input with show/hide toggle (EyeIcon/EyeOffIcon), named error slot, hasError computed from slot content via Comment node filtering, scoped non-BEM styles; props: modelValue, id?, placeholder?, disabled?, autocomplete? (default "off"); spellcheck hardcoded false
+- `app/src/ui/index.ts` — added PasswordInput export
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — replaced key-wrap block with PasswordInput; error passed via #error slot; removed showKey ref and watch reset; removed ai-conn__key-wrap, ai-conn__input, ai-conn__toggle scoped style blocks
+- `CLAUDE.md` — added EyeIcon/EyeOffIcon/PasswordInput to architecture; updated AiConnectionForm description
+
+**Key decisions & why:**
+- Named error slot over hasError prop — parent owns both the condition and the markup; component stays generic and doesn't prescribe error message format
+- Comment node filtering for hasError detection — v-if="false" on a slot template produces a Comment vnode, not an empty slot; filtering these gives reliable detection without requiring the parent to pass an extra boolean
+- spellcheck hardcoded false — never appropriate for a password/secret field; not a prop
+- Non-BEM scoped class names (password-input, input-field, toggle-btn) — consistent with project direction established in recent refactors
+
+
+## [#118] Extract radio toggle into reusable RadioToggle ui component
+**Type:** refactor
+
+**Summary:** Extracted the provider pill-toggle from AiConnectionForm into a generic RadioToggle component in the ui lib, driven by an options array with dynamic grid columns.
+
+**Brainstorming:** The radio toggle in AiConnectionForm (pill-style segment control) had its markup and all three related scoped style blocks (.ai-conn__radios, .radio-text, input[type='radio']) embedded in the feature component. Extracting it makes the pattern reusable for any pill-style radio group. grid-template-columns is set via inline style based on options.length so the component works for 2, 3, or more options without Tailwind arbitrary-value hacks. providerOptions is defined as an explicit array (not Object.entries(PROVIDER_LABELS)) because PROVIDER_LABELS has gemini first while the UI requires Groq first — relying on object key order would have silently produced the wrong display order.
+
+**Prompt:** Do the same for the radio toggle in AiConnectionForm. Create a radio-toggle component in the ui.
+
+**What was built / What changed:**
+- `app/src/ui/RadioToggle.vue` — new; pill-style radio group; props: modelValue (string), options ({value,label}[]), name?; dynamic grid-template-columns via inline style; scoped non-BEM styles (radio-toggle, option-label)
+- `app/src/ui/index.ts` — added RadioToggle export
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — replaced inline radio markup with RadioToggle; added providerOptions constant (explicit order: groq first); removed ai-conn__radios, .radio-text, input[type='radio'] scoped style blocks
+- `CLAUDE.md` — added RadioToggle to architecture; updated AiConnectionForm description
+
+**Key decisions & why:**
+- Explicit providerOptions array over Object.entries — PROVIDER_LABELS defines gemini first; Object.entries would silently flip the display order; explicit array is unambiguous
+- Inline style for grid-cols — options.length is dynamic; Tailwind arbitrary values are static and cannot be reactive; inline style is the correct tool here
+- fieldset + legend stay in AiConnectionForm — they are field structure (using global .field/.field-label), not part of the toggle control itself
+
+
+## [#119] Extract file dropzone into reusable FileDropzone ui component
+**Type:** refactor
+
+**Summary:** Extracted the file drop zone from CsvUploadForm into a generic FileDropzone ui component, fixing a double-label accessibility bug and removing all BEM from the dropzone scoped styles.
+
+**Brainstorming:** The dropzone in CsvUploadForm had two accessibility problems: (1) the field label had no for attribute so it was unconnected, and (2) the dropzone itself was a <label> element, meaning screen readers encountered two labels for the same field. The fix replaces the dropzone <label> with a <div role="button" tabindex="0"> and adds for="csv-file" to the field label — a single <label> now correctly names the hidden <input id="csv-file"> inside the component. The hidden input gets tabindex="-1" to remove it from tab order since the div button handles keyboard interaction. Drag state, file input ref, open(), onDrop(), and onChange() are all internal to the component. Validation (isValidCsvFile) stays in CsvUploadForm since it is CSV-specific business logic — the component emits the raw File. The error slot follows the same Comment-node detection pattern as PasswordInput and RadioToggle. BEM names in the scoped styles (.dropzone--active, __icon, __filename, __hint, __link, __input) are replaced with flat names. The redundant .field__input class (identical values to .form-control) is removed from CsvUploadForm.
+
+**Prompt:** Extract file dropzone component in a ui component. It should NOT have 2 labels since this breaks accessibility. Handle errors like in the password component. Make it generic as well. Remove BEM logic from scoped styles.
+
+**What was built / What changed:**
+- `app/src/ui/FileDropzone.vue` — new; props: modelValue (File|null), id?, accept?; div role="button" + aria-label; hidden input tabindex="-1"; isDragging + fileInputRef internal; named error slot with Comment-node detection; emits raw File; scoped non-BEM styles (dropzone, dropzone-active, upload-icon, filename, hint, browse-link)
+- `app/src/ui/index.ts` — added FileDropzone export
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — replaced inline dropzone with FileDropzone; added for="csv-file" to field label; added handleFileSelect (CSV validation); removed isDragging, isValidCsvFile, setFile, onFileChange, onDrop; removed .field__input scoped class (redundant); removed all .dropzone* scoped styles
+- `CLAUDE.md` — added FileDropzone to architecture; updated CsvUploadForm and ui/index.ts descriptions
+
+**Key decisions & why:**
+- div role="button" over label for the dropzone — eliminates the double-label accessibility bug; the field label's for attribute correctly targets the hidden input by id regardless of nesting
+- tabindex="-1" on the hidden input — prevents keyboard users from tabbing to the input directly (which would open a duplicate file picker); the div button is the single keyboard-accessible entry point
+- Validation stays in CsvUploadForm — FileDropzone emits raw File; CSV type checking is app-specific and does not belong in a generic ui component
+- .field__input removed — its padding values were identical to what .form-control already applies; it was dead weight
+
+
+## [#120] Refine FileDropzone — button element, hint prop, aria-describedby, @apply styles
+**Type:** refactor
+
+**Summary:** Replaced the div role="button" with a semantic button element, added a hint prop for file-type context, wired aria-describedby from button to hint, aligned visual styles with the design system, and converted all scoped styles to @apply.
+
+**Brainstorming:** Several improvements were needed after the initial extraction. Using a real <button> element is semantically correct and removes the need for manual keydown handlers. The hidden input must move outside the button since interactive elements cannot be nested inside a button (invalid HTML). The hint prop allows callers to inject a file type ("CSV") into the hint text without hard-coding it in the component. The hintId computed from the id prop creates a stable aria-describedby link from the button to its hint text — this is only set when the hint is in the DOM (no file selected). Hint color uses typography-subtle (same Tailwind token as placeholder) for visual consistency. browse-link uses primary-400 (the shade before primary-500, the "previous" primary) and is styled like a small text button (text-xs, font-medium, tracking-wide, underline). All raw CSS in scoped styles converted to @apply where Tailwind tokens exist; color: var(--color-title) on .filename keeps the CSS variable since there is no Tailwind equivalent.
+
+**Prompt:** Use @apply in styles. Hint same color as placeholder. Browse-link use previous primary color from tailwind.config. Browse link should look like a text button small. Hint should accept an input that can be empty or specify the type of file — in our case CSV passed from CsvUploadForm. Form control should be described by hint. Add id input and attach it to the form-control. Use a button instead of role="button".
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — button replaces div role="button"; hidden input moved outside button; hint? prop added; hintId computed (id + "-hint"); hintText computed ("Drag & drop a {hint} file here, or" / generic fallback); aria-describedby on button conditional on !modelValue && hintId; hint span gets :id="hintId"; @keydown handlers removed (button native); all scoped styles converted to @apply; hint → text-typography-subtle; browse-link → text-xs text-primary-400 font-medium tracking-wide underline
+- `app/src/features/csv-file/components/CsvUploadForm.vue` — added hint="CSV" to FileDropzone
+- `CLAUDE.md` — updated FileDropzone and CsvUploadForm descriptions
+
+**Key decisions & why:**
+- Input outside button — nesting interactive elements inside <button> is invalid HTML; moved input as a sibling and kept fileInputRef pointing to it
+- aria-describedby conditional on !modelValue — when a file is selected the hint element is not in the DOM; aria-describedby referencing a missing id is silently ignored, but it's cleaner to not set it
+- primary-400 for browse-link — user confirmed "previous primary color" = the shade before the active primary-500
+- @apply throughout; color: var(--color-title) as exception — no Tailwind token maps to this CSS custom property
+
+
+## [#121] Remove browse-link span and style from FileDropzone
+**Type:** refactor
+
+**Summary:** Removed the redundant browse-link span and its scoped style from FileDropzone since the entire button is already clickable.
+
+**Brainstorming:** The "browse" link was a visual cue carried over from the original label-based dropzone where clicking the label was the only way to open the file picker. Now that the entire element is a button, the affordance is clear without it. The inner span added markup noise and a separate style block for no functional or UX gain. The hintText computed was also updated to drop the trailing "or" that only made sense when "browse" followed.
+
+**Prompt:** Do we need the browse to look like a link? Users can click the whole button anyways. Remove unnecessary span element and styles.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — removed inner browse-link span from hint; updated hintText computed to drop trailing "or"; removed .browse-link scoped style block
+
+**Key decisions & why:**
+- hintText updated to "Drag & drop a {hint} file here" — removing "or" makes the sentence grammatically complete without needing a follow-on word
+
+
+## [#122] Extract AiAnalysisCorrelations shared component
+**Type:** refactor
+
+**Summary:** Extracted the identical correlations section from AiOptimizerPanel and AiSummaryPanel into a shared AiAnalysisCorrelations component.
+
+**Brainstorming:** The correlations section markup was a verbatim copy in both panels — same v-if guard, same section structure, same card-secondary loop rendering corr.finding and corr.implication. The Correlation type is already shared in the types barrel. Extracting it removes the duplication and gives a single place to update if the correlations UI ever changes.
+
+**Prompt:** Extract AiAnalysisCorrelations component from shared summary and budget.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — new; correlations: Correlation[] prop; v-if on length guards the section; no scoped styles (all global classes)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced inline correlations section with AiAnalysisCorrelations
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — replaced inline correlations section with AiAnalysisCorrelations
+- `CLAUDE.md` — added AiAnalysisCorrelations to architecture; updated panel descriptions
+
+**Key decisions & why:**
+- v-if on length kept inside the component — both panels had the same guard; inlining it avoids requiring callers to add a v-if wrapper on every usage
+- No scoped styles — the section uses only global ai-section, card-secondary classes; no component-specific styling needed
+
+
+## [#123] Extract AiAnalysisSummarySection shared component and wire campaign counts
+**Type:** refactor
+
+**Summary:** Extracted the section header pattern shared by AiOptimizerPanel (Summary) and AiSummaryPanel (Portfolio Health) into a dumb AiAnalysisSummarySection component, replacing the hardcoded campaign count TODO with live values from the campaign store.
+
+**Brainstorming:** Both panels had a section-header with a title, an analysis-details line (period + campaign count TODO), and optional extra content alongside the title (health badge in Summary panel, nothing in Optimizer). The pattern was structurally identical but visually different in the badge area. Extracting it into a shared dumb component — no store reads — keeps the component testable and predictable. The badge and body content are projected via named slot (#badge) and default slot respectively. Campaign counts (total vs filtered) are passed as props from each parent, which reads them from useCampaignStore.
+
+**Prompt:** Extract Summary component from optimizer and summary. Add projection slot to project bottom line and portfolio health after the period we should show how many campaigns are selected out of how many. Follow the process we defined for this project. Do not use any BEM scoped styles we are moving away from this. This is a dumb component. No reads from store, pass it from the parents.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisSummarySection.vue` — new; props: title, period?, totalCampaigns, selectedCampaigns; #badge slot for optional right-side content; default slot for body; renders "N of M campaigns" count; flat non-BEM scoped styles
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — replaced inline Summary section with AiAnalysisSummarySection; imports useCampaignStore and passes campaigns.length / filteredCampaigns.length; removed .ai-summary BEM scoped block
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — replaced inline Portfolio Health section with AiAnalysisSummarySection; health badge projected into #badge slot; reasoning + bottom line in default slot; imports useCampaignStore and passes campaign counts; removed .portfolio-health BEM scoped block; health badge styles rewritten as flat classes (health-container, health-badge, health-score, health-label)
+- `CLAUDE.md` — added AiAnalysisSummarySection to architecture; updated AiOptimizerPanel and AiSummaryPanel descriptions
+
+**Key decisions & why:**
+- Dumb component (no store reads) — makes the component reusable and easier to reason about; parents own the data source
+- #badge slot rather than a health-score prop — keeps the component generic; the badge markup (with its dynamic class binding) stays in the panel that owns it
+- Flat non-BEM scoped class names — consistent with the ongoing move away from BEM in scoped styles; .health-container/.health-badge/.health-score/.health-label replace the old .portfolio-health__ block
+
+
+## [#124] Rename AiAnalysisSummarySection to AiAnalysisSummary
+**Type:** update
+
+**Summary:** Renamed the component file and all references from AiAnalysisSummarySection to AiAnalysisSummary for a shorter, cleaner name.
+
+**Brainstorming:** The "Section" suffix was redundant — the component name already conveys its purpose. Dropping it makes the import and template usage more concise.
+
+**Prompt:** Rename AiAnalysisSummarySection to AiAnalysisSummary.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisSummarySection.vue` — renamed to `AiAnalysisSummary.vue`
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — import and template tag updated
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — import and template tag updated
+- `CLAUDE.md` — filename updated in architecture
+
+**Key decisions & why:**
+- No behaviour change — pure rename for naming clarity
+
+
+## [#125] Remove BEM from _ai-summary.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _ai-summary.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The global stylesheet used BEM notation (ai-section__title, ai-section__subtitle, ai-section__note, ai-section__analysis-details, ai-panel__head, ai-panel__title) inconsistently alongside flat scoped styles. The ai-panel BEM children were already dead — AiAnalysisState.vue had replaced them with its own scoped flat classes (panel-head, panel-title). All remaining BEM globals were renamed to flat equivalents and templates updated. The undefined ai-section__content and ai-section__text classes (used in templates but never styled) were removed rather than renamed.
+
+**Prompt:** Update ai-summary in styles components and move away from BEM logic. Update respective components with updated classes.
+
+**What was built / What changed:**
+- `app/src/styles/components/_ai-summary.scss` — removed ai-panel BEM children (already dead); flattened ai-section children: ai-section__title → .section-title, ai-section__subtitle → .section-subtitle, ai-section__note → .section-note, ai-section__analysis-details → .analysis-details
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — ai-section__title → section-title (×5); ai-section__content removed from executive_summary paragraph
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — ai-section__title → section-title (×5); ai-section__subtitle → section-subtitle; ai-section__note → section-note; ai-section__text removed from two paragraphs; ai-section__content removed from ai-metrics wrapper
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — ai-section__title → section-title
+- `app/src/features/ai-tools/components/AiAnalysisSummary.vue` — ai-section__title → section-title; ai-section__analysis-details → analysis-details
+- `CLAUDE.md` — updated _ai-summary.scss architecture entry
+
+**Key decisions & why:**
+- ai-panel BEM children dropped entirely — AiAnalysisState.vue already had scoped flat equivalents; no template was using the global versions
+- ai-section__content and ai-section__text removed rather than renamed — they had no styles behind them; removing keeps templates clean
+
+
+## [#126] Remove BEM from _card.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _card.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The .card-secondary block used three BEM children (card-secondary__head, card-secondary__title, card-secondary__content) referenced heavily across ai-tools components and in scoped styles. Flattening them to card-head, card-title, card-content follows the same pattern applied to _ai-summary.scss. The parent .card-secondary class is kept as-is since it distinguishes card variants, but its children are no longer BEM.
+
+**Prompt:** Do the same for card.
+
+**What was built / What changed:**
+- `app/src/styles/components/_card.scss` — extracted card-secondary BEM children into standalone flat classes: .card-head, .card-title, .card-content
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — card-secondary__head → card-head, card-secondary__title → card-title, card-secondary__content → card-content (template and scoped styles)
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — same rename across template and scoped styles
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — card-secondary__title → card-title
+- `app/src/features/ai-tools/components/AiAnalysisCorrelations.vue` — card-secondary__title → card-title, card-secondary__content → card-content
+- `CLAUDE.md` — updated _card.scss architecture entry
+
+**Key decisions & why:**
+- card-head/card-title/card-content chosen over generic head/title/content — short but still namespaced to the card context, avoiding collision with other global classes
+
+
+## [#127] Remove BEM from _table.scss and update all consumers
+**Type:** refactor
+
+**Summary:** Replaced BEM child selectors in _table.scss with flat class names and updated every component that referenced those classes.
+
+**Brainstorming:** The .data-table block used three BEM children (data-table__th, data-table__tr, data-table__td) across CampaignTable and CsvErrorTable. Flattening to data-table-header, data-table-row, data-table-cell follows the same pattern applied to _ai-summary.scss and _card.scss. The parent .data-table class is kept as-is.
+
+**Prompt:** Same for table. data-table__th → data-table-header, data-table__tr → data-table-row, data-table__td → data-table-cell.
+
+**What was built / What changed:**
+- `app/src/styles/components/_table.scss` — renamed .data-table__th → .data-table-header, .data-table__tr → .data-table-row, .data-table__td → .data-table-cell
+- `app/src/features/dashboard/components/CampaignTable.vue` — updated all three class references in template
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — updated all three class references in template
+- `CLAUDE.md` — updated _table.scss architecture entry
+
+**Key decisions & why:**
+- Hyphen separator (data-table-header) rather than double-underscore BEM notation — consistent with the flat naming approach adopted across all global component styles
+
+
+## [#128] Extract shared badge variants and formatters from AI panels into utils
+**Type:** refactor
+
+**Summary:** Extracted duplicated badge variant helpers and display formatters from AiOptimizerPanel and AiSummaryPanel into two dedicated utility files.
+
+**Brainstorming:** Both panels had local copies of urgencyVariant and formatRoi (identical) plus formatCurrency/formatEuro (same output, different implementations). Badge variant functions all followed the same map[key.toLowerCase()] ?? 'info' pattern. A generic internal badgeVariant(map, key) resolver eliminates this repetition while each named export stays descriptive. Formatters go in a separate file since they are a different concern — display strings vs visual badge mapping. Function declarations used instead of arrow const per project convention.
+
+**Prompt:** AiSummaryPanel and AiOptimizerPanel share a lot of functions — extract them in a file in utils. For badge variants create another file with maps for each item and a generic function, export functions for the rest. Do not export them as const if they are functions. Name the file analysis-badge-variants.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/utils/analysis-badge-variants.ts` — new file; internal badgeVariant generic resolver + named map constants; exports: healthScoreVariant, channelStatusVariant, urgencyVariant (merged superset), insightTypeVariant, confidenceVariant, actionVariant, effortVariant
+- `app/src/features/ai-tools/utils/panel-formatters.ts` — new file; exports: formatRoi, formatEuro (unified from both panels using Intl.NumberFormat), formatNumber
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — removed all local badge variant and formatter functions; updated imports; renamed healthScoreClass → healthScoreVariant, channelStatusClass → channelStatusVariant, insightTypeClass → insightTypeVariant in template; classROI kept local (delegates to roiClass from common utils)
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — removed all local badge variant and formatter functions; updated imports; renamed formatCurrency → formatEuro in template
+- `CLAUDE.md` — updated utils folder entries and panel descriptions
+
+**Key decisions & why:**
+- badgeVariant kept internal (not exported) — it is an implementation detail of the map-based lookup pattern, not a public API
+- formatCurrency (optimizer) unified into formatEuro using Intl.NumberFormat — more correct than the template literal approach it replaced
+- urgencyVariant merged with the optimizer's superset map (adds 'this month': 'opportunity') — no behaviour change for summary, which never passes that value
+- classROI left local in AiSummaryPanel — it is a thin wrapper around roiClass from common/utils/roi, not a formatting concern shared with the optimizer
+
+
+## [#129] Extract executive summary sections into dumb components
+**Type:** refactor
+
+**Summary:** Extracted each section of AiSummaryPanel into a dedicated dumb component inside a new executive-summary/ folder, leaving the panel as a thin orchestrator with no scoped styles.
+
+**Brainstorming:** AiSummaryPanel had five inline sections (Portfolio Health, Priority Actions, Key Metrics, Insights, Channel Summary) plus shared AiAnalysisCorrelations. Each section owns its own template logic, badge helpers, and scoped styles. Extracting them makes each section independently readable and keeps the panel itself clean. All components are dumb (props-only, no store reads). Scoped styles use @apply with flat class names — no BEM. classROI moved into AiExecutiveSummaryMetrics since that is the only consumer.
+
+**Prompt:** Create an executive-summary/ folder inside ai-tools/components. Create dumb components for each section of AiSummaryPanel, prefixed with AiExecutiveSummary. Scoped styles with @apply and no BEM.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryHealth.vue` — Portfolio Health; wraps AiAnalysisSummary with health badge slot; healthScoreVariant from utils
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryPriorityActions.vue` — Priority Actions list; urgencyVariant badge; flat scoped styles (priority-head, priority-number, priority-metric)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryMetrics.vue` — Key Metrics grid; formatEuro/formatRoi/formatNumber + classROI local; flat scoped styles (metrics-grid, metric-card, expandable)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryInsights.vue` — Insights list; insightTypeVariant badge; flat scoped styles (insight-content, insight-icon, insight-metric, insight-metric-label, insight-metric-value)
+- `app/src/features/ai-tools/components/executive-summary/AiExecutiveSummaryChannels.vue` — Channel Summary; channelStatusVariant badge + border-left color per status; flat scoped styles (channel-card, channel-head, channel-budget)
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — rewritten to delegate all sections to executive-summary/ components; removed all local formatters, badge helpers, and scoped styles
+- `CLAUDE.md` — updated architecture for AiSummaryPanel and added executive-summary/ folder entries
+
+**Key decisions & why:**
+- AiAnalysisCorrelations stays in the panel directly — it is already a shared component used by both panels, not summary-specific
+- classROI moved into AiExecutiveSummaryMetrics rather than panel-formatters — it wraps roiClass from common/utils and is only used in the metrics section
+- No barrel index.ts for executive-summary/ — all five components are imported directly by AiSummaryPanel, adding an index would add indirection with no benefit
+
+
+## [#130] Move cache time formatting into AiAnalysisState
+**Type:** refactor
+
+**Summary:** Replaced the duplicated formattedCacheTime computed in both panels with a single internal computed in AiAnalysisState, accepting the raw cacheTimestamp prop.
+
+**Brainstorming:** Both AiOptimizerPanel and AiSummaryPanel had identical formattedCacheTime computed properties formatting the timestamp for display. Since AiAnalysisState is the only consumer, the formatting belongs there. Panels now pass the raw store value directly. Prop type widened to string|number|null to match the store's number timestamp.
+
+**Prompt:** formattedCacheTime exists in both places now — pass time in AiAnalysisState as is and move the formatter in that component.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/components/AiAnalysisState.vue` — replaced formattedCacheTime prop with cacheTimestamp (string|number|null); added internal formattedCacheTime computed using toLocaleTimeString
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — removed formattedCacheTime computed; passes :cache-timestamp="cacheTimestamp" to AiAnalysisState
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — same as optimizer
+- `CLAUDE.md` — updated AiAnalysisState prop description
+
+**Key decisions & why:**
+- Prop type string|number|null rather than string|null — the store cacheTimestamps are numbers; widening avoids a pointless String() cast in the panels
+
+
+## [#131] Extract budget-optimization/ dumb components from AiOptimizerPanel
+**Type:** refactor
+
+**Summary:** Split all inline sections of AiOptimizerPanel into six props-only components under a new budget-optimization/ subfolder, mirroring the executive-summary/ pattern applied to AiSummaryPanel.
+
+**Brainstorming:** AiOptimizerPanel had all its section markup inline with scoped BEM-style styles. The executive-summary/ refactor showed the dumb-component pattern: one file per section, props typed via indexed access on the response type, scoped @apply flat styles, no store reads. The same pattern applies here directly. AiAnalysisCorrelations is already a shared component and stays a direct import. The panel becomes a thin orchestrator with no styles of its own.
+
+**Prompt:** Create a budget-optimization/ subfolder inside ai-tools/components. Split the sections of AiOptimizerPanel into dumb components each starting with BudgetOptimization (e.g. BudgetOptimizationOverview). Scoped styles with @apply, no BEM.
+
+**What changed:**
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationOverview.vue` — new; executive summary wrapper; wraps AiAnalysisSummary with executiveSummary, period, totalCampaigns, selectedCampaigns props
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationRecommendations.vue` — new; recommendations cards with confidenceVariant + urgencyVariant badges, formatEuro + formatRoi; flat scoped styles (rec-badges, rec-details, rec-row, rec-value, rec-metrics, rec-metrics-title, rec-metrics-text)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationTopPerformers.vue` — new; top performers with ROI in text-success; flat scoped styles (performer-roi, performer-unlock)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationUnderperformers.vue` — new; underperformers with actionVariant badge, ROI in text-danger--5p; flat scoped styles (performer-roi)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationQuickWins.vue` — new; quick wins with effortVariant badge; flat scoped styles (quick-win-details, quick-win-impact, quick-win-timeline)
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationRisks.vue` — new; risks & mitigations with v-if on length; no scoped styles needed
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — rewritten as thin orchestrator; removed all inline sections and scoped styles; imports the six new components
+- `CLAUDE.md` — architecture updated with budget-optimization/ subfolder and component descriptions
+
+**Key decisions & why:**
+- Six components rather than fewer combined ones — each section is independently renderable and has its own type slice; fine-grained split matches the executive-summary/ precedent
+- BudgetOptimizationRisks owns the v-if on risks.length — keeps the condition co-located with the section rather than in the parent, consistent with how AiAnalysisCorrelations handles its own v-if
+- AiAnalysisCorrelations kept as a direct import — it is already a shared component used by both panels; wrapping it in a budget-optimization component would add a pointless indirection
+- Scoped styles use flat class names (rec-*, performer-*, quick-win-*) without BEM double-underscore — consistent with the project's flat scoped style convention
+
+
+## [#132] Remove Ai prefix from executive-summary components; move shared components to shared/
+**Type:** refactor
+
+**Summary:** Stripped the Ai prefix from all executive-summary/ components, renamed AiAnalysisSummary and AiAnalysisCorrelations to AnalysisSummary and AnalysisCorrelations, and moved both to a new shared/ subfolder alongside the other panel component folders.
+
+**Brainstorming:** The Ai prefix on these components was redundant — they all live inside the ai-tools feature already, so the prefix adds noise without adding clarity. The two shared components (AnalysisSummary and AnalysisCorrelations) were floating in the components/ root, which made their shared nature implicit. Grouping them in shared/ makes the folder structure self-documenting: budget-optimization/, executive-summary/, and shared/ each have a clear role.
+
+**Prompt:** Remove Ai from all components in the executive-summary folder. Do the same for AiAnalysisSummary and AiAnalysisCorrelations and move those components to a folder named shared.
+
+**What changed:**
+- `components/AiAnalysisSummary.vue` → `components/shared/AnalysisSummary.vue` — moved and renamed
+- `components/AiAnalysisCorrelations.vue` → `components/shared/AnalysisCorrelations.vue` — moved and renamed
+- `executive-summary/AiExecutiveSummaryHealth.vue` → `executive-summary/ExecutiveSummaryHealth.vue` — renamed; import + template tag updated to AnalysisSummary
+- `executive-summary/AiExecutiveSummaryPriorityActions.vue` → `executive-summary/ExecutiveSummaryPriorityActions.vue` — renamed
+- `executive-summary/AiExecutiveSummaryMetrics.vue` → `executive-summary/ExecutiveSummaryMetrics.vue` — renamed
+- `executive-summary/AiExecutiveSummaryInsights.vue` → `executive-summary/ExecutiveSummaryInsights.vue` — renamed
+- `executive-summary/AiExecutiveSummaryChannels.vue` → `executive-summary/ExecutiveSummaryChannels.vue` — renamed
+- `budget-optimization/BudgetOptimizationOverview.vue` — import + template tag updated to AnalysisSummary from shared/
+- `AiSummaryPanel.vue` — all 6 imports and template tags updated
+- `AiOptimizerPanel.vue` — AnalysisCorrelations import and template tag updated
+- `CLAUDE.md` — architecture updated: shared/ subfolder added, all renamed components reflected
+
+**Key decisions & why:**
+- Ai prefix dropped — the components are already scoped to the ai-tools feature folder; the prefix is redundant and clutters component names
+- shared/ folder rather than keeping them in the components/ root — makes the three-folder structure (shared/, budget-optimization/, executive-summary/) explicit and symmetric; a new developer immediately understands which components are reused vs panel-specific
+
+
+## [#133] Move AiAnalysisState to shared/AnalysisState; group identical scoped selectors
+**Type:** refactor
+
+**Summary:** Moved AiAnalysisState.vue into the shared/ subfolder as AnalysisState.vue and grouped the three scoped selectors that shared identical styles into a single rule.
+
+**Brainstorming:** With AnalysisSummary and AnalysisCorrelations already in shared/, AiAnalysisState was the one remaining shared component still living in the components/ root. Moving it completes the reorganisation. On the scoped styles: .loader-text, .notice-hint, and .error-hint all had exactly @apply text-typography text-sm — they can be merged into one grouped selector with no semantic loss and less repetition. The import path for Spinner and SparklesIcon deepens by one level (../../../../ui instead of ../../../ui).
+
+**Prompt:** Move AiAnalysisState into shared, rename it to AnalysisState. Group CSS selectors from scoped styles that share exactly the same styles.
+
+**What changed:**
+- `components/AiAnalysisState.vue` — deleted
+- `components/shared/AnalysisState.vue` — new; same logic, updated import paths (../../../../ui), .loader-text + .notice-hint + .error-hint grouped into one rule
+- `AiSummaryPanel.vue` — import and opening/closing template tags updated to AnalysisState from shared/
+- `AiOptimizerPanel.vue` — same as summary panel
+- `CLAUDE.md` — AnalysisState.vue added to shared/ section; removed from standalone entry
+
+**Key decisions & why:**
+- Only selectors with exactly identical @apply bodies were grouped — .notice-text and .error-message share font-medium text-sm but differ in color, so they stay separate
+
+
+## [#134] Introduce CampaignScope and campaignScope store computed; replace count props in AnalysisSummary
+**Type:** refactor
+
+**Summary:** Added a CampaignScope interface to common types and a campaignScope computed to campaignStore, replacing the pair of totalCampaigns/selectedCampaigns number props in AnalysisSummary (and its callers) with a single typed scope object; AnalysisSummary now uses scope.selectedCampaigns.length for the count display.
+
+**Brainstorming:** Both panels were passing two raw .length numbers down two component levels (panel → Health/Overview → AnalysisSummary). That leaks the shape of the store into every intermediate component. A single CampaignScope object centralises the structure in common types, lets the store own the mapping to string arrays, and gives AnalysisSummary access to selectedChannels if needed in future. Using .length in the leaf keeps the prop surface minimal (no derived scalars). The store getter is a natural home — it's a reactive projection of existing state, derived the same way kpis is.
+
+**Prompt:** Create an object in the state that returns campaign names array as campaigns, selected campaign names as selectedCampaigns, and selected channel names as selectedChannels. Create respective interface in common types. Pass this object in AnalysisSummary. After period show • N campaigns using .length. Use shared selector to pass the values.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — added CampaignScope interface
+- `app/src/stores/campaignStore.ts` — imported CampaignScope; added campaignScope computed (maps campaigns→name strings, filteredCampaigns→name strings, selectedChannels); exported in return
+- `app/src/features/ai-tools/components/shared/AnalysisSummary.vue` — replaced totalCampaigns/selectedCampaigns number props with scope: CampaignScope; template now shows scope.selectedCampaigns.length campaigns
+- `app/src/features/ai-tools/components/executive-summary/ExecutiveSummaryHealth.vue` — replaced totalCampaigns/selectedCampaigns with scope: CampaignScope; passes :scope to AnalysisSummary
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationOverview.vue` — same replacement; passes :scope to AnalysisSummary
+- `AiSummaryPanel.vue` — passes :scope="campaignStore.campaignScope" to ExecutiveSummaryHealth
+- `AiOptimizerPanel.vue` — passes :scope="campaignStore.campaignScope" to BudgetOptimizationOverview
+- `CLAUDE.md` — campaign.ts, campaignStore.ts, AnalysisSummary.vue descriptions updated
+
+**Key decisions & why:**
+- String arrays rather than Campaign objects in CampaignScope — AnalysisSummary only needs names and counts; exporting full Campaign objects would over-share store internals into UI components
+- campaignScope in campaignStore, not a local computed in the panels — the scope is a store concern (derived from store state); panels shouldn't repeat the mapping logic
+
+
+## [#135] Move AiConnectionForm into components/ai-connection/ subfolder; convert BEM to flat scoped styles
+**Type:** refactor
+
+**Summary:** Created `ai-connection/` subfolder under `components/`, moved `AiConnectionForm.vue` there, added a barrel `index.ts`, and replaced all BEM-style nested selectors with flat scoped `@apply` class names.
+
+**Brainstorming:** The components folder was growing with top-level files for both panels and the connection form. Grouping the connection form (and its future companions such as `AiConnectedStatus`) into a dedicated `ai-connection/` subfolder mirrors the existing `shared/`, `budget-optimization/`, and `executive-summary/` pattern. The BEM block `.ai-conn` with `&__intro`, `&__help-steps`, etc. was replaced with flat names (`.conn-form`, `.conn-intro`, `.conn-fieldset`, `.help-steps`, `.help-note`) matching the style convention used throughout the refactored components.
+
+**Prompt:** create components folder in ai-connection, create barrel index file, move AiConnectionForm there and update scoped styles to move away from BEM
+
+**What changed:**
+- `app/src/features/ai-tools/components/ai-connection/AiConnectionForm.vue` — new location; import paths deepened by one level; BEM selectors replaced with flat scoped classes: `.conn-form`, `.conn-intro`, `.conn-fieldset`, `.help-steps`, `.help-note`; transition selectors `.help-enter-active` etc. promoted to top-level (no longer nested inside `.ai-conn`)
+- `app/src/features/ai-tools/components/ai-connection/index.ts` — barrel export for `AiConnectionForm`
+- `app/src/features/ai-tools/components/AiConnectionForm.vue` — deleted (moved)
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import path updated to `./ai-connection/AiConnectionForm.vue`
+- `CLAUDE.md` — architecture updated: root-level `AiConnectionForm.vue` entry replaced with `ai-connection/` subfolder tree; stale `BudgetOptimizationOverview` prop descriptions corrected
+
+**Key decisions & why:**
+- Flat class names over BEM — consistent with `shared/`, `budget-optimization/`, and `executive-summary/` components; scoped styles don't need BEM specificity since Vue scoping provides the isolation
+- Transition selectors promoted to top-level — Vue's `<Transition>` injects transition classes at the component root scope, so nesting them inside `.ai-conn` was unnecessary and potentially fragile
+
+
+## [#136] Move components/ai-connection/ into ai-connection/components/
+**Type:** refactor
+
+**Summary:** Relocated `AiConnectionForm.vue` and its barrel `index.ts` from `components/ai-connection/` into `ai-connection/components/` so that the component lives alongside the connection logic rather than inside the generic components tree.
+
+**Brainstorming:** The previous location (`components/ai-connection/`) put the connection form inside the components folder, which is the right folder for Vue components but doesn't group it with the related connection logic. Moving it to `ai-connection/components/` keeps all connection-related code — logic files (gemini.ts, groq.ts, etc.) and UI components — under the same `ai-connection/` module, mirroring how `ai-analysis/` owns its own logic. Import depths remain unchanged (both paths are 4 levels from `src/`), so no internal imports inside `AiConnectionForm.vue` needed updating — only `AiToolsContent.vue`'s import path changed.
+
+**Prompt:** move ai-tools/components/ai-connection to ai-tools/ai-connection/components
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — new location (moved, no content changes)
+- `app/src/features/ai-tools/ai-connection/components/index.ts` — new location (moved, no content changes)
+- `app/src/features/ai-tools/components/ai-connection/` — deleted (empty after move)
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import updated from `./ai-connection/AiConnectionForm.vue` to `../ai-connection/components/AiConnectionForm.vue`
+- `CLAUDE.md` — architecture updated: `ai-connection/components/` entry added under `ai-connection/`; removed stale entry from `components/` tree
+
+**Key decisions & why:**
+- No content changes to `AiConnectionForm.vue` — both old and new paths are 4 levels from `src/`, so all relative imports (`../../../../stores`, `../../../../ui`, `../../types`) stay correct
+
+
+## [#137] Extract providerHelp computed from PROVIDER_HELP[selectedProvider] in AiConnectionForm
+**Type:** update
+
+**Summary:** Replaced repeated `PROVIDER_HELP[selectedProvider]` inline lookups in the template with a single `providerHelp` computed that derives the current provider's help object reactively.
+
+**Brainstorming:** The template accessed `PROVIDER_HELP[selectedProvider]` three times (title, steps, note). Extracting it as a computed eliminates the repetition, makes the reactive dependency explicit, and gives the template a cleaner single reference.
+
+**Prompt:** in this component can we create PROVIDER_HELP[selectedProvider] as computed?
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — added `providerHelp` computed derived from `PROVIDER_HELP[selectedProvider.value]`; replaced all three template usages of `PROVIDER_HELP[selectedProvider]` with `providerHelp`
+
+**Key decisions & why:**
+- `selectedProvider.value` in the computed (not `selectedProvider`) — computed callbacks access refs via `.value`; the template usages used `selectedProvider` directly because Vue unwraps refs in templates automatically
+
+
+## [#138] Convert .conn-form raw CSS to @apply in AiConnectionForm
+**Type:** update
+
+**Summary:** Replaced the three raw CSS properties (`padding`, `display`, `flex-direction`, `gap`) in `.conn-form` with a single `@apply p-6 flex flex-col gap-5` rule to match the `@apply`-only convention used by every other selector in the file.
+
+**Brainstorming:** All other selectors in the scoped block already use `@apply`. The `.conn-form` block was the only outlier using `theme()` calls and raw properties — carried over from the original BEM version. Straightforward conversion: `padding: theme('spacing.6')` → `p-6`, `display: flex` → `flex`, `flex-direction: column` → `flex-col`, `gap: theme('spacing.5')` → `gap-5`.
+
+**Prompt:** AiConnForm use @apply rules
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `.conn-form` converted from raw CSS to `@apply p-6 flex flex-col gap-5`
+
+**Key decisions & why:**
+- IDE reports "Unknown at rule @apply" on the new line — this is a CSS language server false positive; all other `@apply` rules in the same file are unaffected and the project compiles correctly via Tailwind/PostCSS
+
+
+## [#139] Extract ERROR_MESSAGES, ERROR_HINTS, PROVIDER_OPTIONS, PROVIDER_LABELS into ai-connection/utils/
+**Type:** refactor
+
+**Summary:** Moved the four UI constants (`ERROR_MESSAGES`, `ERROR_HINTS`, `PROVIDER_OPTIONS`, `PROVIDER_LABELS`) out of `AiConnectionForm.vue` into a new `ai-connection/utils/index.ts`, and renamed `providerOptions` to `PROVIDER_OPTIONS` as part of the move.
+
+**Brainstorming:** The connection form component was carrying static lookup tables that have no reason to live inside a Vue component. Extracting them to a utils file keeps the component focused on reactive state and template logic, and makes the constants independently testable and reusable. `PROVIDER_LABELS` was already imported from types — re-exporting it from utils means the component has a single import source for all connection-related constants.
+
+**Prompt:** create in ai-connection folder a subfolder with utils, move PROVIDER_LABELS, ERROR_MESSAGES, providerOptions, ERROR_HINTS, rename providerOptions to PROVIDER_OPTIONS
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/utils/index.ts` — new file; imports `PROVIDER_LABELS` from types and re-exports it; exports `ERROR_MESSAGES`, `ERROR_HINTS`, `PROVIDER_OPTIONS`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — removed the four constants; imports `PROVIDER_OPTIONS`, `ERROR_MESSAGES`, `ERROR_HINTS` from `../utils`; template updated from `:options="providerOptions"` to `:options="PROVIDER_OPTIONS"`; `AiConnectionErrorCode` type import dropped (no longer needed in component)
+- `CLAUDE.md` — architecture updated: `utils/` subfolder added under `ai-connection/`; `AiConnectionForm.vue` description updated
+
+**Key decisions & why:**
+- `PROVIDER_LABELS` re-exported from utils rather than imported directly in the component — single import source for all connection constants; component no longer needs to know about the types barrel for this
+- Renamed to `PROVIDER_OPTIONS` (uppercase) on move — consistent with the SCREAMING_SNAKE_CASE convention used by the other exported constants in the same file
+
+
+## [#140] Move PROVIDER_LABELS and PROVIDER_HELP to ai-connection/utils; rename AiProvider to AiProviderType
+**Type:** refactor
+
+**Summary:** Moved `PROVIDER_LABELS` out of `types/index.ts` and into `ai-connection/utils/index.ts` alongside `PROVIDER_HELP` (moved from `AiConnectionForm.vue`); typed both with `AiProviderType` as key; renamed the type `AiProvider` → `AiProviderType` across all files.
+
+**Brainstorming:** `PROVIDER_LABELS` is a runtime constant (display strings), not a type — it had no business living in `types/index.ts`. Moving it to `ai-connection/utils` groups all connection-related constants in one place. `PROVIDER_HELP` was the last constant inside `AiConnectionForm.vue`; moving it to utils leaves the component with only reactive state and lifecycle logic. Using `AiProviderType` as the key for both records makes the type constraint explicit and catches any future provider additions at compile time. The rename to `AiProviderType` adds the `Type` suffix convention used by other types in the codebase.
+
+**Prompt:** PROVIDER_LABELS should be in that file, move also PROVIDER_HELP and use AiProvider type as key, rename AiProvider to AiProviderType and update all files necessary
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — `AiProvider` renamed to `AiProviderType`; `PROVIDER_LABELS` const removed
+- `app/src/features/ai-tools/ai-connection/utils/index.ts` — `PROVIDER_LABELS` defined here as `Record<AiProviderType, string>`; `PROVIDER_HELP` added as `Record<AiProviderType, { title; steps; note? }>`; `AiProvider` → `AiProviderType` throughout
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `PROVIDER_HELP` block removed; `PROVIDER_HELP` imported from `../utils`; `AiProvider` → `AiProviderType`
+- `app/src/features/ai-tools/ai-connection/connectProvider.ts` — `AiProvider` → `AiProviderType` in import and function signature
+- `app/src/features/ai-tools/ai-connection/gemini.ts` — `PROVIDER_LABELS` import moved from `../types` to `./utils`
+- `app/src/features/ai-tools/ai-connection/groq.ts` — `PROVIDER_LABELS` import moved from `../types` to `./utils`
+- `app/src/features/ai-tools/ai-analysis/callProvider.ts` — `AiProvider` → `AiProviderType` in import and function signature
+- `app/src/stores/aiStore.ts` — `AiProvider` → `AiProviderType` in import and all usages
+- `app/src/features/ai-tools/components/AiConnectedStatus.vue` — `PROVIDER_LABELS` import moved from `../types` to `../ai-connection/utils`
+- `CLAUDE.md` — types/index.ts entry updated; utils/index.ts entry updated; AiConnectionForm.vue description updated
+
+**Key decisions & why:**
+- `Record<AiProviderType, ...>` as key type for both constants — exhaustiveness: TypeScript will error if a new provider is added to the union but not to the constant objects
+- `PROVIDER_LABELS` stays in `ai-connection/utils`, not exported from `types` — runtime values belong in utils, not type declaration files
+
+
+## [#141] Move AiConnectedStatus into ai-connection/components; convert BEM to flat scoped styles
+**Type:** refactor
+
+**Summary:** Relocated `AiConnectedStatus.vue` from the generic `components/` folder into `ai-connection/components/` alongside `AiConnectionForm.vue`, and replaced BEM class names (`.ai-status__provider`, `.ai-status__connected`) with flat scoped `@apply` classes.
+
+**Brainstorming:** `AiConnectedStatus` is tightly coupled to the AI connection module — it reads `PROVIDER_LABELS` from `ai-connection/utils` and calls `store.disconnect()`. Keeping it in the generic `components/` folder was inconsistent with the pattern established when `AiConnectionForm` was moved. Moving it into `ai-connection/components/` groups all connection-related UI in one place. The BEM names (`.ai-status__provider`, `.ai-status__connected`) were replaced with flat names (`.status-provider`, `.status-connected`) following the same convention used throughout the refactor.
+
+**Prompt:** Move `AiConnectedStatus.vue` from `ai-tools/components/` into `ai-tools/ai-connection/components/`. Update the barrel export in `ai-connection/components/index.ts` to include it. Update the import in `AiToolsContent.vue`. Convert scoped styles from BEM (`.ai-status__provider`, `.ai-status__connected`) to flat `@apply` classes.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — created at new location; BEM child classes renamed to `.status-provider` and `.status-connected`; `PROVIDER_LABELS` import path unchanged (already pointing to `../utils`); depth from `src/` unchanged so all other imports required no changes
+- `app/src/features/ai-tools/ai-connection/components/index.ts` — added `AiConnectedStatus` to barrel export
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — updated import path from `./AiConnectedStatus.vue` to `../ai-connection/components/AiConnectedStatus.vue`
+- `app/src/features/ai-tools/components/AiConnectedStatus.vue` — deleted
+- `CLAUDE.md` — removed `AiConnectedStatus` from `components/` listing; added it under `ai-connection/components/`; updated barrel export description
+
+**Key decisions & why:**
+- Flat class names `.status-provider` / `.status-connected` instead of keeping `.ai-status__provider` / `.ai-status__connected` — consistent with the flat-scoped-styles convention applied to all other refactored components in this session
+- No changes to import depth-sensitive paths inside the component — the file moved from `components/` to `ai-connection/components/`, both 4 levels deep from `src/`, so all `../../../../` prefixes remain valid
+
+
+## [#142] Move AiOptimizerPanel → BudgetOptimizationAnalysis; AiSummaryPanel → ExecutiveSummaryAnalysis
+**Type:** refactor
+
+**Summary:** Relocated the two tab orchestrator components into their respective section subfolders and renamed them to match the naming convention of their sibling components.
+
+**Brainstorming:** `AiOptimizerPanel` and `AiSummaryPanel` sat in the generic `components/` folder while all the section components they orchestrate live in `budget-optimization/` and `executive-summary/`. Moving the orchestrators into those subfolders collapses the distinction between "orchestrator" and "section components" — the whole tab is now self-contained in its folder. Renaming to `BudgetOptimizationAnalysis` / `ExecutiveSummaryAnalysis` removes the `Ai`/`Panel` prefix and aligns with the `BudgetOptimization*` / `ExecutiveSummary*` naming pattern already used by all sibling components.
+
+**Prompt:** Move `AiOptimizerPanel.vue` to `components/budget-optimization/` and rename it `BudgetOptimizationAnalysis.vue`. Move `AiSummaryPanel.vue` to `components/executive-summary/` and rename it `ExecutiveSummaryAnalysis.vue`. Update all imports and template references in `AiToolsContent.vue`. Delete the old files.
+
+**What changed:**
+- `app/src/features/ai-tools/components/budget-optimization/BudgetOptimizationAnalysis.vue` — created; store imports updated from `../../../` to `../../../../`; shared component imports updated from `./shared/` to `../shared/`; section component imports flattened from `./budget-optimization/` to `./`
+- `app/src/features/ai-tools/components/executive-summary/ExecutiveSummaryAnalysis.vue` — created; same import depth adjustments; section imports flattened from `./executive-summary/` to `./`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced `AiOptimizerPanel` import and template usage with `BudgetOptimizationAnalysis`; replaced `AiSummaryPanel` with `ExecutiveSummaryAnalysis`
+- `app/src/features/ai-tools/components/AiOptimizerPanel.vue` — deleted
+- `app/src/features/ai-tools/components/AiSummaryPanel.vue` — deleted
+- `CLAUDE.md` — removed old panel entries from `components/`; added `BudgetOptimizationAnalysis` and `ExecutiveSummaryAnalysis` as first entries in their respective subfolders
+
+**Key decisions & why:**
+- Orchestrators moved into section subfolders rather than kept in `components/` root — each tab's entire component tree is now self-contained in one folder, consistent with the `ai-connection/components/` pattern
+- Renamed to `*Analysis` suffix rather than keeping `*Panel` — `Panel` described the drawer slot role; `Analysis` describes what the component does, consistent with `AnalysisState`, `AnalysisSummary`, `AnalysisCorrelations`
+
+
+## [#143] Extract AiAnalysis — move Tabs + panel container out of AiToolsContent
+**Type:** refactor
+
+**Summary:** Extracted the tab bar and scrollable panel container from `AiToolsContent.vue` into a dedicated `AiAnalysis.vue` component, leaving `AiToolsContent` responsible only for the header and the connected/disconnected split.
+
+**Brainstorming:** `AiToolsContent` was mixing two concerns: the persistent shell (header + connected/disconnected routing) and the tab navigation logic (tab definitions, active-tab binding, panel switching). Splitting them gives each component a single responsibility. `AiAnalysis` owns everything inside the connected panel below the status bar: tab bar, scroll container, and tab content routing.
+
+**Prompt:** Create `AiAnalysis.vue` at the same level as `AiToolsContent.vue` and move the Tabs + scrollable container block (including the `BudgetOptimizationAnalysis`/`ExecutiveSummaryAnalysis` conditional) into it. Update `AiToolsContent` to use `<AiAnalysis />` instead. Remove the now-unused imports from `AiToolsContent`.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiAnalysis.vue` — created; owns `tabs` constant, `useAiAnalysisStore`, `Tabs`, `BudgetOptimizationAnalysis`, `ExecutiveSummaryAnalysis`; scoped `.panel-container` replaces old `.ai-content__panel--container`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced Tabs + panel block with `<AiAnalysis />`; removed `useAiAnalysisStore`, `BudgetOptimizationAnalysis`, `ExecutiveSummaryAnalysis`, `FileTextIcon`, `SlidersIcon`, `AiAnalysisTab`, `Tab`, `Tabs`, `tabs` constant; removed `.ai-content__panel--container` scoped style
+- `CLAUDE.md` — updated `AiToolsContent` description; added `AiAnalysis` entry
+
+**Key decisions & why:**
+- `AiAnalysis` sits at `components/` root alongside `AiToolsContent` rather than inside a subfolder — it is a layout/routing component, not a section component, so it does not belong in `budget-optimization/` or `executive-summary/`
+- Flat `.panel-container` name in `AiAnalysis` scoped styles — consistent with the flat-scoped convention applied throughout this refactor session
+
+
+## [#144] Move budget-optimization, executive-summary, shared, and AiAnalysis into ai-analysis/components
+**Type:** refactor
+
+**Summary:** Relocated all AI analysis UI — the tab switcher, shared section wrappers, and both tab component trees — from the generic `components/` folder into `ai-analysis/components/`, co-locating them with the analysis logic (`callProvider.ts`). Added a barrel `index.ts` that exports `AiAnalysis`.
+
+**Brainstorming:** The `components/` folder was a grab-bag: shell components (`AiToolsDrawer`, `AiToolsContent`) alongside the entire analysis UI subtree. Moving the analysis UI into `ai-analysis/components/` groups all analysis concerns — logic, types, and UI — into one module. `components/` is now only the drawer and content shell. The barrel export lets `AiToolsContent` import from the module boundary (`'../ai-analysis/components'`) rather than reaching into a specific file path.
+
+**Prompt:** Move `components/budget-optimization/`, `components/executive-summary/`, `components/shared/`, and `components/AiAnalysis.vue` into `ai-analysis/components/`. Create a barrel `ai-analysis/components/index.ts` exporting `AiAnalysis`. Update all import paths affected by the depth change. Update `AiToolsContent.vue` to import via the barrel.
+
+**What changed:**
+- `ai-analysis/components/AiAnalysis.vue` — moved from `components/`; store and ui imports incremented by one `../` level; `'../types'` → `'../../types'`
+- `ai-analysis/components/index.ts` — created; exports `AiAnalysis`
+- `ai-analysis/components/shared/AnalysisState.vue` — moved; `ui` imports: +1 level; `types` import: `'../../types'` → `'../../../types'`
+- `ai-analysis/components/shared/AnalysisSummary.vue` — moved; `common` import: +1 level
+- `ai-analysis/components/shared/AnalysisCorrelations.vue` — moved; pre-existing path bug (`'../types'` → `components/types`) fixed to `'../../../types'` (now correctly resolves to `ai-tools/types/`)
+- `ai-analysis/components/budget-optimization/*` — moved; store imports: +1 level; `types` and `utils` imports: `'../../'` → `'../../../'`; `common` imports: +1 level; `'../shared/'` relative stays valid
+- `ai-analysis/components/executive-summary/*` — moved; same depth corrections as budget-optimization
+- `ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — store imports: +1 level
+- `ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — store imports: +1 level
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — import changed from `'./AiAnalysis.vue'` to `'../ai-analysis/components'` (barrel)
+- `CLAUDE.md` — removed analysis component tree from `components/` section; added full tree under `ai-analysis/components/`
+
+**Key decisions & why:**
+- All analysis UI moves together as a unit — partial moves would leave dangling relative imports between shared, section, and orchestrator components
+- Barrel export at `ai-analysis/components/index.ts` — `AiToolsContent` imports from the module boundary, insulated from internal folder reorganization
+- `'../shared/'` imports in section components require no change after the move — `shared/` is still a sibling folder of `budget-optimization/` and `executive-summary/` within `ai-analysis/components/`
+
+
+## [#145] UI polish — AiToolsContent layout, AnalysisState scoped styles, AiAnalysis tab order
+**Type:** update
+
+**Summary:** Polished the connected-state layout in `AiToolsContent`, reorganised scoped styles in `AnalysisState` into logical groups, and reordered the tabs in `AiAnalysis` so Summary appears before Optimizer.
+
+**Brainstorming:** After the structural refactors (#143, #144) the three shell/analysis components had minor inconsistencies: `AiToolsContent` lacked an explicit height-taking grid row for the scrollable panel, `AnalysisState` had scoped styles in arbitrary order making maintenance harder, and the tab array in `AiAnalysis` listed Optimizer before Summary which did not match the intended default (Summary is the first tab users see). All three changes are purely presentational — no logic, no props, no store changes.
+
+**Prompt:** Polish the AI tools panel UI. In `AiToolsContent.vue` refine the connected-state wrapper to use an explicit 3-row grid (`min-content min-content 1fr`) so the scrollable analysis area always fills remaining height, and tighten the container overflow handling. In `AnalysisState.vue` reorganise scoped styles into logical groups (header, states, result/meta). In `AiAnalysis.vue` reorder the tabs array so Summary (`FileTextIcon`) comes first and Optimizer (`SlidersIcon`) second.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — `.ai-tools-analysis` uses `grid-rows-[min-content_min-content_1fr]`; `.ai-tools-content` gets `grow shrink-0 overflow-hidden` to hand remaining height down to the grid
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — scoped styles regrouped: header block, state blocks (idle/loader/notice/error), result/meta block; no rule changes, ordering only
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — `tabs` array reordered: Summary first, Optimizer second; `v-if` on the panel container checks for `optimizer` explicitly, `v-else` falls through to `ExecutiveSummaryAnalysis`
+
+**Key decisions & why:**
+- `grid-rows-[min-content_min-content_1fr]` in `.ai-tools-analysis` — rows 1 and 2 (status bar and tab bar) shrink to content; row 3 (the panel container) gets all remaining height, enabling reliable `overflow-y-auto` inside `AiAnalysis`
+- Summary tab first — Summary is the higher-level view; presenting it as the default tab matches a top-down reading flow (overview → detail)
+- Style reorder only in `AnalysisState` — avoids any risk of specificity changes while making the file easier to scan
+
+
+## [#146] Replace media queries with container queries in BudgetOptimizationRecommendations and ExecutiveSummaryMetrics
+**Type:** update
+
+**Summary:** Replaced viewport-based `@media` queries with `@container` queries in the two components that have responsive layout rules, so their layouts respond to the panel's actual available width rather than the viewport width.
+
+**Brainstorming:** Both components used `@media` rules to compensate for the fact that the AI panel changes width depending on context — at lg+ the push drawer is fixed at 30rem and compresses the dashboard, while below lg the overlay can be up to 90vw wide. Media queries can only approximate this: the same viewport width can produce different panel widths depending on whether the drawer is open or overlaying. Container queries solve this directly by measuring the element's own containing block. `BudgetOptimizationRecommendations` stacks the confidence/timeline badges vertically when the rec card is narrow; `ExecutiveSummaryMetrics` widens `expandable` and eventually full-width cards when the metrics grid is narrow. No logic changes — purely a layout responsiveness improvement.
+
+**Prompt:** Replace all `@media` queries in `BudgetOptimizationRecommendations.vue` and `ExecutiveSummaryMetrics.vue` with `@container` queries. In `BudgetOptimizationRecommendations`, make each `.card-secondary` rec card the container (`rec-card` class, `container-type: inline-size`) and use `@container (max-width: 460px)` for badge stacking instead of the two media queries (min-width 1024px and max-width 520px). In `ExecutiveSummaryMetrics`, make `.metrics-grid` the container and use `@container (max-width: 548px)` for `.expandable` col-span-2 and `@container (max-width: 360px)` for all `.metric-card` col-span-2.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — added `rec-card` class to the `v-for` card wrapper; `.rec-card { container-type: inline-size }` added to scoped styles; two `@media` rules in `.rec-badges` replaced with `@container (max-width: 460px)`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — `container-type: inline-size` added to `.metrics-grid`; three `@media` rules replaced with `@container (max-width: 548px)` (expandable) and `@container (max-width: 360px)` (all metric-cards full-width)
+- `CLAUDE.md` — updated component descriptions for both files
+
+**Key decisions & why:**
+- Container on the rec card (`rec-card`), not on `.card-head` — the card is the natural layout boundary; querying it means the threshold is the card's outer width, which is easy to reason about against the known drawer/overlay widths
+- Container on `.metrics-grid` directly — the grid is self-contained; no wrapper needed
+- `460px` threshold for badge stacking — push drawer content width is ~452px, small overlay (<520px viewport) is ~440px; 460px catches both without bleeding into medium overlays (521px+ → ~441px+ containers)
+- `548px` for `.expandable` — push drawer (~452px) and small-screen overlays (≤640px viewport → ≤548px container) both fall below this; medium overlays (641px+ viewport → 549px+ container) do not, matching the original two-breakpoint intent with a single threshold
+- VS Code reports a false-positive "Unknown at rule @apply" warning inside `@container` blocks — the CSS language server does not fully understand container queries; the code compiles and runs correctly
+
+
+## [#147] AnalysisSummary: render detail items as spans with CSS bullet separators
+**Type:** update
+
+**Summary:** Replaced the hardcoded `&bull;` HTML entities in the `analysis-details` line with semantic `<span class="detail-item">` elements and a CSS `::before` pseudo-element separator, removing presentational markup from the template.
+
+**Brainstorming:** The original template mixed content and presentation by embedding `&bull;&nbsp;` directly between the text nodes. Using separate `<span>` elements per item keeps the template clean and moves the separator entirely into CSS via `& + & { &::before { content: '\2022' } }`, which only inserts the bullet between adjacent items. Added scoped styles to the component (previously had none).
+
+**Prompt:** In `AnalysisSummary.vue`, replace the `analysis-details` paragraph content with three `<span class="detail-item">` elements (period, campaigns count, channels count). Remove the `&bull;&nbsp;` entities. Add scoped styles: `.detail-item` is `inline-block`; `& + &` adds `pl-3` and a `::before` pseudo-element with `content: '\2022'` and `pr-3 text-typography-subtle`.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — `analysis-details` paragraph now renders three `.detail-item` spans; `&bull;&nbsp;` entities removed; scoped styles added with `.detail-item` (`inline-block`) and `& + &::before` CSS bullet separator
+
+**Key decisions & why:**
+- `& + &` combinator for the separator — only inserts the bullet between sibling `.detail-item` elements, so no leading bullet before the first item and no trailing bullet after the last; no conditional logic needed in the template
+- Empty `content: ''` with CSS-drawn circle (`w-1 h-1 rounded-full bg-typography-subtle align-middle`) — avoids unicode characters entirely; the circle is purely geometric and scales with the design token
+- `text-typography-subtle` color on the circle — visually de-emphasises the separator relative to the content text
+
+
+## [#148] Remove DEV_MOCK_ANALYSIS flag from aiAnalysisStore
+**Type:** update
+
+**Summary:** Removed the development mock flag and all associated mock code from `aiAnalysisStore.ts` so the store executes real AI API calls.
+
+**Brainstorming:** The `DEV_MOCK_ANALYSIS` flag was added during development to cycle through fixture responses without hitting the AI providers. It was always intended as a temporary scaffold with a TODO comment marking it for removal before shipping. Removing it means: the mock import, the flag constant, the two mock-index refs, the entire conditional block inside `executeAnalysis`, and an incidental `console.log(prompt)` left in the real code path.
+
+**Prompt:** Revert the DEV_MOCK_ANALYSIS flag in `aiAnalysisStore.ts`: remove the `BUDGET_OPTIMIZER_MOCKS`/`EXECUTIVE_SUMMARY_MOCKS` import, the `DEV_MOCK_ANALYSIS` constant and TODO comment, the `optimizerMockIndex`/`summaryMockIndex` refs and their TODO comment, the entire `if (DEV_MOCK_ANALYSIS)` block inside `executeAnalysis`, and the leftover `console.log(prompt)` in the real code path.
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — mock import removed; `DEV_MOCK_ANALYSIS` constant and comment removed; `optimizerMockIndex`/`summaryMockIndex` refs and comment removed; `if (DEV_MOCK_ANALYSIS)` block removed; `console.log(prompt)` removed
+
+**Key decisions & why:**
+- Removed `console.log(prompt)` in the same pass — it was a debug leftover in the real code path and should not reach production
+
+
+## [#149] Remove DEV_MOCK_CONNECTED flag from aiStore
+**Type:** update
+
+**Summary:** Removed the `DEV_MOCK_CONNECTED` development flag from `aiStore.ts` so the store initialises in the correct disconnected state, requiring the user to connect an AI provider before analysis can run.
+
+**Brainstorming:** The flag initialised `provider`, `apiKey`, `isConnected`, `models`, and `selectedModel` with mock values, bypassing the connection form entirely. Removing it restores the intended UX flow: user opens the AI panel → fills in the connection form → connects → then runs analysis. Console.log statements in both stores are retained intentionally for active development debugging.
+
+**Prompt:** Revert DEV_MOCK_CONNECTED in aiStore.ts — remove the flag constant, the MOCK_DEV_MODEL object, and reset all conditional initialisers to their real defaults (null/false/empty). Keep console.log statements.
+
+**What changed:**
+- `app/src/stores/aiStore.ts` — `DEV_MOCK_CONNECTED` constant, TODO comment, and `MOCK_DEV_MODEL` object removed; `provider`, `apiKey`, `isConnected`, `models`, `selectedModel` reset to real defaults (`null`, `''`, `false`, `[]`, `null`)
+
+**Key decisions & why:**
+- Console.log statements kept in both `aiStore.ts` and `aiAnalysisStore.ts` — intentionally retained for ongoing debugging during development
+
+
+## [#150] Disable API key input and help toggle while connecting
+**Type:** fix
+
+**Summary:** Disabled the API key `PasswordInput` and the "How to get your key?" button during connection, while leaving the provider `RadioToggle` interactive so the user can still switch providers.
+
+**Brainstorming:** While `isConnecting` is true the Connect button is already disabled and shows a spinner, but the key input and help toggle remained active. Disabling them prevents the user from mutating form state mid-request. The provider toggle is intentionally left enabled — switching provider while connecting cancels the request (the watch on `selectedProvider` clears the error and key, and the next submit will use the new provider).
+
+**Prompt:** While connecting, disable the API key input and the help toggle button. Keep the provider radio toggle enabled.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `:disabled="store.isConnecting"` added to `PasswordInput` and the "How to get your key?" button
+
+**Key decisions & why:**
+- Provider toggle left enabled — switching provider is a valid mid-flight action; the watch already resets key and error on change
+
+
+## [#151] Add disabled prop to RadioToggle
+**Type:** update
+
+**Summary:** Added a `disabled` prop to `RadioToggle` that disables all radio inputs and applies `opacity-50 pointer-events-none` via a CSS `:has()` selector on the wrapper.
+
+**Brainstorming:** The component had no disabled state at all — no prop, no visual, no native input attribute. Adding `:disabled` to each input handles keyboard/form interaction natively. The visual dimming uses `.radio-toggle:has(input:disabled)` so no extra class needs to be toggled on the wrapper — the CSS derives state directly from the inputs. No BEM modifier class needed.
+
+**Prompt:** Implement disabled state in RadioToggle — add a `disabled?` prop, pass it to each radio input, and reflect it visually without BEM modifier classes. Also remove the `:disabled` from the help toggle button in AiConnectionForm so instructions remain accessible during connecting.
+
+**What changed:**
+- `app/src/ui/RadioToggle.vue` — `disabled?` prop added; `:disabled="disabled"` on each input; `.radio-toggle:has(input:disabled)` scoped rule applies `opacity-50 pointer-events-none`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — `:disabled="store.isConnecting"` removed from the help toggle button
+
+**Key decisions & why:**
+- `:has(input:disabled)` instead of a toggled modifier class — CSS derives the disabled visual from the native input state, no extra class binding needed on the wrapper
+- Help button left enabled — instructions should remain accessible while the user waits for a connection response
+
+
+## [#152] Move AiToolsDrawer to shell and refactor styles
+**Type:** refactor
+
+**Summary:** Moved `AiToolsDrawer.vue` from `features/ai-tools/components/` into `shell/` (where it belongs as a layout concern) and refactored both the drawer and `AppShell` styles from BEM to flat `@apply` class names.
+
+**Brainstorming:** The drawer is not a feature component — it is a shell-level layout primitive that decides how the AI panel is presented (push drawer vs. overlay). Placing it alongside `AppShell.vue` makes that responsibility explicit. The BEM style migration replaced `&__panel`/`&--open` nesting with flat class names (`push-drawer`, `push-drawer-panel`, `overlay`, `overlay-panel`, `.open` modifier) and `@apply` throughout both files, consistent with the non-BEM approach already used in the ai-connection and other components.
+
+**Prompt:** Move `AiToolsDrawer.vue` from `features/ai-tools/components/` to `shell/`. Update its import of `AiToolsContent` to the new relative path. Update `AppShell.vue` to import it locally instead of from the feature barrel. Refactor both files' scoped styles from BEM (`&__element`, `&--modifier`) to flat non-BEM class names using `@apply`. Remove the `AiToolsDrawer` export from `features/ai-tools/index.ts` and delete the original file.
+
+**What changed:**
+- `app/src/shell/AiToolsDrawer.vue` — new location; import path updated; BEM styles replaced with flat `@apply` classes (`push-drawer`, `push-drawer-panel`, `.open`, `overlay`, `overlay-panel`)
+- `app/src/shell/AppShell.vue` — import updated to local `./AiToolsDrawer.vue`; template class names updated (`shell-left`, `shell-header`, `shell-title`, `shell-main`); BEM block replaced with flat `@apply` scoped rules
+- `app/src/features/ai-tools/components/AiToolsDrawer.vue` — deleted (moved)
+- `app/src/features/ai-tools/index.ts` — `AiToolsDrawer` export removed (file now empty)
+
+**Key decisions & why:**
+- Drawer placed in `shell/` not `features/` — it is a layout decision (push vs. overlay), not an AI feature; co-locating it with `AppShell` keeps layout responsibilities in one place
+- Flat `@apply` class names — consistent with the non-BEM style convention already established in connection and analysis components
+- `.open` modifier class instead of `&--open` — simple boolean class toggle on the wrapper, no BEM suffix needed in scoped context
+
+
+## [#153] Fix DonutChart hidden legend label detection
+**Type:** fix
+
+**Summary:** Replaced `meta.data[i]?.hidden` with `!chart.getDataVisibility(i)` in the legend `generateLabels` callback — `Element` in Chart.js has no `hidden` property, making the previous access both a type error and a runtime no-op.
+
+**Brainstorming:** The `ChartMeta.data` array holds `Element` instances whose TypeScript type exposes no `hidden` field, so the optional-chain always resolved to `undefined ?? false`, meaning hidden state was never reflected in legend items. `chart.getDataVisibility(i)` is the correct Chart.js API for per-datapoint visibility. With `meta` now unused it was removed in the same pass.
+
+**Prompt:** Fix the TypeScript error on line 36 of DonutChart.vue — `meta.data[i]?.hidden` is not a valid Chart.js API. Use `chart.getDataVisibility(i)` instead, and remove the now-unused `meta` variable.
+
+**What changed:**
+- `app/src/ui/charts/DonutChart.vue` — `meta` variable removed; hidden check replaced with `!chart.getDataVisibility(i)`
+
+**Key decisions & why:**
+- `getDataVisibility(i)` is the Chart.js v3+ public API for checking per-point visibility — avoids reaching into internal element state
+
+
+## [#154] Extract FileActions component from EmptyState
+**Type:** refactor
+
+**Summary:** Extracted the "Download Template" and "Upload CSV" button pair from `EmptyState.vue` into a dedicated `FileActions.vue` component in the `csv-file` feature, co-locating it with the download logic it depends on.
+
+**Brainstorming:** The two buttons and their responsive layout are a self-contained unit tied to CSV file operations. Extracting them into `csv-file/components/FileActions.vue` keeps the composable and UI in the same feature, removes the cross-feature composable import from `EmptyState`, and makes the pair reusable. Styles moved from the BEM `&__actions` block in EmptyState into flat `@apply` scoped styles on `.file-actions` in the new component.
+
+**Prompt:** Create `FileActions.vue` in `csv-file/components/` with the Download Template and Upload CSV buttons. Move the layout styles there as flat @apply. Update EmptyState to import and use `<FileActions @upload="emit('upload')" />` and remove the now-redundant imports and style block.
+
+**What changed:**
+- `app/src/features/csv-file/components/FileActions.vue` — new component; Download Template + Upload CSV buttons; `useDownloadTemplate` called internally; emits `upload`; flat `@apply` scoped styles with <480px column stacking
+- `app/src/features/dashboard/components/EmptyState.vue` — replaced inline buttons with `<FileActions>`; removed `DownloadIcon`, `UploadIcon`, and `useDownloadTemplate` imports; removed `__actions` style block
+
+**Key decisions & why:**
+- Placed in `csv-file/components/` not `dashboard/` — the component owns CSV-specific actions and its composable lives there; dashboard just consumes it via an event
+
+
+## [#155] Extract useUploadModal composable from AppShell
+**Type:** refactor
+
+**Summary:** Extracted upload modal state and replace-confirm logic from `AppShell.vue` into `useUploadModal.ts` in `csv-file/composables/`, co-locating it with the feature it belongs to.
+
+**Brainstorming:** `AppShell` was holding `uploadModal` ref, `showReplaceConfirm`, `onReplaceConfirm`, and the `provide('openUploadModal')` call — all CSV upload concerns. Extracting them into a composable reduces AppShell to layout-only logic. The composable accepts `modalRef` as a parameter rather than creating it internally, so AppShell declares and owns the template ref (eliminating the "declared but never read" TS warning that occurs when a ref is only written via `ref="..."` in the template).
+
+**Prompt:** Create `useUploadModal.ts` in `csv-file/composables/`. It accepts a `modalRef: Ref<InstanceType<typeof UploadModal> | null>`, manages `showReplaceConfirm`, defines `openUploadModal` and `onReplaceConfirm`, calls `provide('openUploadModal', openUploadModal)`, and returns `{ showReplaceConfirm, onReplaceConfirm }`. Update AppShell to declare the ref locally and pass it to the composable.
+
+**What changed:**
+- `app/src/features/csv-file/composables/useUploadModal.ts` — new composable; accepts `modalRef`; manages replace-confirm state and open handlers; calls `provide('openUploadModal')` internally
+- `app/src/shell/AppShell.vue` — `uploadModal` ref declared locally and passed to `useUploadModal`; `showReplaceConfirm` and `onReplaceConfirm` destructured from composable; manual `provide('openUploadModal')` removed
+
+**Key decisions & why:**
+- `modalRef` passed as parameter rather than created inside the composable — the template ref must be declared in the component's setup scope for Vue's `ref="..."` binding to work; passing it in also makes the TS warning disappear since the ref is explicitly read at the call site
+- `provide` called inside the composable — it runs synchronously in setup context, so this is valid and keeps all upload-related wiring in one place
+
+
+## [#156] Move replace modal logic into useUploadModal
+**Type:** refactor
+
+**Summary:** Moved the replace-confirm decision logic and `useCampaignStore` dependency from `AppShell` into `useUploadModal`, exposing `hasCampaigns`, `requestUpload`, and `closeReplaceConfirm` so AppShell's template binds to composable-owned state only.
+
+**Brainstorming:** `AppShell` was still directly setting `showReplaceConfirm = true` in the template and importing `useCampaignStore` solely for the button condition. Both belong in the composable — it already owns `showReplaceConfirm` and the open logic, so it should also own the decision of whether to show replace confirm or open directly. Moving `useCampaignStore` in with a `hasCampaigns` computed removes the last campaign-related concern from AppShell.
+
+**Prompt:** Extend `useUploadModal` with `useCampaignStore` (for `hasCampaigns` computed), `requestUpload` (opens modal directly or sets `showReplaceConfirm` based on `hasCampaigns`), and `closeReplaceConfirm`. Update AppShell template to use `hasCampaigns`/`requestUpload`/`closeReplaceConfirm` and remove `useCampaignStore` import.
+
+**What changed:**
+- `app/src/features/csv-file/composables/useUploadModal.ts` — added `useCampaignStore`; `hasCampaigns` computed; `requestUpload` and `closeReplaceConfirm` functions; all five values returned
+- `app/src/shell/AppShell.vue` — `useCampaignStore` import and `store` removed; template updated to `v-if="hasCampaigns"`, `@click="requestUpload"`, `@close="closeReplaceConfirm"`
+
+**Key decisions & why:**
+- `requestUpload` centralises the open-vs-confirm decision in the composable — the template no longer needs to know about campaign state to decide what clicking "Upload CSV" does
+
+
+## [#157] Split parseCsv — extract validateCampaignData
+**Type:** refactor
+
+**Summary:** Extracted column and row validation logic from `parseCsv.ts` into a dedicated `validateCampaignData.ts`, leaving `parseCsv` responsible only for file-level checks and PapaParse invocation.
+
+**Brainstorming:** `parseCsv` was doing two distinct jobs: file I/O concerns (type/size guard + PapaParse) and data correctness concerns (column presence, row field validation, cross-field constraints). Separating them makes `validateCampaignData` independently testable and reusable if another file type (e.g. Excel/JSON) is added later — the data shape validation would not need to be re-implemented. `parseCsv` is now a thin adapter: validate the file, parse it, hand the rows to the validator.
+
+**Prompt:** Split `parseCsv.ts` — move `EXPECTED_HEADERS`, column validation, empty-file check, headerMap/get helper, and row validation into a new `validateCampaignData(data, fields): CsvParseResult` function in `validateCampaignData.ts`. Reduce `parseCsv` to file-level checks + PapaParse, calling `validateCampaignData` in the `complete` callback.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — new file; owns `EXPECTED_HEADERS`, column check, empty-file check, headerMap/get, row validation, and result assembly
+- `app/src/features/csv-file/utils/parseCsv.ts` — reduced to file type/size guards + PapaParse wrapper; delegates to `validateCampaignData`
+
+**Key decisions & why:**
+- `validateCampaignData` takes `(data, fields)` not a raw PapaParse result — keeps it decoupled from the parser, so it can be called from any source that produces rows and header field names
+
+
+## [#158] Add parse_error type for PapaParse failures
+**Type:** fix
+
+**Summary:** Replaced the semantically incorrect `'file_type'` error type used in the PapaParse `error` callback with a new `'parse_error'` type, and wired it into the UploadModal handler.
+
+**Brainstorming:** The PapaParse `error` callback fires when the parser itself fails — not when the file type is wrong (that check happens earlier). Reusing `'file_type'` was misleading. Adding `'parse_error'` makes the error union exhaustive and accurate. UploadModal already had a clean switch on error type; `parse_error` slots in alongside `file_size` and `empty_file` since all three show the message inline on the form.
+
+**Prompt:** Add `'parse_error'` to `CsvValidationErrorType`. Update the PapaParse error callback in `parseCsv.ts` to emit `type: 'parse_error'`. Handle it explicitly in `UploadModal.vue` alongside `file_size` and `empty_file`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `'parse_error'` added to `CsvValidationErrorType`
+- `app/src/features/csv-file/utils/parseCsv.ts` — PapaParse error callback type changed from `'file_type'` to `'parse_error'`
+- `app/src/features/csv-file/components/UploadModal.vue` — `parse_error` added to the inline-message condition alongside `file_size` and `empty_file`
+
+**Key decisions & why:**
+- `parse_error` grouped with `file_size`/`empty_file` in the handler — all three result in an inline form error with the raw message; no row table needed
+
+
+## [#159] Extract extractCampaignFields helper and remove debug log
+**Type:** fix
+
+**Summary:** Extracted the per-row field reading logic into a named `extractCampaignFields(row, headerMap)` function and removed the stray `console.log(row)` debug statement from `validateCampaignData.ts`.
+
+**Brainstorming:** The inline `get` helper and the seven field assignments were cohesive enough to pull into a named function — it improves readability, makes the row loop body shorter, and removes the need for the closure over `headerMap` inside `validateCampaignData`. The `console.log` was a debug leftover that should never have been committed; removing it is part of the same cleanup.
+
+**Prompt:** Create a `extractCampaignFields(row, headerMap)` function in `validateCampaignData.ts` that returns a `Campaign` object with all seven fields extracted and coerced. Replace the inline `get` helper and the seven `const` assignments in the `forEach` loop with a single destructured call to the new function. Remove the `console.log(row)` debug line.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — added `extractCampaignFields` function; replaced inline `get` helper + seven field `const` declarations with destructured call; removed `console.log(row)`
+
+**Key decisions & why:**
+- `extractCampaignFields` returns a full `Campaign` shape — lets TypeScript enforce all seven fields are present and correctly typed at the extraction boundary
+- `get` helper moved inside `extractCampaignFields` — it only makes sense in that context, no need to expose it further
+
+
+## [#160] Add isValidString, isNonNegativeNumber, isNonNegativeInteger helpers to validateCampaignData
+**Type:** update
+
+**Summary:** Added three named guard functions and replaced all inline validation expressions with calls to them throughout `validateCampaignData.ts`.
+
+**Brainstorming:** The validation conditions were correct but expressed as inline expressions — `!isNaN(x) && x >= 0 && Number.isInteger(x)`, `isNaN(budget) || budget <= 0`, etc. Extracting them into named predicates makes each validation line read as a business rule rather than a type-check expression. `isValidString` also adds explicit rejection of the literal strings `'undefined'` and `'null'` which raw CSV cells can contain after PapaParse stringification.
+
+**Prompt:** Add `isValidString(value?)`, `isNonNegativeNumber(value)`, and `isNonNegativeInteger(value)` functions to `validateCampaignData.ts` and use them to replace all inline validation expressions in the row validation loop.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — three guard functions added at the top; `campaign`/`channel` checks use `isValidString`; `budget` uses `!isNonNegativeNumber || budget === 0`; `impressions`/`clicks`/`conversions` use `isNonNegativeInteger`; `revenue` uses `!isNonNegativeNumber`
+
+**Key decisions & why:**
+- `budget` keeps a separate `=== 0` check alongside `isNonNegativeNumber` — budget must be strictly positive, while `isNonNegativeNumber` allows zero (shared with `revenue`)
+- `isValidString` rejects `'undefined'` and `'null'` literals — raw CSV cells can carry these strings after PapaParse stringification of missing values
+
+
+## [#161] Extract buildHeaderMap helper in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted the header map construction into a named `buildHeaderMap(fields)` function using `reduce`, replacing the imperative `forEach` mutation pattern.
+
+**Brainstorming:** The two-line `forEach` mutation was a minor but noisy side-effect pattern inside an otherwise functional pipeline. A named `reduce`-based function is self-documenting and has no mutable intermediate variable.
+
+**Prompt:** Create a `buildHeaderMap(fields: string[]): Record<string, string>` function using `reduce` and replace the inline `headerMap` construction in `validateCampaignData`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `buildHeaderMap` added; inline `forEach` mutation replaced with `const headerMap = buildHeaderMap(fields)`
+
+**Key decisions & why:**
+- `reduce` with an explicit `{}` accumulator keeps the function pure — no external mutation
+
+
+## [#162] Extract processRows function in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted the row iteration and per-row validation logic into a dedicated `processRows(data, headerMap)` function returning `{ campaigns, errors }`, leaving `validateCampaignData` as a thin coordinator for file-level checks.
+
+**Brainstorming:** `validateCampaignData` was mixing file-level concerns (missing columns, empty file) with row-level concerns (field extraction, cross-field validation, accumulation). Splitting them makes each function single-purpose. A `ProcessRowsResult` interface names the return shape explicitly.
+
+**Prompt:** Create a `processRows(data, headerMap)` function that owns the `forEach` loop, per-row field validation, and result accumulation, returning `{ campaigns: Campaign[], errors: CsvRowError[] }`. Replace the inline loop in `validateCampaignData` with a call to it.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `ProcessRowsResult` interface added; `processRows` function added with full row loop; `validateCampaignData` replaced its row section with `const { campaigns, errors: rowErrors } = processRows(data, headerMap)`
+
+**Key decisions & why:**
+- `ProcessRowsResult` is a local interface, not exported — it is only relevant to the internal split between `processRows` and `validateCampaignData`
+
+
+## [#163] Replace CsvRowError.issue string with typed CsvRowIssueType and extract error-messages util
+**Type:** update
+
+**Summary:** Replaced the free-form `issue: string` on `CsvRowError` with a `CsvRowIssueType` union and an optional `details` field, and moved all display messages into a new `error-messages.ts` utility with a `getRowErrorMessage` function.
+
+**Brainstorming:** A plain string `issue` field forces display logic into the data model — any consumer must know what strings are valid. A typed union makes issue codes exhaustive and refactor-safe. Separating the display message map into `error-messages.ts` keeps the types and validator free of presentation concerns. The `exceeds` issue type uses `details` to carry the field name being exceeded, so the message map stays a flat `Record` with no special cases.
+
+**Prompt:** Add `CsvRowIssueType` union to `types/index.ts`, update `CsvRowError.issue` to use it, add optional `details?: string`. Create `utils/error-messages.ts` with `ROW_ISSUE_MESSAGES` map and `getRowErrorMessage(error)` function. Update `validateCampaignData.ts` to push typed issue codes. Update `CsvErrorTable.vue` to display `getRowErrorMessage(err)`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `CsvRowIssueType` union added; `CsvRowError.issue` typed to it; `details?: string` added
+- `app/src/features/csv-file/utils/error-messages.ts` — new file; `ROW_ISSUE_MESSAGES` record + `getRowErrorMessage(error)` export
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — all `rowErrors.push` calls updated to use typed issue codes; `exceeds` issues include `details` field
+- `app/src/features/csv-file/components/CsvErrorTable.vue` — imports `getRowErrorMessage`; template uses it instead of `err.issue`
+
+**Key decisions & why:**
+- `exceeds` is a single issue type with `details` carrying the field name — avoids proliferating `exceeds_impressions`/`exceeds_clicks` variants while keeping the message map flat
+- Display messages live only in `error-messages.ts` — types and validator have no knowledge of how issues are presented
+
+
+## [#164] Extract validateRow function in validateCampaignData
+**Type:** update
+
+**Summary:** Extracted per-row field validation into a `validateRow(fields, rowNum)` function that returns only the errors for that row, leaving `processRows` as a thin accumulator loop.
+
+**Brainstorming:** The validation checks for all seven fields were inline inside the `forEach` in `processRows`, mixing iteration concerns with field-level rules. `validateRow` now has a single responsibility: given extracted field values and a row number, return any errors. `processRows` becomes a clean loop that extracts fields, delegates validation, and accumulates results.
+
+**Prompt:** Create a `validateRow(fields: Campaign, rowNum: number): CsvRowError[]` function containing all field checks. Update `processRows` to call it and use the returned errors array instead of an inline `rowErrors` accumulator.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — `validateRow` added with all field checks; `processRows` forEach simplified to extract → validate → accumulate
+
+**Key decisions & why:**
+- `validateRow` takes a `Campaign` (already extracted) rather than a raw row + headerMap — keeps it decoupled from parsing, pure over typed values only
+
+
+## [#165] Split validateRow into validateStringFields, validateNumericFields, validateFunnelFields
+**Type:** update
+
+**Summary:** Split `validateRow` into three focused validators grouped by field type, with `validateRow` reduced to a one-liner that spreads all three results.
+
+**Brainstorming:** `validateRow` had a complexity of 14 from mixing string, numeric, and funnel (cross-field) checks. The natural grouping is: string fields (campaign/channel — empty check), numeric fields (budget/revenue — range checks), and funnel fields (impressions/clicks/conversions — integer + cross-field ordering constraints). Each group is independently testable. `validateRow` becomes a pure composition.
+
+**Prompt:** Split `validateRow` into `validateStringFields(campaign, channel, rowNum)`, `validateNumericFields(budget, revenue, rowNum)`, and `validateFunnelFields(impressions, clicks, conversions, rowNum)`, each returning `CsvRowError[]`. Reduce `validateRow` to spread all three.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — three focused validators added; `validateRow` reduced to a spread of all three results
+
+**Key decisions & why:**
+- Funnel fields grouped together because their cross-field ordering constraints (`clicks ≤ impressions`, `conversions ≤ clicks`) require shared validity flags — splitting them further would require passing those flags across boundaries
+
+
+## [#166] Move validateRow and helpers into validateRow.ts
+**Type:** update
+
+**Summary:** Extracted `validateRow`, `validateStringFields`, `validateNumericFields`, `validateFunnelFields`, and the three guard helpers into a new `validateRow.ts`, leaving `validateCampaignData.ts` importing only `validateRow`.
+
+**Brainstorming:** All row-level validation logic was inline in `validateCampaignData.ts` alongside the file/column-level checks. Moving it to its own file gives each file a single responsibility: `validateRow.ts` owns field rules, `validateCampaignData.ts` owns structural checks (headers, empty file) and result assembly.
+
+**Prompt:** Move `isValidString`, `isNonNegativeNumber`, `isNonNegativeInteger`, `validateStringFields`, `validateNumericFields`, `validateFunnelFields`, and `validateRow` into a new `utils/validateRow.ts`. Export only `validateRow`. Import it in `validateCampaignData.ts` and remove the moved functions.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRow.ts` — new file; owns all row-level validation logic; exports only `validateRow`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — removed all moved functions; imports `validateRow` from `./validateRow`
+
+**Key decisions & why:**
+- Only `validateRow` is exported — the three sub-validators and guard helpers are implementation details of the row validation module
+
+
+## [#167] Rename validateRow.ts to validateRowData.ts
+**Type:** update
+
+**Summary:** Renamed `validateRow.ts` to `validateRowData.ts` and updated the import in `validateCampaignData.ts`.
+
+**Brainstorming:** The new name is consistent with the `validateCampaignData` naming convention — both files describe what they validate, not just the action.
+
+**Prompt:** Rename `utils/validateRow.ts` to `utils/validateRowData.ts` and update the import path in `validateCampaignData.ts`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRow.ts` → renamed to `validateRowData.ts`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — import path updated to `./validateRowData`
+
+**Key decisions & why:**
+- Name aligned with `validateCampaignData` convention — file names describe the data being validated, not just the operation
+
+
+## [#168] Unify error handling — CsvFieldIssue type, sub-validators return field-only issues
+**Type:** update
+
+**Summary:** Added `CsvFieldIssue` as the base type for field-level validation results, made `CsvRowError` extend it, stripped `rowNum` from the three sub-validators so they return pure field issues, and updated `validateRow` to map issues to `CsvRowError` by adding `row`. Updated `error-messages.ts` to accept `CsvFieldIssue` instead of `CsvRowError`.
+
+**Brainstorming:** The sub-validators previously received `rowNum` only to construct the full `CsvRowError` shape — mixing structural row identity with field validation rules. Separating the two means sub-validators are purely about which fields are wrong and why; `validateRow` is the single place that stamps the row number. `getRowErrorMessage` only ever needed `issue` and `details`, so accepting `CsvFieldIssue` is more accurate than `CsvRowError`.
+
+**Prompt:** Add `CsvFieldIssue { column, issue, details? }` to types. Make `CsvRowError` extend it with `row`. Strip `rowNum` from `validateStringFields`, `validateNumericFields`, `validateFunnelFields` — return `CsvFieldIssue[]`. In `validateRow`, collect all issues then map to `CsvRowError[]` with `row: rowNum`. Update `error-messages.ts` to import and use `CsvFieldIssue`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `CsvFieldIssue` interface added; `CsvRowError` now extends it
+- `app/src/features/csv-file/utils/validateRowData.ts` — sub-validators return `CsvFieldIssue[]`, no `rowNum` param; `validateRow` maps issues to `CsvRowError[]`
+- `app/src/features/csv-file/utils/error-messages.ts` — `getRowErrorMessage` param type changed from `CsvRowError` to `CsvFieldIssue`
+
+**Key decisions & why:**
+- `CsvRowError extends CsvFieldIssue` rather than duplicating fields — keeps the type hierarchy explicit and `CsvErrorTable` continues to work unchanged since `CsvRowError` still satisfies `CsvFieldIssue`
+
+
+## [#169] Revert rowNum removal from sub-validators in validateRowData
+**Type:** fix
+
+**Summary:** Restored `rowNum` as a parameter in `validateStringFields`, `validateNumericFields`, and `validateFunnelFields` — sub-validators continue to return `CsvRowError[]` with `row` stamped directly.
+
+**Brainstorming:** The previous change stripped `rowNum` from sub-validators and moved the mapping to `validateRow`. The user confirmed `rowNum` should stay in the sub-validators. The `CsvFieldIssue` type and `getRowErrorMessage` signature update from #168 are retained — only the sub-validator signatures and return types are reverted.
+
+**Prompt:** Restore `rowNum` parameter and `CsvRowError[]` return type in all three sub-validators. Revert `validateRow` to spreading results directly.
+
+**What changed:**
+- `app/src/features/csv-file/utils/validateRowData.ts` — `rowNum` restored in all sub-validators; return type reverted to `CsvRowError[]`; `validateRow` reverted to direct spread (no mapping)
+
+**Key decisions & why:**
+- `CsvFieldIssue` type and `getRowErrorMessage(error: CsvFieldIssue)` from #168 are kept — they are still accurate and useful for the display layer
+
+
+## [#170] Unify error types — missingColumns field, ProcessRowsResult moved to types
+**Type:** update
+
+**Summary:** Replaced the generic `details?: string[]` on `CsvValidationError` with a dedicated `missingColumns?: string[]` field, moved `ProcessRowsResult` from a local interface into `types/index.ts`, and updated all consumers.
+
+**Brainstorming:** `details` was a loosely-typed catch-all only ever used for missing column names. A named field is self-documenting and type-safe. `ProcessRowsResult` was a local interface in `validateCampaignData.ts` that duplicated the concept of a parse result — moving it to types makes it available to any future consumer and keeps all types in one place.
+
+**Prompt:** Replace `details?: string[]` with `missingColumns?: string[]` on `CsvValidationError`. Add `ProcessRowsResult` to `types/index.ts`. Remove the local `ProcessRowsResult` interface from `validateCampaignData.ts` and import it from types. Update `validateCampaignData.ts` to use `missingColumns` in the error object. Update `UploadModal.vue` to read `err.missingColumns`.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `details?: string[]` replaced with `missingColumns?: string[]`; `ProcessRowsResult` exported
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — local `ProcessRowsResult` removed; imported from types; `missing_columns` error uses `missingColumns` field
+- `app/src/features/csv-file/components/UploadModal.vue` — `err.details` updated to `err.missingColumns`
+
+**Key decisions & why:**
+- `missingColumns` instead of `details` — the field name describes exactly what it carries; avoids the ambiguity of a generic `details` array
+
+
+## [#171] Move validation error messages to error-messages.ts
+**Type:** update
+
+**Summary:** Moved all hardcoded error message strings from `validateCampaignData.ts` into `error-messages.ts`, making it the single source of truth for all CSV validation display text.
+
+**Brainstorming:** `validateCampaignData.ts` still contained three inline string literals: `'CSV file headers are missing.'`, `'The CSV file contains no data rows.'`, and the dynamic invalid-rows message. These belong alongside the row-level issue messages in `error-messages.ts` so that any future text change has one place to go.
+
+**Prompt:** Move the three hardcoded error message strings from `validateCampaignData.ts` into `error-messages.ts`. Add a `VALIDATION_MESSAGES` constant for the static strings and a `getInvalidRowsMessage(count)` function for the dynamic one. Import and use them in `validateCampaignData.ts`.
+
+**What changed:**
+- `app/src/features/csv-file/utils/error-messages.ts` — added `VALIDATION_MESSAGES` (missing_columns, empty_file) and `getInvalidRowsMessage(invalidRowCount)`
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — imported `VALIDATION_MESSAGES` and `getInvalidRowsMessage`; replaced all three inline strings with the imported values
+
+**Key decisions & why:**
+- `VALIDATION_MESSAGES` as a plain object rather than a `Record<CsvValidationErrorType, string>` — not all error types have static messages (`invalid_rows` is dynamic), so a complete record would require a placeholder or a different type
+
+
+## [#172] Move all validation display text to error-messages.ts — consumed by UI
+**Type:** update
+
+**Summary:** Removed all display strings from the validation and parse layers; `error-messages.ts` now owns all message mapping via `getValidationErrorMessage`, which the UI calls directly.
+
+**Brainstorming:** `validateCampaignData.ts` and `parseCsv.ts` had no reason to know about display text — they only need to return typed error data. `UploadModal.vue` was also duplicating the missing-columns message inline. The fix is to strip `message` from `CsvValidationError`, add `detail?: string` for the one dynamic case (PapaParse error text), and centralise all string mapping in `getValidationErrorMessage` inside `error-messages.ts`. The UI then calls that one function for every non-`invalid_rows` case, which also eliminates the branching in `handleSubmit`.
+
+**Prompt:** Remove `message` from `CsvValidationError` and add `detail?: string`. Add `getValidationErrorMessage(error: CsvValidationError): string` to `error-messages.ts` covering all six error types. Strip all message strings from `validateCampaignData.ts` and `parseCsv.ts` — `parseCsv` carries the PapaParse message via `detail`. Update `UploadModal.vue` to call `getValidationErrorMessage(err)` instead of reading `err.message` or building the missing-columns string inline. Remove previous `VALIDATION_MESSAGES` / `getInvalidRowsMessage` exports.
+
+**What changed:**
+- `app/src/features/csv-file/types/index.ts` — `message: string` replaced with `detail?: string` on `CsvValidationError`
+- `app/src/features/csv-file/utils/error-messages.ts` — removed `VALIDATION_MESSAGES` and `getInvalidRowsMessage` exports; added `getValidationErrorMessage(error: CsvValidationError): string` covering all six error types
+- `app/src/features/csv-file/utils/validateCampaignData.ts` — removed error-messages import; all error objects now carry only typed fields (no `message`)
+- `app/src/features/csv-file/utils/parseCsv.ts` — removed `message` from `file_type` and `file_size` errors; `parse_error` now uses `detail: err.message`
+- `app/src/features/csv-file/components/UploadModal.vue` — imports `getValidationErrorMessage`; `handleSubmit` reduced to one `invalid_rows` branch + a single `parseError.value = getValidationErrorMessage(err)` fallback
+
+**Key decisions & why:**
+- `detail?: string` instead of keeping `message` — `detail` signals "raw external data" (the PapaParse error string), distinct from a user-facing message which now lives only in `error-messages.ts`
+- `getValidationErrorMessage` handles all six types including `invalid_rows` — completeness, even though `UploadModal` currently doesn't call it for that case
+
+
+## [#173] Use placeholder pattern for variable content in validation error messages
+**Type:** update
+
+**Summary:** Replaced inline string interpolation in `getValidationErrorMessage` with a `{placeholder}` pattern — all message text lives in `VALIDATION_ERROR_MESSAGES`, variable content is substituted via `replacePlaceholders`.
+
+**Brainstorming:** The previous implementation mixed message text with logic inside the switch branches. The user wanted the text fully captured in a const map, with `{cols}`, `{count}`, `{rows}`, and `{detail}` as named placeholders substituted at call time. A small `replacePlaceholders` helper uses a regex replace to fill them in.
+
+**Prompt:** Move all display text into a `VALIDATION_ERROR_MESSAGES` const map. Use `{placeholder}` syntax for variable content (`{cols}`, `{count}`, `{rows}`, `{detail}`). Add `replacePlaceholders(template, values)` to resolve them. `getValidationErrorMessage` looks up the template, resolves values per error type, and returns the filled string.
+
+**What changed:**
+- `app/src/features/csv-file/utils/error-messages.ts` — added `VALIDATION_ERROR_MESSAGES` const map with `{placeholder}` syntax; added `replacePlaceholders` helper; `getValidationErrorMessage` now looks up template and substitutes values per error type
+
+**Key decisions & why:**
+- `{rows}` placeholder resolves to `'row'`/`'rows'` separately from `{count}` — keeps the full sentence in the template rather than splitting text across code
+
+
+## [#174] Rename csv-file/utils files to kebab-case
+**Type:** update
+
+**Summary:** Renamed all camelCase files in `csv-file/utils/` to kebab-case and updated every import path referencing them.
+
+**Brainstorming:** Four files were still camelCase (`downloadCsv.ts`, `parseCsv.ts`, `validateCampaignData.ts`, `validateRowData.ts`); `error-messages.ts` was already kebab-case. Renaming required updating imports in `useDownloadTemplate.ts`, `parse-csv.ts`, `validate-campaign-data.ts`, and `UploadModal.vue`.
+
+**Prompt:** Rename all files in `csv-file/utils/` to kebab-case. Update all import paths that reference the renamed files.
+
+**What changed:**
+- `csv-file/utils/downloadCsv.ts` → `download-csv.ts`
+- `csv-file/utils/parseCsv.ts` → `parse-csv.ts`
+- `csv-file/utils/validateCampaignData.ts` → `validate-campaign-data.ts`
+- `csv-file/utils/validateRowData.ts` → `validate-row-data.ts`
+- `csv-file/composables/useDownloadTemplate.ts` — import path updated
+- `csv-file/utils/parse-csv.ts` — import path updated
+- `csv-file/utils/validate-campaign-data.ts` — import path updated
+- `csv-file/components/UploadModal.vue` — import path updated
+- `CLAUDE.md` — architecture section updated with new file names and added missing `error-messages.ts` and `validate-row-data.ts` entries
+
+**Key decisions & why:**
+- All five utils now consistently kebab-case — matches the project convention used by SCSS partials, components, and the already-named `error-messages.ts`
+
+
+## [#175] Move inline pluralization logic from CsvErrorTable template to error-messages.ts
+**Type:** fix
+
+**Summary:** Extracted repeated ternary pluralization logic from `CsvErrorTable.vue`'s template into a `getRowErrorSummaryWords` function in `error-messages.ts`, consumed via a single `summaryWords` computed property.
+
+**Brainstorming:** The template contained five inline ternary expressions (`row/rows`, `contains/contain`, `was/were`, `totalRowWord`, `validRowWord`) duplicating the pluralization pattern already established in `error-messages.ts`. The fix centralises this logic in `error-messages.ts` as a typed `RowErrorSummaryWords` interface + `getRowErrorSummaryWords(invalidCount, validCount)` function. The component computes `summaryWords` once and the template only reads values from it.
+
+**Prompt:** `CsvErrorTable` includes duplicated logic with `error-messages`. Move the pluralization logic out of the template; keep only values in the template.
+
+**What changed:**
+- `csv-file/utils/error-messages.ts` — added `RowErrorSummaryWords` interface and `getRowErrorSummaryWords(invalidCount, validCount)` exported function
+- `csv-file/components/CsvErrorTable.vue` — imported `getRowErrorSummaryWords`; added `summaryWords` computed; replaced all five inline ternaries in the template with `summaryWords.*` bindings
+
+**Key decisions & why:**
+- Returned a plain object (`RowErrorSummaryWords`) rather than individual functions — a single `computed` call in the component is enough; no need for five separate imports
+- `totalRowWord` and `validRowWord` derived from their respective counts inside the helper — keeps all pluralization logic in one place
+
+
+## [#176] Add duplicate campaign detection and resolution UI to CSV upload flow
+**Type:** feature
+
+**Summary:** Extended CSV validation to detect rows with duplicate campaign names, added a new `CsvDuplicateTable` view where users select which row to keep per group, and wired the full sequential flow in `UploadModal` so both row errors and duplicates can coexist.
+
+**Brainstorming:** Duplicate detection needed to happen after row validation, operating on the set of valid rows only. `processRows` was updated to return row numbers alongside campaigns so duplicate groups can reference original file rows. `findDuplicateGroups` groups by case-insensitive campaign name and separates unique entries from groups of two or more. The `CsvParseResult` returns both `invalid_rows` and `duplicate_campaigns` errors independently, allowing `UploadModal` to handle them sequentially (row-errors view → duplicate-rows view). The proceed button in `CsvDuplicateTable` is disabled only when `validCampaigns.length === 0 AND no selections` — if valid non-duplicate campaigns exist, the user can always proceed (skipping unresolved groups). Two test CSV files were created: one with duplicates alongside valid unique campaigns, and one with only duplicate groups to exercise the disabled-proceed path.
+
+**Prompt:** Data validation should also check for duplicate campaigns. A new error type is needed. Users should see duplicate rows in a table and select one row per group. Groups should be shown by campaign name. A message should explain that duplicates are excluded until selected. This should also appear when there are partially correct campaigns. If there are only errors and duplicates with no selection, proceed must be disabled. Also create two test CSV files: one with 3 duplicate groups and valid data, one with only 3 duplicate groups.
+
+**What was built:**
+- `csv-file/types/index.ts` — added `CsvValidCampaignEntry` (rowNum + Campaign), `CsvDuplicateGroup` (campaignName + rows), `'duplicate_campaigns'` to `CsvValidationErrorType`, `duplicateGroups?` field on `CsvValidationError`; updated `ProcessRowsResult.campaigns` to `CsvValidCampaignEntry[]`
+- `csv-file/utils/validate-campaign-data.ts` — updated `processRows` to return `CsvValidCampaignEntry[]`; added `findDuplicateGroups` (case-insensitive grouping); updated `validateCampaignData` to accumulate both `invalid_rows` and `duplicate_campaigns` errors instead of early-returning on row errors
+- `csv-file/utils/error-messages.ts` — added `'duplicate_campaigns'` to `VALIDATION_ERROR_MESSAGES` record (required by `Record<CsvValidationErrorType, string>`)
+- `csv-file/components/CsvErrorTable.vue` — added `duplicateGroupCount` prop; `showProceed` computed (visible when validCampaigns > 0 OR duplicateGroupCount > 0); `proceedLabel` computed ('Proceed with valid rows' vs 'Review duplicate campaigns'); `duplicateNote` computed shown as warning text when duplicateGroupCount > 0
+- `csv-file/components/CsvDuplicateTable.vue` — new component; shows duplicate groups with radio selection per row; 8-column horizontally scrollable table; `canProceed` computed; emits `proceed([Campaign[]])` with only selected campaigns; Back/Cancel buttons
+- `csv-file/components/UploadModal.vue` — added `'duplicate-rows'` view, `duplicateGroups` ref; updated `handleSubmit` to detect both error types and route accordingly; separate `handleBackFromErrors`, `handleProceedFromErrors`, `handleBackFromDuplicates`, `handleProceedFromDuplicates` handlers
+- `test-data/duplicates-with-valid.csv` — 3 duplicate groups (Summer Blast ×2, SEO Drive ×3, Retargeting Push ×3) plus 4 valid unique campaigns
+- `test-data/duplicates-only.csv` — same 3 duplicate groups, no other valid data (exercises disabled-proceed state)
+
+**Key decisions & why:**
+- Both errors accumulated and returned together from `validateCampaignData` — allows `UploadModal` to decide routing; early-return would hide duplicates when row errors also exist
+- `processRows` returns row numbers in `CsvValidCampaignEntry` — needed so the duplicate table can display the original file row for each candidate row; row number is not part of `Campaign` and should not be
+- Proceed disabled only when `validCampaigns.length === 0 && selections.size === 0` — if there are already valid campaigns, the user can always proceed and skip unresolved groups; forcing all groups to be resolved before proceeding would be too strict
+- `findDuplicateGroups` uses case-insensitive name comparison — same campaign name in different casing is the same campaign from the user's perspective
+- Sequential views (row-errors then duplicate-rows) rather than combined — keeps each view focused; `Back` from duplicate-rows returns to row-errors when row errors exist, otherwise to form
+
+
+## [#177] Introduce CsvCampaign extended model with mapper boundary
+**Type:** refactor
+
+**Summary:** Replaced the `CsvValidCampaignEntry` wrapper with a `CsvCampaign` interface that extends `Campaign` with `rowNum`, extracted duplicate detection into `detect-campaign-duplication.ts`, and introduced a `map-campaign.ts` mapper that strips `rowNum` before data enters the store.
+
+**Brainstorming:** The `CsvValidCampaignEntry` wrapper (`{ rowNum, campaign }`) required unwrapping at every use site. Extending `Campaign` directly as `CsvCampaign` lets all CSV-internal code access fields without indirection while keeping `Campaign` clean for the rest of the app. The mapper (`toCampaign` / `toCampaigns`) is the single boundary — called only in `UploadModal` just before `campaignStore.loadCampaigns`. Duplicate detection moved to its own file as discussed, keeping `validate-campaign-data.ts` focused on orchestration.
+
+**Prompt:** Create an extended campaign model for CSV upload. Before storing in the campaign store, remove the extra field via a mapper function. Extract duplicate detection into a separate file `detect-campaign-duplication.ts`.
+
+**What changed:**
+- `csv-file/types/index.ts` — replaced `CsvValidCampaignEntry` with `CsvCampaign extends Campaign { rowNum: number }`; updated `CsvDuplicateGroup.rows`, `CsvParseResult.campaigns`, `ProcessRowsResult.campaigns` to `CsvCampaign[]`
+- `csv-file/utils/detect-campaign-duplication.ts` — new file; `detectCampaignDuplication(campaigns)` extracted from `validate-campaign-data.ts`
+- `csv-file/utils/map-campaign.ts` — new file; `toCampaign` destructures out `rowNum`; `toCampaigns` maps an array
+- `csv-file/utils/validate-campaign-data.ts` — `processRows` spreads `{ ...fields, rowNum }` into `CsvCampaign`; delegates to `detectCampaignDuplication`; removed `findDuplicateGroups`
+- `csv-file/components/CsvErrorTable.vue` — `validCampaigns` prop type updated to `CsvCampaign[]`
+- `csv-file/components/CsvDuplicateTable.vue` — all types updated to `CsvCampaign`; `entry.campaign.*` field accesses simplified to `entry.*` since fields are top-level; emits `CsvCampaign[]`
+- `csv-file/components/UploadModal.vue` — state types updated to `CsvCampaign[]`; `toCampaigns` called at every `campaignStore.loadCampaigns` call site
+
+**Key decisions & why:**
+- `CsvCampaign extends Campaign` rather than a wrapper — direct field access throughout CSV parsing code; wrapper required destructuring at every use site
+- Mapper lives only in `UploadModal` — it is the single boundary between CSV parsing and the store; no other file needs to know about the mapping
+- `detect-campaign-duplication.ts` as a standalone file — single responsibility; testable in isolation; keeps `validate-campaign-data.ts` as an orchestrator
+
+
+## [178] Create DataErrorsTable dumb component
+**Type:** feature
+
+**Summary:** Created a new `validation/` folder inside `csv-file/components` with a dumb `DataErrorsTable.vue` that renders a sortable, scrollable error table using flat `@apply` styles and no BEM.
+
+**Brainstorming:** The existing `CsvErrorTable.vue` mixes layout, summary copy, footer actions, and table rendering into one multi-root component. Extracting the table as a standalone dumb component (`DataErrorsTable`) makes it independently reusable — it only receives `CsvRowError[]` and renders rows. Sorting is kept local (no store, no emits) since it is purely a display concern. Scrollability is achieved by constraining the wrapper div, leaving the table header sticky. Styles use flat class names with `@apply` exclusively — no BEM.
+
+**Prompt:** Create a `validation/` folder inside `csv-file/components`. Inside it, create `DataErrorsTable.vue` — a dumb component that only renders the error table. The Row column must be sortable (asc/desc). Table body must be scrollable. Use flat `@apply` styles, no BEM.
+
+**What was built:**
+- `csv-file/components/validation/DataErrorsTable.vue` — dumb table component; props: `errors: CsvRowError[]`; internal `sortDir` ref toggles asc/desc on the Row column; `sortedErrors` computed sorts by `err.row`; table wrapper has `overflow-y: auto` + `max-height: 260px`; sticky thead; flat `@apply` scoped styles; no BEM
+
+**Key decisions & why:**
+- Sort state kept local — purely a display concern, no parent needs to know the current sort direction
+- `validation/` subfolder — signals intent to group validation-related rendering components separately from the parent modal's multi-root components
+- Flat `@apply` only — aligns with the project-wide move away from BEM
+
+
+## [179] Use DataErrorsTable in CsvErrorTable
+**Type:** update
+
+**Summary:** Replaced the inline table markup in `CsvErrorTable.vue` with the new `DataErrorsTable` component and removed the now-dead table styles.
+
+**Brainstorming:** Straightforward swap — import the new component, replace the `<div class="error-table-wrapper"><table>...</table></div>` block with `<DataErrorsTable :errors="rowErrors" />`, drop the unused `getRowErrorMessage` import, and clean up the dead SCSS rules.
+
+**Prompt:** Replace the table rendering inside CsvErrorTable with the new DataErrorsTable component.
+
+**What changed:**
+- `csv-file/components/CsvErrorTable.vue` — imported `DataErrorsTable`; replaced inline table markup with `<DataErrorsTable :errors="rowErrors" />`; removed unused `getRowErrorMessage` import; removed dead `.error-table-wrapper`, `.error-table__th`, `.error-table__td` SCSS blocks
+
+**Key decisions & why:**
+- Removed `getRowErrorMessage` import entirely — it was only used inside the now-extracted table rows
+- Deleted all table-related scoped styles — they are now owned by `DataErrorsTable`
+
+
+## [180] Scrollable tbody only in DataErrorsTable
+**Type:** fix
+
+**Summary:** Moved scrolling from the wrapper to `tbody` so the scrollbar appears only beside the data rows, while the header stays fixed above with its background and bottom border intact.
+
+**Brainstorming:** The previous approach scrolled the entire `.table-wrapper` div, which dragged the `<thead>` along — solved with `sticky top-0` as a workaround. The cleaner approach is to set `tbody { display: block; overflow-y: auto }` and `tbody tr { display: table; table-layout: fixed; width: 100% }` so only the body scrolls. `thead` also becomes `display: table; width: 100%` to keep column widths in sync with `table-layout: fixed` on the table. Sticky is no longer needed; the header background is maintained with `bg-surface`.
+
+**Prompt:** Make only the table body scrollable. Header should stay visible with its background and bottom border. No scrollbar beside the header.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — removed `overflow-y: auto` / `max-height` from `.table-wrapper`; added `table-layout: fixed` on table; `thead` set to `display: table; w-full; bg-surface`; `tbody` set to `display: block; overflow-y: auto; max-height: 220px`; `tbody tr` set to `display: table; table-layout: fixed; w-full`; removed `thead th { sticky top-0 }`
+
+**Key decisions & why:**
+- `display: block` on `tbody` is the standard way to scroll only the body — requires syncing column widths via `table-layout: fixed` on both table and each `tbody tr`
+- `bg-surface` on `thead` — ensures the header has a solid background so it visually separates from the scrolling rows beneath
+- Removed sticky — no longer needed since the header is naturally above the scroll container
+
+
+## [181] Fix column alignment in DataErrorsTable
+**Type:** fix
+
+**Summary:** Added explicit widths to `td` cell classes to realign columns after the `tbody display: block` change broke automatic width inheritance.
+
+**Brainstorming:** With `tbody { display: block }`, thead and tbody are effectively separate table contexts — `table-layout: fixed` no longer propagates column widths from thead to tbody automatically. The fix is to mirror the same widths (`w-14`, `w-28`) on the `td` classes so both tables use identical column sizing.
+
+**Prompt:** Columns are misaligned after the scrollable tbody change. Fix alignment.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — added `w-14` to `.cell-row` and `w-28` to `.cell-col` to match thead column widths
+
+**Key decisions & why:**
+- Mirror widths on td classes rather than inline styles — keeps sizing in one place per column and consistent with the Tailwind @apply approach
+
+
+## [182] Revert DataErrorsTable to sticky header approach
+**Type:** fix
+
+**Summary:** Reverted to scrolling the whole wrapper with a sticky `thead` — simpler, maintains column alignment naturally, and keeps the header pinned with a solid background.
+
+**Brainstorming:** The `display: block` tbody approach broke column alignment because thead and tbody became separate layout contexts. The sticky header approach is simpler and correct: the wrapper scrolls, `thead th` gets `sticky top-0 bg-surface` so the header stays visible and its background covers scrolling content beneath it.
+
+**Prompt:** Maintain column widths and make header stay on top — scroll can be on the whole table.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorsTable.vue` — removed `display: block` tbody hacks; restored `overflow-y: auto; max-height: 260px` on `.table-wrapper`; `thead th` is `sticky top-0 bg-surface`; removed explicit widths from `.cell-row` / `.cell-col`
+
+**Key decisions & why:**
+- Sticky header on the wrapper scroll is the standard, alignment-safe solution — no width synchronization needed
+- `bg-surface` on `thead th` prevents row content from bleeding through the header when scrolling
+
+
+## [183] Add ArrowUpIcon to sort button in DataErrorsTable
+**Type:** update
+
+**Summary:** Created `ArrowUpIcon.vue`, exported it from the icons barrel, and replaced the `&#8593;` HTML entity in `DataErrorsTable` with the new icon component.
+
+**Brainstorming:** The sort button used a raw HTML entity for the arrow, which is inconsistent with the rest of the icon system. A proper SVG icon component matches the existing pattern (same style as `ArrowLeftIcon`) and inherits `currentColor` and `1em` sizing automatically.
+
+**Prompt:** Add an arrow icon to the sort button in DataErrorsTable.
+
+**What was built:**
+- `ui/icons/ArrowUpIcon.vue` — new inline SVG up arrow, same structure as `ArrowLeftIcon`
+- `ui/icons/index.ts` — exported `ArrowUpIcon`
+- `csv-file/components/validation/DataErrorsTable.vue` — imported `ArrowUpIcon`; replaced `&#8593;` span with `<ArrowUpIcon>` carrying the existing sort-icon / sort-icon--desc classes
+
+**Key decisions & why:**
+- Reused the rotate-180 class for descending — the icon is an up arrow that flips, consistent with the existing sort-icon--desc pattern
+
+
+## [184] Thicker stroke on ArrowUpIcon
+**Type:** fix
+
+**Summary:** Increased `stroke-width` from `2` to `2.5` in `ArrowUpIcon.vue` for a bolder appearance at small sizes.
+
+**Brainstorming:** At `1em` the arrow was too thin. A slight stroke increase makes it more legible without changing shape.
+
+**Prompt:** Make ArrowUpIcon lines a bit wider.
+
+**What changed:**
+- `ui/icons/ArrowUpIcon.vue` — `stroke-width` updated from `2` to `2.5`
+
+**Key decisions & why:**
+- `2.5` over `3` — enough to be visually bolder while staying consistent with the fine-line icon style used elsewhere
+
+
+## [#185] UI polish: extract DataErrorSummary, de-BEM modal classes, improve BaseModal accessibility
+**Type:** update
+
+**Summary:** Extracted a shared `DataErrorSummary` presentational component for CSV error screens, de-BEM'd modal global classes to flat names, and improved `BaseModal` with Teleport, accessibility attributes, and backdrop click-to-close.
+
+**Brainstorming:** Both `CsvErrorTable` and `CsvDuplicateTable` had inline summary blocks with identical structure (title + badge + body text) — extracting `DataErrorSummary` as a slot-driven presentational component removes the duplication and makes the pattern reusable. Modal global classes (`modal__body`, `modal__footer`) were BEM-style holdovers — renamed to flat `modal-body` / `modal-footer` consistent with the project's move away from BEM. `BaseModal` was missing `Teleport`, which meant it rendered in-tree rather than on `body`; also added proper ARIA attributes and backdrop click-to-close for completeness.
+
+**Prompt:** Read changed files on the feat/ui-polish branch and update CLAUDE.md and LOGS.md accordingly. This conversation is not logged.
+
+**What changed:**
+- `csv-file/components/validation/DataErrorSummary.vue` — new presentational component; three named slots (title, badge, summary); no props, no scoped styles; used by both error screens
+- `csv-file/components/CsvErrorTable.vue` — replaced inline summary HTML with stacked `DataErrorSummary` instances rendered conditionally (invalid-only / partial-import / duplicate-notice)
+- `csv-file/components/CsvDuplicateTable.vue` — replaced inline summary/notice markup with a single `DataErrorSummary` block
+- `csv-file/components/validation/DataErrorsTable.vue` — refactored scoped styles to flat class names (`table-wrapper`, `col-row`, `col-campain`, `cell-row`, `cell-col`); thead uses `data-table-sticky-header`; sortable th uses `data-table-sortable-header`; removed hardcoded max-height from scoped style
+- `styles/components/_modal.scss` — renamed `modal__body` → `modal-body`, `modal__footer` → `modal-footer`; added `.modal-body` class definition
+- `ui/BaseModal.vue` — added `Teleport to="body"`; added `aria-modal="true"`, `role="dialog"`, `:aria-label="title"` on backdrop; added `@click.self` for backdrop click-to-close
+- `csv-file/components/ReplaceDataModal.vue` — updated to use flat `modal-body` / `modal-footer` class names
+
+**Key decisions & why:**
+- `DataErrorSummary` uses only named slots, no props — keeps it maximally flexible; callers own all content including badge variant
+- Flat modal class names (`modal-body` / `modal-footer`) over BEM — aligns with the established project direction away from BEM modifiers
+- `Teleport to="body"` on `BaseModal` — ensures the modal and its backdrop render above all page content regardless of stacking context
+
+
+## [#186] Sort rows by row number within duplicate groups in CsvDuplicateTable
+**Type:** update
+
+**Summary:** Added asc/desc sort toggle on the Row column in `CsvDuplicateTable` so rows within each duplicate group can be sorted by row number.
+
+**Brainstorming:** The duplicate table shows rows grouped by campaign name. Sorting by row number helps users quickly orient themselves — especially in large files where duplicates may be far apart. The sort is applied per-group independently via a `sortedGroups` computed that maps each group's rows through a sort, leaving group order unchanged. Pattern mirrors `DataErrorsTable`.
+
+**Prompt:** CsvDuplicate table should sort grouped data by row.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — imported `ArrowUpIcon`; added `SortDir` type, `sortDir` ref, `toggleSort`, `sortedGroups` computed (sorts rows within each group by `rowNum`); Row `th` changed to `data-table-sortable-header` with sort button and `ArrowUpIcon`; `thead` gets `data-table-sticky-header`; `v-for` switched from `duplicateGroups` to `sortedGroups`
+
+**Key decisions & why:**
+- Sort per group (not global re-ordering of groups) — group identity is the primary structure; row sort is a secondary navigation aid within each group
+- Reused `data-table-sortable-header` / `data-table-sticky-header` global classes — consistent with `DataErrorsTable` and avoids new scoped styles
+
+
+## [#187] Add sorting by conversions and revenue to CsvDuplicateTable
+**Type:** update
+
+**Summary:** Extended the row sort in `CsvDuplicateTable` to support sorting by conversions and revenue, with a shared sort key + direction state so only one column is active at a time.
+
+**Brainstorming:** The existing single-column sort was refactored to a two-ref pattern (`sortKey` + `sortDir`) so multiple columns can share the same sort state cleanly. Switching to a new column resets direction to asc. A `sortIconClass(key)` helper drives the active/inactive visual state of each sort icon — inactive columns show the dimmed icon, active column shows bright asc/desc. Numeric sortable headers need right-aligned buttons, handled with a scoped `.col-sortable-num` rule adding `justify-end w-full` to the inner button.
+
+**Prompt:** Add sorting for revenue and conversions.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — replaced `sortDir`-only state with `sortKey` + `sortDir` refs; added `SortKey` type (`'rowNum' | 'conversions' | 'revenue'`); `toggleSort(key)` switches key (resets to asc) or toggles direction on same key; `sortIconClass(key)` returns asc/desc/empty class object; `sortedGroups` sorts by `a[sortKey] - b[sortKey]`; Conversions and Revenue th elements converted to `data-table-sortable-header col-sortable-num` with sort buttons; scoped `.col-sortable-num > button` adds `justify-end w-full` for right alignment
+
+**Key decisions & why:**
+- Single `sortKey` + `sortDir` over per-column state — only one column is ever active; simpler and matches standard table sort UX
+- `sortIconClass` helper over inline ternary — keeps template readable when the same expression is repeated across three columns
+- `.col-sortable-num` scoped class for right alignment — avoids touching the global `data-table-sortable-header` style which is left-aligned by default for the Row column
+
+
+## [#188] Refactor CsvDuplicateTable styles to match DataErrorsTable flat naming
+**Type:** refactor
+
+**Summary:** Replaced all BEM class names in `CsvDuplicateTable` with flat names and converted all style rules to `@apply`, matching the pattern established in `DataErrorsTable`.
+
+**Brainstorming:** The table had two BEM parent blocks (`duplicate-table__th` and `duplicate-table__td`) with element/modifier children, plus `duplicate-table__row` with BEM modifiers. These were all renamed to flat, semantic class names (`col-select`, `col-channel`, `col-num`, `cell-select`, `cell-row`, `cell-num`, `group-header`, `row-selectable`, `row-selected`) consistent with the project's move away from BEM. Style rules were rewritten with `@apply` throughout; `color-mix` values stay as direct CSS since there is no Tailwind `@apply` equivalent.
+
+**Prompt:** Update table styles in CsvDuplicateTable to match DataErrorsTable.
+
+**What changed:**
+- `csv-file/components/CsvDuplicateTable.vue` — renamed all BEM class names in template and styles to flat equivalents; rewrote style block using `@apply` throughout; removed `duplicate-table__th` and `duplicate-table__td` BEM parent blocks; `.duplicate-table__row` / `--selected` → `.row-selectable` / `.row-selected` (sibling class pattern instead of BEM modifier)
+
+**Key decisions & why:**
+- Sibling class `.row-selected` instead of BEM `&--selected` — flat modifier as an independent class matches the project direction; selector becomes `&.row-selected` in SCSS which is equally specific
+- Kept `color-mix` as direct CSS — no `@apply` equivalent; these two lines are the only exception to the `@apply`-throughout rule
+
+
+## [#189] Add DataTableHeader reusable thead component and migrate tables
+**Type:** feature
+
+**Summary:** Created a generic `DataTableHeader` UI component that owns all sortable-header styles, and migrated `CsvDuplicateTable` and `DataErrorsTable` to use it, removing the duplicated thead markup and moving the related styles out of `_table.scss`.
+
+**Brainstorming:** Both `CsvDuplicateTable` and `DataErrorsTable` repeated the same thead pattern — sortable and non-sortable headers, sticky support, sort icon state, right-aligned numeric columns. Extracting this into a `ui` component eliminates the duplication. The `data-table-sortable-header` and `data-table-sticky-header` styles moved to the component's scoped block since they are now exclusively used by it. `data-table-header` stayed global because `CampaignTable` still references it directly. Sort state stays in callers (stateless component). Right-aligned sort buttons use `class: 'th-right'` on the column definition, since `align` was removed by the linter in favor of passing the scoped class name directly.
+
+**Prompt:** Move all related styles from styles/table to DataTableHeader. Implement this in CsvDuplicateTable and DataErrorsTable. Instead of a new log, update #189.
+
+**What was built:**
+- `ui/DataTableHeader.vue` — renders `<thead>`; `columns: DataTableColumn[]` (key, label, sortable?, ariaLabel?, class?); `sticky` prop; `sortKey`/`sortDir` props; emits `sort: [key]`; sortable → `data-table-sortable-header` + button + ArrowUpIcon; non-sortable → `data-table-header`; scoped styles own `data-table-sortable-header`, `data-table-sticky-header`, and `.th-right`; exports `DataTableColumn` + `SortDir` types
+- `ui/index.ts` — added `DataTableHeader`, `DataTableColumn`, `SortDir` exports
+- `styles/components/_table.scss` — removed `data-table-sortable-header` and `data-table-sticky-header` blocks (now owned by `DataTableHeader`)
+- `csv-file/components/CsvDuplicateTable.vue` — replaced `<thead>` with `<DataTableHeader>`; removed `ArrowUpIcon` import and `sortIconClass`; added `columns` definition and `handleSort` wrapper; right-align via `class: 'th-right'`; removed `col-select`/`col-channel`/`col-num`/`col-sortable-num` scoped classes
+- `csv-file/components/validation/DataErrorsTable.vue` — replaced `<thead>` with `<DataTableHeader>`; removed `ArrowUpIcon` import; added `columns` definition; `@sort="toggleSort"` (single-column sort, key ignored)
+
+**Key decisions & why:**
+- `data-table-header` stays global — `CampaignTable` still uses it directly; moving it to scoped would silently break that component
+- `data-table-sortable-header` + `data-table-sticky-header` moved to scoped — safe; no other component uses them after this migration
+- Sort state stays in parent — callers own `sortKey`/`sortDir` refs; component is stateless and works with any sorting logic
+- `class: 'th-right'` instead of `align` prop — the linter removed `align` from `DataTableColumn`; passing the scoped class name directly through `class` achieves the same result since all elements in `DataTableHeader`'s template receive its scoped attribute
+- `ariaLabel` on `DataTableColumn` — covers th `aria-label` for empty headers (e.g. "Select") and the sort button label base text via `col.ariaLabel ?? col.label`
+
+
+## [#190] Add selection state indicators to CsvDuplicateTable
+**Type:** update
+
+**Summary:** Added a `CheckIcon` to each group header with per-group selection state styling, and a "Resolve duplicates (X/N)" progress indicator above the table that turns green when all groups are resolved.
+
+**Brainstorming:** The group header showed only the campaign name with no indication of resolved state. A check icon per group gives an immediate per-row signal; a global counter above the table tells users how many groups still need attention without scrolling through the whole list. When all groups are resolved the indicator turns green to signal readiness.
+
+**Prompt:** Add text next to grouped header to display how many are selected out of duplicates. Create a check icon and add it before group name in group header. Add above table an indicator "Resolve duplicates (1/3)" to match how many groups are resolved.
+
+**What changed:**
+- `ui/icons/CheckIcon.vue` — new inline SVG check icon (polyline `20 6 9 17 4 12`, stroke-width 2.5)
+- `ui/icons/index.ts` — added `CheckIcon` export
+- `csv-file/components/CsvDuplicateTable.vue` — imported `CheckIcon`; added `isGroupSelected` helper and `resolvedCount`/`allResolved` computeds; added `CheckIcon` before campaign name in `.group-header td` with muted/highlighted state; added `.resolve-indicator` bar above the table ("Resolve duplicates (X/N)", turns green when all resolved); updated `.duplicate-body` grid to `grid-rows-[min-content_min-content_1fr]`
+
+**Key decisions & why:**
+- `resolvedCount` uses `selections.value.size` directly — the map has one entry per resolved group by design (radio input, max 1 per group)
+- Green (`text-primary-400`) for resolved indicator state — clear positive signal without introducing a new color token
+- Grid row added for indicator — keeps the table's `1fr` row intact so it still fills available height
+
+
+## [#192] Extract format helpers to common/utils/formatters
+**Type:** refactor
+
+**Summary:** Moved `formatCurrency` and `formatNumber` out of `CsvDuplicateTable` into a new shared `common/utils/formatters.ts` so they can be reused across the codebase.
+
+**Brainstorming:** The two helpers had no component-specific logic and are generically useful anywhere currency or numbers need display formatting. `common/utils/` already holds `math.ts` and `roi.ts` for shared pure utilities — formatters belong there.
+
+**Prompt:** Move all format functions from CsvDuplicateTable to common/utils/formatters and import those from there.
+
+**What changed:**
+- `common/utils/formatters.ts` — new file; exports `formatCurrency(value)` and `formatNumber(value)`
+- `csv-file/components/CsvDuplicateTable.vue` — removed local `formatCurrency`/`formatNumber` definitions; added import from `../../../common/utils/formatters`
+
+**Key decisions & why:**
+- Placed in `common/utils/` not `csv-file/utils/` — no CSV-specific logic; available to dashboard, AI panels, or any future component that formats currency or counts
+
+
+## [#193] Extract duplicate table into CampainDuplicationsTable
+**Type:** refactor
+
+**Summary:** Extracted the grouped duplicate table and all its sorting/selection logic from `CsvDuplicateTable` into a new `CampainDuplicationsTable` component in `csv-file/components/validation/`.
+
+**Brainstorming:** `CsvDuplicateTable` was doing two jobs: orchestrating the modal shell (summary block, resolve indicator, footer) and owning the table's internal sort/selection state. Extracting the table into its own component in `validation/` alongside `DataErrorsTable` keeps the table logic self-contained and makes `CsvDuplicateTable` a thin orchestrator. The new component emits `change:[CsvCampaign[]]` on every selection so the parent can track resolved count and build the proceed payload without needing to reach into internal state.
+
+**Prompt:** Extract duplication table to csv-file/components/validation with name CampainDuplicationsTable.
+
+**What changed:**
+- `csv-file/components/validation/CampainDuplicationsTable.vue` — new component; owns `sortKey`/`sortDir`/`columns`/`sortedGroups`, `selections` Map, `isSelected`/`isGroupSelected`/`selectRow`; emits `change:[CsvCampaign[]]` on every `selectRow` call; owns all table-related scoped styles (group-header, cell-select, row-selectable, data-table-row hover)
+- `csv-file/components/CsvDuplicateTable.vue` — reduced to thin orchestrator; holds `selectedCampaigns` ref updated via `@change`; `resolvedCount`/`allResolved`/`canProceed` computed from that ref; `handleProceed` emits `selectedCampaigns.value` directly; removed all sorting/selection/formatting logic and imports
+
+**Key decisions & why:**
+- `change` emit carries the full `CsvCampaign[]` snapshot on every selection — parent needs the array for both the counter and the proceed payload; avoids exposing internal Map state
+- `allResolved` drives the indicator `.resolved` class in the parent (was `resolvedCount > 0` before — corrected to `allResolved` for accurate green state)
+
+
+## [#194] Extract DuplicateSummary component shared by CsvErrorTable and CsvDuplicateTable
+**Type:** refactor
+
+**Summary:** Extracted the duplicate-specific `DataErrorSummary` blocks used in both `CsvErrorTable` and `CsvDuplicateTable` into a shared `DuplicateSummary.vue` component in `validation/`.
+
+**Brainstorming:** Both components had a `DataErrorSummary` block describing duplicate campaign names — `CsvErrorTable` showed a notice ("will be resolved in the next step") and `CsvDuplicateTable` showed the resolution prompt ("select one row per group"). The structure (DataErrorSummary wrapper, badge, count-based grammar) was the same. Extracting into `DuplicateSummary` with a `variant` prop removes the duplication and centralises the duplicate messaging in one place consistent with how `DataErrorSummary` and `DataErrorsTable` already live in `validation/`.
+
+**Prompt:** CsvErrorTable and CsvDuplicateTable use same logic for duplications extract to errors.
+
+**What was built:**
+- `csv-file/components/validation/DuplicateSummary.vue` — new component; wraps `DataErrorSummary`; props: `count: number`, `variant?: 'notice' | 'resolve'` (default `'notice'`), `hasValidCampaigns?: boolean`; notice variant renders "will need to be resolved" messaging; resolve variant renders "select one row per group" messaging with danger badge when no valid campaigns exist
+- `csv-file/components/CsvErrorTable.vue` — replaced inline duplicate `DataErrorSummary` block with `<DuplicateSummary v-if="duplicateGroupCount > 0" :count="duplicateGroupCount" />`
+- `csv-file/components/CsvDuplicateTable.vue` — replaced inline duplicate `DataErrorSummary` block with `<DuplicateSummary :count="duplicateGroups.length" variant="resolve" :has-valid-campaigns="validCampaigns.length > 0" />`; removed now-unused `groupWord`/`verbWord` computeds
+
+**Key decisions & why:**
+- `variant` prop over two separate components — the two modes share enough structure (DataErrorSummary wrapper, count-based grammar) that a single component with a variant is simpler than two separate files
+- Default `variant='notice'` — the notice use case (CsvErrorTable) is the simpler one and the more likely reuse path; resolve is the explicit opt-in
+
+
+## [#195] Rename CsvDuplicateTable to ResolveDuplicationsStep
+**Type:** refactor
+
+**Summary:** Renamed `CsvDuplicateTable.vue` to `ResolveDuplicationsStep.vue` to better reflect its role as a modal step rather than a generic table component.
+
+**Brainstorming:** The old name described the data it handled (CSV duplicates); the new name describes what the user is doing at this point in the upload flow (resolving duplications). Consistent with the step-based mental model of the upload modal.
+
+**Prompt:** Rename CsvDuplicateTable to ResolveDuplicationsStep.
+
+**What changed:**
+- `csv-file/components/ResolveDuplicationsStep.vue` — new file; identical content to old `CsvDuplicateTable.vue`
+- `csv-file/components/CsvDuplicateTable.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `ResolveDuplicationsStep`
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#196] Rename CsvErrorTable to DisplayUploadErrorsStep
+**Type:** refactor
+
+**Summary:** Renamed `CsvErrorTable.vue` to `DisplayUploadErrorsStep.vue` to match the step-based naming convention established by `ResolveDuplicationsStep`.
+
+**Brainstorming:** Consistent with the rename of `CsvDuplicateTable` → `ResolveDuplicationsStep` in #195. Both components are modal steps in the upload flow; naming them as steps makes their role in `UploadModal` immediately clear.
+
+**Prompt:** Same CsvErrorTable TO DisplayUploadErrorsStep.
+
+**What changed:**
+- `csv-file/components/DisplayUploadErrorsStep.vue` — new file; identical content to old `CsvErrorTable.vue`
+- `csv-file/components/CsvErrorTable.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `DisplayUploadErrorsStep`
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#197] Rename CsvUploadForm to UploadCampainData
+**Type:** refactor
+
+**Summary:** Renamed `CsvUploadForm.vue` to `UploadCampainData.vue` to align with the step-based naming convention used across the CSV upload modal flow.
+
+**Brainstorming:** All modal view components in the upload flow are now named to reflect their role rather than their implementation detail. `UploadCampainData` is consistent with `DisplayUploadErrorsStep` and `ResolveDuplicationsStep`.
+
+**Prompt:** Rename UploadForm to UploadCampainData.
+
+**What changed:**
+- `csv-file/components/UploadCampainData.vue` — new file; identical content to old `CsvUploadForm.vue`
+- `csv-file/components/CsvUploadForm.vue` — deleted
+- `csv-file/components/UploadModal.vue` — updated import and template tag to `UploadCampainData`
+- `CLAUDE.md` — architecture entry updated
+
+**Key decisions & why:**
+- No logic changes — pure rename; component interface (props/emits) unchanged
+
+
+## [#198] Extract isValidCsvFile and create csv-file barrel index
+**Type:** refactor
+
+**Summary:** Consolidated the duplicated `isValidCsvFile` logic into `parse-csv.ts` and created a feature-level `index.ts` barrel for the `csv-file` feature so external consumers import from one place.
+
+**Brainstorming:** `isValidCsvFile` existed as an inline check in `parse-csv.ts` and as a local function in `UploadCampainData.vue`. The canonical home is `parse-csv.ts` since it is the file entry point for CSV handling. The barrel `index.ts` follows the same pattern as `ui/index.ts` — external features (`AppShell`, `EmptyState`) should import from the feature root, not reach into internal subfolders.
+
+**Prompt:** isValidCsvFile logic exists in 2 places — create and export the function from the parse-csv file. Create barrel index for csv-file feature and export everything consumed by other features.
+
+**What changed:**
+- `csv-file/utils/parse-csv.ts` — added exported `isValidCsvFile(f: File): boolean`; replaced inline condition with the function call
+- `csv-file/components/UploadCampainData.vue` — removed local `isValidCsvFile`; imports it from `../utils/parse-csv`
+- `csv-file/index.ts` — new barrel; exports `UploadModal`, `ReplaceDataModal`, `FileActions`, `useUploadModal`
+- `shell/AppShell.vue` — updated three deep imports to single `import { useUploadModal, UploadModal, ReplaceDataModal } from '../features/csv-file'`
+- `features/dashboard/components/EmptyState.vue` — updated deep import to `import { FileActions } from '../../csv-file'`
+- `CLAUDE.md` — architecture updated: `index.ts` entry added, `parse-csv.ts` and `UploadCampainData.vue` descriptions updated
+
+**Key decisions & why:**
+- `isValidCsvFile` lives in `parse-csv.ts` (not a separate util) because CSV file validation is the entry-point concern of that module
+- Barrel only exports what external code actually imports — internal components (`UploadCampainData`, `DisplayUploadErrorsStep`, `ResolveDuplicationsStep`) are not exported
+
+
+## [#199] Rename csv-file feature folder to data-transfer
+**Type:** refactor
+
+**Summary:** Renamed the `csv-file` feature folder to `data-transfer` and updated all external import paths.
+
+**Brainstorming:** Pure folder rename. The barrel `index.ts` created in #198 meant only two external import paths needed updating (`AppShell.vue` and `EmptyState.vue`). Internal relative imports within the feature are unaffected.
+
+**Prompt:** Rename csv-file to data-transfer.
+
+**What changed:**
+- `features/csv-file/` → `features/data-transfer/` — folder renamed; all internal files unchanged
+- `shell/AppShell.vue` — updated import path to `../features/data-transfer`
+- `features/dashboard/components/EmptyState.vue` — updated import path to `../../data-transfer`
+- `CLAUDE.md` — architecture entry updated
+
+**Key decisions & why:**
+- Only two import paths needed updating because the barrel from #198 isolated all external consumers from the internal folder structure
+
+
+## [#200] UI polish — extract .detail-item, de-BEM components, accessibility improvements
+**Type:** update
+
+**Summary:** Extracted `.detail-item` as a global reusable SCSS component class, applied it across AnalysisSummary and DashboardView, de-BEMed Tabs and BaseModal, improved FileDropzone accessibility with a real `<button>` element, and applied several style tweaks across the shell and UI components.
+
+**Brainstorming:** Several components shared the same bullet-separated inline metadata pattern (AnalysisSummary analysis-details, DashboardView dashboard-details) but each had its own scoped implementation. Extracting `.detail-item` to a global partial makes this a reusable primitive. FileDropzone used `div[role="button"]` which is an accessibility antipattern — a native `<button>` is semantically correct and handles keyboard interaction natively. Tabs had a BEM modifier `.tab--active` which was replaced with flat `.tab-active` consistent with the project's no-BEM rule. BaseModal header classes were already partially de-BEMed in a prior commit; remaining scoped names are now flat. Button style: `.btn-secondary-outline` border weight dropped from `border-2` to `border` (1px) to match the visual weight of the outline variant; `.btn-small` became a standalone class so it can be extended independently.
+
+**Prompt:** Check the modified files, create a log entry for the changes, and update CLAUDE.md if necessary.
+
+**What changed:**
+- `app/src/styles/components/_detail-item.scss` — new file; `.detail-item` global component class (inline-block, pr-1.5) with bullet separator via `& + &::before` pseudo-element
+- `app/src/styles/components/index.scss` — added `@use './detail-item'`
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — removed scoped styles; analysis-details children are now `.detail-item` spans using the global class
+- `app/src/features/dashboard/DashboardView.vue` — `.dashboard-details` paragraph children use `.detail-item` spans
+- `app/src/styles/components/_button.scss` — `.btn-secondary-outline` uses `border` (1px) instead of `border-2`; `.btn-small` extracted as standalone class; `.btn-destructive-small` extends both `.btn` and `.btn-small`
+- `app/src/ui/Tabs.vue` — `.tab--active` BEM modifier replaced with flat `.tab-active`
+- `app/src/ui/BaseModal.vue` — header classes de-BEMed to `.modal-header` / `.modal-header-title`; `aria-modal`, `role="dialog"`, `:aria-label` moved to backdrop div; close button uses `.btn-icon-secondary`
+- `app/src/ui/FileDropzone.vue` — changed from `div[role="button"]` to native `<button>`; hidden file input moved outside button; `hintId` computed from id prop; `aria-describedby` only set when no file is selected
+- `app/src/ui/Spinner.vue` — template/script order normalised (template first)
+- `app/src/shell/AppShell.vue` — `provide('openUploadModal')` delegated to `useUploadModal` composable; `shell-main` overflow refined; gradient title (indigo→pink via `secondary-500`)
+- `app/src/shell/AiToolsDrawer.vue` — overlay-panel sizing tweaked; push-drawer-panel uses `grid-rows-[min-content_1fr]`
+- `app/src/features/dashboard/components/EmptyState.vue` — `onMounted`/`onUnmounted` hooks added to lock/unlock body overflow while empty state is visible
+- `app/src/stores/campaignStore.ts` — `campaignScope` computed (CampaignScope) added to store return
+- `app/tailwind.config.js` — `secondary-500` (#ec4899 pink) added for gradient title; `surface-secondary-10` token added
+
+**Key decisions & why:**
+- `.detail-item` in global SCSS (not a Vue component) — it's a single-element CSS primitive with no logic; a full component would be over-engineered; consistent with how `.badge` and `.btn` are handled
+- Native `<button>` for FileDropzone — removes need for manual `role`, `tabindex`, and keyboard handling; browsers provide these for free; hidden input stays outside so it is not a descendant of the button (invalid HTML)
+- `.tab-active` flat name — consistent with `.tab-icon` already on the same component and with the project no-BEM rule
+
+
+## [#201] Extract DashboardHeader component
+**Type:** refactor
+
+**Summary:** Extracted the dashboard header markup (title, AI button, campaign details) from DashboardView into a dedicated DashboardHeader component.
+
+**Brainstorming:** The header section in DashboardView was inline markup with its own scoped styles. Extracting it into a component gives the header a clear boundary, reduces DashboardView's template size, and makes the header independently maintainable. The component reads campaignStore directly (consistent with other dashboard components like CampaignTable) and emits ai-click so DashboardView stays the single place that knows about the openAiPanel injection. The component is multi-root (title-row + details paragraph) — the .dashboard-section layout wrapper stays in DashboardView alongside the channel filter section wrapper, keeping layout ownership consistent.
+
+**Prompt:** Extract dashboardHeader component in dashboard/components.
+
+**What was built:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — new component; multi-root template (title-row + details paragraph); reads campaignStore for title and campaign counts; emits ai-click on AI button press; scoped styles for .dashboard-title-row and .dashboard-details
+- `app/src/features/dashboard/DashboardView.vue` — replaced inline header markup with `<DashboardHeader @ai-click="openAiPanel?.()"/>`; removed SparklesIcon import; kept .dashboard-section scoped style for both header and channel filter wrappers; removed title-row/details styles
+
+**Key decisions & why:**
+- Multi-root component — the header has two sibling elements (title row + details paragraph) with no semantic reason to wrap them; DashboardView's .dashboard-section provides the layout context, same as it does for the channel filter
+- Store read inside component — consistent with how other dashboard components (KpiCard, CampaignTable) receive or read data; avoids threading props through DashboardView for data it no longer needs
+- emit ai-click, not inject openAiPanel — keeps the panel-open concern in DashboardView where the inject already lives; DashboardHeader has no knowledge of the panel system
+
+
+## [#202] DashboardHeader enhancements — channels detail, disabled AI button, connected dot, camelCase emit
+**Type:** update
+
+**Summary:** Added a third detail item showing selected/total channel counts, disabled the AI button when the panel is open, added a connected indicator dot on the button when AI is connected and the panel is closed, and renamed the emitted event to camelCase (aiClick).
+
+**Brainstorming:** The channel filter already lives in the dashboard header area, so surfacing the active channel count in the details line gives users immediate context at a glance. Disabling the button when the panel is open is semantically correct — the button stays visible and communicates it is not actionable, relying on the existing `.btn :disabled` rule (cursor-not-allowed, opacity-50). The connected dot is hidden when the panel is open so it only appears when the panel is closed and there is something to signal. Using camelCase for the emit name (aiClick) is the new project convention; Vue auto-converts to/from kebab-case in templates so consumers can use either form.
+
+**Prompt:** Dashboard header output to camelCase and follow this convention from now on. Add third detail item displaying number of selected channels of number of all channels. Disable the AI button if panel open. When AI connected and panel closed show a connected dot on top right of the button.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — imported aiStore; renamed emit from ai-click to aiClick; added selectedChannelCount computed (equals availableChannels.length when no filter active); added third .detail-item for channels; wrapped button in .ai-btn-wrapper (relative positioning context); added `:disabled="aiStore.aiPanelOpen"` on AI button; added showConnectedDot computed (isConnected && !aiPanelOpen); added .connected-dot/.connected-status span (absolute top-right, bg-success)
+- `app/src/features/dashboard/DashboardView.vue` — updated event listener from @ai-click to @aiClick
+- `CLAUDE.md` — updated DashboardHeader.vue architecture description
+
+**Key decisions & why:**
+- selectedChannelCount shows availableChannels.length when nothing is filtered — "13 of 13 channels" is more informative than "0 of 13"; matches the mental model of the channel filter where no selection = all shown
+- Native disabled over CSS class — prevents click events at the browser level; exposes correct semantics to assistive technology; no new styles needed since `.btn :disabled` already handles visual treatment
+- Connected dot hidden when panel open — the dot signals "click here to open the AI panel"; when the panel is already open the signal is redundant and clutters the disabled button
+- camelCase emit convention — going forward all emits in this project use camelCase
+
+
+## [#203] Refactor KpiCard — flat styles, slot projection, formatters, N/A fallback, roiClass coloring
+**Type:** refactor
+
+**Summary:** Full KpiCard refactor: removed BEM classes, extracted formatting logic into shared formatter functions, reduced props to label and value only, made secondary metrics slot-projected, moved all formatting calls to DashboardView, added N/A fallback for null/undefined, and wired ROI and CVR secondary coloring through roiClass + .roi-text.
+
+**Brainstorming:** KpiCard had three concerns tangled together: layout/styling, formatting logic (Intl.NumberFormat inline), and secondary metric composition (label + colored value + raw value for color derivation). Separating them keeps the card as a pure display shell. Formatting belongs in common/utils/formatters.ts — the compact variants (≥1000 → compact notation) are distinct from the existing simple formatCurrency/formatNumber which have a stable signature consumed by panel-formatters.ts, so they are added as separate functions. Secondary content is parent-specific and projected via slot so the card stays generic; the secondaryColor computed (which depended on secondaryRawValue) is removed entirely — the parent slot controls color directly. The N/A fallback stays on the card because it is a display safety net — callers should not have to guard null before passing. BEM class names (__label, __value, __secondary, __secondary-value) replaced with flat scoped names per the no-BEM project rule. accentColor was introduced to drive a CSS custom property (--accent) but after the style refactor nothing consumed var(--accent) anymore — it was pure dead weight and removed. For ROI and CVR coloring: the initial slot used inline hex colors and font-bold; these were replaced with class="roi-text" :class="roiClass(value)" which uses the existing global utility (.roi-text applies font-semibold; .positive/.warning/.negative apply success/warning/danger color). CVR uses the same thresholds as ROI — both are percentage metrics where higher is better.
+
+**Prompt:** Refactor KPI card move away from BEM styles. Check formatting functions in common/utils and reuse. Add formatting function for percentage. KPI card should accept value and label. Secondary KPI metrics should be projected so we do not need to pass labels and colors. Format value from parent component. N/A should be fallback value for null or undefined passed values. CVR lost its coloring add it back. Use roi formatting from common utils for roi color. Remove accentColor from KpiCard.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — added formatPercentage (toFixed(2)+'%'), formatCompactCurrency (compact EUR ≥1000 else 2-decimal EUR), formatCompactNumber (compact ≥1000 else localized)
+- `app/src/features/dashboard/components/KpiCard.vue` — props reduced to label and value (string|null|undefined); removed format/secondaryLabel/secondaryValue/secondaryRawValue/accentColor props; removed formatted and secondaryColor computeds; removed :style="{ '--accent': accentColor }"; value renders with ?? 'N/A' fallback; secondary section replaced with `<p v-if="$slots.secondary"><slot name="secondary"/></p>`; BEM classes replaced with flat scoped names: kpi-label, kpi-value, kpi-secondary
+- `app/src/features/dashboard/DashboardView.vue` — imports formatCompactCurrency, formatCompactNumber, formatPercentage, roiClass; all KpiCard usages updated: values pre-formatted by parent; accent-color removed from all cards; Revenue and Conversions cards use #secondary slot with roi-text + roiClass coloring; CAC passes null when cac is null
+
+**Key decisions & why:**
+- value typed as string|null|undefined — callers should not guard null before passing; the card owns the N/A display fallback
+- Secondary as slot not a sub-component — the content is a label + a colored span, trivial enough that a slot avoids a dedicated component for two lines of markup
+- roiClass for CVR as well as ROI — both are percentage metrics where higher is better; shared thresholds keep coloring logic in one place
+- accentColor removed without replacement — var(--accent) was unused after the style refactor; removing it entirely is cleaner than keeping a prop with no consumer
+- formatCompactCurrency/formatCompactNumber separate from formatCurrency/formatNumber — compact variants use different precision rules; existing simple formatters must not change signature
+
+
+## [#204] Extract DashboardKpis component; move totalConversions into CampaignKPIs
+**Type:** refactor
+
+**Summary:** Extracted the KPI cards section from DashboardView into a dedicated DashboardKpis component that accepts a single kpis prop, and moved totalConversions into the CampaignKPIs interface and kpis computed so the component needs only one input.
+
+**Brainstorming:** DashboardView was doing formatting work (importing formatters, roiClass) just for the KPI section — extracting it makes DashboardView a thinner orchestrator. The key API question was whether DashboardKpis should read the store directly or accept props. Props was the right choice: it keeps the component testable and decoupled, and a single kpis prop is cleaner than reading the store internally. The original concern was that totalConversions lives as a separate computed on the store root (not in kpis), which would mean a second prop. Rather than threading two separate inputs, totalConversions was added to CampaignKPIs so the component takes a single cohesive object. totalConversions stays exported from the store root as well since the funnel chart in DashboardView still needs it. The .kpi-grid scoped style moves from DashboardView into DashboardKpis where it belongs.
+
+**Prompt:** Extract DashboardKpis.vue component. It should not read from store but accept an input of kpis. totalConversions should be part of kpis when we get data from the store.
+
+**What was built:**
+- `app/src/common/types/campaign.ts` — CampaignKPIs interface extended with totalConversions: number
+- `app/src/stores/campaignStore.ts` — kpis computed now includes totalConversions: totalConversions.value
+- `app/src/features/dashboard/components/DashboardKpis.vue` — new component; props: kpis (CampaignKPIs); imports formatCompactCurrency, formatCompactNumber, formatPercentage, roiClass; renders 5 KpiCards with secondary slots for ROI and CVR; owns .kpi-grid scoped style
+- `app/src/features/dashboard/DashboardView.vue` — removed formatter/roiClass/KpiCard imports; added DashboardKpis import; replaced KPI section with `<DashboardKpis :kpis="store.kpis" />`; removed .kpi-grid scoped style
+
+**Key decisions & why:**
+- totalConversions added to CampaignKPIs rather than passed as a second prop — a single cohesive input is cleaner than two separate inputs; KPIs are logically a bundle
+- totalConversions kept on store root as well — funnel chart in DashboardView still needs store.totalConversions, totalImpressions, totalClicks directly
+- Formatting logic moves into DashboardKpis, not left in DashboardView — DashboardView should not know the display format of KPIs; that knowledge belongs in the component that renders them
+
+
+## [#205] Extract groupByChannel utility; expose channelTotals from campaignStore
+**Type:** refactor
+
+**Summary:** Extracted the repeated channel accumulation pattern into a shared common utility and exposed it as a computed on the campaign store, without touching any feature files.
+
+**Brainstorming:** Three places in the codebase compute the same Map-based channel accumulation (budget + revenue + impressions + clicks + conversions per channel): the revVsBudgetData chart computed in DashboardView, and the internal aggregateChannels functions in buildBudgetOptimizerData and buildExecutiveSummaryData. The chart only uses budget + revenue; the AI utils also compute derived metrics on top. The shared raw accumulation step — iterating campaigns and summing the five numeric fields per channel — is a pure data transformation with no feature dependencies, making it a natural fit for common/utils. Extracting it there lets all consumers eventually replace their inline loops. The store exposes it as channelTotals computed (keyed off filteredCampaigns) so feature components can consume it reactively without importing the utility directly. AI tools and DashboardView were not touched in this pass — they will be updated to use the new utility separately.
+
+**Prompt:** Chart data calculation in DashboardView seems to reuse functionality with other places — can we move those calculations into common utils? Scope: only common and stores, do not replace anything in other features for now.
+
+**What was built:**
+- `app/src/common/utils/campaign-aggregation.ts` — new file; exports ChannelTotals type and groupByChannel(campaigns) → Record<string, ChannelTotals>; pure accumulator with no derived metrics
+- `app/src/stores/campaignStore.ts` — imports groupByChannel; adds channelTotals computed (groupByChannel over filteredCampaigns); exposed in store return
+
+**Key decisions & why:**
+- All five fields in ChannelTotals (not just budget + revenue) — the chart only needs two, but the AI utils need all five; a partial accumulator would force a second pass or separate util
+- No derived metrics (roi, ctr, cvr, etc.) in the utility — those depend on rounding strategy and output type, which differ per consumer; the utility is intentionally a raw accumulator
+- Exposed via store computed rather than requiring feature components to import the util directly — store is already the data layer; channelTotals fits naturally alongside kpis and filteredCampaigns
+- AI tools files left unchanged — scoped to common and stores only for this pass
+
+
+## [#206] Extract DashboardCharts component; consolidate funnel totals into CampaignKPIs
+**Type:** refactor
+
+**Summary:** Extracted the charts section from DashboardView into DashboardCharts, which accepts campaigns, channelTotals, and kpis as props — and consolidated totalImpressions and totalClicks into CampaignKPIs so the funnel data travels with the single kpis object rather than as separate props.
+
+**Brainstorming:** The charts section in DashboardView contained all chart computeds (campaignColorMap, roiChartData, budgetCampaignData, revVsBudgetData, funnelValues) and the charts grid template — a natural extraction unit. Following the same pattern as DashboardKpis, the component accepts props rather than reading the store. The revVsBudgetData computed was a free win: instead of the inline byChannel loop, it uses the channelTotals prop (already provided by the store after the previous groupByChannel extraction), making the computation a straightforward Object.entries pass. For the funnel, the initial prop design had totalImpressions, totalClicks, totalConversions as three separate inputs. The user requested consolidation into kpis — this led to adding totalImpressions and totalClicks to CampaignKPIs (totalConversions was already there), so the funnel chart reads from props.kpis. This keeps DashboardCharts to three clean props: the campaign list for per-campaign charts, channelTotals for the grouped bar chart, and kpis for everything aggregate.
+
+**Prompt:** Create DashboardCharts component and move charts section there. Pass inputs in, will not read from store. Consolidate kpis.
+
+**What was built:**
+- `app/src/common/types/campaign.ts` — CampaignKPIs extended with totalImpressions and totalClicks
+- `app/src/stores/campaignStore.ts` — kpis computed now includes totalImpressions and totalClicks
+- `app/src/features/dashboard/components/DashboardCharts.vue` — new component; props: campaigns (Campaign[]), channelTotals (Record<string, ChannelTotals>), kpis (CampaignKPIs); all chart computeds internal; revVsBudgetData uses channelTotals prop directly; funnelValues reads from kpis; owns .charts-grid scoped style
+- `app/src/features/dashboard/DashboardView.vue` — removed chart imports (ChartData, chart components, CHART_COLORS), all chart computeds, and chart styles; added DashboardCharts; passes store.filteredCampaigns, store.channelTotals, store.kpis
+
+**Key decisions & why:**
+- totalImpressions and totalClicks added to CampaignKPIs — they are aggregate portfolio metrics; keeping them alongside totalConversions in one object avoids threading individual totals as separate props
+- revVsBudgetData uses channelTotals prop instead of inline loop — free win from the prior groupByChannel extraction; eliminates the last inline channel accumulation in the dashboard feature
+- Three props rather than one flat object — campaigns is a list (variable length, drives color mapping), channelTotals is a map keyed by channel name, kpis is a fixed-shape aggregate; splitting them by semantic type makes it clear what each chart computation depends on
+
+
+
+
+## [#207] UI polish: table styles, responsive charts grid, dashboard layout, formatter and modal updates
+**Type:** update
+
+**Summary:** Polished the UI across several areas — table global classes with zebra striping, DataTableHeader class-prop refactor and scoped sticky styles, responsive 2-col charts grid via container query, dashboard layout restructure with max-width and overflow zones, formatCurrency decimals param, and ReplaceDataModal button order fix.
+
+**Brainstorming:** A batch of incremental UI polish changes across the dashboard: the table needed zebra-striping utilities that could be toggled per-table, the DataTableHeader's align prop was replaced with a generic class string to keep it flexible without special-casing right-alignment, the charts grid needed a container query so it collapses to one column when the drawer is open, the dashboard layout needed a stable scroll zone with max-width constraints to match the rest of the page, formatCurrency needed a decimals param to serve both integer (KPIs) and decimal (CAC) use cases, and the ReplaceDataModal button order was corrected so the primary action comes first.
+
+**Prompt:** Check the files I worked on and create a log.
+
+**What changed:**
+- `app/src/styles/components/_table.scss` — added `.table-wrapper` global class (overflow-auto); added `.data-table.stripped-odd` and `.data-table.stripped-even` modifier classes for zebra striping; removed sticky header from global scope (moved to DataTableHeader scoped styles)
+- `app/src/ui/DataTableHeader.vue` — replaced `align?: 'left'|'right'` prop with generic `class?: string` on DataTableColumn; `.data-table-sticky-header` moved to scoped styles (wraps `.data-table-header` and `.data-table-sortable-header` with sticky/z-index/bg); sort icon active/inactive color states refined
+- `app/src/features/dashboard/components/CampaignTable.vue` — table now uses `stripped-even` modifier class; scoped `.campaign-table-td` sets padding; table max-height set to 45rem
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `.charts-container` wrapper with `container-type: inline-size`; charts grid switches to 2 columns via `@container (min-width: 60rem)` query
+- `app/src/features/dashboard/DashboardView.vue` — layout restructured into sticky header/filter sections + scrollable `.data-visualization` zone; `.dashboard-visualizations` wraps KPIs + charts + table with max-width 7xl and flex-col gap; table card and title styles scoped inline
+- `app/src/common/utils/formatters.ts` — `formatCurrency` now accepts optional `decimals` param (default 0); locale changed from `'en-US'` to `'en'` for consistency with other formatters
+- `app/src/features/data-transfer/components/ReplaceDataModal.vue` — button order corrected to primary action first (Replace data), cancel second
+- `app/src/stores/aiAnalysisStore.ts` — minor update; debug `console.log` calls present in `buildPrompt` and `executeAnalysis`
+
+**Key decisions & why:**
+- `stripped-odd`/`stripped-even` as modifier classes on `.data-table` rather than always-on — different tables need different striping behavior (or none); keeps the base table neutral
+- `class?` string prop instead of `align?: 'left'|'right'` on DataTableColumn — more flexible without adding new special cases; callers pass Tailwind/global classes directly
+- `@container` query for charts grid instead of `@media` — charts grid width is determined by the available container (which shrinks when the AI drawer opens), not the viewport; media queries would not respond to drawer state
+- `data-visualization` as the scroll zone — header and channel filter stay sticky, only the chart/table area scrolls; max-width on the inner wrapper keeps content aligned with the rest of the page
+
+
+## [#208] Refactor toast notifications: variants, icons, flat styles, typed store helpers
+**Type:** refactor
+
+**Summary:** Refactored the toast system from a single error-only notification into a fully typed, multi-variant system — adding NotificationVariant type, four dedicated icon components, four typed store helpers, and replacing all BEM styles with flat @apply classes in both toast components.
+
+**Brainstorming:** The existing toast had a single hardcoded error variant with an inline SVG, BEM class names, and a generic addToast(message, type) API. The refactor covers four concerns: (1) type — a new NotificationVariant union replaces the inline 'error' literal, giving the system a shared vocabulary; (2) icons — the inline SVG in ToastNotification was replaced with dedicated icon components (AlertCircleIcon, CheckCircleIcon, AlertTriangleIcon, InfoIcon) following the same pattern as all other icons in the project; (3) store API — four typed helpers (showSuccessToast, showErrorToast, showWarningToast, showInfoToast) replace the generic addToast call at the call site level, while addToast stays as an internal helper so existing callers are not broken; (4) styles — BEM (toast__icon, toast__message, toast__close, toast-container__list) removed and replaced with flat @apply classes in both components, matching the project-wide convention. Colors match badge tokens exactly: bg/border/icon use the same success/danger--5p/warning/primary-500 opacity utilities.
+
+**Prompt:** Refactor toast notifications. Structure styles and move away from BEM. Any SVGs should be created as icons. Add variations: success, error, warning, info. Use same colors as badge. Create a notification type. Toast store should have 4 functions one per variation: showSuccessToast etc. Do not update useDownloadTemplate. Update styles of ToastContainer too.
+
+**What was built:**
+- `app/src/ui/types/notification-variant.ts` — new file; NotificationVariant = 'success' | 'error' | 'warning' | 'info'
+- `app/src/ui/icons/AlertCircleIcon.vue` — new icon; circle + exclamation — error variant
+- `app/src/ui/icons/CheckCircleIcon.vue` — new icon; circle + checkmark — success variant
+- `app/src/ui/icons/AlertTriangleIcon.vue` — new icon; triangle + exclamation — warning variant
+- `app/src/ui/icons/InfoIcon.vue` — new icon; circle + i — info variant
+- `app/src/ui/icons/index.ts` — added exports for all 4 new icons
+- `app/src/stores/toastStore.ts` — Toast.type updated to NotificationVariant; addToast kept as internal helper (existing callers unaffected); showSuccessToast / showErrorToast / showWarningToast / showInfoToast added as public API
+- `app/src/ui/toast/ToastNotification.vue` — variant prop added; icon resolved via static ICON_MAP computed; BEM removed, flat @apply styles; variant modifier classes (.success/.error/.warning/.info) drive bg + border + icon color matching badge tokens
+- `app/src/ui/toast/ToastContainer.vue` — passes variant prop from toast.type; BEM (toast-container__list) removed; flat @apply styles for container and list
+- `app/src/ui/index.ts` — exports NotificationVariant
+
+**Key decisions & why:**
+- addToast kept exported and default type preserved — useDownloadTemplate.ts was intentionally left unchanged; keeping addToast public avoids breaking it
+- Colors match badge tokens exactly (bg-success/10, border-success/25, text-success etc.) — user requested badge color parity; reusing existing token values keeps the system visually consistent without new tokens
+- ICON_MAP as a static Record rather than a switch/computed — resolves the icon component in one lookup; static so Vue can tree-shake unused icons if needed
+- flat modifier classes (.success etc.) on .toast rather than separate component per variant — variant is data, not structure; one component handles all four cases
+
+
+## [#209] Toast visual polish — solid background, larger icon, btn-icon-secondary close
+**Type:** update
+
+**Summary:** Updated toast appearance: solid `bg-surface-secondary` background replaces the transparent tint, borders are now variant-colored at `/50` opacity, the variant icon is bumped to `text-xl`, and the close button now uses the global `.btn-icon-secondary` class.
+
+**Brainstorming:** The previous toasts used a low-opacity tinted background (`bg-{color}/10`) which made them feel washed-out against the dark surface. Switching to `bg-surface-secondary` gives them the same solid, readable background as secondary cards. Borders at `/50` stay color-coded but are now clearly visible against the solid background. The icon needed to grow to match the heavier visual weight of the solid card. The close button already had a custom style that duplicated btn-icon-secondary behavior — replacing it with the global class removes the duplication and ensures it stays in sync with the rest of the UI.
+
+**Prompt:** Toasts should not be transparent. Background should be like secondary cards with updated border colors. Icon should be bigger. Close button should be like btn-icon-secondary.
+
+**What changed:**
+- `app/src/ui/toast/ToastNotification.vue` — background changed from `bg-{color}/10` to `bg-surface-secondary`; borders updated from `{color}/25` to `{color}/50`; icon size bumped from `text-base` to `text-xl`; close button now uses global `btn-icon-secondary` class with a scoped `.toast-close` trim (`-mt-0.5 -mr-0.5`) replacing the previous inline button styles
+
+**Key decisions & why:**
+- `bg-surface-secondary` for background — matches `.card-secondary` token exactly; no new tokens needed
+- Border opacity `/50` instead of full — full opacity borders felt too heavy against the solid background; `/50` keeps the color signal readable without overpowering the card
+- `.btn-icon-secondary` applied directly in template — it is a global class; applying it in template is cleaner than duplicating its rules in scoped SCSS
+
+
+## [#210] Remove all BEM class names from the codebase
+**Type:** refactor
+
+**Summary:** Replaced the only remaining BEM double-underscore class names in FunnelChart.vue with flat hyphenated names, completing the project-wide no-BEM cleanup.
+
+**Brainstorming:** A full codebase scan confirmed that `FunnelChart.vue` was the only file still using BEM syntax (`funnel__row`, `funnel__label`, etc. with `&__` nesting in SCSS). All other files already used flat hyphenated class names. The fix is a straightforward rename: collapse `block__element` into `block-element`, unnest the SCSS rules, and update the matching template class attributes. No logic changes needed.
+
+**Prompt:** Clean up any leftover BEM styles. Make sure the project does not follow that pattern. Update your instructions.
+
+**What changed:**
+- `app/src/ui/charts/FunnelChart.vue` — renamed all BEM classes to flat hyphenated names (`funnel__row` → `funnel-row`, `funnel__label` → `funnel-label`, `funnel__track` → `funnel-track`, `funnel__bar-wrap` → `funnel-bar-wrap`, `funnel__bar` → `funnel-bar`, `funnel__value` → `funnel-value`, `funnel__rate` → `funnel-rate`); SCSS block rules unnested into flat selectors
+- `CLAUDE.md` — Styling rule updated: wording changed from "moving away from BEM" to "does not use BEM — codebase fully cleaned"; rule now says to replace BEM immediately if encountered
+
+**Key decisions & why:**
+- Flat hyphenated names instead of BEM — consistent with every other component in the project; scoped styles prevent collisions so the block prefix alone is sufficient
+- SCSS rules unnested — the `&__` nesting was the BEM-specific pattern; flat rules are more readable and make the no-BEM intent explicit
+
+
+## [#211] Disable upload form during submission; fix FileDropzone hasError detection
+**Type:** fix
+
+**Summary:** Disabled the title input and FileDropzone while a CSV upload is in progress, and fixed `hasError` in FileDropzone to correctly filter out Comment nodes so the error border only appears when an actual error message is slotted in.
+
+**Brainstorming:** Two independent bugs: (1) During `isLoading`, only the Upload button was disabled — the title field and file dropzone remained editable, allowing the user to change inputs mid-parse. Fix: pass `isLoading` as the `disabled` prop to both. (2) `hasError` was checking `slots.error` (a function reference), which is always truthy when the slot is defined. Vue renders a Comment node when a slotted `v-if` is false — the fix is to call the slot function and check whether any of the returned VNodes has a type other than `Comment`.
+
+**Prompt:** Upload form should be disabled while uploading the file. Add disabled properties to respective components if not existent. FileDropzone hasError is not working properly — fix it.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — added `disabled?: boolean` prop; `hasError` now calls `slots.error?.()` and filters out Comment nodes; button and hidden input get `:disabled="disabled"`; `open()` and `onDrop()` return early when disabled; `@dragover` guard added
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — title input gets `:disabled="isLoading"`; FileDropzone gets `:disabled="isLoading"`
+
+**Key decisions & why:**
+- Comment-node filtering for `hasError` — standard Vue pattern for detecting meaningful slot content when the slot uses `v-if`; `slots.error` alone is always truthy if the slot is declared
+- Cancel and Download Template buttons left enabled — user should always be able to cancel an in-progress upload or download the template; only data-entry fields are locked
+- Guard in `open()` and `onDrop()` in addition to `:disabled` on the button — the native `disabled` attribute stops click and keyboard, but drag-and-drop events fire independently of it
+
+
+## [#212] Fix FileDropzone hasError — plain function instead of computed
+**Type:** fix
+
+**Summary:** Changed `hasError` from a `computed` to a plain function so it re-evaluates on every render, which is required because Vue's computed cache does not track slot function calls reactively.
+
+**Brainstorming:** `computed()` only re-runs when its tracked reactive dependencies change. Calling `slots.error?.()` inside a computed doesn't register any reactive dependency — so the cached result never updates when the parent's `v-if` toggles slot content. A plain function called directly in the template runs fresh on every render cycle, picking up the current slot nodes correctly each time the parent re-renders with changed slot content.
+
+**Prompt:** File dropzone still is not applying hasError correctly.
+
+**What changed:**
+- `app/src/ui/FileDropzone.vue` — `hasError` converted from `computed<boolean>` to a plain `function hasError(): boolean`; template updated to call `hasError()` instead of referencing `hasError`
+
+**Key decisions & why:**
+- Plain function over computed — slot calls are not reactive dependencies; computed caching breaks the detection; a plain function in the template runs in the render tracking context and sees the correct slot nodes on every update
+
+
+## [#213] Extract ui/forms/ module — FileDropzone, PasswordInput, RadioToggle
+**Type:** refactor
+
+**Summary:** Moved the three form input components from the `ui/` root into a dedicated `ui/forms/` subfolder with its own barrel, mirroring the existing `charts/`, `icons/`, and `toast/` module pattern.
+
+**Brainstorming:** The `ui/` root was mixing standalone layout components (BaseModal, Spinner, Tabs, DataTableHeader) with form-input components (FileDropzone, PasswordInput, RadioToggle). Grouping the form inputs into their own folder makes the library structure more navigable and consistent with the existing module pattern. The forms barrel re-exports from `ui/index.ts`, so no consumer imports change.
+
+**Prompt:** Create a folder forms in ui and move all form related components there.
+
+**What changed:**
+- `app/src/ui/forms/FileDropzone.vue` — moved from ui/ root; internal UploadIcon import updated from `./icons/` to `../icons/`
+- `app/src/ui/forms/PasswordInput.vue` — moved from ui/ root; no import path changes needed
+- `app/src/ui/forms/RadioToggle.vue` — moved from ui/ root; no import path changes needed
+- `app/src/ui/forms/index.ts` — new barrel; exports FileDropzone, PasswordInput, RadioToggle
+- `app/src/ui/index.ts` — replaced three individual form exports with `export * from './forms'`
+- `CLAUDE.md` — architecture updated; forms/ subfolder documented under ui/
+
+**Key decisions & why:**
+- Barrel re-export via `export * from './forms'` in ui/index.ts — all consumers import from the top-level ui barrel; no consumer files needed updating
+- Only relative path to fix was UploadIcon in FileDropzone — the other two components had no relative sibling imports
+
+
+## [#214] Move toast notifications to bottom-left
+**Type:** fix
+
+**Summary:** Repositioned the toast container from bottom-right to bottom-left, with matching leave animation direction.
+
+**Brainstorming:** Single-file change — update the fixed positioning class and items alignment in ToastContainer, then flip the leave animation to slide left instead of right to match the new position.
+
+**Prompt:** Toast messages should appear at the bottom left.
+
+**What changed:**
+- `app/src/ui/toast/ToastContainer.vue` — changed `right-6` → `left-6` on `.toast-container`, `items-end` → `items-start` on `.toast-list`, and `translate-x-4` → `-translate-x-4` on `.toast-leave-to`
+
+**Key decisions & why:**
+- Flipped leave translation to `-translate-x-4` so toasts slide out to the left, consistent with their anchor position
