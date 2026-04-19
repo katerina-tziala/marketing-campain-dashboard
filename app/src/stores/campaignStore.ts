@@ -18,11 +18,14 @@ export const useCampaignStore = defineStore('campaigns', () => {
   const campaigns = ref<CampaignPerformance[]>(
     DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS.map(toCampaignPerformance) : [],
   )
+  // portfolio
   const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
-  const selectedChannels = ref<string[]>([])
-  const campainChannels = ref<Map<string, Channel>>(
+  const portfolioChannels = ref<Map<string, Channel>>(
     DEV_MOCK_CAMPAIGNS ? buildChannelMap(MOCK_CAMPAINS) : new Map(),
   )
+  const selectedChannels = ref<string[]>([])
+
+console.log(portfolioChannels.value);
 
   // Getters
   const availableChannels = computed(() =>
@@ -67,14 +70,14 @@ export const useCampaignStore = defineStore('campaigns', () => {
   function loadCampaigns(newTitle: string, newCampaigns: Campaign[]): void {
     title.value = newTitle
     campaigns.value = newCampaigns.map(toCampaignPerformance)
-    campainChannels.value = buildChannelMap(newCampaigns)
+    portfolioChannels.value = buildChannelMap(newCampaigns)
     selectedChannels.value = []
   }
 
   return {
     campaigns,
     title,
-    campainChannels,
+    portfolioChannels,
     filteredCampaigns,
     selectedChannels,
     availableChannels,

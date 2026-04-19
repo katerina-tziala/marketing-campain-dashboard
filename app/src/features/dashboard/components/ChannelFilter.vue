@@ -56,7 +56,7 @@ const emit = defineEmits<{
     bg-surface
     text-typography-subtle 
     hover:border-primary-400
-    focus-within:border-primary-400;
+    focus-visible:border-primary-400;
   }
 }
 </style>
