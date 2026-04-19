@@ -38,5 +38,5 @@ export const useToastStore = defineStore('toast', () => {
     addToast(message, 'info')
   }
 
-  return { toasts, addToast, removeToast, showSuccessToast, showErrorToast, showWarningToast, showInfoToast }
+  return { addToast, removeToast, showSuccessToast, showErrorToast, showWarningToast, showInfoToast }
 })

@@ -4664,3 +4664,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `CsvCampaign` removed entirely rather than renamed — with `rowId` on `Campaign`, the type added no new fields; keeping it would have been a redundant alias
 - `map-campaign.ts` deleted — once `CsvCampaign` was gone, `toCampaigns` became `(c: Campaign[]) => c`; dead code deleted rather than left as dead weight
 - `rowNum` local variable kept in `processRows` for the `+2` calculation clarity, but no longer spread onto the campaign object
+
+
+## [#237] Add Channel type, campainChannels store ref, and buildChannelMap utility
+**Type:** feature
+
+**Summary:** Added `Channel` type extending `CampaignMetrics`, a `buildChannelMap` utility split into a pure grouping phase and an immutable sort phase, and a `campainChannels` ref in `campaignStore` populated on load.
+
+**Brainstorming:** `Channel` aggregates campaign metrics per channel and carries `CampaignPerformance[]` for future channel views and AI context. The id is derived deterministically (lowercase, trim, hyphenate) so it is URL-safe and stable. `buildChannelMap` accepts `Campaign[]` and calls `toCampaignPerformance` internally — callers pass the natural load-time type and get back a fully typed map. A `ref` is the right store primitive because channel membership belongs to the full loaded dataset, not the filtered view; a computed would rebuild the map on every filter toggle for no benefit. The builder is split into `groupCampaignsByChannel` (accumulation, no sorting) and a sort phase that iterates sorted keys and spreads each entry with a freshly sorted campaigns array — no data is mutated at any point.
+
+**Prompt:** Create `channel.ts` in `common/types` — `Channel extends CampaignMetrics` with `id: string`, `name: string`, `campaigns: CampaignPerformance[]`. Create `campaign-channel.ts` with `buildChannelMap(campaigns: Campaign[]) → Map<string, Channel>`: extract a private `groupCampaignsByChannel` that accumulates channel entries using `aggregateCampaignMetrics` over the growing campaigns list (new object on every collision, no mutation); then sort the map keys, iterate them, and reduce into a new Map spreading each channel with `[...campaigns].sort()` — no in-place sort anywhere. `buildChannelMap` calls `toCampaignPerformance` internally. Add a `campainChannels` ref to `campaignStore` (type `Map<string, Channel>`), initialise it from mock data, set it in `loadCampaigns`, and return it from the store.
+
+**What was built:**
+- `app/src/common/types/channel.ts` — `Channel extends CampaignMetrics` with `id`, `name`, `campaigns: CampaignPerformance[]`
+- `app/src/common/utils/campaign-channel.ts` — `toChannelId` helper; `groupCampaignsByChannel` (private, pure accumulation via `aggregateCampaignMetrics` + spread on collision); `buildChannelMap` (sorts keys, reduces into new Map with `[...campaigns].sort()` per entry)
+- `app/src/stores/campaignStore.ts` — `campainChannels` ref (`Map<string, Channel>`), initialised with `buildChannelMap(MOCK_CAMPAINS)` in dev-mock mode, updated in `loadCampaigns`, returned from store
+
+**Key decisions & why:**
+- `Map<string, Channel>` over `Record` — preserves sorted insertion order; communicates that iteration order matters
+- `ref` over `computed` — channel structure is load-time data; filters should not trigger a full rebuild
+- `toCampaignPerformance` called inside the builder — callers pass `Campaign[]` (the natural type); the builder owns the conversion
+- `aggregateCampaignMetrics(updatedCampaigns)` on collision — reuses the already-computed `CampaignPerformance[]` list; keeps campaigns as the single source of truth for totals
+- two-phase split — grouping and sorting are separate concerns; the sort phase never touches `groupCampaignsByChannel` output after creation

@@ -1,14 +1,16 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Campaign, CampaignKPIs, CampaignPerformance, CampaignScope } from '../common/types/campaign'
+import type { Channel } from '../common/types/channel'
 import { groupByChannel } from '../common/utils/campaign-aggregation'
+import { buildChannelMap } from '../common/utils/campaign-channel'
 import { aggregateCampaignMetrics, computePerformanceMetrics, toCampaignPerformance } from '../common/utils/campaign-performance'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
 // TODO: DEV MOCK — revert before shipping.
 // To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
-// and reset the `campaigns` and `title` refs to [] and '' respectively.
+// and reset the `campaigns`, `title`, and `campainChannels` refs to [], '', and new Map() respectively.
 const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
@@ -18,6 +20,9 @@ export const useCampaignStore = defineStore('campaigns', () => {
   )
   const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
   const selectedChannels = ref<string[]>([])
+  const campainChannels = ref<Map<string, Channel>>(
+    DEV_MOCK_CAMPAIGNS ? buildChannelMap(MOCK_CAMPAINS) : new Map(),
+  )
 
   // Getters
   const availableChannels = computed(() =>
@@ -62,12 +67,14 @@ export const useCampaignStore = defineStore('campaigns', () => {
   function loadCampaigns(newTitle: string, newCampaigns: Campaign[]): void {
     title.value = newTitle
     campaigns.value = newCampaigns.map(toCampaignPerformance)
+    campainChannels.value = buildChannelMap(newCampaigns)
     selectedChannels.value = []
   }
 
   return {
     campaigns,
     title,
+    campainChannels,
     filteredCampaigns,
     selectedChannels,
     availableChannels,
