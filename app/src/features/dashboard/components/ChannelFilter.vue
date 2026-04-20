@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { Channel } from '../../../common/types/channel'
+
 defineProps<{
-  channels: string[]
+  channels: Channel[]
   selected: string[]
 }>()
 
 const emit = defineEmits<{
-  toggle: [channel: string]
+  toggle: [channelId: string]
   clearAll: []
 }>()
 </script>
@@ -14,20 +16,20 @@ const emit = defineEmits<{
   <div class="channel-filter" role="group" aria-label="Filter by channel">
     <button
       class="btn-icon-secondary filter-btn"
-      :class="selected.length === 0 ? 'active' : 'inactive'" 
+      :class="selected.length === 0 ? 'active' : 'inactive'"
       @click="emit('clearAll')"
     >
       All
     </button>
     <button
       v-for="channel in channels"
-      :key="channel"
+      :key="channel.id"
       class="btn-icon-secondary filter-btn"
-      :class="selected.includes(channel) ? 'active' : 'inactive'"
-      :aria-pressed="selected.includes(channel)"
-      @click="emit('toggle', channel)"
+      :class="selected.includes(channel.id) ? 'active' : 'inactive'"
+      :aria-pressed="selected.includes(channel.id)"
+      @click="emit('toggle', channel.id)"
     >
-      {{ channel }}
+      {{ channel.name }}
     </button>
   </div>
 </template>

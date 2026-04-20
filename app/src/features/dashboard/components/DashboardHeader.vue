@@ -10,9 +10,9 @@ const aiStore = useAiStore()
 const emit = defineEmits<{ 'aiClick': [] }>()
 
 const selectedChannelCount = computed(() =>
-  store.selectedChannels.length === 0
-    ? store.availableChannels.length
-    : store.selectedChannels.length,
+  store.selectedChannelsIds.length === 0
+    ? store.portfolioChannels.size
+    : store.selectedChannelsIds.length,
 )
 
 const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelOpen)
@@ -35,7 +35,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
   <p class="dashboard-details">
     <span class="detail-item">{{ store.title }}</span>
     <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
-    <span class="detail-item">{{ selectedChannelCount }} of {{ store.availableChannels.length }} channels</span>
+    <span class="detail-item">{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</span>
   </p>
 </template>
 

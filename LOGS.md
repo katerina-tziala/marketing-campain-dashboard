@@ -4686,3 +4686,81 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `toCampaignPerformance` called inside the builder — callers pass `Campaign[]` (the natural type); the builder owns the conversion
 - `aggregateCampaignMetrics(updatedCampaigns)` on collision — reuses the already-computed `CampaignPerformance[]` list; keeps campaigns as the single source of truth for totals
 - two-phase split — grouping and sorting are separate concerns; the sort phase never touches `groupCampaignsByChannel` output after creation
+
+
+## [#238] Refactor channel filter to use portfolioChannels and selectedChannelsIds
+**Type:** refactor
+
+**Summary:** Replaced string-based channel filter with Channel-object-based approach — ChannelFilter now renders from `portfolioChannels` Map, `selectedChannels` renamed to `selectedChannelsIds` (stores Map keys), and KPIs now aggregate pre-summed Channel objects instead of iterating all campaigns.
+
+**Brainstorming:** Three connected changes discussed: (1) `selectedChannels` → `selectedChannelsIds` to reflect that stored values are channel IDs (Map keys, not display names); (2) ChannelFilter driven by `portfolioChannels` values (Channel objects with id + name) instead of a separate `availableChannels` computed that re-derived strings from campaigns; (3) KPIs computed from Channel objects which already carry pre-aggregated metrics — avoids re-iterating all campaigns on every filter change. `campaignScope.selectedChannels` maps IDs back to human-readable names so AI prompts receive correct strings. `filteredCampaigns` also optimized to flatMap campaign arrays from selected Channel objects instead of filtering the full campaigns array.
+
+**Prompt:** Use portfolioChannels to render channel filters. selectedChannels should be renamed to selectedChannelsIds. kpis should be computed from selected channels so calculation is faster.
+
+**What changed:**
+- `campaignStore.ts` — renamed `selectedChannels` → `selectedChannelsIds`; removed `availableChannels` computed; added `selectedChannelObjects` computed (Channel[] for selected IDs or all); `filteredCampaigns` now flatMaps from Channel objects; `kpis` aggregates `selectedChannelObjects` (pre-summed); `campaignScope.selectedChannels` maps IDs to names; `toggleChannel`/`clearFilters`/`loadCampaigns` updated
+- `ChannelFilter.vue` — prop `channels` changed from `string[]` to `Channel[]`; template uses `channel.id` as key and for toggle, `channel.name` for display
+- `DashboardView.vue` — passes `[...store.portfolioChannels.values()]` and `store.selectedChannelsIds` to ChannelFilter
+- `DashboardHeader.vue` — `selectedChannels` → `selectedChannelsIds`, `availableChannels.length` → `portfolioChannels.size`
+- `aiAnalysisStore.ts` — three references to `campaignStore.selectedChannels` updated: cache keys use `selectedChannelsIds`; prompt `filteredChannels` uses `campaignStore.campaignScope.selectedChannels` (names); watcher updated to `selectedChannelsIds`
+
+**Key decisions & why:**
+- `selectedChannelsIds` stores channel IDs (Map keys) not names — IDs are stable, normalized strings; names are for display only
+- `campaignScope.selectedChannels` maps IDs → names — AI prompts receive human-readable channel names, not hyphenated IDs
+- KPIs aggregate `Channel[]` (pre-summed) instead of `CampaignPerformance[]` — Channel already carries budget/revenue/etc totals; no need to re-sum campaigns on every filter interaction
+- `filteredCampaigns` flatMaps from selected Channel objects — O(selected channels × campaigns per channel) instead of O(all campaigns); order changes (grouped by channel) but table is sortable so it doesn't matter
+- `availableChannels` computed removed — redundant once ChannelFilter accepts `Channel[]`; `portfolioChannels.size` replaces `.length` for the header count
+
+
+## [#239] Replace channelTotals with selectedChannels Channel array in store and charts
+**Type:** refactor
+
+**Summary:** Removed `channelTotals` computed and `campaign-aggregation.ts`, renamed `selectedChannelObjects` → `selectedChannels` (Channel[]), and updated DashboardCharts to map data directly from Channel objects.
+
+**Brainstorming:** `channelTotals` was a `Record<string, ChannelTotals>` derived by iterating all filtered campaigns — redundant now that `portfolioChannels` already holds pre-aggregated Channel objects. Replacing it with `selectedChannels: Channel[]` gives charts direct access to `ch.name`, `ch.budget`, `ch.revenue` etc. without a separate accumulation pass. `groupByChannel` and `ChannelTotals` type become dead code, so `campaign-aggregation.ts` is deleted entirely.
+
+**Prompt:** Remove channelTotals, create a selectedChannels array, use that in charts to map data, clean up groupByChannel function, selectedChannelObjects should be selectedChannels.
+
+**What changed:**
+- `campaignStore.ts` — removed `groupByChannel` import and `channelTotals` computed; renamed `selectedChannelObjects` → `selectedChannels`; added `selectedChannels` to return
+- `DashboardCharts.vue` — prop `channelTotals: Record<string, ChannelTotals>` replaced with `channels: Channel[]`; `revVsBudgetData` maps from `channels` directly (`ch.name`, `ch.budget`, `ch.revenue`)
+- `DashboardView.vue` — `:channel-totals` replaced with `:channels="store.selectedChannels"`
+- `campaign-aggregation.ts` — deleted (no remaining usages)
+
+**Key decisions & why:**
+- `Channel[]` instead of `Record<string, ChannelTotals>` — Channel already carries all needed fields; a flat array is simpler to map over in chart computeds
+- File deleted rather than emptied — `ChannelTotals` type and `groupByChannel` function had no other consumers; keeping an empty file would be misleading
+
+
+## [#240] Derive filteredCampaigns from selectedChannels; campaignScope.campaigns from portfolioChannels
+**Type:** refactor
+
+**Summary:** Simplified `filteredCampaigns` to always flatMap from `selectedChannels` Channel objects (no conditional), and updated `campaignScope.campaigns` to derive from `portfolioChannels` instead of the raw `campaigns` ref.
+
+**Brainstorming:** Two connected simplifications: (1) `filteredCampaigns` had a conditional — return `campaigns.value` when no filter, else flatMap from selected Channel objects. Since `selectedChannels` already resolves to all channels when nothing is selected, the conditional is redundant — always flatMap from `selectedChannels`. (2) `campaignScope.campaigns` sourced from `campaigns.value` (raw ref); portfolioChannels is now the canonical structure, so flatMap from its values makes portfolioChannels the single source of truth. Rename to `selectionScope` was requested then cancelled by user mid-implementation — name stays `campaignScope`.
+
+**Prompt:** filteredCampaigns should be populated from selected channels. campainScope campaigns in scope map it from portfolioChannels.
+
+**What changed:**
+- `campaignStore.ts` — `selectedChannels` moved above `filteredCampaigns` (dependency order); `filteredCampaigns` simplified to `selectedChannels.value.flatMap(ch => ch.campaigns)`; `campaignScope.campaigns` changed from `campaigns.value.map(...)` to `[...portfolioChannels.value.values()].flatMap(ch => ch.campaigns.map(c => c.campaign))`
+
+**Key decisions & why:**
+- `selectedChannels` declared before `filteredCampaigns` — `filteredCampaigns` now depends on it, order matters in the setup function
+- `portfolioChannels` as source for `campaignScope.campaigns` — portfolioChannels is already the canonical sorted structure; raw `campaigns` ref is now an internal implementation detail only needed for loadCampaigns and empty-state checks
+
+
+## [#241] Derive campaigns computed from portfolioChannels; remove campaigns ref
+**Type:** refactor
+
+**Summary:** Replaced the `campaigns` ref with a computed that flatMaps from `portfolioChannels`, making portfolioChannels the single source of truth and removing `toCampaignPerformance` from the store.
+
+**Brainstorming:** `buildChannelMap` already calls `toCampaignPerformance` internally — portfolioChannels already holds all `CampaignPerformance[]` data. The raw `campaigns` ref was redundant duplication of that same data. Making `campaigns` a computed simplifies `loadCampaigns` (one less assignment), removes the `toCampaignPerformance` import from the store, and lets `campaignScope.campaigns` use the computed directly instead of the verbose flatMap from the previous session.
+
+**Prompt:** Compute campaigns from all channels, use that to populate campaigns in campaignScope, make sure campaignStore is clean.
+
+**What changed:**
+- `campaignStore.ts` — removed `campaigns` ref and `toCampaignPerformance` import; added `campaigns` computed (flatMaps all ch.campaigns from portfolioChannels); `campaignScope.campaigns` simplified to `campaigns.value.map(c => c.campaign)`; `loadCampaigns` removes the `campaigns.value = ...` assignment; DEV_MOCK comment updated
+
+**Key decisions & why:**
+- `campaigns` as computed not ref — portfolioChannels is already the authoritative structure built by `buildChannelMap`; a separate ref was a copy that had to be kept in sync manually
+- `toCampaignPerformance` removed from store imports — conversion now happens exclusively inside `buildChannelMap`; the store no longer needs to know about it

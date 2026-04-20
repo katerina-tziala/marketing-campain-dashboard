@@ -142,7 +142,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function getCurrentCacheKey(): string | null {
     if (!aiStore.provider || !aiStore.selectedModel) return null
     return createCacheKey(
-      campaignStore.selectedChannels,
+      campaignStore.selectedChannelsIds,
       aiStore.provider,
       aiStore.selectedModel.model,
     )
@@ -209,7 +209,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function getOrBuildData(tab: AiAnalysisTab): BudgetOptimizerData | ExecutiveSummaryData {
     const t = getTab(tab)
-    const dataKey = createDataCacheKey(campaignStore.selectedChannels)
+    const dataKey = createDataCacheKey(campaignStore.selectedChannelsIds)
     const cached = t.dataCache.get(dataKey)
     if (cached) return cached
 
@@ -226,8 +226,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function buildPrompt(tab: AiAnalysisTab): string {
     const data = getOrBuildData(tab)
-    const filteredChannels = campaignStore.selectedChannels.length > 0
-      ? campaignStore.selectedChannels
+    const filteredChannels = campaignStore.campaignScope.selectedChannels.length > 0
+      ? campaignStore.campaignScope.selectedChannels
       : undefined
     console.log(data)
 
@@ -566,7 +566,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // Watch label (channel filter) changes — debounced auto-call
   watch(
-    () => [...campaignStore.selectedChannels],
+    () => [...campaignStore.selectedChannelsIds],
     () => {
       const tab = activeTab.value
       const t = getTab(tab)

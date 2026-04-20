@@ -1,4 +1,5 @@
 import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics } from '../types/campaign'
+import type { Channel } from '../types/channel'
 import { round2 } from './math'
 
 export function percentageClass(value: number | null): string {
@@ -23,7 +24,7 @@ export function toCampaignPerformance(campaign: Campaign): CampaignPerformance {
   return { ...campaign, ...computePerformanceMetrics(campaign) }
 }
 
-export function aggregateCampaignMetrics(campaigns: Campaign[]): CampaignMetrics {
+export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): CampaignMetrics {
   return campaigns.reduce(
     (acc, campaign) => ({
       budget: acc.budget + campaign.budget,

@@ -2,12 +2,12 @@
 import type { ChartData } from 'chart.js'
 import { computed } from 'vue'
 import type { CampaignPerformance, CampaignKPIs } from '../../../common/types/campaign'
-import type { ChannelTotals } from '../../../common/utils/campaign-aggregation'
+import type { Channel } from '../../../common/types/channel'
 import { BarChart, CHART_COLORS, DonutChart, FunnelChart, GroupedBarChart } from '../../../ui'
 
 const props = defineProps<{
   campaigns: CampaignPerformance[]
-  channelTotals: Record<string, ChannelTotals>
+  channels: Channel[]
   kpis: CampaignKPIs
 }>()
 
@@ -43,30 +43,27 @@ const budgetCampaignData = computed<ChartData<'doughnut'>>(() => ({
   ],
 }))
 
-const revVsBudgetData = computed<ChartData<'bar'>>(() => {
-  const labels = Object.keys(props.channelTotals)
-  return {
-    labels,
-    datasets: [
-      {
-        label: 'Budget (€)',
-        data: labels.map((l) => props.channelTotals[l].budget),
-        backgroundColor: 'rgba(249,112,102,0.75)',
-        borderColor: '#f97066',
-        borderWidth: 1,
-        borderRadius: 2,
-      },
-      {
-        label: 'Revenue (€)',
-        data: labels.map((l) => props.channelTotals[l].revenue),
-        backgroundColor: 'rgba(16,185,129,0.75)',
-        borderColor: '#10b981',
-        borderWidth: 1,
-        borderRadius: 2,
-      },
-    ],
-  }
-})
+const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
+  labels: props.channels.map((ch) => ch.name),
+  datasets: [
+    {
+      label: 'Budget (€)',
+      data: props.channels.map((ch) => ch.budget),
+      backgroundColor: 'rgba(249,112,102,0.75)',
+      borderColor: '#f97066',
+      borderWidth: 1,
+      borderRadius: 2,
+    },
+    {
+      label: 'Revenue (€)',
+      data: props.channels.map((ch) => ch.revenue),
+      backgroundColor: 'rgba(16,185,129,0.75)',
+      borderColor: '#10b981',
+      borderWidth: 1,
+      borderRadius: 2,
+    },
+  ],
+}))
 
 const funnelLabels = ['Impressions', 'Clicks', 'Conversions']
 const funnelValues = computed(() => [props.kpis.impressions, props.kpis.clicks, props.kpis.conversions])

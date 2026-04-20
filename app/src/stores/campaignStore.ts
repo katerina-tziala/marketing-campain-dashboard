@@ -2,76 +2,71 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { Campaign, CampaignKPIs, CampaignPerformance, CampaignScope } from '../common/types/campaign'
 import type { Channel } from '../common/types/channel'
-import { groupByChannel } from '../common/utils/campaign-aggregation'
 import { buildChannelMap } from '../common/utils/campaign-channel'
-import { aggregateCampaignMetrics, computePerformanceMetrics, toCampaignPerformance } from '../common/utils/campaign-performance'
+import { aggregateCampaignMetrics, computePerformanceMetrics } from '../common/utils/campaign-performance'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
 // TODO: DEV MOCK — revert before shipping.
 // To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
-// and reset the `campaigns`, `title`, and `campainChannels` refs to [], '', and new Map() respectively.
+// and reset the `title` and `portfolioChannels` refs to '' and new Map() respectively.
 const DEV_MOCK_CAMPAIGNS = true
 
 export const useCampaignStore = defineStore('campaigns', () => {
   // State
-  const campaigns = ref<CampaignPerformance[]>(
-    DEV_MOCK_CAMPAIGNS ? MOCK_CAMPAINS.map(toCampaignPerformance) : [],
-  )
-  // portfolio
   const title = ref<string>(DEV_MOCK_CAMPAIGNS ? 'Mock Campaign Data (Dev)' : '')
   const portfolioChannels = ref<Map<string, Channel>>(
     DEV_MOCK_CAMPAIGNS ? buildChannelMap(MOCK_CAMPAINS) : new Map(),
   )
-  const selectedChannels = ref<string[]>([])
-
-console.log(portfolioChannels.value);
+  const selectedChannelsIds = ref<string[]>([])
 
   // Getters
-  const availableChannels = computed(() =>
-    [...new Set(campaigns.value.map((c) => c.channel))].sort(),
+  const campaigns = computed<CampaignPerformance[]>(() =>
+    [...portfolioChannels.value.values()].flatMap((ch) => ch.campaigns),
   )
 
-  const filteredCampaigns = computed(() =>
-    selectedChannels.value.length === 0
-      ? campaigns.value
-      : campaigns.value.filter((c) => selectedChannels.value.includes(c.channel)),
+  const selectedChannels = computed<Channel[]>(() =>
+    selectedChannelsIds.value.length === 0
+      ? [...portfolioChannels.value.values()]
+      : selectedChannelsIds.value.flatMap((id) => {
+          const ch = portfolioChannels.value.get(id)
+          return ch ? [ch] : []
+        }),
   )
 
-  const filteredTotals = computed(() => aggregateCampaignMetrics(filteredCampaigns.value))
-
-  const channelTotals = computed(() => groupByChannel(filteredCampaigns.value))
+  const filteredCampaigns = computed<CampaignPerformance[]>(() =>
+    selectedChannels.value.flatMap((ch) => ch.campaigns),
+  )
 
   const campaignScope = computed((): CampaignScope => ({
     campaigns: campaigns.value.map((c) => c.campaign),
     selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
-    selectedChannels: selectedChannels.value,
+    selectedChannels: selectedChannelsIds.value.map((id) => portfolioChannels.value.get(id)?.name ?? id),
   }))
 
-  const kpis = computed((): CampaignKPIs => ({
-    ...filteredTotals.value,
-    ...computePerformanceMetrics(filteredTotals.value),
-  }))
+  const kpis = computed((): CampaignKPIs => {
+    const totals = aggregateCampaignMetrics(selectedChannels.value)
+    return { ...totals, ...computePerformanceMetrics(totals) }
+  })
 
   // Actions
-  function toggleChannel(channel: string) {
-    const idx = selectedChannels.value.indexOf(channel)
+  function toggleChannel(channelId: string) {
+    const idx = selectedChannelsIds.value.indexOf(channelId)
     if (idx === -1) {
-      selectedChannels.value.push(channel)
+      selectedChannelsIds.value.push(channelId)
     } else {
-      selectedChannels.value.splice(idx, 1)
+      selectedChannelsIds.value.splice(idx, 1)
     }
   }
 
   function clearFilters() {
-    selectedChannels.value = []
+    selectedChannelsIds.value = []
   }
 
   function loadCampaigns(newTitle: string, newCampaigns: Campaign[]): void {
     title.value = newTitle
-    campaigns.value = newCampaigns.map(toCampaignPerformance)
     portfolioChannels.value = buildChannelMap(newCampaigns)
-    selectedChannels.value = []
+    selectedChannelsIds.value = []
   }
 
   return {
@@ -80,10 +75,9 @@ console.log(portfolioChannels.value);
     portfolioChannels,
     filteredCampaigns,
     selectedChannels,
-    availableChannels,
+    selectedChannelsIds,
     campaignScope,
     kpis,
-    channelTotals,
     // actions
     toggleChannel,
     clearFilters,

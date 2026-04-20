@@ -27,8 +27,8 @@ const openAiPanel = inject<() => void>('openAiPanel')
     <!-- Channel Filter -->
     <section class="dashboard-section">
       <ChannelFilter
-        :channels="store.availableChannels"
-        :selected="store.selectedChannels"
+        :channels="[...store.portfolioChannels.values()]"
+        :selected="store.selectedChannelsIds"
         @toggle="store.toggleChannel"
         @clear-all="store.clearFilters"
       />
@@ -39,7 +39,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
         <!-- Charts -->
         <DashboardCharts
           :campaigns="store.filteredCampaigns"
-          :channel-totals="store.channelTotals"
+          :channels="store.selectedChannels"
           :kpis="store.kpis"
         />
         <!-- Campaign Table -->
