@@ -4764,3 +4764,19 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `campaigns` as computed not ref — portfolioChannels is already the authoritative structure built by `buildChannelMap`; a separate ref was a copy that had to be kept in sync manually
 - `toCampaignPerformance` removed from store imports — conversion now happens exclusively inside `buildChannelMap`; the store no longer needs to know about it
+
+
+## [#242] Show campaign count pill in channel filter chips
+**Type:** update
+
+**Summary:** Added a subtle count pill inside each channel chip showing how many campaigns belong to that channel.
+
+**Brainstorming:** `Channel` already carries `campaigns: CampaignPerformance[]`, so the count is available via `channel.campaigns.length` with no prop or store changes. Two visual options considered: inline text ("Email (4)") vs a small rounded pill. Pill chosen for cleaner visual separation between name and count. Styled with `bg-white/10` so it adapts to both active (primary) and inactive (surface) chip states without needing variant-specific overrides.
+
+**Prompt:** Show campaign count in the channel chips — option 2 (subtle pill).
+
+**What changed:**
+- `ChannelFilter.vue` — added `<span class="filter-count">` inside each channel button; added `.filter-count` scoped style (inline-flex, rounded-full, px-1.5, min-w-[1.25rem], h-5, text-xs, bg-white/10, ml-1)
+
+**Key decisions & why:**
+- `bg-white/10` for the pill background — semi-transparent white works on both the active primary-500 and inactive surface backgrounds without needing per-state color overrides

@@ -43,7 +43,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
           :kpis="store.kpis"
         />
         <!-- Campaign Table -->
-        <div class="card table-card max-h-full mx-auto max-w-7xl">
+        <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
           <h3 class="card-title table-card-title">Campaign Details</h3>
           <CampaignTable :campaigns="store.filteredCampaigns" />
         </div>
