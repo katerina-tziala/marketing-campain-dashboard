@@ -1,4 +1,4 @@
-import type { AiConnectionErrorCode } from "../../types"
+import type { AiErrorCode } from "../../types"
 
 const TOKEN_LIMIT_PATTERNS = [
     'resource_exhausted',
@@ -27,7 +27,7 @@ export function normalizeConnectionError(error: unknown): Error {
     return error instanceof Error ? error : new Error('unknown')
 }
 
-export function errorCodeFromStatus(status: number): AiConnectionErrorCode {
+export function errorCodeFromStatus(status: number): AiErrorCode {
     if (status === 400 || status === 401 || status === 403) return 'invalid-key'
     if (status === 429) return 'rate-limit'
     if (status >= 500) return 'server-error'

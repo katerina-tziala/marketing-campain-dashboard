@@ -1,8 +1,10 @@
+import type { AiModel } from '../providers/types'
+
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
 export type AiProviderType = 'gemini' | 'groq';
 
-export type AiConnectionErrorCode =
+export type AiErrorCode =
   | 'invalid-key'
   | 'network'
   | 'timeout'
@@ -11,31 +13,12 @@ export type AiConnectionErrorCode =
   | 'no-models'
   | 'token-limit'
   | 'invalid-response'
+  | 'parse-error'
   | 'unknown';
- 
 
 export type AiConnectionError = {
-  code: AiConnectionErrorCode;
+  code: AiErrorCode;
   provider: AiProviderType;
-};
-
- 
- 
-// ── AI Model (from model evaluation prompt) ──────────────────────────────
-
-export type AiModel = {
-  id: string;
-  model: string;
-  display_name: string;
-  provider: string;
-  strength: string;
-  strength_score: number;
-  reason: string;
-  limitReached: boolean;
-};
-
-export type ModelsResponse = {
-  models: AiModel[];
 };
 // ── Prompt types ──────────────────────────────────────────────────────────
 
@@ -218,19 +201,8 @@ export type BudgetOptimizerResponse = {
 
 export type AiAnalysisTab = 'optimizer' | 'summary';
 
-export type AiAnalysisStatus = 'idle' | 'loading' | 'done' | 'error';
-
-export type AiAnalysisErrorCode =
-  | 'network'
-  | 'timeout'
-  | 'rate-limit'
-  | 'token-limit'
-  | 'server-error'
-  | 'parse-error'
-  | 'unknown';
-
 export type AiAnalysisError = {
-  code: AiAnalysisErrorCode;
+  code: AiErrorCode;
   message: string;
 };
 

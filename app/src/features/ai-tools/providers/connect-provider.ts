@@ -1,4 +1,5 @@
-import type { AiProviderType, AiModel } from "../types"
+import type { AiProviderType } from "../types"
+import type { AiModel } from "./types"
 import { connectGemini } from "./gemini"
 import { connectGroq } from "./qroq"
 

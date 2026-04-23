@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue'
+import type { AsyncStatus } from '../common/types/async-status'
 import type {
   AiAnalysisTab,
-  AiAnalysisStatus,
   AiAnalysisError,
-  AiAnalysisErrorCode,
+  AiErrorCode,
   BudgetOptimizerResponse,
   BudgetOptimizerData,
   ExecutiveSummaryResponse,
@@ -31,7 +31,7 @@ type TabResponse = BudgetOptimizerResponse | ExecutiveSummaryResponse
 function createTabState() {
   return {
     firstAnalyzeCompleted: false,
-    status: 'idle' as AiAnalysisStatus,
+    status: 'idle' as AsyncStatus,
     response: null as TabResponse | null,
     error: null as AiAnalysisError | null,
     controller: null as AbortController | null,
@@ -47,13 +47,16 @@ function createTabState() {
 
 // ── Error messages ─────────────────────────────────────────────────────────
 
-const ERROR_MESSAGES: Record<AiAnalysisErrorCode, string> = {
+const ERROR_MESSAGES: Record<AiErrorCode, string> = {
   'network': 'Network error. Check your connection and try again.',
   'timeout': 'The request timed out. Try again.',
   'rate-limit': 'Too many requests. Please wait and try again.',
   'token-limit': 'AI generation is temporarily unavailable due to usage limits.',
   'server-error': 'The AI provider is experiencing issues. Try again later.',
   'parse-error': 'Could not parse the AI response. Try again.',
+  'invalid-response': 'Could not parse the AI response. Try again.',
+  'invalid-key': 'Something went wrong.',
+  'no-models': 'Something went wrong.',
   'unknown': 'Something went wrong.',
 }
 
@@ -78,14 +81,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Reactive wrappers (Vue needs refs for reactivity) ─────────────────
 
-  const optimizerStatus = ref<AiAnalysisStatus>('idle')
+  const optimizerStatus = ref<AsyncStatus>('idle')
   const optimizerResponse = ref<BudgetOptimizerResponse | null>(null)
   const optimizerError = ref<AiAnalysisError | null>(null)
   const optimizerFirstCompleted = ref(false)
   const optimizerErrorFallback = ref<string | null>(null)
   const optimizerCacheTimestamp = ref<number | null>(null)
 
-  const summaryStatus = ref<AiAnalysisStatus>('idle')
+  const summaryStatus = ref<AsyncStatus>('idle')
   const summaryResponse = ref<ExecutiveSummaryResponse | null>(null)
   const summaryError = ref<AiAnalysisError | null>(null)
   const summaryFirstCompleted = ref(false)
@@ -249,7 +252,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function handleRequestError(tab: AiAnalysisTab, e: unknown, cacheKey: string): void {
     const t = getTab(tab)
-    const code = e instanceof Error ? (e.message as AiAnalysisErrorCode) : 'unknown'
+    const code = e instanceof Error ? (e.message as AiErrorCode) : 'unknown'
     const message = ERROR_MESSAGES[code] ?? ERROR_MESSAGES.unknown
 
     if (code === 'token-limit') {

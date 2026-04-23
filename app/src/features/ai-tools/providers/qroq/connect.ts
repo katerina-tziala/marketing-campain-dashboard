@@ -1,5 +1,5 @@
 import { generateModelEvaluationPrompt } from "../../prompts"
-import type { AiModel, ModelsResponse } from "../../types"
+import type { AiModel, ModelsResponse } from "../types"
 import { parseJsonResponse, toValidModels } from "../utils/shared"
 import { fetchGroqModels, requestGroqChatCompletion } from "./api"
 import type { GroqModel } from "./types"
@@ -9,7 +9,7 @@ const BANNED = ['whisper', 'audio', 'guard', 'safeguard', 'moderation', 'orpheus
 function isAllowed(m: GroqModel): boolean {
   return !BANNED.some((x) => (m.id || '').toLowerCase().includes(x))
 }
-
+// remove inactive ones too
 function filterModels(models: GroqModel[]): GroqModel[] {
   return models.filter(isAllowed)
 }

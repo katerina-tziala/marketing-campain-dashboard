@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AiProviderType, AiConnectionError, AiConnectionErrorCode, AiModel } from '../features/ai-tools/types'
+import type { AiProviderType, AiConnectionError, AiErrorCode } from '../features/ai-tools/types'
+import type { AiModel } from '../features/ai-tools/providers/types'
 import { connectProvider } from '../features/ai-tools/providers'
 import { normalizeConnectionError } from '../features/ai-tools/providers/utils'
 
-const ERROR_CODES = new Set<AiConnectionErrorCode>([
+const ERROR_CODES = new Set<AiErrorCode>([
   'invalid-key', 'network', 'timeout', 'rate-limit', 'token-limit', 'server-error', 'no-models', 'invalid-response', 'unknown',
 ])
 
@@ -34,8 +35,8 @@ export const useAiStore = defineStore('ai', () => {
       isConnected.value = true
     } catch (error) {
       const normalized = normalizeConnectionError(error)
-      const code = ERROR_CODES.has(normalized.message as AiConnectionErrorCode)
-        ? (normalized.message as AiConnectionErrorCode)
+      const code = ERROR_CODES.has(normalized.message as AiErrorCode)
+        ? (normalized.message as AiErrorCode)
         : 'unknown'
       connectionError.value = { code, provider: p }
     } finally {

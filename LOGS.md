@@ -4966,3 +4966,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - No error-handling changes in the store — `runProviderPrompt` surfaces the same error codes (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) that `handleRequestError` already handles; `'invalid-response'` on parse failure falls through to the `?? ERROR_MESSAGES.unknown` fallback
 - Deleted `ai-analysis/index.ts` rather than leaving an empty barrel — an empty barrel is dead weight
+
+
+## [#251] Unify error codes, extract AsyncStatus, move AiModel to providers
+**Type:** refactor
+
+**Summary:** Merged `AiConnectionErrorCode` and `AiAnalysisErrorCode` into a single `AiErrorCode` union; extracted `AsyncStatus` into `common/types/`; moved `AiModel` and `ModelsResponse` from `ai-tools/types/` to `providers/types.ts`.
+
+**Brainstorming:** Three separate type concerns were addressed together since they all touched the same type boundary. `AiConnectionErrorCode` and `AiAnalysisErrorCode` had overlapping codes and both ended up surfaced in the same error records — unifying them into `AiErrorCode` removes the duplicate and forces exhaustive coverage everywhere via `Record<AiErrorCode, ...>`. `AsyncStatus` is a plain four-value union that every async operation uses — it belongs in `common/types/` rather than inside a feature folder. `AiModel` and `ModelsResponse` describe provider-layer data (model IDs, strength scores, limit flags) and are only meaningful inside the providers layer — moving them to `providers/types.ts` and exporting via the providers barrel keeps the public API clean while removing the circular feel of `ai-tools/types/` importing back from the providers it configures.
+
+**Prompt:** AiConnectionErrorCode and AiAnalysisErrorCode should be unified. Also 'idle' | 'loading' | 'done' | 'error' should be a type status in common folder. Move models related to providers only there.
+
+**What changed:**
+- `common/types/async-status.ts` — new file; exports `AsyncStatus = 'idle' | 'loading' | 'done' | 'error'`
+- `providers/types.ts` — was empty placeholder; now contains `AiModel` and `ModelsResponse` definitions
+- `providers/index.ts` — added `export * from './types'` to expose `AiModel`/`ModelsResponse` via the barrel
+- `ai-tools/types/index.ts` — removed `AiConnectionErrorCode`, `AiAnalysisErrorCode`, `AiAnalysisStatus`, `AiModel` (definition), `ModelsResponse`, `RankedModelsResponse`; added `AiErrorCode` (10-code unified union); `AiConnectionError.code` and `AiAnalysisError.code` now use `AiErrorCode`; added internal `import type { AiModel }` from providers for response types that stamp the model
+- `providers/utils/error-handling.ts` — `AiConnectionErrorCode` → `AiErrorCode`
+- `ai-connection/utils/index.ts` — `AiConnectionErrorCode` → `AiErrorCode` throughout; `ERROR_MESSAGES` and `ERROR_HINTS` expanded to `Record<AiErrorCode, ...>` covering all 10 codes (added `parse-error` entries)
+- `stores/aiStore.ts` — `AiConnectionErrorCode` → `AiErrorCode`; `AiModel` now imported from `providers/types`; `Set<AiConnectionErrorCode>` → `Set<AiErrorCode>`
+- `stores/aiAnalysisStore.ts` — `AiAnalysisStatus` → `AsyncStatus`; `AiAnalysisErrorCode` → `AiErrorCode`; `ERROR_MESSAGES` expanded to all 10 `AiErrorCode` values
+- `providers/connect-provider.ts` — `AiModel` import split: from `./types` instead of `../types`
+- `providers/gemini/connect.ts` — `AiModel`/`ModelsResponse` import: `../types` instead of `../../types`
+- `providers/qroq/connect.ts` — same import path update
+- `providers/utils/shared.ts` — `AiModel` import: `../types` instead of `../../types`
+- `mocks/budget-optimizer-mocks.ts` — `AiModel` import split from `../providers/types`
+- `mocks/executive-summary-mocks.ts` — same split
+- `ai-analysis/components/shared/AnalysisState.vue` — replaced `AiAnalysisStatus` import with `AsyncStatus`; `status` prop type updated to `AsyncStatus`
+- `CLAUDE.md` — architecture updated: `async-status.ts` added, `providers/types.ts` description updated, `types/index.ts` description rewritten, `error-handling.ts` and `ai-connection/utils/index.ts` descriptions updated, `AnalysisState.vue` prop types corrected
+
+**Key decisions & why:**
+- `AiModel` re-exported from `providers/index.ts` barrel so consumers that already import from `providers` don't need a deeper path — the type is public but lives in the right layer
+- `types/index.ts` imports `AiModel` internally (not re-exported) to satisfy `BudgetOptimizerResponse.model?` and `ExecutiveSummaryResponse.model?` — the response types stay in the feature types file while the definition stays in providers
+- `Record<AiErrorCode, ...>` for all error maps — TypeScript enforces exhaustiveness, preventing silent gaps when a new code is added
+- `parse-error` added to `ai-connection/utils/index.ts` error records even though it's an analysis-only code — exhaustiveness requires all 10 entries everywhere the record type is used

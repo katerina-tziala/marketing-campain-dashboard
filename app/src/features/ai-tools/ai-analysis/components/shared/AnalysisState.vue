@@ -2,14 +2,15 @@
 import { computed } from 'vue'
 import { Spinner } from '../../../../../ui'
 import { SparklesIcon } from '../../../../../ui/icons'
-import type { AiAnalysisStatus, AiAnalysisError } from '../../../types'
+import type { AsyncStatus } from '../../../../../common/types/async-status'
+import type { AiAnalysisError } from '../../../types'
 
 const props = defineProps<{
   title: string
   actionLabel: string
   idleText: string
   loadingText: string
-  status: AiAnalysisStatus
+  status: AsyncStatus
   error: AiAnalysisError | null
   errorFallback: string | null
   tokenLimitReached: boolean

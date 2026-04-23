@@ -1,5 +1,5 @@
 import { generateModelEvaluationPrompt } from "../../prompts";
-import type { AiModel, ModelsResponse } from "../../types";
+import type { AiModel, ModelsResponse } from "../types";
 import { parseJsonResponse, toValidModels } from "../utils/shared";
 import { fetchGeminiModels, requestGeminiChatCompletion } from "./api";
 import type { GeminiModel } from "./types";
