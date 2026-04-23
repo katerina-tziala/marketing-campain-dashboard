@@ -1,1 +1,0 @@
-export { connectProvider } from './connectProvider'

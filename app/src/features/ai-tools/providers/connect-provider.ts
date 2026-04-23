@@ -1,16 +1,15 @@
-
-import type { AiProviderType, AiModel, AiConnectionError } from "../types"
+import type { AiProviderType, AiModel } from "../types"
 import { connectGemini } from "./gemini"
 import { connectGroq } from "./qroq"
 
 const CONNECTORS: Record<AiProviderType, (apiKey: string) => Promise<AiModel[]>> = {
-    gemini: connectGemini,
-    groq: connectGroq,
+  gemini: connectGemini,
+  groq: connectGroq,
 }
 
 export async function connectProvider(
-    provider: AiProviderType,
-    apiKey: string,
-): Promise<AiModel[] | AiConnectionError> {
-    return await CONNECTORS[provider](apiKey)
+  provider: AiProviderType,
+  apiKey: string,
+): Promise<AiModel[]> {
+  return await CONNECTORS[provider](apiKey)
 }

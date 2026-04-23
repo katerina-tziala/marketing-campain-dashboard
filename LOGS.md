@@ -4824,3 +4824,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `runProviderPrompt` added but not yet wired to `aiAnalysisStore` — incremental migration; the analysis store still calls `callProviderForAnalysis` from `ai-analysis/callProvider.ts`; full cutover is the next step
 - `rankModels.ts` in `ai-tools/utils/` kept for now — still referenced by existing code; removal deferred until the full migration to `providers/utils/shared.ts` is complete
 - `errorCodeFromStatus` now maps 400/401/403 → `invalid-key` — the old version only mapped 429 and 500+; this means auth errors from the connection endpoint now produce the correct user-facing message rather than 'unknown'
+
+
+## [#244] Wire aiStore to providers/connectProvider; move error mapping into store; delete old ai-connection wrappers
+**Type:** refactor
+
+**Summary:** Replaced the `ai-connection/connectProvider.ts` wrapper (which returned `AiModel[] | AiConnectionError`) with the new `providers/connectProvider` (which throws), moved error mapping into `aiStore.connect()`, and deleted the now-redundant `ai-connection/connectProvider.ts` and `ai-connection/index.ts`.
+
+**Brainstorming:** The old `ai-connection/connectProvider.ts` was a catch-and-return wrapper: it caught any thrown error, normalized it, and returned an `AiConnectionError` object so the store could check `isConnectionError(result)`. The new `providers/connect-provider.ts` is a thin dispatcher that throws — meaning the union return type `AiModel[] | AiConnectionError` was wrong, and error handling belonged somewhere else. The store is the right place: it already owns connection state (`connectionError`, `isConnected`), so catching there keeps the error path next to the state it affects. The `isConnectionError` type guard became unnecessary once the return type is `AiModel[]` only. The `console.log` in `selectBestModel` was removed as part of cleanup.
+
+**Prompt:** Use the new connectProvider from providers/. Move error mapping to aiStore. Clean up files not needed anymore.
+
+**What changed:**
+- `providers/connect-provider.ts` — return type corrected from `Promise<AiModel[] | AiConnectionError>` to `Promise<AiModel[]>`; unused `AiConnectionError` import removed; indentation normalized
+- `stores/aiStore.ts` — imports `connectProvider` from `providers/` and `normalizeConnectionError` from `providers/utils`; added `AiConnectionErrorCode` import and `ERROR_CODES` set; removed `isConnectionError` type guard; `connect()` rewritten as try/catch — success path sets state directly, catch path maps error via `normalizeConnectionError` + `ERROR_CODES`; removed `console.log` from `selectBestModel`
+- `ai-connection/connectProvider.ts` — deleted (logic split: dispatch moved to `providers/connect-provider.ts`, error mapping moved to `aiStore`)
+- `ai-connection/index.ts` — deleted (barrel had no remaining exports)
+
+**Key decisions & why:**
+- Error mapping in the store, not in a wrapper — the store is the only consumer of `connectProvider`; keeping error handling next to the state it sets avoids an indirection layer that existed solely to avoid a try/catch in the store
+- `isConnectionError` guard removed — with `connectProvider` returning `Promise<AiModel[]>` and throwing on failure, a union return type and its guard are no longer needed
+- `invalid-response` added to `ERROR_CODES` — it was missing from the old set and is now a valid `AiConnectionErrorCode`
