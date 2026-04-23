@@ -9,50 +9,18 @@ export type AiConnectionErrorCode =
   | 'rate-limit'
   | 'server-error'
   | 'no-models'
+  | 'token-limit'
+  | 'invalid-response'
   | 'unknown';
+ 
 
 export type AiConnectionError = {
   code: AiConnectionErrorCode;
   provider: AiProviderType;
 };
 
-// ── Provider model types ──────────────────────────────────────────────────
-
-export type GeminiModel = {
-  name: string;
-  version: string;
-  displayName: string;
-  description: string;
-  inputTokenLimit: number;
-  outputTokenLimit: number;
-  supportedGenerationMethods: string[];
-  temperature?: number;
-  topP?: number;
-  topK?: number;
-  maxTemperature?: number;
-  thinking?: boolean;
-};
-
-export type GeminiModelsResponse = {
-  models: GeminiModel[];
-};
-
-export type GroqModel = {
-  id: string;
-  object: string;
-  created: number;
-  owned_by: string;
-  active: boolean;
-  context_window: number;
-  public_apps: unknown;
-  max_completion_tokens: number;
-};
-
-export type GroqModelsResponse = {
-  object: string;
-  data: GroqModel[];
-};
-
+ 
+ 
 // ── AI Model (from model evaluation prompt) ──────────────────────────────
 
 export type AiModel = {
@@ -70,6 +38,9 @@ export type RankedModelsResponse = {
   models: AiModel[];
 };
 
+export type ModelsResponse = {
+  models: AiModel[];
+};
 // ── Prompt types ──────────────────────────────────────────────────────────
 
 export type PromptList = {

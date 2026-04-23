@@ -35,6 +35,8 @@ export const ERROR_MESSAGES: Record<AiConnectionErrorCode, (provider: AiProvider
   'server-error': (p) => `${PROVIDER_LABELS[p]} is temporarily unavailable. Try again later.`,
   'no-models': (p) => `No suitable models found for ${PROVIDER_LABELS[p]}.`,
   'unknown': (p) => `Connection to ${PROVIDER_LABELS[p]} failed`,
+  'token-limit': () => 'The provider\u2019s token limit was exceeded. Try again.',
+  'invalid-response': () => 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.', 
 }
 
 export const ERROR_HINTS: Record<AiConnectionErrorCode, string> = {
@@ -45,6 +47,8 @@ export const ERROR_HINTS: Record<AiConnectionErrorCode, string> = {
   'server-error': 'This is a problem on the provider\u2019s side, not yours. Try again later.',
   'no-models': 'The provider returned no models compatible with this application. Try a different provider.',
   'unknown': 'If this persists, try a different provider or check the provider\u2019s status page',
+  'token-limit': ' .',
+  'invalid-response': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.', 
 }
 
 export const PROVIDER_OPTIONS = [

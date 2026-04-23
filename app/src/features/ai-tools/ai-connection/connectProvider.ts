@@ -1,23 +1,28 @@
 import type { AiProviderType, AiConnectionError, AiConnectionErrorCode, AiModel } from '../types'
-import { errorCodeFromException } from './shared'
-import { connectGemini } from './gemini'
-import { connectGroq } from './groq'
+import { connectGemini, connectGroq } from '../providers'
+import { normalizeConnectionError } from '../providers/utils'
 
 const ERROR_CODES: Set<string> = new Set<AiConnectionErrorCode>([
-  'invalid-key', 'network', 'timeout', 'rate-limit', 'server-error', 'no-models', 'unknown',
+  'invalid-key', 'network', 'timeout', 'rate-limit', 'token-limit', 'server-error', 'no-models', 'unknown',
 ])
+
+const CONNECTORS: Record<AiProviderType, (apiKey: string) => Promise<AiModel[]>> = {
+  gemini: connectGemini,
+  groq: connectGroq,
+}
 
 export async function connectProvider(
   provider: AiProviderType,
   apiKey: string,
 ): Promise<AiModel[] | AiConnectionError> {
   try {
-    return provider === 'gemini'
-      ? await connectGemini(apiKey)
-      : await connectGroq(apiKey)
-  } catch (e) {
-    const message = e instanceof Error ? e.message : ''
-    const code = ERROR_CODES.has(message) ? message as AiConnectionErrorCode : errorCodeFromException(e)
+    return await CONNECTORS[provider](apiKey)
+  } catch (error) {
+    const normalized = normalizeConnectionError(error)
+    const code = ERROR_CODES.has(normalized.message)
+      ? (normalized.message as AiConnectionErrorCode)
+      : 'unknown'
+
     return { code, provider }
   }
 }

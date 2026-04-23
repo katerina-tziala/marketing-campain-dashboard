@@ -1,5 +1,6 @@
+import { parseJsonResponse } from '../providers/utils/shared'
 import type { AiProviderType, AiAnalysisErrorCode } from '../types'
-import { parseJsonResponse } from '../ai-connection/shared'
+
 
 const TOKEN_LIMIT_PATTERNS = [
   'resource_exhausted',
@@ -105,7 +106,7 @@ export async function callProviderForAnalysis<T>(
       ? await callGemini(apiKey, model, prompt, signal)
       : await callGroq(apiKey, model, prompt, signal)
 
-    return parseJsonResponse(raw) as T
+    return parseJsonResponse<T>(raw)
   } catch (e) {
     if (e instanceof Error && (
       e.message === 'token-limit'

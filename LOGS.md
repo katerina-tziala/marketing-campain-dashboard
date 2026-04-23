@@ -4780,3 +4780,47 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `bg-white/10` for the pill background — semi-transparent white works on both the active primary-500 and inactive surface backgrounds without needing per-state color overrides
+
+
+## [#243] Extract provider implementations into dedicated providers/ module
+**Type:** refactor
+
+**Summary:** Broke the monolithic `ai-connection/gemini.ts`, `ai-connection/groq.ts`, and `ai-connection/shared.ts` files into a structured `providers/` module with per-provider subfolders (gemini/, qroq/) each owning its types, API calls, and connection logic, plus shared utils for error handling and model ranking.
+
+**Brainstorming:** The old structure put every concern for a provider into one large file — raw HTTP calls, model filtering, model evaluation prompt, fallback logic, and shared utilities all mixed together. As the codebase grew and a second provider (Groq) was added alongside Gemini, the duplication became visible: both `gemini.ts` and `groq.ts` had their own copies of `buildFallbackModel`, `filterModels`, `getOptimalModel`, and both imported from a flat `shared.ts`. The goal was single-responsibility: each provider folder gets `types.ts` (raw API shapes), `api.ts` (fetch wrappers), and `connect.ts` (full connection flow). Shared error utilities (`normalizeConnectionError`, `assertResponseOk`, `assertChatResponseOk`) and model utilities (`buildFallbackModel`, `rankModels`, `parseJsonResponse`) were lifted into `providers/utils/`. A new generic `runProviderPrompt<T>` was added as a clean replacement for the inline `callGemini`/`callGroq` pattern inside `callProviderForAnalysis` — though the analysis call path is only partially migrated. `assertChatResponseOk` is a notable new addition: it reads the response body to detect token-limit patterns before throwing, which was previously done inline inside `callProviderForAnalysis`.
+
+**Prompt:** Refactor the ai-connection provider files (gemini.ts, groq.ts, shared.ts) into a dedicated providers/ module. Each provider should have its own subfolder with types, api, and connect files. Shared utilities for error handling and model ranking go into providers/utils/. Add a generic runProviderPrompt<T> as the future replacement for callProviderForAnalysis. Update connectProvider to import from the new module.
+
+**What changed:**
+- `providers/` (new folder) — dedicated provider module
+- `providers/index.ts` — barrel exporting connectGemini, connectGroq, requestGeminiChatCompletion, requestGroqChatCompletion, runProviderPrompt, connectProvider
+- `providers/connect-provider.ts` — thin connectProvider dispatcher with no error wrapping (errors thrown by individual providers)
+- `providers/run-provider-prompt.ts` — generic runProviderPrompt<T>; dispatches to provider caller, parses JSON, throws 'invalid-response' on parse failure
+- `providers/types.ts` — empty placeholder file
+- `providers/gemini/types.ts` — GeminiModel, GeminiModelsResponse (moved from ai-tools/types/)
+- `providers/gemini/api.ts` — fetchGeminiModels + requestGeminiChatCompletion; uses shared error utils
+- `providers/gemini/connect.ts` — connectGemini full flow; filterModels, getSortedModels (flash-first + version desc), getOptimalModel; AI evaluation prompt; falls back to buildFallbackModel
+- `providers/gemini/index.ts` — barrel
+- `providers/qroq/types.ts` — GroqModel, GroqModelsResponse (moved from ai-tools/types/); folder named qroq
+- `providers/qroq/api.ts` — fetchGroqModels + requestGroqChatCompletion; uses shared error utils
+- `providers/qroq/connect.ts` — connectGroq full flow; filterModels, getOptimalModel (most recently created); AI evaluation prompt; falls back to buildFallbackModel
+- `providers/qroq/index.ts` — barrel
+- `providers/utils/error-handling.ts` — normalizeConnectionError, errorCodeFromStatus (expanded: 400/401/403→invalid-key), assertResponseOk, assertChatResponseOk (new — reads body for token-limit detection)
+- `providers/utils/shared.ts` — buildFallbackModel, rankModels, parseJsonResponse (consolidated from old shared.ts and per-provider files)
+- `providers/utils/index.ts` — barrel re-exporting error-handling
+- `ai-connection/gemini.ts` — deleted (moved to providers/gemini/)
+- `ai-connection/groq.ts` — deleted (moved to providers/qroq/)
+- `ai-connection/shared.ts` — deleted (moved to providers/utils/)
+- `ai-connection/connectProvider.ts` — updated to import from providers/ barrel; uses normalizeConnectionError from providers/utils
+- `ai-analysis/callProvider.ts` — imports parseJsonResponse from providers/utils/shared (partial migration; inline callGemini/callGroq remain)
+- `ai-connection/utils/index.ts` — added invalid-response to ERROR_MESSAGES and ERROR_HINTS
+- `types/index.ts` — added invalid-response to AiConnectionErrorCode; removed GeminiModel/GeminiModelsResponse/GroqModel/GroqModelsResponse (moved to provider files); replaced RankedModelsResponse with ModelsResponse (generic); promoted ConfidenceLevel to top-level export; added ExecutiveSummaryChannel, ExecutiveSummaryCampaign, ExecutiveSummaryOtherChannelsSummary as named types
+- `toastStore.ts` — auto-dismiss changed from 4s to 5s
+
+**Key decisions & why:**
+- `providers/` as a sibling to `ai-analysis/` and `ai-connection/` — provider logic is its own concern, not owned by either the connection or analysis path; this placement makes both consumers equal importers
+- Folder named `qroq` not `groq` — name chosen during authoring; kept as-is to avoid unnecessary rename churn
+- `assertChatResponseOk` separate from `assertResponseOk` — analysis calls need token-limit body inspection; connection calls only need status-based error codes; separating them avoids over-reading response bodies during model listing
+- `runProviderPrompt` added but not yet wired to `aiAnalysisStore` — incremental migration; the analysis store still calls `callProviderForAnalysis` from `ai-analysis/callProvider.ts`; full cutover is the next step
+- `rankModels.ts` in `ai-tools/utils/` kept for now — still referenced by existing code; removal deferred until the full migration to `providers/utils/shared.ts` is complete
+- `errorCodeFromStatus` now maps 400/401/403 → `invalid-key` — the old version only mapped 429 and 500+; this means auth errors from the connection endpoint now produce the correct user-facing message rather than 'unknown'
