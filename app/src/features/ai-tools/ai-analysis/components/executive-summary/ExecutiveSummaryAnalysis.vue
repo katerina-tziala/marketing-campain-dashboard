@@ -13,11 +13,11 @@ import ExecutiveSummaryChannels from './ExecutiveSummaryChannels.vue'
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
 
-const status = computed(() => analysisStore.summaryStatus)
-const response = computed(() => analysisStore.summaryResponse)
-const error = computed(() => analysisStore.summaryError)
-const errorFallback = computed(() => analysisStore.summaryErrorFallback)
-const cacheTimestamp = computed(() => analysisStore.summaryCacheTimestamp)
+const status = computed(() => analysisStore.summary.status)
+const response = computed(() => analysisStore.summary.response)
+const error = computed(() => analysisStore.summary.error)
+const errorFallback = computed(() => analysisStore.summary.errorFallback)
+const cacheTimestamp = computed(() => analysisStore.summary.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 

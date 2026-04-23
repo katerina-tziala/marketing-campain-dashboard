@@ -5075,3 +5075,146 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - New `ai-analysis/utils/` subfolder created — `ai-analysis/` had only `components/`; utils is the natural parallel for non-component module-level code scoped to this feature
+
+
+## [#255] Add PerformanceMetrics to Channel type
+**Type:** update
+
+**Summary:** Extended `Channel` to include `PerformanceMetrics` (roi/ctr/cvr/cac) computed from the channel's aggregated campaign totals, reusing `computePerformanceMetrics` from `campaign-performance.ts`.
+
+**Brainstorming:** `Channel` already aggregates raw `CampaignMetrics` totals across its campaigns. Adding `PerformanceMetrics` is a natural extension — the channel-level ROI, CTR, CVR, and CAC are derived from those same aggregated totals using the same formula already applied at the campaign level. The `computePerformanceMetrics` function takes any `CampaignMetrics` object, so it works on channel aggregates without modification. Both the create and update paths in `groupCampaignsByChannel` need to spread the result.
+
+**Prompt:** Add PerformanceMetrics in Channel and calculate them correctly based on the campaigns of the channel. Re-use functionality from the campaign performance.
+
+**What changed:**
+- `common/types/channel.ts` — `Channel` now extends both `CampaignMetrics` and `PerformanceMetrics`; imports `PerformanceMetrics` from `./campaign`
+- `common/utils/campaign-channel.ts` — imports `computePerformanceMetrics`; both the new-channel and update-channel branches in `groupCampaignsByChannel` now spread `computePerformanceMetrics(metrics)` on top of the aggregated raw metrics
+
+**Key decisions & why:**
+- Performance metrics re-computed on every campaign addition (update branch) — channel aggregates change with each new campaign, so metrics must be derived from the final aggregated totals, not accumulated incrementally
+- `computePerformanceMetrics` called on the extracted `metrics` object (not on the full channel) — avoids passing extra fields and matches the function's `CampaignMetrics` parameter contract exactly
+
+
+## [#256] Move computePerformanceMetrics call to buildChannelMap sort phase
+**Type:** fix
+
+**Summary:** Moved `computePerformanceMetrics` from the per-campaign accumulation loop in `groupCampaignsByChannel` to the final sort phase in `buildChannelMap`, so it is called once per channel rather than on every campaign addition.
+
+**Brainstorming:** Previously, every time a campaign was added to an existing channel entry, `computePerformanceMetrics` was called on the intermediate aggregate — meaning a channel with N campaigns triggered N-1 redundant computations. The accumulator only needs raw metric totals; performance metrics are derived values that belong at the end. Introduced a local `ChannelAccumulator` type (`Omit<Channel, keyof PerformanceMetrics>`) so `groupCampaignsByChannel` is correctly typed without performance fields, and `buildChannelMap` stamps them once after sorting.
+
+**Prompt:** computePerformanceMetrics better to call once when we build the sorted map.
+
+**What changed:**
+- `common/utils/campaign-channel.ts` — added `ChannelAccumulator` local type; `groupCampaignsByChannel` now returns `Map<string, ChannelAccumulator>` and accumulates raw metrics only; `buildChannelMap` spreads `computePerformanceMetrics(sorted)` once per channel in the reduce step
+
+**Key decisions & why:**
+- `ChannelAccumulator = Omit<Channel, keyof PerformanceMetrics>` — ties the type to `PerformanceMetrics` structurally; if new performance fields are added later, the omit stays correct without manual updates
+
+
+## [#257] Move aggregateCampaignMetrics to buildChannelMap sort phase
+**Type:** fix
+
+**Summary:** Removed `aggregateCampaignMetrics` from the per-campaign accumulation loop; `ChannelAccumulator` is now minimal (`{ id, name, campaigns }`), with both metric aggregation and performance computation deferred to the single `buildChannelMap` reduce step.
+
+**Brainstorming:** Same reasoning as #256 — `aggregateCampaignMetrics` was being called on every campaign addition to an existing channel, re-iterating all accumulated campaigns each time (O(N²) total). The accumulator only needs to collect campaigns; all derived values belong at the end. With this change `groupCampaignsByChannel` is purely a grouping function and `buildChannelMap` owns all derivation in one pass.
+
+**Prompt:** Can we do the same for aggregateCampaignMetrics?
+
+**What changed:**
+- `common/utils/campaign-channel.ts` — `ChannelAccumulator` simplified to `{ id, name, campaigns }`; `groupCampaignsByChannel` loop only appends campaigns; `buildChannelMap` reduce calls `aggregateCampaignMetrics` then `computePerformanceMetrics` once per channel; `PerformanceMetrics` import removed (no longer needed for Omit)
+
+**Key decisions & why:**
+- Accumulator reduced to the minimum needed for grouping — raw metrics and performance metrics are all derived; keeping them out of the loop makes the separation of concerns explicit
+
+
+## [#258] Replace 12 individual refs with two reactive display objects in aiAnalysisStore
+**Type:** refactor
+
+**Summary:** Removed the 12 per-tab named refs (`optimizerStatus`, `optimizerResponse`, etc.) and the `syncRefsFromTab`/`syncCacheTimestamp` sync functions; replaced them with two typed `reactive()` display objects (`optimizer` and `summary`) that are mutated directly wherever state changes.
+
+**Brainstorming:** The 12 individual refs existed only because `createTabState()` returned a plain object that Vue cannot observe — requiring a manual copy step (`syncRefsFromTab`) after every mutation. The fix is to separate display state (needs reactivity, consumed by components) from internal state (controllers, timers, caches — no reactivity needed). Two `reactive()` objects per tab provide the reactive surface without the sync overhead. `firstAnalyzeCompleted` stays internal (nothing outside the store reads it). `syncRefsFromTab` and `syncCacheTimestamp` are removed entirely; mutations happen in place at every call site.
+
+**Prompt:** Do we really need the 12 individual reactive wrappers and their sync functions in aiAnalysis store?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — removed 12 individual refs; removed `syncRefsFromTab` and `syncCacheTimestamp`; added `optimizer` and `summary` reactive objects (typed per response type); `createTabState()` trimmed to internal-only fields; all mutation sites updated to use `d = getDisplay(tab)` directly; `optimizerCanAnalyze`/`summaryCanAnalyze` read from reactive objects; return statement exposes `optimizer` and `summary` instead of 12 named refs; `reactive` imported
+- `BudgetOptimizationAnalysis.vue` — computed refs updated from `analysisStore.optimizerX` to `analysisStore.optimizer.x`
+- `ExecutiveSummaryAnalysis.vue` — computed refs updated from `analysisStore.summaryX` to `analysisStore.summary.x`
+- `CLAUDE.md` — aiAnalysisStore description updated
+
+**Key decisions & why:**
+- Two separate reactive objects rather than one generic — preserves per-tab response typing (`BudgetOptimizerResponse | null` vs `ExecutiveSummaryResponse | null`) without casts in components
+- Internal state kept as plain objects — AbortController, Map, setTimeout timers should not be reactive; separating them is also clearer about intent
+- `firstAnalyzeCompleted` moved to internal state only — nothing outside the store used the exposed refs; `analysisActivated` (shared ref) serves the same role for the UI
+
+
+## [#259] Fix unsafe response casts in aiAnalysisStore
+**Type:** fix
+
+**Summary:** Replaced all 10 `as typeof d.response` / `as typeof otherD.response` / `as typeof prevD.response` casts with `as unknown as typeof d.response` to silence the legitimate IDE warning about non-overlapping types.
+
+**Brainstorming:** TypeScript's `as T` assertion requires the source type to overlap with T. `TabResponse` (non-null) doesn't sufficiently overlap with `X | null` at the union member level, so the cast was flagged. The two-step `as unknown as T` pattern is the standard escape hatch for intentional narrowing casts where the developer knows the runtime value is correct.
+
+**Prompt:** Line 354 is problematic.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — all 10 response assignment casts changed from `as typeof d.response` to `as unknown as typeof d.response`
+
+**Key decisions & why:**
+- `as unknown as T` rather than a different typing approach — the union return type of `getDisplay` is correct; the unsafe cast is a deliberate trade-off to avoid duplicating response-assignment logic per tab
+
+
+## [#260] Consolidate per-tab cache maps into a single CacheEntry map
+**Type:** refactor
+
+**Summary:** Replaced the three co-keyed maps (`cache`, `cacheTimestamps`, `cooldowns`) in `createTabState()` with a single `Map<string, CacheEntry>` where each entry carries `response`, `timestamp`, and `cooldownUntil` together.
+
+**Brainstorming:** All three maps shared the same key (`provider::model::sorted-labels`) and were always written atomically on a successful analysis call. Keeping them as parallel maps created partial-state risk (a key present in one but not another) and required three lookups at every read site. A single `CacheEntry` type eliminates the redundancy. The `dataCache` map uses a different key format (labels only, no provider/model prefix) so it stays separate — merging it would force re-building data per model, which is wasteful. The cooldown semantics also improved: instead of storing a start timestamp and subtracting on read, `cooldownUntil` stores the expiry time directly (`now + COOLDOWN_MS`), making the `canAnalyze` check a simple `Date.now() >= entry.cooldownUntil`.
+
+**Prompt:** Instead of having 4 maps (cache, cacheTimestamps, dataCache, cooldowns), does it make sense to have one map with a CacheEntry type extending TabResponse with cooldown, timestamp, and data?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — added `CacheEntry` type (`response`, `timestamp`, `cooldownUntil`); removed `cacheTimestamps` and `cooldowns` from `createTabState()`; `cache` map retyped to `Map<string, CacheEntry>`; all read sites updated to use `entry.response` / `entry.timestamp` / `entry.cooldownUntil`; success path collapsed to single `t.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })`; `clearStateForNewCSV` no longer needs separate `cacheTimestamps.clear()` / `cooldowns.clear()` calls; `canAnalyze` simplified to `Date.now() >= entry.cooldownUntil`
+
+**Key decisions & why:**
+- `dataCache` kept separate — uses a label-only key (no provider/model); merging would cause unnecessary data rebuilds per model switch
+- `cooldownUntil` instead of `cooldownStart` — storing expiry rather than start time makes the check a direct comparison with no arithmetic
+
+
+## [#261] Remove model from response cache key
+**Type:** refactor
+
+**Summary:** Changed the response cache key from `provider::model::labels` to `provider::labels` because model selection is system-controlled (auto-fallback), not user-controlled, making per-model cache isolation unnecessary.
+
+**Brainstorming:** The model is in the key because different models could produce different responses. However, users never pick a model — the system selects the highest-scored available model and silently falls back on token-limit. Keeping the model in the key meant a cache miss on every system-initiated model switch, forcing a redundant API call even when a valid cached response already existed. Removing it means model switches reuse cached responses across the same provider+labels combination. The token-limit fallback path (`executeAnalysis(tab, false)`) bypasses the cache check entirely (`isAutomatic=false`), so it still fetches a fresh response from the next model when needed. The provider stays in the key because Gemini and Groq produce structurally different responses. `response.model` stamp on each entry preserves traceability — the UI still shows which model generated the response.
+
+**Prompt:** Cache uses provider::model::labels — since model switching is done by the system, should we remove model from the key?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `createCacheKey` signature reduced from `(labels, provider, model)` to `(labels, provider)`; key format changes from `provider::model::labels` to `provider::labels`; `getCurrentCacheKey` no longer passes `aiStore.selectedModel.id`
+- `CLAUDE.md` — Status and aiAnalysisStore description updated to reflect new key format and `CacheEntry` type
+
+**Key decisions & why:**
+- Model removed, provider kept — provider determines response structure; model within a provider is an implementation detail the user never controls
+- Token-limit fallback unaffected — it calls `executeAnalysis(tab, false)` which skips the cache check, so a fresh response is always fetched on the first call after model switch
+
+
+## [#262] Move cacheTimestamp into response — stamp timestamp on TabResponse
+**Type:** refactor
+
+**Summary:** Removed the standalone `cacheTimestamp` field from reactive display state; `timestamp` is now stamped directly onto the response object alongside `model`, so it travels with the response automatically.
+
+**Brainstorming:** The reactive display objects (`optimizer`, `summary`) each held a `cacheTimestamp: number | null` field that was written at every cache-restore site (~9 write sites total). Since `model` is already stamped onto the response as an infrastructure concern, there is an established pattern for attaching metadata to the response. Adding `timestamp` to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse` follows the same approach: stamp once at write time, read anywhere via `response?.timestamp`. This removes the `cacheTimestamp` field from reactive state entirely, collapses all `d.cacheTimestamp = entry.timestamp` assignments, and means that wherever `d.response` is set from a cache entry the timestamp comes for free — no separate assignment needed. Components read `response?.timestamp ?? null` instead of a dedicated computed.
+
+**Prompt:** d.cacheTimestamp — can't we use timestamp in the TabResponse without breaking anything?
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added `timestamp?: number` to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse`
+- `stores/aiAnalysisStore.ts` — removed `cacheTimestamp` from both `optimizer` and `summary` reactive objects; stamped `result.timestamp = now` in `executeAnalysis` success path alongside `result.model`; removed all `d.cacheTimestamp = ...` write sites (~9 total) across `handleRequestError`, `executeAnalysis`, `evaluateTab`, `clearStateForNewCSV`, and the label-change watcher
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `cacheTimestamp` computed changed to `analysisStore.summary.response?.timestamp ?? null`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `cacheTimestamp` computed changed to `analysisStore.optimizer.response?.timestamp ?? null`
+- `CLAUDE.md` — Status and aiAnalysisStore description updated to reflect that `timestamp` is on the response, not in reactive state
+
+**Key decisions & why:**
+- Pattern follows `model` stamp — `model` was already an infrastructure field on the response; `timestamp` is consistent with that precedent
+- No cache-restore sites need changing — `d.response = entry.response` implicitly carries `response.timestamp` already set at write time; all restore paths just work

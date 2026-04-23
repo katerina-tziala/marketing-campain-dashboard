@@ -47,16 +47,17 @@ export type PromptScopeConfig = {
 };
 
 export type BusinessContext = {
-  period?: string;
-  industry?: string;
-  goal?: string;
-  businessStage?: string;
-  attributionModel?: string;
-  riskTolerance?: string;
-  scalingTolerance?: string;
-  constraints?: string[];
+  period?: string; // e.g. "Last 90 days"
+  industry?: string; // e.g. "E-commerce"
+  goal?: string; // e.g. "Improve efficiency" or "Scale qualified demand"
+  businessStage?: string; // e.g. "Growth", "Mature", "Launch"
+  attributionModel?: string; // e.g. "Last click", "Data-driven"
+  riskTolerance?: string; // e.g. "Low", "Moderate", "High"
+  scalingTolerance?: string; // e.g. "Conservative", "Balanced", "Aggressive"
+  constraints?: string[]; // strategic or operational constraints
 };
 
+ 
 export type BudgetOptimizerContextInput = BusinessContext & {
   allowBudgetExpansion?: boolean;
 };
@@ -151,6 +152,7 @@ export type Correlation = {
 
 export type BudgetOptimizerResponse = {
   model?: AiModel;
+  timestamp?: number;
   period?: string;
   executive_summary: string;
   recommendations: {
@@ -208,6 +210,7 @@ export type AiAnalysisError = {
 
 export type ExecutiveSummaryResponse = {
   model?: AiModel;
+  timestamp?: number;
   period?: string;
   health_score: {
     score: number;

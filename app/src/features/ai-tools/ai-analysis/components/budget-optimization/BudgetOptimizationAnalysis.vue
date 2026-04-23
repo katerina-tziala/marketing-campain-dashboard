@@ -14,11 +14,11 @@ import BudgetOptimizationRisks from './BudgetOptimizationRisks.vue'
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
 
-const status = computed(() => analysisStore.optimizerStatus)
-const response = computed(() => analysisStore.optimizerResponse)
-const error = computed(() => analysisStore.optimizerError)
-const errorFallback = computed(() => analysisStore.optimizerErrorFallback)
-const cacheTimestamp = computed(() => analysisStore.optimizerCacheTimestamp)
+const status = computed(() => analysisStore.optimizer.status)
+const response = computed(() => analysisStore.optimizer.response)
+const error = computed(() => analysisStore.optimizer.error)
+const errorFallback = computed(() => analysisStore.optimizer.errorFallback)
+const cacheTimestamp = computed(() => analysisStore.optimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 

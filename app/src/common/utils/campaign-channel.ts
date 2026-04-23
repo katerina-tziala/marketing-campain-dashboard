@@ -1,34 +1,22 @@
-import type { Campaign } from '../types/campaign'
+import type { Campaign, CampaignPerformance } from '../types/campaign'
 import type { Channel } from '../types/channel'
-import { aggregateCampaignMetrics, toCampaignPerformance } from './campaign-performance'
+import { aggregateCampaignMetrics, computePerformanceMetrics, toCampaignPerformance } from './campaign-performance'
+
+type ChannelAccumulator = { id: string; name: string; campaigns: CampaignPerformance[] }
 
 function toChannelId(name: string): string {
   return name.trim().toLowerCase().replace(/ /g, '-')
 }
 
-function groupCampaignsByChannel(campaigns: Campaign[]): Map<string, Channel> {
-  const grouped = new Map<string, Channel>()
+function groupCampaignsByChannel(campaigns: Campaign[]): Map<string, ChannelAccumulator> {
+  const grouped = new Map<string, ChannelAccumulator>()
 
   for (const campaign of campaigns) {
     const performance = toCampaignPerformance(campaign)
     const id = toChannelId(campaign.channel)
-    const existing = grouped.get(id)
+    const existing = grouped.get(id) ?? { id, name: campaign.channel, campaigns: [] }
 
-    if (existing) {
-      const updatedCampaigns = [...existing.campaigns, performance]
-      grouped.set(id, {
-        ...existing,
-        ...aggregateCampaignMetrics(updatedCampaigns),
-        campaigns: updatedCampaigns,
-      })
-    } else {
-      const { channel, budget, impressions, clicks, conversions, revenue } = campaign
-      grouped.set(id, {
-        id, budget, impressions, clicks, conversions, revenue,
-        name: channel,
-        campaigns: [performance],
-      })
-    }
+    grouped.set(id, { ...existing, campaigns: [...existing.campaigns, performance] })
   }
 
   return grouped
@@ -39,10 +27,9 @@ export function buildChannelMap(campaigns: Campaign[]): Map<string, Channel> {
   const sortedKeys = [...grouped.keys()].sort()
 
   return sortedKeys.reduce((map, key) => {
-    const channel = grouped.get(key)!
-    return map.set(key, {
-      ...channel,
-      campaigns: [...channel.campaigns].sort((a, b) => a.campaign.localeCompare(b.campaign)),
-    })
+    const { id, name, campaigns: unsorted } = grouped.get(key)!
+    const campaigns = [...unsorted].sort((a, b) => a.campaign.localeCompare(b.campaign))
+    const metrics = aggregateCampaignMetrics(campaigns)
+    return map.set(key, { id, name, campaigns, ...metrics, ...computePerformanceMetrics(metrics) })
   }, new Map<string, Channel>())
 }

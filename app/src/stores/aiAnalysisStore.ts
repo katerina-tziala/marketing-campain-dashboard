@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch, computed } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import type { AsyncStatus } from '../common/types/async-status'
 import type {
   AiAnalysisTab,
@@ -29,20 +29,20 @@ const ALL_LABELS_KEY = 'all'
 
 type TabResponse = BudgetOptimizerResponse | ExecutiveSummaryResponse
 
+type CacheEntry = {
+  response: TabResponse
+  timestamp: number
+  cooldownUntil: number
+}
+
 function createTabState() {
   return {
     firstAnalyzeCompleted: false,
-    status: 'idle' as AsyncStatus,
-    response: null as TabResponse | null,
-    error: null as AiAnalysisError | null,
     controller: null as AbortController | null,
     debounceTimer: null as ReturnType<typeof setTimeout> | null,
-    cache: new Map<string, TabResponse>(),
-    cacheTimestamps: new Map<string, number>(),
+    cache: new Map<string, CacheEntry>(),
     dataCache: new Map<string, BudgetOptimizerData | ExecutiveSummaryData>(),
-    cooldowns: new Map<string, number>(),
     lastVisibleCacheKey: null as string | null,
-    errorFallbackMessage: null as string | null,
   }
 }
 
@@ -58,28 +58,28 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const tokenLimitReached = ref(false)
   const analysisActivated = ref(false)
 
-  // ── Per-tab state ─────────────────────────────────────────────────────
+  // ── Per-tab internal state ────────────────────────────────────────────
 
   const tabs = {
     optimizer: createTabState(),
     summary: createTabState(),
   }
 
-  // ── Reactive wrappers (Vue needs refs for reactivity) ─────────────────
+  // ── Per-tab reactive display state ────────────────────────────────────
 
-  const optimizerStatus = ref<AsyncStatus>('idle')
-  const optimizerResponse = ref<BudgetOptimizerResponse | null>(null)
-  const optimizerError = ref<AiAnalysisError | null>(null)
-  const optimizerFirstCompleted = ref(false)
-  const optimizerErrorFallback = ref<string | null>(null)
-  const optimizerCacheTimestamp = ref<number | null>(null)
+  const optimizer = reactive({
+    status: 'idle' as AsyncStatus,
+    response: null as BudgetOptimizerResponse | null,
+    error: null as AiAnalysisError | null,
+    errorFallback: null as string | null,
+  })
 
-  const summaryStatus = ref<AsyncStatus>('idle')
-  const summaryResponse = ref<ExecutiveSummaryResponse | null>(null)
-  const summaryError = ref<AiAnalysisError | null>(null)
-  const summaryFirstCompleted = ref(false)
-  const summaryErrorFallback = ref<string | null>(null)
-  const summaryCacheTimestamp = ref<number | null>(null)
+  const summary = reactive({
+    status: 'idle' as AsyncStatus,
+    response: null as ExecutiveSummaryResponse | null,
+    error: null as AiAnalysisError | null,
+    errorFallback: null as string | null,
+  })
 
   // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -88,8 +88,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     return [...labels].map((l) => l.trim().toLowerCase()).sort()
   }
 
-  function createCacheKey(labels: string[], provider: string, model: string): string {
-    return `${provider}::${model}::${normalizeLabels(labels).join('|')}`
+  function createCacheKey(labels: string[], provider: string): string {
+    return `${provider}::${normalizeLabels(labels).join('|')}`
   }
 
   function createDataCacheKey(labels: string[]): string {
@@ -100,41 +100,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     return tabs[tab]
   }
 
-  function syncRefsFromTab(tab: AiAnalysisTab): void {
-    const t = getTab(tab)
-    if (tab === 'optimizer') {
-      optimizerStatus.value = t.status
-      optimizerResponse.value = t.response as BudgetOptimizerResponse | null
-      optimizerError.value = t.error
-      optimizerFirstCompleted.value = t.firstAnalyzeCompleted
-      optimizerErrorFallback.value = t.errorFallbackMessage
-    } else {
-      summaryStatus.value = t.status
-      summaryResponse.value = t.response as ExecutiveSummaryResponse | null
-      summaryError.value = t.error
-      summaryFirstCompleted.value = t.firstAnalyzeCompleted
-      summaryErrorFallback.value = t.errorFallbackMessage
-    }
-  }
-
-  function syncCacheTimestamp(tab: AiAnalysisTab): void {
-    const t = getTab(tab)
-    const key = getCurrentCacheKey()
-    const ts = key ? t.cacheTimestamps.get(key) ?? null : null
-    if (tab === 'optimizer') {
-      optimizerCacheTimestamp.value = ts
-    } else {
-      summaryCacheTimestamp.value = ts
-    }
+  function getDisplay(tab: AiAnalysisTab) {
+    return tab === 'optimizer' ? optimizer : summary
   }
 
   function getCurrentCacheKey(): string | null {
     if (!aiStore.provider || !aiStore.selectedModel) return null
-    return createCacheKey(
-      campaignStore.selectedChannelsIds,
-      aiStore.provider,
-      aiStore.selectedModel.id,
-    )
+    return createCacheKey(campaignStore.selectedChannelsIds, aiStore.provider)
   }
 
   // ── Cooldown check ────────────────────────────────────────────────────
@@ -160,18 +132,18 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const t = getTab(tab)
     const key = getCurrentCacheKey()
     if (!key) return false
-    const lastSuccess = t.cooldowns.get(key)
-    if (!lastSuccess) return true
-    return Date.now() - lastSuccess >= COOLDOWN_MS
+    const entry = t.cache.get(key)
+    if (!entry) return true
+    return Date.now() >= entry.cooldownUntil
   }
 
   const optimizerCanAnalyze = computed(() => {
-    if (optimizerStatus.value === 'loading') return false
+    if (optimizer.status === 'loading') return false
     return canAnalyze('optimizer')
   })
 
   const summaryCanAnalyze = computed(() => {
-    if (summaryStatus.value === 'loading') return false
+    if (summary.status === 'loading') return false
     return canAnalyze('summary')
   })
 
@@ -238,6 +210,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function handleRequestError(tab: AiAnalysisTab, e: unknown, cacheKey: string): void {
     const t = getTab(tab)
+    const d = getDisplay(tab)
     const code = e instanceof Error ? (e.message as AiErrorCode) : 'unknown'
     const message = ANALYSIS_ERROR_MESSAGES[code] ?? ANALYSIS_ERROR_MESSAGES.unknown
 
@@ -256,23 +229,20 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       tokenLimitReached.value = true
     }
 
-    // Case 1: cached response exists — keep showing it
-    const cachedResponse = t.cache.get(cacheKey)
-    if (cachedResponse) {
-      t.status = 'done'
-      t.response = cachedResponse
-      t.error = null
-      t.errorFallbackMessage = 'The latest request failed. Showing the previous generated result.'
+    const entry = t.cache.get(cacheKey)
+    if (entry) {
+      // Case 1: cached response exists — keep showing it
+      d.status = 'done'
+      d.response = entry.response as unknown as typeof d.response
+      d.error = null
+      d.errorFallback = 'The latest request failed. Showing the previous generated result.'
     } else {
       // Case 2: no cache — show error
-      t.status = 'error'
-      t.response = null
-      t.error = { code, message }
-      t.errorFallbackMessage = null
+      d.status = 'error'
+      d.response = null
+      d.error = { code, message }
+      d.errorFallback = null
     }
-
-    syncRefsFromTab(tab)
-    syncCacheTimestamp(tab)
   }
 
   // ── Core analyze ──────────────────────────────────────────────────────
@@ -288,6 +258,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     if (!cacheKey) return
 
     const t = getTab(tab)
+    const d = getDisplay(tab)
 
     // Token limit: try next model silently, or show cached if all exhausted
     if (aiStore.selectedModelLimitReached) {
@@ -296,29 +267,25 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       }
     }
     if (tokenLimitReached.value) {
-      const cached = t.cache.get(cacheKey)
-      if (cached) {
-        t.status = 'done'
-        t.response = cached
-        t.error = null
-        t.errorFallbackMessage = null
-        syncRefsFromTab(tab)
-        syncCacheTimestamp(tab)
+      const entry = t.cache.get(cacheKey)
+      if (entry) {
+        d.status = 'done'
+        d.response = entry.response as unknown as typeof d.response
+        d.error = null
+        d.errorFallback = null
       }
       return
     }
 
     // Check cache for automatic calls
     if (isAutomatic) {
-      const cached = t.cache.get(cacheKey)
-      if (cached) {
-        t.status = 'done'
-        t.response = cached
-        t.error = null
-        t.errorFallbackMessage = null
+      const entry = t.cache.get(cacheKey)
+      if (entry) {
+        d.status = 'done'
+        d.response = entry.response as unknown as typeof d.response
+        d.error = null
+        d.errorFallback = null
         t.lastVisibleCacheKey = cacheKey
-        syncRefsFromTab(tab)
-        syncCacheTimestamp(tab)
         return
       }
     }
@@ -326,33 +293,32 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     // Cancel any running request on the OTHER tab (global single-request rule)
     const otherTab: AiAnalysisTab = tab === 'optimizer' ? 'summary' : 'optimizer'
     const otherT = getTab(otherTab)
+    const otherD = getDisplay(otherTab)
     if (otherT.controller) {
       cancelActiveRequest(otherTab)
       // Revert other tab to its last state
       const otherCacheKey = otherT.lastVisibleCacheKey
       if (otherCacheKey) {
-        const otherCached = otherT.cache.get(otherCacheKey)
-        if (otherCached) {
-          otherT.status = 'done'
-          otherT.response = otherCached
+        const otherEntry = otherT.cache.get(otherCacheKey)
+        if (otherEntry) {
+          otherD.status = 'done'
+          otherD.response = otherEntry.response as unknown as typeof otherD.response
         }
       } else {
-        otherT.status = 'idle'
+        otherD.status = 'idle'
       }
-      otherT.error = null
-      otherT.errorFallbackMessage = null
-      syncRefsFromTab(otherTab)
+      otherD.error = null
+      otherD.errorFallback = null
     }
 
     // Cancel current tab's running request
     cancelActiveRequest(tab)
 
     // Start loading
-    t.status = 'loading'
-    t.response = null
-    t.error = null
-    t.errorFallbackMessage = null
-    syncRefsFromTab(tab)
+    d.status = 'loading'
+    d.response = null
+    d.error = null
+    d.errorFallback = null
 
     const controller = new AbortController()
     t.controller = controller
@@ -372,26 +338,23 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       // Check if this request was cancelled (stale)
       if (controller.signal.aborted) return
 
-      // Stamp the model that generated this response
+      // Stamp the model and timestamp onto the response
+      const now = Date.now()
       if (aiStore.selectedModel) {
         result.model = { ...aiStore.selectedModel }
       }
+      result.timestamp = now
 
       // Success
-      t.status = 'done'
-      t.response = result
-      t.error = null
-      t.errorFallbackMessage = null
+      d.status = 'done'
+      d.response = result as unknown as typeof d.response
+      d.error = null
+      d.errorFallback = null
       t.firstAnalyzeCompleted = true
-      t.cache.set(cacheKey, result)
-      t.cacheTimestamps.set(cacheKey, Date.now())
-      t.cooldowns.set(cacheKey, Date.now())
+      t.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
       scheduleCooldownExpiry()
       t.lastVisibleCacheKey = cacheKey
       t.controller = null
-
-      syncRefsFromTab(tab)
-      syncCacheTimestamp(tab)
     } catch (e) {
       // Silently ignore cancelled requests
       if (controller.signal.aborted) return
@@ -404,10 +367,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   // ── Public actions ────────────────────────────────────────────────────
 
   function analyze(tab: AiAnalysisTab): void {
-    const t = getTab(tab)
-    t.errorFallbackMessage = null
+    const d = getDisplay(tab)
+    d.errorFallback = null
     analysisActivated.value = true
-    syncRefsFromTab(tab)
     executeAnalysis(tab, false)
   }
 
@@ -419,22 +381,22 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     // Cancel in-flight request on the previous tab
     const prevT = getTab(prevTab)
+    const prevD = getDisplay(prevTab)
     if (prevT.controller) {
       cancelActiveRequest(prevTab)
       // Revert previous tab
       const prevCacheKey = prevT.lastVisibleCacheKey
       if (prevCacheKey) {
-        const prevCached = prevT.cache.get(prevCacheKey)
-        if (prevCached) {
-          prevT.status = 'done'
-          prevT.response = prevCached
+        const prevEntry = prevT.cache.get(prevCacheKey)
+        if (prevEntry) {
+          prevD.status = 'done'
+          prevD.response = prevEntry.response as unknown as typeof prevD.response
         }
-      } else if (prevT.status === 'loading') {
-        prevT.status = 'idle'
+      } else if (prevD.status === 'loading') {
+        prevD.status = 'idle'
       }
-      prevT.error = null
-      prevT.errorFallbackMessage = null
-      syncRefsFromTab(prevTab)
+      prevD.error = null
+      prevD.errorFallback = null
     }
 
     // Reopen evaluation for the new tab
@@ -447,33 +409,30 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     if (campaignStore.filteredCampaigns.length === 0) return
 
     const t = getTab(tab)
+    const d = getDisplay(tab)
     const cacheKey = getCurrentCacheKey()
     if (!cacheKey) return
 
     // Show last visible result first
     if (t.lastVisibleCacheKey && t.lastVisibleCacheKey === cacheKey) {
-      const cached = t.cache.get(cacheKey)
-      if (cached) {
-        t.status = 'done'
-        t.response = cached
-        t.error = null
-        t.errorFallbackMessage = null
-        syncRefsFromTab(tab)
-        syncCacheTimestamp(tab)
+      const entry = t.cache.get(cacheKey)
+      if (entry) {
+        d.status = 'done'
+        d.response = entry.response as unknown as typeof d.response
+        d.error = null
+        d.errorFallback = null
         return
       }
     }
 
     // Check cache
-    const cached = t.cache.get(cacheKey)
-    if (cached) {
-      t.status = 'done'
-      t.response = cached
-      t.error = null
-      t.errorFallbackMessage = null
+    const entry = t.cache.get(cacheKey)
+    if (entry) {
+      d.status = 'done'
+      d.response = entry.response as unknown as typeof d.response
+      d.error = null
+      d.errorFallback = null
       t.lastVisibleCacheKey = cacheKey
-      syncRefsFromTab(tab)
-      syncCacheTimestamp(tab)
       return
     }
 
@@ -493,23 +452,18 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
       const t = getTab(tab)
+      const d = getDisplay(tab)
       t.firstAnalyzeCompleted = false
-      t.status = 'idle'
-      t.response = null
-      t.error = null
-      t.errorFallbackMessage = null
       t.controller = null
       t.debounceTimer = null
       t.cache.clear()
-      t.cacheTimestamps.clear()
       t.dataCache.clear()
-      t.cooldowns.clear()
       t.lastVisibleCacheKey = null
-      syncRefsFromTab(tab)
+      d.status = 'idle'
+      d.response = null
+      d.error = null
+      d.errorFallback = null
     }
-
-    optimizerCacheTimestamp.value = null
-    summaryCacheTimestamp.value = null
   }
 
   // ── Disconnect reset ──────────────────────────────────────────────────
@@ -531,22 +485,22 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     // Revert loading tabs to their last known state
     for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
       const t = getTab(tab)
-      if (t.status === 'loading') {
+      const d = getDisplay(tab)
+      if (d.status === 'loading') {
         const lastKey = t.lastVisibleCacheKey
         if (lastKey) {
-          const cached = t.cache.get(lastKey)
-          if (cached) {
-            t.status = 'done'
-            t.response = cached
+          const entry = t.cache.get(lastKey)
+          if (entry) {
+            d.status = 'done'
+            d.response = entry.response as unknown as typeof d.response
           } else {
-            t.status = 'idle'
+            d.status = 'idle'
           }
         } else {
-          t.status = 'idle'
+          d.status = 'idle'
         }
-        t.error = null
-        t.errorFallbackMessage = null
-        syncRefsFromTab(tab)
+        d.error = null
+        d.errorFallback = null
       }
     }
   }
@@ -559,20 +513,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     () => {
       const tab = activeTab.value
       const t = getTab(tab)
+      const d = getDisplay(tab)
 
       if (!analysisActivated.value) return
       if (!aiStore.aiPanelOpen) return
       if (!aiStore.provider || !aiStore.selectedModel) return
 
-      // Clear cooldown restriction for label changes
-      // (cooldown only applies to same combination re-analyze)
-
       // Cancel current request
       cancelActiveRequest(tab)
-
-      // Clear data cache for the active tab (new labels = new data)
-      // Actually, we keep data cache — it's keyed by labels, so new labels
-      // will just build new data on miss.
 
       // Debounce
       t.debounceTimer = setTimeout(() => {
@@ -585,15 +533,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
         if (!cacheKey) return
 
         // Check cache first
-        const cached = t.cache.get(cacheKey)
-        if (cached) {
-          t.status = 'done'
-          t.response = cached
-          t.error = null
-          t.errorFallbackMessage = null
+        const entry = t.cache.get(cacheKey)
+        if (entry) {
+          d.status = 'done'
+          d.response = entry.response as unknown as typeof d.response
+          d.error = null
+          d.errorFallback = null
           t.lastVisibleCacheKey = cacheKey
-          syncRefsFromTab(tab)
-          syncCacheTimestamp(tab)
           return
         }
 
@@ -638,24 +584,12 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     activeTab,
     tokenLimitReached,
     analysisActivated,
-    // Optimizer refs
-    optimizerStatus,
-    optimizerResponse,
-    optimizerError,
-    optimizerFirstCompleted,
-    optimizerErrorFallback,
-    optimizerCacheTimestamp,
+    // Per-tab reactive display state
+    optimizer,
+    summary,
+    // Computed
     optimizerCanAnalyze,
-
-    // Summary refs
-    summaryStatus,
-    summaryResponse,
-    summaryError,
-    summaryFirstCompleted,
-    summaryErrorFallback,
-    summaryCacheTimestamp,
     summaryCanAnalyze,
-
     // Actions
     analyze,
     setActiveTab,

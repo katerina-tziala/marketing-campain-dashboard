@@ -28,4 +28,3 @@ export interface CampaignScope {
   selectedCampaigns: string[]
   selectedChannels: string[]
 }
-

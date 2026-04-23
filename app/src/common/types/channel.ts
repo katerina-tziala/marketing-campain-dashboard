@@ -1,7 +1,9 @@
-import type { CampaignMetrics, CampaignPerformance } from './campaign'
+import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics } from './campaign'
 
-export interface Channel extends CampaignMetrics {
+export interface Channel extends CampaignMetrics, PerformanceMetrics {
   id: string
   name: string
   campaigns: CampaignPerformance[]
 }
+
+ 
