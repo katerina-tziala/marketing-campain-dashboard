@@ -6,7 +6,7 @@ export function parseJsonResponse<T>(text: string): T {
 }
 
 export function toValidModels(validIds: Set<string>, parsed: AiModel[]): AiModel[] {
-  const valid = parsed.filter((m) => validIds.has(m.id) || validIds.has(m.model))
+  const valid = parsed.filter((m) => validIds.has(m.id))
   if (valid.length === 0) throw new Error('no-models')
   return valid
 }

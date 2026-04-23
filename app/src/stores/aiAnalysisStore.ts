@@ -147,7 +147,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     return createCacheKey(
       campaignStore.selectedChannelsIds,
       aiStore.provider,
-      aiStore.selectedModel.model,
+      aiStore.selectedModel.id,
     )
   }
 
@@ -257,7 +257,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     if (code === 'token-limit') {
       if (aiStore.selectedModel) {
-        aiStore.markModelLimitReached(aiStore.selectedModel.model)
+        aiStore.markModelLimitReached(aiStore.selectedModel.id)
       }
 
       // Silent fallback: try next available model without showing error
@@ -378,7 +378,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       const result = await runProviderPrompt<TabResponse>(
         aiStore.provider,
         aiStore.apiKey,
-        aiStore.selectedModel.model,
+        aiStore.selectedModel.id,
         prompt,
         controller.signal,
       )

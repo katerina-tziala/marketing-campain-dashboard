@@ -44,7 +44,7 @@ function handleAnalyze(): void {
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"
     :cache-timestamp="cacheTimestamp"
-    :model-name="response?.model?.display_name"
+    :model-name="response?.model?.displayName"
     @analyze="handleAnalyze"
   >
     <BudgetOptimizationOverview

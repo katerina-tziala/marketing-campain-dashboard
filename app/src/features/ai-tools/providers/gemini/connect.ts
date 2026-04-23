@@ -1,8 +1,9 @@
-import { generateModelEvaluationPrompt } from "../../prompts";
-import type { AiModel, ModelsResponse } from "../types";
-import { parseJsonResponse, toValidModels } from "../utils/shared";
-import { fetchGeminiModels, requestGeminiChatCompletion } from "./api";
-import type { GeminiModel } from "./types";
+import { generateModelEvaluationPrompt } from '../../prompts'
+import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
+import { parseJsonResponse, toValidModels } from '../utils/shared'
+import { fetchGeminiModels, requestGeminiChatCompletion } from './api'
+import type { GeminiModel } from './types'
+import { GEMINI_PROVIDER_RULES } from '../providers-meta'
 
 const BANNED = ['embedding', 'image', 'audio', 'tts', 'veo', 'imagen', 'lyria', 'robotics']
 
@@ -26,13 +27,21 @@ function getSortedCandidates(models: GeminiModel[]): GeminiModel[] {
   })
 }
 
+function stripPrefix(name: string): string {
+  return name.replace(/^models\//, '')
+}
+
 function buildValidIds(candidates: GeminiModel[]): Set<string> {
-  const ids = new Set<string>()
-  for (const c of candidates) {
-    ids.add(c.name)
-    ids.add(c.name.replace(/^models\//, ''))
+  return new Set(candidates.map((c) => stripPrefix(c.name)))
+}
+
+function toAiModelCandidate(m: GeminiModel): AiModelCandidate {
+  return {
+    id: stripPrefix(m.name),
+    contextWindow: m.inputTokenLimit,
+    maxOutputTokens: m.outputTokenLimit,
+    thinking: m.thinking,
   }
-  return ids
 }
 
 async function tryWithModel(
@@ -40,14 +49,8 @@ async function tryWithModel(
   runner: GeminiModel,
   candidates: GeminiModel[],
 ): Promise<AiModel[]> {
-  const modelId = runner.name.replace(/^models\//, '')
-    // TODO: consider whether we want to include more info in the prompt, 
-    // such as model capabilities or strengths (currently we just include the model IDs).
-    // This would require changes to the prompt template and response parsing, 
-    // but could potentially lead to better model selection by providing more context to the AI.
-    // customize prompt to DTO of provider
-    // perform a mapping on our side first???
-  const prompt = generateModelEvaluationPrompt(candidates)
+  const modelId = stripPrefix(runner.name)
+  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GEMINI_PROVIDER_RULES)
   const raw = await requestGeminiChatCompletion(apiKey, modelId, prompt)
   return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
 }

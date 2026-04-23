@@ -1,10 +1,16 @@
+export type AiModelCandidate = {
+  id: string;
+  contextWindow?: number;
+  maxOutputTokens?: number;
+  thinking?: boolean;
+};
+
 export type AiModel = {
   id: string;
-  model: string;
-  display_name: string;
-  provider: string;
+  displayName: string;
+  family: string;
   strength: string;
-  strength_score: number;
+  strengthScore: number;
   reason: string;
   limitReached: boolean;
 };

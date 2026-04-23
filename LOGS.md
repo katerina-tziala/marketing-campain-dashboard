@@ -5000,3 +5000,36 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `types/index.ts` imports `AiModel` internally (not re-exported) to satisfy `BudgetOptimizerResponse.model?` and `ExecutiveSummaryResponse.model?` — the response types stay in the feature types file while the definition stays in providers
 - `Record<AiErrorCode, ...>` for all error maps — TypeScript enforces exhaustiveness, preventing silent gaps when a new code is added
 - `parse-error` added to `ai-connection/utils/index.ts` error records even though it's an analysis-only code — exhaustiveness requires all 10 entries everywhere the record type is used
+
+
+## [#252] Refactor AiModel DTO, add AiModelCandidate mapping, providers-meta rules
+**Type:** refactor
+
+**Summary:** Updated AiModel to a clean camelCase DTO (added family, removed model/provider, renamed display_name/strength_score), introduced per-provider AiModelCandidate conversion in connect files, extracted provider rules to providers-meta.ts, and updated generateModelEvaluationPrompt to accept models + providerRules as separate parameters.
+
+**Brainstorming:** Three concerns were addressed together because they form a single coherent data-flow change. AiModel had snake_case fields (display_name, strength_score) inconsistent with the rest of the codebase, a redundant model field (duplicate of id), a provider field that duplicates aiStore.provider, and was missing family (which the prompt already produced in its output schema but the type didn't capture). AiModelCandidate already existed in providers/types.ts — the connect files were still passing raw provider types (GroqModel[]/GeminiModel[]) to the prompt instead of using it. Moving the provider-specific rules to providers-meta.ts as string[] makes the prompt function reusable and testable without conditionals. Gemini's buildValidIds was simplified to stripped IDs only since candidates now have stripped IDs. Groq inactive model filtering was also added (m.active === true) which was the original impetus.
+
+**Prompt:** Remove inactive models when filtering Groq models. Convert Groq and Gemini models to AiModelCandidate after filtering. Update AiModel to new DTO (id/displayName/family/strength/strengthScore/reason/limitReached). generateModelEvaluationPrompt must be called with models: AiModelCandidate[] and providerRules: string[]. Add providers-meta.ts with Groq and Gemini rules as string[].
+
+**What changed:**
+- `providers/types.ts` — AiModel updated: removed model/provider, renamed display_name→displayName/strength_score→strengthScore, added family; AiModelCandidate kept as-is
+- `providers/providers-meta.ts` — new file; GROQ_PROVIDER_RULES and GEMINI_PROVIDER_RULES as string[]
+- `prompts/model-evaluation-prompt.ts` — new signature (models: AiModelCandidate[], providerRules: string[]); removed provider param and getProviderSpecificInstructions; renders providerRules as bullet list; fixed stale import from model-evaluation-prompt2
+- `providers/qroq/connect.ts` — isAllowed adds m.active===true check; toAiModelCandidate(GroqModel)→AiModelCandidate mapper added; tryWithModel maps candidates before passing to prompt with GROQ_PROVIDER_RULES; removed TODO comments
+- `providers/gemini/connect.ts` — stripPrefix helper extracted; buildValidIds uses stripped IDs only; toAiModelCandidate(GeminiModel)→AiModelCandidate mapper added; tryWithModel maps candidates before passing to prompt with GEMINI_PROVIDER_RULES; removed TODO comments
+- `providers/utils/shared.ts` — toValidModels: removed || validIds.has(m.model) branch (model field gone)
+- `providers/connect-provider.ts` — strength_score → strengthScore in byStrengthDesc and rankModels filter
+- `stores/aiStore.ts` — selectBestModel: strength_score → strengthScore; markModelLimitReached: m.model → m.id
+- `stores/aiAnalysisStore.ts` — selectedModel.model → selectedModel.id in getCurrentCacheKey, handleRequestError, executeAnalysis
+- `mocks/executive-summary-mocks.ts` — MOCK_GEMINI_FLASH and MOCK_GROQ_LLAMA updated to new DTO (added family, removed model/provider, renamed fields)
+- `mocks/budget-optimizer-mocks.ts` — same mock updates
+- `ExecutiveSummaryAnalysis.vue` — model?.display_name → model?.displayName
+- `BudgetOptimizationAnalysis.vue` — model?.display_name → model?.displayName
+- `CLAUDE.md` — architecture updated: providers/types.ts, providers-meta.ts, connect files, model-evaluation-prompt, shared.ts, connect-provider.ts descriptions
+
+**Key decisions & why:**
+- provider removed from AiModel — aiStore already knows the provider at the connection level; per-model duplication was noise
+- model field removed — id now serves both roles (prompt input identifier and API call identifier); Gemini connect strips the models/ prefix in toAiModelCandidate so id is already the API-call form
+- Gemini buildValidIds simplified to stripped forms only — since candidates now carry stripped IDs, the AI always returns stripped IDs; the previous both-forms logic was a workaround for ambiguous input
+- providerRules as string[] rather than derived from provider enum — keeps the prompt function free of provider knowledge and makes rules independently testable
+- prompt2 files left untouched — user explicitly excluded them

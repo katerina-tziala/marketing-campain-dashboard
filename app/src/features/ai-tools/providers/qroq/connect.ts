@@ -1,15 +1,16 @@
-import { generateModelEvaluationPrompt } from "../../prompts"
-import type { AiModel, ModelsResponse } from "../types"
-import { parseJsonResponse, toValidModels } from "../utils/shared"
-import { fetchGroqModels, requestGroqChatCompletion } from "./api"
-import type { GroqModel } from "./types"
+import { generateModelEvaluationPrompt } from '../../prompts'
+import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
+import { parseJsonResponse, toValidModels } from '../utils/shared'
+import { fetchGroqModels, requestGroqChatCompletion } from './api'
+import type { GroqModel } from './types'
+import { GROQ_PROVIDER_RULES } from '../providers-meta'
 
 const BANNED = ['whisper', 'audio', 'guard', 'safeguard', 'moderation', 'orpheus']
 
 function isAllowed(m: GroqModel): boolean {
-  return !BANNED.some((x) => (m.id || '').toLowerCase().includes(x))
+  return m.active === true && !BANNED.some((x) => (m.id || '').toLowerCase().includes(x))
 }
-// remove inactive ones too
+
 function filterModels(models: GroqModel[]): GroqModel[] {
   return models.filter(isAllowed)
 }
@@ -26,18 +27,20 @@ function buildValidIds(candidates: GroqModel[]): Set<string> {
   return new Set(candidates.map((c) => c.id))
 }
 
+function toAiModelCandidate(m: GroqModel): AiModelCandidate {
+  return {
+    id: m.id,
+    contextWindow: m.context_window,
+    maxOutputTokens: m.max_completion_tokens,
+  }
+}
+
 async function tryWithModel(
   apiKey: string,
   runner: GroqModel,
   candidates: GroqModel[],
 ): Promise<AiModel[]> {
-        // TODO: consider whether we want to include more info in the prompt, 
-    // such as model capabilities or strengths (currently we just include the model IDs).
-    // This would require changes to the prompt template and response parsing, 
-    // but could potentially lead to better model selection by providing more context to the AI.
-    // customize prompt to DTO of provider
-    // perform a mapping on our side first???
-  const prompt = generateModelEvaluationPrompt(candidates)
+  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GROQ_PROVIDER_RULES)
   const raw = await requestGroqChatCompletion(apiKey, runner.id, prompt)
   return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
 }

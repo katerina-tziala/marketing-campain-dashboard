@@ -10,7 +10,7 @@ const ERROR_CODES = new Set<AiErrorCode>([
 ])
 
 function selectBestModel(models: AiModel[]): AiModel {
-  return models.reduce((best, m) => m.strength_score > best.strength_score ? m : best)
+  return models.reduce((best, m) => m.strengthScore > best.strengthScore ? m : best)
 }
 
 export const useAiStore = defineStore('ai', () => {
@@ -51,7 +51,7 @@ export const useAiStore = defineStore('ai', () => {
   )
 
   function markModelLimitReached(modelId: string): void {
-    const model = models.value.find((m) => m.model === modelId)
+    const model = models.value.find((m) => m.id === modelId)
     if (model) model.limitReached = true
   }
 

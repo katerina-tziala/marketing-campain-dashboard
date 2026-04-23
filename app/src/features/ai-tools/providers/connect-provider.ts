@@ -9,7 +9,7 @@ const CONNECTORS: Record<AiProviderType, (apiKey: string) => Promise<AiModel[]>>
 }
 
 function byStrengthDesc(a: AiModel, b: AiModel): number {
-  return b.strength_score - a.strength_score
+  return b.strengthScore - a.strengthScore
 }
 
 function withLimitReset(m: AiModel): AiModel {
@@ -18,7 +18,7 @@ function withLimitReset(m: AiModel): AiModel {
 
 function rankModels(models: AiModel[]): AiModel[] {
   const ranked = models
-    .filter((m) => m.strength_score >= 6)
+    .filter((m) => m.strengthScore >= 6)
     .sort(byStrengthDesc)
     .map(withLimitReset)
   if (ranked.length === 0) throw new Error('no-models')

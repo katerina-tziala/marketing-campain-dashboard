@@ -3,22 +3,20 @@ import type { ExecutiveSummaryResponse } from '../types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',
-  model: 'gemini-2.0-flash',
-  display_name: 'Gemini 2.0 Flash',
-  provider: 'gemini',
+  displayName: 'Gemini 2.0 Flash',
+  family: 'Gemini',
   strength: 'Fast and efficient for structured analysis tasks',
-  strength_score: 8,
+  strengthScore: 8,
   reason: 'Best balance of speed and accuracy for executive summary generation',
   limitReached: false,
 }
 
 const MOCK_GROQ_LLAMA: AiModel = {
   id: 'llama-3.3-70b-versatile',
-  model: 'llama-3.3-70b-versatile',
-  display_name: 'Llama 3.3 70B',
-  provider: 'groq',
+  displayName: 'Llama 3.3 70B',
+  family: 'Llama',
   strength: 'High-quality reasoning with detailed analytical depth',
-  strength_score: 9,
+  strengthScore: 9,
   reason: 'Strong analytical reasoning with comprehensive portfolio insights',
   limitReached: false,
 }
