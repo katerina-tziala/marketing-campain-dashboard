@@ -98,6 +98,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── components/
 │   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + AiAnalysis when connected; grid layout (status bar / tabs / scroll area)
 │   │   │   ├── ai-analysis/
+│   │   │   │   ├── utils/
+│   │   │   │   │   └── analysis-error-messages.ts  # ANALYSIS_ERROR_MESSAGES (Record<AiErrorCode, string> — all 10 codes, plain strings); used by aiAnalysisStore to format analysis panel error messages
 │   │   │   │   └── components/         # AI analysis UI — tab switcher, shared section wrappers, budget-optimization and executive-summary component trees
 │   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs (Summary/Optimizer) + scrollable container; reads aiAnalysisStore.activeTab; renders BudgetOptimizationAnalysis or ExecutiveSummaryAnalysis; flat scoped .panel-container style
 │   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
@@ -122,17 +124,17 @@ app/                        # Vue 3 + Vite project
 │   │   │   │           └── ExecutiveSummaryChannels.vue        # Channel Summary — props: channels[], additionalChannelsNote?; channelStatusVariant badge + border-left color
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── components/         # Connection UI components
-│   │   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (PROVIDER_OPTIONS from utils) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; providerHelp computed from PROVIDER_HELP; imports PROVIDER_OPTIONS, PROVIDER_HELP, ERROR_MESSAGES, ERROR_HINTS from utils/; flat scoped styles (no BEM)
+│   │   │   │   │   ├── AiConnectionForm.vue    # Provider selection via RadioToggle (PROVIDER_OPTIONS from providers-meta) + API key input via PasswordInput (error passed via #error slot) + collapsible help section (.card-secondary) + Connect button (.btn-primary + Spinner) + inline error (field-error/field-error-hint); clears connectionError + apiKey on provider change; providerHelp computed from PROVIDER_HELP; imports PROVIDER_OPTIONS, PROVIDER_HELP from providers/providers-meta; imports ERROR_MESSAGES, ERROR_HINTS from utils/; flat scoped styles (no BEM)
 │   │   │   │   │   ├── AiConnectedStatus.vue   # Status bar — provider label + green dot (::before pseudo-element + shadow-connection) + "Connected" + .btn-destructive-small Disconnect; disconnect clears analysis state via aiAnalysisStore; flat scoped styles (no BEM)
 │   │   │   │   │   └── index.ts                # Barrel export — AiConnectionForm, AiConnectedStatus
 │   │   │   │   └── utils/              # Connection UI constants
-│   │   │   │       └── index.ts        # PROVIDER_LABELS (Record<AiProviderType, string>), PROVIDER_HELP (Record<AiProviderType, ...>), ERROR_MESSAGES (Record<AiErrorCode, string> — all 10 codes), ERROR_HINTS (Record<AiErrorCode, string|null> — all 10 codes), PROVIDER_OPTIONS
+│   │   │   │       └── index.ts        # ERROR_MESSAGES (Record<AiErrorCode, (provider) => string> — all 10 codes; provider-aware functions); ERROR_HINTS (Record<AiErrorCode, string> — all 10 codes); imports PROVIDER_LABELS from providers-meta
 │   │   │   ├── providers/              # Provider implementations — Gemini and Groq, each broken into api/connect/types; shared utils for error handling and model ranking
 │   │   │   │   ├── index.ts            # Barrel — re-exports connectGemini, connectGroq, requestGeminiChatCompletion, requestGroqChatCompletion, runProviderPrompt, connectProvider
 │   │   │   │   ├── connect-provider.ts # connectProvider(provider, apiKey) → AiModel[]; thin dispatcher; applies shared rankModels step (strengthScore≥6 filter + byStrengthDesc sort + withLimitReset map + no-models throw) on top of each provider's raw result; errors thrown by providers or rankModels propagate to aiStore
 │   │   │   │   ├── run-provider-prompt.ts # runProviderPrompt<T>(provider, apiKey, model, prompt, signal?) → T; dispatches to provider caller, parses JSON, throws 'invalid-response' on parse failure; used by aiAnalysisStore for all analysis calls
 │   │   │   │   ├── types.ts            # AiModelCandidate (id/contextWindow?/maxOutputTokens?/thinking?) — normalized DTO passed to AI for evaluation; AiModel (id/displayName/family/strength/strengthScore/reason/limitReached) — AI-evaluated model DTO; ModelsResponse ({ models: AiModel[] }); exported via providers/index.ts barrel
-│   │   │   │   ├── providers-meta.ts   # GROQ_PROVIDER_RULES and GEMINI_PROVIDER_RULES as string[] — per-provider instruction lists passed into generateModelEvaluationPrompt
+│   │   │   │   ├── providers-meta.ts   # PROVIDER_LABELS (Record<AiProviderType, string>), PROVIDER_HELP (Record<AiProviderType, ...>), PROVIDER_OPTIONS; GROQ_PROVIDER_RULES and GEMINI_PROVIDER_RULES as string[] — per-provider instruction lists passed into generateModelEvaluationPrompt
 │   │   │   │   ├── gemini/             # Gemini provider module
 │   │   │   │   │   ├── types.ts        # GeminiModel, GeminiModelsResponse
 │   │   │   │   │   ├── api.ts          # fetchGeminiModels(apiKey, signal?) → GeminiModel[]; requestGeminiChatCompletion(apiKey, model, prompt, signal?) → string; uses assertResponseOk/assertChatResponseOk/normalizeConnectionError from utils

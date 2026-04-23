@@ -17,6 +17,7 @@ import { buildExecutiveSummaryData } from '../features/ai-tools/utils/buildExecu
 import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
 import { runProviderPrompt } from '../features/ai-tools/providers'
+import { ANALYSIS_ERROR_MESSAGES } from '../features/ai-tools/ai-analysis/utils/analysis-error-messages'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -43,21 +44,6 @@ function createTabState() {
     lastVisibleCacheKey: null as string | null,
     errorFallbackMessage: null as string | null,
   }
-}
-
-// ── Error messages ─────────────────────────────────────────────────────────
-
-const ERROR_MESSAGES: Record<AiErrorCode, string> = {
-  'network': 'Network error. Check your connection and try again.',
-  'timeout': 'The request timed out. Try again.',
-  'rate-limit': 'Too many requests. Please wait and try again.',
-  'token-limit': 'AI generation is temporarily unavailable due to usage limits.',
-  'server-error': 'The AI provider is experiencing issues. Try again later.',
-  'parse-error': 'Could not parse the AI response. Try again.',
-  'invalid-response': 'Could not parse the AI response. Try again.',
-  'invalid-key': 'Something went wrong.',
-  'no-models': 'Something went wrong.',
-  'unknown': 'Something went wrong.',
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -253,7 +239,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function handleRequestError(tab: AiAnalysisTab, e: unknown, cacheKey: string): void {
     const t = getTab(tab)
     const code = e instanceof Error ? (e.message as AiErrorCode) : 'unknown'
-    const message = ERROR_MESSAGES[code] ?? ERROR_MESSAGES.unknown
+    const message = ANALYSIS_ERROR_MESSAGES[code] ?? ANALYSIS_ERROR_MESSAGES.unknown
 
     if (code === 'token-limit') {
       if (aiStore.selectedModel) {

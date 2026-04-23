@@ -1,31 +1,5 @@
-import type { AiProviderType, AiErrorCode } from '../../types'
-
-export const PROVIDER_LABELS: Record<AiProviderType, string> = {
-  gemini: 'Google Gemini',
-  groq: 'Groq',
-}
-
-export const PROVIDER_HELP: Record<AiProviderType, { title: string; steps: string[]; note?: string }> = {
-  groq: {
-    title: "How to get your Groq API key",
-    steps: [
-      "Go to the Groq Console and sign in with your account.",
-      "Open API Keys from the left sidebar.",
-      "Click Create API Key.",
-      "Copy the key and paste it into the field below."
-    ],
-    note: "Some models may require your organization admin to accept additional terms before use."
-  },
-  gemini: {
-    title: "How to get your Gemini API key",
-    steps: [
-      "Go to Google AI Studio and sign in with your account.",
-      "Open API Keys from the left sidebar.",
-      "Click Create API key.",
-      "Copy the key and paste it into the field below."
-    ]
-  }
-}
+import type { AiErrorCode, AiProviderType } from '../../types'
+import { PROVIDER_LABELS } from '../../providers/providers-meta'
 
 export const ERROR_MESSAGES: Record<AiErrorCode, (provider: AiProviderType) => string> = {
   'invalid-key': (p) => `Invalid API key for ${PROVIDER_LABELS[p]}`,
@@ -48,12 +22,7 @@ export const ERROR_HINTS: Record<AiErrorCode, string> = {
   'server-error': 'This is a problem on the provider’s side, not yours. Try again later.',
   'no-models': 'The provider returned no models compatible with this application. Try a different provider.',
   'unknown': 'If this persists, try a different provider or check the provider’s status page',
-  'token-limit': ' .',
+  'token-limit': 'The provider has limits on how many tokens can be processed in a given time frame. Wait a moment and try again.',
   'invalid-response': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
   'parse-error': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
 }
-
-export const PROVIDER_OPTIONS = [
-  { value: 'groq', label: PROVIDER_LABELS.groq },
-  { value: 'gemini', label: PROVIDER_LABELS.gemini },
-]

@@ -5033,3 +5033,45 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Gemini buildValidIds simplified to stripped forms only — since candidates now carry stripped IDs, the AI always returns stripped IDs; the previous both-forms logic was a workaround for ambiguous input
 - providerRules as string[] rather than derived from provider enum — keeps the prompt function free of provider knowledge and makes rules independently testable
 - prompt2 files left untouched — user explicitly excluded them
+
+
+## [#253] Split provider metadata and error messages to correct feature boundaries
+**Type:** refactor
+
+**Summary:** Moved `PROVIDER_LABELS`, `PROVIDER_HELP`, and `PROVIDER_OPTIONS` from `ai-connection/utils` into `providers/providers-meta.ts`; extracted the inline `ERROR_MESSAGES` from `aiAnalysisStore` into a dedicated `ai-tools/utils/analysis-error-messages.ts`; `ai-connection/utils` now only contains connection-form error display constants.
+
+**Brainstorming:** `ai-connection/utils/index.ts` was acting as a grab-bag for both provider-level metadata (labels, help text, options) and connection-form display strings. Provider metadata belongs in the provider layer alongside the existing rule arrays in `providers-meta.ts`. Error messages split along feature lines: the connection form needs provider-aware functions `(provider) => string`; the analysis store needs plain strings. The analysis store was also defining its error map inline — extracting it to `ai-tools/utils/` makes it a proper module-level concern and removes hidden coupling between store logic and display strings.
+
+**Prompt:** `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS` should also be part of `providers-meta`. `ERROR_MESSAGES` and `ERROR_HINTS` are both in `ai-connection/utils` and used in different features — split them properly.
+
+**What changed:**
+- `providers/providers-meta.ts` — added `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS`; imports `AiProviderType` from types
+- `ai-connection/utils/index.ts` — removed the three provider metadata constants; now imports `PROVIDER_LABELS` from `providers-meta` for use in error message functions; retains `ERROR_MESSAGES` (provider-aware functions) and `ERROR_HINTS` (plain strings) as connection-form-specific display constants
+- `ai-tools/utils/analysis-error-messages.ts` — new file; `ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, string>` (all 10 codes, plain strings) extracted from `aiAnalysisStore`
+- `stores/aiAnalysisStore.ts` — removed inline `ERROR_MESSAGES` constant and its comment block; imports `ANALYSIS_ERROR_MESSAGES` from `ai-tools/utils/analysis-error-messages`; usage updated at `handleRequestError`
+- `ai-connection/components/AiConnectionForm.vue` — imports `PROVIDER_OPTIONS, PROVIDER_HELP` from `providers/providers-meta`; imports `ERROR_MESSAGES, ERROR_HINTS` from `../utils`
+- `ai-connection/components/AiConnectedStatus.vue` — imports `PROVIDER_LABELS` from `providers/providers-meta`
+- `CLAUDE.md` — updated `providers-meta.ts`, `ai-connection/utils/index.ts`, `AiConnectionForm.vue` descriptions; added `analysis-error-messages.ts` entry
+
+**Key decisions & why:**
+- Provider metadata in `providers-meta.ts` — it was already home to provider rule arrays; labels, help text, and form options are all provider-level knowledge that the connection UI consumes, not produces
+- Two separate error message constants (`ERROR_MESSAGES` vs `ANALYSIS_ERROR_MESSAGES`) kept intentionally separate — connection form messages are provider-aware functions; analysis panel messages are plain strings; merging them would require artificial branching or overloading
+- `ai-connection/utils` retained (not deleted) — it still owns the connection-form error display constants, which are specific to the connection UI and not reusable elsewhere
+
+
+## [#254] Move analysis-error-messages to ai-analysis/utils/
+**Type:** fix
+
+**Summary:** Relocated `analysis-error-messages.ts` from `ai-tools/utils/` into the correct `ai-analysis/utils/` subfolder so analysis-specific constants live within their own feature boundary.
+
+**Brainstorming:** `analysis-error-messages.ts` was placed in the shared `ai-tools/utils/` folder in #253, but it is exclusively used by the analysis feature. The `ai-analysis/` feature folder is the right home; a new `utils/` subfolder was created for it.
+
+**Prompt:** ANALYSIS_ERROR_MESSAGES should be in the ai-analysis feature — why is it not?
+
+**What changed:**
+- `ai-tools/utils/analysis-error-messages.ts` — moved to `ai-tools/ai-analysis/utils/analysis-error-messages.ts`
+- `stores/aiAnalysisStore.ts` — import path updated accordingly
+- `CLAUDE.md` — removed entry from `ai-tools/utils/`; added `ai-analysis/utils/` section with the file entry
+
+**Key decisions & why:**
+- New `ai-analysis/utils/` subfolder created — `ai-analysis/` had only `components/`; utils is the natural parallel for non-component module-level code scoped to this feature
