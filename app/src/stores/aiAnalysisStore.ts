@@ -16,7 +16,7 @@ import { buildBudgetOptimizerData } from '../features/ai-tools/utils/buildBudget
 import { buildExecutiveSummaryData } from '../features/ai-tools/utils/buildExecutiveSummaryData'
 import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
-import { callProviderForAnalysis } from '../features/ai-tools/ai-analysis'
+import { runProviderPrompt } from '../features/ai-tools/providers'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -372,7 +372,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       const prompt = buildPrompt(tab)
       console.log(prompt)
 
-      const result = await callProviderForAnalysis<TabResponse>(
+      const result = await runProviderPrompt<TabResponse>(
         aiStore.provider,
         aiStore.apiKey,
         aiStore.selectedModel.model,

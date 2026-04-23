@@ -4845,3 +4845,124 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Error mapping in the store, not in a wrapper — the store is the only consumer of `connectProvider`; keeping error handling next to the state it sets avoids an indirection layer that existed solely to avoid a try/catch in the store
 - `isConnectionError` guard removed — with `connectProvider` returning `Promise<AiModel[]>` and throwing on failure, a union return type and its guard are no longer needed
 - `invalid-response` added to `ERROR_CODES` — it was missing from the old set and is now a valid `AiConnectionErrorCode`
+
+
+## [#245] Retry model evaluation across candidates; fix swapped args and wrong provider label
+**Type:** refactor
+
+**Summary:** Replaced the single-shot AI model evaluation call in `connectGemini` and `connectGroq` with a retry loop that iterates through sorted candidates, removes any model that fails (API error or parse error), and only falls back to `[fallback]` when all candidates are exhausted; also fixed two pre-existing bugs: swapped `model`/`prompt` args in both API calls, and wrong provider label (`PROVIDER_LABELS.groq`) used for the Gemini fallback model.
+
+**Brainstorming:** The old implementation picked one optimal model and ran the evaluation prompt with it — if that call failed for any reason, the whole evaluation was abandoned and only the fallback model was returned. The retry loop is the natural fix: if the best candidate can't run the prompt, try the next-best. Removing the failed candidate from `candidates` also means the evaluation prompt is rebuilt each iteration, so the AI isn't asked to evaluate models that have already proven unresponsive. The `attemptEvaluation` helper was extracted to keep `connectGemini`/`connectGroq` under the complexity threshold (the nested try/catch inside a while loop was flagged at complexity 11). Both implementations follow the same shape, differing only in provider-specific types and model ID format. The swapped-args bug (`requestGeminiChatCompletion(apiKey, prompt, optimal)` instead of `(apiKey, modelId, prompt)`) would have sent the full prompt text as the model identifier — the evaluation call was silently broken. The Gemini fallback used `PROVIDER_LABELS.groq` as the provider string — cosmetic but incorrect.
+
+**Prompt:** Update connectGroq and connectGemini. Iterate on multiple models if call fails, rather than just picking the optimal and falling back to it if the evaluation fails. Models that failed should be removed from the filtered models list. Make sure to add a new error handling in case parsing of JSON response fails.
+
+**What changed:**
+- `providers/gemini/connect.ts` — complete rewrite; `getSortedCandidates` replaces `getFlashModelSortDir` + `getSortedModels` + `getOptimalModel`; `attemptEvaluation(apiKey, modelId, candidates, fallback)` → `AiModel[]|null` encapsulates one attempt (API call + parse); `connectGemini` runs the retry loop, shifts failed candidates; fixed `PROVIDER_LABELS.groq` → `PROVIDER_LABELS.gemini`; fixed arg order `(apiKey, modelId, prompt)`; removed console.logs and TODO comments
+- `providers/qroq/connect.ts` — complete rewrite; `getSortedCandidates` (sort by `created` desc) replaces `getOptimalModel`; same `attemptEvaluation` pattern; `connectGroq` runs the retry loop; fixed arg order `(apiKey, runner.id, prompt)`; removed console.logs and TODO comments
+- `prompts/model-evaluation-prompt.ts` — import of `GeminiModel`/`GroqModel` updated to source from `providers/gemini/types` and `providers/qroq/types` (auto-fixed; the old `../types` import was broken after the providers refactor)
+
+**Key decisions & why:**
+- `attemptEvaluation` extracted as a module-private helper — the nested try/catch inside a while loop pushed `connectGemini` to complexity 11; the helper reduces the public function to a simple loop with an early return, bringing complexity down to an acceptable level
+- Failed candidates removed from `candidates` before each retry — the evaluation prompt is rebuilt from the remaining list each iteration, so the AI is never asked to evaluate a model that already failed; this keeps the prompt consistent with what's actually available
+- `null` return from `attemptEvaluation` rather than throwing — makes the retry loop a simple `if (result) return result` without any additional try/catch at the call site
+- Fallback returned only when all candidates are exhausted — connection still succeeds with the optimal model as a baseline; the AI evaluation is a best-effort ranking, not a hard requirement
+
+
+## [#246] Replace fallback model with recursive evaluation; throw on exhaustion; filter ranked output against candidates
+**Type:** refactor
+
+**Summary:** Replaced the while-loop-with-fallback pattern in `connectGemini` and `connectGroq` with a recursive `evaluateModels` function; removed `buildFallbackModel` and `rankModels` from `providers/utils/shared.ts`; the ranked output is now validated against the actual candidates list, and if all candidates are exhausted the error propagates to the store which blocks connection.
+
+**Brainstorming:** The fallback model was a silent safety net: if every AI evaluation attempt failed, the user was "connected" with an untested model. The argument against keeping it is that a fallback that passes all prompts would also pass the evaluation — so if the evaluation consistently fails, it's likely a deeper problem (rate limit, API instability) and silently connecting is misleading. The recursive structure is a natural fit: base case throws, recursive case tries the head and falls through to tail on failure. `tryWithModel` extracts the single-attempt logic so `evaluateModels` has no branching beyond the base case and `.catch`, keeping both functions well within the complexity budget. The ranked output validation (`toRankedModels` filtering by `validIds`) prevents hallucinated model IDs from leaking through — previously `rankModels` would push a fallback if the AI returned nothing matching, now an empty validated result triggers another retry instead. `buildFallbackModel` and `rankModels` in `providers/utils/shared.ts` became dead code once both providers stopped using them.
+
+**Prompt:** Refine the logic. Use recursive calling instead of while. Filter out all models that are not in the candidates list or in the runner. Do not keep fallback model — if the prompt fails, the rest will fail too. In that case throw an error and do not establish connection in the store.
+
+**What changed:**
+- `providers/gemini/connect.ts` — complete rewrite; `flashPriority` extracted for sort readability; `isSufficientModel`/`buildValidIds`/`byStrengthDesc`/`withLimitReset` extracted as named helpers to keep `toRankedModels` below complexity threshold; `toRankedModels` validates response against candidate IDs (both `models/` prefixed and stripped forms), filters strength_score≥6, throws `no-models` if result is empty; `tryWithModel` runs one prompt+parse attempt and throws on any failure; `evaluateModels` is recursive — base case throws `no-models`, catches `tryWithModel` failure and recurses with `remaining`; `connectGemini` just filters, sorts, and delegates; `PROVIDER_LABELS` import removed (no fallback)
+- `providers/qroq/connect.ts` — same structure; `buildValidIds` inlined as a single `new Set(candidates.map(c => c.id))` (no prefix stripping needed for Groq); otherwise identical shape
+- `providers/utils/shared.ts` — `buildFallbackModel` and `rankModels` removed (dead code); only `parseJsonResponse` remains
+- `aiStore.ts` — no change needed; the store's existing catch block maps the thrown `no-models` error to `{ code: 'no-models', provider }`, which blocks connection and shows the appropriate error message
+
+**Key decisions & why:**
+- Recursive `evaluateModels` over while loop — natural base-case/recursive-case fit; removes mutable `candidates.shift()` mutation; each frame gets its own immutable `[runner, ...remaining]` destructure
+- `tryWithModel` extracted — isolates the async attempt logic so `evaluateModels` contains no branching except the base case and the `.catch`; this is what keeps both functions under the complexity threshold
+- Throw on exhaustion, not silent fallback — if every candidate fails the evaluation call, connecting with an unverified model is misleading; the error propagates to `aiStore` which sets `connectionError` and leaves `isConnected = false`
+- `toRankedModels` validates output against `validIds` — prevents the AI from returning hallucinated model identifiers; an empty validation result triggers a retry rather than a silent empty connection
+- `buildFallbackModel` / `rankModels` removed from `providers/utils/shared.ts` — both were only used by the connect files and are now fully superseded by the per-provider `toRankedModels` implementations
+
+
+## [#247] Move shared ranking logic (strength filter, sort, limitReset, no-models throw) to connect-provider
+**Type:** refactor
+
+**Summary:** Extracted the universal post-evaluation ranking step — strength_score≥6 filter, byStrengthDesc sort, withLimitReset map, and no-models throw — from each provider's `toRankedModels` into `connect-provider.ts`; providers now only validate the AI response against their own candidate ID sets.
+
+**Brainstorming:** The `isSufficientModel`, `byStrengthDesc`, and `withLimitReset` helpers were duplicated verbatim in both `gemini/connect.ts` and `qroq/connect.ts`. The strength score threshold, sort order, and `limitReached` reset are universal concerns independent of any provider — they belong at the aggregation point, not inside each provider. Moving them to `connect-provider` means a single `rankModels` function owns that logic, providers only need to answer "did the AI return something that matches a known model ID?", and any future provider automatically gets the same ranking applied. The retry logic (evaluateModels recursion) is unaffected: `toRankedModels` still throws `no-models` if no candidate IDs match, which triggers the next recursion frame. The strength/sort/map step happens once, after the winning evaluation round completes. The Groq file also needed named function references (`isAllowed`, `byCreatedDesc`) instead of inline arrows to keep the cumulative file complexity under the linter threshold.
+
+**Prompt:** Lets move `.sort(byStrengthDesc)` `.map(withLimitReset)` to the connect-provider without missing any error handling — filtering by strength_score should also happen there and throwing a no models error there.
+
+**What changed:**
+- `providers/connect-provider.ts` — added `byStrengthDesc`, `withLimitReset`, and `rankModels` (strength≥6 filter + sort + map + no-models throw); `connectProvider` now calls `rankModels(await CONNECTORS[provider](apiKey))` instead of returning the raw result
+- `providers/gemini/connect.ts` — removed `isSufficientModel`, `byStrengthDesc`, `withLimitReset`; `toRankedModels` now filters by `validIds` only and throws `no-models` if empty; `isSufficientModel` check (`strength_score >= 6`) removed from this file
+- `providers/qroq/connect.ts` — same removals; additionally introduced `BANNED` constant, `isAllowed(m)` named predicate used as a direct reference in `filterModels` (eliminates inline arrow), `byCreatedDesc` named comparator used as a direct reference in `getSortedCandidates` (eliminates inline arrow), and `buildValidIds` helper (mirrors Gemini's pattern) — all required to keep cumulative file complexity under the linter threshold
+
+**Key decisions & why:**
+- Ranking moved to `connect-provider`, not to a shared utils file — the dispatcher is already the natural integration point between providers and the store; putting `rankModels` here means it runs exactly once regardless of provider, with no duplication
+- `toRankedModels` in each provider retains the validIds throw — this is what drives the retry recursion; if the AI hallucinated all model IDs the loop still tries the next candidate; only the universal quality bar (strength, sort, reset) moved up
+- Named function references in Groq file — the linter reports cumulative file complexity and was hitting the threshold at `toRankedModels`; extracting `isAllowed` and `byCreatedDesc` as named functions (used by reference, not as inline arrows) removes their branch cost from the calling functions, bringing cumulative complexity to 4
+
+
+## [#248] Extract toValidModels into shared utils; remove toRankedModels from provider connect files
+**Type:** refactor
+
+**Summary:** Moved the duplicate candidate-validation logic from both provider `toRankedModels` functions into a shared `toValidModels(validIds, parsed)` utility in `providers/utils/shared.ts`; `tryWithModel` in each provider now calls it directly with the provider-built `validIds` set.
+
+**Brainstorming:** Both `toRankedModels` implementations were identical in logic — filter parsed AI response against a `Set<string>` of valid IDs, throw `no-models` if nothing matches. The only difference between providers was how `validIds` was built (Gemini strips `models/` prefix, Groq uses raw IDs), and that already lived in the provider-specific `buildValidIds` helpers. Moving the shared filter+throw step to a named utility makes the logic explicit, removes the last duplication between the two connect files, and gives the function a name that accurately describes what it does: it validates the AI response against known model IDs, not ranks them.
+
+**Prompt:** toRankedModels is wrong naming — create a function in shared, name it toValidModels and use validIds Set<string> and AiModel[] as inputs; reuse the same function.
+
+**What changed:**
+- `providers/utils/shared.ts` — added `toValidModels(validIds: Set<string>, parsed: AiModel[]): AiModel[]`; filters parsed by `validIds.has(m.id) || validIds.has(m.model)`, throws `no-models` if result is empty
+- `providers/gemini/connect.ts` — removed `toRankedModels`; `tryWithModel` now calls `toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)`; added `toValidModels` to import from `../utils/shared`
+- `providers/qroq/connect.ts` — same: removed `toRankedModels`, updated `tryWithModel`, added `toValidModels` to import
+
+**Key decisions & why:**
+- Signature is `(validIds, parsed)` not `(parsed, candidates)` — the caller already has `validIds` from `buildValidIds`; passing the set directly keeps the function decoupled from provider-specific model shapes
+- `buildValidIds` stays in each provider — it handles provider-specific ID formats (Gemini `models/` prefix stripping vs Groq plain IDs); only the generic filter step is shared
+
+
+## [#249] Align Gemini filterModels architecture with Groq
+**Type:** refactor
+
+**Summary:** Refactored `filterModels` in `gemini/connect.ts` to match the Groq pattern: `BANNED` module constant, `isAllowed(m)` named predicate, `filterModels` uses `isAllowed` as a direct reference with no inline arrow.
+
+**Brainstorming:** The two providers now have identical structural shape for the filter step — a constant, a named predicate, and a one-liner `filterModels`. The Gemini predicate is slightly richer (checks `supportedGenerationMethods` in addition to the banned-name check), but the pattern is the same. `!!` coerces `boolean | undefined` from the optional chain to `boolean` so the return type is satisfied without a cast.
+
+**Prompt:** filterModels in gemini must have same architecture as in groq. update.
+
+**What changed:**
+- `providers/gemini/connect.ts` — extracted `BANNED` constant; extracted `isAllowed(m: GeminiModel): boolean` (uses `!!` on optional-chain result + `!BANNED.some(...)`); `filterModels` now calls `models.filter(isAllowed)` with no inline arrow
+
+**Key decisions & why:**
+- `!!` on `m.supportedGenerationMethods?.includes('generateContent')` — the optional chain returns `boolean | undefined`; `!!` coerces to `boolean` so the named function satisfies its declared return type without needing `=== true` or a broader signature
+
+
+## [#250] Wire runProviderPrompt into aiAnalysisStore; delete unused callProvider and rankModels files
+**Type:** refactor
+
+**Summary:** Replaced `callProviderForAnalysis` in `aiAnalysisStore` with `runProviderPrompt` from the providers module, then deleted the now-unused `ai-analysis/callProvider.ts`, `ai-analysis/index.ts`, `utils/rankModels.ts`, and removed the stale `RankedModelsResponse` type.
+
+**Brainstorming:** `callProviderForAnalysis` was a parallel implementation of the HTTP calls already living in `providers/gemini/api.ts` and `providers/qroq/api.ts`. `runProviderPrompt` is the proper thin dispatcher that delegates to those same provider callers, parses JSON, and throws `'invalid-response'` on parse failure. The error codes that flow out of the provider API functions (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) match what the store's `handleRequestError` expects, so the swap is a direct one-to-one replacement with no error-handling changes needed. `utils/rankModels.ts` had already been superseded by the `rankModels` function in `connect-provider.ts` — nothing else imported it. `RankedModelsResponse` was only used by `rankModels.ts`.
+
+**Prompt:** Wire `runProviderPrompt` into `aiAnalysisStore` to replace `callProviderForAnalysis`. Then clean up all unused files: `ai-analysis/callProvider.ts`, `ai-analysis/index.ts`, `utils/rankModels.ts`; remove `RankedModelsResponse` type.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — import changed from `callProviderForAnalysis` (via `ai-analysis` barrel) to `runProviderPrompt` (via `providers`); call site updated accordingly
+- `features/ai-tools/ai-analysis/callProvider.ts` — deleted (parallel HTTP implementation, fully replaced)
+- `features/ai-tools/ai-analysis/index.ts` — deleted (barrel that only re-exported `callProviderForAnalysis`)
+- `features/ai-tools/utils/rankModels.ts` — deleted (superseded by `rankModels` in `connect-provider.ts`)
+- `features/ai-tools/types/index.ts` — removed `RankedModelsResponse` type (only used by the deleted file)
+- `CLAUDE.md` — architecture updated: removed deleted files, updated `run-provider-prompt.ts` description, updated checklist and status
+
+**Key decisions & why:**
+- No error-handling changes in the store — `runProviderPrompt` surfaces the same error codes (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) that `handleRequestError` already handles; `'invalid-response'` on parse failure falls through to the `?? ERROR_MESSAGES.unknown` fallback
+- Deleted `ai-analysis/index.ts` rather than leaving an empty barrel — an empty barrel is dead weight

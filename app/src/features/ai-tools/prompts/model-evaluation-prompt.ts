@@ -1,4 +1,5 @@
-import type { GeminiModel, GroqModel } from "../types";
+import type { GeminiModel } from "../providers/gemini/types";
+import type { GroqModel } from "../providers/qroq/types";
 import { getPromptList, getPromptNumberedList,   } from "./prompt-utils";
  
  const ROLE = [

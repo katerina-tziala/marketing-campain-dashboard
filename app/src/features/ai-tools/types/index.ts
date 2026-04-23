@@ -34,10 +34,6 @@ export type AiModel = {
   limitReached: boolean;
 };
 
-export type RankedModelsResponse = {
-  models: AiModel[];
-};
-
 export type ModelsResponse = {
   models: AiModel[];
 };

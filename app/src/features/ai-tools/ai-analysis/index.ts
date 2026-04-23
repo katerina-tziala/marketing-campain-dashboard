@@ -1,1 +1,0 @@
-export { callProviderForAnalysis } from './callProvider'
