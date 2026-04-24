@@ -5672,3 +5672,106 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Description follows the same inline style as the rest of the Status paragraph — no separate section needed since the feature is small and already documented in the architecture and checklist
+
+
+## [#277] Wire analysis-prompt utils into aiAnalysisStore
+**Type:** refactor
+
+**Summary:** Replaced the inline prompt-building, `runProviderPrompt` call, and manual model+timestamp stamping in `aiAnalysisStore` with the new `runAnalysisPrompt` util; replaced the local `createCacheKey`/`normalizeLabels` helpers with `getCacheKey`; replaced the local `TabResponse` alias with the shared `AnalysisResponse` type.
+
+**Brainstorming:** The new `ai-analysis/utils/` files (`analysis-prompt.ts`, `utils.ts`, `types.ts`) already encapsulate exactly what `aiAnalysisStore` was doing inline: building the prompt from a tab type + portfolio analysis, dispatching to `runProviderPrompt`, and stamping `model`/`timestamp` on the result. The store no longer needs to import the prompt generators or `runProviderPrompt` directly — `runAnalysisPrompt` owns that boundary. `getCacheKey` is a direct drop-in for the local `createCacheKey`/`normalizeLabels` pair. `AnalysisResponse` replaces the local `TabResponse` alias which was defined identically.
+
+**Prompt:** use analysis-prompt utils in aiAnalysisStore
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — removed imports of `generateBudgetOptimizationPrompt`, `generateExecutiveSummaryPrompt`, `runProviderPrompt`; added imports of `runAnalysisPrompt`, `getCacheKey` from `ai-analysis/utils` barrel and `AnalysisResponse` from `ai-analysis/utils/types`; added `AiAnalysisType` to types import; removed `ALL_LABELS_KEY`, `TabResponse`, `normalizeLabels`, `createCacheKey`, `buildPrompt`; updated `CacheEntry.response` to `AnalysisResponse`; updated `getCurrentCacheKey` to call `getCacheKey`; replaced the `buildPrompt` + `runProviderPrompt` + manual stamp block in `executeAnalysis` with a single `runAnalysisPrompt` call + `if (!result) return` guard
+
+**Key decisions & why:**
+- `if (!result) return` replaces `if (controller.signal.aborted) return` after the await — `runAnalysisPrompt` returns `null` on abort, so the explicit signal check is no longer needed at the call site; the catch block still checks `signal.aborted` for abort-related throws from lower layers
+- `AiAnalysisTab` → `AiAnalysisType` mapping inline (`tab === 'optimizer' ? 'budgetOptimizer' : 'executiveSummary'`) — keeps the mapping co-located with the only place it's needed; no shared helper warranted for a two-value switch
+
+
+## [#278] evaluationDisabled, setDisplay helper, optimizer minimum campaign guard
+**Type:** refactor
+
+**Summary:** Extracted a `evaluationDisabled` computed to replace repeated panel/provider/model guards; introduced a `setDisplay` helper to collapse the repeated 4-field display mutation; and added a minimum-2-campaign guard on the Budget Optimizer tab with an explicit error message.
+
+**Brainstorming:** Three separate but related cleanups. `evaluationDisabled` captures the identical 2-line guard (`!aiPanelOpen || !provider || !selectedModel`) that appeared in `executeAnalysis`, `evaluateTab`, and both watchers — a computed is the right home since it reacts to the same signals everywhere. `setDisplay` eliminates ~12 repetitions of the `display.status / display.response (cast) / display.error / display.errorFallback` assignment pattern; the cast `as unknown as typeof display.response` is now in one place. The optimizer minimum-campaign guard is behaviour: with only 1 campaign there is no source and destination for a budget reallocation, so running the analysis produces meaningless output — block it before the API call and surface a clear message rather than letting the AI return empty recommendations.
+
+**Prompt:** use evaluationDisabled for checks in aiAnalysisStore; create function to set display state with required inputs to avoid repetition; disable evaluation running for budget if selected campaigns <2 -> add error message for this
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — added `MIN_OPTIMIZER_CAMPAIGNS = 2` constant; added `OPTIMIZER_MIN_CAMPAIGNS_ERROR: AiAnalysisError` constant; added `evaluationDisabled` computed; added `setDisplay(tab, status, response?, error?, errorFallback?)` helper; replaced all manual 4-field display assignments with `setDisplay` calls throughout (`handleRequestError`, `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, `clearStateForNewCSV`, debounced watcher); replaced `!aiStore.aiPanelOpen` / `!aiStore.provider || !aiStore.selectedModel` guard pairs with `evaluationDisabled.value`; destructured `provider`/`apiKey`/`selectedModel` after guard in `executeAnalysis` to satisfy TypeScript narrowing; added `< MIN_OPTIMIZER_CAMPAIGNS` check in `executeAnalysis`, `evaluateTab`, and debounced watcher; updated `optimizerCanAnalyze` to return false when `filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS`
+
+**Key decisions & why:**
+- `evaluationDisabled` does not include `apiKey` — the key is a memory-only secret; its absence is an internal invariant (should never happen post-connect), not a display-facing condition; keeping it as a separate check in `executeAnalysis` makes the intent clearer
+- Non-null assertions (`provider!`, `selectedModel!`) after the `evaluationDisabled` guard — TypeScript cannot narrow through a computed getter; the assertions are safe because the guard already verified non-null; extracting to locals also makes the `runAnalysisPrompt` call site cleaner
+- `setDisplay` uses positional params (not an options object) — all 5 fields, response/error/errorFallback default to null; call sites read naturally (`setDisplay(tab, 'done', entry.response)`)
+- `OPTIMIZER_MIN_CAMPAIGNS_ERROR` uses `code: 'unknown'` — no specific `AiErrorCode` exists for validation failures; `handleRequestError` only special-cases `token-limit`; all other codes just surface the message, which is the desired behaviour here
+- Both `executeAnalysis` and `evaluateTab` enforce the guard (not just one) — `evaluateTab` is the auto-eval path (panel open, tab switch, model change); `executeAnalysis` is the manual and debounced path; both need the check so the error state is set regardless of how analysis was triggered
+
+
+## [#279] AiAnalysisType unification, ref display state, module-level helpers, type cleanup
+**Type:** refactor
+
+**Summary:** Replaced `AiAnalysisTab` with `AiAnalysisType` as the single key type throughout the store and components, converted display state from `reactive()` to `ref<TabDisplay<T>>` with whole-object replacement, moved `setDisplay` and `getOtherAnalysisType` outside the store as module-level helpers, and removed stray dead code.
+
+**Brainstorming:** The store had two parallel tab-key types (`AiAnalysisTab` 'optimizer'|'summary' and `AiAnalysisType` 'budgetOptimizer'|'executiveSummary') that both mapped to the same concept. Unifying on `AiAnalysisType` eliminates the ternary mapping in `executeAnalysis` and all string duplication. The `reactive()` display objects allowed scattered property mutation — converting to `ref<TabDisplay<T>>` with `display.value = { ... }` replacement makes all updates explicit and atomic. Pure helpers with no dependency on reactive state (`getOtherAnalysisType`, `setDisplay`) belong at module scope. `PromptBuilder` was exported from `analysis-prompt.ts` without any external consumer — made internal. The stray `getCacheKey(selectedChannelsIds.value, 'groq')` dev-test call in `campaignStore.ts` was removed.
+
+**Prompt:** Check created types in ai-connection types. Move related and reused types and interfaces to that feature only there. Instead of AiAnalysisTab use AiAnalysisType. Avoid data mutation in this store. Write helper functions outside the store on top of the file for repeated logic.
+
+**What changed:**
+- `stores/campaignStore.ts` — removed stray `getCacheKey` import and dead call inside `selectedChannels` computed
+- `features/ai-tools/types/index.ts` — deleted `AiAnalysisTab` type
+- `features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — made `PromptBuilder` type non-exported (internal)
+- `stores/aiAnalysisStore.ts` — full refactor: `AiAnalysisTab` → `AiAnalysisType` everywhere; `tabs`/display refs renamed `optimizer`→`budgetOptimizer`, `summary`→`executiveSummary`; `reactive()` → `ref<TabDisplay<T>>` for display state; `setDisplay` and `getOtherAnalysisType` moved to module scope; `TabDisplay<T>` type defined at module level; `analyze` uses spread instead of direct property assignment; `activeTab` default changed to `'executiveSummary'`
+- `ai-analysis/components/AiAnalysis.vue` — tab IDs updated to `'executiveSummary'`/`'budgetOptimizer'`; cast changed to `AiAnalysisType`; `v-if` check updated
+- `ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — store refs `optimizer` → `budgetOptimizer`; `analyze('optimizer')` → `analyze('budgetOptimizer')`
+- `ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — store refs `summary` → `executiveSummary`; `analyze('summary')` → `analyze('executiveSummary')`
+
+**Key decisions & why:**
+- `AiAnalysisTab` deleted (not aliased) — the type was purely a UI naming accident; `AiAnalysisType` is the correct domain term; no external consumers outside the store and three components
+- `ref<TabDisplay<T>>` with full `.value` replacement instead of `reactive()` — avoids scattered property mutation; `getDisplay` returns `Ref<TabDisplay>` (widened via cast) so `setDisplay` can remain generic; Pinia auto-unwraps the specific typed ref for consumers, preserving `BudgetOptimizerResponse|null` precision at component level
+- `setDisplay` at module scope takes `Ref<TabDisplay>` parameter — decouples the helper from the store's closure; call sites pass `getDisplay(tab)` which centralises the ref lookup
+- `getOtherAnalysisType` at module scope — pure function, no reactive dependencies; replaces the inline ternary in `executeAnalysis` and makes the "other tab" concept named
+- `PromptBuilder` made internal — was exported but had zero external consumers; leaking implementation types widens the public API unnecessarily
+- `activeTab` default `'executiveSummary'` — aligns with the Summary-first tab order in the UI (Summary tab is shown first)
+
+
+## [#280] aiAnalysisStore: derived getters from aiStore, unified evaluationDisabled, allModelsLimitReached handling
+**Type:** refactor
+
+**Summary:** Replaced local `tokenLimitReached` ref and duplicated `evaluationDisabled` logic with derived getters from `aiStore`, combined the no-campaigns gate into `evaluationDisabled`, and added `showTokenLimitState` to properly show cached responses or error when all models are exhausted.
+
+**Brainstorming:** `aiStore` already exposed `evaluationDisabled` (panel open + provider + selectedModel + allModelsLimitReached) and `allModelsLimitReached`. The analysis store was duplicating a subset of that check in its own `evaluationDisabled` and tracking `tokenLimitReached` as an independent ref that had to be manually set and reset. Deriving both from aiStore eliminates the duplication and makes the two stores consistent. The `filteredCampaigns.length === 0` check was scattered across three sites — folding it into `evaluationDisabled` reduces it to one definition. The `allModelsLimitReached` inclusion in `evaluationDisabled` means `evaluateTab` now returns early when token-limited, so a dedicated `showTokenLimitState` helper is needed to ensure cached responses are restored (or token-limit error shown) in that path. The filter watcher gained an immediate token-limit branch (no debounce needed when no API call is possible) to keep the display current when filters change while exhausted. `getCurrentCacheKey` no longer needs the `selectedModel` check — provider alone is the requirement for `getCacheKey`.
+
+**Prompt:** evaluationDisabled in aiAnalysisStore should read evaluationDisabled from aiStore and combine campaignStore.filteredCampaigns.length === 0. When allModelsLimitReached we should show previous cached responses and error message if not. Create getters that derive everything needed from aiStore if necessary. We will not deviate from this approach.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `tokenLimitReached` changed from `ref(false)` to `computed(() => aiStore.allModelsLimitReached)`; `evaluationDisabled` now reads `aiStore.evaluationDisabled || filteredCampaigns.length === 0`; added `showTokenLimitState(tab)` internal helper; `getCurrentCacheKey` drops `selectedModel` null-guard; `evaluateTab` calls `showTokenLimitState` when `evaluationDisabled && tokenLimitReached`; `executeAnalysis` token pre-flight calls `showTokenLimitState` instead of setting ref; `handleRequestError` removes explicit `tokenLimitReached.value = true`; filter watcher handles token-limited case immediately before debounce; `optimizerCanAnalyze` and `summaryCanAnalyze` gate on `tokenLimitReached`; `clearStateForNewCSV` removes `tokenLimitReached.value = false`
+- `CLAUDE.md` — updated Status paragraph and aiAnalysisStore architecture entry
+
+**Key decisions & why:**
+- `tokenLimitReached` as computed not ref — `aiStore.allModelsLimitReached` is the single source of truth for model exhaustion; a local ref that shadowed it required manual sync and could drift; computed is always accurate
+- `evaluationDisabled` combines `aiStore.evaluationDisabled` (includes allModelsLimitReached) with `filteredCampaigns.length === 0` — both are "cannot analyze" conditions; one computed replaces three scattered checks
+- `showTokenLimitState` called inside the `evaluationDisabled` branch of `evaluateTab` — when `allModelsLimitReached` gates the evaluation, the old cache-restore path is unreachable; this helper re-establishes that path specifically for the token-limit case
+- Filter watcher: token-limit check before debounce — when models are exhausted, filter changes should update the display immediately (lookup new cache key or show error); no point debouncing since no API call will happen
+- `optimizerCanAnalyze`/`summaryCanAnalyze` gated on `tokenLimitReached` — `AnalysisState.vue` controls the button only via `isButtonDisabled`; without the gate the button would be enabled when all models are exhausted even though clicking does nothing
+- `getCurrentCacheKey` only checks `!aiStore.provider` — `selectedModel` is not used by `getCacheKey`; provider is non-null whenever the computed's callers have already passed the `evaluationDisabled` guard
+
+
+## [#281] getCurrentCacheKey: remove null return, propagate provider guard to canAnalyze
+**Type:** refactor
+
+**Summary:** Changed `getCurrentCacheKey` to always return `string` (was `string | null`), moved the provider null-guard into `canAnalyze` (its only unguarded caller), and removed the now-dead `if (!cacheKey) return` checks from `executeAnalysis`, `evaluateTab`, and the debounce watcher.
+
+**Brainstorming:** After the previous refactor, every call site of `getCurrentCacheKey` except `canAnalyze` was already guarded by `evaluationDisabled` (which includes `!aiStore.provider`). The null check inside `getCurrentCacheKey` was redundant in those paths. `canAnalyze` is called from `optimizerCanAnalyze`/`summaryCanAnalyze` without an `evaluationDisabled` guard, so it needs its own provider check. Moving the guard there lets `getCurrentCacheKey` be a pure, non-nullable function. The downstream `if (!cacheKey) return` guards in `executeAnalysis`, `evaluateTab`, and the debounce callback become dead code and can be deleted.
+
+**Prompt:** getCurrentCacheKey — do we really need to check again provider?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `getCurrentCacheKey` return type changed from `string | null` to `string`, non-null assertion on `aiStore.provider!`; `canAnalyze` adds `if (!aiStore.provider) return false` guard; `showTokenLimitState` drops the `cacheKey ?` ternary (always a string now); removed `if (!cacheKey) return` from `executeAnalysis`, `evaluateTab`, and the debounce callback
+
+**Key decisions & why:**
+- Guard moved to `canAnalyze`, not inlined at each call site — `canAnalyze` is the only path that can reach `getCurrentCacheKey` without an `evaluationDisabled` guard; the other callers are already safe by construction
+- `getCurrentCacheKey` returns `string` unconditionally — callers after the `evaluationDisabled` guard have a non-null provider by definition; making the return type reflect that removes defensive checks that were pure noise

@@ -1,17 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { AiProviderType, AiConnectionError, AiErrorCode } from '../features/ai-tools/types'
-import type { AiModel } from '../features/ai-tools/providers/types'
-import { connectProvider } from '../features/ai-tools/providers'
-import { normalizeConnectionError } from '../features/ai-tools/providers/utils'
 
-const ERROR_CODES = new Set<AiErrorCode>([
-  'invalid-key', 'network', 'timeout', 'rate-limit', 'token-limit', 'server-error', 'no-models', 'invalid-response', 'unknown',
-])
-
-function selectBestModel(models: AiModel[]): AiModel {
-  return models.reduce((best, m) => m.strengthScore > best.strengthScore ? m : best)
-}
+import type { AiProviderType, AiConnectionError } from '../features/ai-tools/types'
+import { getErrorCode } from '../features/ai-tools/ai-connection/utils'
+import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '../features/ai-tools/providers'
 
 export const useAiStore = defineStore('ai', () => {
   const provider = ref<AiProviderType | null>(null)
@@ -23,22 +15,19 @@ export const useAiStore = defineStore('ai', () => {
   const selectedModel = ref<AiModel | null>(null)
   const aiPanelOpen = ref(false)
 
-  async function connect(p: AiProviderType, key: string): Promise<void> {
+  async function connect(providerType: AiProviderType, APIkey: string): Promise<void> {
     isConnecting.value = true
     connectionError.value = null
     try {
-      const result = await connectProvider(p, key)
-      provider.value = p
-      apiKey.value = key
-      models.value = result
-      selectedModel.value = selectBestModel(result)
+      const providerModels = await connectProvider(providerType, APIkey)
+      provider.value = providerType
+      apiKey.value = APIkey
+      models.value = providerModels
+      selectedModel.value = providerModels[0]
       isConnected.value = true
     } catch (error) {
-      const normalized = normalizeConnectionError(error)
-      const code = ERROR_CODES.has(normalized.message as AiErrorCode)
-        ? (normalized.message as AiErrorCode)
-        : 'unknown'
-      connectionError.value = { code, provider: p }
+      const code = getErrorCode(error)
+      connectionError.value = { code, provider: providerType }
     } finally {
       isConnecting.value = false
     }
@@ -47,16 +36,20 @@ export const useAiStore = defineStore('ai', () => {
   const selectedModelLimitReached = computed(() => selectedModel.value?.limitReached ?? false)
 
   const allModelsLimitReached = computed(() =>
-    models.value.length > 0 && models.value.every((m) => m.limitReached),
+    getAllModelsLimitReached(models.value),
+  )
+
+  const evaluationDisabled = computed(() =>
+    !aiPanelOpen.value || !provider.value || !apiKey.value || !selectedModel.value || allModelsLimitReached.value,
   )
 
   function markModelLimitReached(modelId: string): void {
-    const model = models.value.find((m) => m.id === modelId)
+    const model = getModelById(models.value, modelId)
     if (model) model.limitReached = true
   }
 
   function selectNextAvailableModel(): boolean {
-    const next = models.value.find((m) => !m.limitReached)
+    const next = getNextAvailableMode(models.value)
     if (!next) return false
     selectedModel.value = next
     return true
@@ -90,6 +83,7 @@ export const useAiStore = defineStore('ai', () => {
     selectedModelLimitReached,
     allModelsLimitReached,
     aiPanelOpen,
+    evaluationDisabled,
     // actions
     connect,
     disconnect,

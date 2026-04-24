@@ -113,7 +113,7 @@ export type BudgetOptimizerData = {
 
 // ── AI Analysis types ─────────────────────────────────────────────────────
 
-export type AiAnalysisTab = 'optimizer' | 'summary';
+export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';
 
 export type AiAnalysisError = {
   code: AiErrorCode;

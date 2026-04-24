@@ -12,11 +12,11 @@ defineProps<{
 
 const analysisStore = useAiAnalysisStore()
 
-const status = computed(() => analysisStore.optimizer.status)
-const response = computed(() => analysisStore.optimizer.response)
-const error = computed(() => analysisStore.optimizer.error)
-const errorFallback = computed(() => analysisStore.optimizer.errorFallback)
-const cacheTimestamp = computed(() => analysisStore.optimizer.response?.timestamp ?? null)
+const status = computed(() => analysisStore.budgetOptimizer.status)
+const response = computed(() => analysisStore.budgetOptimizer.response)
+const error = computed(() => analysisStore.budgetOptimizer.error)
+const errorFallback = computed(() => analysisStore.budgetOptimizer.errorFallback)
+const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
@@ -25,7 +25,7 @@ const actionLabel = computed(() => analysisActivated.value ? 'Re-Analyze' : 'Ana
 const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
 
 function handleAnalyze(): void {
-  analysisStore.analyze('optimizer')
+  analysisStore.analyze('budgetOptimizer')
 }
 </script>
 

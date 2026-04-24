@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, watch, computed, type Ref } from 'vue'
 import type { AsyncStatus } from '../common/types/async-status'
 import type {
-  AiAnalysisTab,
+  AiAnalysisType,
   AiAnalysisError,
   AiErrorCode,
   BudgetOptimizerResponse,
@@ -10,25 +10,33 @@ import type {
 } from '../features/ai-tools/types'
 import { useAiStore } from './aiStore'
 import { useCampaignStore } from './campaignStore'
-import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
-import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
-import { runProviderPrompt } from '../features/ai-tools/providers'
-import { ANALYSIS_ERROR_MESSAGES } from '../features/ai-tools/ai-analysis/utils/analysis-error-messages'
+import { ANALYSIS_ERROR_MESSAGES, runAnalysisPrompt, getCacheKey } from '../features/ai-tools/ai-analysis/utils'
+import type { AnalysisResponse } from '../features/ai-tools/ai-analysis/types'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const DEBOUNCE_MS = 300
+const DEBOUNCE_MS = 350
 const COOLDOWN_MS = 5_000
-const ALL_LABELS_KEY = 'all'
+const MIN_OPTIMIZER_CAMPAIGNS = 2
+
+const OPTIMIZER_MIN_CAMPAIGNS_ERROR: AiAnalysisError = {
+  code: 'unknown',
+  message: 'Budget optimization requires at least 2 campaigns. Adjust the channel filter or add more campaign data.',
+}
 
 // ── Per-tab state shape ────────────────────────────────────────────────────
 
-type TabResponse = BudgetOptimizerResponse | ExecutiveSummaryResponse
-
 type CacheEntry = {
-  response: TabResponse
+  response: AnalysisResponse
   timestamp: number
   cooldownUntil: number
+}
+
+type TabDisplay<T extends AnalysisResponse = AnalysisResponse> = {
+  status: AsyncStatus
+  response: T | null
+  error: AiAnalysisError | null
+  errorFallback: string | null
 }
 
 function createTabState() {
@@ -41,6 +49,22 @@ function createTabState() {
   }
 }
 
+// ── Module-level helpers ───────────────────────────────────────────────────
+
+function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {
+  return type === 'budgetOptimizer' ? 'executiveSummary' : 'budgetOptimizer'
+}
+
+function setDisplay(
+  display: Ref<TabDisplay>,
+  status: AsyncStatus,
+  response: AnalysisResponse | null = null,
+  error: AiAnalysisError | null = null,
+  errorFallback: string | null = null,
+): void {
+  display.value = { status, response, error, errorFallback }
+}
+
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
@@ -49,55 +73,67 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Shared state ──────────────────────────────────────────────────────
 
-  const activeTab = ref<AiAnalysisTab>('summary')
-  const tokenLimitReached = ref(false)
+  const activeTab = ref<AiAnalysisType>('executiveSummary')
   const analysisActivated = ref(false)
 
   // ── Per-tab internal state ────────────────────────────────────────────
 
   const tabs = {
-    optimizer: createTabState(),
-    summary: createTabState(),
+    budgetOptimizer: createTabState(),
+    executiveSummary: createTabState(),
   }
 
   // ── Per-tab reactive display state ────────────────────────────────────
 
-  const optimizer = reactive({
-    status: 'idle' as AsyncStatus,
-    response: null as BudgetOptimizerResponse | null,
-    error: null as AiAnalysisError | null,
-    errorFallback: null as string | null,
+  const budgetOptimizer = ref<TabDisplay<BudgetOptimizerResponse>>({
+    status: 'idle',
+    response: null,
+    error: null,
+    errorFallback: null,
   })
 
-  const summary = reactive({
-    status: 'idle' as AsyncStatus,
-    response: null as ExecutiveSummaryResponse | null,
-    error: null as AiAnalysisError | null,
-    errorFallback: null as string | null,
+  const executiveSummary = ref<TabDisplay<ExecutiveSummaryResponse>>({
+    status: 'idle',
+    response: null,
+    error: null,
+    errorFallback: null,
   })
+
+  // ── Getters derived from aiStore ──────────────────────────────────────
+
+  const tokenLimitReached = computed(() => aiStore.allModelsLimitReached)
+
+  // ── Evaluation guard ──────────────────────────────────────────────────
+
+  const evaluationDisabled = computed(() =>
+    aiStore.evaluationDisabled || campaignStore.filteredCampaigns.length === 0,
+  )
 
   // ── Helpers ───────────────────────────────────────────────────────────
 
-  function normalizeLabels(labels: string[]): string[] {
-    if (labels.length === 0) return [ALL_LABELS_KEY]
-    return [...labels].map((label) => label.trim().toLowerCase()).sort()
-  }
-
-  function createCacheKey(labels: string[], provider: string): string {
-    return `${provider}::${normalizeLabels(labels).join('|')}`
-  }
-
-  function getTabState(tab: AiAnalysisTab) {
+  function getTabState(tab: AiAnalysisType) {
     return tabs[tab]
   }
 
-  function getDisplay(tab: AiAnalysisTab) {
-    return tab === 'optimizer' ? optimizer : summary
+  function getDisplay(tab: AiAnalysisType): Ref<TabDisplay> {
+    return (tab === 'budgetOptimizer' ? budgetOptimizer : executiveSummary) as Ref<TabDisplay>
   }
 
-  function getCurrentCacheKey(): string | null {
-    if (!aiStore.provider || !aiStore.selectedModel) return null
-    return createCacheKey(campaignStore.selectedChannelsIds, aiStore.provider)
+  function getCurrentCacheKey(): string {
+    return getCacheKey(campaignStore.selectedChannelsIds, aiStore.provider!)
+  }
+
+  function showTokenLimitState(tab: AiAnalysisType): void {
+    const cacheKey = getCurrentCacheKey()
+    const tabState = getTabState(tab)
+    const display = getDisplay(tab)
+    const entry = tabState.cache.get(cacheKey)
+    if (entry) {
+      setDisplay(display, 'done', entry.response)
+      tabState.lastVisibleCacheKey = cacheKey
+    } else {
+      setDisplay(display, 'error', null, { code: 'token-limit', message: ANALYSIS_ERROR_MESSAGES['token-limit'] })
+    }
   }
 
   // ── Cooldown check ────────────────────────────────────────────────────
@@ -118,29 +154,32 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     cooldownTimers.clear()
   }
 
-  function canAnalyze(tab: AiAnalysisTab): boolean {
+  function canAnalyze(tab: AiAnalysisType): boolean {
     void cooldownTick.value // reactive dependency — triggers re-evaluation when cooldown expires
+    if (!aiStore.provider) return false
     const tabState = getTabState(tab)
     const cacheKey = getCurrentCacheKey()
-    if (!cacheKey) return false
     const entry = tabState.cache.get(cacheKey)
     if (!entry) return true
     return Date.now() >= entry.cooldownUntil
   }
 
   const optimizerCanAnalyze = computed(() => {
-    if (optimizer.status === 'loading') return false
-    return canAnalyze('optimizer')
+    if (budgetOptimizer.value.status === 'loading') return false
+    if (tokenLimitReached.value) return false
+    if (campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS) return false
+    return canAnalyze('budgetOptimizer')
   })
 
   const summaryCanAnalyze = computed(() => {
-    if (summary.status === 'loading') return false
-    return canAnalyze('summary')
+    if (executiveSummary.value.status === 'loading') return false
+    if (tokenLimitReached.value) return false
+    return canAnalyze('executiveSummary')
   })
 
   // ── Cancel ────────────────────────────────────────────────────────────
 
-  function cancelActiveRequest(tab: AiAnalysisTab): void {
+  function cancelActiveRequest(tab: AiAnalysisType): void {
     const tabState = getTabState(tab)
     if (tabState.controller) {
       tabState.controller.abort()
@@ -153,23 +192,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   function cancelAllRequests(): void {
-    cancelActiveRequest('optimizer')
-    cancelActiveRequest('summary')
-  }
-
-  // ── Prompt builder ────────────────────────────────────────────────────
-
-  function buildPrompt(tab: AiAnalysisTab): string {
-    const analysis = campaignStore.portfolioAnalysis
-    const isFiltered = campaignStore.selectedChannelsIds.length > 0
-    return tab === 'optimizer'
-      ? generateBudgetOptimizationPrompt(analysis, isFiltered)
-      : generateExecutiveSummaryPrompt(analysis, isFiltered)
+    cancelActiveRequest('budgetOptimizer')
+    cancelActiveRequest('executiveSummary')
   }
 
   // ── Error handling ────────────────────────────────────────────────────
 
-  function handleRequestError(tab: AiAnalysisTab, error: unknown, cacheKey: string): void {
+  function handleRequestError(tab: AiAnalysisType, error: unknown, cacheKey: string): void {
     const tabState = getTabState(tab)
     const display = getDisplay(tab)
     const code = error instanceof Error ? (error.message as AiErrorCode) : 'unknown'
@@ -186,130 +215,82 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
         return
       }
 
-      // All models exhausted
-      tokenLimitReached.value = true
+      // All models exhausted — fall through to show cache or error below
     }
 
     const entry = tabState.cache.get(cacheKey)
     if (entry) {
-      // Case 1: cached response exists — keep showing it
-      display.status = 'done'
-      display.response = entry.response as unknown as typeof display.response
-      display.error = null
-      display.errorFallback = 'The latest request failed. Showing the previous generated result.'
+      setDisplay(display, 'done', entry.response, null, 'The latest request failed. Showing the previous generated result.')
     } else {
-      // Case 2: no cache — show error
-      display.status = 'error'
-      display.response = null
-      display.error = { code, message }
-      display.errorFallback = null
+      setDisplay(display, 'error', null, { code, message })
     }
   }
 
   // ── Core analyze ──────────────────────────────────────────────────────
 
-  async function executeAnalysis(tab: AiAnalysisTab, isAutomatic: boolean): Promise<void> {
-    if (!aiStore.provider || !aiStore.selectedModel || !aiStore.apiKey) return
-    if (!aiStore.aiPanelOpen) return
+  async function executeAnalysis(tab: AiAnalysisType, isAutomatic: boolean): Promise<void> {
+    if (evaluationDisabled.value) return
+    
+    const provider = aiStore.provider!
+    const apiKey = aiStore.apiKey
+    const selectedModel = aiStore.selectedModel!
 
-    // Empty dataset guard
-    if (campaignStore.filteredCampaigns.length === 0) return
+    if (tab === 'budgetOptimizer' && campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS) {
+      setDisplay(getDisplay(tab), 'error', null, OPTIMIZER_MIN_CAMPAIGNS_ERROR)
+      return
+    }
 
     const cacheKey = getCurrentCacheKey()
-    if (!cacheKey) return
-
     const tabState = getTabState(tab)
     const display = getDisplay(tab)
 
-    // Token limit: try next model silently, or show cached if all exhausted
+    // Token limit pre-flight: if selected model is exhausted, try next; if all exhausted, show cache or error
     if (aiStore.selectedModelLimitReached) {
       if (!aiStore.selectNextAvailableModel()) {
-        tokenLimitReached.value = true
+        showTokenLimitState(tab)
+        return
       }
-    }
-    if (tokenLimitReached.value) {
-      const entry = tabState.cache.get(cacheKey)
-      if (entry) {
-        display.status = 'done'
-        display.response = entry.response as unknown as typeof display.response
-        display.error = null
-        display.errorFallback = null
-      }
-      return
     }
 
     // Check cache for automatic calls
     if (isAutomatic) {
       const entry = tabState.cache.get(cacheKey)
       if (entry) {
-        display.status = 'done'
-        display.response = entry.response as unknown as typeof display.response
-        display.error = null
-        display.errorFallback = null
+        setDisplay(display, 'done', entry.response)
         tabState.lastVisibleCacheKey = cacheKey
         return
       }
     }
 
     // Cancel any running request on the OTHER tab (global single-request rule)
-    const otherTab: AiAnalysisTab = tab === 'optimizer' ? 'summary' : 'optimizer'
+    const otherTab = getOtherAnalysisType(tab)
     const otherTabState = getTabState(otherTab)
-    const otherDisplay = getDisplay(otherTab)
     if (otherTabState.controller) {
       cancelActiveRequest(otherTab)
-      // Revert other tab to its last state
       const otherCacheKey = otherTabState.lastVisibleCacheKey
-      if (otherCacheKey) {
-        const otherEntry = otherTabState.cache.get(otherCacheKey)
-        if (otherEntry) {
-          otherDisplay.status = 'done'
-          otherDisplay.response = otherEntry.response as unknown as typeof otherDisplay.response
-        }
-      } else {
-        otherDisplay.status = 'idle'
-      }
-      otherDisplay.error = null
-      otherDisplay.errorFallback = null
+      const otherEntry = otherCacheKey ? otherTabState.cache.get(otherCacheKey) : null
+      setDisplay(getDisplay(otherTab), otherEntry ? 'done' : 'idle', otherEntry?.response ?? null)
     }
 
-    // Cancel current tab's running request
+    // Cancel current tab's running request and start loading
     cancelActiveRequest(tab)
-
-    // Start loading
-    display.status = 'loading'
-    display.response = null
-    display.error = null
-    display.errorFallback = null
+    setDisplay(display, 'loading')
 
     const controller = new AbortController()
     tabState.controller = controller
 
     try {
-      const prompt = buildPrompt(tab)
-
-      const result = await runProviderPrompt<TabResponse>(
-        aiStore.provider,
-        aiStore.apiKey,
-        aiStore.selectedModel.id,
-        prompt,
+      const result = await runAnalysisPrompt(
+        { provider, apiKey, selectedModel },
+        { type: tab, analysis: campaignStore.portfolioAnalysis, isFiltered: campaignStore.selectedChannelsIds.length > 0 },
         controller.signal,
       )
 
-      // Check if this request was cancelled (stale)
-      if (controller.signal.aborted) return
-
-      // Stamp the model and timestamp onto the response
-      const now = Date.now()
-      if (aiStore.selectedModel) {
-        result.model = { ...aiStore.selectedModel }
-      }
-      result.timestamp = now
+      if (!result) return
 
       // Success
-      display.status = 'done'
-      display.response = result as unknown as typeof display.response
-      display.error = null
-      display.errorFallback = null
+      const now = result.timestamp!
+      setDisplay(display, 'done', result)
       tabState.firstAnalyzeCompleted = true
       tabState.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
       scheduleCooldownExpiry()
@@ -326,61 +307,52 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Public actions ────────────────────────────────────────────────────
 
-  function analyze(tab: AiAnalysisTab): void {
+  function analyze(tab: AiAnalysisType): void {
     const display = getDisplay(tab)
-    display.errorFallback = null
+    display.value = { ...display.value, errorFallback: null }
     analysisActivated.value = true
     executeAnalysis(tab, false)
   }
 
-  function setActiveTab(tab: AiAnalysisTab): void {
+  function setActiveTab(tab: AiAnalysisType): void {
     if (activeTab.value === tab) return
 
     const prevTab = activeTab.value
     activeTab.value = tab
 
-    // Cancel in-flight request on the previous tab
+    // Cancel in-flight request on the previous tab and revert to last known state
     const prevTabState = getTabState(prevTab)
-    const prevDisplay = getDisplay(prevTab)
     if (prevTabState.controller) {
       cancelActiveRequest(prevTab)
-      // Revert previous tab
       const prevCacheKey = prevTabState.lastVisibleCacheKey
-      if (prevCacheKey) {
-        const prevEntry = prevTabState.cache.get(prevCacheKey)
-        if (prevEntry) {
-          prevDisplay.status = 'done'
-          prevDisplay.response = prevEntry.response as unknown as typeof prevDisplay.response
-        }
-      } else if (prevDisplay.status === 'loading') {
-        prevDisplay.status = 'idle'
-      }
-      prevDisplay.error = null
-      prevDisplay.errorFallback = null
+      const prevEntry = prevCacheKey ? prevTabState.cache.get(prevCacheKey) : null
+      setDisplay(getDisplay(prevTab), prevEntry ? 'done' : 'idle', prevEntry?.response ?? null)
     }
 
     // Reopen evaluation for the new tab
     evaluateTab(tab)
   }
 
-  function evaluateTab(tab: AiAnalysisTab): void {
-    if (!aiStore.aiPanelOpen) return
-    if (!aiStore.provider || !aiStore.selectedModel) return
-    if (campaignStore.filteredCampaigns.length === 0) return
+  function evaluateTab(tab: AiAnalysisType): void {
+    if (evaluationDisabled.value) {
+      if (tokenLimitReached.value) showTokenLimitState(tab)
+      return
+    }
+
+    if (tab === 'budgetOptimizer' && campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS) {
+      setDisplay(getDisplay(tab), 'error', null, OPTIMIZER_MIN_CAMPAIGNS_ERROR)
+      return
+    }
 
     const tabState = getTabState(tab)
     const display = getDisplay(tab)
     const cacheKey = getCurrentCacheKey()
-    if (!cacheKey) return
 
     // Show last visible result first
     if (tabState.lastVisibleCacheKey && tabState.lastVisibleCacheKey === cacheKey) {
       const entry = tabState.cache.get(cacheKey)
       if (entry) {
-        display.status = 'done'
-        display.response = entry.response as unknown as typeof display.response
-        display.error = null
-        display.errorFallback = null
+        setDisplay(display, 'done', entry.response)
         return
       }
     }
@@ -388,16 +360,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     // Check cache
     const entry = tabState.cache.get(cacheKey)
     if (entry) {
-      display.status = 'done'
-      display.response = entry.response as unknown as typeof display.response
-      display.error = null
-      display.errorFallback = null
+      setDisplay(display, 'done', entry.response)
       tabState.lastVisibleCacheKey = cacheKey
       return
     }
 
-    // Auto-call if user has triggered analysis on any tab and not token-limited
-    if (analysisActivated.value && !tokenLimitReached.value) {
+    // Auto-call if user has triggered analysis on any tab
+    if (analysisActivated.value) {
       executeAnalysis(tab, true)
     }
   }
@@ -407,21 +376,16 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function clearStateForNewCSV(): void {
     cancelAllRequests()
     clearCooldownTimers()
-    tokenLimitReached.value = false
     analysisActivated.value = false
 
-    for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
+    for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
       const tabState = getTabState(tab)
-      const display = getDisplay(tab)
       tabState.firstAnalyzeCompleted = false
       tabState.controller = null
       tabState.debounceTimer = null
       tabState.cache.clear()
       tabState.lastVisibleCacheKey = null
-      display.status = 'idle'
-      display.response = null
-      display.error = null
-      display.errorFallback = null
+      setDisplay(getDisplay(tab), 'idle')
     }
   }
 
@@ -442,24 +406,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     cancelAllRequests()
 
     // Revert loading tabs to their last known state
-    for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
-      const tabState = getTabState(tab)
+    for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
       const display = getDisplay(tab)
-      if (display.status === 'loading') {
+      if (display.value.status === 'loading') {
+        const tabState = getTabState(tab)
         const lastKey = tabState.lastVisibleCacheKey
-        if (lastKey) {
-          const entry = tabState.cache.get(lastKey)
-          if (entry) {
-            display.status = 'done'
-            display.response = entry.response as unknown as typeof display.response
-          } else {
-            display.status = 'idle'
-          }
-        } else {
-          display.status = 'idle'
-        }
-        display.error = null
-        display.errorFallback = null
+        const entry = lastKey ? tabState.cache.get(lastKey) : null
+        setDisplay(display, entry ? 'done' : 'idle', entry?.response ?? null)
       }
     }
   }
@@ -472,11 +425,16 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     () => {
       const tab = activeTab.value
       const tabState = getTabState(tab)
-      const display = getDisplay(tab)
 
       if (!analysisActivated.value) return
-      if (!aiStore.aiPanelOpen) return
-      if (!aiStore.provider || !aiStore.selectedModel) return
+
+      // Token-limited: update display for new filter immediately (no API call possible)
+      if (tokenLimitReached.value) {
+        showTokenLimitState(tab)
+        return
+      }
+
+      if (evaluationDisabled.value) return
 
       // Cancel current request
       cancelActiveRequest(tab)
@@ -485,30 +443,24 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       tabState.debounceTimer = setTimeout(() => {
         tabState.debounceTimer = null
 
-        if (!aiStore.aiPanelOpen) return
-        if (campaignStore.filteredCampaigns.length === 0) return
+        if (evaluationDisabled.value) return
+
+        if (tab === 'budgetOptimizer' && campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS) {
+          setDisplay(getDisplay(tab), 'error', null, OPTIMIZER_MIN_CAMPAIGNS_ERROR)
+          return
+        }
 
         const cacheKey = getCurrentCacheKey()
-        if (!cacheKey) return
 
         // Check cache first
         const entry = tabState.cache.get(cacheKey)
         if (entry) {
-          display.status = 'done'
-          display.response = entry.response as unknown as typeof display.response
-          display.error = null
-          display.errorFallback = null
+          setDisplay(getDisplay(tab), 'done', entry.response)
           tabState.lastVisibleCacheKey = cacheKey
           return
         }
 
-        // Token limit: try next model or stop
-        if (aiStore.selectedModelLimitReached) {
-          if (!aiStore.selectNextAvailableModel()) {
-            tokenLimitReached.value = true
-          }
-        }
-        if (tokenLimitReached.value) return
+
 
         // Auto-call
         executeAnalysis(tab, true)
@@ -522,7 +474,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     () => aiStore.selectedModel,
     () => {
       if (!analysisActivated.value) return
-      if (!aiStore.aiPanelOpen) return
+      if (evaluationDisabled.value) return
       evaluateTab(activeTab.value)
     },
   )
@@ -544,8 +496,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     tokenLimitReached,
     analysisActivated,
     // Per-tab reactive display state
-    optimizer,
-    summary,
+    budgetOptimizer,
+    executiveSummary,
     // Computed
     optimizerCanAnalyze,
     summaryCanAnalyze,

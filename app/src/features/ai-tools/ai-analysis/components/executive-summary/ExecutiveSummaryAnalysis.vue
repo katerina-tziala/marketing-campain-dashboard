@@ -14,11 +14,11 @@ defineProps<{
 
 const analysisStore = useAiAnalysisStore()
 
-const status = computed(() => analysisStore.summary.status)
-const response = computed(() => analysisStore.summary.response)
-const error = computed(() => analysisStore.summary.error)
-const errorFallback = computed(() => analysisStore.summary.errorFallback)
-const cacheTimestamp = computed(() => analysisStore.summary.response?.timestamp ?? null)
+const status = computed(() => analysisStore.executiveSummary.status)
+const response = computed(() => analysisStore.executiveSummary.response)
+const error = computed(() => analysisStore.executiveSummary.error)
+const errorFallback = computed(() => analysisStore.executiveSummary.errorFallback)
+const cacheTimestamp = computed(() => analysisStore.executiveSummary.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
@@ -27,7 +27,7 @@ const actionLabel = computed(() => analysisActivated.value ? 'Re-Summarize' : 'S
 const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
 
 function handleSummarize(): void {
-  analysisStore.analyze('summary')
+  analysisStore.analyze('executiveSummary')
 }
 </script>
 
