@@ -5944,3 +5944,61 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `showCachedResult` returns a boolean so callers can gate on it (`if (showCachedResult(...)) return`) — this collapses `evaluateTab`'s two near-identical cache-check blocks into one call and simplifies the watcher debounce body
 - `isBelowOptimizerMinimum` keeps the raw boolean check separate so `optimizerCanAnalyze` can use it without side effects; `showOptimizerMinimumError` layers the display call on top and returns a boolean for the same early-return pattern, collapsing the repeated 4-line block in `executeAnalysis`, `evaluateTab`, and the watcher debounce into a single `if (showOptimizerMinimumError(tab)) return`
 - `setDisplay` moved inside the store and its first parameter changed from `display: Ref<TabDisplay>` to `tab: AiAnalysisType` — it now calls `getDisplay(tab).value = { status, response, error, notice }` internally (full object replacement, the correct Vue reactivity pattern), removing the repeated `setDisplay(getDisplay(tab), ...)` pattern from every call site
+
+
+## [#288] Background connection: toast notifications + green dot pop-in
+**Type:** update
+
+**Summary:** When the AI panel is closed while a connection request is in flight, the request completes in the background and shows a success or error toast; the connected dot gains a spring pop-in animation so it appears immediately and visibly on background success.
+
+**Brainstorming:** The connection store's `connect()` already continued in the background when the panel closed (no AbortController, no cancel call in `closePanel`). What was missing was feedback: the user had no way to know the request succeeded or failed. Solution: check `aiPanelOpen` at completion time inside `connect()` and fire toasts conditionally. Analysis cancellation on panel close was confirmed to remain unchanged. For the green dot, it already appeared reactively when `isConnected && !aiPanelOpen`, but the static appearance made it easy to miss. A one-shot spring keyframe animation makes it pop into view so the user notices it immediately.
+
+**Prompt:** When the AI panel is closed while a connection request is in flight: let the request complete in background, show a success toast ("Connected to [Provider]") or error toast ("Connection failed. Reopen the panel for details.") if the panel is still closed at completion time. Also add a pop-in animation to the connected dot in DashboardHeader so it's immediately noticeable on background success. Analysis requests still cancel on panel close.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnectionStore.ts` — imported `useToastStore` and `PROVIDER_LABELS`; `connect()` checks `!aiPanelOpen.value` after success and after catch, showing the appropriate toast only when panel is closed
+- `app/src/features/dashboard/components/DashboardHeader.vue` — added `dot-pop` scoped `@keyframes` (cubic-bezier spring, scale 0→1, 0.4s) applied to `.connected-status` so the dot animates in each time it appears
+
+**Key decisions & why:**
+- Check `aiPanelOpen.value` at completion time (not captured at call start) — the panel might be closed mid-flight, so the relevant question is whether it's open when the result arrives
+- `useToastStore()` called inside `connect()` rather than at store definition level — avoids circular initialization risk since both stores are Pinia setup stores; Pinia resolves setup-store instances lazily so calling inside an action is safe
+- No new reactive state — the dot's appearance is already driven by `isConnected && !aiPanelOpen`; the animation triggers naturally via `v-if` re-mount each time the condition becomes true
+- Error toast message intentionally vague ("Reopen the panel for details") — the granular error codes and hints are displayed in the connection form, not appropriate for a transient toast
+
+
+## [#289] Normalize all component emits and listeners to camelCase
+**Type:** fix
+
+**Summary:** Renamed the one kebab-case emit (`'download-template'`) to `'downloadTemplate'` in `UploadCampainData.vue` and updated its emit call and listener in `UploadModal.vue`; also updated the `@clear-all` listener in `DashboardView.vue` to `@clearAll` to match the existing camelCase emit in `ChannelFilter.vue`.
+
+**Brainstorming:** Audited all `defineEmits` definitions and `@event` listeners across the codebase. Found three inconsistencies: one kebab-case emit name in `UploadCampainData.vue`, one matching kebab-case listener in `UploadModal.vue`, and one kebab-case listener `@clear-all` in `DashboardView.vue` (the emit itself was already `clearAll`). All other emits were already camelCase. Vue 3 accepts either form but camelCase in both emit definition and listener keeps the codebase consistent.
+
+**Prompt:** Make all component outputs/emits camelCase
+
+**What changed:**
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — renamed emit `'download-template'` → `'downloadTemplate'`; updated `emit('download-template')` call to `emit('downloadTemplate')`
+- `app/src/features/data-transfer/components/UploadModal.vue` — updated listener `@download-template` → `@downloadTemplate`
+- `app/src/features/dashboard/DashboardView.vue` — updated listener `@clear-all` → `@clearAll`
+
+**Key decisions & why:**
+- No logic changes — purely naming consistency; Vue 3 auto-maps both forms so behavior is unchanged
+- `ChannelFilter` emit was already `clearAll`; only the call-site listener needed updating
+
+
+## [#290] Enforce camelCase/kebab-case split between script and template
+**Type:** fix
+
+**Summary:** Applied the project naming convention — JS/TS uses camelCase, templates/HTML use kebab-case — to violations found in three modified files.
+
+**Brainstorming:** The rule is that the two halves of a Vue SFC use different case conventions: script block (defineEmits keys, defineProps keys, emit() call arguments, variable names) → camelCase; template attributes (prop bindings, event listeners, v-model argument) → kebab-case. Vue 3 auto-maps between them. Three files had violations from a previous commit that uniformly moved everything to camelCase.
+
+**Prompt:** Inputs and outputs in Vue components must follow this pattern: JavaScript / TypeScript → camelCase; Templates / HTML → kebab-case.
+
+**What changed:**
+- `app/src/features/dashboard/DashboardView.vue` — `@aiClick` → `@ai-click`
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — `:modelValue` → `:model-value`; `@update:modelValue` → `@update:model-value`; emit definition `'download-template'` → `downloadTemplate`; inline `emit('download-template')` → `emit('downloadTemplate')`
+- `app/src/features/data-transfer/components/UploadModal.vue` — `@download-template` was already kebab-case; no changes needed
+
+**Key decisions & why:**
+- Emit definition keys in `defineEmits` are JS/TS → camelCase; corresponding template listeners are HTML → kebab-case; Vue maps them automatically
+- `v-model:title` / `v-model:file` argument names follow the prop name and stay as-is; the generated `update:title` / `update:file` event names are a Vue convention, not free-form strings

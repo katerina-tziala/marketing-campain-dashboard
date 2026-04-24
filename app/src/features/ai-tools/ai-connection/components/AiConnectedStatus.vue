@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useAiConnectionStore } from '../stores'
 import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
-import { PROVIDER_LABELS } from '../../providers/providers-meta'
+import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
 
 const store = useAiConnectionStore()
 const analysisStore = useAiAnalysisStore()

@@ -1,5 +1,5 @@
 import type { AiErrorCode, AiProviderType } from '../../types'
-import { PROVIDER_LABELS } from '../../providers/providers-meta'
+import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
 import { normalizeConnectionError } from '../../providers/utils'
 
 const ERROR_CODES = new Set<AiErrorCode>([

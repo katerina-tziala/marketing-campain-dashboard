@@ -22,7 +22,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
   <div v-else class="dashboard">
     <!-- Header -->
     <section class="dashboard-section">
-      <DashboardHeader @aiClick="openAiPanel?.()" />
+      <DashboardHeader @ai-click="openAiPanel?.()" />
     </section>
     <!-- Channel Filter -->
     <section class="dashboard-section">

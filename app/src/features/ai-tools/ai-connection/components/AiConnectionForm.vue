@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useAiConnectionStore } from '../stores'
 import { Spinner, PasswordInput, RadioToggle } from '../../../../ui'
 import type { AiProviderType } from '../../types'
-import { PROVIDER_OPTIONS, PROVIDER_HELP } from '../../providers/providers-meta'
+import { PROVIDER_OPTIONS, PROVIDER_HELP } from '../../providers/utils/providers-meta'
 import { ERROR_MESSAGES, ERROR_HINTS } from '../utils'
 
 const store = useAiConnectionStore()

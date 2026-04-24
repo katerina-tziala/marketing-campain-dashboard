@@ -3,7 +3,7 @@ import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
 import { parseJsonResponse, toValidModels } from '../utils/shared'
 import { fetchGeminiModels, requestGeminiChatCompletion } from './api'
 import type { GeminiModel } from './types'
-import { GEMINI_PROVIDER_RULES } from '../providers-meta'
+import { GEMINI_PROVIDER_RULES } from '../utils/providers-meta'
 
 const BANNED = ['embedding', 'image', 'audio', 'tts', 'veo', 'imagen', 'lyria', 'robotics']
 

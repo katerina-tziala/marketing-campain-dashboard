@@ -4,7 +4,7 @@ import { ref, computed } from 'vue'
 import type { AiProviderType, AiConnectionError } from '../../types'
 import { getErrorCode } from '../utils'
 import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '../../providers'
-import { PROVIDER_LABELS } from '../../providers/providers-meta'
+import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
 import { useToastStore } from '../../../../stores/toastStore'
 
 export const useAiConnectionStore = defineStore('aiConnection', () => {
@@ -35,7 +35,7 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
       const code = getErrorCode(error)
       connectionError.value = { code, provider: providerType }
       if (!aiPanelOpen.value) {
-        toastStore.showErrorToast('Connection failed. Reopen the panel for details.')
+        toastStore.showErrorToast(`Connection to ${PROVIDER_LABELS[providerType]} failed. Reopen the panel for details.`)
       }
     } finally {
       isConnecting.value = false
