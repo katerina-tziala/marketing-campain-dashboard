@@ -22,7 +22,7 @@ const roiChartData = computed<ChartData<'bar'>>(() => ({
   datasets: [
     {
       label: 'ROI (%)',
-      data: props.campaigns.map((c) => c.roi ?? 0),
+      data: props.campaigns.map((c) => (c.roi ?? 0) * 100),
       backgroundColor: props.campaigns.map((c) => campaignColorMap.value[c.campaign] + 'bf'),
       borderColor: props.campaigns.map((c) => campaignColorMap.value[c.campaign]),
       borderWidth: 1,

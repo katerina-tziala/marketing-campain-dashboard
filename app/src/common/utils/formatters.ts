@@ -2,9 +2,10 @@ export function formatNumber(value: number): string {
   return value.toLocaleString('en')
 }
 
+// value is a decimal ratio (e.g. 0.12 = 12%); multiplication to percentage happens here
 export function formatPercentage(value: number | null, fallback = 'N/A'): string {
   if (value === null) return fallback
-  return `${value.toFixed(2)}%`
+  return `${(value * 100).toFixed(2)}%`
 }
 
 export function formatCurrency(val: number | null, decimals = 0, fallback = 'N/A'): string {

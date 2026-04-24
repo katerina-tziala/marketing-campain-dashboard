@@ -11,3 +11,10 @@ export function safeDivide(numerator: number, denominator: number): number {
 export function round2(value: number): number {
   return Math.round(value * 100) / 100
 }
+
+/**
+ * Round a number to 4 decimal places.
+ */
+export function round4(value: number): number {
+  return Math.round(value * 10000) / 10000
+}

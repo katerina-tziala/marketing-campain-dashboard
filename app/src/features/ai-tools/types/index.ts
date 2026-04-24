@@ -91,38 +91,6 @@ export type PortfolioCount = {
 
 export type ConfidenceLevel = "High" | "Medium" | "Low";
 
-// ── Executive Summary types ────────────────────────────────────────────────
-
-export type PerformanceDeltas = {
-  roiDelta: number;
-  cacDelta: number | null;
-  cvrDelta: number;
-};
-
-export type ExecutiveSummaryChannel = CampainSummaryTotals & AllocationShare & PerformanceDeltas & {
-  channel: string;
-};
-
-export type ExecutiveSummaryCampaign = CampainSummaryTotals & PerformanceDeltas & {
-  campaign: string;
-  channel: string;
-};
-
-export type ExecutiveSummaryOtherChannelsSummary = AllocationShare & {
-  channelCount: number;
-};
-
-export type ExecutiveSummaryData = {
-  period?: string;
-  totals: CampainSummaryTotals;
-  portfolio: PortfolioCount;
-  topChannels: ExecutiveSummaryChannel[];
-  otherChannelsSummary?: ExecutiveSummaryOtherChannelsSummary;
-  topCampaigns: ExecutiveSummaryCampaign[];
-  underperformingCampaigns: ExecutiveSummaryCampaign[];
-  keyFindings?: string[];
-};
-
 // ── Budget Optimizer types ─────────────────────────────────────────────────
 
 export type BudgetOptimizerCampaign = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
@@ -211,45 +179,26 @@ export type AiAnalysisError = {
 export type ExecutiveSummaryResponse = {
   model?: AiModel;
   timestamp?: number;
-  period?: string;
-  health_score: {
+  healthScore: {
     score: number;
-    label: "Excellent" | "Good" | "Needs Attention" | "Critical";
+    label: "Excellent" | "Good" | "NeedsAttention" | "Critical";
     reasoning: string;
   };
-  bottom_line: string;
+  bottomLine: string;
   insights: {
-    type: "performance" | "opportunity" | "warning" | "achievement";
-    icon: "📊" | "🏆" | "⚠️" | "🎯" | "💡" | "📈" | "📉" | "🔥";
+    type: "Performance" | "Opportunity" | "Warning" | "Achievement";
     text: string;
-    metric_highlight: {
+    metricHighlight: {
       label: string;
       value: string;
     };
   }[];
-  priority_actions: {
+  priorityActions: {
     priority: number;
     action: string;
-    expected_outcome: string;
-    urgency: "Immediate" | "This Quarter" | "Next Quarter";
-    success_metric: string;
+    expectedOutcome: string;
+    urgency: "Immediate" | "ThisQuarter" | "NextQuarter";
+    successMetric: string;
   }[];
-  channel_summary: {
-    channel: string;
-    status: "strong" | "moderate" | "weak";
-    budget_share: string;
-    one_liner: string;
-  }[];
-  additional_channels_note?: string;
   correlations: Correlation[];
-  key_metrics: {
-    total_spend: number;
-    total_revenue: number;
-    overall_roi: number;
-    total_conversions: number;
-    best_channel: string;
-    worst_channel: string;
-    best_campaign: string;
-    biggest_opportunity: string;
-  };
 };

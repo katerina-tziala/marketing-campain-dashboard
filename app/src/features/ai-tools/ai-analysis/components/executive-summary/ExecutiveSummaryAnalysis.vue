@@ -6,9 +6,7 @@ import AnalysisState from '../shared/AnalysisState.vue'
 import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
 import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'
 import ExecutiveSummaryPriorityActions from './ExecutiveSummaryPriorityActions.vue'
-import ExecutiveSummaryMetrics from './ExecutiveSummaryMetrics.vue'
 import ExecutiveSummaryInsights from './ExecutiveSummaryInsights.vue'
-import ExecutiveSummaryChannels from './ExecutiveSummaryChannels.vue'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -47,18 +45,12 @@ function handleSummarize(): void {
     @analyze="handleSummarize"
   >
     <ExecutiveSummaryHealth
-      :health-score="response!.health_score"
-      :bottom-line="response!.bottom_line"
-      :period="response!.period"
+      :health-score="response!.healthScore"
+      :bottom-line="response!.bottomLine"
       :scope="campaignStore.campaignScope"
     />
-    <ExecutiveSummaryPriorityActions :actions="response!.priority_actions" />
-    <ExecutiveSummaryMetrics :metrics="response!.key_metrics" />
+    <ExecutiveSummaryPriorityActions :actions="response!.priorityActions" />
     <ExecutiveSummaryInsights :insights="response!.insights" />
-    <ExecutiveSummaryChannels
-      :channels="response!.channel_summary"
-      :additional-channels-note="response!.additional_channels_note"
-    />
     <AnalysisCorrelations :correlations="response!.correlations" />
   </AnalysisState>
 </template>

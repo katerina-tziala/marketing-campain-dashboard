@@ -5,9 +5,8 @@ import AnalysisSummary from '../shared/AnalysisSummary.vue'
 import { healthScoreVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
-  healthScore: ExecutiveSummaryResponse['health_score']
+  healthScore: ExecutiveSummaryResponse['healthScore']
   bottomLine: string
-  period?: string
   scope: CampaignScope
 }>()
 </script>
@@ -15,7 +14,6 @@ defineProps<{
 <template>
   <AnalysisSummary
     title="Portfolio Health"
-    :period="period"
     :scope="scope"
   >
     <template #badge>

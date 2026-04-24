@@ -7,23 +7,45 @@ export interface CampaignMetrics {
 }
 
 export interface PerformanceMetrics {
+  /** Decimal ratio — (revenue - budget) / budget. e.g. 1.68 = 168% ROI */
   roi: number | null
+  /** Decimal ratio — clicks / impressions. e.g. 0.05 = 5% CTR */
   ctr: number | null
+  /** Decimal ratio — conversions / clicks. e.g. 0.12 = 12% CVR */
   cvr: number | null
+  /** Currency (EUR) — budget / conversions */
   cac: number | null
 }
-
-export interface CampaignKPIs extends CampaignMetrics, PerformanceMetrics {}
 
 export interface Campaign extends CampaignMetrics {
   rowId: number
   campaign: string
   channel: string
 }
- 
-export interface CampaignPerformance extends Campaign, PerformanceMetrics {}
+
+export interface CampaignPerformance extends Campaign, PerformanceMetrics { }
 
 export interface CampaignScope {
+  campaigns: string[]
+  selectedCampaigns: string[]
+  selectedChannels: string[]
+}
+
+export interface CampaignKPIs extends CampaignMetrics, PerformanceMetrics { }
+
+export interface PortfolioKPIs {
+  totalBudget: number;
+  totalRevenue: number;
+  totalConversions: number;
+  totalImpressions: number
+  totalClicks: number
+  aggregatedROI: number | null; // decimal, e.g. 1.68 = 168%
+  aggregatedCAC: number | null; // decimal, 
+  aggregatedCTR: number | null; // decimal, e.g. 1.68 = 168%
+  aggregatedCVR: number | null; // decimal, e.g. 1.68 = 168%
+}
+
+export interface PortfolioScope {
   campaigns: string[]
   selectedCampaigns: string[]
   selectedChannels: string[]

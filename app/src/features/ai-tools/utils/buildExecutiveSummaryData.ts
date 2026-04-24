@@ -1,359 +1,171 @@
-import type { Campaign } from '../../../common/types/campaign'
-import { safeDivide, round2 } from '../../../common/utils/math'
+import type { CampaignPerformance } from '../../../common/types/campaign'
+import type { Channel } from '../../../common/types/channel'
+import { safeDivide, round2, round4 } from '../../../common/utils/math'
+import { getExecutiveSummaryDerivedInputs } from '../../../common/analysis/executive-summary-analysis'
 import type {
-  ExecutiveSummaryData,
-  ExecutiveSummaryChannel,
-  ExecutiveSummaryCampaign,
-  ExecutiveSummaryOtherChannelsSummary,
-} from '../types'
-
-const MAX_TOP_CHANNELS = 6
-const MAX_TOP_CAMPAIGNS = 3
-const MAX_UNDERPERFORMING = 3
-const MAX_KEY_FINDINGS = 5
-const MIN_CONVERSIONS = 10
-const MIN_BUDGET_SHARE_PERCENT = 2
-
-// ── Portfolio benchmarks ──────────────────────────────────────────────────
-
-type PortfolioBenchmarks = {
-  roi: number
-  cac: number // Infinity when totalConversions = 0
-  cvr: number
-}
+  ExecutiveSummaryInput,
+  CampaignSummary,
+  ChannelSummary,
+  SummaryMetricStatus,
+} from '../../../common/analysis/executive-summary-analysis.types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-// Returns Infinity for zero conversions — enables correct comparison logic
-// (Infinity > any threshold → zero-conversion items are never classified as efficient).
-// Serializes to null in JSON for the AI prompt.
-function computeCAC(budget: number, conversions: number): number {
-  return conversions > 0 ? round2(budget / conversions) : Infinity
+function computeChannelStatus(
+  roi: number | null,
+  portfolioRoi: number | null,
+): SummaryMetricStatus {
+  if (roi === null || portfolioRoi === null) return 'Moderate'
+  if (roi > portfolioRoi * 1.1) return 'Strong'
+  if (roi < portfolioRoi * 0.9) return 'Weak'
+  return 'Moderate'
 }
 
-function computeCacDelta(campaignCac: number, portfolioCac: number): number | null {
-  const d = campaignCac - portfolioCac
-  return isFinite(d) ? round2(d) : null
-}
-
-function meetsMinSample(conversions: number, budget: number, totalBudget: number): boolean {
-  return conversions >= MIN_CONVERSIONS
-    || (totalBudget > 0 && (budget / totalBudget) * 100 >= MIN_BUDGET_SHARE_PERCENT)
-}
-
-// ── Per-campaign derived metrics ──────────────────────────────────────────
-
-function deriveCampaignMetrics(
-  c: Campaign,
-  benchmarks: PortfolioBenchmarks,
-): ExecutiveSummaryCampaign {
-  const roi = round2(safeDivide(c.revenue - c.budget, c.budget) * 100)
-  const cac = computeCAC(c.budget, c.conversions)
-  const cvr = round2(safeDivide(c.conversions, c.clicks) * 100)
-
+function toCampaignSummary(
+  c: CampaignPerformance,
+  totalBudget: number,
+  totalRevenue: number,
+): CampaignSummary {
+  const budgetShare = safeDivide(c.budget, totalBudget)
+  const revenueShare = safeDivide(c.revenue, totalRevenue)
   return {
-    campaign: c.campaign,
-    channel: c.channel,
-    budget: round2(c.budget),
-    revenue: round2(c.revenue),
-    roi,
-    conversions: c.conversions,
-    cac,
-    ctr: round2(safeDivide(c.clicks, c.impressions) * 100),
-    cvr,
-    roiDelta: round2(roi - benchmarks.roi),
-    cacDelta: computeCacDelta(cac, benchmarks.cac),
-    cvrDelta: round2(cvr - benchmarks.cvr),
+    ...c,
+    budgetShare,
+    revenueShare,
+    efficiencyGap: budgetShare - revenueShare,
   }
 }
 
-// ── Channel aggregation ─────────────────────────────────────────────────
-
-type ChannelAccumulator = {
-  budget: number
-  revenue: number
-  impressions: number
-  clicks: number
-  conversions: number
-}
-
-function aggregateChannels(
-  rows: Campaign[],
+function toChannelSummary(
+  ch: Channel,
   totalBudget: number,
   totalRevenue: number,
-  benchmarks: PortfolioBenchmarks,
-): ExecutiveSummaryChannel[] {
-  const map = new Map<string, ChannelAccumulator>()
-
-  for (const row of rows) {
-    const acc = map.get(row.channel)
-    if (acc) {
-      acc.budget += row.budget
-      acc.revenue += row.revenue
-      acc.impressions += row.impressions
-      acc.clicks += row.clicks
-      acc.conversions += row.conversions
-    } else {
-      map.set(row.channel, {
-        budget: row.budget,
-        revenue: row.revenue,
-        impressions: row.impressions,
-        clicks: row.clicks,
-        conversions: row.conversions,
-      })
-    }
-  }
-
-  const channels: ExecutiveSummaryChannel[] = []
-
-  for (const [channel, acc] of map) {
-    const roi = round2(safeDivide(acc.revenue - acc.budget, acc.budget) * 100)
-    const cac = computeCAC(acc.budget, acc.conversions)
-    const cvr = round2(safeDivide(acc.conversions, acc.clicks) * 100)
-
-    channels.push({
-      channel,
-      budget: round2(acc.budget),
-      revenue: round2(acc.revenue),
-      roi,
-      conversions: acc.conversions,
-      cac,
-      ctr: round2(safeDivide(acc.clicks, acc.impressions) * 100),
-      cvr,
-      budgetShare: round2(safeDivide(acc.budget, totalBudget) * 100),
-      revenueShare: round2(safeDivide(acc.revenue, totalRevenue) * 100),
-      roiDelta: round2(roi - benchmarks.roi),
-      cacDelta: computeCacDelta(cac, benchmarks.cac),
-      cvrDelta: round2(cvr - benchmarks.cvr),
-    })
-  }
-
-  return channels
-}
-
-// ── Top / other channels split (materiality score ranking) ────────────────
-
-function splitChannels(channels: ExecutiveSummaryChannel[]): {
-  topChannels: ExecutiveSummaryChannel[]
-  otherChannelsSummary?: ExecutiveSummaryOtherChannelsSummary
-} {
-  const sorted = [...channels].sort((a, b) => {
-    const aMat = a.budgetShare * 0.6 + a.revenueShare * 0.4
-    const bMat = b.budgetShare * 0.6 + b.revenueShare * 0.4
-    return bMat - aMat
-  })
-
-  const topChannels = sorted.slice(0, MAX_TOP_CHANNELS)
-  const rest = sorted.slice(MAX_TOP_CHANNELS)
-
-  if (rest.length === 0) return { topChannels }
-
+  portfolioRoi: number | null,
+): ChannelSummary {
+  const budgetShare = safeDivide(ch.budget, totalBudget)
+  const revenueShare = safeDivide(ch.revenue, totalRevenue)
   return {
-    topChannels,
-    otherChannelsSummary: {
-      channelCount: rest.length,
-      budgetShare: round2(rest.reduce((s, c) => s + c.budgetShare, 0)),
-      revenueShare: round2(rest.reduce((s, c) => s + c.revenueShare, 0)),
-    },
+    channel: ch.name,
+    budget: ch.budget,
+    impressions: ch.impressions,
+    clicks: ch.clicks,
+    conversions: ch.conversions,
+    revenue: ch.revenue,
+    roi: ch.roi,
+    ctr: ch.ctr,
+    cvr: ch.cvr,
+    cac: ch.cac,
+    budgetShare,
+    revenueShare,
+    efficiencyGap: budgetShare - revenueShare,
+    status: computeChannelStatus(ch.roi, portfolioRoi),
   }
-}
-
-// ── Campaign classification ───────────────────────────────────────────────
-
-function selectTopCampaigns(
-  campaigns: ExecutiveSummaryCampaign[],
-  benchmarks: PortfolioBenchmarks,
-  totalBudget: number,
-): ExecutiveSummaryCampaign[] {
-  return campaigns
-    .filter((c) => {
-      if (!meetsMinSample(c.conversions, c.budget, totalBudget)) return false
-      const cacOk = c.cac !== null && c.cac <= benchmarks.cac
-      return c.roi >= benchmarks.roi && cacOk
-    })
-    .sort((a, b) =>
-      b.roi - a.roi
-      || b.revenue - a.revenue
-      || b.conversions - a.conversions,
-    )
-    .slice(0, MAX_TOP_CAMPAIGNS)
-}
-
-function countUnderperformingSignals(
-  c: ExecutiveSummaryCampaign,
-  benchmarks: PortfolioBenchmarks,
-  totalBudget: number,
-  totalRevenue: number,
-): number {
-  let signals = 0
-
-  // 1. ROI < 80% portfolio or ROI < 10%
-  if (c.roi < benchmarks.roi * 0.8 || c.roi < 10) signals++
-
-  // 2. CAC > 125% portfolio (only when conversions >= 10)
-  if (
-    c.conversions >= MIN_CONVERSIONS
-    && c.cac !== null
-    && isFinite(c.cac)
-    && isFinite(benchmarks.cac)
-    && c.cac > benchmarks.cac * 1.25
-  ) signals++
-
-  // 3. Revenue share < 75% budget share (when budget share >= 5%)
-  const budgetPct = totalBudget > 0 ? (c.budget / totalBudget) * 100 : 0
-  const revenuePct = totalRevenue > 0 ? (c.revenue / totalRevenue) * 100 : 0
-  if (budgetPct >= 5 && revenuePct < budgetPct * 0.75) signals++
-
-  // 4. CVR < 80% portfolio
-  if (c.cvr < benchmarks.cvr * 0.8) signals++
-
-  return signals
-}
-
-function selectUnderperformingCampaigns(
-  campaigns: ExecutiveSummaryCampaign[],
-  benchmarks: PortfolioBenchmarks,
-  totalBudget: number,
-  totalRevenue: number,
-  topCampaignNames: Set<string>,
-): ExecutiveSummaryCampaign[] {
-  return campaigns
-    .filter((c) => {
-      if (topCampaignNames.has(c.campaign)) return false
-      if (!meetsMinSample(c.conversions, c.budget, totalBudget)) return false
-      return countUnderperformingSignals(c, benchmarks, totalBudget, totalRevenue) >= 2
-    })
-    .sort((a, b) =>
-      a.roi - b.roi
-      || b.budget - a.budget
-      || a.revenue - b.revenue,
-    )
-    .slice(0, MAX_UNDERPERFORMING)
-}
-
-// ── Key findings ──────────────────────────────────────────────────────────
-
-function generateKeyFindings(
-  channels: ExecutiveSummaryChannel[],
-  topCampaigns: ExecutiveSummaryCampaign[],
-): string[] {
-  const findings: string[] = []
-
-  // Priority 1: Budget inefficiency (budget share >= 10% AND revenue share < 70% budget share)
-  const budgetInefficient = [...channels]
-    .filter((ch) => ch.budgetShare >= 10 && ch.revenueShare < ch.budgetShare * 0.7)
-    .sort((a, b) => (a.revenueShare / a.budgetShare) - (b.revenueShare / b.budgetShare))
-  if (budgetInefficient.length > 0) {
-    const ch = budgetInefficient[0]
-    findings.push(
-      `${ch.channel} receives ${ch.budgetShare}% of budget but contributes only ${ch.revenueShare}% of revenue.`,
-    )
-  }
-
-  // Priority 2: Disproportionate revenue (revenue share >= 1.4× budget share AND budget share >= 5%)
-  const disproportionate = [...channels]
-    .filter((ch) => ch.revenueShare >= ch.budgetShare * 1.4 && ch.budgetShare >= 5)
-    .sort((a, b) => (b.revenueShare / b.budgetShare) - (a.revenueShare / a.budgetShare))
-  if (disproportionate.length > 0) {
-    const ch = disproportionate[0]
-    findings.push(
-      `${ch.channel} generates ${ch.revenueShare}% of revenue with only ${ch.budgetShare}% of budget.`,
-    )
-  }
-
-  // Priority 3: Major campaign outperformance
-  if (topCampaigns.length > 0 && topCampaigns[0].roi > 200) {
-    findings.push(
-      `Campaign "${topCampaigns[0].campaign}" achieves an ROI of ${topCampaigns[0].roi}%, the strongest in the portfolio.`,
-    )
-  }
-
-  // Priority 4: Channel concentration risk (top 2 channels >= 60% budget, when >= 2 channels)
-  if (channels.length >= 2) {
-    const sorted = [...channels].sort((a, b) => b.budgetShare - a.budgetShare)
-    const top2Share = sorted[0].budgetShare + sorted[1].budgetShare
-    if (top2Share >= 60) {
-      findings.push(
-        `The top 2 channels (${sorted[0].channel}, ${sorted[1].channel}) account for ${round2(top2Share)}% of total budget.`,
-      )
-    }
-  }
-
-  return findings.slice(0, MAX_KEY_FINDINGS)
 }
 
 // ── Main builder ──────────────────────────────────────────────────────────
 
-export function buildExecutiveSummaryData(
-  rows: Campaign[],
-  period?: string,
-): ExecutiveSummaryData {
-  // Empty dataset — return zeroed structure
-  if (rows.length === 0) {
+export function buildExecutiveSummaryInput(
+  campaigns: CampaignPerformance[],
+  channels: Channel[],
+): ExecutiveSummaryInput {
+  if (campaigns.length === 0) {
     return {
-      ...(period ? { period } : {}),
-      totals: { budget: 0, revenue: 0, roi: 0, conversions: 0, cac: null, ctr: 0, cvr: 0 },
-      portfolio: { campaignCount: 0, channelCount: 0 },
-      topChannels: [],
+      portfolio: {
+        totalBudget: 0,
+        totalRevenue: 0,
+        aggregatedROI: 0,
+        totalConversions: 0,
+        aggregatedCAC: null,
+        campaignCount: 0,
+        channelCount: 0,
+      },
+      channels: [],
       topCampaigns: [],
-      underperformingCampaigns: [],
+      bottomCampaigns: [],
+      derivedSignals: {
+        inefficientChannels: [],
+        scalingCandidates: [],
+        concentrationFlag: {
+          flagged: false,
+          level: 'Low',
+          top1RevenueShare: 0,
+          top3RevenueShare: 0,
+          reason: 'No data provided.',
+        },
+        correlations: [],
+      },
     }
   }
 
-  // Portfolio raw sums
-  const totalBudget = rows.reduce((s, c) => s + c.budget, 0)
-  const totalRevenue = rows.reduce((s, c) => s + c.revenue, 0)
-  const totalImpressions = rows.reduce((s, c) => s + c.impressions, 0)
-  const totalClicks = rows.reduce((s, c) => s + c.clicks, 0)
-  const totalConversions = rows.reduce((s, c) => s + c.conversions, 0)
+  const totalBudget = campaigns.reduce((s, c) => s + c.budget, 0)
+  const totalRevenue = campaigns.reduce((s, c) => s + c.revenue, 0)
+  const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0)
 
-  // Portfolio benchmarks — baseline for all delta and classification logic
-  const benchmarks: PortfolioBenchmarks = {
-    roi: round2(safeDivide(totalRevenue - totalBudget, totalBudget) * 100),
-    cac: computeCAC(totalBudget, totalConversions),
-    cvr: round2(safeDivide(totalConversions, totalClicks) * 100),
-  }
+  const portfolioRoi = totalBudget > 0
+    ? round4(safeDivide(totalRevenue - totalBudget, totalBudget))
+    : null
 
-  const totals = {
-    budget: round2(totalBudget),
-    revenue: round2(totalRevenue),
-    roi: benchmarks.roi,
-    conversions: totalConversions,
-    cac: benchmarks.cac as number | null,
-    ctr: round2(safeDivide(totalClicks, totalImpressions) * 100),
-    cvr: benchmarks.cvr,
-  }
+  const aggregatedCAC = totalConversions > 0
+    ? round2(totalBudget / totalConversions)
+    : null
 
-  const uniqueChannels = new Set(rows.map((r) => r.channel))
-
-  // Derived campaign metrics with deltas
-  const campaignMetrics = rows.map((c) => deriveCampaignMetrics(c, benchmarks))
-
-  // Channel aggregation with deltas + materiality-ranked split
-  const allChannels = aggregateChannels(rows, totalBudget, totalRevenue, benchmarks)
-  const { topChannels, otherChannelsSummary } = splitChannels(allChannels)
-
-  // Campaign classification (top takes precedence, no overlap)
-  const topCampaigns = selectTopCampaigns(campaignMetrics, benchmarks, totalBudget)
-  const topCampaignNames = new Set(topCampaigns.map((c) => c.campaign))
-  const underperformingCampaigns = selectUnderperformingCampaigns(
-    campaignMetrics, benchmarks, totalBudget, totalRevenue, topCampaignNames,
+  const campaignSummaries = campaigns.map(c =>
+    toCampaignSummary(c, totalBudget, totalRevenue),
   )
 
-  // Key findings (priority-ordered)
-  const keyFindings = generateKeyFindings(allChannels, topCampaigns)
+  const channelSummaries = channels.map(ch =>
+    toChannelSummary(ch, totalBudget, totalRevenue, portfolioRoi),
+  )
+
+  const { topCampaigns, bottomCampaigns, derivedSignals } =
+    getExecutiveSummaryDerivedInputs({
+      campaigns: campaignSummaries,
+      channels: channelSummaries,
+      portfolioRoi,
+    })
 
   return {
-    ...(period ? { period } : {}),
-    totals,
     portfolio: {
-      campaignCount: rows.length,
-      channelCount: uniqueChannels.size,
+      totalBudget: round2(totalBudget),
+      totalRevenue: round2(totalRevenue),
+      aggregatedROI: portfolioRoi ?? 0,
+      totalConversions,
+      aggregatedCAC,
+      campaignCount: campaigns.length,
+      channelCount: channels.length,
     },
-    topChannels,
-    ...(otherChannelsSummary ? { otherChannelsSummary } : {}),
+    channels: channelSummaries,
     topCampaigns,
-    underperformingCampaigns,
-    ...(keyFindings.length > 0 ? { keyFindings } : {}),
+    bottomCampaigns,
+    derivedSignals,
   }
 }
+
+// add 
+//  totalImpressions: number
+//  totalClicks: number 
+//  aggregatedCTR: number | null
+//  aggregatedCVR: number | null  
+// in ExecutiveSummaryInput.portfolio
+
+// use functions from campaign-performance to perform same calculations and use object destructuring to reassing
+// check if we can derive those from campain level faster
+// create and reuse ShareAnsEfficiency {
+//   budgetShare: number;
+//   revenueShare: number;
+//   efficiencyGap: number;
+// }
+// interface
+
+// implement dynamic thressholds
+// function getDynamicThresholds(campaigns: CampaignSummaryInput[]) {
+//   const totalRevenue = campaigns.reduce((s, c) => s + c.revenue, 0);
+//   const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0);
+
+//   return {
+//     minRevenue: Math.max(totalRevenue * 0.02, 50),
+//     minConversions: Math.max(totalConversions * 0.02, 2),
+//   };
+// }
+
+// remove function n. we use number or null. update it with a meaningfull name

@@ -5218,3 +5218,61 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Pattern follows `model` stamp — `model` was already an infrastructure field on the response; `timestamp` is consistent with that precedent
 - No cache-restore sites need changing — `d.response = entry.response` implicitly carries `response.timestamp` already set at write time; all restore paths just work
+
+
+
+## [#263] Executive Summary — full refactor to camelCase schema, derivedSignals-first prompt, and new builder
+**Type:** refactor
+
+**Summary:** Replaced the snake_case `ExecutiveSummaryData`/`ExecutiveSummaryResponse` pipeline (with `icon`, `key_metrics`, `channel_summary`) with a new camelCase `ExecutiveSummaryInput`/`ExecutiveSummaryResponse` pipeline driven by `derivedSignals`, switching to `executive-summary-prompt2` and rewriting all mocks to match.
+
+**Brainstorming:** The existing executive summary pipeline had grown unwieldy: snake_case keys across prompts, types, and UI components; a `key_metrics` grid and `channel_summary` table that added noise without improving the actionability of the output; `icon` fields on insights that required the AI to emit an emoji (unreliable); and a builder (`buildExecutiveSummaryData`) that computed deltas and classifications at the data layer rather than letting the prompt guide AI reasoning. The new direction: (1) camelCase everywhere for consistency with the rest of the TypeScript codebase; (2) `derivedSignals` — pre-computed signals (topCampaigns, bottomCampaigns, positiveChannels, negativeChannels, budgetConcentration, roiOutlierSpread) that give the AI structured facts without exhaustive raw data; (3) `executive-summary-prompt2` which uses these signals as the primary reasoning input and emits a strict, noise-free schema (healthScore, bottomLine, insights, priorityActions, correlations — no icon, no key_metrics, no channel_summary); (4) `buildExecutiveSummaryInput` accepts `Channel[]` directly from `campaignStore.selectedChannels` instead of re-aggregating from campaigns. Badge variant maps were also updated to match the new enum string forms (`NeedsAttention`, `ThisQuarter`, `NextQuarter`).
+
+**Prompt:** Refactor the executive summary pipeline end-to-end. Replace the existing `buildExecutiveSummaryData` builder and `ExecutiveSummaryData`/`ExecutiveSummaryResponse` types (snake_case, with `icon`, `key_metrics`, `channel_summary`) with a new camelCase `ExecutiveSummaryInput`-based flow. Update `buildExecutiveSummaryData.ts` in-place — do not create a new file alongside it — renaming the export to `buildExecutiveSummaryInput` and refining the logic to accept `Channel[]` directly from `campaignStore.selectedChannels`. Integrate `getExecutiveSummaryDerivedInputs` from `common/analysis/executive-summary-analysis` to compute `topCampaigns`, `bottomCampaigns`, and `derivedSignals`. Update `ExecutiveSummaryResponse` in `ai-tools/types` to the new camelCase shape (healthScore, bottomLine, insights with metricHighlight, priorityActions, correlations — no icon, no key_metrics, no channel_summary). Wire the store to call `executive-summary-prompt2`. Update all UI components and rewrite all 5 executive summary mocks to match the new shape.
+
+**What changed:**
+- `common/analysis/executive-summary-analysis.ts` — refined: `getBottomCampaigns` now takes `excludedNames?: Set<string>` and filters `budgetShare >= MIN_BUDGET_SHARE (0.01)`; `getExecutiveSummaryDerivedInputs` computes `topCampaigns` first, derives `topCampaignNames` Set, passes it to `getBottomCampaigns` to prevent overlap
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — completely rewritten; renamed export to `buildExecutiveSummaryInput(campaigns, channels)`; adds `computeChannelStatus` (Strong/Moderate/Weak via ±10% band around portfolioRoi), `toCampaignSummary`, `toChannelSummary`; portfolioRoi in percentage form; passes `Channel[]` directly
+- `features/ai-tools/types/index.ts` — replaced `PerformanceDeltas`, `ExecutiveSummaryChannel/Campaign/OtherChannelsSummary/Data` with new camelCase `ExecutiveSummaryResponse` (healthScore, bottomLine, insights, priorityActions, correlations — no icon, no key_metrics, no channel_summary)
+- `features/ai-tools/ai-analysis/types/index.ts` — added `export * from './executive-summary.types'` barrel entry
+- `features/ai-tools/prompts/index.ts` — swapped `executive-summary-prompt` for `executive-summary-prompt2`
+- `stores/aiAnalysisStore.ts` — updated imports (`ExecutiveSummaryData` → `ExecutiveSummaryInput`, `buildExecutiveSummaryData` → `buildExecutiveSummaryInput`); `dataCache` type updated; `getOrBuildData` passes `campaignStore.selectedChannels`; `buildPrompt` derives `isFiltered: boolean` and passes to new prompt signature
+- `features/ai-tools/utils/analysis-badge-variants.ts` — `HEALTH_SCORE_MAP` key updated to `'needsattention'`; `URGENCY_MAP` keys updated to `'thisquarter'` / `'nextquarter'`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — removed `period` prop; updated to `healthScore` / `bottomLine` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryInsights.vue` — removed icon span and related styles; updated to `metricHighlight` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryPriorityActions.vue` — updated to `priorityActions` / `expectedOutcome` / `successMetric` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — removed `ExecutiveSummaryChannels` and `ExecutiveSummaryMetrics` imports/usage; updated all prop names to camelCase
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryChannels.vue` — DELETED
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — DELETED
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — all 5 mock objects rewritten to match new camelCase `ExecutiveSummaryResponse` shape (no period, no icon, no key_metrics, no channel_summary); `AiModel` import updated to `providers/types`
+- `CLAUDE.md` — Status, Architecture (added `common/analysis/`, updated all executive summary component and type descriptions, removed deleted files), checklist updated
+
+**Key decisions & why:**
+- `buildExecutiveSummaryInput` not a new file — user clarified to update the existing builder in-place rather than add a parallel file; this keeps the import path stable and avoids dead code
+- `excludedNames` Set passed to `getBottomCampaigns` — prevents a campaign appearing in both top and bottom lists; computed once from `topCampaigns` results before calling bottom
+- `MIN_BUDGET_SHARE = 0.01` threshold — micro-campaigns (< 1% of portfolio budget) are excluded from the bottom list to avoid noise in the AI prompt
+- Badge variant keys lowercased — `healthScoreVariant` / `urgencyVariant` / `insightTypeVariant` all call `.toLowerCase()` on the input; keys in maps updated to match the new enum string casing
+- `isFiltered` as boolean to prompt — `executive-summary-prompt2` signature uses `filteredChannels: boolean`; store derives this from `selectedChannelsIds.length > 0` at call time
+
+
+## [#257] Store PerformanceMetrics as decimal ratios, format percentages at display time
+**Type:** fix
+
+**Summary:** Changed `roi`, `ctr`, and `cvr` in `PerformanceMetrics` from percentage values (e.g. 168 = 168%) to decimal ratios (e.g. 1.68 = 168%), rounded to 4 decimal places, and moved the ×100 multiplication into `formatPercentage`.
+
+**Brainstorming:** The previous implementation computed `roi/ctr/cvr` by multiplying the raw ratio by 100 and rounding to 2 decimal places, so the stored value was already a percentage. This conflated two concerns — calculation and display formatting — making it impossible to use these values in arithmetic or AI prompts without knowing the implicit unit. The fix stores clean decimal ratios (4 d.p. for precision) and lets each display site apply the ×100 via `formatPercentage`. The `percentageClass` threshold for "warning" moved from 50 to 0.5 to match the new unit. `cac` is unaffected (it's a currency amount, not a ratio). The ROI bar chart multiplies by 100 in the data mapping to preserve correct axis labels. `portfolioRoi` in `buildExecutiveSummaryData` was already typed as a decimal in `ExecutiveSummaryInput` but was being calculated as a percentage — this is now consistent.
+
+**Prompt:** `computePerformanceMetrics` should keep decimals with 4 decimal digits. The calculation to percentage must happen when formatting values for display. Update the function, add comments to the models, and update formatters.
+
+**What changed:**
+- `common/utils/math.ts` — added `round4` (4 decimal places)
+- `common/utils/campaign-performance.ts` — `computePerformanceMetrics` removes `* 100` from roi/ctr/cvr, uses `round4` for those three; `percentageClass` warning threshold changed from `<= 50` to `<= 0.5`
+- `common/utils/formatters.ts` — `formatPercentage` now multiplies by 100 before `toFixed(2)`; added unit comment
+- `common/types/campaign.ts` — `PerformanceMetrics` fields annotated with JSDoc describing units (decimal ratio vs EUR)
+- `features/dashboard/components/DashboardCharts.vue` — ROI bar chart data mapping changed from `c.roi ?? 0` to `(c.roi ?? 0) * 100` so axis labels remain in percentage scale
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — `portfolioRoi` calculation removes `* 100`, uses `round4`; imports `round4`
+
+**Key decisions & why:**
+- `round4` not `round2` for ratios — low-CTR channels (e.g. 0.3% CTR) need 4 d.p. to avoid `0.00` values after rounding
+- `cac` stays `round2` — it's a currency amount (EUR), where 2 decimal places is the standard
+- Chart data multiplied by 100 inline — the chart y-label is "ROI (%)" so raw decimal values would produce a misleading axis; the multiplication lives in the chart mapping, not in the formatter, because chart tooltips read the raw number

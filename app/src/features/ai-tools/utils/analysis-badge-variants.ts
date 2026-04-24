@@ -3,7 +3,7 @@ import type { BadgeVariant } from '../../../ui/types/badge-variant'
 const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
   excellent: 'success',
   good: 'info',
-  'needs attention': 'warning',
+  needsattention: 'warning',
   critical: 'danger',
 }
 
@@ -15,8 +15,8 @@ const CHANNEL_STATUS_MAP: Record<string, BadgeVariant> = {
 
 const URGENCY_MAP: Record<string, BadgeVariant> = {
   immediate: 'danger',
-  'this quarter': 'warning',
-  'next quarter': 'info',
+  thisquarter: 'warning',
+  nextquarter: 'info',
   'this month': 'opportunity',
 }
 
