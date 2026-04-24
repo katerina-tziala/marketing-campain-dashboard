@@ -106,12 +106,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiToolsContent.vue      # Root content — header (SparklesIcon + title + .btn-icon-secondary close); shows AiConnectionForm when disconnected; AiConnectedStatus + AiAnalysis when connected; grid layout (status bar / tabs / scroll area)
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── utils/
+│   │   │   │   │   ├── analysis-badge-variants.ts  # Badge variant helpers for AI panels — internal badgeVariant(map, key) generic resolver; exports: healthScoreVariant, channelStatusVariant, urgencyVariant, insightTypeVariant, confidenceVariant, executionRiskVariant, actionVariant, effortVariant
 │   │   │   │   │   ├── analysis-error-messages.ts  # ANALYSIS_ERROR_MESSAGES (Record<AiErrorCode, string> — all 10 codes, plain strings); used by aiAnalysisStore to format analysis panel error messages
 │   │   │   │   │   ├── analysis-prompt.ts  # buildAnalysisPrompt (internal, maps AiAnalysisType to prompt generator via PROMPT_BUILDERS; PromptBuilder type is internal); runAnalysisPrompt(providerState, analysisContext, signal) → AnalysisResponse|null — builds prompt, calls runProviderPrompt, stamps model+timestamp, returns null on abort
+│   │   │   │   │   ├── utils.ts            # getCacheKey(channelIds, provider) → string — normalises channelIds (sort, fallback to 'all') and lowercases provider; used by aiAnalysisStore
+│   │   │   │   │   └── index.ts            # Barrel — re-exports analysis-badge-variants, analysis-error-messages, analysis-prompt, utils
 │   │   │   │   ├── types/
 │   │   │   │   └── index.ts            # AnalysisResponse = BudgetOptimizerResponse | ExecutiveSummaryResponse; AnalysisContext (type/analysis/isFiltered/businessContext?); AIProviderState (provider/apiKey/selectedModel); used by analysis-prompt.ts and aiAnalysisStore
-│   │   │   │   │   ├── utils.ts            # getCacheKey(channelIds, provider) → string — normalises channelIds (sort, fallback to 'all') and lowercases provider; used by aiAnalysisStore
-│   │   │   │   │   └── index.ts            # Barrel — re-exports analysis-error-messages, analysis-prompt, utils
 │   │   │   │   └── components/         # AI analysis UI — tab switcher, shared section wrappers, budget-optimization and executive-summary component trees
 │   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs (Summary/Optimizer) + scrollable container; reads aiAnalysisStore.activeTab + campaignStore.portfolioScope; passes scope prop to BudgetOptimizationAnalysis and ExecutiveSummaryAnalysis; flat scoped .panel-container style
 │   │   │   │       ├── index.ts                # Barrel export — AiAnalysis
@@ -122,7 +123,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │       ├── budget-optimization/    # Budget Optimizer tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
 │   │   │   │       │   ├── BudgetOptimizationAnalysis.vue        # Budget Optimizer tab — thin orchestrator; receives scope: PortfolioScope prop; wraps AnalysisState; slot content guarded with v-if="response" (null-safe); reads aiAnalysisStore only; no scoped styles
 │   │   │   │       │   ├── BudgetOptimizationOverview.vue        # Summary overview — props: summary (string), period?, scope (CampaignScope); wraps AnalysisSummary
-│   │   │   │       │   └── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; fromCampaign→toCampaign header with arrow; confidenceVariant + executionRiskVariant badges; budgetShift/expectedImpact metrics (revenueChange/conversionChange/roiEstimate); v-if on length; rec-card container-type for badge stacking via @container
+│   │   │   │       │   └── BudgetOptimizationRecommendations.vue # Recommendations — props: recommendations[]; fromCampaign→toCampaign header with arrow; confidenceVariant + executionRiskVariant badges; budgetShift/expectedImpact metrics formatted with formatCurrency/formatPercentage from common; v-if on length; rec-card container-type for badge stacking via @container
 │   │   │   │       └── executive-summary/      # Executive Summary tab orchestrator + dumb section components — all props-only section components, no store reads, scoped @apply flat styles
 │   │   │   │           ├── ExecutiveSummaryAnalysis.vue        # Executive Summary tab — thin orchestrator; receives scope: PortfolioScope prop; wraps AnalysisState; slot content guarded with v-if="response" (null-safe); reads aiAnalysisStore only; no scoped styles
 │   │   │   │           ├── ExecutiveSummaryHealth.vue          # Portfolio Health — props: healthScore (healthScore/reasoning/label), bottomLine, scope (CampaignScope); wraps AnalysisSummary with health badge in #badge slot
@@ -171,9 +172,6 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── budget-optimizer-mocks.ts    # 5 BudgetOptimizerResponse mock objects (aggressive reallocation, conservative, seasonal pivot, channel consolidation, no strong opportunity); camelCase shape matching BudgetOptimizerOutput
 │   │   │   │   ├── executive-summary-mocks.ts  # 5 ExecutiveSummaryResponse mock objects (strong portfolio, needs attention, excellent, critical, growth phase); new camelCase shape; no period field
 │   │   │   │   └── index.ts                    # Barrel export for mocks
-│   │   │   ├── utils/
-│   │   │   │   ├── analysis-badge-variants.ts   # Badge variant helpers for AI panels — internal badgeVariant(map, key) generic resolver; exports: healthScoreVariant, channelStatusVariant, urgencyVariant, insightTypeVariant, confidenceVariant, executionRiskVariant, actionVariant, effortVariant
-│   │   │   │   └── panel-formatters.ts          # Display string helpers for AI panels — exports: formatRoi, formatEuro, formatNumber
 │   │   │   └── index.ts            # Barrel export (empty — AiToolsDrawer moved to shell/)
 │   │   ├── dashboard/              # Dashboard feature folder
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; .data-visualization sets container-type: inline-size to enable child container queries; table section uses global `.card` class

@@ -5804,3 +5804,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Named container on KpiCard (`kpi-card`) — allows the card to query its own width independently of the grid; a single card can appear in different layout contexts without needing separate media query overrides
 - Theme tokens in a dedicated `themes/dark.scss` — keeps the token definitions co-located with the theme they belong to; `style.scss` stays as a thin entry point; future light theme would be a sibling file
 - CSS variables in Tailwind via `rgb(var(--color-*) / <alpha-value>)` — preserves Tailwind's opacity modifier support (`bg-surface/50`) while making the underlying value runtime-configurable
+
+
+## [#283] Move analysis-badge-variants into ai-analysis/utils; remove panel-formatters
+**Type:** refactor
+
+**Summary:** Relocated `analysis-badge-variants.ts` from the orphaned `ai-tools/utils/` folder into `ai-analysis/utils/` where its consumers live, deleted `panel-formatters.ts` entirely, and replaced its two callers (`formatEuro`, `formatRoi`) with `formatCurrency` and `formatPercentage` from `common/utils/formatters`.
+
+**Brainstorming:** `ai-tools/utils/` held two files with no barrel and no consumers outside `ai-analysis/` — a folder that existed only to hold these two files. `analysis-badge-variants.ts` belongs beside the other AI analysis utilities it's always used with. `panel-formatters.ts` duplicated functionality already present in `common/utils/formatters` with minor locale differences (`en-IE` vs `en`) and slightly different precision for ROI (no decimals vs 2 decimals via `toFixed`). The common formatters are the single source of truth for display formatting; duplicating them in a feature folder creates drift risk. Removing `panel-formatters.ts` leaves the `ai-tools/utils/` folder empty, so it is deleted too.
+
+**Prompt:** Move analysis-badge-variants out of ai-tools/utils and into ai-analysis/utils. Remove panel-formatters.ts and use the formatters from common instead.
+
+**What changed:**
+- `ai-tools/ai-analysis/utils/analysis-badge-variants.ts` — new location; same content, import path for `BadgeVariant` updated to `../../../../ui/types/badge-variant`
+- `ai-tools/ai-analysis/utils/index.ts` — added `export * from './analysis-badge-variants'`
+- `ai-tools/utils/analysis-badge-variants.ts` — deleted (old location)
+- `ai-tools/utils/panel-formatters.ts` — deleted
+- `ai-tools/utils/` folder — deleted (now empty)
+- `BudgetOptimizationRecommendations.vue` — import updated to `'../../utils/analysis-badge-variants'`; panel-formatters import removed; `formatEuro` → `formatCurrency`, `formatRoi` → `formatPercentage` from `common/utils/formatters`; template call sites updated accordingly
+- `ExecutiveSummaryPriorityActions.vue`, `ExecutiveSummaryInsights.vue`, `ExecutiveSummaryHealth.vue` — import paths updated from `'../../../utils/analysis-badge-variants'` to `'../../utils/analysis-badge-variants'`
+
+**Key decisions & why:**
+- `ai-analysis/utils/` as destination — badge variants are consumed exclusively by ai-analysis components; co-locating them with the other ai-analysis utilities (getCacheKey, analysis-prompt, error-messages) removes the cross-folder hop
+- `formatCurrency` for euro amounts, `formatPercentage` for ROI — direct functional equivalents in common; locale difference (`en-IE` → `en`) and ROI decimal change (0 → 2) are acceptable since the common formatters are the project standard
+- Deleted the `ai-tools/utils/` folder entirely — an empty folder with no barrel serves no purpose

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutiveSummaryResponse } from '../../../types'
-import { insightTypeVariant } from '../../../utils/analysis-badge-variants'
+import { insightTypeVariant } from '../../utils/analysis-badge-variants'
 
 defineProps<{
   insights: ExecutiveSummaryResponse['insights']

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BudgetOptimizerResponse } from '../../../types'
-import { confidenceVariant, executionRiskVariant } from '../../../utils/analysis-badge-variants'
-import { formatEuro, formatRoi } from '../../../utils/panel-formatters'
+import { confidenceVariant, executionRiskVariant } from '../../utils/analysis-badge-variants'
+import { formatCurrency, formatPercentage } from '../../../../../common/utils/formatters'
 
 defineProps<{
   recommendations: BudgetOptimizerResponse['recommendations']
@@ -30,15 +30,15 @@ defineProps<{
       <div class="rec-details">
         <p class="rec-row">
           <span class="rec-label">Budget shift</span>
-          <span class="rec-value">{{ formatEuro(rec.budgetShift) }}</span>
+          <span class="rec-value">{{ formatCurrency(rec.budgetShift) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. ROI</span>
-          <span class="rec-value">{{ formatRoi(rec.expectedImpact.roiEstimate) }}</span>
+          <span class="rec-value">{{ formatPercentage(rec.expectedImpact.roiEstimate) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Revenue</span>
-          <span class="rec-value text-success">+{{ formatEuro(rec.expectedImpact.revenueChange) }}</span>
+          <span class="rec-value text-success">+{{ formatCurrency(rec.expectedImpact.revenueChange) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Conversions</span>
