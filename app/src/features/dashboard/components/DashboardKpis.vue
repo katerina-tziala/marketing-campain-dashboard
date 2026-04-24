@@ -22,7 +22,7 @@ defineProps<{ kpis: PortfolioKPIs }>()
         :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <template #secondary>
-          <p>ROI</p><span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
+          <span>ROI</span><span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
         </template>
       </KpiCard>
       <KpiCard

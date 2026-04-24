@@ -5924,3 +5924,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `rawMessage` on `AiAnalysisError` (not only when code === 'unknown') — always capturing the raw error text is cheap and lets the component decide whether to show it; the component prioritises the map lookup and only falls back to rawMessage if the map has no entry for that code (defensive against future unhandled codes at runtime)
 - `TOKEN_LIMIT_MESSAGES` as a plain object in `analysis-messages.ts` (not a notice code) — the token-limit notice is driven by a prop, not a `TabDisplay.notice` field; adding it to the mapping file still satisfies "one file for all message text" without forcing a second notice code
 - `'min-campaigns'` added as a real `AiErrorCode` — the optimizer threshold case previously borrowed `'unknown'` and baked a long message inline in the store constant; a real code gives it a proper entry in the map and removes the inline string from the store entirely
+
+
+## [#287] Refactor aiAnalysisStore to remove repetition
+**Type:** refactor
+
+**Summary:** Extracted three internal helpers from `aiAnalysisStore` to eliminate repeated code patterns across `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, and the channel-filter watcher.
+
+**Brainstorming:** Three patterns repeated across the store: (1) "cancel in-flight + revert to last known state" was an identical 4-line block in three places; (2) the optimizer minimum campaign check was duplicated four times inline; (3) "look up cache entry → setDisplay('done') → update lastVisibleCacheKey" appeared in five locations including as two separate near-identical blocks inside `evaluateTab`. Extracting each into a named helper eliminates the duplication, gives each pattern a descriptive name, and makes the callers read as intent rather than mechanics. The derived-state section was also tidied: `tokenLimitReached`, `evaluationDisabled`, and the two `canAnalyze` computeds are now co-located under one section header. Two separate reset sections (`clearStateForNewCSV`, `clearStateForDisconnect`) were collapsed into a single "Reset" section. All logic is unchanged; zero TypeScript errors after refactor.
+
+**Prompt:** The aiAnalysisStore has a lot of repetition. Clean up the store, maintain the functionality but make it more readable.
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — extracted `isBelowOptimizerMinimum(): boolean`, `showOptimizerMinimumError(tab): boolean`, `showCachedResult(tab, cacheKey): boolean`, and `revertTab(tab): void`; simplified `showTokenLimitState`, `canAnalyze`, `optimizerCanAnalyze`, `handleRequestError`, `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, and the channel-filter watcher to use the new helpers; merged single-getter sections into "Derived state"; merged reset sections into "Reset"; removed spurious double blank line in watcher
+- `CLAUDE.md` — updated `aiAnalysisStore.ts` architecture description to document the new store-internal helpers
+
+**Key decisions & why:**
+- `revertTab` encapsulates "cancel + show last known state" — this exact sequence appeared identically when switching tabs, when pre-empting the other tab before a new request, and when closing the panel; a single named function makes each call site's intent obvious
+- `showCachedResult` returns a boolean so callers can gate on it (`if (showCachedResult(...)) return`) — this collapses `evaluateTab`'s two near-identical cache-check blocks into one call and simplifies the watcher debounce body
+- `isBelowOptimizerMinimum` keeps the raw boolean check separate so `optimizerCanAnalyze` can use it without side effects; `showOptimizerMinimumError` layers the display call on top and returns a boolean for the same early-return pattern, collapsing the repeated 4-line block in `executeAnalysis`, `evaluateTab`, and the watcher debounce into a single `if (showOptimizerMinimumError(tab)) return`
+- `setDisplay` moved inside the store and its first parameter changed from `display: Ref<TabDisplay>` to `tab: AiAnalysisType` — it now calls `getDisplay(tab).value = { status, response, error, notice }` internally (full object replacement, the correct Vue reactivity pattern), removing the repeated `setDisplay(getDisplay(tab), ...)` pattern from every call site

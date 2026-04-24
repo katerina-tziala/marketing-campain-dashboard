@@ -14,9 +14,9 @@ defineProps<{
     <h5 class="card-title">{{ label }}</h5> 
     <div class="kpi-content">
       <p class="kpi-value">{{ value ?? 'N/A' }}</p>
-      <div v-if="$slots.secondary" class="kpi-secondary">
+      <p v-if="$slots.secondary" class="kpi-secondary">
         <slot name="secondary" />
-      </div>
+      </p>
     </div>
     
   </div>
@@ -51,7 +51,7 @@ defineProps<{
     @apply text-xs shrink; 
   }
 
-  .kpi-secondary :deep(p) {
+  .kpi-secondary :deep(span:first-of-type) {
     @apply block shrink grow w-full text-right;
   }
 
