@@ -6,13 +6,13 @@ import type {
   AiAnalysisError,
   AiErrorCode,
   BudgetOptimizerResponse,
-  BudgetOptimizerData,
   ExecutiveSummaryResponse,
 } from '../features/ai-tools/types'
+import type { BudgetOptimizerAnalysis } from '../common/analysis/budget-optimization-analysis.types'
 import type { SummaryAnalysis } from '../common/analysis/executive-summary-analysis.types'
 import { useAiStore } from './aiStore'
 import { useCampaignStore } from './campaignStore'
-import { buildBudgetOptimizerData } from '../features/ai-tools/utils/buildBudgetOptimizerData'
+import { computeBudgetOptimizerAnalysis } from '../common/analysis/budget-optimization-analysis'
 import { computeSummaryAnalysis } from '../common/analysis/executive-summary-analysis'
 import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
@@ -41,7 +41,7 @@ function createTabState() {
     controller: null as AbortController | null,
     debounceTimer: null as ReturnType<typeof setTimeout> | null,
     cache: new Map<string, CacheEntry>(),
-    dataCache: new Map<string, BudgetOptimizerData | SummaryAnalysis>(),
+    dataCache: new Map<string, BudgetOptimizerAnalysis | SummaryAnalysis>(),
     lastVisibleCacheKey: null as string | null,
   }
 }
@@ -168,16 +168,25 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Data builders ─────────────────────────────────────────────────────
 
-  function getOrBuildData(tab: AiAnalysisTab): BudgetOptimizerData | SummaryAnalysis {
+  function getOrBuildData(tab: AiAnalysisTab): BudgetOptimizerAnalysis | SummaryAnalysis {
     const t = getTab(tab)
     const dataKey = createDataCacheKey(campaignStore.selectedChannelsIds)
     const cached = t.dataCache.get(dataKey)
     if (cached) return cached
 
-    const rows = campaignStore.filteredCampaigns
     const data = tab === 'optimizer'
-      ? buildBudgetOptimizerData(rows)
-      : computeSummaryAnalysis(rows, campaignStore.selectedChannels, campaignStore.kpis, campaignStore.portfolioScope)
+      ? computeBudgetOptimizerAnalysis(
+          campaignStore.filteredCampaigns,
+          campaignStore.selectedChannels,
+          campaignStore.kpis,
+          campaignStore.portfolioScope,
+        )
+      : computeSummaryAnalysis(
+          campaignStore.filteredCampaigns,
+          campaignStore.selectedChannels,
+          campaignStore.kpis,
+          campaignStore.portfolioScope,
+        )
 
     t.dataCache.set(dataKey, data)
     return data
@@ -191,11 +200,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     console.log(data)
 
     if (tab === 'optimizer') {
-      return generateBudgetOptimizationPrompt(
-        data as BudgetOptimizerData,
-        undefined,
-        isFiltered ? campaignStore.portfolioScope.selectedChannels : undefined,
-      )
+      return generateBudgetOptimizationPrompt(data as BudgetOptimizerAnalysis, isFiltered)
     }
     return generateExecutiveSummaryPrompt(
       data as SummaryAnalysis,

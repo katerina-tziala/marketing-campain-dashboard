@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BudgetOptimizerResponse } from '../../../types'
-import { confidenceVariant, urgencyVariant } from '../../../utils/analysis-badge-variants'
+import { confidenceVariant, executionRiskVariant } from '../../../utils/analysis-badge-variants'
 import { formatEuro, formatRoi } from '../../../utils/panel-formatters'
 
 defineProps<{
@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="ai-section">
+  <section v-if="recommendations.length" class="ai-section">
     <h4 class="section-title">Recommendations</h4>
     <div
       v-for="(rec, i) in recommendations"
@@ -17,39 +17,35 @@ defineProps<{
       class="card-secondary rec-card"
     >
       <div class="card-head">
-        <h5 class="card-title">{{ rec.action }}</h5>
+        <h5 class="card-title rec-route">
+          <span>{{ rec.fromCampaign }}</span>
+          <span class="rec-arrow">→</span>
+          <span>{{ rec.toCampaign }}</span>
+        </h5>
         <div class="rec-badges">
           <span class="badge" :class="confidenceVariant(rec.confidence)">{{ rec.confidence }}</span>
-          <span class="badge" :class="urgencyVariant(rec.timeline)">{{ rec.timeline }}</span>
+          <span class="badge" :class="executionRiskVariant(rec.executionRisk)">{{ rec.executionRisk }} risk</span>
         </div>
       </div>
       <div class="rec-details">
         <p class="rec-row">
-          <span class="rec-label">Reallocation</span>
-          <span class="rec-value">{{ formatEuro(rec.amount) }}</span>
+          <span class="rec-label">Budget shift</span>
+          <span class="rec-value">{{ formatEuro(rec.budgetShift) }}</span>
         </p>
         <p class="rec-row">
-          <span class="rec-label">New ROI</span>
-          <span class="rec-value">{{ formatRoi(rec.expected_impact.new_roi_estimate) }}</span>
+          <span class="rec-label">Est. ROI</span>
+          <span class="rec-value">{{ formatRoi(rec.expectedImpact.roiEstimate) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Revenue</span>
-          <span class="rec-value text-success">+{{ formatEuro(rec.expected_impact.additional_revenue) }}</span>
+          <span class="rec-value text-success">+{{ formatEuro(rec.expectedImpact.revenueChange) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Conversions</span>
-          <span class="rec-value text-success">+{{ rec.expected_impact.additional_conversions }}</span>
+          <span class="rec-value text-success">+{{ rec.expectedImpact.conversionChange }}</span>
         </p>
       </div>
-      <p class="card-content">{{ rec.reasoning }}</p>
-      <div class="card-content rec-metrics">
-        <h5 class="rec-metrics-title">Success Metrics</h5>
-        <p class="card-content rec-metrics-text">
-          <strong>Measure:</strong> {{ rec.success_metrics.what_to_measure }}<br>
-          <strong>Target:</strong> {{ rec.success_metrics.target }}<br>
-          <strong>Review after:</strong> {{ rec.success_metrics.review_after }}
-        </p>
-      </div>
+      <p class="card-content">{{ rec.reason }}</p>
     </div>
   </section>
 </template>
@@ -57,6 +53,14 @@ defineProps<{
 <style lang="scss" scoped>
 .rec-card {
   container-type: inline-size;
+}
+
+.rec-route {
+  @apply flex flex-wrap items-center gap-1;
+}
+
+.rec-arrow {
+  @apply text-typography-subtle;
 }
 
 .rec-badges {
@@ -70,7 +74,7 @@ defineProps<{
 .rec-details {
   @apply grid grid-cols-2 grid-rows-2 gap-y-2 gap-x-8 p-2 w-full;
 
-   @container (max-width: 28.75rem) {
+  @container (max-width: 28.75rem) {
     @apply gap-x-4;
   }
 }
@@ -85,19 +89,5 @@ defineProps<{
 
 .rec-value {
   @apply font-semibold;
-}
-
-.rec-metrics {
-  @apply bg-primary-700/10 border-primary-700/25 py-1 px-2;
-}
-
-.rec-metrics-title {
-  @apply font-semibold text-primary-300;
-}
-
-.rec-metrics-text {
-  strong {
-    @apply font-semibold text-primary-200;
-  }
 }
 </style>

@@ -5455,3 +5455,67 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Moved into `common/analysis/` not `common/utils/` — this function is specific to the executive summary analysis domain, not a generic utility
 - Rename to `compute` prefix — consistent with `computePerformanceMetrics`, `computeShareEfficiency`, `computePortfolioKPIs` already in `common/utils/`
 - No intermediate barrel needed — `aiAnalysisStore` imports directly from `common/analysis/executive-summary-analysis`
+
+
+## [#267] Update executive-summary-analysis imports and mappings for restructured signal types
+**Type:** fix
+
+**Summary:** Moved `ScalingCandidateSignal` import to `campaign.ts` (its new home) and added the required `efficiencyGap` field to both `toCampaignScalingSignals` and `toChannelScalingSignals` mappers after `ScalingCandidateSignal` was updated to extend `ShareEfficiency`.
+
+**Brainstorming:** The types restructure moved `ScalingCandidateSignal` from `executive-summary-analysis.types.ts` to `campaign.ts` and changed it to extend `ShareEfficiency` — making `efficiencyGap` a required field. The analysis file's import was still pointing to the old location, and both mapping functions were missing `efficiencyGap` in their object literals. Two targeted fixes: correct the import source and add the missing field in both mappers.
+
+**Prompt:** Read the updates in the types and update executive-summary-analysis.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — moved `ScalingCandidateSignal` from `./executive-summary-analysis.types` import to `../types/campaign` import; added `efficiencyGap: campaign.efficiencyGap` to `toCampaignScalingSignals` mapper; added `efficiencyGap: channel.efficiencyGap` to `toChannelScalingSignals` mapper
+
+**Key decisions & why:**
+- `efficiencyGap` is already present on both `CampaignSummary` (via `ShareEfficiency`) and `ChannelSummary` (via `ShareEfficiency`) — no computation needed, just a direct field read
+
+
+## [#268] Extract businessContext from SummaryAnalysis into separate prompt parameter
+**Type:** refactor
+
+**Summary:** Removed `businessContext` from `SummaryAnalysis` and added it as an explicit optional parameter to `generateExecutiveSummaryPrompt`, matching the same pattern used by `generateBudgetOptimizationPrompt`.
+
+**Brainstorming:** `SummaryAnalysis` is a computed data structure built from campaign and channel metrics — it describes portfolio state, not the user's business configuration. `businessContext` is caller-supplied metadata that informs prompt interpretation but is not derived from the data. Keeping it inside `SummaryAnalysis` mixed two different concerns. Making it a separate prompt parameter keeps the data type pure and aligns with how the budget optimizer already handles it.
+
+**Prompt:** `generateExecutiveSummaryPrompt` businessContext should be an additional input — implement this.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.types.ts` — removed `businessContext?: BusinessContext` from `SummaryAnalysis`; removed now-unused `BusinessContext` import
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — added `import type { BusinessContext }` from types; added `businessContext?: BusinessContext` as third parameter; updated `getBusinessContextBlock` call to use the standalone parameter instead of `input.businessContext`
+
+**Key decisions & why:**
+- Parameter is optional — no call sites currently pass business context, and the prompt handles `undefined` gracefully via `getBusinessContextBlock`
+- Store call site unchanged — omitting the optional third arg is valid; it will be wired when the UI provides business context input
+
+
+## [#269] Refactor Budget Optimizer to use computeBudgetOptimizerAnalysis and BudgetOptimizerOutput
+**Type:** refactor
+
+**Summary:** Replaced the old flat `BudgetOptimizerData` pipeline with a `computeBudgetOptimizerAnalysis` function in `common/analysis/`, mirroring the executive summary pattern exactly; updated the AI response shape to the new camelCase `BudgetOptimizerOutput` (summary + recommendations with fromCampaign/toCampaign/budgetShift/expectedImpact/confidence/executionRisk); removed four obsolete UI section components (TopPerformers, Underperformers, QuickWins, Risks).
+
+**Brainstorming:** The executive summary already had a clean pattern: domain data computation in `common/analysis/`, a typed analysis struct with derivedSignals, a prompt function that takes that struct, and slim UI components. The budget optimizer was still using a flat `buildBudgetOptimizerData` util and a snake_case AI response shape from a different era. The goal was to make both tabs structurally identical: same layer boundaries, same data-building pattern, same camelCase response convention. The old response had top_performers, underperformers, quick_wins, correlations, and risks — all removed in favour of a minimal summary + recommendations schema that the AI can actually produce reliably.
+
+**Prompt:** In common/analysis/budget-optimization-analysis build the BudgetOptimizerAnalysis data in a similar way as the executive-summary-analysis. Update types and UI and use BudgetOptimizerOutput and budget-optimization-prompt2. Make sure scope and businessContext is handled the same way in the prompt as in the executive-summary-prompt2.
+
+**What was built / What changed:**
+- `app/src/common/analysis/budget-optimization-analysis.types.ts` — fully rewritten: ConfidenceLevel/ExecutionRisk, InefficientCampaignSignal, BudgetScalingCandidate, TransferCandidate, BudgetOptimizerAnalysis
+- `app/src/common/analysis/budget-optimization-analysis.ts` — written: getInefficientCampaigns, getBudgetScalingCandidates, getTransferCandidates, computeBudgetOptimizerAnalysis
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt2.ts` — rewritten: uses BudgetOptimizerAnalysis as input type, local getScopeBlock(isFiltered), getBusinessContextBlock(businessContext), camelCase OUTPUT_SCHEMA (summary + recommendations[])
+- `app/src/features/ai-tools/prompts/index.ts` — updated: exports generateBudgetOptimizationPrompt from budget-optimization-prompt2
+- `app/src/features/ai-tools/types/index.ts` — updated: BudgetOptimizerResponse = BudgetOptimizerOutput & {model?,timestamp?}; imports BudgetOptimizerOutput from executive-summary.types
+- `app/src/stores/aiAnalysisStore.ts` — updated: uses computeBudgetOptimizerAnalysis; dataCache typed as BudgetOptimizerAnalysis|SummaryAnalysis; buildPrompt calls generateBudgetOptimizationPrompt(data, isFiltered)
+- `app/src/features/ai-tools/utils/analysis-badge-variants.ts` — added executionRiskVariant (low→success, medium→warning, high→danger)
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — simplified orchestrator: renders Overview + Recommendations only; uses response.summary (not executive_summary); no period prop
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — redesigned: fromCampaign→toCampaign header with arrow, budgetShift, expectedImpact (revenueChange/conversionChange/roiEstimate), confidence + executionRisk badges; v-if on length
+- `app/src/features/ai-tools/mocks/budget-optimizer-mocks.ts` — rewritten: 5 camelCase BudgetOptimizerResponse mocks (aggressive reallocation, conservative, seasonal pivot, channel consolidation, no strong opportunity)
+- Deleted: BudgetOptimizationTopPerformers.vue, BudgetOptimizationUnderperformers.vue, BudgetOptimizationQuickWins.vue, BudgetOptimizationRisks.vue
+
+**Key decisions & why:**
+- `computeBudgetOptimizerAnalysis` takes `(campaigns, channels, kpis, scope)` — same signature as `computeSummaryAnalysis` so the store's `getOrBuildData` stays symmetric
+- `ConfidenceLevel` and `ExecutionRisk` canonical home is `budget-optimization-analysis.types.ts` — `executive-summary.types.ts` already imports them from there
+- Old `budget-optimization-prompt.ts` kept as dead-but-compilable code so its dependent legacy types in `types/index.ts` remain valid
+- Mock 5 changed from "growth expansion" to "no strong opportunity" (empty recommendations) — exercises the v-if guard on the Recommendations component and matches the prompt's instruction to prefer an empty array over weak suggestions
+- `executionRiskVariant` uses the same low/medium/high→success/warning/danger mapping as confidence to keep the badge language consistent

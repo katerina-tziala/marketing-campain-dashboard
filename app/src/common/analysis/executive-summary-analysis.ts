@@ -1,16 +1,11 @@
-import type { CampaignPerformance, PortfolioKPIs, PortfolioScope } from "../types/campaign";
+import type { CampaignPerformance, CampaignSummary, ChannelSummary, PortfolioKPIs, PortfolioScope, PortfolioSummary, ScalingCandidateSignal, SummaryMetricStatus } from "../types/campaign";
 import type { Channel } from "../types/channel";
 import { computeShareEfficiency } from "../utils/campaign-performance";
 import type {
-  CampaignSummary,
-  ChannelSummary,
   ConcentrationFlagSignal,
   CorrelationSignal,
   InefficientChannelSignal,
-  PortfolioSummary,
-  ScalingCandidateSignal,
   SummaryAnalysis,
-  SummaryMetricStatus,
 } from "./executive-summary-analysis.types";
 
 const MIN_BUDGET_SHARE = 0.01; // 1% of portfolio budget — filters micro-campaigns from bottom list
@@ -143,6 +138,7 @@ function toCampaignScalingSignals(
       roi: campaign.roi!,
       budgetShare: campaign.budgetShare,
       revenueShare: campaign.revenueShare,
+      efficiencyGap: campaign.efficiencyGap,
       reason: "Strong efficiency with revenue share exceeding budget share.",
     }));
 }
@@ -159,6 +155,7 @@ function toChannelScalingSignals(
       roi: channel.roi!,
       budgetShare: channel.budgetShare,
       revenueShare: channel.revenueShare,
+      efficiencyGap: channel.efficiencyGap,
       reason: "Channel outperforms its budget allocation.",
     }));
 }

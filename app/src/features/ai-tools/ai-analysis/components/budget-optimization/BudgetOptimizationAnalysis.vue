@@ -3,13 +3,8 @@ import { computed } from 'vue'
 import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
 import { useCampaignStore } from '../../../../../stores/campaignStore'
 import AnalysisState from '../shared/AnalysisState.vue'
-import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
-import BudgetOptimizationTopPerformers from './BudgetOptimizationTopPerformers.vue'
-import BudgetOptimizationUnderperformers from './BudgetOptimizationUnderperformers.vue'
-import BudgetOptimizationQuickWins from './BudgetOptimizationQuickWins.vue'
-import BudgetOptimizationRisks from './BudgetOptimizationRisks.vue'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()
@@ -48,15 +43,9 @@ function handleAnalyze(): void {
     @analyze="handleAnalyze"
   >
     <BudgetOptimizationOverview
-      :summary="response!.executive_summary"
-      :period="response!.period"
+      :summary="response!.summary"
       :scope="campaignStore.portfolioScope"
     />
     <BudgetOptimizationRecommendations :recommendations="response!.recommendations" />
-    <BudgetOptimizationTopPerformers :performers="response!.top_performers" />
-    <BudgetOptimizationUnderperformers :underperformers="response!.underperformers" />
-    <BudgetOptimizationQuickWins :quick-wins="response!.quick_wins" />
-    <AnalysisCorrelations :correlations="response!.correlations" />
-    <BudgetOptimizationRisks :risks="response!.risks" />
   </AnalysisState>
 </template>

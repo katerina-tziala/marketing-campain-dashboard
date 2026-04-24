@@ -1,5 +1,5 @@
 import type { AiModel } from '../providers/types'
-import type { ExecutiveSummaryOutput } from '../ai-analysis/types/executive-summary.types'
+import type { BudgetOptimizerOutput, ExecutiveSummaryOutput } from '../ai-analysis/types/executive-summary.types'
 
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
@@ -119,53 +119,9 @@ export type Correlation = {
     implication: string;
   };
 
-export type BudgetOptimizerResponse = {
+export type BudgetOptimizerResponse = BudgetOptimizerOutput & {
   model?: AiModel;
   timestamp?: number;
-  period?: string;
-  executive_summary: string;
-  recommendations: {
-    action: string;
-    from_campaign: string;
-    to_campaign: string;
-    amount: number;
-    expected_impact: {
-      additional_revenue: number;
-      additional_conversions: number;
-      new_roi_estimate: number;
-    };
-    confidence: ConfidenceLevel;
-    reasoning: string;
-    timeline: "Immediate" | "This Month" | "Next Quarter";
-    success_metrics: {
-      what_to_measure: string;
-      target: string;
-      review_after: string;
-    };
-  }[];
-  top_performers: {
-    campaign: string;
-    roi: number;
-    insight: string;
-    unlock_potential: string;
-  }[];
-  underperformers: {
-    campaign: string;
-    roi: number;
-    insight: string;
-    recommended_action: "Reduce" | "Pause" | "Restructure";
-  }[];
-  quick_wins: {
-    action: string;
-    effort: Exclude<ConfidenceLevel, "High">;
-    potential_impact: string;
-    timeline: string;
-  }[];
-  correlations: Correlation[];
-  risks: {
-    risk: string;
-    mitigation: string;
-  }[];
 };
 
 // ── AI Analysis types ─────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
- 
-import type { SummaryAnalysis } from "../../../common/analysis/executive-summary-analysis.types";
+ import type { SummaryAnalysis } from "../../../common/analysis/executive-summary-analysis.types";
+import type { BusinessContext } from "../types";
 import { getBusinessContextBlock } from "./business-context";
 
  
@@ -63,6 +63,7 @@ function getScopeBlock(isFiltered: boolean): string {
 export function generateExecutiveSummaryPrompt(
   input: SummaryAnalysis,
   filteredChannels: boolean,
+  businessContext?: BusinessContext,
 ): string {
   return `
 ROLE:
@@ -76,7 +77,7 @@ Add meaning, not repetition.
 
 ${getScopeBlock(filteredChannels)}
 
-${getBusinessContextBlock(input.businessContext)}
+${getBusinessContextBlock(businessContext)}
 
 CRITICAL RULES:
 - Use only the provided input data.

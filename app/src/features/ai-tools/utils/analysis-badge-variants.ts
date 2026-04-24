@@ -33,6 +33,12 @@ const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
   low: 'danger',
 }
 
+const EXECUTION_RISK_MAP: Record<string, BadgeVariant> = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+}
+
 const ACTION_MAP: Record<string, BadgeVariant> = {
   reduce: 'warning',
   pause: 'danger',
@@ -66,6 +72,10 @@ export function insightTypeVariant(type: string): BadgeVariant {
 
 export function confidenceVariant(level: string): BadgeVariant {
   return badgeVariant(CONFIDENCE_MAP, level)
+}
+
+export function executionRiskVariant(risk: string): BadgeVariant {
+  return badgeVariant(EXECUTION_RISK_MAP, risk)
 }
 
 export function actionVariant(action: string): BadgeVariant {
