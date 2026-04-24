@@ -8,12 +8,8 @@ import type {
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
 } from '../features/ai-tools/types'
-import type { BudgetOptimizerAnalysis } from '../common/analysis/budget-optimization-analysis.types'
-import type { SummaryAnalysis } from '../common/analysis/executive-summary-analysis.types'
 import { useAiStore } from './aiStore'
 import { useCampaignStore } from './campaignStore'
-import { computeBudgetOptimizerAnalysis } from '../common/analysis/budget-optimization-analysis'
-import { computeSummaryAnalysis } from '../common/analysis/executive-summary-analysis'
 import { generateBudgetOptimizationPrompt } from '../features/ai-tools/prompts'
 import { generateExecutiveSummaryPrompt } from '../features/ai-tools/prompts'
 import { runProviderPrompt } from '../features/ai-tools/providers'
@@ -41,7 +37,6 @@ function createTabState() {
     controller: null as AbortController | null,
     debounceTimer: null as ReturnType<typeof setTimeout> | null,
     cache: new Map<string, CacheEntry>(),
-    dataCache: new Map<string, BudgetOptimizerAnalysis | SummaryAnalysis>(),
     lastVisibleCacheKey: null as string | null,
   }
 }
@@ -85,18 +80,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function normalizeLabels(labels: string[]): string[] {
     if (labels.length === 0) return [ALL_LABELS_KEY]
-    return [...labels].map((l) => l.trim().toLowerCase()).sort()
+    return [...labels].map((label) => label.trim().toLowerCase()).sort()
   }
 
   function createCacheKey(labels: string[], provider: string): string {
     return `${provider}::${normalizeLabels(labels).join('|')}`
   }
 
-  function createDataCacheKey(labels: string[]): string {
-    return normalizeLabels(labels).join('|')
-  }
-
-  function getTab(tab: AiAnalysisTab) {
+  function getTabState(tab: AiAnalysisTab) {
     return tabs[tab]
   }
 
@@ -129,10 +120,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function canAnalyze(tab: AiAnalysisTab): boolean {
     void cooldownTick.value // reactive dependency — triggers re-evaluation when cooldown expires
-    const t = getTab(tab)
-    const key = getCurrentCacheKey()
-    if (!key) return false
-    const entry = t.cache.get(key)
+    const tabState = getTabState(tab)
+    const cacheKey = getCurrentCacheKey()
+    if (!cacheKey) return false
+    const entry = tabState.cache.get(cacheKey)
     if (!entry) return true
     return Date.now() >= entry.cooldownUntil
   }
@@ -150,14 +141,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   // ── Cancel ────────────────────────────────────────────────────────────
 
   function cancelActiveRequest(tab: AiAnalysisTab): void {
-    const t = getTab(tab)
-    if (t.controller) {
-      t.controller.abort()
-      t.controller = null
+    const tabState = getTabState(tab)
+    if (tabState.controller) {
+      tabState.controller.abort()
+      tabState.controller = null
     }
-    if (t.debounceTimer) {
-      clearTimeout(t.debounceTimer)
-      t.debounceTimer = null
+    if (tabState.debounceTimer) {
+      clearTimeout(tabState.debounceTimer)
+      tabState.debounceTimer = null
     }
   }
 
@@ -166,54 +157,22 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     cancelActiveRequest('summary')
   }
 
-  // ── Data builders ─────────────────────────────────────────────────────
-
-  function getOrBuildData(tab: AiAnalysisTab): BudgetOptimizerAnalysis | SummaryAnalysis {
-    const t = getTab(tab)
-    const dataKey = createDataCacheKey(campaignStore.selectedChannelsIds)
-    const cached = t.dataCache.get(dataKey)
-    if (cached) return cached
-
-    const data = tab === 'optimizer'
-      ? computeBudgetOptimizerAnalysis(
-          campaignStore.filteredCampaigns,
-          campaignStore.selectedChannels,
-          campaignStore.kpis,
-          campaignStore.portfolioScope,
-        )
-      : computeSummaryAnalysis(
-          campaignStore.filteredCampaigns,
-          campaignStore.selectedChannels,
-          campaignStore.kpis,
-          campaignStore.portfolioScope,
-        )
-
-    t.dataCache.set(dataKey, data)
-    return data
-  }
-
-  // ── Prompt builders ───────────────────────────────────────────────────
+  // ── Prompt builder ────────────────────────────────────────────────────
 
   function buildPrompt(tab: AiAnalysisTab): string {
-    const data = getOrBuildData(tab)
+    const analysis = campaignStore.portfolioAnalysis
     const isFiltered = campaignStore.selectedChannelsIds.length > 0
-    console.log(data)
-
-    if (tab === 'optimizer') {
-      return generateBudgetOptimizationPrompt(data as BudgetOptimizerAnalysis, isFiltered)
-    }
-    return generateExecutiveSummaryPrompt(
-      data as SummaryAnalysis,
-      isFiltered,
-    )
+    return tab === 'optimizer'
+      ? generateBudgetOptimizationPrompt(analysis, isFiltered)
+      : generateExecutiveSummaryPrompt(analysis, isFiltered)
   }
 
   // ── Error handling ────────────────────────────────────────────────────
 
-  function handleRequestError(tab: AiAnalysisTab, e: unknown, cacheKey: string): void {
-    const t = getTab(tab)
-    const d = getDisplay(tab)
-    const code = e instanceof Error ? (e.message as AiErrorCode) : 'unknown'
+  function handleRequestError(tab: AiAnalysisTab, error: unknown, cacheKey: string): void {
+    const tabState = getTabState(tab)
+    const display = getDisplay(tab)
+    const code = error instanceof Error ? (error.message as AiErrorCode) : 'unknown'
     const message = ANALYSIS_ERROR_MESSAGES[code] ?? ANALYSIS_ERROR_MESSAGES.unknown
 
     if (code === 'token-limit') {
@@ -231,19 +190,19 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       tokenLimitReached.value = true
     }
 
-    const entry = t.cache.get(cacheKey)
+    const entry = tabState.cache.get(cacheKey)
     if (entry) {
       // Case 1: cached response exists — keep showing it
-      d.status = 'done'
-      d.response = entry.response as unknown as typeof d.response
-      d.error = null
-      d.errorFallback = 'The latest request failed. Showing the previous generated result.'
+      display.status = 'done'
+      display.response = entry.response as unknown as typeof display.response
+      display.error = null
+      display.errorFallback = 'The latest request failed. Showing the previous generated result.'
     } else {
       // Case 2: no cache — show error
-      d.status = 'error'
-      d.response = null
-      d.error = { code, message }
-      d.errorFallback = null
+      display.status = 'error'
+      display.response = null
+      display.error = { code, message }
+      display.errorFallback = null
     }
   }
 
@@ -259,8 +218,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const cacheKey = getCurrentCacheKey()
     if (!cacheKey) return
 
-    const t = getTab(tab)
-    const d = getDisplay(tab)
+    const tabState = getTabState(tab)
+    const display = getDisplay(tab)
 
     // Token limit: try next model silently, or show cached if all exhausted
     if (aiStore.selectedModelLimitReached) {
@@ -269,65 +228,64 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       }
     }
     if (tokenLimitReached.value) {
-      const entry = t.cache.get(cacheKey)
+      const entry = tabState.cache.get(cacheKey)
       if (entry) {
-        d.status = 'done'
-        d.response = entry.response as unknown as typeof d.response
-        d.error = null
-        d.errorFallback = null
+        display.status = 'done'
+        display.response = entry.response as unknown as typeof display.response
+        display.error = null
+        display.errorFallback = null
       }
       return
     }
 
     // Check cache for automatic calls
     if (isAutomatic) {
-      const entry = t.cache.get(cacheKey)
+      const entry = tabState.cache.get(cacheKey)
       if (entry) {
-        d.status = 'done'
-        d.response = entry.response as unknown as typeof d.response
-        d.error = null
-        d.errorFallback = null
-        t.lastVisibleCacheKey = cacheKey
+        display.status = 'done'
+        display.response = entry.response as unknown as typeof display.response
+        display.error = null
+        display.errorFallback = null
+        tabState.lastVisibleCacheKey = cacheKey
         return
       }
     }
 
     // Cancel any running request on the OTHER tab (global single-request rule)
     const otherTab: AiAnalysisTab = tab === 'optimizer' ? 'summary' : 'optimizer'
-    const otherT = getTab(otherTab)
-    const otherD = getDisplay(otherTab)
-    if (otherT.controller) {
+    const otherTabState = getTabState(otherTab)
+    const otherDisplay = getDisplay(otherTab)
+    if (otherTabState.controller) {
       cancelActiveRequest(otherTab)
       // Revert other tab to its last state
-      const otherCacheKey = otherT.lastVisibleCacheKey
+      const otherCacheKey = otherTabState.lastVisibleCacheKey
       if (otherCacheKey) {
-        const otherEntry = otherT.cache.get(otherCacheKey)
+        const otherEntry = otherTabState.cache.get(otherCacheKey)
         if (otherEntry) {
-          otherD.status = 'done'
-          otherD.response = otherEntry.response as unknown as typeof otherD.response
+          otherDisplay.status = 'done'
+          otherDisplay.response = otherEntry.response as unknown as typeof otherDisplay.response
         }
       } else {
-        otherD.status = 'idle'
+        otherDisplay.status = 'idle'
       }
-      otherD.error = null
-      otherD.errorFallback = null
+      otherDisplay.error = null
+      otherDisplay.errorFallback = null
     }
 
     // Cancel current tab's running request
     cancelActiveRequest(tab)
 
     // Start loading
-    d.status = 'loading'
-    d.response = null
-    d.error = null
-    d.errorFallback = null
+    display.status = 'loading'
+    display.response = null
+    display.error = null
+    display.errorFallback = null
 
     const controller = new AbortController()
-    t.controller = controller
+    tabState.controller = controller
 
     try {
       const prompt = buildPrompt(tab)
-      console.log(prompt)
 
       const result = await runProviderPrompt<TabResponse>(
         aiStore.provider,
@@ -348,29 +306,29 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       result.timestamp = now
 
       // Success
-      d.status = 'done'
-      d.response = result as unknown as typeof d.response
-      d.error = null
-      d.errorFallback = null
-      t.firstAnalyzeCompleted = true
-      t.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
+      display.status = 'done'
+      display.response = result as unknown as typeof display.response
+      display.error = null
+      display.errorFallback = null
+      tabState.firstAnalyzeCompleted = true
+      tabState.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
       scheduleCooldownExpiry()
-      t.lastVisibleCacheKey = cacheKey
-      t.controller = null
-    } catch (e) {
+      tabState.lastVisibleCacheKey = cacheKey
+      tabState.controller = null
+    } catch (error) {
       // Silently ignore cancelled requests
       if (controller.signal.aborted) return
 
-      t.controller = null
-      handleRequestError(tab, e, cacheKey)
+      tabState.controller = null
+      handleRequestError(tab, error, cacheKey)
     }
   }
 
   // ── Public actions ────────────────────────────────────────────────────
 
   function analyze(tab: AiAnalysisTab): void {
-    const d = getDisplay(tab)
-    d.errorFallback = null
+    const display = getDisplay(tab)
+    display.errorFallback = null
     analysisActivated.value = true
     executeAnalysis(tab, false)
   }
@@ -382,23 +340,23 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     activeTab.value = tab
 
     // Cancel in-flight request on the previous tab
-    const prevT = getTab(prevTab)
-    const prevD = getDisplay(prevTab)
-    if (prevT.controller) {
+    const prevTabState = getTabState(prevTab)
+    const prevDisplay = getDisplay(prevTab)
+    if (prevTabState.controller) {
       cancelActiveRequest(prevTab)
       // Revert previous tab
-      const prevCacheKey = prevT.lastVisibleCacheKey
+      const prevCacheKey = prevTabState.lastVisibleCacheKey
       if (prevCacheKey) {
-        const prevEntry = prevT.cache.get(prevCacheKey)
+        const prevEntry = prevTabState.cache.get(prevCacheKey)
         if (prevEntry) {
-          prevD.status = 'done'
-          prevD.response = prevEntry.response as unknown as typeof prevD.response
+          prevDisplay.status = 'done'
+          prevDisplay.response = prevEntry.response as unknown as typeof prevDisplay.response
         }
-      } else if (prevD.status === 'loading') {
-        prevD.status = 'idle'
+      } else if (prevDisplay.status === 'loading') {
+        prevDisplay.status = 'idle'
       }
-      prevD.error = null
-      prevD.errorFallback = null
+      prevDisplay.error = null
+      prevDisplay.errorFallback = null
     }
 
     // Reopen evaluation for the new tab
@@ -410,31 +368,31 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     if (!aiStore.provider || !aiStore.selectedModel) return
     if (campaignStore.filteredCampaigns.length === 0) return
 
-    const t = getTab(tab)
-    const d = getDisplay(tab)
+    const tabState = getTabState(tab)
+    const display = getDisplay(tab)
     const cacheKey = getCurrentCacheKey()
     if (!cacheKey) return
 
     // Show last visible result first
-    if (t.lastVisibleCacheKey && t.lastVisibleCacheKey === cacheKey) {
-      const entry = t.cache.get(cacheKey)
+    if (tabState.lastVisibleCacheKey && tabState.lastVisibleCacheKey === cacheKey) {
+      const entry = tabState.cache.get(cacheKey)
       if (entry) {
-        d.status = 'done'
-        d.response = entry.response as unknown as typeof d.response
-        d.error = null
-        d.errorFallback = null
+        display.status = 'done'
+        display.response = entry.response as unknown as typeof display.response
+        display.error = null
+        display.errorFallback = null
         return
       }
     }
 
     // Check cache
-    const entry = t.cache.get(cacheKey)
+    const entry = tabState.cache.get(cacheKey)
     if (entry) {
-      d.status = 'done'
-      d.response = entry.response as unknown as typeof d.response
-      d.error = null
-      d.errorFallback = null
-      t.lastVisibleCacheKey = cacheKey
+      display.status = 'done'
+      display.response = entry.response as unknown as typeof display.response
+      display.error = null
+      display.errorFallback = null
+      tabState.lastVisibleCacheKey = cacheKey
       return
     }
 
@@ -453,18 +411,17 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     analysisActivated.value = false
 
     for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
-      const t = getTab(tab)
-      const d = getDisplay(tab)
-      t.firstAnalyzeCompleted = false
-      t.controller = null
-      t.debounceTimer = null
-      t.cache.clear()
-      t.dataCache.clear()
-      t.lastVisibleCacheKey = null
-      d.status = 'idle'
-      d.response = null
-      d.error = null
-      d.errorFallback = null
+      const tabState = getTabState(tab)
+      const display = getDisplay(tab)
+      tabState.firstAnalyzeCompleted = false
+      tabState.controller = null
+      tabState.debounceTimer = null
+      tabState.cache.clear()
+      tabState.lastVisibleCacheKey = null
+      display.status = 'idle'
+      display.response = null
+      display.error = null
+      display.errorFallback = null
     }
   }
 
@@ -486,23 +443,23 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     // Revert loading tabs to their last known state
     for (const tab of ['optimizer', 'summary'] as AiAnalysisTab[]) {
-      const t = getTab(tab)
-      const d = getDisplay(tab)
-      if (d.status === 'loading') {
-        const lastKey = t.lastVisibleCacheKey
+      const tabState = getTabState(tab)
+      const display = getDisplay(tab)
+      if (display.status === 'loading') {
+        const lastKey = tabState.lastVisibleCacheKey
         if (lastKey) {
-          const entry = t.cache.get(lastKey)
+          const entry = tabState.cache.get(lastKey)
           if (entry) {
-            d.status = 'done'
-            d.response = entry.response as unknown as typeof d.response
+            display.status = 'done'
+            display.response = entry.response as unknown as typeof display.response
           } else {
-            d.status = 'idle'
+            display.status = 'idle'
           }
         } else {
-          d.status = 'idle'
+          display.status = 'idle'
         }
-        d.error = null
-        d.errorFallback = null
+        display.error = null
+        display.errorFallback = null
       }
     }
   }
@@ -514,8 +471,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     () => [...campaignStore.selectedChannelsIds],
     () => {
       const tab = activeTab.value
-      const t = getTab(tab)
-      const d = getDisplay(tab)
+      const tabState = getTabState(tab)
+      const display = getDisplay(tab)
 
       if (!analysisActivated.value) return
       if (!aiStore.aiPanelOpen) return
@@ -525,8 +482,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       cancelActiveRequest(tab)
 
       // Debounce
-      t.debounceTimer = setTimeout(() => {
-        t.debounceTimer = null
+      tabState.debounceTimer = setTimeout(() => {
+        tabState.debounceTimer = null
 
         if (!aiStore.aiPanelOpen) return
         if (campaignStore.filteredCampaigns.length === 0) return
@@ -535,13 +492,13 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
         if (!cacheKey) return
 
         // Check cache first
-        const entry = t.cache.get(cacheKey)
+        const entry = tabState.cache.get(cacheKey)
         if (entry) {
-          d.status = 'done'
-          d.response = entry.response as unknown as typeof d.response
-          d.error = null
-          d.errorFallback = null
-          t.lastVisibleCacheKey = cacheKey
+          display.status = 'done'
+          display.response = entry.response as unknown as typeof display.response
+          display.error = null
+          display.errorFallback = null
+          tabState.lastVisibleCacheKey = cacheKey
           return
         }
 

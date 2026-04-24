@@ -1,9 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign, CampaignPerformance, PortfolioKPIs, PortfolioScope } from '../common/types/campaign'
+import type { Campaign, CampaignPerformance, PortfolioScope } from '../common/types/campaign'
 import type { Channel } from '../common/types/channel'
 import { buildChannelMap } from '../common/utils/campaign-channel'
-import { computePortfolioKPIs } from '../common/utils/campaign-performance'
 import { computePortfolioAnalysis } from '../common/portfolio-analysis/portfolio-analysis'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
@@ -23,47 +22,42 @@ export const useCampaignStore = defineStore('campaigns', () => {
 
   // Getters
   const campaigns = computed<CampaignPerformance[]>(() =>
-    [...portfolioChannels.value.values()].flatMap((ch) => ch.campaigns),
+    [...portfolioChannels.value.values()].flatMap((channel) => channel.campaigns),
   )
 
   const selectedChannels = computed<Channel[]>(() =>
     selectedChannelsIds.value.length === 0
       ? [...portfolioChannels.value.values()]
       : selectedChannelsIds.value.flatMap((id) => {
-          const ch = portfolioChannels.value.get(id)
-          return ch ? [ch] : []
+          const channel = portfolioChannels.value.get(id)
+          return channel ? [channel] : []
         }),
   )
 
   const filteredCampaigns = computed<CampaignPerformance[]>(() =>
-    selectedChannels.value.flatMap((ch) => ch.campaigns),
+    selectedChannels.value.flatMap((channel) => channel.campaigns),
   )
 
   const portfolioScope = computed((): PortfolioScope => ({
-    campaigns: campaigns.value.map((c) => c.campaign),
-    selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
-    selectedChannels: selectedChannelsIds.value.map((id) => portfolioChannels.value.get(id)?.name ?? id),
+    campaigns: campaigns.value.map((campaign) => campaign.campaign),
+    channels: [...portfolioChannels.value.values()].map((channel) => channel.name),
+    selectedCampaigns: filteredCampaigns.value.map((campaign) => campaign.campaign),
+    selectedChannels: selectedChannelsIds.value.map(
+      (id) => portfolioChannels.value.get(id)?.name ?? id,
+    ),
   }))
 
-  const kpis = computed((): PortfolioKPIs => computePortfolioKPIs(selectedChannels.value))
-
   const portfolioAnalysis = computed(() =>
-    computePortfolioAnalysis(
-      filteredCampaigns.value,
-      selectedChannels.value,
-      kpis.value,
-      portfolioScope.value,
-      selectedChannelsIds.value.length > 0,
-    ),
+    computePortfolioAnalysis(selectedChannels.value, selectedChannelsIds.value),
   )
 
   // Actions
   function toggleChannel(channelId: string) {
-    const idx = selectedChannelsIds.value.indexOf(channelId)
-    if (idx === -1) {
+    const index = selectedChannelsIds.value.indexOf(channelId)
+    if (index === -1) {
       selectedChannelsIds.value.push(channelId)
     } else {
-      selectedChannelsIds.value.splice(idx, 1)
+      selectedChannelsIds.value.splice(index, 1)
     }
   }
 
@@ -78,14 +72,13 @@ export const useCampaignStore = defineStore('campaigns', () => {
   }
 
   return {
-    campaigns,
     title,
     portfolioChannels,
-    filteredCampaigns,
+    campaigns,
     selectedChannels,
     selectedChannelsIds,
+    filteredCampaigns,
     portfolioScope,
-    kpis,
     portfolioAnalysis,
     // actions
     toggleChannel,

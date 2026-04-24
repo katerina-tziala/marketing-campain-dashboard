@@ -39,6 +39,7 @@ export interface PortfolioKPIs {
 
 export interface PortfolioScope {
   campaigns: string[]
+  channels: string[]
   selectedCampaigns: string[]
   selectedChannels: string[]
 }

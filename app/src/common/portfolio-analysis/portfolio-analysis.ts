@@ -1,4 +1,4 @@
-import type { CampaignPerformance, PortfolioKPIs, PortfolioScope, PortfolioSummary } from '../types/campaign'
+import type { CampaignPerformance, PortfolioScope, PortfolioSummary } from '../types/campaign'
 import type { Channel } from '../types/channel'
 import type { PortfolioAnalysis } from './types'
 import {
@@ -14,26 +14,39 @@ import {
 } from './utils'
 import { classifyCampaigns } from './classify-campaigns'
 import { classifyChannels } from './classify-channels'
+import { computePortfolioKPIs } from '../utils/campaign-performance'
 
 export function computePortfolioAnalysis(
-  campaigns: CampaignPerformance[],
-  channels: Channel[],
-  kpis: PortfolioKPIs,
-  scope: PortfolioScope,
-  filteredChannels: boolean,
+  selectedChannels: Channel[],
+  selectedChannelsIds: string[],
 ): PortfolioAnalysis {
+  const filteredCampaigns: CampaignPerformance[] = selectedChannels.flatMap(
+    (channel) => channel.campaigns,
+  )
+
+  const kpis = computePortfolioKPIs(selectedChannels)
+
+  const scope: PortfolioScope = {
+    campaigns: filteredCampaigns.map((campaign) => campaign.campaign),
+    channels: selectedChannels.map((channel) => channel.name),
+    selectedCampaigns: filteredCampaigns.map((campaign) => campaign.campaign),
+    selectedChannels: selectedChannels.map((channel) => channel.name),
+  }
+
   const portfolio: PortfolioSummary = {
     ...kpis,
-    campaignCount: scope.selectedCampaigns.length,
-    channelCount: scope.selectedChannels.length,
+    campaignCount: filteredCampaigns.length,
+    channelCount: selectedChannels.length,
   }
+
+  const filteredChannels = selectedChannelsIds.length > 0
 
   const emptyGroups = {
     campaignGroups: { top: [], opportunity: [], bottom: [], watch: [] },
     channelGroups: { strong: [], opportunity: [], weak: [], watch: [] },
   }
 
-  if (campaigns.length === 0) {
+  if (filteredCampaigns.length === 0) {
     return {
       portfolio,
       scope,
@@ -60,12 +73,12 @@ export function computePortfolioAnalysis(
 
   const { totalBudget, totalRevenue, aggregatedROI } = kpis
 
-  const campaignSummaries = campaigns.map(c =>
-    toCampaignSummary(c, totalBudget, totalRevenue),
+  const campaignSummaries = filteredCampaigns.map((campaign) =>
+    toCampaignSummary(campaign, totalBudget, totalRevenue),
   )
 
-  const channelSummaries = channels.map(ch =>
-    toChannelSummary(ch, totalBudget, totalRevenue, aggregatedROI),
+  const channelSummaries = selectedChannels.map((channel) =>
+    toChannelSummary(channel, totalBudget, totalRevenue, aggregatedROI),
   )
 
   const campaignGroups = classifyCampaigns(campaignSummaries, aggregatedROI)

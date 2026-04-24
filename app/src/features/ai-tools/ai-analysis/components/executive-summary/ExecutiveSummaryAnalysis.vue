@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { PortfolioScope } from '../../../../../common/types/campaign'
 import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../../../stores/campaignStore'
 import AnalysisState from '../shared/AnalysisState.vue'
 import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
 import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'
 import ExecutiveSummaryPriorityActions from './ExecutiveSummaryPriorityActions.vue'
 import ExecutiveSummaryInsights from './ExecutiveSummaryInsights.vue'
 
+defineProps<{
+  scope: PortfolioScope
+}>()
+
 const analysisStore = useAiAnalysisStore()
-const campaignStore = useCampaignStore()
 
 const status = computed(() => analysisStore.summary.status)
 const response = computed(() => analysisStore.summary.response)
@@ -44,13 +47,15 @@ function handleSummarize(): void {
     :model-name="response?.model?.displayName"
     @analyze="handleSummarize"
   >
-    <ExecutiveSummaryHealth
-      :health-score="response!.healthScore"
-      :bottom-line="response!.bottomLine"
-      :scope="campaignStore.portfolioScope"
-    />
-    <ExecutiveSummaryPriorityActions :actions="response!.priorityActions" />
-    <ExecutiveSummaryInsights :insights="response!.insights" />
-    <AnalysisCorrelations :correlations="response!.correlations" />
+    <template v-if="response">
+      <ExecutiveSummaryHealth
+        :health-score="response.healthScore"
+        :bottom-line="response.bottomLine"
+        :scope="scope"
+      />
+      <ExecutiveSummaryPriorityActions :actions="response.priorityActions" />
+      <ExecutiveSummaryInsights :insights="response.insights" />
+      <AnalysisCorrelations :correlations="response.correlations" />
+    </template>
   </AnalysisState>
 </template>

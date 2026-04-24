@@ -1,8 +1,7 @@
- import type { SummaryAnalysis } from "../../../common/analysis/executive-summary-analysis.types";
-import type { BusinessContext } from "../types";
-import { getBusinessContextBlock } from "./business-context";
+import type { PortfolioAnalysis } from '../../../common/portfolio-analysis/types'
+import type { BusinessContext } from '../types'
+import { getBusinessContextBlock } from './business-context'
 
- 
 const OUTPUT_SCHEMA = `{
   "healthScore": {
     "score": number,
@@ -35,18 +34,15 @@ const OUTPUT_SCHEMA = `{
       "implication": "string — why it matters"
     }
   ]
-}`;
+}`
 
-
-// ===============================
-// Prompt Helpers
-// ===============================
+// ── Scope block ───────────────────────────────────────────────────────────────
 
 function getScopeBlock(isFiltered: boolean): string {
   if (!isFiltered) {
     return `ANALYSIS SCOPE:
 - Full portfolio analysis.
-- Treat the provided dataset as the complete marketing portfolio for this request.`;
+- Treat the provided dataset as the complete marketing portfolio for this request.`
   }
 
   return `ANALYSIS SCOPE:
@@ -54,17 +50,33 @@ function getScopeBlock(isFiltered: boolean): string {
 - A subset of campaigns and channels is selected.
 - Treat the provided dataset as the complete portfolio for this request.
 - Do not assume the existence of campaigns or channels outside the provided input.
-- Do not generalize conclusions beyond the selected subset unless explicitly supported by the input.`;
+- Do not generalize conclusions beyond the selected subset unless explicitly supported by the input.`
 }
- 
-// ===============================
-//  Prompt Generator
-// ===============================
+
+// ── Prompt generator ──────────────────────────────────────────────────────────
+
 export function generateExecutiveSummaryPrompt(
-  input: SummaryAnalysis,
-  filteredChannels: boolean,
+  analysis: PortfolioAnalysis,
+  isFiltered: boolean,
   businessContext?: BusinessContext,
 ): string {
+  const promptInput = {
+    portfolio: analysis.portfolio,
+    campaignGroups: {
+      top: analysis.campaignGroups.top,
+      bottom: analysis.campaignGroups.bottom,
+      watch: analysis.campaignGroups.watch,
+    },
+    channels: analysis.channels,
+    channelGroups: analysis.channelGroups,
+    derivedSignals: {
+      inefficientChannels: analysis.derivedSignals.inefficientChannels,
+      scalingOpportunities: analysis.derivedSignals.scalingOpportunities,
+      concentrationFlag: analysis.derivedSignals.concentrationFlag,
+      correlations: analysis.derivedSignals.correlations,
+    },
+  }
+
   return `
 ROLE:
 You are a senior marketing strategist preparing an executive summary for company leadership.
@@ -75,7 +87,7 @@ Generate a concise executive summary from the provided marketing data.
 Focus on interpretation, material risks, trade-offs, and priority actions.
 Add meaning, not repetition.
 
-${getScopeBlock(filteredChannels)}
+${getScopeBlock(isFiltered)}
 
 ${getBusinessContextBlock(businessContext)}
 
@@ -92,6 +104,17 @@ CRITICAL RULES:
 - Prioritize derivedSignals when forming insights and priorityActions.
 - Do not recompute, contradict, or ignore derivedSignals without clear evidence in the provided input.
 - Treat relationships as correlations, not causation.
+
+CAMPAIGN GROUP CONTEXT:
+- campaignGroups.top campaigns are strong performers — reference as key revenue drivers.
+- campaignGroups.bottom campaigns are underperforming — primary inefficiency sources.
+- campaignGroups.watch campaigns have contradictory signals — flag for investigation.
+
+CHANNEL GROUP CONTEXT:
+- channelGroups.strong channels outperform on ROI and revenue share — protect allocation.
+- channelGroups.weak channels consume budget without proportionate returns — flag for reduction.
+- channelGroups.opportunity channels are under-invested but efficient — scaling candidates.
+- channelGroups.watch channels show contradictory funnel signals — investigate before scaling.
 
 SMALL DATASET AND LIMITED SCOPE RULES:
 - If the dataset contains only 1 campaign:
@@ -121,16 +144,16 @@ NOISE CONTROL:
 
 PRIORITIZATION ORDER:
 1. derivedSignals related to inefficiency, scaling opportunity, and concentration risk
-2. cross-channel patterns
-3. campaign-level drivers and drags
+2. cross-channel patterns from channelGroups
+3. campaign-level drivers and drags from campaignGroups
 4. portfolio-level implications
 
 Favor higher-priority signals when selecting insights and actions.
 
 ANALYSIS APPROACH:
 1. Evaluate portfolio health using profitability, efficiency, allocation quality, concentration risk, and consistency.
-2. Use channel summaries to assess allocation efficiency and relative performance.
-3. Use topCampaigns and bottomCampaigns to identify major drivers and drags.
+2. Use channels and channelGroups to assess allocation efficiency and relative performance.
+3. Use campaignGroups.top and campaignGroups.bottom to identify major drivers and drags.
 4. Use derivedSignals to identify inefficiency, scaling opportunities, and concentration risks.
 5. Select only the findings that materially affect leadership decisions.
 6. Convert those findings into concise implications and actions.
@@ -209,8 +232,6 @@ RESPONSE SCHEMA:
 ${OUTPUT_SCHEMA}
 
 INPUT DATA:
-${JSON.stringify(input, null, 2)}
-`.trim();
+${JSON.stringify(promptInput, null, 2)}
+`.trim()
 }
-
-

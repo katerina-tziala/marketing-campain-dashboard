@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { PortfolioScope } from '../../../../../common/types/campaign'
 import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../../../stores/campaignStore'
 import AnalysisState from '../shared/AnalysisState.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
 
+defineProps<{
+  scope: PortfolioScope
+}>()
+
 const analysisStore = useAiAnalysisStore()
-const campaignStore = useCampaignStore()
 
 const status = computed(() => analysisStore.optimizer.status)
 const response = computed(() => analysisStore.optimizer.response)
@@ -42,10 +45,12 @@ function handleAnalyze(): void {
     :model-name="response?.model?.displayName"
     @analyze="handleAnalyze"
   >
-    <BudgetOptimizationOverview
-      :summary="response!.summary"
-      :scope="campaignStore.portfolioScope"
-    />
-    <BudgetOptimizationRecommendations :recommendations="response!.recommendations" />
+    <template v-if="response">
+      <BudgetOptimizationOverview
+        :summary="response.summary"
+        :scope="scope"
+      />
+      <BudgetOptimizationRecommendations :recommendations="response.recommendations" />
+    </template>
   </AnalysisState>
 </template>

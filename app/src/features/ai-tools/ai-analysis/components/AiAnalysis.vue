@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
+import { useCampaignStore } from '../../../../stores/campaignStore'
 import BudgetOptimizationAnalysis from './budget-optimization/BudgetOptimizationAnalysis.vue'
 import ExecutiveSummaryAnalysis from './executive-summary/ExecutiveSummaryAnalysis.vue'
 import { FileTextIcon, SlidersIcon } from '../../../../ui/icons'
@@ -8,6 +9,8 @@ import type { Tab } from '../../../../ui'
 import { Tabs } from '../../../../ui'
 
 const analysisStore = useAiAnalysisStore()
+const campaignStore = useCampaignStore()
+
 const tabs: Tab[] = [
   { id: 'summary', label: 'Summary', icon: FileTextIcon },
   { id: 'optimizer', label: 'Optimizer', icon: SlidersIcon },
@@ -17,8 +20,14 @@ const tabs: Tab[] = [
 <template>
   <Tabs :tabs="tabs" :active-tab="analysisStore.activeTab" @change="analysisStore.setActiveTab($event as AiAnalysisTab)" />
   <div class="scrollbar-stable scrollbar-on-surface panel-container">
-    <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'optimizer'" />
-    <ExecutiveSummaryAnalysis v-else />
+    <BudgetOptimizationAnalysis
+      v-if="analysisStore.activeTab === 'optimizer'"
+      :scope="campaignStore.portfolioScope"
+    />
+    <ExecutiveSummaryAnalysis
+      v-else
+      :scope="campaignStore.portfolioScope"
+    />
   </div>
 </template>
 

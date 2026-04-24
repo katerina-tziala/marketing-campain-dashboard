@@ -1,7 +1,6 @@
-import type { BudgetOptimizerAnalysis } from "../../../common/analysis/budget-optimization-analysis.types";
-import type { BusinessContext } from "../types";
-import { getBusinessContextBlock } from "./business-context";
-
+import type { PortfolioAnalysis } from '../../../common/portfolio-analysis/types'
+import type { BusinessContext } from '../types'
+import { getBusinessContextBlock } from './business-context'
 
 const OUTPUT_SCHEMA = `{
   "summary": "string — one to two sentences describing the main optimization opportunity",
@@ -20,18 +19,15 @@ const OUTPUT_SCHEMA = `{
       "executionRisk": "Low | Medium | High"
     }
   ]
-}`;
+}`
 
-
-// ===============================
-// Prompt Helpers
-// ===============================
+// ── Scope block ───────────────────────────────────────────────────────────────
 
 function getScopeBlock(isFiltered: boolean): string {
   if (!isFiltered) {
     return `OPTIMIZATION SCOPE:
 - Full portfolio optimization.
-- Treat the provided dataset as the complete optimization universe for this request.`;
+- Treat the provided dataset as the complete optimization universe for this request.`
   }
 
   return `OPTIMIZATION SCOPE:
@@ -40,19 +36,27 @@ function getScopeBlock(isFiltered: boolean): string {
 - Treat the provided dataset as the complete optimization universe for this request.
 - Do not assume campaigns outside the provided input.
 - Do not recommend reallocations outside this subset.
-- Do not generalize conclusions beyond this subset unless explicitly supported by the input.`;
+- Do not generalize conclusions beyond this subset unless explicitly supported by the input.`
 }
 
-
-// ===============================
-// Prompt Generator
-// ===============================
+// ── Prompt generator ──────────────────────────────────────────────────────────
 
 export function generateBudgetOptimizationPrompt(
-  input: BudgetOptimizerAnalysis,
-  filteredChannels: boolean,
+  analysis: PortfolioAnalysis,
+  isFiltered: boolean,
   businessContext?: BusinessContext,
 ): string {
+  const promptInput = {
+    portfolio: analysis.portfolio,
+    campaignGroups: analysis.campaignGroups,
+    channels: analysis.channels,
+    derivedSignals: {
+      inefficientCampaigns: analysis.derivedSignals.inefficientCampaigns,
+      budgetScalingCandidates: analysis.derivedSignals.budgetScalingCandidates,
+      transferCandidates: analysis.derivedSignals.transferCandidates,
+    },
+  }
+
   return `
 ROLE:
 You are a performance marketing analyst responsible for realistic budget reallocation.
@@ -62,7 +66,7 @@ TASK:
 Recommend budget reallocations that improve overall portfolio efficiency.
 Focus on high-impact changes, conservative impact estimates, and realistic execution.
 
-${getScopeBlock(filteredChannels)}
+${getScopeBlock(isFiltered)}
 
 ${getBusinessContextBlock(businessContext)}
 
@@ -74,15 +78,21 @@ CRITICAL RULES:
 - Every recommendation must specify fromCampaign, toCampaign, budgetShift, and reason.
 - Use businessContext to refine prioritization and risk framing, but do not override performance data.
 - If businessContext is not provided or does not mention budget expansion, only recommend budget-neutral reallocations.
-- If businessContext explicitly allows budget expansion, expansion is allowed only for strong scalingCandidates within maxAdditionalBudget.
+- If businessContext explicitly allows budget expansion, expansion is allowed only for strong budgetScalingCandidates within maxAdditionalBudget.
 
 DERIVED SIGNAL PRIORITY:
 - Treat derivedSignals as authoritative.
 - Prioritize transferCandidates first.
 - Use inefficientCampaigns as funding sources.
-- Use scalingCandidates as destinations.
+- Use budgetScalingCandidates as destinations.
 - Only use campaign pairs that exist in transferCandidates.
 - Do not contradict transferCandidates minShift, maxShift, or maxAdditionalBudget.
+
+CAMPAIGN GROUP CONTEXT:
+- campaignGroups.bottom campaigns are underperforming — primary funding sources.
+- campaignGroups.top campaigns are strong performers — protect their budget.
+- campaignGroups.opportunity campaigns are under-invested — consider scaling.
+- campaignGroups.watch campaigns have contradictory signals — proceed cautiously.
 
 RECOMMENDATION RULES:
 - Return up to 3 recommendations.
@@ -144,6 +154,6 @@ RESPONSE SCHEMA:
 ${OUTPUT_SCHEMA}
 
 INPUT DATA:
-${JSON.stringify(input, null, 2)}
-`.trim();
+${JSON.stringify(promptInput, null, 2)}
+`.trim()
 }
