@@ -69,5 +69,11 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
   items-center
   justify-center
   overflow-visible;
+  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes dot-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 </style>
