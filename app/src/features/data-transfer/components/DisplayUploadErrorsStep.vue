@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Campaign } from '@/common/types/campaign'
+import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataRowError } from '@/features/data-transfer/types'
 import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-messages'
 import DataErrorsTable from './validation/DataErrorsTable.vue'

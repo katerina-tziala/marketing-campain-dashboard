@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PortfolioScope } from '@/common/types/campaign'
+import type { PortfolioScope } from '@/shared/types/campaign'
 
 defineProps<{
   title: string

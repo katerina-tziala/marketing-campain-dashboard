@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed, type Ref } from 'vue'
-import type { AsyncStatus } from '@/common/types/async-status'
+import type { AsyncStatus } from '@/shared/types/async-status'
 import type { AiAnalysisType, AiAnalysisError, AiErrorCode, AiAnalysisNotice } from '@/features/ai-tools/types'
 import type {
   AnalysisResponse,

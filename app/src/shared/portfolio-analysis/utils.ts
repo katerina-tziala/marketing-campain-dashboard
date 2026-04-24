@@ -1,7 +1,7 @@
-import type { CampaignPerformance } from '@/common/types/campaign'
+import type { CampaignPerformance } from '@/shared/types/campaign'
 import type { CampaignSummary, ChannelSummary, ScalingCandidateSignal, SummaryMetricStatus } from './types'
-import type { Channel } from '@/common/types/channel'
-import { computeShareEfficiency } from '@/common/utils/campaign-performance'
+import type { Channel } from '@/shared/types/channel'
+import { computeShareEfficiency } from '@/shared/utils/campaign-performance'
 import type {
   BudgetScalingCandidate,
   ConcentrationFlagSignal,

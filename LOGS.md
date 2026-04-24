@@ -6026,3 +6026,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Same-directory `./foo` imports left as-is — they don't benefit from an alias and are already unambiguous
 - Double-quoted imports handled in a second pass to catch provider utils that used `"../..."` style
 - Pre-existing type errors fixed inline rather than deferred — the build must be clean after a refactor
+
+
+## [#292] Rename `common/` folder to `shared/`
+**Type:** refactor
+
+**Summary:** Renamed `src/common/` to `src/shared/` and updated all `@/common/` imports across the codebase to `@/shared/`.
+
+**Brainstorming:** The folder name `common` is ambiguous — it could mean anything generic. `shared` more clearly communicates that this module contains domain types, utilities, and logic shared across features (dashboard, data-transfer, AI tools, stores). Since all imports were already migrated to use the `@/` alias in the previous session, this was a clean two-step operation: rename the folder and bulk-replace the import prefix.
+
+**Prompt:** Rename the `common` folder to `shared`. Update all imports accordingly and update CLAUDE.md.
+
+**What changed:**
+- `app/src/common/` → `app/src/shared/` — folder rename; no file contents changed
+- 33 `.ts` and `.vue` files — `@/common/` import prefix replaced with `@/shared/`
+- `CLAUDE.md` — architecture section updated (`common/` → `shared/` in all references)
+
+**Key decisions & why:**
+- Bulk sed on the entire `src/` tree rather than file-by-file — safe because every cross-folder import already used the `@/` alias; no relative paths remained to confuse the replace pattern
+- TypeScript reported zero errors after the rename — confirms no missed references

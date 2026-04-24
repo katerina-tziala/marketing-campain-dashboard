@@ -1,4 +1,4 @@
-import type { Campaign } from '@/common/types/campaign'
+import type { Campaign } from '@/shared/types/campaign'
 
 export type CampainDataRowIssueType =
   | 'empty'

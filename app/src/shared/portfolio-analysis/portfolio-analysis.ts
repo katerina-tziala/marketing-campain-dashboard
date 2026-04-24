@@ -1,6 +1,6 @@
-import type { CampaignPerformance, PortfolioScope } from '@/common/types/campaign'
+import type { CampaignPerformance, PortfolioScope } from '@/shared/types/campaign'
 import type { PortfolioSummary } from './types'
-import type { Channel } from '@/common/types/channel'
+import type { Channel } from '@/shared/types/channel'
 import type { PortfolioAnalysis } from './types'
 import {
   toCampaignSummary,
@@ -15,7 +15,7 @@ import {
 } from './utils'
 import { classifyCampaigns } from './classify-campaigns'
 import { classifyChannels } from './classify-channels'
-import { computePortfolioKPIs } from '@/common/utils/campaign-performance'
+import { computePortfolioKPIs } from '@/shared/utils/campaign-performance'
 
 export function computePortfolioAnalysis(
   selectedChannels: Channel[],

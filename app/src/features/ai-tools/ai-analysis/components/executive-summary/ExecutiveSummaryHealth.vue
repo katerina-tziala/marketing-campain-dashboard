@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
-import type { PortfolioScope } from '@/common/types/campaign'
+import type { PortfolioScope } from '@/shared/types/campaign'
 import AnalysisSummary from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue'
 import { healthScoreVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 

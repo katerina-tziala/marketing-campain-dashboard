@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BudgetOptimizerResponse } from '@/features/ai-tools/ai-analysis/types'
 import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
-import { formatCurrency, formatPercentage } from '@/common/utils/formatters'
+import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
 
 defineProps<{
   recommendations: BudgetOptimizerResponse['recommendations']

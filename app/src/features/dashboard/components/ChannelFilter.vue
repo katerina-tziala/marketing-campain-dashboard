@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Channel } from '@/common/types/channel'
+import type { Channel } from '@/shared/types/channel'
 
 defineProps<{
   channels: Channel[]

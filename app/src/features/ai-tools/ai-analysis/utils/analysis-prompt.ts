@@ -1,4 +1,4 @@
-import type { PortfolioAnalysis } from '@/common/portfolio-analysis/types';
+import type { PortfolioAnalysis } from '@/shared/portfolio-analysis/types';
 import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '@/features/ai-tools/prompts';
 import { runProviderPrompt } from '@/features/ai-tools/providers';
 import type { AiAnalysisType } from '@/features/ai-tools/types';

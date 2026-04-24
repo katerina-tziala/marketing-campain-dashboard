@@ -1,4 +1,4 @@
-import type { Campaign } from '@/common/types/campaign'
+import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataParseResult, CampainDataProcessRowsResult, CampainDataRowError, CampainDataValidationError } from '@/features/data-transfer/types'
 import { validateRow } from './validate-row-data'
 import { detectCampaignDuplication } from './detect-campaign-duplication'

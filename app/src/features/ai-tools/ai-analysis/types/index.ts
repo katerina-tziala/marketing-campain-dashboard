@@ -1,4 +1,4 @@
-import type { PortfolioAnalysis } from '@/common/portfolio-analysis/types'
+import type { PortfolioAnalysis } from '@/shared/portfolio-analysis/types'
 import type { AiModel } from '@/features/ai-tools/providers'
 import type { AiAnalysisType, AiProviderType } from '@/features/ai-tools/types'
 
