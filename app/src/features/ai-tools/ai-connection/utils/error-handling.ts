@@ -1,6 +1,6 @@
-import type { AiErrorCode, AiProviderType } from '../../types'
-import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
-import { normalizeConnectionError } from '../../providers/utils'
+import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types'
+import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
+import { normalizeConnectionError } from '@/features/ai-tools/providers/utils'
 
 const ERROR_CODES = new Set<AiErrorCode>([
   'invalid-key', 'network', 'timeout', 'rate-limit', 'token-limit', 'server-error', 'no-models', 'invalid-response', 'unknown',
@@ -17,6 +17,7 @@ export const ERROR_MESSAGES: Record<AiErrorCode, (provider: AiProviderType) => s
   'token-limit': () => 'The provider’s token limit was exceeded. Try again.',
   'invalid-response': () => 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
   'parse-error': () => 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
+  'min-campaigns': () => 'Not enough campaigns selected for this analysis.',
 }
 
 export const ERROR_HINTS: Record<AiErrorCode, string> = {
@@ -30,6 +31,7 @@ export const ERROR_HINTS: Record<AiErrorCode, string> = {
   'token-limit': 'The provider has limits on how many tokens can be processed in a given time frame. Wait a moment and try again.',
   'invalid-response': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
   'parse-error': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
+  'min-campaigns': 'Select at least 2 campaigns to run this analysis.',
 }
 
 

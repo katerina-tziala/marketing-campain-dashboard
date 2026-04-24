@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { CampaignPerformance } from '../../../common/types/campaign'
-import { DataTableHeader } from '../../../ui'
-import type { DataTableColumn, SortDir } from '../../../ui'
-import { formatCompactNumber, formatCurrency, formatNumber, formatPercentage } from '../../../common/utils/formatters'
-import { sortWithNullsLast } from '../../../common/utils/sorting'
-import { percentageClass } from '../../../common/utils/campaign-performance'
+import type { CampaignPerformance } from '@/common/types/campaign'
+import { DataTableHeader } from '@/ui'
+import type { DataTableColumn, SortDir } from '@/ui'
+import { formatCompactNumber, formatCurrency, formatNumber, formatPercentage } from '@/common/utils/formatters'
+import { sortWithNullsLast } from '@/common/utils/sorting'
+import { percentageClass } from '@/common/utils/campaign-performance'
 
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>()

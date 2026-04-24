@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from '../../../common/types/campaign'
+import type { PortfolioKPIs } from '@/common/types/campaign'
 import {
   formatCompactCurrency,
   formatCompactNumber,
   formatPercentage,
-} from '../../../common/utils/formatters'
-import { percentageClass } from '../../../common/utils/campaign-performance'
+} from '@/common/utils/formatters'
+import { percentageClass } from '@/common/utils/campaign-performance'
 import KpiCard from './KpiCard.vue'
 
 defineProps<{ kpis: PortfolioKPIs }>()

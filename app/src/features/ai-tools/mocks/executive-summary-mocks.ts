@@ -1,5 +1,5 @@
-import type { AiModel } from '../providers/types'
-import type { ExecutiveSummaryResponse } from '../ai-analysis/types'
+import type { AiModel } from '@/features/ai-tools/providers/types'
+import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',
@@ -110,7 +110,7 @@ const needsAttention: ExecutiveSummaryResponse = {
     {
       priority: 1,
       action: 'Cut Paid Social budget by 30% and redirect to SEO content investment.',
-      expectedOutcome: 'Reduce the highest-CAC channel's drag and amplify the most efficient acquisition channel.',
+      expectedOutcome: "Reduce the highest-CAC channel's drag and amplify the most efficient acquisition channel.",
       urgency: 'Immediate',
       successMetric: 'Overall CAC decreases by 15% within 60 days; SEO organic traffic grows 10%.',
     },

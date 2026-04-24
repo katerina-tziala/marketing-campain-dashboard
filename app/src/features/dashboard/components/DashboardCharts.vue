@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
 import { computed } from 'vue'
-import type { CampaignPerformance, PortfolioKPIs } from '../../../common/types/campaign'
-import type { Channel } from '../../../common/types/channel'
-import { BarChart, CHART_COLORS, DonutChart, FunnelChart, GroupedBarChart } from '../../../ui'
+import type { CampaignPerformance, PortfolioKPIs } from '@/common/types/campaign'
+import type { Channel } from '@/common/types/channel'
+import { BarChart, CHART_COLORS, DonutChart, FunnelChart, GroupedBarChart } from '@/ui'
 
 const props = defineProps<{
   campaigns: CampaignPerformance[]

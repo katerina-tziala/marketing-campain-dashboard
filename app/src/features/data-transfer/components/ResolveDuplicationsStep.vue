@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Campaign } from '../../../common/types/campaign'
-import type { CampainDataDuplicateGroup } from '../types'
+import type { Campaign } from '@/common/types/campaign'
+import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
 import CampainDuplicationsTable from './validation/CampainDuplicationsTable.vue'
 

@@ -1,4 +1,4 @@
-import type { AiModelCandidate } from '../providers/types'
+import type { AiModelCandidate } from '@/features/ai-tools/providers/types'
 
 const OUTPUT_SCHEMA = `{
   "models": [

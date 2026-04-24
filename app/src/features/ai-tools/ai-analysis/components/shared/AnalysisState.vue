@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Spinner } from '../../../../../ui'
-import { SparklesIcon } from '../../../../../ui/icons'
-import type { AsyncStatus } from '../../../../../common/types/async-status'
-import type { AiAnalysisError, AiAnalysisNotice } from '../../../types'
-import { ANALYSIS_ERROR_MESSAGES, ANALYSIS_NOTICE_MESSAGES, TOKEN_LIMIT_MESSAGES } from '../../utils/analysis-messages'
+import { Spinner } from '@/ui'
+import { SparklesIcon } from '@/ui/icons'
+import type { AsyncStatus } from '@/common/types/async-status'
+import type { AiAnalysisError, AiAnalysisNotice } from '@/features/ai-tools/types'
+import { ANALYSIS_ERROR_MESSAGES, ANALYSIS_NOTICE_MESSAGES, TOKEN_LIMIT_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
 
 const props = defineProps<{
   title: string

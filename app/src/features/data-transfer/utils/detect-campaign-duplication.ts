@@ -1,5 +1,5 @@
-import type { Campaign } from '../../../common/types/campaign'
-import type { CampainDataDuplicateGroup } from '../types'
+import type { Campaign } from '@/common/types/campaign'
+import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
 
 function getGrouppedCampains(campaigns: Campaign[]): Map<string, Campaign[]> {
   const grouped = new Map<string, Campaign[]>()

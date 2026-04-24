@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../../stores/campaignStore'
+import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import { useCampaignStore } from '@/stores/campaignStore'
 import BudgetOptimizationAnalysis from './budget-optimization/BudgetOptimizationAnalysis.vue'
 import ExecutiveSummaryAnalysis from './executive-summary/ExecutiveSummaryAnalysis.vue'
-import { FileTextIcon, SlidersIcon } from '../../../../ui/icons'
-import type { AiAnalysisType } from '../../types'
-import type { Tab } from '../../../../ui'
-import { Tabs } from '../../../../ui'
+import { FileTextIcon, SlidersIcon } from '@/ui/icons'
+import type { AiAnalysisType } from '@/features/ai-tools/types'
+import type { Tab } from '@/ui'
+import { Tabs } from '@/ui'
 
 const analysisStore = useAiAnalysisStore()
 const campaignStore = useCampaignStore()

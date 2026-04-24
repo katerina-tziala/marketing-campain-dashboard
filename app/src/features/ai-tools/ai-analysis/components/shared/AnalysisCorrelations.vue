@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExecutiveCorrelation } from '../../../types'
+import type { ExecutiveCorrelation } from '@/features/ai-tools/ai-analysis/types'
 
 defineProps<{
   correlations: ExecutiveCorrelation[]

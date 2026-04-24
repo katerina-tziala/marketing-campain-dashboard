@@ -1,5 +1,5 @@
-import type { PortfolioAnalysis } from '../../../common/portfolio-analysis/types'
-import type { BusinessContext } from '../ai-analysis/types'
+import type { PortfolioAnalysis } from '@/common/portfolio-analysis/types'
+import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types'
 import { getBusinessContextBlock } from './business-context'
 
 const OUTPUT_SCHEMA = `{

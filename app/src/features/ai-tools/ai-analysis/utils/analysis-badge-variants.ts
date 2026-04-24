@@ -1,4 +1,4 @@
-import type { BadgeVariant } from '../../../../ui/types/badge-variant'
+import type { BadgeVariant } from '@/ui/types/badge-variant'
 
 const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
   excellent: 'success',

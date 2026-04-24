@@ -1,4 +1,4 @@
-import type { AiErrorCode, AiAnalysisNoticeCode } from '../../types'
+import type { AiErrorCode, AiAnalysisNoticeCode } from '@/features/ai-tools/types'
 
 export const ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, string> = {
   'network': 'Network error. Check your connection and try again.',

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from 'vue'
-import EyeIcon from '../icons/EyeIcon.vue'
-import EyeOffIcon from '../icons/EyeOffIcon.vue'
+import EyeIcon from '@/ui/icons/EyeIcon.vue'
+import EyeOffIcon from '@/ui/icons/EyeOffIcon.vue'
 
 const props = withDefaults(defineProps<{
   modelValue: string

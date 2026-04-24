@@ -1,5 +1,5 @@
-import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '../types/campaign'
-import type { Channel } from '../types/channel'
+import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '@/common/types/campaign'
+import type { Channel } from '@/common/types/channel'
 import { round2, round4, safeDivide } from './math'
 
 // Threshold is 0.5 because roi/ctr/cvr are stored as decimal ratios (e.g. 0.5 = 50%)

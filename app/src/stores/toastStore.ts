@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { NotificationVariant } from '../ui/types/notification-variant'
+import type { NotificationVariant } from '@/ui/types/notification-variant'
 
 interface Toast {
   id: number

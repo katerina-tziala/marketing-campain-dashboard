@@ -1,5 +1,5 @@
 
-import type { AiProviderType } from "../types"
+import type { AiProviderType } from '@/features/ai-tools/types'
 import { requestGeminiChatCompletion } from "./gemini"
 import { requestGroqChatCompletion } from "./qroq"
 import { parseJsonResponse } from "./utils/shared"

@@ -304,6 +304,13 @@ app/                        # Vue 3 + Vite project
 - **Never run git commands** — no git status, git add, git commit, git log, or any other git operation.
 - The user handles all git operations. When asked for a commit message, provide the text only — no commands.
 
+### Imports
+- **Always use the `@/` alias** — never use relative `../` paths. `@` maps to `src/`. Same-directory `./foo` imports are the only exception.
+- Example: `import { useCampaignStore } from '@/stores/campaignStore'` not `'../../stores/campaignStore'`.
+- **Vue component naming in templates** — JS/TS (script block) uses camelCase; HTML/template attributes use kebab-case.
+  - Props: defined as `myProp` in script, bound as `:my-prop` in template.
+  - Events: emitted as `emit('myEvent')` in script, listened to as `@my-event` in template.
+
 ### Styling
 - **No BEM** — the project does not use BEM class naming. The codebase has been fully cleaned of BEM.
 - All styles use flat class names with `@apply` (Tailwind utility composition in SCSS). No `__element` or `--modifier` suffixes.

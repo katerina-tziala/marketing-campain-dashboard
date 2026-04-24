@@ -1,4 +1,4 @@
-import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency } from '../types/campaign'
+import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency } from '@/common/types/campaign'
 
 // ── Portfolio summary types ───────────────────────────────────────────────────
 

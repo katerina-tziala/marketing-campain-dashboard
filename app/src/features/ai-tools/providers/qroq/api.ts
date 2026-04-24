@@ -3,7 +3,7 @@ import {
   assertChatResponseOk,
   assertResponseOk,
   normalizeConnectionError,
-} from '../utils'
+} from '@/features/ai-tools/providers/utils'
 
 const API_BASE_URL = 'https://api.groq.com/openai/v1'
 

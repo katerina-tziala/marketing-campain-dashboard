@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
-import AiToolsContent from '../features/ai-tools/components/AiToolsContent.vue'
+import AiToolsContent from '@/features/ai-tools/components/AiToolsContent.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits<{ close: [] }>()

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PortfolioScope } from '../../../../../common/types/campaign'
-import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import AnalysisState from '../shared/AnalysisState.vue'
+import type { PortfolioScope } from '@/common/types/campaign'
+import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
 
@@ -37,7 +37,7 @@ function handleAnalyze(): void {
     loading-text="Analyzing campaigns…"
     :status="status"
     :error="error"
-    :error-fallback="notice"
+    :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"

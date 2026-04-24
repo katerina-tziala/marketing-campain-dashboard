@@ -1,4 +1,4 @@
-import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType } from '../types'
+import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType } from '@/features/data-transfer/types'
 
 const ROW_ISSUE_MESSAGES: Record<CampainDataRowIssueType, string> = {
   empty: 'Cannot be empty',

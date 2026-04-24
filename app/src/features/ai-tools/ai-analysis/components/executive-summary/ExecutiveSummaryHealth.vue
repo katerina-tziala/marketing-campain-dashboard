@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '../../../types'
-import type { PortfolioScope } from '../../../../../common/types/campaign'
-import AnalysisSummary from '../shared/AnalysisSummary.vue'
-import { healthScoreVariant } from '../../utils/analysis-badge-variants'
+import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
+import type { PortfolioScope } from '@/common/types/campaign'
+import AnalysisSummary from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue'
+import { healthScoreVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 
 defineProps<{
   healthScore: ExecutiveSummaryResponse['healthScore']

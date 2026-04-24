@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Campaign } from '../../../../common/types/campaign'
-import type { CampainDataDuplicateGroup } from '../../types'
-import { DataTableHeader, CheckIcon } from '../../../../ui'
-import type { DataTableColumn } from '../../../../ui'
-import { formatCurrency, formatNumber } from '../../../../common/utils/formatters'
+import type { Campaign } from '@/common/types/campaign'
+import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
+import { DataTableHeader, CheckIcon } from '@/ui'
+import type { DataTableColumn } from '@/ui'
+import { formatCurrency, formatNumber } from '@/common/utils/formatters'
 
 const props = defineProps<{
   duplicateGroups: CampainDataDuplicateGroup[]

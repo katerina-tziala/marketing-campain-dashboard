@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { provide, ref } from 'vue'
-import { UploadIcon } from '../ui'
-import { ToastContainer } from '../ui/toast'
-import { useAiConnectionStore } from '../features/ai-tools/ai-connection/stores'
-import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
-import { useUploadModal, UploadModal, ReplaceDataModal } from '../features/data-transfer'
+import { UploadIcon } from '@/ui'
+import { ToastContainer } from '@/ui/toast'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import { useUploadModal, UploadModal, ReplaceDataModal } from '@/features/data-transfer'
 import AiToolsDrawer from './AiToolsDrawer.vue'
 
 const aiStore = useAiConnectionStore()

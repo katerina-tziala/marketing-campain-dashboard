@@ -1,4 +1,4 @@
-import type { BusinessContext } from "../types";
+import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types';
 import { getPromptList } from "./prompt-utils";
 
 const CONTEXT_DICTIONARY: Record<keyof BusinessContext, string | undefined> = {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PortfolioScope } from '../../../../../common/types/campaign'
-import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import AnalysisState from '../shared/AnalysisState.vue'
-import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
+import type { PortfolioScope } from '@/common/types/campaign'
+import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
+import AnalysisCorrelations from '@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue'
 import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'
 import ExecutiveSummaryPriorityActions from './ExecutiveSummaryPriorityActions.vue'
 import ExecutiveSummaryInsights from './ExecutiveSummaryInsights.vue'
@@ -39,7 +39,7 @@ function handleSummarize(): void {
     loading-text="Generating summary…"
     :status="status"
     :error="error"
-    :error-fallback="notice"
+    :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"

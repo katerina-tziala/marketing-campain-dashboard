@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SparklesIcon } from '../../../ui'
-import { useCampaignStore } from '../../../stores/campaignStore'
-import { useAiConnectionStore } from '../../ai-tools/ai-connection/stores'
+import { SparklesIcon } from '@/ui'
+import { useCampaignStore } from '@/stores/campaignStore'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 
 const store = useCampaignStore()
 const aiStore = useAiConnectionStore()

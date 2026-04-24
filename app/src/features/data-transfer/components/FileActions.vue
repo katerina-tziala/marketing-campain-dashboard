@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { DownloadIcon, UploadIcon } from '../../../ui'
-import { useDownloadTemplate } from '../composables/useDownloadTemplate'
+import { DownloadIcon, UploadIcon } from '@/ui'
+import { useDownloadTemplate } from '@/features/data-transfer/composables/useDownloadTemplate'
 
 const emit = defineEmits<{ upload: [] }>()
 const { downloadTemplate } = useDownloadTemplate()

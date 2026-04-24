@@ -1,9 +1,9 @@
-import { generateModelEvaluationPrompt } from '../../prompts'
-import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
-import { parseJsonResponse, toValidModels } from '../utils/shared'
+import { generateModelEvaluationPrompt } from '@/features/ai-tools/prompts'
+import type { AiModel, AiModelCandidate, ModelsResponse } from '@/features/ai-tools/providers/types'
+import { parseJsonResponse, toValidModels } from '@/features/ai-tools/providers/utils/shared'
 import { fetchGeminiModels, requestGeminiChatCompletion } from './api'
 import type { GeminiModel } from './types'
-import { GEMINI_PROVIDER_RULES } from '../utils/providers-meta'
+import { GEMINI_PROVIDER_RULES } from '@/features/ai-tools/providers/utils/providers-meta'
 
 const BANNED = ['embedding', 'image', 'audio', 'tts', 'veo', 'imagen', 'lyria', 'robotics']
 

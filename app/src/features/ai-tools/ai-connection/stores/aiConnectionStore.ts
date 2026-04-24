@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-import type { AiProviderType, AiConnectionError } from '../../types'
-import { getErrorCode } from '../utils'
-import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '../../providers'
-import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
-import { useToastStore } from '../../../../stores/toastStore'
+import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/types'
+import { getErrorCode } from '@/features/ai-tools/ai-connection/utils'
+import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
+import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
+import { useToastStore } from '@/stores/toastStore'
 
 export const useAiConnectionStore = defineStore('aiConnection', () => {
   const provider = ref<AiProviderType | null>(null)

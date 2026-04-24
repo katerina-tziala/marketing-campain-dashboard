@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign, CampaignPerformance, PortfolioScope } from '../common/types/campaign'
-import type { Channel } from '../common/types/channel'
-import { buildChannelMap } from '../common/utils/campaign-channel'
-import { computePortfolioAnalysis } from '../common/portfolio-analysis/portfolio-analysis'
+import type { Campaign, CampaignPerformance, PortfolioScope } from '@/common/types/campaign'
+import type { Channel } from '@/common/types/channel'
+import { buildChannelMap } from '@/common/utils/campaign-channel'
+import { computePortfolioAnalysis } from '@/common/portfolio-analysis/portfolio-analysis'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
-import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
+import { MOCK_CAMPAINS } from '@/common/data/MOCK_CAMPAIN_DATA'
 // TODO: DEV MOCK — revert before shipping.
 // To revert: set DEV_MOCK_CAMPAIGNS = false, remove the MOCK_CAMPAINS import above,
 // and reset the `title` and `portfolioChannels` refs to '' and new Map() respectively.

@@ -1,4 +1,4 @@
-import type { Campaign } from '../types/campaign'
+import type { Campaign } from '@/common/types/campaign'
 
 export const MOCK_CAMPAINS: Campaign[] = [
   // Paid Search

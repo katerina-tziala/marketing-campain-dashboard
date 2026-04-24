@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiConnectionStore } from '../stores'
-import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
-import { PROVIDER_LABELS } from '../../providers/utils/providers-meta'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 
 const store = useAiConnectionStore()
 const analysisStore = useAiAnalysisStore()

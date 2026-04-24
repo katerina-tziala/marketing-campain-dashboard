@@ -1,4 +1,4 @@
-import type { AiErrorCode } from "../../types"
+import type { AiErrorCode } from '@/features/ai-tools/types'
 
 const TOKEN_LIMIT_PATTERNS = [
     'resource_exhausted',

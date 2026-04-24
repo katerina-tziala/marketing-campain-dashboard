@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useAiConnectionStore } from '../ai-connection/stores'
-import AiConnectionForm from '../ai-connection/components/AiConnectionForm.vue'
-import AiConnectedStatus from '../ai-connection/components/AiConnectedStatus.vue'
-import { AiAnalysis } from '../ai-analysis/components'
-import { CloseIcon, SparklesIcon } from '../../../ui/icons'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import AiConnectionForm from '@/features/ai-tools/ai-connection/components/AiConnectionForm.vue'
+import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue'
+import { AiAnalysis } from '@/features/ai-tools/ai-analysis/components'
+import { CloseIcon, SparklesIcon } from '@/ui/icons'
 
 const store = useAiConnectionStore()
 const emit = defineEmits<{ close: [] }>()

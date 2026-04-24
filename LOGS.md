@@ -6002,3 +6002,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Emit definition keys in `defineEmits` are JS/TS → camelCase; corresponding template listeners are HTML → kebab-case; Vue maps them automatically
 - `v-model:title` / `v-model:file` argument names follow the prop name and stay as-is; the generated `update:title` / `update:file` event names are a Vue convention, not free-form strings
+
+
+## [#291] Replace all relative path imports with @ alias
+**Type:** refactor
+
+**Summary:** Replaced every `../` relative import across the entire `src/` tree with `@/` alias paths, and fixed a set of pre-existing type errors exposed by making the paths explicit.
+
+**Brainstorming:** The `@` alias (pointing to `src/`) was already declared in both `vite.config.ts` and `tsconfig.app.json` but was not used in any source file — all 177 cross-folder imports used relative `../../..` chains. A Python script resolved each relative import to its absolute `src/`-rooted path and rewrote it as `@/...`. This also surfaced pre-existing errors that had been masked: five analysis components imported response types from `@/features/ai-tools/types` (the slim meta-types module) when they needed `@/features/ai-tools/ai-analysis/types`; `business-context.ts` had the same wrong module for `BusinessContext`; `error-handling.ts` was missing `min-campaigns` from both `ERROR_MESSAGES` and `ERROR_HINTS` records after the error code was added to `AiErrorCode`; two accidental Finder copy files (`budget-optimization-prompt copy.ts`, `executive-summary-prompt copy.ts`) were in `src/` and failed to compile; a string literal in `executive-summary-mocks.ts` had an unescaped apostrophe; and both orchestrator components passed `:error-fallback` after the prop was renamed to `notice` in `AnalysisState`. All fixed as part of this change. Build is now clean.
+
+**Prompt:** Use alias in vite for imports and not relative paths.
+
+**What changed:**
+- 80 source files — all `../` relative imports replaced with `@/` equivalents via automated script
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue`, `ExecutiveSummaryInsights.vue`, `ExecutiveSummaryPriorityActions.vue`, `AnalysisCorrelations.vue` (shared), `BudgetOptimizationRecommendations.vue` — import of response types fixed from `@/features/ai-tools/types` → `@/features/ai-tools/ai-analysis/types`
+- `features/ai-tools/prompts/business-context.ts` — `BusinessContext` import fixed to `@/features/ai-tools/ai-analysis/types`
+- `features/ai-tools/ai-connection/utils/error-handling.ts` — `min-campaigns` entry added to both `ERROR_MESSAGES` and `ERROR_HINTS`
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — unescaped apostrophe in string literal fixed (outer quotes changed to double quotes)
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue`, `executive-summary/ExecutiveSummaryAnalysis.vue` — `:error-fallback` → `:notice` to match renamed prop in `AnalysisState`
+- `features/ai-tools/prompts/budget-optimization-prompt copy.ts`, `executive-summary-prompt copy.ts` — deleted (accidental Finder duplicates; not referenced anywhere)
+
+**Key decisions & why:**
+- Same-directory `./foo` imports left as-is — they don't benefit from an alias and are already unambiguous
+- Double-quoted imports handled in a second pass to catch provider utils that used `"../..."` style
+- Pre-existing type errors fixed inline rather than deferred — the build must be clean after a refactor

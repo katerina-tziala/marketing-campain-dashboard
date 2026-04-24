@@ -1,5 +1,5 @@
-import type { Campaign } from '../../../common/types/campaign'
-import type { CampainDataRowError } from '../types'
+import type { Campaign } from '@/common/types/campaign'
+import type { CampainDataRowError } from '@/features/data-transfer/types'
 
 function isValidString(value?: string | null): boolean {
   if (!value || value.length === 0) {

@@ -1,4 +1,4 @@
-import type { AiProviderType } from "../types"
+import type { AiProviderType } from '@/features/ai-tools/types'
 import type { AiModel } from "./types"
 import { connectGemini } from "./gemini"
 import { connectGroq } from "./qroq"

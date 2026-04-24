@@ -1,6 +1,6 @@
-import type { PortfolioAnalysis } from '../../../../common/portfolio-analysis/types'
-import type { AiModel } from '../../providers'
-import type { AiAnalysisType, AiProviderType } from '../../types'
+import type { PortfolioAnalysis } from '@/common/portfolio-analysis/types'
+import type { AiModel } from '@/features/ai-tools/providers'
+import type { AiAnalysisType, AiProviderType } from '@/features/ai-tools/types'
 
 // ── Business context ──────────────────────────────────────────────────────────
 
