@@ -1,5 +1,5 @@
 import { computed, provide, ref, type Ref } from 'vue'
-import { useCampaignStore } from '@/stores/campaignStore'
+import { useCampaignStore } from '@/stores/campaign.store'
 import type UploadModal from '@/features/data-transfer/components/UploadModal.vue'
 
 export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadModal> | null>) {

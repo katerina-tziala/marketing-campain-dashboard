@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
-import { useCampaignStore } from '@/stores/campaignStore'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import { useCampaignStore } from '@/stores/campaign.store'
 import BudgetOptimizationAnalysis from './budget-optimization/BudgetOptimizationAnalysis.vue'
 import ExecutiveSummaryAnalysis from './executive-summary/ExecutiveSummaryAnalysis.vue'
 import { FileTextIcon, SlidersIcon } from '@/ui/icons'

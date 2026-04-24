@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PortfolioScope } from '@/shared/types/campaign'
-import { useAiAnalysisStore } from '@/stores/aiAnalysisStore'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
 import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import AnalysisCorrelations from '@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue'
 import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'

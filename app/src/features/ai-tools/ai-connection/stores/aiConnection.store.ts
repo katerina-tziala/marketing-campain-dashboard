@@ -5,7 +5,7 @@ import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/type
 import { getErrorCode } from '@/features/ai-tools/ai-connection/utils'
 import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { useToastStore } from '@/stores/toastStore'
+import { useToastStore } from '@/stores/toast.store'
 
 export const useAiConnectionStore = defineStore('aiConnection', () => {
   const provider = ref<AiProviderType | null>(null)

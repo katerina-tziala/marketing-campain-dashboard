@@ -1,1 +1,1 @@
-export { useAiConnectionStore } from './aiConnectionStore'
+export { useAiConnectionStore } from './aiConnection.store'

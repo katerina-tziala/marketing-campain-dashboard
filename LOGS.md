@@ -6045,3 +6045,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Bulk sed on the entire `src/` tree rather than file-by-file — safe because every cross-folder import already used the `@/` alias; no relative paths remained to confuse the replace pattern
 - TypeScript reported zero errors after the rename — confirms no missed references
+
+
+## [#293] Rename store files to `.store.ts` pattern
+**Type:** refactor
+
+**Summary:** Renamed all four store files to use the `<name>.store.ts` convention, matching the explicit file-type suffix pattern already used for `.vue` components.
+
+**Brainstorming:** `campaignStore.ts` bundles the role ("store") into the identifier, making it redundant when the function name (`useCampaignStore`) already signals that. The `<name>.store.ts` pattern separates the domain name from the file type, aligns with common Vue/Pinia conventions, and makes the role scannable at a glance in a file tree without reading the function export.
+
+**Prompt:** Rename aiConnectionStore to aiConnection.store.ts. Apply the same pattern to the rest of the stores.
+
+**What changed:**
+- `aiConnectionStore.ts` → `aiConnection.store.ts`
+- `aiAnalysisStore.ts` → `aiAnalysis.store.ts`
+- `campaignStore.ts` → `campaign.store.ts`
+- `toastStore.ts` → `toast.store.ts`
+- 14 `.ts` and `.vue` files — import paths updated to match new filenames
+- `CLAUDE.md` — architecture section updated with new filenames
+
+**Key decisions & why:**
+- Sed on import path segments (`/campaignStore` → `/campaign.store`) rather than full paths — handles both `@/stores/` and `./stores/` forms without needing separate patterns
+- Internal self-references inside store files (e.g. `aiConnectionStore.ts` importing `toastStore`) were caught by the same bulk replace

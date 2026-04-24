@@ -8,7 +8,7 @@ import type {
   ExecutiveSummaryResponse,
 } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
-import { useCampaignStore } from './campaignStore'
+import { useCampaignStore } from './campaign.store'
 import { runAnalysisPrompt, getCacheKey } from '@/features/ai-tools/ai-analysis/utils'
 
 // ── Constants ──────────────────────────────────────────────────────────────

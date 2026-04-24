@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject } from 'vue'
-import { useCampaignStore } from '@/stores/campaignStore'
+import { useCampaignStore } from '@/stores/campaign.store'
 import DashboardHeader from './components/DashboardHeader.vue'
 import DashboardKpis from './components/DashboardKpis.vue'
 import DashboardCharts from './components/DashboardCharts.vue'
