@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed, type Ref } from 'vue'
 import type { AsyncStatus } from '../common/types/async-status'
-import type { AiAnalysisType, AiAnalysisError, AiErrorCode } from '../features/ai-tools/types'
+import type { AiAnalysisType, AiAnalysisError, AiErrorCode, AiAnalysisNotice } from '../features/ai-tools/types'
 import type {
   AnalysisResponse,
   BudgetOptimizerResponse,
@@ -9,7 +9,7 @@ import type {
 } from '../features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '../features/ai-tools/ai-connection/stores'
 import { useCampaignStore } from './campaignStore'
-import { ANALYSIS_ERROR_MESSAGES, runAnalysisPrompt, getCacheKey } from '../features/ai-tools/ai-analysis/utils'
+import { runAnalysisPrompt, getCacheKey } from '../features/ai-tools/ai-analysis/utils'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -18,8 +18,7 @@ const COOLDOWN_MS = 5_000
 const MIN_OPTIMIZER_CAMPAIGNS = 2
 
 const OPTIMIZER_MIN_CAMPAIGNS_ERROR: AiAnalysisError = {
-  code: 'unknown',
-  message: 'Budget optimization requires at least 2 campaigns. Adjust the channel filter or add more campaign data.',
+  code: 'min-campaigns',
 }
 
 // ── Per-tab state shape ────────────────────────────────────────────────────
@@ -34,7 +33,7 @@ type TabDisplay<T extends AnalysisResponse = AnalysisResponse> = {
   status: AsyncStatus
   response: T | null
   error: AiAnalysisError | null
-  errorFallback: string | null
+  notice: AiAnalysisNotice | null
 }
 
 function createTabState() {
@@ -58,9 +57,9 @@ function setDisplay(
   status: AsyncStatus,
   response: AnalysisResponse | null = null,
   error: AiAnalysisError | null = null,
-  errorFallback: string | null = null,
+  notice: AiAnalysisNotice | null = null,
 ): void {
-  display.value = { status, response, error, errorFallback }
+  display.value = { status, response, error, notice }
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
@@ -87,14 +86,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     status: 'idle',
     response: null,
     error: null,
-    errorFallback: null,
+    notice: null,
   })
 
   const executiveSummary = ref<TabDisplay<ExecutiveSummaryResponse>>({
     status: 'idle',
     response: null,
     error: null,
-    errorFallback: null,
+    notice: null,
   })
 
   // ── Getters derived from aiStore ──────────────────────────────────────
@@ -130,7 +129,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       setDisplay(display, 'done', entry.response)
       tabState.lastVisibleCacheKey = cacheKey
     } else {
-      setDisplay(display, 'error', null, { code: 'token-limit', message: ANALYSIS_ERROR_MESSAGES['token-limit'] })
+      setDisplay(display, 'error', null, { code: 'token-limit' })
     }
   }
 
@@ -200,7 +199,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const tabState = getTabState(tab)
     const display = getDisplay(tab)
     const code = error instanceof Error ? (error.message as AiErrorCode) : 'unknown'
-    const message = ANALYSIS_ERROR_MESSAGES[code] ?? ANALYSIS_ERROR_MESSAGES.unknown
+    const rawMessage = error instanceof Error ? error.message : undefined
 
     if (code === 'token-limit') {
       if (aiStore.selectedModel) {
@@ -218,9 +217,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
     const entry = tabState.cache.get(cacheKey)
     if (entry) {
-      setDisplay(display, 'done', entry.response, null, 'The latest request failed. Showing the previous generated result.')
+      setDisplay(display, 'done', entry.response, null, { code: 'stale-result' })
     } else {
-      setDisplay(display, 'error', null, { code, message })
+      setDisplay(display, 'error', null, { code, rawMessage })
     }
   }
 
@@ -307,7 +306,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function analyze(tab: AiAnalysisType): void {
     const display = getDisplay(tab)
-    display.value = { ...display.value, errorFallback: null }
+    display.value = { ...display.value, notice: null }
     analysisActivated.value = true
     executeAnalysis(tab, false)
   }

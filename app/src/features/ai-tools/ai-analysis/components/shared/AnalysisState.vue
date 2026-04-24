@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { Spinner } from '../../../../../ui'
 import { SparklesIcon } from '../../../../../ui/icons'
 import type { AsyncStatus } from '../../../../../common/types/async-status'
-import type { AiAnalysisError } from '../../../types'
+import type { AiAnalysisError, AiAnalysisNotice } from '../../../types'
+import { ANALYSIS_ERROR_MESSAGES, ANALYSIS_NOTICE_MESSAGES, TOKEN_LIMIT_MESSAGES } from '../../utils/analysis-messages'
 
 const props = defineProps<{
   title: string
@@ -12,7 +13,7 @@ const props = defineProps<{
   loadingText: string
   status: AsyncStatus
   error: AiAnalysisError | null
-  errorFallback: string | null
+  notice: AiAnalysisNotice | null
   tokenLimitReached: boolean
   isButtonDisabled: boolean
   hasResult: boolean
@@ -30,6 +31,15 @@ const formattedCacheTime = computed(() => {
     second: '2-digit',
   })
 })
+
+const errorMessage = computed(() => {
+  if (!props.error) return null
+  return ANALYSIS_ERROR_MESSAGES[props.error.code] ?? props.error.rawMessage ?? ANALYSIS_ERROR_MESSAGES.unknown
+})
+
+const noticeText = computed(() =>
+  props.notice ? ANALYSIS_NOTICE_MESSAGES[props.notice.code] : null,
+)
 </script>
 
 <template>
@@ -45,8 +55,8 @@ const formattedCacheTime = computed(() => {
 
     <!-- Token limit notice -->
     <div v-if="tokenLimitReached && status !== 'done'" class="notice" role="status">
-      <p class="notice-text">AI generation is temporarily unavailable due to usage limits.</p>
-      <p class="notice-hint">Previously generated results are still available.</p>
+      <p class="notice-text">{{ TOKEN_LIMIT_MESSAGES.notice }}</p>
+      <p class="notice-hint">{{ TOKEN_LIMIT_MESSAGES.hint }}</p>
     </div>
 
     <!-- Idle -->
@@ -60,7 +70,7 @@ const formattedCacheTime = computed(() => {
 
     <!-- Error (no cached result) -->
     <div v-else-if="status === 'error' && error" class="error-box" role="alert">
-      <p class="error-message">{{ error.message }}</p>
+      <p class="error-message">{{ errorMessage }}</p>
       <p class="error-hint">Click "{{ actionLabel }}" to try again.</p>
     </div>
 
@@ -71,7 +81,7 @@ const formattedCacheTime = computed(() => {
           Generated at {{ formattedCacheTime }}<template v-if="modelName"> with {{ modelName }}</template>
         </p>
         <p class="response-meta-disclaimer">AI can make mistakes</p>
-        <p v-if="errorFallback" class="response-meta-fallback" role="status">{{ errorFallback }}</p>
+        <p v-if="noticeText" class="response-meta-fallback" role="status">{{ noticeText }}</p>
       </div>
       <slot />
     </div>

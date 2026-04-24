@@ -5898,3 +5898,29 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Rename to `'aiConnection'` store id — the old `'ai'` id was ambiguous; `'aiConnection'` matches the folder name and signals the store's single responsibility
 - `providers/index.ts` named exports only — `export * from './utils'` was leaking `normalizeConnectionError`, `assertResponseOk`, `parseJsonResponse`, `toValidModels` — all internal to provider implementations and not consumed by any external caller; named exports make the public API explicit
 - `export * from './providers-meta'` removed — `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS` are imported directly from `providers-meta` by the two connection components, not via the barrel; removing the re-export eliminates a redundant path without breaking anything
+
+
+## [#286] Refactor analysis error and notice types — move message mapping to one file in the analysis feature
+**Type:** refactor
+
+**Summary:** Removed message text from `AiAnalysisError`, replaced `errorFallback: string` with a typed `AiAnalysisNotice`, and consolidated all analysis-panel message text into a single `analysis-messages.ts` file so the store only stores error codes and components resolve display text.
+
+**Brainstorming:** The store was doing two jobs: tracking error state and resolving human-readable message strings via `ANALYSIS_ERROR_MESSAGES`. This created a split where some message text lived in the store constant file and some was hardcoded directly in `AnalysisState.vue` (the token-limit notice block). `errorFallback: string | null` was an untyped raw string with no connection to a code or mapping. The fix: strip message resolution out of the store entirely, add typed `AiAnalysisNotice` alongside `AiAnalysisError`, collect every analysis-panel string into one mapping file (`analysis-messages.ts`), and have `AnalysisState.vue` resolve display text from that file. A new `'min-campaigns'` error code was added so the optimizer threshold case has a real code instead of piggybacking on `'unknown'`. `rawMessage` on `AiAnalysisError` provides a runtime fallback for any truly unhandled error whose code falls through the map.
+
+**Prompt:** Move the mapping of error types to displayed errors into the analysis feature. The store should only save errors. Errors should ideally carry a rawMessage for unhandled cases. errorFallback should be renamed to a typed notice. All message text should live in one file. Add error types if necessary.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — added `'min-campaigns'` to `AiErrorCode`; changed `AiAnalysisError` from `{ code, message }` to `{ code, rawMessage? }`; added `AiAnalysisNoticeCode` ('stale-result') and `AiAnalysisNotice ({ code })`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` (NEW) — `ANALYSIS_ERROR_MESSAGES` (11 codes), `ANALYSIS_NOTICE_MESSAGES` ('stale-result'), `TOKEN_LIMIT_MESSAGES` ({ notice, hint }); replaces `analysis-error-messages.ts`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-error-messages.ts` (DELETED) — replaced by `analysis-messages.ts`
+- `app/src/features/ai-tools/ai-analysis/utils/index.ts` — barrel updated to re-export `analysis-messages` instead of `analysis-error-messages`
+- `app/src/stores/aiAnalysisStore.ts` — removed `ANALYSIS_ERROR_MESSAGES` import; `OPTIMIZER_MIN_CAMPAIGNS_ERROR` now `{ code: 'min-campaigns' }`; `TabDisplay` field `errorFallback: string|null` → `notice: AiAnalysisNotice|null`; `setDisplay` 5th param renamed to `notice`; `handleRequestError` stores `{ code, rawMessage }` — no message lookup; `showTokenLimitState` stores `{ code: 'token-limit' }` — no message lookup; stale-result case stores `{ code: 'stale-result' }` notice; `analyze()` clears `notice: null`
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — prop `errorFallback: string|null` → `notice: AiAnalysisNotice|null`; imports `ANALYSIS_ERROR_MESSAGES`, `ANALYSIS_NOTICE_MESSAGES`, `TOKEN_LIMIT_MESSAGES`; `errorMessage` computed resolves from map with `rawMessage` fallback; `noticeText` computed resolves from notice map; token-limit template strings use `TOKEN_LIMIT_MESSAGES`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `errorFallback` → `notice` in computed + template prop
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `errorFallback` → `notice` in computed + template prop
+- `CLAUDE.md` — updated types description, aiAnalysisStore description, analysis-messages entry, barrel entry, AnalysisState description, Status paragraph
+
+**Key decisions & why:**
+- `rawMessage` on `AiAnalysisError` (not only when code === 'unknown') — always capturing the raw error text is cheap and lets the component decide whether to show it; the component prioritises the map lookup and only falls back to rawMessage if the map has no entry for that code (defensive against future unhandled codes at runtime)
+- `TOKEN_LIMIT_MESSAGES` as a plain object in `analysis-messages.ts` (not a notice code) — the token-limit notice is driven by a prop, not a `TabDisplay.notice` field; adding it to the mapping file still satisfies "one file for all message text" without forcing a second notice code
+- `'min-campaigns'` added as a real `AiErrorCode` — the optimizer threshold case previously borrowed `'unknown'` and baked a long message inline in the store constant; a real code gives it a proper entry in the map and removes the inline string from the store entirely

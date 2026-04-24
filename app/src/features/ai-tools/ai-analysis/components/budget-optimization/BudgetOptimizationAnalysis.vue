@@ -15,7 +15,7 @@ const analysisStore = useAiAnalysisStore()
 const status = computed(() => analysisStore.budgetOptimizer.status)
 const response = computed(() => analysisStore.budgetOptimizer.response)
 const error = computed(() => analysisStore.budgetOptimizer.error)
-const errorFallback = computed(() => analysisStore.budgetOptimizer.errorFallback)
+const notice = computed(() => analysisStore.budgetOptimizer.notice)
 const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
@@ -37,7 +37,7 @@ function handleAnalyze(): void {
     loading-text="Analyzing campaigns…"
     :status="status"
     :error="error"
-    :error-fallback="errorFallback"
+    :error-fallback="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"

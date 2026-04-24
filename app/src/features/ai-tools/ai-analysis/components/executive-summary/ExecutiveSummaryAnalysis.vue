@@ -17,7 +17,7 @@ const analysisStore = useAiAnalysisStore()
 const status = computed(() => analysisStore.executiveSummary.status)
 const response = computed(() => analysisStore.executiveSummary.response)
 const error = computed(() => analysisStore.executiveSummary.error)
-const errorFallback = computed(() => analysisStore.executiveSummary.errorFallback)
+const notice = computed(() => analysisStore.executiveSummary.notice)
 const cacheTimestamp = computed(() => analysisStore.executiveSummary.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
@@ -39,7 +39,7 @@ function handleSummarize(): void {
     loading-text="Generating summary…"
     :status="status"
     :error="error"
-    :error-fallback="errorFallback"
+    :error-fallback="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"

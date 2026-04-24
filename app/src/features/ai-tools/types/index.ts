@@ -12,6 +12,7 @@ export type AiErrorCode =
   | 'token-limit'
   | 'invalid-response'
   | 'parse-error'
+  | 'min-campaigns'
   | 'unknown';
 
 export type AiConnectionError = {
@@ -25,5 +26,11 @@ export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';
 
 export type AiAnalysisError = {
   code: AiErrorCode;
-  message: string;
+  rawMessage?: string;
+};
+
+export type AiAnalysisNoticeCode = 'stale-result';
+
+export type AiAnalysisNotice = {
+  code: AiAnalysisNoticeCode;
 };

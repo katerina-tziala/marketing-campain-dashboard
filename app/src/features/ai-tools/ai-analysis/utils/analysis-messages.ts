@@ -1,5 +1,4 @@
-import type { AiErrorCode } from "../../types";
-
+import type { AiErrorCode, AiAnalysisNoticeCode } from '../../types'
 
 export const ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, string> = {
   'network': 'Network error. Check your connection and try again.',
@@ -11,5 +10,15 @@ export const ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, string> = {
   'invalid-response': 'Could not parse the AI response. Try again.',
   'invalid-key': 'Something went wrong.',
   'no-models': 'Something went wrong.',
+  'min-campaigns': 'Budget optimization requires at least 2 campaigns. Adjust the channel filter or add more campaign data.',
   'unknown': 'Something went wrong.',
+}
+
+export const ANALYSIS_NOTICE_MESSAGES: Record<AiAnalysisNoticeCode, string> = {
+  'stale-result': 'The latest request failed. Showing the previous generated result.',
+}
+
+export const TOKEN_LIMIT_MESSAGES = {
+  notice: 'AI generation is temporarily unavailable due to usage limits.',
+  hint: 'Previously generated results are still available.',
 }
