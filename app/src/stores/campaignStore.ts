@@ -4,6 +4,7 @@ import type { Campaign, CampaignPerformance, PortfolioKPIs, PortfolioScope } fro
 import type { Channel } from '../common/types/channel'
 import { buildChannelMap } from '../common/utils/campaign-channel'
 import { computePortfolioKPIs } from '../common/utils/campaign-performance'
+import { computePortfolioAnalysis } from '../common/portfolio-analysis/portfolio-analysis'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
@@ -46,6 +47,16 @@ export const useCampaignStore = defineStore('campaigns', () => {
 
   const kpis = computed((): PortfolioKPIs => computePortfolioKPIs(selectedChannels.value))
 
+  const portfolioAnalysis = computed(() =>
+    computePortfolioAnalysis(
+      filteredCampaigns.value,
+      selectedChannels.value,
+      kpis.value,
+      portfolioScope.value,
+      selectedChannelsIds.value.length > 0,
+    ),
+  )
+
   // Actions
   function toggleChannel(channelId: string) {
     const idx = selectedChannelsIds.value.indexOf(channelId)
@@ -75,6 +86,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     selectedChannelsIds,
     portfolioScope,
     kpis,
+    portfolioAnalysis,
     // actions
     toggleChannel,
     clearFilters,

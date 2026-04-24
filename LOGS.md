@@ -5519,3 +5519,71 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Old `budget-optimization-prompt.ts` kept as dead-but-compilable code so its dependent legacy types in `types/index.ts` remain valid
 - Mock 5 changed from "growth expansion" to "no strong opportunity" (empty recommendations) — exercises the v-if guard on the Recommendations component and matches the prompt's instruction to prefer an empty array over weak suggestions
 - `executionRiskVariant` uses the same low/medium/high→success/warning/danger mapping as confidence to keep the badge language consistent
+
+
+## [#270] Create portfolio-analysis module and campaignStore getter
+**Type:** refactor
+
+**Summary:** Introduced `common/portfolio-analysis/` as a self-contained analysis module that unifies both AI tab data computation into a single `PortfolioAnalysis` structure, exposed as a `portfolioAnalysis` computed getter on `campaignStore`.
+
+**Brainstorming:** Both `computeSummaryAnalysis` and `computeBudgetOptimizerAnalysis` duplicate core mapping logic (`toCampaignSummary`, `toChannelSummary`, `computeChannelStatus`) and diverge only in their `derivedSignals`. The goal is a single authoritative computation that both AI prompt functions will eventually consume. The unified `derivedSignals` disambiguates the `scalingCandidates` name collision: `scalingOpportunities` (mixed campaign+channel, top 5 by ROI — for summary) vs `budgetScalingCandidates` (campaign-only with capacity data — for budget optimizer). The module imports only from `common/types/` — no dependency on the old `analysis/` files so it can become the sole source of truth when cleanup happens. Existing analysis files are left in place (no cleanup in this phase). The `filteredChannels` boolean is passed as a fifth parameter since only the store knows `selectedChannelsIds.length`.
+
+**Prompt:** Create a portfolio-analysis folder in common/ with types.ts (self-contained, no imports from old analysis files), utils.ts (all signal computation and mapping helpers), and portfolio-analysis.ts (assembly function). Add portfolioAnalysis as a computed getter in campaignStore. No prompt changes, no cleanup of existing files.
+
+**What was built:**
+- `app/src/common/portfolio-analysis/types.ts` — `PortfolioAnalysis` interface; all signal types defined here (InefficientChannelSignal, InefficientCampaignSignal, BudgetScalingCandidate, TransferCandidate, ConcentrationLevel, ConcentrationFlagSignal, CorrelationSignal); imports only from `common/types/campaign`
+- `app/src/common/portfolio-analysis/utils.ts` — all mapping and signal computation: toCampaignSummary, toChannelSummary, computeChannelStatus, toFinite, getDynamicThresholds, getTopCampaigns, getBottomCampaigns, getInefficientChannels, getInefficientCampaigns, getScalingOpportunities, getBudgetScalingCandidates, getTransferCandidates, getConcentrationFlag, getCorrelations
+- `app/src/common/portfolio-analysis/portfolio-analysis.ts` — `computePortfolioAnalysis(campaigns, channels, kpis, scope, filteredChannels)` → `PortfolioAnalysis`; thin assembly only, delegates to utils
+- `app/src/stores/campaignStore.ts` — added `portfolioAnalysis` computed getter calling `computePortfolioAnalysis` with filteredCampaigns, selectedChannels, kpis, portfolioScope, and `selectedChannelsIds.length > 0`
+
+**Key decisions & why:**
+- `types.ts` imports nothing from `common/analysis/` — makes the module independently deletable and avoids circular dependency risk when the old files are eventually removed
+- `scalingOpportunities` vs `budgetScalingCandidates` naming — summary needs a mixed campaign+channel narrative list; budget optimizer needs campaign-only operational data with capacity fields; different names prevent confusion when both appear in the same `derivedSignals` object
+- `filteredChannels` as a fifth parameter — the boolean is derived from `selectedChannelsIds.length` which is store state; the pure function has no access to it
+- Old `analysis/` files left intact — prompt integration is a separate phase; no cleanup until both prompts are migrated
+
+
+## [#271] Add campaign and channel classification with four mutually exclusive groups
+**Type:** refactor
+
+**Summary:** Replaced `topCampaigns`/`bottomCampaigns` in `PortfolioAnalysis` with a four-bucket classification system (`CampaignGroups`, `ChannelGroups`) extracted into dedicated files, adding Opportunity and Watch categories with documented marketing rationale.
+
+**Brainstorming:** The existing top/bottom split was too coarse — it missed campaigns that are under-invested (Opportunity) or show contradictory signals worth monitoring (Watch). "High variance" from the requirement cannot be computed from a static snapshot (no time series), so Watch was redefined as campaigns/channels with specific contradictory signals detectable in a single data point: funnel leak (high CTR + low CVR vs dataset median) or positive-but-underperforming ROI. Mutual exclusivity is enforced via a priority cascade (Top→Opportunity→Bottom→Watch for campaigns; Strong→Opportunity→Weak→Watch for channels), so each item appears in exactly one bucket. Small dataset handling is per-item — no minimum size guards — so 1, 2, or 3 campaigns/channels are classified correctly with empty buckets where nothing qualifies. All numeric thresholds are centralised in a single CLASSIFY_THRESHOLDS constant in classify-utils.ts to serve as the natural seam for future user configurability. Comments in each predicate explain the marketing reasoning behind the condition, not just what the code does. The user requested splitting classify into one file per entity type, with a shared utils file only for genuinely shared helpers (getMedian, getDynamicThresholds, CLASSIFY_THRESHOLDS). channels: ChannelSummary[] is kept as-is on PortfolioAnalysis (for table enumeration) alongside the new channelGroups.
+
+**Prompt:** Refine the top/bottom campaign and channel classification in portfolio-analysis. Add Opportunity (under-invested, efficient) and Watch (contradictory signals: funnel leak or positive underperforming ROI) categories. Enforce mutual exclusivity via priority cascade. Remove minimum dataset size guards — classify per-item, allow empty buckets. Extract into classify-campaigns.ts, classify-channels.ts, and classify-utils.ts. Add inline documentation explaining the marketing rationale. All thresholds in one CLASSIFY_THRESHOLDS constant for future configurability. Keep channels: ChannelSummary[] on PortfolioAnalysis; add channelGroups alongside it.
+
+**What changed:**
+- `app/src/common/portfolio-analysis/classify-utils.ts` (new) — `CLASSIFY_THRESHOLDS` (all decision boundaries with full marketing rationale comments); `getMedian(values)`; `getDynamicThresholds(campaigns)` (moved from utils.ts)
+- `app/src/common/portfolio-analysis/classify-campaigns.ts` (new) — `classifyCampaigns(campaigns, portfolioRoi) → CampaignGroups`; priority cascade Top→Opportunity→Bottom→Watch; Watch detects funnel leak (CTR > medianCtr×1.2 AND CVR < medianCvr×0.8) or underperforming positive ROI (roi < portfolioRoi×0.9); each bucket sorted most-actionable-first
+- `app/src/common/portfolio-analysis/classify-channels.ts` (new) — `classifyChannels(channels, portfolioRoi) → ChannelGroups`; priority cascade Strong→Opportunity→Weak→Watch; Watch at channel level interpreted as structural audience/format issue rather than individual campaign execution
+- `app/src/common/portfolio-analysis/types.ts` — added `CampaignGroups` and `ChannelGroups` interfaces with JSDoc; `PortfolioAnalysis` replaces `topCampaigns`/`bottomCampaigns` with `campaignGroups: CampaignGroups` and adds `channelGroups: ChannelGroups`
+- `app/src/common/portfolio-analysis/utils.ts` — removed `getDynamicThresholds`, `getTopCampaigns`, `getBottomCampaigns`; imports `getDynamicThresholds` from classify-utils; removed unused `MIN_BUDGET_SHARE_BOTTOM` constant
+- `app/src/common/portfolio-analysis/portfolio-analysis.ts` — imports `classifyCampaigns` + `classifyChannels`; removes `getTopCampaigns`/`getBottomCampaigns` calls; updated empty-guard return and full return shape
+
+**Key decisions & why:**
+- Watch = specific contradictory signals, not catch-all — gives the category a defined, actionable meaning rather than being a residual bin; campaigns with no signal stay unclassified
+- 1.2×/0.8× funnel leak thresholds — symmetric 20% deviation from median; meaningful above statistical noise in marketing data; AND requirement (both conditions together) further reduces false positives
+- watchRoiFactor 0.9 (10% buffer) — campaigns near the portfolio average are normal performers; the buffer ensures only a consistent, meaningful lag fires the signal
+- Single CLASSIFY_THRESHOLDS object — all boundaries in one place; the natural seam if thresholds become user-configurable in the future
+- classify-utils.ts exports getDynamicThresholds — avoids duplication between classify-campaigns.ts (Top gate) and utils.ts (scaling signal filtering); utils.ts imports it from there
+- Kept channels: ChannelSummary[] — flat list needed for table enumeration and raw channel access; channelGroups is additive, not a replacement
+
+
+## [#272] Simplify classifiers to single-pass loop and extract shared getFunnelMedians
+**Type:** refactor
+
+**Summary:** Replaced the four-pass loop pattern in both classifier functions with a single `else if` cascade, and extracted the duplicated `getFunnelMedians` helper into `classify-utils.ts`.
+
+**Brainstorming:** Both `classifyCampaigns` and `classifyChannels` used four separate `for` loops — one per priority level — plus a `Set` to track assigned items. The `else if` cascade achieves identical mutual exclusivity in a single pass: each item hits the first matching branch and falls through to nothing if no predicate matches. The `Set` becomes unnecessary. Additionally, both classifier files contained an identical `getFunnelMedians` function; with structural typing (`{ ctr: number | null; cvr: number | null }`) it can live in `classify-utils.ts` and serve both without coupling to either concrete type.
+
+**Prompt:** classifyChannels is over complicated. Refactor it to loop through channels once only. Check if there are functions we can extract and re-use between classification files and utils in portfolio-analysis.
+
+**What changed:**
+- `app/src/common/portfolio-analysis/classify-utils.ts` — added `getFunnelMedians(items: Array<{ ctr, cvr }>) → { medianCtr, medianCvr }`; shared by both classifiers
+- `app/src/common/portfolio-analysis/classify-campaigns.ts` — removed local `getFunnelMedians`; imports shared one from classify-utils; collapsed four loops + Set into single `else if` cascade
+- `app/src/common/portfolio-analysis/classify-channels.ts` — same refactor: removed local `getFunnelMedians`, imports shared one, single-pass loop
+
+**Key decisions & why:**
+- `else if` over `Set` tracking — mutual exclusivity is guaranteed by the branch structure itself; no auxiliary data structure needed; simpler to read and reason about
+- Structural typing for `getFunnelMedians` — accepts `Array<{ ctr: number | null; cvr: number | null }>` rather than a union of `CampaignSummary | ChannelSummary`; avoids coupling the shared helper to either concrete type; both types satisfy the shape
+- Complexity lint hint acknowledged but not acted on — the hint fires on `isWatch` (many `&&` conditions) which is already split into two named booleans (`hasFunnelLeak`, `hasUnderperformingRoi`); extracting further would reduce clarity rather than improve it
