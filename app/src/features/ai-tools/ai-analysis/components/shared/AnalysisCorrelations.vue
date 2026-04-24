@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Correlation } from '../../../types'
+import type { ExecutiveCorrelation } from '../../../types'
 
 defineProps<{
-  correlations: Correlation[]
+  correlations: ExecutiveCorrelation[]
 }>()
 </script>
 

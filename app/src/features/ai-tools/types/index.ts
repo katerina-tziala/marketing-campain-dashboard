@@ -1,5 +1,4 @@
 import type { AiModel } from '../providers/types'
-import type { BudgetOptimizerOutput, ExecutiveSummaryOutput } from '../ai-analysis/types/executive-summary.types'
 
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
@@ -21,11 +20,12 @@ export type AiConnectionError = {
   code: AiErrorCode;
   provider: AiProviderType;
 };
+
 // ── Prompt types ──────────────────────────────────────────────────────────
 
 export type PromptList = {
-   title: string, 
-    list: string[] 
+  title: string,
+  list: string[]
 };
 
 export type PromptInstructions = {
@@ -48,17 +48,16 @@ export type PromptScopeConfig = {
 };
 
 export type BusinessContext = {
-  period?: string; // e.g. "Last 90 days"
-  industry?: string; // e.g. "E-commerce"
-  goal?: string; // e.g. "Improve efficiency" or "Scale qualified demand"
-  businessStage?: string; // e.g. "Growth", "Mature", "Launch"
-  attributionModel?: string; // e.g. "Last click", "Data-driven"
-  riskTolerance?: string; // e.g. "Low", "Moderate", "High"
-  scalingTolerance?: string; // e.g. "Conservative", "Balanced", "Aggressive"
-  constraints?: string[]; // strategic or operational constraints
+  period?: string;
+  industry?: string;
+  goal?: string;
+  businessStage?: string;
+  attributionModel?: string;
+  riskTolerance?: string;
+  scalingTolerance?: string;
+  constraints?: string[];
 };
 
- 
 export type BudgetOptimizerContextInput = BusinessContext & {
   allowBudgetExpansion?: boolean;
 };
@@ -90,15 +89,13 @@ export type PortfolioCount = {
   channelCount: number;
 };
 
-export type ConfidenceLevel = "High" | "Medium" | "Low";
-
-// ── Budget Optimizer types ─────────────────────────────────────────────────
+// ── Legacy Budget Optimizer types (used by old prompt files) ──────────────
 
 export type BudgetOptimizerCampaign = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
   campaign: string;
   channel: string;
   efficiencyScore?: number;
-  spendTier?: Lowercase<ConfidenceLevel>;
+  spendTier?: 'high' | 'medium' | 'low';
 };
 
 export type BudgetOptimizerChannel = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
@@ -114,16 +111,6 @@ export type BudgetOptimizerData = {
   keyFindings?: string[];
 };
 
-export type Correlation = { 
-    finding: string;
-    implication: string;
-  };
-
-export type BudgetOptimizerResponse = BudgetOptimizerOutput & {
-  model?: AiModel;
-  timestamp?: number;
-};
-
 // ── AI Analysis types ─────────────────────────────────────────────────────
 
 export type AiAnalysisTab = 'optimizer' | 'summary';
@@ -131,6 +118,78 @@ export type AiAnalysisTab = 'optimizer' | 'summary';
 export type AiAnalysisError = {
   code: AiErrorCode;
   message: string;
+};
+
+// ── AI response literal types ─────────────────────────────────────────────
+
+export type ConfidenceLevel = 'High' | 'Medium' | 'Low'
+export type ExecutionRisk = 'Low' | 'Medium' | 'High'
+export type HealthLabel = 'Excellent' | 'Good' | 'NeedsAttention' | 'Critical'
+export type InsightType = 'Performance' | 'Opportunity' | 'Warning' | 'Achievement'
+export type ActionUrgency = 'Immediate' | 'ThisQuarter' | 'NextQuarter'
+
+// ── Executive Summary output types ────────────────────────────────────────
+
+export interface ExecutiveInsight {
+  type: InsightType
+  text: string
+  metricHighlight: {
+    label: string
+    value: string
+  }
+}
+
+export interface PriorityAction {
+  priority: number
+  action: string
+  expectedOutcome: string
+  urgency: ActionUrgency
+  successMetric: string
+}
+
+export interface ExecutiveCorrelation {
+  finding: string
+  implication: string
+}
+
+export interface ExecutiveSummaryOutput {
+  healthScore: {
+    score: number
+    label: HealthLabel
+    reasoning: string
+  }
+  bottomLine: string
+  insights: ExecutiveInsight[]
+  priorityActions: PriorityAction[]
+  correlations: ExecutiveCorrelation[]
+}
+
+// ── Budget Optimizer output types ─────────────────────────────────────────
+
+export interface BudgetRecommendation {
+  fromCampaign: string
+  toCampaign: string
+  budgetShift: number
+  reason: string
+  expectedImpact: {
+    revenueChange: number
+    conversionChange: number
+    roiEstimate: number
+  }
+  confidence: ConfidenceLevel
+  executionRisk: ExecutionRisk
+}
+
+export interface BudgetOptimizerOutput {
+  summary: string
+  recommendations: BudgetRecommendation[]
+}
+
+// ── Response types ────────────────────────────────────────────────────────
+
+export type BudgetOptimizerResponse = BudgetOptimizerOutput & {
+  model?: AiModel;
+  timestamp?: number;
 };
 
 export type ExecutiveSummaryResponse = ExecutiveSummaryOutput & {

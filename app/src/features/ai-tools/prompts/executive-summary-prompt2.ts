@@ -104,6 +104,7 @@ CRITICAL RULES:
 - Prioritize derivedSignals when forming insights and priorityActions.
 - Do not recompute, contradict, or ignore derivedSignals without clear evidence in the provided input.
 - Treat relationships as correlations, not causation.
+- Because the input is a point-in-time snapshot, do not infer trends, momentum, improvement, decline, seasonality, or sustained performance unless explicitly provided.
 
 CAMPAIGN GROUP CONTEXT:
 - campaignGroups.top campaigns are strong performers — reference as key revenue drivers.
@@ -235,3 +236,32 @@ INPUT DATA:
 ${JSON.stringify(promptInput, null, 2)}
 `.trim()
 }
+
+// ROLE
+// TASK
+
+// SCOPE
+// BUSINESS CONTEXT
+
+// CORE RULES (merged):
+// - use only input
+// - no fluff
+// - no restating dashboard
+// - focus on implications
+// - treat derivedSignals as authoritative
+
+// DATA LIMITATIONS:
+// - snapshot → no trends
+// - small dataset rules
+
+// SIGNAL PRIORITY (short)
+
+// INSIGHT RULES
+
+// PRIORITY ACTION RULES
+
+// CORRELATION RULES
+
+// OUTPUT REQUIREMENTS
+// SCHEMA
+// INPUT

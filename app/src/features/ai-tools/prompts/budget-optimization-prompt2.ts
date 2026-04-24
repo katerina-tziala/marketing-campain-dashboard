@@ -79,6 +79,7 @@ CRITICAL RULES:
 - Use businessContext to refine prioritization and risk framing, but do not override performance data.
 - If businessContext is not provided or does not mention budget expansion, only recommend budget-neutral reallocations.
 - If businessContext explicitly allows budget expansion, expansion is allowed only for strong budgetScalingCandidates within maxAdditionalBudget.
+- The input is a point-in-time snapshot. Do not infer trends, momentum, or performance changes over time unless explicitly provided.
 
 DERIVED SIGNAL PRIORITY:
 - Treat derivedSignals as authoritative.
@@ -157,3 +158,40 @@ INPUT DATA:
 ${JSON.stringify(promptInput, null, 2)}
 `.trim()
 }
+
+// These overlap:
+
+// CRITICAL RULES
+// DERIVED SIGNAL PRIORITY
+// BUDGET SHIFT RULES
+// REALISM CONSTRAINTS
+
+// They’re not bad — but you could compress ~15–20% later.
+
+// 4. Missing “no self-reinforcing loops” guardrail
+
+// Subtle but important.
+
+// Sometimes models do:
+
+// “Move budget from A to B because B is strong, and B is strong because it gets more budget”
+
+// You want to prevent circular logic.
+
+// Add:
+
+// Do not justify a recommendation solely by restating the same efficiency signal. Each recommendation must include a distinct reason beyond simple ranking.
+// 5. Summary could drift into fluff
+
+// You say:
+
+// summary: one to two sentences
+
+// But no constraint like:
+
+// must reflect top recommendation
+// must be decision-oriented
+
+// Better mental note (no need to change now):
+
+// summary should compress the strongest reallocation idea

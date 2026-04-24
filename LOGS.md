@@ -5616,3 +5616,59 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Prompt generators curate `promptInput` locally — each tab's AI context is different; the curation belongs inside the prompt function, not in an adapter layer; this removes the need for `BudgetOptimizerAnalysis` and `SummaryAnalysis` types entirely
 - `v-if="response"` over non-null assertion — the slot is only rendered when `hasResult` is true, but the `!` assertions were fragile against reactive timing; `v-if` makes the guard explicit in the template and eliminates the assertions cleanly
 - `scope.campaigns === scope.selectedCampaigns` inside `computePortfolioAnalysis` — the analysis scope is defined by what is selected; the full portfolio campaign list (needed by `PortfolioScope` for display) is maintained separately in the store's `portfolioScope` computed from `portfolioChannels`
+
+
+## [#274] Delete common/analysis, buildBudgetOptimizerData, and inline orphaned types
+**Type:** refactor
+
+**Summary:** Removed the dead `common/analysis/` folder (4 files) and `buildBudgetOptimizerData.ts`, inlined the 5 AI response literal types into `executive-summary.types.ts`, and removed the duplicate `ConfidenceLevel` from `ai-tools/types/index.ts`.
+
+**Brainstorming:** With `PortfolioAnalysis` now the direct input to both prompt generators, the intermediate analysis layer in `common/analysis/` became fully dead code — the function files were never called, and the `.types.ts` files were only imported for 5 string union literals (`ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency`). Those 5 literals belong in the AI feature, not in `common`, since they describe AI response output shapes. `buildBudgetOptimizerData.ts` was similarly dead — not called anywhere active (the old `budget-optimization-prompt.ts` imports only the type `BudgetOptimizerData`, not the function). `common/utils/` was confirmed correct where it is: all 5 files are shared between dashboard and portfolio-analysis layers with no clear migration target. The `ConfidenceLevel` duplicate was removed from `types/index.ts` — its use in `BudgetOptimizerCampaign.spendTier` replaced with an inlined `'high' | 'medium' | 'low'` literal.
+
+**Prompt:** Clean up: without touching prompts folder, check if we need common/analysis folder; move related interfaces and functions to ai-analysis feature; check which of common/utils can move to portfolio-analysis; check if we need buildBudgetOptimizerData.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/types/executive-summary.types.ts` — removed imports from `common/analysis`; inlined `ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency` as local type declarations; cleaned up comments; standardised quote style
+- `app/src/features/ai-tools/types/index.ts` — removed `ConfidenceLevel` type declaration; replaced `Lowercase<ConfidenceLevel>` in `BudgetOptimizerCampaign.spendTier` with `'high' | 'medium' | 'low'`
+- `app/src/common/analysis/` — deleted entirely (budget-optimization-analysis.types.ts, budget-optimization-analysis.ts, executive-summary-analysis.types.ts, executive-summary-analysis.ts)
+- `app/src/features/ai-tools/utils/buildBudgetOptimizerData.ts` — deleted
+
+**Key decisions & why:**
+- Inline literal types rather than re-export from types/index.ts — `executive-summary.types.ts` is imported by `types/index.ts`, so the reverse import would be circular; inlining avoids the dependency and keeps the types next to the interfaces that use them
+- `common/utils/` stays unchanged — `campaign-performance.ts` is used by both `portfolio-analysis` and dashboard components; `formatters.ts`/`sorting.ts` are dashboard-facing; `campaign-channel.ts` is store-facing; `math.ts` is foundational; none have a clear home in `portfolio-analysis`
+- Legacy `BudgetOptimizerData`/`BudgetOptimizerCampaign`/`BudgetOptimizerChannel` kept in `types/index.ts` — the old `budget-optimization-prompt.ts` imports them; removing them would break the legacy file which is intentionally kept compilable
+
+
+## [#275] Merge ai-analysis/types into ai-tools/types/index.ts
+**Type:** refactor
+
+**Summary:** Moved all types from `ai-analysis/types/executive-summary.types.ts` into the central `ai-tools/types/index.ts`, deleted the `ai-analysis/types/` folder, and replaced the duplicate `Correlation` type with `ExecutiveCorrelation`.
+
+**Brainstorming:** `ai-analysis/types/` was a two-file folder (`executive-summary.types.ts` + barrel `index.ts`) with a single external consumer: `ai-tools/types/index.ts` imported `BudgetOptimizerOutput` and `ExecutiveSummaryOutput` from it. With `common/analysis/` already deleted and both output type trees belonging to the same feature, maintaining a separate subfolder added indirection with no benefit. The `Correlation` type in `types/index.ts` (`{ finding: string; implication: string }`) was structurally identical to `ExecutiveCorrelation` in `executive-summary.types.ts`; after merging, only `ExecutiveCorrelation` is needed. `AnalysisCorrelations.vue` was the one active consumer of `Correlation` — updated to `ExecutiveCorrelation`.
+
+**Prompt:** Clean up types in ai-tools/types and move all executive-summary.types to index since it does not make sense anymore.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — removed import from `ai-analysis/types/executive-summary.types`; inlined all response literal types, output interfaces, and response types directly; removed `Correlation` type (replaced by `ExecutiveCorrelation`); reorganised with section comments
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue` — updated import from `Correlation` to `ExecutiveCorrelation`
+- `app/src/features/ai-tools/ai-analysis/types/` — deleted entirely (executive-summary.types.ts + index.ts)
+
+**Key decisions & why:**
+- All types in one file rather than re-exported from a subfolder — the subfolder only existed to group output types; with `common/analysis/` gone and the types folded into the feature's single index, the grouping adds no value
+- `ExecutiveCorrelation` kept over `Correlation` — `ExecutiveCorrelation` is the more specific name and comes from the response schema; `Correlation` was a generic alias with no added meaning
+
+
+## [#276] Mark upload-replace flow as complete in CLAUDE.md
+**Type:** update
+
+**Summary:** Removed the stale "Upload-replace flow is next" placeholder from the Status section and replaced it with an accurate description of what was built.
+
+**Brainstorming:** The upload-replace flow was already fully implemented (`ReplaceDataModal`, `useUploadModal` composable, header button wiring in `AppShell`) and marked `[x]` in the feature checklist. The only stale reference was the trailing sentence in the Status paragraph. No code changes needed — documentation-only update.
+
+**Prompt:** This has been completed, update CLAUDE.md respectively.
+
+**What changed:**
+- `CLAUDE.md` — replaced "Upload-replace flow is next." with a concise description of the implemented flow: header Upload CSV button → `ReplaceDataModal` confirmation when data exists → confirmed opens `UploadModal`; `useUploadModal` composable owns all state and provides `openUploadModal`
+
+**Key decisions & why:**
+- Description follows the same inline style as the rest of the Status paragraph — no separate section needed since the feature is small and already documented in the architecture and checklist

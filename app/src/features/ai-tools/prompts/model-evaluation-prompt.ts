@@ -3,98 +3,112 @@ import type { AiModelCandidate } from '../providers/types'
 const OUTPUT_SCHEMA = `{
   "models": [
     {
-      "id": "string — exact identifier copied from the provided list",
-      "displayName": "string — concise, user-friendly model name",
-      "family": "string — inferred family name such as Gemini, Llama, Gemma, Qwen, Mixtral, or Other",
-      "strength": "string — short capability label",
-      "strengthScore": number,
-      "reason": "string — brief justification"
+      "id": "exact identifier copied from the provided list",
+      "model": "exact identifier copied from the provided list",
+      "displayName": "concise user-friendly model name",
+      "provider": "user-friendly provider name",
+      "family": "model family such as Gemini, Llama, Gemma, Qwen, Mixtral, or Other",
+      "strength": "short capability label",
+      "strengthScore": 9,
+      "reason": "brief justification tied to the use case"
     }
   ]
 }`
 
 export function generateModelEvaluationPrompt(
   models: AiModelCandidate[],
-  providerRules: string[],
+  providerRules: string[] = [],
 ): string {
   const rulesList = providerRules.map((r) => `- ${r}`).join('\n')
 
   return `
 ROLE:
-You are an AI model selection specialist.
-Be concise, analytical, strict about evidence, and free of fluff.
+You are a model selection specialist responsible for ranking LLMs for a marketing analytics application.
 
 TASK:
-Evaluate all provided models for a marketing analytics application.
+Evaluate every model in the provided list, but return only the strongest models.
+Rank models by suitability for marketing analytics, structured reasoning, summarization, and reliable JSON generation.
 
 APPLICATION USE CASE:
-The models will be used for:
-- executive summary generation
-- budget optimization recommendations
-- reliable structured JSON output generation
+The selected models will be used to:
+- generate marketing campaign executive summaries
+- generate marketing budget optimization recommendations
+- analyze marketing and business performance data
+- produce reliable structured JSON outputs
 
-SELECTION GOAL:
-Assess each model based on suitability for:
-- reasoning quality
-- summarization quality
-- business and marketing analysis
+SELECTION CRITERIA:
+Prioritize models with:
+- strong reasoning ability
+- strong summarization capability
+- strong business and marketing analysis capability
 - reliable structured JSON generation
-- expected consistency and production suitability
+- consistent performance across repeated requests
+- stable generally available identifiers
+- sustainable expected usage characteristics
+
+Deprioritize models when:
+- the identifier contains "preview", "experimental", "latest", "beta", or similar instability markers
+- the model appears small, lightweight, or specialized for non-analytical use
+- the model is likely weaker for reasoning, summarization, or structured output reliability
 
 INPUT EVIDENCE RULES:
-- Use the provided model list as the primary source of truth.
+- Use the provided model list as the source of truth for available identifiers.
 - Use only identifiers present in the provided list.
-- Do not invent or modify identifiers.
-- If metadata required for a criterion is not present in the list, use conservative judgment.
-- Do not fabricate usage limits, token limits, stability guarantees, or availability details if they are not explicitly supported by the input.
+- Do not invent, normalize, rename, or modify model identifiers.
+- If an identifier appears as "id", use that value.
+- If no "id" exists but "name" exists, use "name" as the identifier.
+- Both "id" and "model" in the output must exactly match the chosen identifier.
+- If metadata is incomplete, make a conservative suitability judgment from the identifier and provider context.
+- Do not fabricate exact rate limits, token limits, or availability guarantees.
 
 PROVIDER-SPECIFIC RULES:
-${rulesList}
+${rulesList || '- No additional provider-specific rules provided.'}
 
-STRICT RULES:
-- Return only models that appear in the provided list.
-- Evaluate and return all valid models from the provided list.
-- Do not omit any valid model from the provided list.
+STRICT SELECTION RULES:
+- Evaluate all models from the input list internally.
+- Return only the top-ranked models.
+- Return no more than 20 models.
+- Do not return weak models just to be comprehensive.
 - Do not duplicate models.
-- The "id" field must exactly match the input identifier.
-- Assign a strengthScore to every model based on suitability.
-- Models with similar identifiers must use consistent family naming.
-- Models with similar identifiers must use consistent displayName formatting.
-- Deprioritize models whose identifier suggests instability such as "preview", "experimental", or "latest".
-
-NOISE CONTROL:
-- Keep every reason short and specific to the use case.
-- Do not include commentary outside required fields.
-- Do not repeat the same reasoning across multiple models.
-- Keep displayName short, readable, and suitable for UI display.
-- Do not use vague praise such as "good overall" without linking it to the application needs.
+- The output must be ranked in descending order by strengthScore.
+- Prefer stable production-suitable models over preview, latest, beta, or experimental models.
+- For similar model families, prefer the strongest stable variant.
 
 SCORING RULES:
-- Assign strengthScore from 1 to 10.
-- 10 = excellent fit for reasoning, summarization, and structured business analysis
+Assign strengthScore from 1 to 10:
+- 10 = excellent fit for reasoning, summarization, structured JSON, and marketing analytics
 - 8-9 = very strong fit with minor limitations
 - 6-7 = usable but meaningfully weaker
-- below 6 = generally weak for this use case
-- Use the score range realistically.
+- below 6 = generally unsuitable and should usually not be returned
 
-FINAL QUALITY CHECK:
-- Every returned model must appear in the input list.
-- The number of returned models must match the number of valid models in the input list.
-- No duplicate models.
-- Every "id" must exactly match an input identifier.
-- Every model must have a valid strengthScore between 1 and 10.
-- Family naming must be consistent across similar models.
-- Reasons must be concise and tied to the application use case.
+REASONING INSTRUCTIONS:
+Before answering, internally evaluate:
+1. reasoning ability
+2. summarization quality
+3. marketing/business analysis suitability
+4. structured JSON reliability
+5. stability of the model identifier
+6. expected consistency for repeated production-like use
+7. provider-specific constraints
 
 OUTPUT REQUIREMENTS:
-- Return only valid JSON matching the schema exactly.
-- Do not add extra fields.
-- Do not include markdown, commentary, or wrapper text.
-- Use double quotes for all strings.
+- Return only valid JSON.
+- Do not include markdown.
+- Do not include commentary outside the JSON.
 - Do not include trailing commas.
+- Use double quotes for all strings.
+- Do not add, remove, or rename schema fields.
+- The final response must contain only the JSON object.
 
-OUTPUT SHAPE:
-- return all valid models
+FINAL VALIDATION CHECK:
+- Every returned model appears in the input list.
+- Every "id" exactly matches an input identifier.
+- Every "model" exactly matches the same identifier as "id".
+- No duplicate models.
+- No more than 20 models.
+- Models are ranked from strongest to weakest.
+- Every strengthScore is between 1 and 10.
+- Every reason is short, specific, and tied to the application use case.
 
 RESPONSE SCHEMA:
 ${OUTPUT_SCHEMA}

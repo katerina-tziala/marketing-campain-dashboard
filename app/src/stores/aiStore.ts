@@ -80,8 +80,22 @@ export const useAiStore = defineStore('ai', () => {
   }
 
   return {
-    provider, apiKey, isConnected, isConnecting, connectionError, models, selectedModel,
-    selectedModelLimitReached, allModelsLimitReached,
-    aiPanelOpen, connect, disconnect, markModelLimitReached, selectNextAvailableModel, openPanel, closePanel,
+    provider,
+    apiKey,
+    isConnected,
+    isConnecting,
+    connectionError,
+    models,
+    selectedModel,
+    selectedModelLimitReached,
+    allModelsLimitReached,
+    aiPanelOpen,
+    // actions
+    connect,
+    disconnect,
+    markModelLimitReached,
+    selectNextAvailableModel,
+    openPanel,
+    closePanel,
   }
 })
