@@ -45,7 +45,7 @@ const iconComponent = computed(() => ICON_MAP[props.variant])
     min-w-[17.5rem]
     max-w-[25rem]
     border
-    bg-surface-secondary
+    // bg-surface-secondary
     shadow-lg;
 
   &.success {

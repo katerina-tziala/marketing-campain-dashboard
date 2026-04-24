@@ -59,7 +59,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
   grid
   grid-cols-1
   grid-rows-[min_content-min-content_1fr]
-  pt-4
+  pt-5
   gap-y-5;
 }
 
@@ -71,13 +71,14 @@ const openAiPanel = inject<() => void>('openAiPanel')
   @apply overflow-y-auto w-full flex
     flex-col
     gap-5
+    px-4
     pb-6;
     container-type: inline-size;
 }
 
-.card.table-card {
-  @apply p-4;
-}
+// .card.table-card {
+//   @apply p-4;
+// }
 
 .card-title.table-card-title {
   @apply text-base shrink-0 font-normal text-primary-300;

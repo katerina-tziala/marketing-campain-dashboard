@@ -176,13 +176,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── panel-formatters.ts          # Display string helpers for AI panels — exports: formatRoi, formatEuro, formatNumber
 │   │   │   └── index.ts            # Barrel export (empty — AiToolsDrawer moved to shell/)
 │   │   ├── dashboard/              # Dashboard feature folder
-│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; table section uses global `.card` class
+│   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; .data-visualization sets container-type: inline-size to enable child container queries; table section uses global `.card` class
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── DashboardHeader.vue # Dashboard header — reads campaignStore (title, campaign/channel counts) + aiStore (isConnected, aiPanelOpen); emits aiClick (camelCase); multi-root (title-row + details); AI button disabled when panel open; connected dot (top-right) shown when AI connected + panel closed; layout wrapper provided by DashboardView
-│   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CAC); owns .kpi-grid scoped style
+│   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CAC); .kpi-grid uses @container breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols)
 │   │   │       ├── DashboardCharts.vue # Charts section — props: campaigns (CampaignPerformance[]), channels (Channel[]), kpis (CampaignKPIs); all chart computeds internal (campaignColorMap, roiChartData, budgetCampaignData, revVsBudgetData via channels, funnelValues via kpis); owns .charts-grid scoped style
 │   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
-│   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot for projected secondary metric; flat scoped styles (no BEM)
+│   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot; uses @include cq-container('kpi-card') + @include cq-up(tiny, 'kpi-card') for container-query-driven font size scaling; flat scoped styles (no BEM)
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; reads pre-calculated roi/ctr/cvr/cac directly; revenue+ROI coloring via percentageClass(c.roi); uses global data-table classes; channel cell uses `.badge.info`
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
 │   │   └── data-transfer/          # CSV upload & data transfer feature folder
@@ -212,13 +212,16 @@ app/                        # Vue 3 + Vite project
 │   │           ├── validate-campaign-data.ts # Campaign data validator — EXPECTED_HEADERS (excludes rowId — system-generated, not a CSV column); column presence check; empty-file check; extractCampaignFields(row, headerMap, rowId) → Campaign; processRows returns CampainDataProcessRowsResult (Campaign[] — no rowNum spread, rowId already set); delegates duplicate detection; returns CampainDataParseResult with both invalid_rows and duplicate_campaigns errors when applicable
 │   │           └── validate-row-data.ts    # Per-row field validation — validateRow + three sub-validators (string/numeric/funnel); guard helpers; returns CampainDataRowError[]
 │   ├── styles/
-│   │   ├── index.scss              # Root barrel — @use components/index + utilities/index; imported by style.scss
+│   │   ├── index.scss              # Root barrel — @use themes/dark + components/index + utilities/index; imported by style.scss
+│   │   ├── themes/
+│   │   │   └── dark.scss           # CSS custom properties for dark theme — primary scale (50–1000), neutral-100, color-background, color-surface, color-typography, color-on-surface-high, color-surface-outline; applied on :root and [data-theme="dark"]
+│   │   ├── container-queries.scss  # SCSS mixin library for container queries — $container-sizes scale (tiny/xs/sm/md/lg/xl/2xl); mixins: cq-container($name?, $type?), cq-up($size, $name?), cq-down($size, $name?), cq-between($min, $max, $name?); globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
 │   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
-│   │   │   ├── _card.scss          # @layer components — .card, .card-secondary; flat child classes: .card-head, .card-title, .card-content
+│   │   │   ├── _card.scss          # @layer components — .card (border-surface-outline), .card-secondary; flat child classes: .card-head, .card-title, .card-content; .card.card-smaller-spaces modifier
 │   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-typography-subtle)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
@@ -229,11 +232,11 @@ app/                        # Vue 3 + Vite project
 │   │       └── _scrollbar.scss     # @layer utilities — .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface
 │   ├── App.vue                 # Root component — AppShell + RouterView
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
-│   └── style.scss              # Global styles: Tailwind directives, CSS theme tokens, dark mode; imports styles/index
+│   └── style.scss              # Global styles: Tailwind directives, dark mode; imports styles/index (theme tokens now in styles/themes/dark.scss)
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; danger (default + -5p), success, warning, typography (default/subtle/intense), surface (default/secondary), surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; badge colors moved to SCSS
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; background/surface/surface-outline/on-surface-high/typography.DEFAULT via CSS vars; danger (default + -5p), success, warning, surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token
 ├── postcss.config.js
-├── vite.config.ts              # @ alias → src/
+├── vite.config.ts              # @ alias → src/; SCSS additionalData globally injects container-queries.scss as *
 └── package.json                # Locked via package-lock.json
 .gitignore                      # Excludes node_modules, dist, .env
 ```

@@ -1,0 +1,93 @@
+@use "sass:map";
+/* =========================================
+   Container Query System
+   ========================================= */
+
+/* Container size scale (tweak as needed) */
+$container-sizes: (
+  tiny: 220px,   // very small cards
+  xs: 280px,
+  sm: 320px,
+  md: 400px,
+  lg: 480px,
+  xl: 640px,
+  2xl: 768px
+);
+
+/* =========================================
+   Mixin: define container
+   ========================================= */
+
+@mixin cq-container($name: null, $type: inline-size) {
+  container-type: #{$type};
+
+  @if $name {
+    container-name: #{$name};
+  }
+}
+
+/* =========================================
+   Mixin: min-width query
+   ========================================= */
+
+@mixin cq-up($size, $name: null) {
+  $value: map.get($container-sizes, $size);
+
+  @if not $value {
+    @error "Unknown container size: #{$size}";
+  }
+
+  @if $name {
+    @container #{$name} (min-width: #{$value}) {
+      @content;
+    }
+  } @else {
+    @container (min-width: #{$value}) {
+      @content;
+    }
+  }
+}
+
+/* =========================================
+   Mixin: max-width query
+   ========================================= */
+
+@mixin cq-down($size, $name: null) {
+  $value: map.get($container-sizes, $size);
+
+  @if not $value {
+    @error "Unknown container size: #{$size}";
+  }
+
+  @if $name {
+    @container #{$name} (max-width: #{$value}) {
+      @content;
+    }
+  } @else {
+    @container (max-width: #{$value}) {
+      @content;
+    }
+  }
+}
+
+/* =========================================
+   Mixin: range query
+   ========================================= */
+@mixin cq-between($min, $max, $name: null) {
+  $min-value: map.get($container-sizes, $min);
+  $max-value: map.get($container-sizes, $max);
+
+  @if not $min-value or not $max-value {
+    @error "Unknown container size(s): #{$min}, #{$max}";
+  }
+
+  @if $name {
+    @container #{$name} (min-width: #{$min-value}) and (max-width: #{$max-value}) {
+      @content;
+    }
+  } @else {
+    @container (min-width: #{$min-value}) and (max-width: #{$max-value}) {
+      @content;
+    }
+  }
+}

@@ -140,7 +140,7 @@ function selectRow(campaignName: string, rowId: number): void {
     font-semibold
     tracking-wide
     text-typography-subtle
-    bg-surface-secondary
+    // bg-surface-secondary
     border-t
     border-b
     border-surface-border-secondary

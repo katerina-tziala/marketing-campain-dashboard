@@ -22,7 +22,7 @@ defineProps<{ kpis: PortfolioKPIs }>()
         :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <template #secondary>
-          ROI: <span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
+          <p>ROI</p><span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
         </template>
       </KpiCard>
       <KpiCard
@@ -30,7 +30,8 @@ defineProps<{ kpis: PortfolioKPIs }>()
         :value="formatCompactNumber(kpis.totalConversions)"
       >
         <template #secondary>
-          CVR: <span class="roi-text" :class="percentageClass(kpis.aggregatedCVR)">{{ formatPercentage(kpis.aggregatedCVR) }}</span>
+         <p>CVR</p>
+         <span class="roi-text" :class="percentageClass(kpis.aggregatedCVR)">{{ formatPercentage(kpis.aggregatedCVR) }}</span>
         </template>
       </KpiCard>
       <KpiCard
@@ -46,7 +47,7 @@ defineProps<{ kpis: PortfolioKPIs }>()
 
 <style lang="scss" scoped>
 .kpi-grid {
-  @apply w-full grid grid-cols-1 gap-4 mx-auto max-w-7xl px-4;
+  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl;
 
   @container (min-width: 22.5rem) {
     @apply grid-cols-2;

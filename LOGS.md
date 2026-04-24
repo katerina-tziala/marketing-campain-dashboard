@@ -5775,3 +5775,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Guard moved to `canAnalyze`, not inlined at each call site — `canAnalyze` is the only path that can reach `getCurrentCacheKey` without an `evaluationDisabled` guard; the other callers are already safe by construction
 - `getCurrentCacheKey` returns `string` unconditionally — callers after the `evaluationDisabled` guard have a non-null provider by definition; making the return type reflect that removes defensive checks that were pure noise
+
+
+## [#282] Container query system + CSS variable theme tokens
+**Type:** architecture
+
+**Summary:** Introduced a SCSS mixin library for container queries globally injected via Vite, extracted dark theme tokens into a dedicated `themes/dark.scss` file, migrated key Tailwind color tokens to CSS custom properties, and rewired the KPI grid and KpiCard to use container queries instead of viewport media queries.
+
+**Brainstorming:** The dashboard's KPI grid was using viewport-based media queries, which break when the AI drawer opens and compresses the content area — the viewport width does not change but the available space for the grid does. Container queries solve this precisely: the grid reacts to the width of its own container, not the viewport. To use container queries cleanly across multiple components without per-file imports, the mixin library is injected globally via Vite's `additionalData`. The theme tokens were scattered across `style.scss` as hardcoded values — extracting them to `themes/dark.scss` and wiring them into Tailwind as CSS variables makes the color system coherent and prepares for future theme switching.
+
+**Prompt:** Set up a container query SCSS mixin system and make it globally available. Extract the dark theme into a proper tokens file. Migrate the KPI grid layout to use container queries so it responds to the AI drawer compression rather than viewport width. Wire CSS variable-based color tokens into Tailwind.
+
+**What was built:**
+- `app/src/styles/container-queries.scss` — new SCSS mixin library: `$container-sizes` scale (tiny 220px / xs 280px / sm 320px / md 400px / lg 480px / xl 640px / 2xl 768px); mixins `cq-container`, `cq-up`, `cq-down`, `cq-between` with optional named-container support
+- `app/src/styles/themes/dark.scss` — new file; CSS custom properties for the dark theme (primary scale 50–1000, color-background, color-surface, color-typography, color-on-surface-high, color-surface-outline); applied on `:root` and `[data-theme="dark"]`
+- `app/src/styles/index.scss` — updated to `@use './themes/dark.scss'` as first import
+- `app/src/style.scss` — simplified; theme tokens removed (now live in `themes/dark.scss`)
+- `app/tailwind.config.js` — `background`, `surface`, `surface-outline`, `on-surface-high`, and `typography.DEFAULT` now reference CSS custom properties via `rgb(var(--color-*) / <alpha-value>)` instead of hardcoded values
+- `app/vite.config.ts` — added `css.preprocessorOptions.scss.additionalData` to globally inject `@use "@/styles/container-queries" as *` into every SCSS file
+- `app/src/features/dashboard/DashboardView.vue` — `.data-visualization` scoped style adds `container-type: inline-size` to establish the container context for child grid queries
+- `app/src/features/dashboard/components/DashboardKpis.vue` — `.kpi-grid` now uses `@container (min-width: Xrem)` breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols) instead of viewport media queries
+- `app/src/features/dashboard/components/KpiCard.vue` — uses `@include cq-container('kpi-card')` on the card root and `@include cq-up(tiny, 'kpi-card')` to scale the value font size from 2xl to 3xl when the card is wide enough
+- Minor style token updates across `_card.scss`, `_forms.scss`, `Tabs.vue`, `RadioToggle.vue`, `ToastNotification.vue`, `CampainDuplicationsTable.vue` to align with the new CSS variable token names
+
+**Key decisions & why:**
+- Vite `additionalData` for global mixin injection — avoids per-file `@use` boilerplate; the mixin file contains no CSS output (only variables and mixins) so injecting it globally has zero bundle cost
+- Container queries over media queries for the KPI grid — the AI drawer compresses the content area without changing the viewport width; only container queries respond to actual available space
+- Named container on KpiCard (`kpi-card`) — allows the card to query its own width independently of the grid; a single card can appear in different layout contexts without needing separate media query overrides
+- Theme tokens in a dedicated `themes/dark.scss` — keeps the token definitions co-located with the theme they belong to; `style.scss` stays as a thin entry point; future light theme would be a sibling file
+- CSS variables in Tailwind via `rgb(var(--color-*) / <alpha-value>)` — preserves Tailwind's opacity modifier support (`bg-surface/50`) while making the underlying value runtime-configurable
