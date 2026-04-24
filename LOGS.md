@@ -5869,3 +5869,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `prompts/types.ts` as a dedicated file — prompt-building primitives are only used by `prompt-utils.ts` and the legacy prompt files; keeping them separate from both the provider/connection hub and the analysis response types avoids cross-concern leakage
 - Legacy types moved locally (not deleted) — the old `budget-optimization-prompt.ts` and `executive-summary-prompt.ts` are non-exported dead code but are kept compilable; inlining their types makes them fully self-contained and removes all traces from the shared hub
 - `common/portfolio-analysis/index.ts` created — the folder had no barrel despite having five internal files; the barrel lets external consumers (`campaignStore`, `ai-analysis/types`) import from a single path rather than reaching into internals
+
+
+## [#285] Move aiStore to ai-connection/stores as useAiConnectionStore; tighten providers barrel
+**Type:** refactor
+
+**Summary:** Moved the AI connection Pinia store from `stores/aiStore.ts` into `features/ai-tools/ai-connection/stores/` as `useAiConnectionStore`, co-locating it with the connection UI it serves; tightened `providers/index.ts` to export only symbols consumed externally.
+
+**Brainstorming:** The store was sitting in the global `stores/` folder despite being exclusively an ai-connection concern — it holds provider state, API key, connection status, model list, and panel open/close. Moving it into `ai-connection/stores/` makes the feature folder self-contained: components, utils, and store all live together. The rename from `useAiStore` / `'ai'` to `useAiConnectionStore` / `'aiConnection'` clarifies intent. The `providers/index.ts` barrel was exporting everything from `./utils` (including internal error-handling symbols only used inside providers) and `./providers-meta` (imported directly by components, never via the barrel); narrowing to named exports removes accidental leakage of internal API surface.
+
+**Prompt:** Move aiStore to ai-connection/stores folder, define it as aiConnection, update barrel files in ai-tools folder to export only what is consumed.
+
+**What changed:**
+- `features/ai-tools/ai-connection/stores/aiConnectionStore.ts` — new file; store content moved from `stores/aiStore.ts`; store id changed from `'ai'` to `'aiConnection'`; export renamed from `useAiStore` to `useAiConnectionStore`; import paths updated to resolve from new location
+- `features/ai-tools/ai-connection/stores/index.ts` — new barrel; exports `useAiConnectionStore`
+- `stores/aiStore.ts` — replaced with location comment (pending deletion); all consumers updated
+- `features/ai-tools/providers/index.ts` — removed `export * from './utils'` (wildcard) and `export * from './providers-meta'`; replaced with named exports: `getAllModelsLimitReached`, `getModelById`, `getNextAvailableMode` from utils; kept `export * from './types'`, `runProviderPrompt`, `connectProvider`
+- `shell/AppShell.vue` — import + usage updated to `useAiConnectionStore`
+- `features/dashboard/components/DashboardHeader.vue` — import + usage updated
+- `features/ai-tools/components/AiToolsContent.vue` — import + usage updated
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — import + usage updated
+- `features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — import + usage updated
+- `stores/aiAnalysisStore.ts` — import + usage updated
+- `CLAUDE.md` — architecture updated: removed `aiStore.ts` entry, added `ai-connection/stores/` sub-tree, updated `providers/index.ts` description, updated `DashboardHeader.vue` and `AppShell.vue` descriptions, updated `aiAnalysisStore.ts` description
+
+**Key decisions & why:**
+- Store placed in `ai-connection/stores/` (not a top-level `ai-tools/stores/`) — the store serves only the connection sub-feature; placing it alongside the connection components and utils gives the clearest ownership boundary
+- Rename to `'aiConnection'` store id — the old `'ai'` id was ambiguous; `'aiConnection'` matches the folder name and signals the store's single responsibility
+- `providers/index.ts` named exports only — `export * from './utils'` was leaking `normalizeConnectionError`, `assertResponseOk`, `parseJsonResponse`, `toValidModels` — all internal to provider implementations and not consumed by any external caller; named exports make the public API explicit
+- `export * from './providers-meta'` removed — `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS` are imported directly from `providers-meta` by the two connection components, not via the barrel; removing the re-export eliminates a redundant path without breaking anything

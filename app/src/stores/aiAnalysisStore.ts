@@ -7,7 +7,7 @@ import type {
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
 } from '../features/ai-tools/ai-analysis/types'
-import { useAiStore } from './aiStore'
+import { useAiConnectionStore } from '../features/ai-tools/ai-connection/stores'
 import { useCampaignStore } from './campaignStore'
 import { ANALYSIS_ERROR_MESSAGES, runAnalysisPrompt, getCacheKey } from '../features/ai-tools/ai-analysis/utils'
 
@@ -66,7 +66,7 @@ function setDisplay(
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
-  const aiStore = useAiStore()
+  const aiStore = useAiConnectionStore()
   const campaignStore = useCampaignStore()
 
   // ── Shared state ──────────────────────────────────────────────────────

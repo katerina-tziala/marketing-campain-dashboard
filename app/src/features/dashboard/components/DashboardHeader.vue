@@ -2,10 +2,10 @@
 import { computed } from 'vue'
 import { SparklesIcon } from '../../../ui'
 import { useCampaignStore } from '../../../stores/campaignStore'
-import { useAiStore } from '../../../stores/aiStore'
+import { useAiConnectionStore } from '../../ai-tools/ai-connection/stores'
 
 const store = useCampaignStore()
-const aiStore = useAiStore()
+const aiStore = useAiConnectionStore()
 
 const emit = defineEmits<{ 'aiClick': [] }>()
 

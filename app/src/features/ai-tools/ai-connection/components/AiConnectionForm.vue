@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useAiStore } from '../../../../stores/aiStore'
+import { useAiConnectionStore } from '../stores'
 import { Spinner, PasswordInput, RadioToggle } from '../../../../ui'
 import type { AiProviderType } from '../../types'
 import { PROVIDER_OPTIONS, PROVIDER_HELP } from '../../providers/providers-meta'
 import { ERROR_MESSAGES, ERROR_HINTS } from '../utils'
 
-const store = useAiStore()
+const store = useAiConnectionStore()
 
 const selectedProvider = ref<AiProviderType>('groq')
 const apiKey = ref('')
