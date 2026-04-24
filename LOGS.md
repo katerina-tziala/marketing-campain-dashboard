@@ -5828,3 +5828,44 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ai-analysis/utils/` as destination — badge variants are consumed exclusively by ai-analysis components; co-locating them with the other ai-analysis utilities (getCacheKey, analysis-prompt, error-messages) removes the cross-folder hop
 - `formatCurrency` for euro amounts, `formatPercentage` for ROI — direct functional equivalents in common; locale difference (`en-IE` → `en`) and ROI decimal change (0 → 2) are acceptable since the common formatters are the project standard
 - Deleted the `ai-tools/utils/` folder entirely — an empty folder with no barrel serves no purpose
+
+
+## [#284] Isolate types per feature — portfolio-analysis barrel, slim ai-tools/types, ai-analysis/types expansion, prompts/types
+**Type:** refactor
+
+**Summary:** Split the monolithic `ai-tools/types/index.ts` into feature-scoped type files, moved portfolio-specific summary types out of `common/types/campaign.ts` into `common/portfolio-analysis/types.ts`, created a barrel for `common/portfolio-analysis/`, extracted prompt-building primitives into `ai-tools/prompts/types.ts`, expanded `ai-analysis/types/index.ts` to own all AI response types, and relocated legacy types into the legacy prompt file where they belong.
+
+**Brainstorming:** `ai-tools/types/index.ts` had grown into a 199-line mega-hub mixing provider/connection types, analysis meta-types, prompt-building primitives, response literal types, output interfaces, response types, building blocks, and legacy data types. Similarly, `common/types/campaign.ts` contained portfolio classification summary types (`CampaignSummary`, `ChannelSummary`, `PortfolioSummary`, `SummaryMetricStatus`, `ScalingCandidateSignal`) that are exclusively consumed within `common/portfolio-analysis/` — a clear misplacement. The goal was feature-scoped isolation: each folder's types live in that folder, each layer imports only what it owns. The ai-tools feature was split into three focused type files: `ai-tools/types/` (5 cross-feature provider+meta types), `ai-analysis/types/` (all response types + BusinessContext), and `prompts/types.ts` (prompt-building primitives). Legacy types were moved locally into the legacy prompt file.
+
+**Prompt:** Audit every type and interface across the codebase. Move each type to the folder that owns it. Create barrel files per folder for clean imports. Remove types from shared hubs that are only used within one sub-feature. Move all types used only by legacy prompt files directly into those files as local (non-exported) types. The goal is to isolate related types per feature so that each feature folder's index.ts or types/ barrel is the sole source of truth for that feature's types.
+
+**What changed:**
+- `common/types/campaign.ts` — removed `PortfolioSummary`, `SummaryMetricStatus`, `ChannelSummary`, `CampaignSummary`, `ScalingCandidateSignal` (moved to portfolio-analysis/types.ts)
+- `common/portfolio-analysis/types.ts` — added the 5 portfolio-only summary types as local definitions; updated import from `../types/campaign` to only pull base types
+- `common/portfolio-analysis/index.ts` — new barrel: exports `computePortfolioAnalysis` + all types from `types.ts`
+- `common/portfolio-analysis/classify-campaigns.ts` — `CampaignSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/classify-utils.ts` — `CampaignSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/classify-channels.ts` — `ChannelSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/portfolio-analysis.ts` — `PortfolioSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/utils.ts` — `CampaignSummary, ChannelSummary, ScalingCandidateSignal, SummaryMetricStatus` import: `../types/campaign` → `./types`
+- `ai-tools/types/index.ts` — slimmed to 5 types only: `AiProviderType`, `AiErrorCode`, `AiConnectionError`, `AiAnalysisType`, `AiAnalysisError`
+- `ai-tools/ai-analysis/types/index.ts` — expanded to own all AI response types: `BusinessContext`, `ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency`, `ExecutiveInsight`, `PriorityAction`, `ExecutiveCorrelation`, `ExecutiveSummaryOutput`, `BudgetRecommendation`, `BudgetOptimizerOutput`, `BudgetOptimizerResponse`, `ExecutiveSummaryResponse` + existing `AnalysisResponse`, `AnalysisContext`, `AIProviderState`
+- `ai-tools/prompts/types.ts` — new file: `PromptList`, `PromptInstructions`, `PromptInstructionStep`, `PromptScopeConfig`
+- `ai-tools/prompts/index.ts` — added `export type { ... } from './types'`
+- `ai-tools/prompts/prompt-utils.ts` — import from `'../types'` → `'./types'`
+- `ai-tools/prompts/budget-optimization-prompt.ts` — all legacy types (`BudgetOptimizerData`, `BudgetOptimizerCampaign`, `BudgetOptimizerChannel`, building blocks, `BudgetOptimizerContextInput`) defined locally; import updated to `'./types'`
+- `ai-tools/prompts/executive-summary-prompt.ts` — legacy file; imports fixed: `BusinessContext` from `'../ai-analysis/types'`, `PromptScopeConfig` from `'./types'`, `ExecutiveSummaryData` defined locally
+- `ai-tools/prompts/budget-optimization-prompt2.ts` — `BusinessContext` import: `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/prompts/executive-summary-prompt2.ts` — `BusinessContext` import: `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/ai-analysis/utils/analysis-prompt.ts` — split import: `AiAnalysisType` stays in `'../../types'`, `BusinessContext` → `'../types'`
+- `stores/aiAnalysisStore.ts` — `BudgetOptimizerResponse`, `ExecutiveSummaryResponse` moved from `ai-tools/types` import to `ai-analysis/types` import
+- `ai-tools/mocks/budget-optimizer-mocks.ts` — `BudgetOptimizerResponse` from `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/mocks/executive-summary-mocks.ts` — `ExecutiveSummaryResponse` from `'../types'` → `'../ai-analysis/types'`
+- `CLAUDE.md` — updated architecture entries for all changed files
+
+**Key decisions & why:**
+- `common/portfolio-analysis/types.ts` as destination for summary types — `CampaignSummary`, `ChannelSummary` etc. were defined in `campaign.ts` but imported exclusively by `portfolio-analysis/` internals; co-locating them with the classification logic they support removes the leaky abstraction
+- `ai-analysis/types/index.ts` as the owner of all AI response types — response types, literal types, and `BusinessContext` are all consumed within the `ai-analysis` sub-feature (components, store, prompts); centralising them here eliminates the need for external callers to import from the parent `ai-tools/types` hub
+- `prompts/types.ts` as a dedicated file — prompt-building primitives are only used by `prompt-utils.ts` and the legacy prompt files; keeping them separate from both the provider/connection hub and the analysis response types avoids cross-concern leakage
+- Legacy types moved locally (not deleted) — the old `budget-optimization-prompt.ts` and `executive-summary-prompt.ts` are non-exported dead code but are kept compilable; inlining their types makes them fully self-contained and removes all traces from the shared hub
+- `common/portfolio-analysis/index.ts` created — the folder had no barrel despite having five internal files; the barrel lets external consumers (`campaignStore`, `ai-analysis/types`) import from a single path rather than reaching into internals

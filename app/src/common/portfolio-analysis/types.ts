@@ -1,4 +1,29 @@
-import type { CampaignSummary, ChannelSummary, PortfolioScope, PortfolioSummary, ScalingCandidateSignal, ShareEfficiency } from '../types/campaign'
+import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency } from '../types/campaign'
+
+// ── Portfolio summary types ───────────────────────────────────────────────────
+
+export interface PortfolioSummary extends PortfolioKPIs {
+  campaignCount: number;
+  channelCount: number;
+}
+
+export type SummaryMetricStatus = 'Strong' | 'Moderate' | 'Weak';
+
+export interface ChannelSummary extends CampaignMetrics, PerformanceMetrics, ShareEfficiency {
+  channel: string;
+  status: SummaryMetricStatus;
+}
+
+export interface CampaignSummary extends CampaignPerformance, ShareEfficiency { }
+
+export interface ScalingCandidateSignal extends ShareEfficiency {
+  name: string;
+  type: 'campaign' | 'channel';
+  channel?: string;
+  roi: number;
+  reason: string;
+  maxAdditionalBudget?: number;
+}
 
 // ── Channel signals ───────────────────────────────────────────────────────────
 

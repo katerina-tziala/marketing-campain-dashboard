@@ -1,8 +1,8 @@
-import type {
-  BusinessContext,
-  ExecutiveSummaryData,
-  PromptScopeConfig,
-} from "../types";
+import type { BusinessContext } from '../ai-analysis/types';
+import type { PromptScopeConfig } from './types';
+
+// Legacy data shape — replaced by PortfolioAnalysis in the active prompt
+type ExecutiveSummaryData = Record<string, unknown>;
 import { generateBusinessContextForPrompt } from "./business-context";
 import {
   DATA_INTERPRETATION_RULES,

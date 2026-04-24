@@ -1,4 +1,4 @@
-import type { CampaignSummary } from '../types/campaign'
+import type { CampaignSummary } from './types'
 import type { CampaignGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getDynamicThresholds, getFunnelMedians } from './classify-utils'
 

@@ -53,30 +53,3 @@ export interface ShareEfficiency {
   efficiencyGap: number
 }
 
-export interface PortfolioSummary extends PortfolioKPIs {
-  campaignCount: number;
-  channelCount: number;
-}
-
-
-export type SummaryMetricStatus = "Strong" | "Moderate" | "Weak";
-
-export interface ChannelSummary extends CampaignMetrics, PerformanceMetrics, ShareEfficiency {
-  channel: string;
-  status: SummaryMetricStatus;
-}
-
-export interface CampaignSummary extends CampaignPerformance, ShareEfficiency { }
-
- export interface ScalingCandidateSignal extends ShareEfficiency {
-  name: string;
-  type: "campaign" | "channel";
-  channel?: string;
-  roi: number;
-  reason: string;
-    /**
-   * Optional hard cap on how much additional budget may be added safely.
-   * If present, AI should not exceed it.
-   */
-  maxAdditionalBudget?: number;
-}

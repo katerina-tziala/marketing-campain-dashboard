@@ -1,4 +1,5 @@
-import type { CampaignPerformance, PortfolioScope, PortfolioSummary } from '../types/campaign'
+import type { CampaignPerformance, PortfolioScope } from '../types/campaign'
+import type { PortfolioSummary } from './types'
 import type { Channel } from '../types/channel'
 import type { PortfolioAnalysis } from './types'
 import {

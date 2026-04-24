@@ -1,5 +1,5 @@
 import type { AiModel } from '../providers/types'
-import type { BudgetOptimizerResponse } from '../types'
+import type { BudgetOptimizerResponse } from '../ai-analysis/types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',

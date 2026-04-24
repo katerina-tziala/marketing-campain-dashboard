@@ -1,5 +1,5 @@
 import type { AiModel } from '../providers/types'
-import type { ExecutiveSummaryResponse } from '../types'
+import type { ExecutiveSummaryResponse } from '../ai-analysis/types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',

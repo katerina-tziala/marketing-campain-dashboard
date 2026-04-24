@@ -1,17 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed, type Ref } from 'vue'
 import type { AsyncStatus } from '../common/types/async-status'
+import type { AiAnalysisType, AiAnalysisError, AiErrorCode } from '../features/ai-tools/types'
 import type {
-  AiAnalysisType,
-  AiAnalysisError,
-  AiErrorCode,
+  AnalysisResponse,
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
-} from '../features/ai-tools/types'
+} from '../features/ai-tools/ai-analysis/types'
 import { useAiStore } from './aiStore'
 import { useCampaignStore } from './campaignStore'
 import { ANALYSIS_ERROR_MESSAGES, runAnalysisPrompt, getCacheKey } from '../features/ai-tools/ai-analysis/utils'
-import type { AnalysisResponse } from '../features/ai-tools/ai-analysis/types'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 

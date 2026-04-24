@@ -1,4 +1,4 @@
-import type { ChannelSummary } from '../types/campaign'
+import type { ChannelSummary } from './types'
 import type { ChannelGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getFunnelMedians } from './classify-utils'
 

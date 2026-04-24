@@ -1,7 +1,8 @@
 import type { PortfolioAnalysis } from "../../../../common/portfolio-analysis/types";
 import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from "../../prompts";
 import { runProviderPrompt } from "../../providers";
-import type { AiAnalysisType, BusinessContext, } from "../../types";
+import type { AiAnalysisType } from '../../types';
+import type { BusinessContext } from '../types';
 import type { AnalysisContext, AIProviderState, AnalysisResponse } from "../types";
 
 

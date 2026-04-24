@@ -5,13 +5,13 @@
 
 /* Container size scale (tweak as needed) */
 $container-sizes: (
-  tiny: 220px,   // very small cards
-  xs: 280px,
-  sm: 320px,
-  md: 400px,
-  lg: 480px,
-  xl: 640px,
-  2xl: 768px
+  tiny: 13.75rem, // very small cards: 220px 
+  xs: 17.5rem, // 280px
+  sm: 20rem, // 320px
+  md: 25rem, // 400px
+  lg: 30rem, // 480px
+  xl: 40rem, // 640px
+  2xl: 48rem // 768px
 );
 
 /* =========================================

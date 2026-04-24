@@ -1,4 +1,5 @@
-import type { CampaignPerformance, CampaignSummary, ChannelSummary, ScalingCandidateSignal, SummaryMetricStatus } from '../types/campaign'
+import type { CampaignPerformance } from '../types/campaign'
+import type { CampaignSummary, ChannelSummary, ScalingCandidateSignal, SummaryMetricStatus } from './types'
 import type { Channel } from '../types/channel'
 import { computeShareEfficiency } from '../utils/campaign-performance'
 import type {

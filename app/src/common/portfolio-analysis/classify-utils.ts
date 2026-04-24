@@ -1,4 +1,4 @@
-import type { CampaignSummary } from '../types/campaign'
+import type { CampaignSummary } from './types'
 
 /**
  * Classification thresholds — all numeric decision boundaries live here.

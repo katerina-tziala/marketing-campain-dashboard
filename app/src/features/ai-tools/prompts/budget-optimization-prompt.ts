@@ -1,9 +1,63 @@
-import type {
-  BudgetOptimizerContextInput,
-  BudgetOptimizerData, 
-  PromptInstructions,
-  PromptScopeConfig,
-} from "../types";
+import type { PromptInstructions, PromptScopeConfig } from './types';
+
+// ── Legacy local types ─────────────────────────────────────────────────────────
+
+type CampainSummaryTotals = {
+  budget: number;
+  revenue: number;
+  roi: number;
+  conversions: number;
+  cac: number | null;
+  ctr: number;
+  cvr: number;
+};
+
+type AllocationShare = {
+  budgetShare: number;
+  revenueShare: number;
+};
+
+type FunnelMetrics = {
+  impressions: number;
+  clicks: number;
+};
+
+type PortfolioCount = {
+  campaignCount: number;
+  channelCount: number;
+};
+
+type BudgetOptimizerContextInput = {
+  period?: string;
+  industry?: string;
+  goal?: string;
+  businessStage?: string;
+  attributionModel?: string;
+  riskTolerance?: string;
+  scalingTolerance?: string;
+  constraints?: string[];
+  allowBudgetExpansion?: boolean;
+};
+
+type BudgetOptimizerCampaign = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
+  campaign: string;
+  channel: string;
+  efficiencyScore?: number;
+  spendTier?: 'high' | 'medium' | 'low';
+};
+
+type BudgetOptimizerChannel = CampainSummaryTotals & AllocationShare & FunnelMetrics & {
+  channel: string;
+  efficiencyScore?: number;
+};
+
+type BudgetOptimizerData = {
+  totals: CampainSummaryTotals;
+  campaigns: BudgetOptimizerCampaign[];
+  channels: BudgetOptimizerChannel[];
+  portfolio: PortfolioCount;
+  keyFindings?: string[];
+};
 import { getBusinessContextForPrompt, getBusinessContextLinesForPrompt } from "./business-context";
 import {
   DATA_INTERPRETATION_RULES,
