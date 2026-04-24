@@ -6088,3 +6088,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `ui/index.ts` needed a manual fix: it re-exported `./forms` which pointed at the now-deleted barrel; replaced with explicit named exports for the three form components so the UI library public API is unchanged for consumers
 - `ai-analysis/utils` had four wildcard re-exports from different files; the single import site needed two separate lines since `runAnalysisPrompt` and `getCacheKey` live in different source files
+
+
+## [#295] Restore gemini and qroq provider barrel files
+**Type:** fix
+
+**Summary:** Recreated the deleted `index.ts` barrels for `providers/gemini/` and `providers/qroq/` after the barrel removal pass broke the Vite dev build with an unresolved import error.
+
+**Brainstorming:** The previous barrel audit classified these two as "0 imports" and deleted them. But `connect-provider.ts` and `run-provider-prompt.ts` both import from `"./gemini"` and `"./qroq"` using folder-style resolution — which requires an `index.ts` to exist. Without it Vite throws a "Failed to resolve import" error at startup. The fix is to restore the barrels with only the exports actually consumed by those two callers.
+
+**Prompt:** The Vite dev server throws "Failed to resolve import './gemini'" from connect-provider.ts. The gemini/index.ts and qroq/index.ts barrel files were deleted in the last session. Put them back, exporting only what the callers need.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/gemini/index.ts` — recreated; exports `connectGemini` from `./connect` and `requestGeminiChatCompletion` from `./api`
+- `app/src/features/ai-tools/providers/qroq/index.ts` — recreated; exports `connectGroq` from `./connect` and `requestGroqChatCompletion` from `./api`
+
+**Key decisions & why:**
+- Both barrels export the full public surface of their module (connect + api functions) rather than only the currently-used subset, so future callers don't need to know the internal file split
+- TypeScript type check (`tsc --noEmit`) confirmed clean after recreation
+
+
+## [#296] Fix broken named import of AiAnalysis.vue in AiToolsContent
+**Type:** fix
+
+**Summary:** Corrected a broken named import `{ AiAnalysis }` that was left behind when the `ai-analysis/components/index.ts` barrel was deleted — Vue SFCs are default exports, not named exports.
+
+**Brainstorming:** The barrel removal pass updated the import path to point directly at `AiAnalysis.vue` but kept the curly-brace named import syntax from the barrel. At runtime Vite resolved the file but found no named export called `AiAnalysis`, causing a blank screen. The fix is a one-line change from `{ AiAnalysis }` to `AiAnalysis` (default import).
+
+**Prompt:** The app shows a blank screen after the barrel removal. Running `vite build` reveals: "AiAnalysis is not exported by AiAnalysis.vue" in AiToolsContent.vue. Fix the import.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — line 5: changed `import { AiAnalysis }` to `import AiAnalysis` (default import for Vue SFC)
+
+**Key decisions & why:**
+- Vue SFCs always use default exports; named re-exports of SFCs are only possible through an intermediate barrel — without the barrel the import must be a default import

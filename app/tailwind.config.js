@@ -11,7 +11,7 @@ export default {
         'surface-outline': "rgb(var(--color-surface-outline) / <alpha-value>)",
         'on-surface-high': "rgb(var(--color-on-surface-high) / <alpha-value>)",
 
-        // 
+
         // 
         black: {
           DEFAULT: '#000000', 

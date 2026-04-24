@@ -2,7 +2,7 @@
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import AiConnectionForm from '@/features/ai-tools/ai-connection/components/AiConnectionForm.vue'
 import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue'
-import { AiAnalysis } from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
+import AiAnalysis from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
 import { CloseIcon, SparklesIcon } from '@/ui/icons'
 
 const store = useAiConnectionStore()
