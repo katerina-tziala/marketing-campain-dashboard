@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Campaign, CampaignKPIs, CampaignPerformance, CampaignScope } from '../common/types/campaign'
+import type { Campaign, CampaignPerformance, PortfolioKPIs, PortfolioScope } from '../common/types/campaign'
 import type { Channel } from '../common/types/channel'
 import { buildChannelMap } from '../common/utils/campaign-channel'
-import { aggregateCampaignMetrics, computePerformanceMetrics } from '../common/utils/campaign-performance'
+import { computePortfolioKPIs } from '../common/utils/campaign-performance'
 // TODO: DEV MOCK — remove this import when reverting DEV_MOCK_CAMPAIGNS
 import { MOCK_CAMPAINS } from '../common/data/MOCK_CAMPAIN_DATA'
 
@@ -38,16 +38,13 @@ export const useCampaignStore = defineStore('campaigns', () => {
     selectedChannels.value.flatMap((ch) => ch.campaigns),
   )
 
-  const campaignScope = computed((): CampaignScope => ({
+  const portfolioScope = computed((): PortfolioScope => ({
     campaigns: campaigns.value.map((c) => c.campaign),
     selectedCampaigns: filteredCampaigns.value.map((c) => c.campaign),
     selectedChannels: selectedChannelsIds.value.map((id) => portfolioChannels.value.get(id)?.name ?? id),
   }))
 
-  const kpis = computed((): CampaignKPIs => {
-    const totals = aggregateCampaignMetrics(selectedChannels.value)
-    return { ...totals, ...computePerformanceMetrics(totals) }
-  })
+  const kpis = computed((): PortfolioKPIs => computePortfolioKPIs(selectedChannels.value))
 
   // Actions
   function toggleChannel(channelId: string) {
@@ -76,7 +73,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns,
     selectedChannels,
     selectedChannelsIds,
-    campaignScope,
+    portfolioScope,
     kpis,
     // actions
     toggleChannel,

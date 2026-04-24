@@ -25,14 +25,6 @@ export interface Campaign extends CampaignMetrics {
 
 export interface CampaignPerformance extends Campaign, PerformanceMetrics { }
 
-export interface CampaignScope {
-  campaigns: string[]
-  selectedCampaigns: string[]
-  selectedChannels: string[]
-}
-
-export interface CampaignKPIs extends CampaignMetrics, PerformanceMetrics { }
-
 export interface PortfolioKPIs {
   totalBudget: number;
   totalRevenue: number;
@@ -49,4 +41,13 @@ export interface PortfolioScope {
   campaigns: string[]
   selectedCampaigns: string[]
   selectedChannels: string[]
+}
+
+export interface ShareEfficiency {
+  /** Decimal — item budget / total budget */
+  budgetShare: number
+  /** Decimal — item revenue / total revenue */
+  revenueShare: number
+  /** Decimal — budgetShare - revenueShare; negative means revenue outperforms budget weight */
+  efficiencyGap: number
 }

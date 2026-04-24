@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CampaignKPIs } from '../../../common/types/campaign'
+import type { PortfolioKPIs } from '../../../common/types/campaign'
 import {
   formatCompactCurrency,
   formatCompactNumber,
@@ -8,38 +8,38 @@ import {
 import { percentageClass } from '../../../common/utils/campaign-performance'
 import KpiCard from './KpiCard.vue'
 
-defineProps<{ kpis: CampaignKPIs }>()
+defineProps<{ kpis: PortfolioKPIs }>()
 </script>
 
 <template>
     <section class="kpi-grid">
       <KpiCard
         label="Budget"
-        :value="formatCompactCurrency(kpis.budget)"
+        :value="formatCompactCurrency(kpis.totalBudget)"
       />
       <KpiCard
         label="Revenue"
-        :value="formatCompactCurrency(kpis.revenue)"
+        :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <template #secondary>
-          ROI: <span class="roi-text" :class="percentageClass(kpis.roi)">{{ formatPercentage(kpis.roi) }}</span>
+          ROI: <span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
         </template>
       </KpiCard>
       <KpiCard
         label="Conversions"
-        :value="formatCompactNumber(kpis.conversions)"
+        :value="formatCompactNumber(kpis.totalConversions)"
       >
         <template #secondary>
-          CVR: <span class="roi-text" :class="percentageClass(kpis.cvr)">{{ formatPercentage(kpis.cvr) }}</span>
+          CVR: <span class="roi-text" :class="percentageClass(kpis.aggregatedCVR)">{{ formatPercentage(kpis.aggregatedCVR) }}</span>
         </template>
       </KpiCard>
       <KpiCard
         label="CTR"
-        :value="formatPercentage(kpis.ctr)"
+        :value="formatPercentage(kpis.aggregatedCTR)"
       />
       <KpiCard
         label="CAC"
-        :value="kpis.cac !== null ? formatCompactCurrency(kpis.cac) : null"
+        :value="kpis.aggregatedCAC !== null ? formatCompactCurrency(kpis.aggregatedCAC) : null"
       />
     </section>
 </template>

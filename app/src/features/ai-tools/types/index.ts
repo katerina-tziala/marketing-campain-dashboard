@@ -1,4 +1,5 @@
 import type { AiModel } from '../providers/types'
+import type { ExecutiveSummaryOutput } from '../ai-analysis/types/executive-summary.types'
 
 // ── AI Provider & Connection ──────────────────────────────────────────────
 
@@ -176,29 +177,7 @@ export type AiAnalysisError = {
   message: string;
 };
 
-export type ExecutiveSummaryResponse = {
+export type ExecutiveSummaryResponse = ExecutiveSummaryOutput & {
   model?: AiModel;
   timestamp?: number;
-  healthScore: {
-    score: number;
-    label: "Excellent" | "Good" | "NeedsAttention" | "Critical";
-    reasoning: string;
-  };
-  bottomLine: string;
-  insights: {
-    type: "Performance" | "Opportunity" | "Warning" | "Achievement";
-    text: string;
-    metricHighlight: {
-      label: string;
-      value: string;
-    };
-  }[];
-  priorityActions: {
-    priority: number;
-    action: string;
-    expectedOutcome: string;
-    urgency: "Immediate" | "ThisQuarter" | "NextQuarter";
-    successMetric: string;
-  }[];
-  correlations: Correlation[];
 };

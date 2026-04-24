@@ -5276,3 +5276,182 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `round4` not `round2` for ratios — low-CTR channels (e.g. 0.3% CTR) need 4 d.p. to avoid `0.00` values after rounding
 - `cac` stays `round2` — it's a currency amount (EUR), where 2 decimal places is the standard
 - Chart data multiplied by 100 inline — the chart y-label is "ROI (%)" so raw decimal values would produce a misleading axis; the multiplication lives in the chart mapping, not in the formatter, because chart tooltips read the raw number
+
+
+## [#258] Replace CampaignScope/CampaignKPIs with PortfolioScope/PortfolioKPIs
+**Type:** refactor
+
+**Summary:** Removed `CampaignScope` and `CampaignKPIs` from the type system, replacing them with `PortfolioScope` and `PortfolioKPIs` (explicit named fields), and extracted portfolio KPI computation into `computePortfolioKPIs`.
+
+**Brainstorming:** `CampaignKPIs extends CampaignMetrics, PerformanceMetrics` used the same flat field names (`budget`, `roi`, etc.) as individual campaign objects, making it easy to accidentally mix up portfolio-level and campaign-level values. `PortfolioKPIs` uses explicit `total*` / `aggregated*` prefixes that make the semantic level clear at every call site. `CampaignScope` was renamed to `PortfolioScope` for the same reason — it describes portfolio selection state, not a single campaign. The new `computePortfolioKPIs` function encapsulates the `aggregateCampaignMetrics` + `computePerformanceMetrics` + field-mapping steps that the store was doing inline, making the store computed trivially simple and the logic reusable.
+
+**Prompt:** Replace `CampaignScope` with `PortfolioScope` and `CampaignKPIs` with `PortfolioKPIs`. Create a function in `campaign-performance` that uses `aggregateCampaignMetrics` and `computePerformanceMetrics` to calculate values and returns `PortfolioKPIs`.
+
+**What changed:**
+- `common/types/campaign.ts` — removed `CampaignScope` and `CampaignKPIs`; `PortfolioScope` and `PortfolioKPIs` (already present) are now the sole types
+- `common/utils/campaign-performance.ts` — added `computePortfolioKPIs(channels: Channel[]): PortfolioKPIs`; imports `PortfolioKPIs`
+- `stores/campaignStore.ts` — imports `PortfolioKPIs`, `PortfolioScope`, `computePortfolioKPIs`; `campaignScope` renamed to `portfolioScope`; `kpis` computed simplified to `computePortfolioKPIs(selectedChannels.value)`; removed `aggregateCampaignMetrics` and `computePerformanceMetrics` imports
+- `features/dashboard/components/DashboardKpis.vue` — prop type `CampaignKPIs` → `PortfolioKPIs`; all field accesses updated (`budget` → `totalBudget`, `revenue` → `totalRevenue`, `roi` → `aggregatedROI`, `ctr` → `aggregatedCTR`, `cvr` → `aggregatedCVR`, `cac` → `aggregatedCAC`, `conversions` → `totalConversions`)
+- `features/dashboard/components/DashboardCharts.vue` — prop type `CampaignKPIs` → `PortfolioKPIs`; funnel values updated (`impressions/clicks/conversions` → `totalImpressions/totalClicks/totalConversions`)
+- `features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationOverview.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `campaignStore.campaignScope` → `campaignStore.portfolioScope`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `campaignStore.campaignScope` → `campaignStore.portfolioScope`
+- `stores/aiAnalysisStore.ts` — `campaignStore.campaignScope.selectedChannels` → `campaignStore.portfolioScope.selectedChannels`
+
+**Key decisions & why:**
+- `computePortfolioKPIs` takes `Channel[]` not `Campaign[]` — channels are already aggregated; passing channels avoids re-flattening and mirrors how the store already builds its `selectedChannels` computed
+- `PortfolioKPIs` field names use `total*`/`aggregated*` prefix — distinguishes portfolio-level values from same-named fields on `CampaignMetrics`/`PerformanceMetrics` at every use site
+
+
+## [#259] Use PortfolioSummary for ExecutiveSummaryInput.portfolio; pass kpis + scope to buildExecutiveSummaryInput
+**Type:** refactor
+
+**Summary:** Changed `ExecutiveSummaryInput.portfolio` from an inline object type to `PortfolioSummary`, and updated `buildExecutiveSummaryInput` to accept `PortfolioKPIs` and `PortfolioScope` directly instead of recomputing portfolio totals from raw campaigns.
+
+**Brainstorming:** `PortfolioSummary` already existed in `executive-summary-analysis.types.ts` (extends `PortfolioKPIs` + `campaignCount` + `channelCount`) but `ExecutiveSummaryInput.portfolio` was still an inline type with a subset of those fields. Meanwhile, `buildExecutiveSummaryInput` was recomputing `totalBudget`, `totalRevenue`, `totalConversions`, `portfolioRoi`, and `aggregatedCAC` from `campaigns` arrays — the exact same values already available in `campaignStore.kpis` (a `PortfolioKPIs`). Passing `kpis` and `scope` removes the redundant computation, and typing `portfolio` as `PortfolioSummary` makes the structure explicit and reusable.
+
+**Prompt:** `ExecutiveSummaryInput.portfolio` should be of type `PortfolioSummary`. Notice that kpis in campaign store can be used for `PortfolioSummary` without any further calculations. Pass kpis and portfolio scope in `buildExecutiveSummaryInput` to map required data and avoid recalculations.
+
+**What changed:**
+- `common/analysis/executive-summary-analysis.types.ts` — `ExecutiveSummaryInput.portfolio` changed from inline object type to `PortfolioSummary`
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — signature updated to `(campaigns, channels, kpis: PortfolioKPIs, scope: PortfolioScope)`; portfolio built as `{ ...kpis, campaignCount: scope.selectedCampaigns.length, channelCount: scope.selectedChannels.length }`; removed internal recalculation of totals and ratios; removed `round2`/`round4` imports (no longer needed); added `PortfolioSummary` to imports; cleaned up stale commented-out code
+- `stores/aiAnalysisStore.ts` — `buildExecutiveSummaryInput` call now passes `campaignStore.kpis` and `campaignStore.portfolioScope` as third and fourth arguments
+
+**Key decisions & why:**
+- `scope.selectedCampaigns.length` and `scope.selectedChannels.length` used for counts — these mirror `campaigns.length` and `channels.length` exactly, but using scope makes the intent explicit (these are portfolio-scoped counts, not raw array lengths)
+- `aggregatedROI` from `kpis` used directly for channel status comparison — it is already a decimal ratio matching the same unit as `ch.roi`, so `computeChannelStatus` works unchanged
+
+
+## [#260] Extract ShareEfficiency interface and computeShareEfficiency function
+**Type:** refactor
+
+**Summary:** Created `ShareEfficiency` interface and `computeShareEfficiency` function to eliminate the repeated `budgetShare/revenueShare/efficiencyGap` fields across `ChannelSummary`, `CampaignSummary`, and signal types, and removed inline share computations from `buildExecutiveSummaryData.ts`.
+
+**Brainstorming:** `ChannelSummary` and `CampaignSummary` both declared the same three fields (`budgetShare`, `revenueShare`, `efficiencyGap`) as inline properties, and `buildExecutiveSummaryData.ts` computed them inline in both `toCampaignSummary` and `toChannelSummary` using duplicated `safeDivide` calls. A named interface and a single function eliminate the duplication at both the type and computation level. The function belongs in `campaign-performance.ts` (it operates on `CampaignMetrics`, same as the other helpers there); the interface belongs in `campaign.ts` (shared data type, not analysis-specific). The signal types (`InefficientChannelSignal`, `ScalingCandidateSignal`) were not extended — `InefficientChannelSignal` has all three fields but is a signal DTO not a metrics summary; `ScalingCandidateSignal` has `revenueShare?` as optional so the shape doesn't match.
+
+**Prompt:** Create and reuse `ShareEfficiency { budgetShare, revenueShare, efficiencyGap }` interface. Create a function to get `ShareEfficiency` either from a campaign or a channel in `campaign-performance`. From now on never use one letter to describe variables.
+
+**What changed:**
+- `common/types/campaign.ts` — added `ShareEfficiency` interface with JSDoc unit comments on all three fields
+- `common/utils/campaign-performance.ts` — added `computeShareEfficiency(item: CampaignMetrics, totalBudget: number, totalRevenue: number): ShareEfficiency`; added `ShareEfficiency` to type import; added `safeDivide` to math import
+- `common/analysis/executive-summary-analysis.types.ts` — `ChannelSummary` now extends `ShareEfficiency` (removed the three inline field declarations); `CampaignSummary` now extends `ShareEfficiency` (same); added `ShareEfficiency` to import; removed stale commented-out code
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — `toCampaignSummary` and `toChannelSummary` now spread `computeShareEfficiency(...)` instead of computing shares inline; removed `safeDivide` import (no longer needed); replaced single-letter parameter names (`c` → `campaign`, `ch` → `channel`) throughout; replaced `s` in reduce with meaningful names
+
+**Key decisions & why:**
+- `ShareEfficiency` in `campaign.ts` not in analysis types — `computeShareEfficiency` takes `CampaignMetrics` which lives in `campaign.ts`; putting the interface there avoids a reverse dependency (utils importing from analysis types)
+- Function accepts `CampaignMetrics` not a union — both `CampaignPerformance` and `Channel` extend `CampaignMetrics`, so the function works for both without overloads or a union type
+- Single-letter variable names banned going forward — `campaign`, `channel` etc. used in all map/reduce callbacks
+
+
+## [#261] Fix toChannelSummary name-to-channel mapping
+**Type:** fix
+
+**Summary:** Fixed `toChannelSummary` to correctly map `Channel.name` to `ChannelSummary.channel` when using object destructuring.
+
+**Brainstorming:** The destructure `{ campaigns, id, ...channelMetrics }` left `name` in the spread, which would produce `name: string` in the result object — but `ChannelSummary` expects `channel: string`, not `name`. The fix extracts `name` from the destructure and sets `channel: name` explicitly, keeping the rest of the metrics spread intact.
+
+**Prompt:** Fix `toChannelSummary` but keep object destructuring.
+
+**What changed:**
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — destructure updated to `{ campaigns, id, name, ...metrics }`; return object sets `channel: name` explicitly before spreading `metrics`
+
+**Key decisions & why:**
+- `name` extracted explicitly from the destructure — prevents it leaking into the spread as a wrong-named field while allowing the alias `channel: name` in the return literal
+
+
+## [#262] Refactor executive-summary-analysis.ts — sorting, naming, complexity
+**Type:** refactor
+
+**Summary:** Replaced the opaque `n()` helper with `toFinite`, eliminated redundant field recomputation by reading `efficiencyGap` directly from typed inputs, and extracted multi-condition predicates into named functions to bring all cyclomatic complexity scores into the "cool" range.
+
+**Brainstorming:** The file had several issues: `n()` was a single-letter function name that violated the naming convention; `getInefficientChannels` was recomputing `efficiencyGap` manually even though `ChannelSummary` already carries it via `ShareEfficiency`; `getBottomCampaigns` was recomputing `gapA/gapB` inline for the same reason; `n()` was wrapping fields that are typed as `number` (never null); and inline multi-condition filter predicates in `getInefficientChannels` and `getScalingCandidates` pushed cyclomatic complexity to 7–10. `sortWithNullsLast` from `sorting.ts` was considered but does not fit — it requires a direction parameter and puts nulls last, whereas the analysis sorts either filter out nulls first or treat null as 0 for ranking purposes, making `toFinite` the correct tool for the one remaining nullable field (roi in bottom-campaign secondary sort).
+
+**Prompt:** Refactor executive-summary-analysis. Since we know the data types we can improve sorting functions in there, replace the use of the n function with something more meaningful if necessary. If you can use functions from utils for sorting do that.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — `n()` renamed to `toFinite` with an explanatory comment; `getTopCampaigns` filter and sort use direct field access (`campaign.budget`, `campaign.revenue`, `campaign.conversions`, `b.roi!`, `b.revenue`); `getBottomCampaigns` sort uses `b.efficiencyGap - a.efficiencyGap` directly; `getInefficientChannels` reordered to filter-then-map (more efficient), reads `channel.efficiencyGap` directly; `getScalingCandidates` broken into `hasCampaignScalingData`, `campaignOutperformsPortfolio`, `isChannelScalingCandidate`, `toCampaignScalingSignals`, `toChannelScalingSignals` — all predicates and pipelines extracted so the exported function is a single merge+sort; `getConcentrationFlag` sort uses `b.revenue - a.revenue` directly, `??` replaces `n()` for the optional chained access
+
+**Key decisions & why:**
+- `toFinite` retained (not inlined) — still needed for `roi` in `getBottomCampaigns` secondary sort and for coercing `channel.roi` in `getInefficientChannels` map; a named helper is clearer than repeated ternaries
+- `sortWithNullsLast` not used — its API (`dir: 1 | -1`) is designed for UI table sorts; analysis sorts are multi-key domain sorts where null handling semantics differ per call site
+- filter-before-map in `getInefficientChannels` — avoids constructing signal objects for channels that will be discarded; possible because `efficiencyGap` is already present on `ChannelSummary`
+- Predicate extraction driven by complexity linter — each extracted function landed at complexity ≤ 5; `getScalingCandidates` itself dropped to complexity 3
+
+
+## [#263] Implement dynamic thresholds for campaign filtering
+**Type:** refactor
+
+**Summary:** Replaced static MIN_REVENUE and MIN_CONVERSIONS constants with a getDynamicThresholds function that scales floor values relative to the actual portfolio size, so small portfolios are not over-filtered and large portfolios use proportionally meaningful cutoffs.
+
+**Brainstorming:** Static floors (100 revenue, 3 conversions) work poorly at the extremes: a portfolio with 5 campaigns and €2000 total revenue would have almost every campaign exceed the €100 floor, giving no useful signal; a portfolio with 50 campaigns and €500k revenue would need a higher floor to avoid surfacing micro-campaigns. The user-provided formula — 2% of portfolio total, with absolute floor (€50 / 2 conversions) — scales naturally. The thresholds are needed in two places: getTopCampaigns (has the campaigns array directly) and hasCampaignScalingData (called per-campaign from toCampaignScalingSignals). The cleanest approach is to compute once per call site and pass as a DynamicThresholds parameter, avoiding global state and keeping each function pure.
+
+**Prompt:** implement dynamic thresholds — getDynamicThresholds(campaigns) returning { minRevenue: Math.max(totalRevenue * 0.02, 50), minConversions: Math.max(totalConversions * 0.02, 2) }
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — removed MIN_REVENUE and MIN_CONVERSIONS constants; added DynamicThresholds interface and getDynamicThresholds function; getTopCampaigns computes thresholds from its input and uses minRevenue/minConversions in the filter; hasCampaignScalingData accepts a DynamicThresholds parameter (destructured inline); toCampaignScalingSignals computes thresholds and passes to hasCampaignScalingData; remaining single-letter variable c fixed to campaign in getExecutiveSummaryDerivedInputs
+
+**Key decisions & why:**
+- Compute per call site, not once at the top — both getTopCampaigns and toCampaignScalingSignals receive the same campaigns array, so the result is identical; avoids threading thresholds through every function signature in the call chain
+- DynamicThresholds interface defined locally — only used within this module; no need to export to types file
+- hasCampaignScalingData receives thresholds as a parameter — it does not have access to the full campaigns array, so the caller (toCampaignScalingSignals) computes and passes them
+
+
+## [#264] ExecutiveSummaryResponse extends ExecutiveSummaryOutput
+**Type:** refactor
+
+**Summary:** Replaced the inline duplicate field declarations on ExecutiveSummaryResponse with an intersection of ExecutiveSummaryOutput, eliminating redundant inline unions that already had named types.
+
+**Brainstorming:** ExecutiveSummaryResponse in types/index.ts was repeating every field from ExecutiveSummaryOutput verbatim — including literal unions ("Excellent" | "Good" | ...) that already exist as HealthLabel, InsightType, ActionUrgency in analysis types. ExecutiveSummaryOutput is the canonical shape; the response type only adds model and timestamp. Correlation stays in types/index.ts because BudgetOptimizerResponse still uses it.
+
+**Prompt:** ExecutiveSummaryResponse should extend ExecutiveSummaryOutput. Clean up the rest.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — added import of ExecutiveSummaryOutput; ExecutiveSummaryResponse replaced with ExecutiveSummaryOutput & { model?: AiModel; timestamp?: number }; all inline field duplicates removed
+
+**Key decisions & why:**
+- Intersection type rather than interface extends — ExecutiveSummaryResponse is a type alias (not interface), so & is the correct composition form
+- Correlation retained — still used by BudgetOptimizerResponse; removing it would break the optimizer types
+
+
+## [#265] Rename ExecutiveSummaryInput to SummaryAnalysis
+**Type:** refactor
+
+**Summary:** Renamed ExecutiveSummaryInput to SummaryAnalysis (and its builder to buildSummaryAnalysis) across all files that reference it — arrived at the final name after discarding "Insights" as too output-oriented.
+
+**Brainstorming:** "Input" was a leaky implementation detail describing the type's role as a prompt argument rather than what it represents. "Insights" was considered but rejected — it implies AI output. "SummaryAnalysis" better reflects that this is computed analysis data (portfolio summary, derived signals, top/bottom campaigns) assembled from campaign/channel data and used as structured input to the AI prompt. Vue component references to ExecutiveSummaryInsights.vue were left untouched throughout — that is a separate UI component for rendering AI response insights, unrelated to this type.
+
+**Prompt:** Rename ExecutiveSummaryInput to ExecutiveSummaryInsights. / Rename ExecutiveSummaryInsights to SummaryAnalysis.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.types.ts` — interface renamed to SummaryAnalysis
+- `app/src/features/ai-tools/utils/buildExecutiveSummaryData.ts` — type import and function renamed to buildSummaryAnalysis
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — type import and parameter type updated
+- `app/src/stores/aiAnalysisStore.ts` — type import, function import, Map type param, return type, cast, and call site updated
+
+**Key decisions & why:**
+- "SummaryAnalysis" chosen over "Insights" — "Insights" reads as AI output; this type is prompt input (computed analysis)
+- Builder renamed to buildSummaryAnalysis for consistency with the type name
+- Vue component ExecutiveSummaryInsights.vue not renamed — unrelated to the analysis data type
+
+
+## [#266] Move summary assembly into executive-summary-analysis and rename to computeSummaryAnalysis
+**Type:** refactor
+
+**Summary:** Moved the `buildSummaryAnalysis` function and its helpers out of the feature-layer `buildExecutiveSummaryData.ts` file into `common/analysis/executive-summary-analysis.ts`, renamed it `computeSummaryAnalysis`, and deleted the now-empty utility file.
+
+**Brainstorming:** `buildExecutiveSummaryData.ts` was a thin wrapper that converted raw store data into `SummaryAnalysis`. Its helpers (`computeChannelStatus`, `toCampaignSummary`, `toChannelSummary`) and the assembly function belong logically in the same module as the derived-signal computation already in `executive-summary-analysis.ts`. Keeping them separate created an artificial split: `common/analysis/` had the analysis logic while a feature-layer utils file had the data shaping — both operating on the same types. Consolidating into `common/analysis/` makes the module self-contained and removes the cross-layer dependency. The rename from `build` to `compute` aligns with the `compute*` naming convention already used throughout `common/utils/`.
+
+**Prompt:** Move all functions from `buildExecutiveSummaryData.ts` into `executive-summary-analysis.ts`, rename `buildSummaryAnalysis` to `computeSummaryAnalysis`, update the store import, and delete the file.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — added imports for `CampaignPerformance`, `PortfolioKPIs`, `PortfolioScope`, `Channel`, `computeShareEfficiency`, `PortfolioSummary`, `SummaryAnalysis`, `SummaryMetricStatus`; appended `computeChannelStatus`, `toCampaignSummary`, `toChannelSummary`, and `computeSummaryAnalysis` (exported)
+- `app/src/stores/aiAnalysisStore.ts` — updated import from `buildSummaryAnalysis` at `buildExecutiveSummaryData` to `computeSummaryAnalysis` at `common/analysis/executive-summary-analysis`; updated call site
+- `app/src/features/ai-tools/utils/buildExecutiveSummaryData.ts` — deleted
+- `CLAUDE.md` — removed deleted file from architecture; updated `executive-summary-analysis.ts` description; updated status and campaign-performance.ts description
+
+**Key decisions & why:**
+- Moved into `common/analysis/` not `common/utils/` — this function is specific to the executive summary analysis domain, not a generic utility
+- Rename to `compute` prefix — consistent with `computePerformanceMetrics`, `computeShareEfficiency`, `computePortfolioKPIs` already in `common/utils/`
+- No intermediate barrel needed — `aiAnalysisStore` imports directly from `common/analysis/executive-summary-analysis`

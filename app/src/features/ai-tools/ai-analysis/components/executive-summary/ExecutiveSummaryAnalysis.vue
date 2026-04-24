@@ -47,7 +47,7 @@ function handleSummarize(): void {
     <ExecutiveSummaryHealth
       :health-score="response!.healthScore"
       :bottom-line="response!.bottomLine"
-      :scope="campaignStore.campaignScope"
+      :scope="campaignStore.portfolioScope"
     />
     <ExecutiveSummaryPriorityActions :actions="response!.priorityActions" />
     <ExecutiveSummaryInsights :insights="response!.insights" />

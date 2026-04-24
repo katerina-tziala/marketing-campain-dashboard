@@ -1,11 +1,37 @@
-import type { CampaignSummary, ChannelSummary, ConcentrationFlagSignal, CorrelationSignal, InefficientChannelSignal, ScalingCandidateSignal } from "./executive-summary-analysis.types";
+import type { CampaignPerformance, PortfolioKPIs, PortfolioScope } from "../types/campaign";
+import type { Channel } from "../types/channel";
+import { computeShareEfficiency } from "../utils/campaign-performance";
+import type {
+  CampaignSummary,
+  ChannelSummary,
+  ConcentrationFlagSignal,
+  CorrelationSignal,
+  InefficientChannelSignal,
+  PortfolioSummary,
+  ScalingCandidateSignal,
+  SummaryAnalysis,
+  SummaryMetricStatus,
+} from "./executive-summary-analysis.types";
 
-const MIN_REVENUE = 100;
-const MIN_CONVERSIONS = 3;
 const MIN_BUDGET_SHARE = 0.01; // 1% of portfolio budget — filters micro-campaigns from bottom list
 const GAP_THRESHOLD = 0.05;   // 5% efficiency gap (decimal)
 
-function n(value: number | null | undefined): number {
+interface DynamicThresholds {
+  minRevenue: number;
+  minConversions: number;
+}
+
+function getDynamicThresholds(campaigns: CampaignSummary[]): DynamicThresholds {
+  const totalRevenue = campaigns.reduce((sum, campaign) => sum + campaign.revenue, 0);
+  const totalConversions = campaigns.reduce((sum, campaign) => sum + campaign.conversions, 0);
+  return {
+    minRevenue: Math.max(totalRevenue * 0.02, 50),
+    minConversions: Math.max(totalConversions * 0.02, 2),
+  };
+}
+
+// Coerces null/undefined/non-finite numbers to 0 — used only for nullable metric fields (roi, ctr, cvr, cac)
+function toFinite(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
@@ -16,18 +42,20 @@ export function getTopCampaigns(
 ): CampaignSummary[] {
   if (campaigns.length <= 2) return [];
 
+  const { minRevenue, minConversions } = getDynamicThresholds(campaigns);
+
   return [...campaigns]
     .filter(
-      c =>
-        n(c.budget) > 0 &&
-        n(c.revenue) >= MIN_REVENUE &&
-        n(c.conversions) >= MIN_CONVERSIONS &&
-        c.roi !== null,
+      campaign =>
+        campaign.budget > 0 &&
+        campaign.revenue >= minRevenue &&
+        campaign.conversions >= minConversions &&
+        campaign.roi !== null,
     )
     .sort((a, b) => {
-      const roiDiff = n(b.roi) - n(a.roi);
+      const roiDiff = b.roi! - a.roi!;
       if (roiDiff !== 0) return roiDiff;
-      return n(b.revenue) - n(a.revenue);
+      return b.revenue - a.revenue;
     })
     .slice(0, 5);
 }
@@ -40,18 +68,24 @@ export function getBottomCampaigns(
 
   return [...campaigns]
     .filter(
-      c =>
-        n(c.budget) > 0 &&
-        n(c.budgetShare) >= MIN_BUDGET_SHARE &&
-        !excludedNames?.has(c.campaign),
+      campaign =>
+        campaign.budget > 0 &&
+        campaign.budgetShare >= MIN_BUDGET_SHARE &&
+        !excludedNames?.has(campaign.campaign),
     )
     .sort((a, b) => {
-      const gapA = n(a.budgetShare) - n(a.revenueShare);
-      const gapB = n(b.budgetShare) - n(b.revenueShare);
-      if (gapB !== gapA) return gapB - gapA;
-      return n(a.roi) - n(b.roi);
+      const gapDiff = b.efficiencyGap - a.efficiencyGap;
+      if (gapDiff !== 0) return gapDiff;
+      return toFinite(a.roi) - toFinite(b.roi);
     })
     .slice(0, 5);
+}
+
+function isInefficientChannel(channel: ChannelSummary, portfolioRoi: number | null): boolean {
+  return (
+    channel.efficiencyGap > GAP_THRESHOLD &&
+    (portfolioRoi === null || toFinite(channel.roi) < portfolioRoi)
+  );
 }
 
 export function getInefficientChannels(
@@ -59,23 +93,74 @@ export function getInefficientChannels(
   portfolioRoi: number | null,
 ): InefficientChannelSignal[] {
   return channels
-    .map(channel => {
-      const efficiencyGap = n(channel.budgetShare) - n(channel.revenueShare);
-      return {
-        channel: channel.channel,
-        budgetShare: channel.budgetShare,
-        revenueShare: channel.revenueShare,
-        efficiencyGap,
-        roi: n(channel.roi),
-        reason: "Budget share exceeds revenue share with weaker efficiency.",
-      };
-    })
-    .filter(
-      channel =>
-        channel.efficiencyGap > GAP_THRESHOLD &&
-        (portfolioRoi === null || channel.roi < portfolioRoi),
-    )
+    .filter(channel => isInefficientChannel(channel, portfolioRoi))
+    .map(channel => ({
+      channel: channel.channel,
+      budgetShare: channel.budgetShare,
+      revenueShare: channel.revenueShare,
+      efficiencyGap: channel.efficiencyGap,
+      roi: toFinite(channel.roi),
+      reason: "Budget share exceeds revenue share with weaker efficiency.",
+    }))
     .sort((a, b) => b.efficiencyGap - a.efficiencyGap);
+}
+
+function hasCampaignScalingData(campaign: CampaignSummary, { minRevenue, minConversions }: DynamicThresholds): boolean {
+  return (
+    campaign.roi !== null &&
+    campaign.budget > 0 &&
+    campaign.revenue >= minRevenue &&
+    campaign.conversions >= minConversions
+  );
+}
+
+function campaignOutperformsPortfolio(campaign: CampaignSummary, portfolioRoi: number | null): boolean {
+  return (
+    (portfolioRoi === null || campaign.roi! > portfolioRoi) &&
+    campaign.revenueShare > campaign.budgetShare
+  );
+}
+
+function isChannelScalingCandidate(channel: ChannelSummary, portfolioRoi: number | null): boolean {
+  return (
+    channel.roi !== null &&
+    (portfolioRoi === null || channel.roi > portfolioRoi) &&
+    channel.revenueShare > channel.budgetShare
+  );
+}
+
+function toCampaignScalingSignals(
+  campaigns: CampaignSummary[],
+  portfolioRoi: number | null,
+): ScalingCandidateSignal[] {
+  const thresholds = getDynamicThresholds(campaigns);
+  return campaigns
+    .filter(campaign => hasCampaignScalingData(campaign, thresholds) && campaignOutperformsPortfolio(campaign, portfolioRoi))
+    .map(campaign => ({
+      name: campaign.campaign,
+      type: "campaign" as const,
+      channel: campaign.channel,
+      roi: campaign.roi!,
+      budgetShare: campaign.budgetShare,
+      revenueShare: campaign.revenueShare,
+      reason: "Strong efficiency with revenue share exceeding budget share.",
+    }));
+}
+
+function toChannelScalingSignals(
+  channels: ChannelSummary[],
+  portfolioRoi: number | null,
+): ScalingCandidateSignal[] {
+  return channels
+    .filter(channel => isChannelScalingCandidate(channel, portfolioRoi))
+    .map(channel => ({
+      name: channel.channel,
+      type: "channel" as const,
+      roi: channel.roi!,
+      budgetShare: channel.budgetShare,
+      revenueShare: channel.revenueShare,
+      reason: "Channel outperforms its budget allocation.",
+    }));
 }
 
 export function getScalingCandidates(
@@ -83,43 +168,10 @@ export function getScalingCandidates(
   channels: ChannelSummary[],
   portfolioRoi: number | null,
 ): ScalingCandidateSignal[] {
-  const campaignCandidates: ScalingCandidateSignal[] = campaigns
-    .filter(
-      c =>
-        c.roi !== null &&
-        n(c.budget) > 0 &&
-        n(c.revenue) >= MIN_REVENUE &&
-        n(c.conversions) >= MIN_CONVERSIONS &&
-        (portfolioRoi === null || c.roi > portfolioRoi) &&
-        n(c.revenueShare) > n(c.budgetShare),
-    )
-    .map(c => ({
-      name: c.campaign,
-      type: "campaign" as const,
-      channel: c.channel,
-      roi: n(c.roi),
-      budgetShare: c.budgetShare,
-      revenueShare: c.revenueShare,
-      reason: "Strong efficiency with revenue share exceeding budget share.",
-    }));
-
-  const channelCandidates: ScalingCandidateSignal[] = channels
-    .filter(
-      c =>
-        c.roi !== null &&
-        (portfolioRoi === null || c.roi > portfolioRoi) &&
-        n(c.revenueShare) > n(c.budgetShare),
-    )
-    .map(c => ({
-      name: c.channel,
-      type: "channel" as const,
-      roi: n(c.roi),
-      budgetShare: c.budgetShare,
-      revenueShare: c.revenueShare,
-      reason: "Channel outperforms its budget allocation.",
-    }));
-
-  return [...campaignCandidates, ...channelCandidates]
+  return [
+    ...toCampaignScalingSignals(campaigns, portfolioRoi),
+    ...toChannelScalingSignals(channels, portfolioRoi),
+  ]
     .sort((a, b) => b.roi - a.roi)
     .slice(0, 5);
 }
@@ -137,12 +189,12 @@ export function getConcentrationFlag(
     };
   }
 
-  const sorted = [...campaigns].sort((a, b) => n(b.revenue) - n(a.revenue));
+  const sorted = [...campaigns].sort((a, b) => b.revenue - a.revenue);
 
-  const top1RevenueShare = n(sorted[0]?.revenueShare);
+  const top1RevenueShare = sorted[0]?.revenueShare ?? 0;
   const top3RevenueShare = sorted
     .slice(0, 3)
-    .reduce((sum, c) => sum + n(c.revenueShare), 0);
+    .reduce((sum, campaign) => sum + campaign.revenueShare, 0);
 
   if (top1RevenueShare > 0.4 || top3RevenueShare > 0.75) {
     return {
@@ -188,7 +240,7 @@ export function getExecutiveSummaryDerivedInputs(params: {
   const { campaigns, channels, portfolioRoi } = params;
 
   const topCampaigns = getTopCampaigns(campaigns);
-  const topCampaignNames = new Set(topCampaigns.map(c => c.campaign));
+  const topCampaignNames = new Set(topCampaigns.map(campaign => campaign.campaign));
 
   return {
     topCampaigns,
@@ -199,5 +251,103 @@ export function getExecutiveSummaryDerivedInputs(params: {
       concentrationFlag: getConcentrationFlag(campaigns),
       correlations: getCorrelations(campaigns),
     },
+  };
+}
+
+// ── Summary assembly ──────────────────────────────────────────────────────────
+
+function computeChannelStatus(
+  channelRoi: number | null,
+  portfolioRoi: number | null,
+): SummaryMetricStatus {
+  if (channelRoi === null || portfolioRoi === null) return 'Moderate';
+  if (channelRoi > portfolioRoi * 1.1) return 'Strong';
+  if (channelRoi < portfolioRoi * 0.9) return 'Weak';
+  return 'Moderate';
+}
+
+function toCampaignSummary(
+  campaign: CampaignPerformance,
+  totalBudget: number,
+  totalRevenue: number,
+): CampaignSummary {
+  return {
+    ...campaign,
+    ...computeShareEfficiency(campaign, totalBudget, totalRevenue),
+  };
+}
+
+function toChannelSummary(
+  channel: Channel,
+  totalBudget: number,
+  totalRevenue: number,
+  portfolioRoi: number | null,
+): ChannelSummary {
+  const { campaigns, id, name, ...metrics } = channel;
+
+  return {
+    channel: name,
+    ...metrics,
+    ...computeShareEfficiency(channel, totalBudget, totalRevenue),
+    status: computeChannelStatus(channel.roi, portfolioRoi),
+  };
+}
+
+export function computeSummaryAnalysis(
+  campaigns: CampaignPerformance[],
+  channels: Channel[],
+  kpis: PortfolioKPIs,
+  scope: PortfolioScope,
+): SummaryAnalysis {
+  const portfolio: PortfolioSummary = {
+    ...kpis,
+    campaignCount: scope.selectedCampaigns.length,
+    channelCount: scope.selectedChannels.length,
+  };
+
+  if (campaigns.length === 0) {
+    return {
+      portfolio,
+      channels: [],
+      topCampaigns: [],
+      bottomCampaigns: [],
+      derivedSignals: {
+        inefficientChannels: [],
+        scalingCandidates: [],
+        concentrationFlag: {
+          flagged: false,
+          level: 'Low',
+          top1RevenueShare: 0,
+          top3RevenueShare: 0,
+          reason: 'No data provided.',
+        },
+        correlations: [],
+      },
+    };
+  }
+
+  const { totalBudget, totalRevenue, aggregatedROI } = kpis;
+
+  const campaignSummaries = campaigns.map(
+    (campaign) => toCampaignSummary(campaign, totalBudget, totalRevenue),
+  );
+
+  const channelSummaries = channels.map(
+    (channel) => toChannelSummary(channel, totalBudget, totalRevenue, aggregatedROI),
+  );
+
+  const { topCampaigns, bottomCampaigns, derivedSignals } =
+    getExecutiveSummaryDerivedInputs({
+      campaigns: campaignSummaries,
+      channels: channelSummaries,
+      portfolioRoi: aggregatedROI,
+    });
+
+  return {
+    portfolio,
+    channels: channelSummaries,
+    topCampaigns,
+    bottomCampaigns,
+    derivedSignals,
   };
 }

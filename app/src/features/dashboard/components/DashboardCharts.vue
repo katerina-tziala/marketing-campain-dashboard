@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { ChartData } from 'chart.js'
 import { computed } from 'vue'
-import type { CampaignPerformance, CampaignKPIs } from '../../../common/types/campaign'
+import type { CampaignPerformance, PortfolioKPIs } from '../../../common/types/campaign'
 import type { Channel } from '../../../common/types/channel'
 import { BarChart, CHART_COLORS, DonutChart, FunnelChart, GroupedBarChart } from '../../../ui'
 
 const props = defineProps<{
   campaigns: CampaignPerformance[]
   channels: Channel[]
-  kpis: CampaignKPIs
+  kpis: PortfolioKPIs
 }>()
 
 const campaignColorMap = computed<Record<string, string>>(() =>
@@ -66,7 +66,7 @@ const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
 }))
 
 const funnelLabels = ['Impressions', 'Clicks', 'Conversions']
-const funnelValues = computed(() => [props.kpis.impressions, props.kpis.clicks, props.kpis.conversions])
+const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.totalClicks, props.kpis.totalConversions])
 </script>
 
 <template>

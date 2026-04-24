@@ -1,6 +1,6 @@
 import type {
   BusinessContext,
-  ExecutiveSummaryData, 
+  ExecutiveSummaryData,
   PromptScopeConfig,
 } from "../types";
 import { generateBusinessContextForPrompt } from "./business-context";
@@ -10,7 +10,7 @@ import {
   getScopeBlock,
 } from "./prompt-utils";
 
- 
+
 const OUTPUT_SCHEMA = `{
   "period": "string — optional; include only if explicitly provided in the context",
   "health_score": {
@@ -83,26 +83,26 @@ const SUMMARY_SCOPE_CONFIG: PromptScopeConfig = {
     "Do not generalize conclusions to the full portfolio unless explicitly supported by the data.",
   ],
 };
- 
- const ROLE = [
-    'You are a Chief Marketing Officer presenting a concise executive briefing to a company board of non-technical business leaders.',
-    'Your responsibility is to translate marketing performance data into clear strategic insights and leadership actions.'
-  ];
 
- const TASK = [
-    'The audience must understand overall marketing performance, major risks, and the most important next actions in under two minutes.',
-    'Transform the provided marketing dataset into a concise, executive-level performance summary.',
-    'Focus on interpretation and business implications, not simply repeating raw metrics.'
-  ];
+const ROLE = [
+  "You are a senior marketing strategist preparing an executive summary for company leadership.",
+  "Be concise, analytical, and direct. Avoid presentation-style language and fluff."
+];
+
+const TASK = [
+  'The audience must understand overall marketing performance, major risks, and the most important next actions in under two minutes.',
+  'Transform the provided marketing dataset into a concise, executive-level performance summary.',
+  'Focus on interpretation and business implications, not simply repeating raw metrics.'
+];
 
 const EXECUTIVE_QUESTIONS = [
-    'What is working well in the marketing portfolio?',
-    'What is underperforming or creating risk?',
-    'How healthy is the overall marketing portfolio?',
-    'Which channels or campaigns matter most?',
-    'What actions should leadership prioritize next?'
-  ];
- 
+  'What is working well in the marketing portfolio?',
+  'What is underperforming or creating risk?',
+  'How healthy is the overall marketing portfolio?',
+  'Which channels or campaigns matter most?',
+  'What actions should leadership prioritize next?'
+];
+
 const HEALTH_SCORE_LIST = [
   "85 to 100 = Excellent\nStrong profitability, efficient allocation, limited weaknesses.",
   "70 to 84 = Good\nHealthy overall performance with clear improvement opportunities.",
@@ -110,11 +110,11 @@ const HEALTH_SCORE_LIST = [
   "0 to 49 = Critical\nSerious inefficiencies or major performance risks."
 ];
 
-const INTERPRETATION_RULES = [ 
+const INTERPRETATION_RULES = [
   'If the analysis scope is filtered, interpret the dataset as the complete portfolio for this request.',
   'Use only the provided dataset and optional business context.',
   'Do not invent metrics, assumptions, or unsupported conclusions.',
-  'Describe relationships as correlations unless causality is clearly supported.', 
+  'Describe relationships as correlations unless causality is clearly supported.',
   'Treat the topChannels list as the primary channels for analysis.',
   'Do not assume channels omitted from topChannels are unimportant unless the analysis scope explicitly indicates that no additional channels exist.',
   'Reflect mixed performance signals honestly and conservatively.',
@@ -149,7 +149,7 @@ const INTERNAL_ANALYSIS_CHECKLIST = [
   '',
   'Do not include this reasoning in the output.',
 ];
- 
+
 const ANALYSIS_INSTRUCTIONS = [
   'Before generating the final response, internally analyze the dataset and determine the most important performance patterns, risks, and opportunities.',
   'Do not include internal reasoning in the output.',
@@ -167,7 +167,7 @@ const ANALYSIS_INSTRUCTIONS = [
   '    2. Channel-level performance',
   '    3. Campaign-level performance',
   '    4. Provided key findings',
- '',
+  '',
   '   Focus only on high-impact signals that materially affect portfolio performance.',
   '   High-impact signals typically involve:',
   '   - large revenue contributions',
@@ -242,7 +242,7 @@ export function generateExecutiveSummaryPrompt(
     getScopeBlock(SUMMARY_SCOPE_CONFIG, filteredChannels),
     `${getPromptList('DATA INTERPRETATION RULES', DATA_INTERPRETATION_RULES).join("\n")}`,
     `ANALYSIS INSTRUCTIONS:\n${ANALYSIS_INSTRUCTIONS.join("\n")}`,
-      getPromptList('HEALTH SCORE GUIDANCE', HEALTH_SCORE_LIST).join("\n"),
+    getPromptList('HEALTH SCORE GUIDANCE', HEALTH_SCORE_LIST).join("\n"),
     `INTERPRETATION RULES:\n${getPromptList('Use the following guardrails', INTERPRETATION_RULES).join("\n")}`,
     `INTERNAL ANALYSIS CHECKLIST:\n${INTERNAL_ANALYSIS_CHECKLIST.join("\n")}`,
     `OUTPUT RULES:\n${JSON_OUTPUT_RULES.join("\n")}`,

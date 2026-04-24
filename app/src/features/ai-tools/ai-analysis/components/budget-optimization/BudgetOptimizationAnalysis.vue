@@ -50,7 +50,7 @@ function handleAnalyze(): void {
     <BudgetOptimizationOverview
       :summary="response!.executive_summary"
       :period="response!.period"
-      :scope="campaignStore.campaignScope"
+      :scope="campaignStore.portfolioScope"
     />
     <BudgetOptimizationRecommendations :recommendations="response!.recommendations" />
     <BudgetOptimizationTopPerformers :performers="response!.top_performers" />

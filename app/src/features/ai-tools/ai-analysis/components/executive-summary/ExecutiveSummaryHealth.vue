@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { ExecutiveSummaryResponse } from '../../../types'
-import type { CampaignScope } from '../../../../../common/types/campaign'
+import type { PortfolioScope } from '../../../../../common/types/campaign'
 import AnalysisSummary from '../shared/AnalysisSummary.vue'
 import { healthScoreVariant } from '../../../utils/analysis-badge-variants'
 
 defineProps<{
   healthScore: ExecutiveSummaryResponse['healthScore']
   bottomLine: string
-  scope: CampaignScope
+  scope: PortfolioScope
 }>()
 </script>
 

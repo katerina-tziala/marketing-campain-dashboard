@@ -1,6 +1,6 @@
-import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics } from '../types/campaign'
+import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '../types/campaign'
 import type { Channel } from '../types/channel'
-import { round2, round4 } from './math'
+import { round2, round4, safeDivide } from './math'
 
 // Threshold is 0.5 because roi/ctr/cvr are stored as decimal ratios (e.g. 0.5 = 50%)
 export function percentageClass(value: number | null): string {
@@ -21,6 +21,20 @@ export function computePerformanceMetrics(campain: CampaignMetrics): Performance
   }
 }
 
+export function computeShareEfficiency(
+  item: CampaignMetrics,
+  totalBudget: number,
+  totalRevenue: number,
+): ShareEfficiency {
+  const budgetShare = safeDivide(item.budget, totalBudget)
+  const revenueShare = safeDivide(item.revenue, totalRevenue)
+  return {
+    budgetShare,
+    revenueShare,
+    efficiencyGap: budgetShare - revenueShare,
+  }
+}
+
 export function toCampaignPerformance(campaign: Campaign): CampaignPerformance {
   return { ...campaign, ...computePerformanceMetrics(campaign) }
 }
@@ -36,4 +50,20 @@ export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): Cam
     }),
     { budget: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0 },
   )
+}
+
+export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
+  const { budget, revenue, impressions, clicks, conversions } = aggregateCampaignMetrics(channels)
+  const { roi, ctr, cvr, cac } = computePerformanceMetrics({ budget, revenue, impressions, clicks, conversions })
+  return {
+    totalBudget: budget,
+    totalRevenue: revenue,
+    totalImpressions: impressions,
+    totalClicks: clicks,
+    totalConversions: conversions,
+    aggregatedROI: roi,
+    aggregatedCTR: ctr,
+    aggregatedCVR: cvr,
+    aggregatedCAC: cac,
+  }
 }

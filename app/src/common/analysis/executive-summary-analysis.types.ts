@@ -1,5 +1,5 @@
 import type { BusinessContext } from "../../features/ai-tools/types";
-import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics } from "../types/campaign";
+import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from "../types/campaign";
 
 export type SummaryMetricStatus = "Strong" | "Moderate" | "Weak";
 export type HealthLabel = "Excellent" | "Good" | "NeedsAttention" | "Critical";
@@ -7,19 +7,12 @@ export type InsightType = "Performance" | "Opportunity" | "Warning" | "Achieveme
 export type ActionUrgency = "Immediate" | "ThisQuarter" | "NextQuarter";
 export type ConcentrationLevel = "Low" | "Moderate" | "High";
 
-export interface ChannelSummary extends CampaignMetrics, PerformanceMetrics {
+export interface ChannelSummary extends CampaignMetrics, PerformanceMetrics, ShareEfficiency {
   channel: string;
-  budgetShare: number; // decimal
-  revenueShare: number; // decimal
-  efficiencyGap: number; // budgetShare - revenueShare
   status: SummaryMetricStatus;
 }
- 
-export interface CampaignSummary extends CampaignPerformance {
-  budgetShare: number; // campaign budget / filtered total budget, decimal
-  revenueShare: number; // campaign revenue / filtered total revenue, decimal
-  efficiencyGap: number; // budgetShare - revenueShare, decimal
-}
+
+export interface CampaignSummary extends CampaignPerformance, ShareEfficiency {}
 
 export interface InefficientChannelSignal {
   channel: string;
@@ -54,19 +47,16 @@ export interface CorrelationSignal {
   implication: string;
 }
 
-export interface ExecutiveSummaryInput {
-  portfolio: {
-    totalBudget: number;
-    totalRevenue: number;
-    totalConversions: number;
-    aggregatedROI: number; // decimal, e.g. 1.68 = 168%
-    aggregatedCAC: number | null;
-    campaignCount: number;
-    channelCount: number;
-  };
+export interface PortfolioSummary extends PortfolioKPIs {
+  campaignCount: number;
+  channelCount: number;
+}
+
+export interface SummaryAnalysis {
+  portfolio: PortfolioSummary;
   channels: ChannelSummary[];
-  topCampaigns: CampaignSummary[]; // recommended: 3-5
-  bottomCampaigns: CampaignSummary[]; // recommended: 3-5
+  topCampaigns: CampaignSummary[];
+  bottomCampaigns: CampaignSummary[];
   derivedSignals: {
     inefficientChannels: InefficientChannelSignal[];
     scalingCandidates: ScalingCandidateSignal[];
@@ -75,6 +65,3 @@ export interface ExecutiveSummaryInput {
   };
   businessContext?: BusinessContext;
 }
-
-
- 
