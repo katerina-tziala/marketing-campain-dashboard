@@ -2,7 +2,7 @@
 import { provide, ref } from 'vue'
 import { UploadIcon } from '@/ui'
 import { ToastContainer } from '@/ui/toast'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
 import { useUploadModal, UploadModal, ReplaceDataModal } from '@/features/data-transfer'
 import AiToolsDrawer from './AiToolsDrawer.vue'

@@ -7,9 +7,10 @@ import type {
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
 } from '@/features/ai-tools/ai-analysis/types'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useCampaignStore } from './campaign.store'
-import { runAnalysisPrompt, getCacheKey } from '@/features/ai-tools/ai-analysis/utils'
+import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
+import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 

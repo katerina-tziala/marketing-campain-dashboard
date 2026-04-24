@@ -6067,3 +6067,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Sed on import path segments (`/campaignStore` → `/campaign.store`) rather than full paths — handles both `@/stores/` and `./stores/` forms without needing separate patterns
 - Internal self-references inside store files (e.g. `aiConnectionStore.ts` importing `toastStore`) were caught by the same bulk replace
+
+
+## [#294] Remove pass-through barrel files project-wide
+**Type:** refactor
+
+**Summary:** Deleted 10 barrel index.ts files that were pure pass-throughs with no real module API value, and updated all import sites to use direct file paths.
+
+**Brainstorming:** Flat utility/type folders benefit from deep imports — each consumer's import line is self-documenting about exactly what it depends on, there's no extra file to maintain, and circular imports can't sneak through a pass-through. An audit of all 24 barrel files in the project identified 10 candidates for removal: 6 with zero imports (outright dead) and 4 that were used but added no curation. The remaining 14 barrels serve as real module API boundaries (type hubs, feature public surfaces, UI library entry points) and were left in place.
+
+**Prompt:** Audit all barrel index.ts files in the project. Delete the ones that are pure pass-throughs or unused. Update all import sites to use direct file paths. Keep barrels that serve as real module API boundaries.
+
+**What changed:**
+- Deleted: `ai-tools/index.ts` (empty), `ai-connection/components/index.ts`, `ai-connection/stores/index.ts`, `ai-connection/utils/index.ts`, `ai-analysis/components/index.ts`, `ai-analysis/utils/index.ts`, `mocks/index.ts`, `providers/gemini/index.ts`, `providers/qroq/index.ts`, `ui/forms/index.ts`
+- `stores/aiAnalysis.store.ts` — split `ai-analysis/utils` import into two direct imports (`analysis-prompt`, `utils`)
+- `ui/index.ts` — replaced `export * from './forms'` with three direct `.vue` component exports
+- 9 other `.ts`/`.vue` files — import paths updated to direct file targets
+- `CLAUDE.md` — architecture section updated to remove deleted barrel entries
+
+**Key decisions & why:**
+- `ui/index.ts` needed a manual fix: it re-exported `./forms` which pointed at the now-deleted barrel; replaced with explicit named exports for the three form components so the UI library public API is unchanged for consumers
+- `ai-analysis/utils` had four wildcard re-exports from different files; the single import site needed two separate lines since `runAnalysisPrompt` and `getCacheKey` live in different source files

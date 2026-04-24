@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { Spinner, PasswordInput, RadioToggle } from '@/ui'
 import type { AiProviderType } from '@/features/ai-tools/types'
 import { PROVIDER_OPTIONS, PROVIDER_HELP } from '@/features/ai-tools/providers/utils/providers-meta'
-import { ERROR_MESSAGES, ERROR_HINTS } from '@/features/ai-tools/ai-connection/utils'
+import { ERROR_MESSAGES, ERROR_HINTS } from '@/features/ai-tools/ai-connection/utils/error-handling'
 
 const store = useAiConnectionStore()
 

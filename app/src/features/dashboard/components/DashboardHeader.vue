@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { SparklesIcon } from '@/ui'
 import { useCampaignStore } from '@/stores/campaign.store'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 
 const store = useCampaignStore()
 const aiStore = useAiConnectionStore()
