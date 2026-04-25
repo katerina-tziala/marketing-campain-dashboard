@@ -45,7 +45,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
   @apply flex items-start justify-center gap-x-4 gap-y-2;
 
   // .dashboard-title {
-  //   @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1;
+  //   @apply grow text-lg font-semibold tracking-wider text-primary-light pt-1;
   // }
 }
  

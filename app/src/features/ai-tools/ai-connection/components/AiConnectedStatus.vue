@@ -34,13 +34,13 @@ function handleDisconnect(): void {
     pl-6
     pr-4
     border-b
-    border-surface-border
+    border
     w-full
     bg-success/[0.05];
 }
 
 .status-provider {
-  @apply text-sm font-medium text-typography-intense grow;
+  @apply text-sm font-medium text-on-primary grow;
 }
 
 .status-connected {

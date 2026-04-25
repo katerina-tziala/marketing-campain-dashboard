@@ -106,6 +106,6 @@ const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.tot
 }
 
 .card-title.chart-card-title {
-  @apply text-base shrink-0 font-normal text-primary-300;
+  @apply text-base shrink-0 font-normal text-primary-lighter;
 }
 </style>

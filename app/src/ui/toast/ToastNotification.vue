@@ -54,8 +54,8 @@ const iconComponent = computed(() => ICON_MAP[props.variant])
   }
 
   &.error {
-    @apply border-danger--5p/50;
-    .toast-icon { @apply text-danger--5p; }
+    @apply border-danger-lighter/50;
+    .toast-icon { @apply text-danger-lighter; }
   }
 
   &.warning {
@@ -64,8 +64,8 @@ const iconComponent = computed(() => ICON_MAP[props.variant])
   }
 
   &.info {
-    @apply border-primary-500/50;
-    .toast-icon { @apply text-primary-400; }
+    @apply border-primary/50;
+    .toast-icon { @apply text-primary-light; }
   }
 }
 

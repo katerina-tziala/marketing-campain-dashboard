@@ -47,18 +47,18 @@ const emit = defineEmits<{ close: [] }>()
       items-center
       justify-start
       border
-      border-surface-border
+      border
       gap-2
       py-3
       px-4;
 }
 
 .ai-tools-header-icon {
-  @apply text-primary-400 text-lg shrink-0;
+  @apply text-primary-light text-lg shrink-0;
 }
 
 .ai-tools-title {
-   @apply grow text-primary-400 text-lg font-semibold m-0;
+   @apply grow text-primary-light text-lg font-semibold m-0;
 }
 
 .ai-tools-content {

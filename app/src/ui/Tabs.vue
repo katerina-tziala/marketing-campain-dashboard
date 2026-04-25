@@ -44,7 +44,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .tabs {
   // bg-surface-secondary/20
-  @apply flex w-full border-b border-surface-border ;
+  @apply flex w-full border-b border ;
 
 }
 
@@ -69,7 +69,7 @@ onMounted(() => {
       ease-in-out;
 
     &.tab-active {
-      @apply text-primary-400 border-primary-500;
+      @apply text-primary-light border-primary;
     }
 
     .tab-icon {
@@ -78,7 +78,7 @@ onMounted(() => {
 
 
     &:hover:not(.tab-active) {
-      @apply bg-primary-500/10 text-primary-300;
+      @apply bg-primary/10 text-primary-lighter;
     }
 
   }

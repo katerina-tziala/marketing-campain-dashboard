@@ -8,16 +8,16 @@
     @apply flex flex-col gap-3 text-sm;
 
     p > strong {
-      @apply font-semibold text-primary-300;
+      @apply font-semibold text-primary-lighter;
     }
   }
 
   .section-title {
-    @apply text-base font-bold tracking-wider m-0 text-primary-300;
+    @apply text-base font-bold tracking-wider m-0 text-primary-lighter;
   }
 
   .section-subtitle {
-    @apply text-sm tracking-wide font-semibold text-primary-200;
+    @apply text-sm tracking-wide font-semibold text-primary-soft;
   }
 
   .section-note {

@@ -9,7 +9,7 @@
   }
 
   .field-label {
-    @apply text-sm font-medium text-primary-300;
+    @apply text-sm font-medium text-primary-lighter;
   }
 
   .form-control {
@@ -18,13 +18,13 @@
       w-full
       block
       border
-      border-surface-border
+      border
       outline-none
       transition-colors
       duration-150
       ease-in-out
       tracking-wider
-      text-primary-400
+      text-primary-light
       // bg-surface-secondary
       px-3
       py-2.5;
@@ -38,7 +38,7 @@
         &:focus,
         &:focus-within,
         &:hover {
-          @apply border-primary-500;
+          @apply border-primary;
         }
     }
 

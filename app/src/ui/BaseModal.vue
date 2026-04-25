@@ -52,7 +52,7 @@ onUnmounted(() => {
     overflow-hidden
     z-1000
     inset-0
-    bg-black/[0.7];
+    bg-primary-ink/[0.7];
 }
 
 .modal {
@@ -63,7 +63,7 @@ onUnmounted(() => {
     shadow-md
     bg-surface
     border
-    border-surface-border
+    border
     grid 
     grid-cols-1
     auto-rows-auto;
@@ -74,13 +74,13 @@ onUnmounted(() => {
       items-start
       justify-between
       border
-      border-surface-border
+      border
       gap-2
       py-3
       px-4;
   }
 
   .modal-header-title {
-    @apply text-primary-400 text-lg font-semibold m-0 pt-1;
+    @apply text-primary-light text-lg font-semibold m-0 pt-1;
   }
 </style>

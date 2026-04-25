@@ -57,7 +57,7 @@ async function handleConnect(): Promise<void> {
         <Transition name="help">
           <div v-if="showHelp" class="help-collapse">
             <div class="card-secondary bg-surface-secondary/50">
-              <h5 class="card-title text-primary-300">
+              <h5 class="card-title text-primary-lighter">
                 {{ providerHelp.title }}
               </h5>
               <ol class="help-steps">

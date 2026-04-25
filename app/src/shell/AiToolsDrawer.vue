@@ -59,7 +59,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     h-full
     bg-surface
     border
-    border-surface-border
+    border
     overflow-hidden
     sticky
     top-0
@@ -78,7 +78,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     overflow-hidden
     z-1000
     inset-0
-    bg-black/[0.7]
+    bg-primary-ink/[0.7]
     py-[5vh]
     px-[5vw];
 
@@ -95,7 +95,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     w-full
     bg-surface
     border
-    border-surface-border
+    border
     overflow-hidden
     rounded-md
     min-h-[50vh]

@@ -34,11 +34,11 @@
   
   .btn-primary {
     @extend .btn;
-    @apply bg-primary-600 text-white;
+    @apply bg-primary-dark text-on-primary;
 
     &:not(:disabled)  {
       &:focus-visible, &:hover  {
-        @apply border-primary-500 bg-primary-500;
+        @apply border-primary bg-primary;
       } 
     }
   }
@@ -49,7 +49,7 @@
     @apply text-xl
       bg-none
       p-1.5
-      text-primary-400;
+      text-primary-light;
 
      > span {
       @apply sr-only;
@@ -57,11 +57,11 @@
 
      &:not(:disabled) {
        &:hover {
-        @apply text-primary-400 bg-primary-500/20;
+        @apply text-primary-light bg-primary/20;
       }
 
       &:focus-visible  {
-        @apply border-primary-400;
+        @apply border-primary-light;
       }
      }
   }
@@ -72,26 +72,26 @@
     @apply text-xl
       bg-none
       p-1.5
-      text-primary-400;
+      text-primary-light;
  
      &:not(:disabled) {
        &:hover {
-        @apply text-primary-400 bg-primary-500/20;
+        @apply text-primary-light bg-primary/20;
       }
 
       &:focus-visible  {
-        @apply border-primary-400;
+        @apply border-primary-light;
       }
      }
   }
 
   .btn-secondary-outline {
     @extend .btn;
-     @apply text-primary-300 border-primary-300 border;
+     @apply text-primary-lighter border-primary-lighter border;
     
     &:not(:disabled) {
        &:focus-visible, &:hover  {
-        @apply text-primary-400 border-primary-400;
+        @apply text-primary-light border-primary-light;
       }
     }
   }

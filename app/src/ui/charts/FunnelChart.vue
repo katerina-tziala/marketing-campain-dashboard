@@ -6,7 +6,7 @@ const props = defineProps<{
   values: number[]
 }>()
 
-// Vivid, WCAG AA contrast with white labels (≥4.5:1): ~6:1, ~5.1:1, ~4.9:1
+// Vivid, WCAG AA contrast with on-primary labels (≥4.5:1): ~6:1, ~5.1:1, ~4.9:1
 const FUNNEL_COLORS = ['#4f46e5', '#9333ea', '#c2410c']
 
 function formatValue(val: number) {
@@ -117,7 +117,7 @@ const rows = computed(() =>
   font-size: theme('fontSize.sm');
   font-weight: 700;
   color: #fff;
-  white-space: nowrap;
+  on-primary-space: nowrap;
 }
 
 .funnel-rate {
@@ -126,6 +126,6 @@ const rows = computed(() =>
   font-size: theme('fontSize.xs');
   font-weight: 500;
   color: #f59e0b;
-  white-space: nowrap;
+  on-primary-space: nowrap;
 }
 </style>

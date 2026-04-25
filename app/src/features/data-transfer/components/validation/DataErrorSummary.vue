@@ -1,7 +1,7 @@
  <template>
   <section class="flex flex-col gap-1">
     <div class="flex flex-row items-start justify-center gap-2">
-      <h3 class="grow font-semibold text-primary-300">
+      <h3 class="grow font-semibold text-primary-lighter">
         <slot name="title" />
       </h3>
       <slot name="badge" />

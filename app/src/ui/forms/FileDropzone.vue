@@ -82,7 +82,7 @@ function onChange(e: Event): void {
 }
 
 .dropzone-active {
-  @apply border-primary-500;
+  @apply border-primary;
 }
 
 .upload-icon {

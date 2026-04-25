@@ -143,7 +143,7 @@ function selectRow(campaignName: string, rowId: number): void {
     // bg-surface-secondary
     border-t
     border-b
-    border-surface-border-secondary
+    border-divider
     items-center
     gap-2;
 
@@ -152,10 +152,10 @@ function selectRow(campaignName: string, rowId: number): void {
   }
 
   &.selected {
-    @apply text-primary-400;
+    @apply text-primary-light;
 
     .group-check-icon {
-      @apply text-primary-400;
+      @apply text-primary-light;
     }
   }
 }
@@ -170,7 +170,7 @@ function selectRow(campaignName: string, rowId: number): void {
 
 .row-selectable {
   &.row-selected {
-    @apply bg-primary-950;
+    @apply bg-primary-muted;
 
     td {
       @apply font-semibold;
@@ -180,7 +180,7 @@ function selectRow(campaignName: string, rowId: number): void {
 
 .data-table-row {
   &:hover {
-    @apply bg-primary-800/35;
+    @apply bg-primary-deep/35;
   }
 }
 </style>

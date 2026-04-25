@@ -34,10 +34,10 @@ defineProps<{
 }
 
 .priority-number {
-  @apply font-extrabold text-sm min-w-5 text-primary-200;
+  @apply font-extrabold text-sm min-w-5 text-primary-soft;
 }
 
 .priority-metric {
-  @apply bg-primary-700/10 border-primary-700/25 py-1 px-2;
+  @apply bg-primary-darker/10 border-primary-darker/25 py-1 px-2;
 }
 </style>

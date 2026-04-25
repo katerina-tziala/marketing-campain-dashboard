@@ -59,7 +59,7 @@ const hasError = computed(() => {
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary-500;
+      @apply border-primary;
     }
   }
 }
@@ -74,7 +74,7 @@ const hasError = computed(() => {
   &:not(:disabled) {
     &:focus,
     &:focus-visible {
-      @apply border-primary-500/20 text-primary-400 bg-primary-500/20;
+      @apply border-primary/20 text-primary-light bg-primary/20;
     }
   }
 }

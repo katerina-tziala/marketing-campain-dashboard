@@ -2272,7 +2272,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** The single `components.scss` file was growing unwieldy — every component category dumped styles into one file, making it hard to navigate and reason about. Splitting by concern (button, badge, card, form, modal, table, roi, ai-summary, scrollbar) follows the same pattern already used in most style systems: one partial per semantic area, composed via a top-level entry file. A separate `utilities.scss` entry mirrors the Tailwind layer split (components vs utilities). `AiTabs.vue` was feature-locked; `Tabs.vue` in the UI library is generically useful — takes a typed `Tab<T>[]` prop with optional icon. `Badge.vue` as a Vue component added component overhead for what is essentially a styled `<span>`; moving to global `.badge` + `.badge-text`/`.badge-background` modifier classes (extended via `@extend`) is simpler and works in any template without an import. `roi.ts` extracts three ROI helpers (`roiValue`, `roiClass`, `formatROI`) that were likely duplicated across components. `Spinner` gained `lg/xl/xxl` sizes to cover full-panel loading states.
 
-**Prompt:** Split components.scss into individual SCSS partials per concern (badge, button, card, forms, modal, roi, scrollbar, table, ai-summary). Add a utilities.scss entry file for utility-layer classes. Replace the feature-specific AiTabs.vue with a generic reusable Tabs.vue in the UI library. Remove Badge.vue and move badge styling to global CSS classes. Add roi.ts shared utilities (roiValue, roiClass, formatROI) to common/utils. Extend Spinner with lg/xl/xxl size variants. Standardize icon sizing via inline style. Clean up Tailwind tokens — remove badge-* and panel-text flat keys, add danger.-5p, typography.intense, surface-border.secondary.
+**Prompt:** Split components.scss into individual SCSS partials per concern (badge, button, card, forms, modal, roi, scrollbar, table, ai-summary). Add a utilities.scss entry file for utility-layer classes. Replace the feature-specific AiTabs.vue with a generic reusable Tabs.vue in the UI library. Remove Badge.vue and move badge styling to global CSS classes. Add roi.ts shared utilities (roiValue, roiClass, formatROI) to common/utils. Extend Spinner with lg/xl/xxl size variants. Standardize icon sizing via inline style. Clean up Tailwind tokens — remove badge-* and panel-text flat keys, add danger.-5p, typography.intense, border.secondary.
 
 **What changed:**
 - `app/src/styles/components.scss` — converted to entry file; replaced inline styles with `@use` imports for each partial
@@ -2297,7 +2297,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `app/src/ui/icons/*.vue` — standardized all icons with `style="width: 1em; height: 1em; display: inline-block;"` inline sizing
 - `app/src/ui/index.ts` — removed `Badge`/`BadgeVariant` exports; added `Tabs` + `Tab` type exports
 - `app/src/common/utils/roi.ts` — new shared utility; `roiValue()`, `roiClass()`, `formatROI()`
-- `app/tailwind.config.js` — removed `badge-*` and `panel-text` flat tokens; added `danger.-5p`, `typography.intense`, `surface-border.secondary`, explicit `black`/`white` tokens
+- `app/tailwind.config.js` — removed `badge-*` and `panel-text` flat tokens; added `danger.-5p`, `typography.intense`, `border.secondary`, explicit `black`/`white` tokens
 
 **Key decisions & why:**
 - One partial per concern — mirrors Tailwind's own layer structure; each file is self-contained and easy to locate
@@ -6723,3 +6723,58 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No local state in ChannelFilter: displayed selection derived from store reactively — portfolio switch resets the store ref and the component updates automatically with no extra watcher
 - Normalization in component: ChannelFilter has the `channels` prop (total count) needed to detect "all selected"; the store setter doesn't need to know about total channel count
 - Single setter over toggle action: callers compose the next state themselves, giving them full control without relying on store-internal array mutation logic
+
+
+## [#328] Complete semantic token wiring — tailwind config, ChannelFilter styles
+**Type:** refactor
+
+**Summary:** Replaced all hardcoded hex color values in `tailwind.config.js` with CSS-var-backed semantic tokens covering the full design system (primary/secondary/accent/success/warning/danger/info each with DEFAULT/light/lighter/dark/darker scale, on-primary, divider border); updated ChannelFilter pill styles to consume the new tokens.
+
+**Brainstorming:** The previous tailwind config was a hybrid — some tokens pointed to CSS vars, others (primary 50–1000 hex scale, secondary single hex, danger -5p, slate, black/white, surface-border) were hardcoded. This meant changing the theme required editing both `dark-pallette.scss` and `tailwind.config.js`. The refactor makes the config purely a mapping layer: CSS vars are the single source of truth, Tailwind tokens are aliases. The new primary scale adds semantic role names (soft/deep/deeper/muted/ink) rather than numeric steps, which communicate intent rather than lightness level. ChannelFilter was updated as a direct consumer: the old `border-primary-500`/`bg-primary-500`/`text-white`/`bg-white/10` hardcoded values are replaced with `border-primary`/`bg-primary`/`text-on-primary`/`bg-on-primary/10`.
+
+**Prompt:** Check all changed files — tailwind.config.js was updated with the full semantic token system. Update CLAUDE.md to reflect the new token structure, update ChannelFilter docs for the new semantic styles, write the log entry, give a commit message.
+
+**What changed:**
+- `app/tailwind.config.js` — removed all hardcoded hex color values; primary now purely CSS-var-backed with soft/deep/deeper/muted/ink semantic variants added; secondary/accent/success/warning/danger/info all expanded to full CSS-var-backed scale (DEFAULT/light/lighter/dark/darker); added on-primary token; added divider to borderColor; removed slate/black/white/surface-border/danger-5p; spinner tokens remain hardcoded hex (no CSS var counterpart)
+- `app/src/features/dashboard/components/ChannelFilter.vue` — active pill updated to `border-primary bg-primary text-on-primary`; inactive updated to `hover:border-primary-light focus-visible:border-primary-light`; filter-count badge updated to `bg-on-primary/10`; border-2 reduced to border
+
+**Key decisions & why:**
+- Semantic primary scale (soft/deep/deeper/muted/ink) instead of numeric (50–1000): communicates role rather than lightness position; decouples component code from palette values
+- Spinner left as hardcoded hex: spinner has no semantic meaning that benefits from CSS-var indirection; it's a UI-only token unlikely to theme-switch
+- on-primary token: required to correctly set text on filled primary-background elements without hardcoding `text-white` — enables theme flexibility
+
+
+## [#329] Rename primary palette scale to semantic names; update dark.scss and _card.scss
+**Type:** refactor
+
+**Summary:** Renamed the primary color scale in `dark-pallette.scss` from numeric steps (--primary-400 etc.) to semantic names (--primary-light etc.); updated `dark.scss` to reference the new names; updated `_card.scss` to use `bg-surface-elevated` and `text-primary-soft`.
+
+**Brainstorming:** The previous palette used numeric suffixes (50–1000) for primary, making component code express a position rather than a role. Renaming to semantic names (--primary, --primary-light, --primary-lighter, --primary-soft, --primary-dark, --primary-darker, --primary-deep, --primary-deeper, --primary-muted, --primary-ink) means the palette communicates intent. dark.scss semantic token layer now references these names (--color-primary-light: var(--primary-light)) rather than numerics. Card components updated to use the new tokens: .card uses bg-surface-elevated (surface-1 depth) for slightly elevated appearance; .card-secondary .card-title uses text-primary-soft.
+
+**Prompt:** Check if CLAUDE.md is fully up to date — dark-pallette.scss renamed primary scale to semantic names, dark.scss updated accordingly, _card.scss uses bg-surface-elevated and text-primary-soft.
+
+**What changed:**
+- `app/src/styles/themes/dark-pallette.scss` — primary scale renamed: --primary-200→--primary-soft, --primary-300→--primary-lighter, --primary-400→--primary-light, --primary-500→--primary, --primary-600→--primary-dark, --primary-700→--primary-darker, --primary-800→--primary-deep, --primary-900→--primary-deeper, --primary-950→--primary-muted, --primary-1000→--primary-ink; --primary-50/100 kept numeric
+- `app/src/styles/themes/dark.scss` — all --color-primary-* vars updated to reference semantic palette names (--primary-light not --primary-400); --color-text-primary/strong/subtle updated similarly; --color-on-primary moved into Primary section
+- `app/src/styles/components/_card.scss` — .card uses bg-surface-elevated (was bg-surface); .card-secondary .card-title uses text-primary-soft (was text-primary-200)
+
+**Key decisions & why:**
+- Semantic names over numeric steps: component code reads `text-primary-soft` rather than `text-primary-200` — role is explicit without needing to know the scale position
+- --primary-50/100 kept numeric: no semantic role assigned to the lightest end of the scale yet; renamed only the values actively used in tokens
+
+
+## [#330] Fix dark.scss broken palette references after dark-pallette revert to numeric naming
+**Type:** fix
+
+**Summary:** Reverted `dark-pallette.scss` to numeric primary scale (50–1000); fixed 5 broken references in `dark.scss` that still used the short-lived semantic palette names (`--primary`, `--primary-light`, `--primary-lighter`).
+
+**Brainstorming:** `dark-pallette.scss` was restored to the original numeric naming. `dark.scss` had 5 leftover references to semantic palette names that no longer exist: `--color-text-primary`, `--color-text-primary-strong`, `--color-text-primary-subtle`, `--color-primary`, and `--color-focus-ring`. All five now point to the correct numeric vars. Lines 37–45 (the `--color-primary-*` semantic token definitions) were already correct as they had been manually updated to use numeric refs.
+
+**Prompt:** dark-pallette.scss reverted to numeric naming. Fix the remaining broken references in dark.scss.
+
+**What changed:**
+- `app/src/styles/themes/dark-pallette.scss` — primary scale restored to numeric (--primary-50 through --primary-1000)
+- `app/src/styles/themes/dark.scss` — fixed: `--color-text-primary` → `var(--primary-400)`; `--color-text-primary-strong` → `var(--primary-500)`; `--color-text-primary-subtle` → `var(--primary-300)`; `--color-primary` → `var(--primary-500)`; `--color-focus-ring` → `var(--primary-400)`
+
+**Key decisions & why:**
+- All five broken refs resolved to their numeric equivalents based on the intended role (400 = light/interactive, 500 = base, 300 = subtle)

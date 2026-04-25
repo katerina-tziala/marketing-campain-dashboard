@@ -48,24 +48,24 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
     tracking-wider
     px-2
     py-2.5
-    text-primary-300;
+    text-primary-lighter;
 }
 
 input[type='radio'] {
   &:not(:disabled)+ .option-label {
-    @apply hover:bg-primary-500 hover:text-white;
+    @apply hover:bg-primary hover:text-on-primary;
   }
 
   &:checked + .option-label {
-    @apply bg-primary-600 text-white;
+    @apply bg-primary-dark text-on-primary;
   }
 
   &:focus-visible + .option-label {
-    @apply bg-primary-500 text-white;
+    @apply bg-primary text-on-primary;
   }
 
   &:disabled + .option-label {
-    @apply opacity-50 cursor-not-allowed text-white;
+    @apply opacity-50 cursor-not-allowed text-on-primary;
   }
 }
  

@@ -187,7 +187,7 @@ app/                        # Vue 3 + Vite project
 │   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot; uses @include cq-container('kpi-card') + @include cq-up(tiny, 'kpi-card') for container-query-driven font size scaling; flat scoped styles (no BEM)
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; reads pre-calculated roi/ctr/cvr/cpa directly; revenue+ROI coloring via percentageClass(c.roi); uses global data-table classes; channel cell uses `.badge.info`
-│   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills — reads selectedChannelsIds from campaign.store directly; toggle() normalizes (all selected → []); calls store.setChannelFilter(); no emits; channels prop from DashboardView
+│   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills — reads selectedChannelsIds from campaign.store directly; toggle() normalizes (all selected → []); calls store.setChannelFilter(); no emits; channels prop from DashboardView; active state uses border-primary/bg-primary/text-on-primary semantic tokens; filter-count badge uses bg-on-primary/10
 │   │   └── data-transfer/          # CSV upload & data transfer feature folder
 │   │       ├── index.ts            # Barrel — exports UploadModal, ReplaceDataModal, FileActions, useUploadModal for external consumers
 │   │       ├── types/
@@ -217,15 +217,15 @@ app/                        # Vue 3 + Vite project
 │   ├── styles/
 │   │   ├── index.scss              # Root barrel — @use themes/dark + components/index + utilities/index; imported by style.scss
 │   │   ├── themes/
-│   │   │   ├── dark-pallette.scss  # Raw color scale variables — primary (50–1000), secondary, accent, success, warning, danger, info, neutral (50–950); applied on :root + [data-theme="dark"]; @used by dark.scss
-│   │   │   └── dark.scss           # Semantic design tokens — @use dark-pallette; maps palette vars to semantic roles: surface layers (0–3/hover/active), borders (subtle/default/strong/divider), text (default/muted/subtle/inverse/primary variants), primary/secondary/accent/success/warning/danger/info color groups, focus-ring, disabled, elevation shadows; applied on :root + [data-theme="dark"]
+│   │   │   ├── dark-pallette.scss  # Raw color scale variables — primary numeric scale (50–1000), secondary/accent/success/warning/danger/info/neutral numeric scale; applied on :root + [data-theme="dark"]; @used by dark.scss
+│   │   │   └── dark.scss           # Semantic design tokens — @use dark-pallette; maps numeric palette vars to semantic roles; surface layers (0–3/hover/active), borders (subtle/default/strong/divider), text (default/muted/subtle/inverse/primary variants), on-primary, primary (DEFAULT→500/light→400/lighter→300/dark→600/darker→700/soft→200/deep→800/deeper→900/muted→950/ink→1000), secondary/accent/success/warning/danger/info color groups, focus-ring (primary-400), disabled, elevation shadows; applied on :root + [data-theme="dark"]
 │   │   ├── container-queries.scss  # SCSS mixin library for container queries — $container-sizes scale (tiny/xs/sm/md/lg/xl/2xl); mixins: cq-container($name?, $type?), cq-up($size, $name?), cq-down($size, $name?), cq-between($min, $max, $name?); globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
 │   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
-│   │   │   ├── _card.scss          # @layer components — .card (border-subtle), .card-secondary; flat child classes: .card-head, .card-title, .card-content
+│   │   │   ├── _card.scss          # @layer components — .card (bg-surface-elevated, border-subtle), .card-secondary (bg-surface, plain border); flat child classes: .card-head, .card-title (text-primary-soft), .card-content
 │   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-primary-light)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
@@ -238,7 +238,7 @@ app/                        # Vue 3 + Vite project
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
 │   └── style.scss              # Global styles: Tailwind directives, dark mode; imports styles/index (theme tokens now in styles/themes/dark.scss)
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class'; background/surface (0/elevated/raised/overlay/hover/active)/typography (DEFAULT/muted/subtle/inverse/primary variants)/border (subtle/DEFAULT/strong) via CSS vars; primary (50–1000 + DEFAULT/light/lighter/dark/darker via CSS vars), secondary, danger (default + -5p), success, warning, surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; xs screen breakpoint
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class'; all semantic color tokens via CSS vars: background, on-primary, surface (DEFAULT/elevated/raised/overlay/hover/active), primary (DEFAULT/light/lighter/dark/darker/soft/deep/deeper/muted/ink), secondary (DEFAULT/light/dark/darker), accent (DEFAULT/light/lighter/dark/darker), success/warning/danger/info (each DEFAULT/light/lighter/dark/darker), typography (DEFAULT/muted/subtle/inverse/primary/primary-strong/primary-subtle), border (subtle/DEFAULT/strong/divider); spinner tokens (hardcoded hex); connection box-shadow token; xs screen breakpoint; zIndex 1000
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/; SCSS additionalData globally injects container-queries.scss as *
 └── package.json                # Locked via package-lock.json — dependencies include xxhashjs (deterministic h64 cache key hashing)

@@ -73,7 +73,7 @@ function handleProceed(): void {
   @apply flex items-center gap-2 text-sm font-semibold text-typography-subtle -mb-3;
 
   &.resolved {
-    @apply text-primary-400;
+    @apply text-primary-light;
   }
 }
 </style>

@@ -65,7 +65,7 @@ function onCloseAiPanel(): void {
     py-3
     shadow-md
     border-b
-    border-primary-900;
+    border-primary-deeper;
 }
 
 .shell-title {
@@ -74,9 +74,10 @@ function onCloseAiPanel(): void {
     m-0
     leading-9
     bg-gradient-to-r
-    from-primary-500 via-purple-500 to-secondary-500
+    from-info via-primary-light to-secondary
     bg-clip-text
     text-transparent;
+    
 }
 
 .shell-body {

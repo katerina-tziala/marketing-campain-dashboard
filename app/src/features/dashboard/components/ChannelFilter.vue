@@ -43,11 +43,17 @@ function toggle(channelId: string): void {
 <style lang="scss" scoped>
 .channel-filter {
   @apply flex flex-wrap items-center gap-2.5;
+
+
+  // border: 1px dashed yellow;
+
+  max-height: 100px;
+  overflow: auto
 }
 
 .filter-btn {
   @apply rounded-full
-  border-2 
+  border
   pr-1
   pl-2
   py-1
@@ -57,15 +63,15 @@ function toggle(channelId: string): void {
   outline-none;
 
   &.active {
-    @apply border-primary-500 bg-primary-500 text-white;
+    @apply border-primary bg-primary text-on-primary;
   }
 
   &.inactive {
-    @apply border-surface-border
+    @apply border
     bg-surface
     text-typography-subtle
-    hover:border-primary-400
-    focus-visible:border-primary-400;
+    hover:border-primary-light
+    focus-visible:border-primary-light;
   }
 
   &.all {
@@ -81,6 +87,6 @@ function toggle(channelId: string): void {
   h-5
   text-xs
   font-normal
-  bg-white/10;
+  bg-on-primary/10;
 }
 </style>

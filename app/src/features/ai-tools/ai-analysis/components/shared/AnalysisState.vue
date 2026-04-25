@@ -94,11 +94,11 @@ const noticeText = computed(() =>
 }
 
 .panel-title {
-  @apply grow m-0 font-bold text-base text-primary-400;
+  @apply grow m-0 font-bold text-base text-primary-light;
 }
 
 .idle-text {
-  @apply text-typography-intense text-sm py-2 leading-5;
+  @apply text-on-primary text-sm py-2 leading-5;
 }
 
 .loader {

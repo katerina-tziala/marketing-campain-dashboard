@@ -37,7 +37,7 @@ defineProps<{
     gap-0.5;
 
     .kpi-value {
-      @apply shrink grow text-2xl font-medium text-typography-intense;
+      @apply shrink grow text-2xl font-medium text-on-primary;
     }
     
     @include cq-up(tiny, 'kpi-card') { 

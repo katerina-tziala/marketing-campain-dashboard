@@ -11,7 +11,7 @@ const emit = defineEmits<{ upload: [] }>()
 
 <template>
   <div class="empty-state">
-    <FileTextIcon class="text-4xl inline-block text-primary-400/60" />
+    <FileTextIcon class="text-4xl inline-block text-primary-light/60" />
     <h2 class="empty-state-title">No campaign data yet</h2>
     <p class="empty-state-description">
       Upload a CSV file to generate your campaign performance dashboard.<br />
@@ -28,7 +28,7 @@ const emit = defineEmits<{ upload: [] }>()
 }
 
 .empty-state-title {
-  @apply text-primary-400 text-xl font-semibold leading-6 tracking-wide;
+  @apply text-primary-light text-xl font-semibold leading-6 tracking-wide;
 }
 
 .empty-state-description {

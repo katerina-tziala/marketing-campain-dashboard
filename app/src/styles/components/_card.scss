@@ -26,7 +26,7 @@
      @apply rounded-md
       shadow-md
    
-      border-surface-border
+      border
       p-3
       flex
       flex-col
@@ -40,14 +40,14 @@
   
       //    bg-surface
       // border
-      // border-surface-border-secondary
+      // border-divider
 
     .card-head {
       @apply w-full flex items-start justify-start gap-2;
     }
 
     .card-title {
-      @apply grow font-semibold text-primary-200;
+      @apply grow font-semibold text-primary-soft;
     }
 
     .card-content {
