@@ -31,6 +31,7 @@ export default {
         secondary: {
           DEFAULT: 'rgb(var(--color-secondary) / <alpha-value>)',
           light: 'rgb(var(--color-secondary-light) / <alpha-value>)',
+          lighter: 'rgb(var(--color-secondary-lighter) / <alpha-value>)',
           dark: 'rgb(var(--color-secondary-dark) / <alpha-value>)',
           darker: 'rgb(var(--color-secondary-darker) / <alpha-value>)',
         },

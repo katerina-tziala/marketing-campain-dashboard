@@ -74,7 +74,7 @@ function onCloseAiPanel(): void {
     m-0
     leading-9
     bg-gradient-to-r
-    from-info via-primary-light to-secondary
+    from-accent via-info via-primary-light to-secondary
     bg-clip-text
     text-transparent;
     

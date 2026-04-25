@@ -11,11 +11,11 @@
 }
 
 html {
-  @apply bg-background;
+ @apply font-sans m-0 p-0 bg-background text-typography;
 }
 
 body {
-  @apply font-sans m-0 p-0 bg-background text-typography-subtle;
+  @apply m-0 p-0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -28,6 +28,6 @@ h2 {
   @apply text-xl font-semibold tracking-wider text-typography-primary;
 }
 
-// h5 {
-//   @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 
-// }
+h5 {
+  @apply w-full font-medium tracking-widest text-typography-primary-subtle text-sm; 
+}
