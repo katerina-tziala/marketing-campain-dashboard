@@ -68,11 +68,7 @@ const efficiencyGapData = computed<ChartData<'bar'>>(() => {
   const totalRevenue = props.kpis.totalRevenue
 
   return {
-    labels: props.channels.map((ch) => {
-      const gap = ch.revenue - ch.budget
-      const gapStr = gap >= 0 ? `+${formatCurrency(gap)}` : formatCurrency(gap)
-      return `${ch.name} (${gapStr})`
-    }),
+    labels: props.channels.map((ch) => ch.name),
     datasets: [
       {
         label: 'Efficiency Gap',
@@ -104,12 +100,31 @@ const gapOptions = computed<ChartOptions<'bar'>>(() => ({
   plugins: {
     ...basePlugins,
     legend: { display: false },
+    tooltip: {
+      ...basePlugins.tooltip,
+      callbacks: {
+        label: (ctx) => {
+          const value = typeof ctx.raw === 'number' ? ctx.raw.toFixed(2) : '0.00'
+          return ` ${value}%`
+        },
+        afterLabel: (ctx) => {
+          const ch = props.channels[ctx.dataIndex]
+          if (!ch) return ''
+          const gap = ch.revenue - ch.budget
+          return `Gap: ${gap >= 0 ? '+' : ''}${formatCurrency(gap)}`
+        },
+      },
+    },
   },
   scales: {
     x: { ...baseScales.x, ticks: baseXTicks },
     y: {
       ...baseScales.y,
       title: { display: true, text: 'Gap (%)', color: baseScales.y.ticks.color, font: { size: 11 } },
+      ticks: {
+        ...baseScales.y.ticks,
+        callback: (value) => `${Number(value).toFixed(1)}%`,
+      },
     },
   },
 }))

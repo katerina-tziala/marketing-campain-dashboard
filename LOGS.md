@@ -6336,3 +6336,36 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - No logic change — the formula `budget / conversions` is correct, only the name was wrong
 - Legacy prompt files updated for consistency even though they are unused — kept compilable
+
+
+## [#307] Efficiency Gap chart — move euro gap from x-axis labels to tooltip
+**Type:** fix
+
+**Summary:** Removed the inline euro gap from efficiency gap x-axis labels and moved it into a tooltip `afterLabel` callback instead.
+
+**Brainstorming:** The euro gap embedded in the label (`Email (+€1,234)`) cluttered the x-axis and made rotation labels harder to read. Tooltip is the correct place for supplementary detail — the label should only identify the channel.
+
+**Prompt:** Efficiency gap chart should not show gap amount in labels, only on tooltips.
+
+**What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — `efficiencyGapData` labels simplified to `ch.name` only; `gapOptions` extended with `tooltip.callbacks.afterLabel` that returns `Gap: +€X` or `Gap: -€X` for the hovered channel
+
+**Key decisions & why:**
+- Used `afterLabel` callback (renders on a separate line below the percentage value) so the euro gap supplements rather than replaces the primary value
+- Spread `basePlugins.tooltip` inside the override to preserve dark-theme tooltip styling
+
+
+## [#308] Efficiency Gap chart — format axis ticks and tooltip values as percentages
+**Type:** fix
+
+**Summary:** Y-axis tick labels and tooltip primary value in the Efficiency Gap chart now display with a `%` suffix instead of raw numbers.
+
+**Brainstorming:** The raw number on the axis (e.g. `12.5`) was ambiguous without the unit. Adding a `ticks.callback` to format axis labels as `N.N%` and a `tooltip.callbacks.label` to show `N.NN%` makes the chart self-explanatory. The euro gap remains in `afterLabel` unchanged.
+
+**Prompt:** Efficiency gap should be a percentage — axis as well.
+
+**What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — `gapOptions.scales.y.ticks.callback` formats axis ticks as `N.N%`; `gapOptions.plugins.tooltip.callbacks.label` formats the hovered value as `N.NN%`
+
+**Key decisions & why:**
+- Axis ticks use 1 decimal (`toFixed(1)`) for readability at small label size; tooltip uses 2 decimals (`toFixed(2)`) for precision on hover
