@@ -6638,3 +6638,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `token-limit` auto-reset after 100 ms: the store marks the model as exhausted, shows the token-limit state, then the reset re-enables the button so the cycle can continue without reconnecting
 - Per-tab counters (not shared): matches the requirement that tabs cycle independently
 - Single commented block in `AiToolsContent.vue`: one place to uncomment/re-comment; no build flags or env vars
+
+
+
+## [#324] Refactor AI drawer to not push the header
+**Type:** fix
+
+**Summary:** Restructured AppShell layout so the AI push drawer only compresses the main content area, leaving the header at full width.
+
+**Brainstorming:** The header was being compressed alongside the main content because both lived inside `.shell-left`, which was a flex sibling of the drawer. The fix is to hoist the header out of that sibling relationship — making it a direct child of `.app-shell` that spans the full width — and wrapping only the main content and the drawer in a new `.shell-body` row. This way the drawer's width transition only affects the content area below the header.
+
+**Prompt:** Refactor the AI drawer so it does not push the header. The header should stay full width when the drawer opens.
+
+**What changed:**
+- `app/src/shell/AppShell.vue` — removed `.shell-left` wrapper; `.app-shell` changed from `flex flex-row` to `flex flex-col`; header is now a direct child of `.app-shell`; new `.shell-body` div (`flex flex-row flex-1 overflow-hidden`) wraps `shell-main` + `AiToolsDrawer`; removed commented-out gradient variants from `.shell-title`
+- `app/src/shell/AiToolsDrawer.vue` — `.push-drawer-panel` changed from `h-screen` to `h-full` since it is no longer at root level
+
+**Key decisions & why:**
+- `h-full` on push-drawer-panel: `h-screen` no longer works once the panel is nested inside `.shell-body` rather than at viewport root; `h-full` fills the parent's constrained height correctly
+- No changes to the overlay path (`<lg`): the fixed overlay is already positioned independently of the layout flow

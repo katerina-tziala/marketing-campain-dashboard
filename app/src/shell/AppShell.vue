@@ -22,21 +22,23 @@ function onCloseAiPanel(): void {
 
 <template>
   <div class="app-shell">
-    <!-- Left column — header + content; compresses when drawer opens at lg+ -->
-    <div class="shell-left">
-      <header class="shell-header">
-        <h1 class="shell-title">Marketing Campaign Dashboard</h1>
-        <button v-if="hasCampaigns" class="btn-secondary-outline" @click="requestUpload">
-          <UploadIcon />
-          Upload CSV
-        </button>
-      </header>
+    <!-- Header — full width, never compressed by drawer -->
+    <header class="shell-header">
+      <h1 class="shell-title">Marketing Campaign Dashboard</h1>
+      <button v-if="hasCampaigns" class="btn-secondary-outline" @click="requestUpload">
+        <UploadIcon />
+        Upload CSV
+      </button>
+    </header>
+
+    <!-- Body row — main content + AI drawer side by side -->
+    <div class="shell-body">
       <main class="shell-main">
         <slot />
       </main>
+      <!-- AI drawer — sibling to main only, so header stays full width -->
+      <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
     </div>
-    <!-- AI drawer — sibling to left column so it pushes everything left at lg+ -->
-    <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
 
     <UploadModal ref="uploadModal" />
     <ReplaceDataModal
@@ -50,11 +52,7 @@ function onCloseAiPanel(): void {
 
 <style lang="scss" scoped>
 .app-shell {
-  @apply flex flex-row h-screen overflow-hidden;
-}
-
-.shell-left {
-  @apply grow shrink grid grid-cols-1 grid-rows-[min-content_1fr] overflow-hidden;
+  @apply flex flex-col h-screen overflow-hidden;
 }
 
 .shell-header {
@@ -76,12 +74,13 @@ function onCloseAiPanel(): void {
     m-0
     leading-9
     bg-gradient-to-r
-    // from-primary-500
-    // to-secondary-500
-    // bg-gradient-to-tr
     from-primary-500 via-purple-500 to-secondary-500
     bg-clip-text
     text-transparent;
+}
+
+.shell-body {
+  @apply flex flex-row flex-1 overflow-hidden;
 }
 
 .shell-main {

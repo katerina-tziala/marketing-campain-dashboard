@@ -56,7 +56,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     grid
     grid-cols-1
     grid-rows-[min-content_1fr]
-    h-screen
+    h-full
     bg-surface
     border
     border-surface-border
