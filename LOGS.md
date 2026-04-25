@@ -6616,3 +6616,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ticks.color` as function (Chart.js scriptable option): per-tick colour without a custom plugin
 - Bottom filter `v > axis.min + 0.15`: 0.15 in log space ≈ one meaningful ROI step; reliably clears the collision without removing meaningful ticks higher up
 - x-axis: only inject median tick if not already within 0.01€ of an existing tick (prevents near-duplicate labels)
+
+
+## [#323] Dev analysis cycle helper
+**Type:** update
+
+**Summary:** Added a dev-only helper that fakes a Groq connection and cycles through all mock responses and every error code, allowing UI work on AI analysis panels without real API calls.
+
+**Brainstorming:** The goal was to make it fast and safe to work on AI summary and optimizer UIs without a real API key or live requests. The key design choices were: intercept at `runAnalysisPrompt` (after prompt building, before the HTTP call) so the full store pipeline runs exactly as in production; keep all dev logic in a single file that is inert unless explicitly activated; use a simple module-level counter per tab so cycles are independent; include every `AiErrorCode` reachable from the analysis path to exercise all UI error states; handle `token-limit` specially with a 100 ms auto-reset so the cycle can continue without reconnecting; expose a commented-out block in `AiToolsContent.vue` as the single activation point.
+
+**Prompt:** Add a dev helper function that fakes a Groq AI connection and cycles through all mock responses interleaved with every error code (including hints). 2 s fixed delay per call to show the loader. Per-tab independent counters. No real API calls. Easy to activate/deactivate programmatically via TODO-marked comments.
+
+**What was built:**
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — new file; `DEV_GROQ_MODEL` fake AiModel; `BUDGET_SEQUENCE` and `SUMMARY_SEQUENCE` arrays (5 mocks + 10 error codes each, interleaved); module-level `counters` record; `runDevCycle` override function (2 s sleep, cycles entries, throws `Error(code)` for error entries, resets `token-limit` model flag after 100 ms); `devConnect()` patches aiConnectionStore via `$patch` with fake Groq state; `devDisconnect()` clears override + calls store.disconnect(); `useDevAnalysisCycle()` composable returns `activate`/`deactivate`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — added `_devOverride` module-level slot + `setDevAnalysisOverride` export; `runAnalysisPrompt` checks override first and returns early if set; all marked with `TODO: [DEV ONLY]`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — added commented-out activation block (4 lines + import) marked with `TODO: [DEV ONLY]`; uncomment to enable, comment to disable
+
+**Key decisions & why:**
+- Intercept in `runAnalysisPrompt` not the store: exercises the full store state machine (loading, caching, error display, cooldown) with no real network hop
+- Module-level override slot (not reactive): zero runtime overhead when dev cycle is inactive; a simple null-check
+- `token-limit` auto-reset after 100 ms: the store marks the model as exhausted, shows the token-limit state, then the reset re-enables the button so the cycle can continue without reconnecting
+- Per-tab counters (not shared): matches the requirement that tabs cycle independently
+- Single commented block in `AiToolsContent.vue`: one place to uncomment/re-comment; no build flags or env vars

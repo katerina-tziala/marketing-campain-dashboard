@@ -5,6 +5,17 @@ import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiCo
 import AiAnalysis from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
 import { CloseIcon, SparklesIcon } from '@/ui/icons'
 
+// TODO: [DEV ONLY] Uncomment the block below to enable the dev analysis cycle.
+// Cycles through all mock responses and every error code without real API calls.
+// Comment it back out (or delete it) before shipping to production.
+// ─────────────────────────────────────────────────────────────────────────────
+import { onMounted, onUnmounted } from 'vue'
+import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
+const { activate, deactivate } = useDevAnalysisCycle()
+onMounted(activate)
+onUnmounted(deactivate)
+// ─────────────────────────────────────────────────────────────────────────────
+
 const store = useAiConnectionStore()
 const emit = defineEmits<{ close: [] }>()
 </script>
