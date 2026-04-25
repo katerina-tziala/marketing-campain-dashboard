@@ -17,7 +17,7 @@ export function computePerformanceMetrics(campain: CampaignMetrics): Performance
     roi: budget > 0 ? round4((revenue - budget) / budget) : null,
     ctr: impressions > 0 ? round4(clicks / impressions) : null,
     cvr: clicks > 0 ? round4(conversions / clicks) : null,
-    cac: conversions > 0 ? round2(budget / conversions) : null,
+    cpa: conversions > 0 ? round2(budget / conversions) : null,
   }
 }
 
@@ -32,6 +32,7 @@ export function computeShareEfficiency(
     budgetShare,
     revenueShare,
     efficiencyGap: budgetShare - revenueShare,
+    gapAmount: item.revenue - item.budget,
   }
 }
 
@@ -54,7 +55,7 @@ export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): Cam
 
 export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
   const { budget, revenue, impressions, clicks, conversions } = aggregateCampaignMetrics(channels)
-  const { roi, ctr, cvr, cac } = computePerformanceMetrics({ budget, revenue, impressions, clicks, conversions })
+  const { roi, ctr, cvr, cpa } = computePerformanceMetrics({ budget, revenue, impressions, clicks, conversions })
   return {
     totalBudget: budget,
     totalRevenue: revenue,
@@ -64,6 +65,6 @@ export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
     aggregatedROI: roi,
     aggregatedCTR: ctr,
     aggregatedCVR: cvr,
-    aggregatedCAC: cac,
+    aggregatedCPA: cpa,
   }
 }

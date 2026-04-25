@@ -39,8 +39,8 @@ defineProps<{ kpis: PortfolioKPIs }>()
         :value="formatPercentage(kpis.aggregatedCTR)"
       />
       <KpiCard
-        label="CAC"
-        :value="kpis.aggregatedCAC !== null ? formatCompactCurrency(kpis.aggregatedCAC) : null"
+        label="CPA"
+        :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
       />
     </section>
 </template>

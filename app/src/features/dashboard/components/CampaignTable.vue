@@ -48,7 +48,7 @@ const COLUMNS: DataTableColumn[] = [
   { key: 'conversions', label: 'Conversions', sortable: true },
   { key: 'cvr', label: 'CVR', ariaLabel: 'Conversion rate', sortable: true },
   { key: 'revenue', label: 'Revenue', sortable: true },
-  { key: 'cac', label: 'CAC', ariaLabel: 'Customer acquisition cost', sortable: true },
+  { key: 'cpa', label: 'CPA', ariaLabel: 'Cost per acquisition', sortable: true },
   { key: 'roi', label: 'ROI', sortable: true },
 ]
 </script>
@@ -80,7 +80,7 @@ const COLUMNS: DataTableColumn[] = [
           <td class="data-table-cell campaign-table-td">{{ formatNumber(c.conversions) }}</td>
           <td class="data-table-cell campaign-table-td">{{ formatPercentage(c.cvr) }}</td>
           <td class="data-table-cell campaign-table-td roi-text" :class="percentageClass(c.roi)">{{ formatCurrency(c.revenue) }}</td>
-          <td class="data-table-cell campaign-table-td">{{ formatCurrency(c.cac, 2) }}</td>
+          <td class="data-table-cell campaign-table-td">{{ formatCurrency(c.cpa, 2) }}</td>
           <td class="data-table-cell campaign-table-td roi-text" :class="percentageClass(c.roi)">
             {{ formatPercentage(c.roi) }}
           </td>

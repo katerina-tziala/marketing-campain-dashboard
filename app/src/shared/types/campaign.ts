@@ -14,7 +14,7 @@ export interface PerformanceMetrics {
   /** Decimal ratio — conversions / clicks. e.g. 0.12 = 12% CVR */
   cvr: number | null
   /** Currency (EUR) — budget / conversions */
-  cac: number | null
+  cpa: number | null
 }
 
 export interface Campaign extends CampaignMetrics {
@@ -32,7 +32,7 @@ export interface PortfolioKPIs {
   totalImpressions: number
   totalClicks: number
   aggregatedROI: number | null; // decimal, e.g. 1.68 = 168%
-  aggregatedCAC: number | null; // decimal, 
+  aggregatedCPA: number | null; // EUR — budget / conversions
   aggregatedCTR: number | null; // decimal, e.g. 1.68 = 168%
   aggregatedCVR: number | null; // decimal, e.g. 1.68 = 168%
 }
@@ -51,5 +51,7 @@ export interface ShareEfficiency {
   revenueShare: number
   /** Decimal — budgetShare - revenueShare; negative means revenue outperforms budget weight */
   efficiencyGap: number
+  /** Currency (EUR) — revenue - budget; positive means profitable */
+  gapAmount: number
 }
 

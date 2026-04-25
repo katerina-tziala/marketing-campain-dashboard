@@ -30,12 +30,12 @@ app/                        # Vue 3 + Vite project
 ├── src/
 │   ├── shared/                 # Shared types and data — no framework dependencies
 │   │   ├── types/
-│   │   │   ├── campaign.ts     # CampaignMetrics interface (budget/revenue/impressions/clicks/conversions: number) + Campaign extends CampaignMetrics (adds rowId: number + campaign/channel: string) + PerformanceMetrics interface (roi/ctr/cvr/cac: number|null) + CampaignPerformance extends Campaign + PerformanceMetrics (empty body) + PortfolioKPIs (total*/aggregated* fields) + PortfolioScope (campaigns/channels/selectedCampaigns/selectedChannels string arrays) + ShareEfficiency (budgetShare/revenueShare/efficiencyGap: number); portfolio-specific summary types live in portfolio-analysis/types.ts
-│   │   │   ├── channel.ts      # Channel extends CampaignMetrics, PerformanceMetrics — id: string (lowercase-trimmed-hyphenated from name), name: string, campaigns: CampaignPerformance[]; roi/ctr/cvr/cac computed from aggregated channel metrics
+│   │   │   ├── campaign.ts     # CampaignMetrics interface (budget/revenue/impressions/clicks/conversions: number) + Campaign extends CampaignMetrics (adds rowId: number + campaign/channel: string) + PerformanceMetrics interface (roi/ctr/cvr/cpa: number|null) + CampaignPerformance extends Campaign + PerformanceMetrics (empty body) + PortfolioKPIs (total*/aggregated* fields) + PortfolioScope (campaigns/channels/selectedCampaigns/selectedChannels string arrays) + ShareEfficiency (budgetShare/revenueShare/efficiencyGap: number; gapAmount: number — revenue - budget in EUR); portfolio-specific summary types live in portfolio-analysis/types.ts
+│   │   │   ├── channel.ts      # Channel extends CampaignMetrics, PerformanceMetrics — id: string (lowercase-trimmed-hyphenated from name), name: string, campaigns: CampaignPerformance[]; roi/ctr/cvr/cpa computed from aggregated channel metrics
 │   │   │   └── async-status.ts # AsyncStatus type — 'idle' | 'loading' | 'done' | 'error'; shared across stores and components that track async operation state
 │   │   ├── utils/
 │   │   │   ├── math.ts         # safeDivide + round2 — shared math helpers
-│   │   │   ├── campaign-performance.ts # percentageClass(value: number|null) → string (negative/warning/positive/empty) + computePerformanceMetrics(CampaignMetrics) → PerformanceMetrics (roi/ctr/cvr/cac with null on zero-divisor) + computeShareEfficiency(item: CampaignMetrics, totalBudget, totalRevenue) → ShareEfficiency (budgetShare/revenueShare/efficiencyGap) + aggregateCampaignMetrics(Campaign[]) → CampaignMetrics (sums numeric fields across array) + toCampaignPerformance(Campaign) → CampaignPerformance + computePortfolioKPIs(Channel[]) → PortfolioKPIs; used by portfolio-analysis and dashboard components
+│   │   │   ├── campaign-performance.ts # percentageClass(value: number|null) → string (negative/warning/positive/empty) + computePerformanceMetrics(CampaignMetrics) → PerformanceMetrics (roi/ctr/cvr/cpa with null on zero-divisor) + computeShareEfficiency(item: CampaignMetrics, totalBudget, totalRevenue) → ShareEfficiency (budgetShare/revenueShare/efficiencyGap/gapAmount) + aggregateCampaignMetrics(Campaign[]) → CampaignMetrics (sums numeric fields across array) + toCampaignPerformance(Campaign) → CampaignPerformance + computePortfolioKPIs(Channel[]) → PortfolioKPIs; used by portfolio-analysis and dashboard components
 │   │   │   ├── sorting.ts          # compareNullsLast(a, b) → number|null; compareDirectional(a, b, dir) → number; sortWithNullsLast(a, b, dir) → number — null-safe directional sort composing the two
 │   │   │   ├── campaign-channel.ts # buildChannelMap(campaigns: Campaign[]) → Map<string, Channel>; local ChannelAccumulator type ({ id, name, campaigns }); groupCampaignsByChannel accumulates campaigns only; buildChannelMap calls aggregateCampaignMetrics + computePerformanceMetrics once per channel in the sort/reduce phase; no mutation
 │   │   │   └── formatters.ts   # formatCurrency(value) → '€N' (en-US, 0 decimals); formatNumber(value) → localized string; formatPercentage(value) → 'N.NN%'; formatCompactCurrency(value) → compact EUR with 1 decimal for ≥1000, 2 decimals otherwise; formatCompactNumber(value) → compact with 1 decimal for ≥1000, localized otherwise
@@ -174,11 +174,12 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── DashboardView.vue   # Campaign performance dashboard — shows EmptyState or full dashboard; injects openUploadModal and openAiPanel from AppShell; wraps header and channel filter in .dashboard-section; .dashboard uses CSS grid (grid-rows-[min_content-min-content_1fr]); .data-visualization sets container-type: inline-size to enable child container queries; table card uses `card table-card max-h-full mx-auto max-w-7xl w-full`; scoped `.card-title.table-card-title` applies `text-primary-300` color
 │   │   │   └── components/         # Components owned by this view
 │   │   │       ├── DashboardHeader.vue # Dashboard header — reads campaign.store (title, campaign/channel counts) + useAiConnectionStore (isConnected, aiPanelOpen); emits aiClick (camelCase); multi-root (title-row + details); AI button disabled when panel open; connected dot (top-right) shown when AI connected + panel closed; dot has scoped dot-pop @keyframes (cubic-bezier spring, scale 0→1) so it pops in visibly on background connection success; layout wrapper provided by DashboardView
-│   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CAC); .kpi-grid uses @container breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols)
-│   │   │       ├── DashboardCharts.vue # Charts section — props: campaigns (CampaignPerformance[]), channels (Channel[]), kpis (CampaignKPIs); all chart computeds internal (campaignColorMap, roiChartData, budgetCampaignData, revVsBudgetData via channels, funnelValues via kpis); owns .charts-grid scoped style
+│   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CPA); .kpi-grid uses @container breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols)
+│   │   │       ├── DashboardCharts.vue # Charts section — props: campaigns (CampaignPerformance[]), channels (Channel[]), kpis (PortfolioKPIs); chart computeds: campaignColorMap, roiChartData, roiChannelChartData, budgetCampaignData, funnelValues; delegates Revenue vs Budget to RevVsBudgetChart; owns .charts-grid scoped style
+│   │   │       ├── RevVsBudgetChart.vue # Revenue vs Budget by Channel — props: channels (Channel[]), kpis (PortfolioKPIs); internal toggle (RadioToggle): 'budgetVsRevenue' (grouped bars, Amount (€) axis) | 'efficiencyGap' (single-dataset bars green/red by sign, Gap (%) axis, x-axis labels include euro gap); uses Bar from vue-chartjs directly; flat scoped styles
 │   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot; uses @include cq-container('kpi-card') + @include cq-up(tiny, 'kpi-card') for container-query-driven font size scaling; flat scoped styles (no BEM)
-│   │   │       ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; reads pre-calculated roi/ctr/cvr/cac directly; revenue+ROI coloring via percentageClass(c.roi); uses global data-table classes; channel cell uses `.badge.info`
+│   │   │       ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; reads pre-calculated roi/ctr/cvr/cpa directly; revenue+ROI coloring via percentageClass(c.roi); uses global data-table classes; channel cell uses `.badge.info`
 │   │   │       └── ChannelFilter.vue   # Multi-select channel filter pills
 │   │   └── data-transfer/          # CSV upload & data transfer feature folder
 │   │       ├── index.ts            # Barrel — exports UploadModal, ReplaceDataModal, FileActions, useUploadModal for external consumers
@@ -263,10 +264,11 @@ app/                        # Vue 3 + Vite project
 - [x] Upload again / replace existing data (with confirmation warning)
 
 ### Campaign Performance Dashboard
-- [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CAC
+- [x] KPI Cards: Total Budget, Revenue, ROI, CTR, CVR, CPA
 - [x] Bar chart: ROI by campaign
+- [x] Bar chart: ROI by channel
 - [x] Donut chart: Budget allocation by channel
-- [x] Grouped bar chart: Revenue vs Budget by channel
+- [x] Revenue vs Budget by Channel chart — toggle between Budget vs Revenue (grouped bars) and Efficiency Gap (% with euro amounts in axis labels)
 - [x] Conversion Funnel: Impressions → Clicks → Conversions
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table

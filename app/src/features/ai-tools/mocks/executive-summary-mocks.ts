@@ -86,7 +86,7 @@ const needsAttention: ExecutiveSummaryResponse = {
   healthScore: {
     score: 58,
     label: 'NeedsAttention',
-    reasoning: 'Mixed performance with several high-spend channels underperforming on ROI and CAC, and budget allocation misaligned with revenue contribution.',
+    reasoning: 'Mixed performance with several high-spend channels underperforming on ROI and CPA, and budget allocation misaligned with revenue contribution.',
   },
   bottomLine: 'Budget is concentrated in channels that underdeliver; three reallocation moves could materially improve portfolio efficiency this quarter.',
   insights: [
@@ -102,24 +102,24 @@ const needsAttention: ExecutiveSummaryResponse = {
     },
     {
       type: 'Opportunity',
-      text: 'CAC across Paid Social is 3.2× the portfolio average, indicating poor conversion quality that warrants audience or creative review before any budget increase.',
-      metricHighlight: { label: 'Paid Social CAC vs portfolio average', value: '3.2×' },
+      text: 'CPA across Paid Social is 3.2× the portfolio average, indicating poor conversion quality that warrants audience or creative review before any budget increase.',
+      metricHighlight: { label: 'Paid Social CPA vs portfolio average', value: '3.2×' },
     },
   ],
   priorityActions: [
     {
       priority: 1,
       action: 'Cut Paid Social budget by 30% and redirect to SEO content investment.',
-      expectedOutcome: "Reduce the highest-CAC channel's drag and amplify the most efficient acquisition channel.",
+      expectedOutcome: "Reduce the highest-CPA channel's drag and amplify the most efficient acquisition channel.",
       urgency: 'Immediate',
-      successMetric: 'Overall CAC decreases by 15% within 60 days; SEO organic traffic grows 10%.',
+      successMetric: 'Overall CPA decreases by 15% within 60 days; SEO organic traffic grows 10%.',
     },
     {
       priority: 2,
       action: 'Audit Paid Social audience targeting and creative assets before the next cycle.',
-      expectedOutcome: 'Identify whether the CAC gap is structural or fixable through optimisation.',
+      expectedOutcome: 'Identify whether the CPA gap is structural or fixable through optimisation.',
       urgency: 'ThisQuarter',
-      successMetric: 'Paid Social CAC falls within 1.5× of portfolio average after creative refresh.',
+      successMetric: 'Paid Social CPA falls within 1.5× of portfolio average after creative refresh.',
     },
     {
       priority: 3,
@@ -131,7 +131,7 @@ const needsAttention: ExecutiveSummaryResponse = {
   ],
   correlations: [
     {
-      finding: 'Channels with the highest CAC also have the largest gap between budget share and revenue share.',
+      finding: 'Channels with the highest CPA also have the largest gap between budget share and revenue share.',
       implication: 'Inefficient acquisition cost and poor capital efficiency co-occur, suggesting systemic targeting or funnel issues rather than isolated campaign failures.',
     },
   ],
@@ -144,7 +144,7 @@ const excellentPortfolio: ExecutiveSummaryResponse = {
   healthScore: {
     score: 91,
     label: 'Excellent',
-    reasoning: 'Strong profitability across all major channels, efficient CAC, and well-distributed revenue with no significant concentration risk.',
+    reasoning: 'Strong profitability across all major channels, efficient CPA, and well-distributed revenue with no significant concentration risk.',
   },
   bottomLine: 'The portfolio is performing at a high level with efficient allocation; the primary focus should be scaling top performers before market conditions shift.',
   insights: [
@@ -250,7 +250,7 @@ const growthPhase: ExecutiveSummaryResponse = {
   healthScore: {
     score: 74,
     label: 'Good',
-    reasoning: 'Solid overall profitability with strong new-channel performance, though budget concentration and early-stage CAC instability in two channels limit the score.',
+    reasoning: 'Solid overall profitability with strong new-channel performance, though budget concentration and early-stage CPA instability in two channels limit the score.',
   },
   bottomLine: 'Growth channels are validating quickly; the portfolio is healthy but needs concentration risk management before budget is increased further.',
   insights: [
@@ -276,7 +276,7 @@ const growthPhase: ExecutiveSummaryResponse = {
       action: 'Increase TikTok Ads budget by 50% to determine whether early-stage efficiency holds at higher volume.',
       expectedOutcome: 'Validate TikTok as a scalable acquisition channel before committing to a larger structural reallocation.',
       urgency: 'ThisQuarter',
-      successMetric: 'TikTok ROI remains above 150% after budget increase; CAC stays within 1.2× portfolio average.',
+      successMetric: 'TikTok ROI remains above 150% after budget increase; CPA stays within 1.2× portfolio average.',
     },
     {
       priority: 2,

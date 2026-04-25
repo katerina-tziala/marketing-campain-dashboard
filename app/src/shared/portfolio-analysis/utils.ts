@@ -82,6 +82,7 @@ export function getInefficientChannels(
       budgetShare: ch.budgetShare,
       revenueShare: ch.revenueShare,
       efficiencyGap: ch.efficiencyGap,
+      gapAmount: ch.gapAmount,
       roi: toFinite(ch.roi),
       reason: 'Budget share exceeds revenue share with weaker efficiency.',
     }))
@@ -112,6 +113,7 @@ function toCampaignScalingSignals(
       budgetShare: c.budgetShare,
       revenueShare: c.revenueShare,
       efficiencyGap: c.efficiencyGap,
+      gapAmount: c.gapAmount,
       reason: 'Strong efficiency with revenue share exceeding budget share.',
     }))
 }
@@ -133,6 +135,7 @@ function toChannelScalingSignals(
       budgetShare: ch.budgetShare,
       revenueShare: ch.revenueShare,
       efficiencyGap: ch.efficiencyGap,
+      gapAmount: ch.gapAmount,
       reason: 'Channel outperforms its budget allocation.',
     }))
 }
@@ -170,6 +173,7 @@ export function getBudgetScalingCandidates(
       budgetShare: c.budgetShare,
       revenueShare: c.revenueShare,
       efficiencyGap: c.efficiencyGap,
+      gapAmount: c.gapAmount,
       maxAdditionalBudget: c.budget * MAX_ADDITIONAL_FRACTION,
       expectedRoiRetention: BASE_ROI_RETENTION,
       reason: 'Revenue share exceeds budget share with strong efficiency.',
@@ -197,6 +201,7 @@ export function getInefficientCampaigns(
       budgetShare: c.budgetShare,
       revenueShare: c.revenueShare,
       efficiencyGap: c.efficiencyGap,
+      gapAmount: c.gapAmount,
       maxReducibleBudget: c.budget * MAX_REDUCIBLE_FRACTION,
       reason: 'Budget share exceeds revenue share with weaker efficiency than portfolio.',
     }))

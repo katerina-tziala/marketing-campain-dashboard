@@ -7,7 +7,7 @@ type CampainSummaryTotals = {
   revenue: number;
   roi: number;
   conversions: number;
-  cac: number | null;
+  cpa: number | null;
   ctr: number;
   cvr: number;
 };
@@ -188,20 +188,20 @@ function generateBudgetOptimizerContext(
   '',
   'Follow this reasoning process:',
   '',
-  '1. Evaluate overall portfolio performance using totals such as revenue, ROI, CAC, conversions, CTR, and CVR.',
+  '1. Evaluate overall portfolio performance using totals such as revenue, ROI, CPA, conversions, CTR, and CVR.',
   '',
   '2. Evaluate campaign efficiency using the following signals:',
   '   - ROI',
   '   - Conversion Rate (CVR)',
-  '   - Customer Acquisition Cost (CAC)',
+  '   - Customer Acquisition Cost (CPA)',
   '',
-  '   Treat ROI as the primary efficiency signal, with CAC and CVR used to confirm efficiency.',
-  '   Use portfolio totals as reference benchmarks when evaluating CAC, CVR, and ROI differences across campaigns.',
+  '   Treat ROI as the primary efficiency signal, with CPA and CVR used to confirm efficiency.',
+  '   Use portfolio totals as reference benchmarks when evaluating CPA, CVR, and ROI differences across campaigns.',
   '',
   '3. Identify budget-to-performance mismatches such as:',
   '   - high spend with relatively weak ROI',
   '   - low spend with strong ROI',
-  '   - high CAC relative to portfolio benchmarks',
+  '   - high CPA relative to portfolio benchmarks',
   '   - conversion inefficiencies despite strong engagement',
   '',
   '4. Compare budget share with revenue contribution to detect allocation inefficiencies.',
@@ -218,13 +218,13 @@ function generateBudgetOptimizerContext(
   '   Funding sources should typically exhibit:',
   '',
   '   - relatively weaker ROI',
-  '   - higher CAC compared with portfolio benchmarks',
+  '   - higher CPA compared with portfolio benchmarks',
   '   - budget share exceeding revenue contribution',
   '',
   '   Scaling targets should typically exhibit:',
   '',
   '   - strong ROI relative to peers',
-  '   - efficient CAC',
+  '   - efficient CPA',
   '   - revenue contribution exceeding budget share',
   '',
   '8. Consider portfolio balance when recommending reallocations.',
@@ -264,7 +264,7 @@ const INTERNAL_ANALYSIS_CHECKLIST = [
   'Before generating the final JSON response, internally verify the following:',
   '',
   '1. Portfolio Efficiency',
-  '   - Evaluate overall ROI, CAC, and conversion performance.',
+  '   - Evaluate overall ROI, CPA, and conversion performance.',
   '',
   '2. Campaign Efficiency',
   '   - Identify campaigns with the strongest and weakest efficiency signals.',

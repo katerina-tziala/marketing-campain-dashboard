@@ -6192,3 +6192,147 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `getCacheKey` unchanged — portfolioId scoping is handled by the outer map, not by changing the hash input
 - Filter watcher double guard — `analysisActivated` was already checked; adding `firstAnalyzeCompleted` closes the timing window where a portfolio switch (which changes `selectedChannelsIds` to `[]`) could trigger a spurious debounced auto-call before `onPortfolioSwitch` resets the flag
 - `data-transfer` writes directly to `portfolioData.store` with no store in `data-transfer` — the upload feature is a write mechanism; future API fetches would follow the same pattern
+
+
+## [#300] Add ROI by Channel chart to dashboard
+**Type:** feature
+
+**Summary:** Added a horizontal bar chart showing ROI by channel, placed immediately after the existing ROI by campaign chart in DashboardCharts.vue.
+
+**Brainstorming:** Reused the existing `BarChart` component in horizontal mode — same pattern as ROI by campaign. Data comes from the `channels` prop already passed to `DashboardCharts.vue` (each `Channel` carries `roi` via `PerformanceMetrics`). Colors assigned from `CHART_COLORS` by index, matching the per-channel visual language used elsewhere (Revenue vs Budget chart). No new components needed.
+
+**Prompt:** Add a ROI by channel horizontal bar chart to the dashboard, placed after the ROI by campaign chart.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `roiChannelChartData` computed (maps `channels` to ROI % values with `CHART_COLORS` by index); inserted "ROI by Channel" card between ROI by campaign and Budget Allocation cards
+
+**Key decisions & why:**
+- Horizontal bar chart — matches ROI by campaign visual style and keeps channel names readable on the Y axis
+- `CHART_COLORS` by channel index — consistent with the existing per-channel color convention; `campaignColorMap` is campaign-keyed so a separate index-based mapping is cleaner here
+
+
+## [#301] Add Chart.js conversion funnel for comparison
+**Type:** feature
+
+**Summary:** Created a Chart.js-based funnel chart (FunnelBarChart.vue) as an alternative to the existing custom HTML/SCSS FunnelChart, and rendered both on the dashboard so the user can compare and decide which to keep.
+
+**Brainstorming:** Chart.js has no native funnel type, so the closest equivalent is a horizontal bar chart — impressions/clicks/conversions naturally produce a funnel shape since values decrease at each stage. The existing FunnelChart uses cube-root width scaling and inline rate labels; the Chart.js version shows drop rates (CTR/CVR) in the tooltip via the afterLabel callback instead. Same FUNNEL_COLORS used for visual consistency. Both components share the same labels/values prop interface so they are drop-in interchangeable.
+
+**Prompt:** Create a Chart.js-based conversion funnel chart (FunnelBarChart.vue) using a horizontal bar chart. Keep both the existing FunnelChart and the new FunnelBarChart visible in DashboardCharts.vue so the user can compare them.
+
+**What was built:**
+- `app/src/ui/charts/FunnelBarChart.vue` — new component; horizontal Bar chart; FUNNEL_COLORS per bar; `rates` computed for CTR/CVR drop rates; tooltip `afterLabel` callback shows rate label + value; X axis ticks formatted K/M; same `labels`/`values` props as FunnelChart
+- `app/src/ui/charts/index.ts` — added `FunnelBarChart` export
+- `app/src/features/dashboard/components/DashboardCharts.vue` — imported `FunnelBarChart`; added "Conversion Funnel (Chart.js)" card after existing funnel card
+
+**Key decisions & why:**
+- Horizontal bar over vertical — matches funnel reading direction (top to bottom = Impressions → Clicks → Conversions) and keeps stage labels readable
+- Drop rates in tooltip rather than inline — Chart.js bar charts don't have a clean way to render inline labels without the datalabels plugin; tooltip afterLabel is dependency-free and unambiguous
+- Both charts kept simultaneously — user explicitly requested side-by-side comparison before deciding which to remove
+
+
+## [#302] Add step and stacked funnel chart variants
+**Type:** feature
+
+**Summary:** Created two more Chart.js funnel chart alternatives (FunnelStepChart and FunnelStackedChart) and added them to the dashboard alongside the existing two, so all four variants are visible for comparison.
+
+**Brainstorming:** Step chart uses Chart.js Line with `stepped: true` and fill below — the cliff drops between stages make drop-off viscerally clear; good for "shock" communication of funnel loss. Stacked progression uses a horizontal stacked bar with Progressed (green) + Dropped (red) datasets per stage — every bar sums to the full stage total, making conversion rates readable as proportions; better for analytical audiences. `LineElement`, `PointElement`, and `Filler` were not registered; added them to register.ts. Stacked tooltip uses `afterBody` (fires once per tooltip, not per dataset) to show the progression rate for the hovered stage.
+
+**Prompt:** Add a step line chart and a stacked progression bar chart as additional conversion funnel variants. Register the missing Chart.js elements. Keep all four funnel charts visible on the dashboard.
+
+**What was built:**
+- `app/src/ui/charts/register.ts` — added LineElement, PointElement, Filler registrations
+- `app/src/ui/charts/FunnelStepChart.vue` — Line chart, stepped: true, fill below with semi-transparent indigo; Y axis ticks formatted K/M; tooltip afterLabel shows CTR/CVR per stage
+- `app/src/ui/charts/FunnelStackedChart.vue` — stacked horizontal Bar; Progressed + Dropped datasets; progression rate shown via tooltip afterBody; legend at bottom
+- `app/src/ui/charts/index.ts` — exported FunnelStackedChart and FunnelStepChart
+- `app/src/features/dashboard/components/DashboardCharts.vue` — imported and rendered both new components as additional chart cards
+
+**Key decisions & why:**
+- `stepped: true` (not 'before'/'after') — centers the step transition at the midpoint between stages, giving a balanced look rather than holding the line until the last moment
+- `afterBody` in stacked tooltip — fires once per tooltip group rather than once per dataset (afterLabel), avoids the progression rate appearing twice
+- Dropped dataset opacity 0.45 — muted intentionally so the green "progressed" portion reads as the primary signal
+
+
+## [#303] Normalize FunnelBarChart values and show actual values as bar labels
+**Type:** update
+
+**Summary:** Updated FunnelBarChart to use normalized values (% of impressions) so all bars are visually comparable, and added chartjs-plugin-datalabels to render formatted actual values inside each bar.
+
+**Brainstorming:** Raw values (impressions=1M, conversions=~1.4K) make the bottom bars invisible at scale — normalization fixes this. chartjs-plugin-datalabels is the standard Chart.js solution for on-bar text; registered per-instance via the `:plugins` prop on the Bar component so other charts are unaffected. Anchor 'start' + align 'end' + clamp: true places labels at the left of each bar reading rightward, clamped to stay inside even for very short bars. Tooltip updated to show normalized %, actual value, and CTR/CVR rate.
+
+**Prompt:** Use normalized values (% of impressions) for FunnelBarChart so bars are visually comparable. Display formatted actual values (K/M notation) on the bars. Install chartjs-plugin-datalabels.
+
+**What changed:**
+- `app/package.json` / `package-lock.json` — added chartjs-plugin-datalabels dependency
+- `app/src/ui/charts/FunnelBarChart.vue` — `normalized` computed maps values to % of first value; chartData uses normalized values; X axis fixed 0–100 with `%` tick suffix; ChartDataLabels imported and passed via `:plugins`; datalabels config: anchor start, align end, clamp true, formatter returns formatActual(rawValue); tooltip label shows normalized %, afterLabel shows actual + rate
+
+**Key decisions & why:**
+- Per-instance plugin registration — avoids polluting all other charts with datalabels; Chart.js global registration would require every other chart to explicitly opt out
+- `values[0]` as the normalization base — impressions is always the first (and largest) stage; using max() would be equivalent but fragile if order changed
+- `clamp: true` — prevents label overflow on the very short conversions bar without needing conditional positioning logic
+
+
+## [#304] Remove Chart.js funnel variants — keep original FunnelChart
+**Type:** update
+
+**Summary:** Removed all three Chart.js funnel alternatives (FunnelBarChart, FunnelStepChart, FunnelStackedChart) after user chose the original custom HTML/SCSS FunnelChart as the best visual.
+
+**Brainstorming:** No trade-offs — user decision after seeing all four side by side.
+
+**Prompt:** Keep only the original FunnelChart. Remove the three Chart.js variants, their files, exports, registrations, and the chartjs-plugin-datalabels dependency.
+
+**What changed:**
+- Deleted `app/src/ui/charts/FunnelBarChart.vue`, `FunnelStepChart.vue`, `FunnelStackedChart.vue`
+- `app/src/ui/charts/register.ts` — removed LineElement, PointElement, Filler registrations
+- `app/src/ui/charts/index.ts` — removed FunnelBarChart, FunnelStepChart, FunnelStackedChart exports
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed all three imports and their chart cards
+- `app/package.json` / `package-lock.json` — uninstalled chartjs-plugin-datalabels
+
+**Key decisions & why:**
+- Full removal rather than keeping files unused — no orphaned code
+
+
+## [#305] RevVsBudgetChart — toggle between Budget vs Revenue and Efficiency Gap views
+**Type:** feature
+
+**Summary:** Extracted "Revenue vs Budget by Channel" into a dedicated component with a view toggle (Budget vs Revenue / Efficiency Gap), and added `gapAmount` to `ShareEfficiency` so the euro gap propagates across all portfolio analysis models.
+
+**Brainstorming:** The toggle needed two distinct chart configs — the grouped bars view uses the standard legend + Amount (€) axis, while the gap view needs per-bar green/red coloring by sign, no legend, Gap (%) axis, and euro amounts visible without hover. Evaluated two options for showing euros on the gap chart: (1) tooltip-only — cleaner axis but requires hover, (2) x-axis label strings including the euro gap — always visible, slightly busier. Chose (2). For the chart component, direct `Bar` from vue-chartjs is simpler than adding an `extraOptions` escape hatch to `GroupedBarChart`. `RadioToggle` already exists and fits the 2-option toggle exactly. `gapAmount` (`revenue - budget`) added to `ShareEfficiency` so AI prompts and analysis signals carry the absolute EUR gap alongside the share-based `efficiencyGap`.
+
+**Prompt:** Update Revenue vs Budget by Channel. Add a toggle [ Budget vs Revenue ] (default) [ Efficiency Gap ]. Amount (€) → Gap (%). Labels for gap chart should include value in euros. Create a component for this chart to handle view switch. Also add the gap in euros in the campaign analysis calculations and update all models.
+
+**What was built / What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — new component; owns `view` ref (ChartView union); `TOGGLE_OPTIONS` drives RadioToggle; `revVsBudgetData` + `revVsBudgetOptions` for grouped view; `efficiencyGapData` (x-axis labels include `+€N` / `-€N`, per-bar colors by sign) + `gapOptions` (Gap (%) axis, no legend) for gap view; renders `Bar` directly from vue-chartjs
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed `revVsBudgetData` computed and `GroupedBarChart` import; added `RevVsBudgetChart` import; replaced the inline card body with `<RevVsBudgetChart>`
+- `app/src/shared/types/campaign.ts` — `ShareEfficiency` gains `gapAmount: number` (revenue − budget in EUR)
+- `app/src/shared/utils/campaign-performance.ts` — `computeShareEfficiency` computes `gapAmount: item.revenue - item.budget`
+- `app/src/shared/portfolio-analysis/utils.ts` — all 5 explicit `ShareEfficiency` object literals updated to include `gapAmount` from the parent summary object
+
+**Key decisions & why:**
+- `Bar` directly rather than extending `GroupedBarChart` — the gap view has fundamentally different options; an escape-hatch prop would bleed app-specific logic into the UI library
+- Euro amount in axis label string — always visible without requiring hover; implemented as `${ch.name} (+€N)` format with explicit `+` prefix for positive values
+- `gapAmount` on `ShareEfficiency` rather than a separate field — all signal types extend `ShareEfficiency`, so a single change propagates to `CampaignSummary`, `ChannelSummary`, `InefficientChannelSignal`, `InefficientCampaignSignal`, `BudgetScalingCandidate`, `ScalingCandidateSignal`
+
+
+## [#306] Rename CAC → CPA across all models and UI
+**Type:** fix
+
+**Summary:** Corrected a metric naming error — the formula `budget / conversions` is CPA (Cost Per Acquisition), not CAC (Customer Acquisition Cost); renamed the field and all references across types, utils, UI, prompts, and mocks.
+
+**Brainstorming:** Pure rename — no logic changes. Scope covered: `PerformanceMetrics.cac` → `cpa`, `PortfolioKPIs.aggregatedCAC` → `aggregatedCPA`, all downstream KPI card and table labels, and all "CAC" string occurrences in AI prompts and mock responses. Legacy prompt files kept compilable with the rename applied. `channel.ts` description updated in CLAUDE.md (no code change needed there — Channel inherits from PerformanceMetrics).
+
+**Prompt:** CAC formula is actually CPA. Rename cac → cpa in models and update UI too.
+
+**What changed:**
+- `app/src/shared/types/campaign.ts` — `PerformanceMetrics.cac` → `cpa`; `PortfolioKPIs.aggregatedCAC` → `aggregatedCPA`
+- `app/src/shared/utils/campaign-performance.ts` — `cac:` → `cpa:` in `computePerformanceMetrics`; destructured `cac` → `cpa` and `aggregatedCAC` → `aggregatedCPA` in `computePortfolioKPIs`
+- `app/src/features/dashboard/components/DashboardKpis.vue` — label "CAC" → "CPA"; `kpis.aggregatedCAC` → `kpis.aggregatedCPA`
+- `app/src/features/dashboard/components/CampaignTable.vue` — column key `cac` → `cpa`; label "CAC" → "CPA"; ariaLabel "Customer acquisition cost" → "Cost per acquisition"; `c.cac` → `c.cpa`
+- `app/src/features/ai-tools/mocks/executive-summary-mocks.ts` — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/executive-summary-prompt.ts` (legacy) — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt.ts` (legacy) — all "CAC" string occurrences → "CPA"; local `CampainSummaryTotals.cac` → `cpa`
+
+**Key decisions & why:**
+- No logic change — the formula `budget / conversions` is correct, only the name was wrong
+- Legacy prompt files updated for consistency even though they are unused — kept compilable
