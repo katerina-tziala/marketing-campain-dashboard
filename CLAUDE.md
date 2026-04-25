@@ -58,7 +58,7 @@ app/                        # Vue 3 + Vite project
 │   │   └── index.ts            # Vue Router — single route: / → DashboardView
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
 │   │   ├── charts/             # Chart.js wrapper module
-│   │   │   ├── register.ts     # Registers all Chart.js components once (imported in main.ts)
+│   │   │   ├── register.ts     # Registers all Chart.js components once (imported in main.ts); includes PointElement (required for Scatter charts)
 │   │   │   ├── useChartTheme.ts# Chart colors, grid, tooltip constants for dark theme
 │   │   │   ├── BarChart.vue    # Bar chart wrapper (supports horizontal mode)
 │   │   │   ├── DonutChart.vue  # Doughnut chart wrapper
@@ -176,7 +176,8 @@ app/                        # Vue 3 + Vite project
 │   │   │       ├── DashboardHeader.vue # Dashboard header — reads campaign.store (title, campaign/channel counts) + useAiConnectionStore (isConnected, aiPanelOpen); emits aiClick (camelCase); multi-root (title-row + details); AI button disabled when panel open; connected dot (top-right) shown when AI connected + panel closed; dot has scoped dot-pop @keyframes (cubic-bezier spring, scale 0→1) so it pops in visibly on background connection success; layout wrapper provided by DashboardView
 │   │   │       ├── DashboardKpis.vue   # KPI cards section — props: kpis (CampaignKPIs); formats all values internally; renders 5 KpiCards (Budget, Revenue+ROI, Conversions+CVR, CTR, CPA); .kpi-grid uses @container breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols)
 │   │   │       ├── DashboardCharts.vue # Charts section — props: campaigns (CampaignPerformance[]), channels (Channel[]), kpis (PortfolioKPIs); chart computeds: campaignColorMap, roiChartData, roiChannelChartData, budgetCampaignData, funnelValues; delegates Revenue vs Budget to RevVsBudgetChart; owns .charts-grid scoped style
-│   │   │       ├── RevVsBudgetChart.vue # Revenue vs Budget by Channel — props: channels (Channel[]), kpis (PortfolioKPIs); internal toggle (RadioToggle): 'budgetVsRevenue' (grouped bars, Amount (€) axis) | 'efficiencyGap' (single-dataset bars green/red by sign, Gap (%) axis, x-axis labels include euro gap); uses Bar from vue-chartjs directly; flat scoped styles
+│   │   │       ├── RevVsBudgetChart.vue # Revenue vs Budget by Channel — props: channels (Channel[]), kpis (PortfolioKPIs); internal toggle (RadioToggle): 'budgetVsRevenue' (grouped bars, Amount (€) axis) | 'efficiencyGap' (single-dataset bars green/red by sign, Gap (%) y-axis, tooltip shows euro gap via afterLabel); uses Bar from vue-chartjs directly; flat scoped styles
+│   │   │       ├── RoiCpaScatter.vue   # ROI vs CPA decision quadrant scatter — props: allCampaigns (full portfolio, for medians + ghost layer) + campaigns (filtered, main points); Bubble from vue-chartjs with fixed POINT_R=5 (position as primary signal); 4 QUADRANT datasets keyed by position relative to portfolio medians; ghost dataset (low-opacity neutral, GHOST_R=3) shown when filtered — only non-filtered campaigns, no overlap with main points; quadrant bg fills always shown; portfolio median reference lines + annotations always shown; y-axis log-scale (Math.log1p transform); axisBounds computed applies symmetric 10% padding on all 4 sides (xMin clamped to 0, bounds from filtered campaigns only so ghost-layer outliers don't stretch scale); dynamic subtitle: "Portfolio overview" / "Compared to portfolio benchmarks"; top-2 labels per quadrant by revenue; tooltip shows campaign/channel/ROI/CPA/Revenue; ghost tooltip shows "(not in filter)"; placed in DashboardView full-width above table
 │   │   │       ├── EmptyState.vue      # No-data screen — uses FileActions for download/upload buttons
 │   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined — pre-formatted by parent, falls back to 'N/A'); optional #secondary slot; uses @include cq-container('kpi-card') + @include cq-up(tiny, 'kpi-card') for container-query-driven font size scaling; flat scoped styles (no BEM)
 │   │   │       ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; reads pre-calculated roi/ctr/cvr/cpa directly; revenue+ROI coloring via percentageClass(c.roi); uses global data-table classes; channel cell uses `.badge.info`
@@ -268,7 +269,8 @@ app/                        # Vue 3 + Vite project
 - [x] Bar chart: ROI by campaign
 - [x] Bar chart: ROI by channel
 - [x] Donut chart: Budget allocation by channel
-- [x] Revenue vs Budget by Channel chart — toggle between Budget vs Revenue (grouped bars) and Efficiency Gap (% with euro amounts in axis labels)
+- [x] Revenue vs Budget by Channel chart — toggle between Budget vs Revenue (grouped bars) and Efficiency Gap (% axis, euro gap in tooltip)
+- [x] ROI vs CPA — Decision Quadrants scatter chart — 4 color-coded quadrants (Scale/Optimize/Improve/Cut), reference lines at portfolio averages, full-width above table
 - [x] Conversion Funnel: Impressions → Clicks → Conversions
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table

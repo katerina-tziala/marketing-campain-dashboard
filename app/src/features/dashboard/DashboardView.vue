@@ -4,6 +4,7 @@ import { useCampaignStore } from '@/stores/campaign.store'
 import DashboardHeader from './components/DashboardHeader.vue'
 import DashboardKpis from './components/DashboardKpis.vue'
 import DashboardCharts from './components/DashboardCharts.vue'
+import RoiCpaScatter from './components/RoiCpaScatter.vue'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
@@ -41,6 +42,12 @@ const openAiPanel = inject<() => void>('openAiPanel')
           :campaigns="store.filteredCampaigns"
           :channels="store.selectedChannels"
           :kpis="store.portfolioAnalysis.portfolio"
+        />
+        <!-- ROI vs CPA Scatter -->
+        <RoiCpaScatter
+          :all-campaigns="store.campaigns"
+          :campaigns="store.filteredCampaigns"
+          class="mx-auto max-w-7xl w-full"
         />
         <!-- Campaign Table -->
         <div class="card table-card max-h-full mx-auto max-w-7xl w-full">

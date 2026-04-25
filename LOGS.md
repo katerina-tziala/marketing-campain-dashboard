@@ -6369,3 +6369,250 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Axis ticks use 1 decimal (`toFixed(1)`) for readability at small label size; tooltip uses 2 decimals (`toFixed(2)`) for precision on hover
+
+
+## [#309] ROI vs CPA — Decision Quadrants scatter chart
+**Type:** feature
+
+**Summary:** Added a full-width scatter chart above the campaign table that plots each campaign by ROI (y-axis) vs CPA (x-axis), split into four color-coded decision quadrants divided by portfolio average reference lines.
+
+**Brainstorming:** Considered a bubble chart with budget-encoded size but concluded that position (ROI vs CPA) carries the decision signal and bubble size would add cognitive load without proportionate value. Quadrant coloring (green/yellow/indigo/red) gives immediate actionability without reading axis values. Four datasets (one per quadrant) provide a built-in legend with action labels. Custom inline Chart.js plugin draws quadrant background tints and dashed reference lines at aggregatedROI / aggregatedCPA without needing the annotation plugin. PointElement was missing from Chart.js registration — added it to register.ts as Scatter requires it.
+
+**Prompt:** Create a ROI vs CPA scatter chart above the campaign table occupying full width. Colored scatter + quadrants + reference lines, no bubble sizing.
+
+**What was built:**
+- `app/src/ui/charts/register.ts` — added `PointElement` import and registration (required by Scatter chart type)
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — new component; Scatter from vue-chartjs; 4 datasets keyed by quadrant (Scale aggressively / Optimize cost / Improve funnel / Cut or rethink); inline `quadrantPlugin` draws colored background tints + dashed reference lines at portfolio avg ROI and avg CPA; tooltip shows campaign name, channel, ROI%, CPA€; axis ticks formatted with formatCurrency (x) and formatPercentage (y)
+- `app/src/features/dashboard/DashboardView.vue` — imported RoiCpaScatter; inserted full-width between DashboardCharts and the campaign table card
+
+**Key decisions & why:**
+- 4 datasets rather than 1 with per-point colors: Chart.js legend entry per dataset gives action labels (Scale/Optimize/Improve/Cut) for free
+- Custom plugin reads `props.kpis` directly on each `beforeDraw` call — no computed needed, always uses latest values, avoids plugin re-registration
+- No bubble sizing: position alone tells the story; size added noise vs value for this dataset size
+- PointElement added globally in register.ts rather than locally — consistent with the existing registration pattern for all other Chart.js elements
+
+
+## [#310] RoiCpaScatter — fix chart not filling card width
+**Type:** fix
+
+**Summary:** Chart wrapper div was missing `w-full` — added the class so the Scatter canvas fills the full card width.
+
+**Brainstorming:** Chart.js `responsive: true` fills the container, but the container div only had a height set and no width, so it defaulted to content width. Adding `w-full` gives it 100% width for the canvas to fill.
+
+**Prompt:** The chart does not cover all the width of the card.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `class="w-full"` to the chart height-wrapper div
+
+**Key decisions & why:**
+- Single class addition; no structural change needed
+
+
+## [#311] RoiCpaScatter — log scale ROI axis + visible campaign labels
+**Type:** update
+
+**Summary:** Y-axis now uses a log1p transform for better separation of closely-clustered ROI values, and campaign names are drawn directly on the chart next to each point.
+
+**Brainstorming:** Chart.js native logarithmic scale only handles positive values; since ROI can be negative, used Math.log1p / Math.expm1 transform on a linear scale instead. log1p(x) = ln(1+x) is defined for x > -1 (ROI cannot be worse than -100%). The transform is monotonic so quadrant assignment logic is unchanged. Visible labels drawn in afterDraw via canvas fillText — no extra plugin dependency needed.
+
+**Prompt:** ROI axis should use log scale; add visible campaign name labels on the chart.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `roi` field to ScatterPoint (original value for tooltip); `y` stores `logRoi(c.roi)` = Math.log1p(clamped); quadrantPlugin.beforeDraw uses `logRoi(avgRoi)` for the y reference line pixel; quadrantPlugin.afterDraw draws campaign name labels via ctx.fillText colored by dataset border; y-axis ticks callback reverses with Math.expm1; tooltip uses p.roi (original); axis title updated to "ROI (log scale)"; CHART_HEIGHT increased to 420
+
+**Key decisions & why:**
+- Math.log1p transform rather than Chart.js logarithmic type — handles negative ROI values cleanly
+- Clamp at -0.999 in logRoi helper to avoid log(0) = -Infinity for near-total-loss campaigns
+- afterDraw for labels rather than chartjs-plugin-datalabels — no extra dependency, full control; labels offset 9px right and 3px up from the point center
+
+
+## [#312] RoiCpaScatter — quadrant labels on chart + bubble sizing by budget
+**Type:** update
+
+**Summary:** Added in-chart quadrant corner labels (Scale / Optimize / Improve / Cut) and switched from Scatter to Bubble chart with bubble radius scaled from campaign budget.
+
+**Brainstorming:** Quadrant labels drawn in beforeDraw after backgrounds — positioned at the top-left corner of each quadrant using the same i%2/i<2 index logic used for background rects. Short labels (tag field) used on chart; full labels (label field) kept for the legend. Bubble radius: MIN_R=5 to MAX_R=28 pixels, linearly scaled from budget share of maxBudget in the filtered set. Campaign name labels in afterDraw now offset by r+4 from point center so they clear the bubble edge regardless of size.
+
+**Prompt:** Update quadrant labels to Scale/Optimize/Improve/Cut; add bubble size scaled from budget.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `tag` field to QUADRANTS; added `r` and `roi` to BubblePoint type; switched from Scatter to Bubble (vue-chartjs); added budget-to-radius scaling (MIN_R=5, MAX_R=28); quadrantPlugin.beforeDraw draws short tag labels per quadrant corner at 55% opacity; afterDraw campaign label x-offset uses r+4 to clear bubble edge; ChartOptions type updated to 'bubble'
+
+**Key decisions & why:**
+- Separate `tag` (short) from `label` (long) in QUADRANTS — legend keeps descriptive text, chart label stays compact
+- globalAlpha 0.55 on quadrant tags — readable but doesn't compete with the data points
+- r offset in afterDraw label positioning so labels don't overlap the bubble for large-budget campaigns
+
+
+## [#313] RoiCpaScatter — selective labels (largest per quadrant) with clipping prevention
+**Type:** update
+
+**Summary:** Labels now only appear for the largest-budget campaign per quadrant; all others appear on hover via tooltip; labels are repositioned to never overflow the chart area.
+
+**Brainstorming:** "Important" defined as largest bubble (highest budget) per quadrant — the most impactful decision point in each zone. Per-dataset loop finds max-r point; draws only that label. Clipping prevention: measureText for width, flip to left-aligned if right edge would overflow, clamp y between top+halfLineHeight and bottom-halfLineHeight.
+
+**Prompt:** Labels only for really important items (rest on hover); labels must never be cut outside chart area.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — afterDraw rewrites to find max-r index per dataset; draws one label per quadrant; ctx.measureText used to detect right-edge overflow and flip to left; y clamped to stay inside chartArea; textBaseline changed to 'middle' for vertical centering
+
+**Key decisions & why:**
+- Largest bubble per quadrant = highest budget = most impactful decision — natural "importance" definition for a budget tool
+- Flip-to-left rather than truncate — preserves full campaign name readability
+- textBaseline 'middle' + y clamp keeps label anchored to the bubble center regardless of proximity to chart edges
+
+
+## [#314] RoiCpaScatter — bubble size from revenue (min=6, max=20) + semi-transparent tooltip
+**Type:** update
+
+**Summary:** Bubble radius now encodes revenue (not budget), clamped to 6–20px; tooltip background changed to 75% opacity so overlapping bubbles remain visible through it.
+
+**Prompt:** minSize=6, maxSize=20, size=normalize(revenue); tooltips are opaque and this is a problem.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — MIN_R 5→6, MAX_R 28→20; radius computed from revenue/maxRevenue; tooltip backgroundColor overridden to rgba(31,41,55,0.75); BubblePoint comment updated
+
+**Key decisions & why:**
+- Revenue as size metric: revenue is the output signal — a large revenue bubble in the top-left is the clearest "scale this" signal
+- 75% opacity tooltip: retains readability of tooltip text while letting chart content show through
+
+
+## [#315] RoiCpaScatter — top-3 labels per quadrant, opacity scaling, smaller bubbles, visible tooltip
+**Type:** update
+
+**Summary:** Labels now show for top 3 revenue campaigns per quadrant; bubble opacity scales with size (smaller = more transparent); bubbles restrained to MIN_R=4/MAX_R=14; tooltip is nearly opaque with a brighter border; labels are white.
+
+**Prompt:** Top 3 labels per category by meaning; smaller dots more opaque; restrain size; tooltip not visible; labels white.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `revenue` to BubblePoint for ranking; QUADRANT_RGB array for per-point rgba construction; pointOpacity(r) helper scales 0.35→0.85 by radius; backgroundColor is now an array per dataset; afterDraw ranks by revenue desc and labels top LABELS_PER_QUADRANT=3; label fillStyle '#ffffff'; tooltip backgroundColor 'rgba(15,23,42,0.95)' + brighter border; MIN_R 6→4, MAX_R 20→14
+
+**Key decisions & why:**
+- Revenue ranking for labels: highest revenue = highest business impact, consistent with bubble size metric
+- Opacity 0.35–0.85 range: smallest bubbles fade back visually; largest stay prominent — reduces perceived overlap
+- Tooltip rgba(15,23,42,0.95): near-opaque dark navy, clearly readable against both light and dark chart backgrounds
+
+
+## [#316] RoiCpaScatter — restore bubble colors, labels under tooltip, updated quadrant text
+**Type:** fix
+
+**Summary:** Restored fixed bubble colors per quadrant (removed per-point opacity variation); moved campaign label drawing to afterDatasetsDraw so tooltips always render on top; updated quadrant labels to Scale / Optimize cost / Improve funnel / Rethink / Watch.
+
+**Prompt:** Colors of areas should not have changed; labels appearing above tooltips is wrong; update text to Scale / Optimize cost / Improve funnel / Rethink / Watch.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — restored single `color` per QUADRANT dataset (removed QUADRANT_RGB + pointOpacity); renamed labels/tags: "Scale aggressively"→"Scale", "Cut or rethink"→"Rethink / Watch", tag "Optimize"→"Optimize cost", "Improve"→"Improve funnel", "Cut"→"Rethink / Watch"; label drawing moved from `afterDraw` to `afterDatasetsDraw` (runs before tooltip plugin renders, so tooltip draws on top)
+
+**Key decisions & why:**
+- afterDatasetsDraw for labels: Chart.js tooltip plugin hooks into a later draw phase; moving labels to afterDatasetsDraw ensures they are drawn to the canvas before the tooltip, so the tooltip always appears on top
+- Fixed colors restored: per-point opacity caused unexpected visual divergence from previous appearance
+
+
+## [#317] RoiCpaScatter — median splits, updated quadrant names, removed kpis prop
+**Type:** update
+
+**Summary:** Quadrant split lines now use medianROI and medianCPA computed from the visible campaigns instead of portfolio averages; quadrant labels updated to Efficient / Costly / Weak funnel / Inefficient; kpis prop removed as it is no longer needed.
+
+**Prompt:** Arbitrary average split unfairly flips categories — use medianCPA and medianROI. Update quadrant names to Efficient / Costly / Weak funnel / Inefficient.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added getMedian helper; added medians computed (roi + cpa from non-null campaign values); bubbleData and quadrantPlugin.beforeDraw now read medians.value instead of props.kpis; kpis prop removed; quadrant labels updated to Efficient / Costly / Weak funnel / Inefficient with descriptive legend text
+- `app/src/features/dashboard/DashboardView.vue` — removed :kpis binding from RoiCpaScatter
+
+**Key decisions & why:**
+- Median over mean: median is not skewed by extreme outliers (a single very high CPA campaign would push the mean right, misclassifying the majority); median gives a stable "middle ground" split
+- kpis prop removed entirely: medians are derived from campaigns, so kpis is no longer a required input
+
+
+## [#318] RoiCpaScatter — median annotations, round tooltip markers, text shadow, axis padding, bubble size subtitle
+**Type:** update
+
+**Summary:** Added median value labels on reference lines, removed corner quadrant tags, added text shadow to campaign labels, set explicit ROI tick values, added 5% axis grace padding, made tooltip point markers round, added bubble size subtitle.
+
+**Prompt:** Add reference line value labels; remove corner area tags; round tooltip shape; bubble size legend subtitle; text shadow on labels; axis padding.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed corner tag rendering from beforeDraw; added median annotation labels ("Median CPA: €X" above vertical line, "Median ROI: X%" above horizontal line at right edge); afterDatasetsDraw adds ctx.shadowColor/shadowBlur for label readability; tooltip usePointStyle: true for round markers; tooltip label callback adds Revenue line; ROI_TICKS array drives afterBuildTicks for clean y-axis tick values (-50%, 0%, 50%, 100%, 200%, 500%, 1000%); grace: '5%' on both axes prevents edge clipping; layout.padding.top: 16 to accommodate median CPA label above chart area; scatter-header + scatter-subtitle added to template
+
+**Key decisions & why:**
+- Median labels positioned outside chart area top (CPA) and inside at right edge above line (ROI) — non-overlapping with data
+- afterBuildTicks for explicit ticks: the cleanest Chart.js 3 API for overriding auto-generated ticks without affecting data positions
+- grace instead of manual min/max: proportional to data range, works across different datasets automatically
+
+
+## [#319] RoiCpaScatter redesign — fixed size, ghost layer, portfolio benchmarks, adaptive quadrants
+**Type:** update
+
+**Summary:** Redesigned RoiCpaScatter with fixed-size points, a ghost context layer for filtered views, portfolio-median reference lines, adaptive quadrant zones, and a clamped y-axis to prevent extreme ROI values from compressing the chart.
+
+**Brainstorming:** The bubble chart was visually noisy due to varying bubble sizes causing overlaps and the log-scale y-axis stretching to accommodate 1000%+ ROI outliers while compressing the interesting region. The redesign separates two concerns: position tells the story (no bubble sizing), and a ghost layer provides portfolio context when filtering. Portfolio medians (not filtered medians) serve as benchmark midlines so the reference lines remain stable across filter changes. Quadrant backgrounds are suppressed below 5 campaigns to avoid misleading splits on thin data. Y-axis max is computed from filtered data p-max + 0.25 in log space to prevent ghost-layer outliers from stretching the scale.
+
+**Prompt:** Redesign RoiCpaScatter: use portfolio medians for midlines; plot filtered campaigns as fixed-size main points; add background ghost points (all non-filtered campaigns, low opacity, small) when filter active; disable quadrant zones if <5 filtered campaigns but keep reference lines; clamp y-axis to filtered data range; dynamic subtitle "Portfolio overview" / "Compared to portfolio benchmarks"; top 2 labels per quadrant by revenue.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — full redesign: new props (allCampaigns + campaigns), fixed POINT_R=5 / GHOST_R=3, ghost dataset (non-filtered campaigns only, isGhost flag), medians always from allCampaigns, showQuadrants gate (≥5), yAxisMax computed from filtered data, dynamic subtitle computed, tooltip handles isGhost "(not in filter)" label
+- `app/src/features/dashboard/DashboardView.vue` — added `:all-campaigns="store.campaigns"` prop binding
+
+**Key decisions & why:**
+- Fixed point size (r=5): position is the primary signal; bubble overlap was the main readability problem
+- Ghost layer excludes filtered campaigns (rowId Set): avoids z-order overlap and double tooltips at same position
+- Medians from allCampaigns: reference lines stay stable when channel filter changes — consistent benchmark
+- yAxisMax from filtered data: ghost-layer outliers can't stretch the visible range; ghost points above max simply clip
+- showQuadrants threshold (5): splits are not meaningful with very few data points — colored zones removed but reference lines remain
+- Y-axis min fixed at logRoi(-0.7): ensures the scale always shows down to ~-70% ROI regardless of data
+
+
+## [#320] RoiCpaScatter — remove quadrant gate, fix axis padding symmetry
+**Type:** fix
+
+**Summary:** Removed the <5-campaigns quadrant suppression gate and replaced asymmetric grace/fixed-min axis padding with symmetric 10% bounds computed from the filtered data range on all four sides.
+
+**Brainstorming:** The quadrant gate was unhelpful — it removed visual context for small filtered sets rather than helping. The large empty left side was caused by `grace: '5%'` on the x-axis (which adds 5% of the full range, pushing the minimum into negative CPA territory) combined with a hardcoded `logRoi(-0.7)` y-min that didn't match the actual data. The fix: a single `axisBounds` computed derives xMin/xMax/yMin/yMax from the filtered campaign data and applies a uniform 10% padding on each side, with xMin clamped to 0 (CPA can't be negative).
+
+**Prompt:** Remove the quadrant-disable logic for <5 campaigns. Fix the huge empty left side: replace grace and fixed min with symmetric 10% padding on all 4 dimensions computed from the actual data range.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed `MIN_CAMPAIGNS_FOR_QUADRANTS` constant, `showQuadrants` computed, and the conditional guard in `beforeDraw`; removed `yAxisMax` computed; added `axisBounds` computed (symmetric 10% PAD on x and y from filtered data, xMin clamped ≥0); updated chartOptions x/y scales to use `axisBounds.value.*` instead of `grace`/`yAxisMax`
+
+**Key decisions & why:**
+- Single `axisBounds` computed for both axes: ensures padding is symmetric and derived from the same data snapshot
+- xMin clamped to 0: CPA is always positive; preventing negative axis values avoids misleading empty space
+- 10% PAD: small enough to keep points near edges, large enough for labels not to clip
+- Ghost-layer points excluded from bounds calculation: chart always focuses on filtered data, ghost context clips gracefully if outside range
+
+
+## [#321] RoiCpaScatter — fix median label positions, vertical ROI label outside chart
+**Type:** fix
+
+**Summary:** Moved "Median CPA" annotation inside the chart area to stop it clashing with the legend, and drew "Median ROI" vertically outside the right edge of the chart using canvas translate + rotate.
+
+**Brainstorming:** The Median CPA text was drawn at `top - 2` (just above the chart area), which put it in the same space as the Chart.js legend, causing overlap. Moving it to `top + 4` with `textBaseline = 'top'` places it inside the chart right below the top edge — still visually connected to the vertical reference line, no legend clash. The Median ROI text was horizontal at the right edge of the chart area and overlapping with data points; rotating it -90° and translating it to `right + 14` (outside the chart area) keeps it readable and out of the data space. Added `layout.padding.right = 20` to ensure the canvas has room for the rotated label.
+
+**Prompt:** Move the legend up so it doesn't clash with the Median CPA tag. Draw Median ROI vertically outside the chart area on the right so it doesn't overlap with data.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — `layout.padding` → `{ top: 24, right: 20 }`; Median CPA text moved to `(xMid, top + 4)` with `textBaseline = 'top'` (inside chart); Median ROI redrawn with `ctx.translate(right + 14, yMid)` + `ctx.rotate(-Math.PI / 2)` (vertical, outside right edge)
+
+**Key decisions & why:**
+- Median CPA inside chart (top + 4): removes legend clash entirely without any layout tricks; still visually associated with the vertical reference line
+- Median ROI rotated -90°: reads naturally bottom-to-top alongside the horizontal reference line; placed outside chart area so it never overlaps data
+- right padding 20px: minimum space needed for the rotated text's rendered height (~12px at 10px font)
+
+
+## [#322] RoiCpaScatter — median ticks on both axes (pink), fix bottom y-axis collision
+**Type:** update
+
+**Summary:** Replaced canvas text annotations for median values with proper pink-coloured axis tick labels on both axes, and filtered y-axis ticks that crowd the axis floor to prevent collision with x-axis labels.
+
+**Brainstorming:** The canvas text approach for median annotations was fragile (could overlap data, hard to align with gridlines) and the Median ROI label was colliding with data points. Moving the annotations to axis tick labels is cleaner: they align exactly with the gridline, respect the axis scale, and are styled consistently with other ticks. The `ticks.color` callback in Chart.js 3 accepts a `ScriptableScaleContext` — comparing `ctx.tick.value` to the median tick value (with a small epsilon for float comparison) returns pink only for the median tick. For the bottom collision: `afterBuildTicks` filters out any tick whose log-space value is within 0.15 of `axis.min` — this clears ticks that would render at the very bottom of the chart area where x-axis labels live.
+
+**Prompt:** Add median ROI as a pink tick label on the y-axis (between other tick lines, in log scale). Add median CPA as a pink tick label on the x-axis. Fix the bottom y-axis tick colliding with x-axis labels.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed both canvas text annotation blocks from `beforeDraw`; removed `layout.padding.right`; x-axis gains `afterBuildTicks` (injects medCpa tick) + `ticks.color` callback (pink for median); y-axis `afterBuildTicks` now injects `logRoi(medRoi)` into sorted tick list and filters ticks within 0.15 log-units of axis floor; y-axis gains `ticks.color` callback (pink for median)
+
+**Key decisions & why:**
+- Axis tick labels instead of canvas text: align precisely with gridlines, never overlap data, scale-aware
+- `ticks.color` as function (Chart.js scriptable option): per-tick colour without a custom plugin
+- Bottom filter `v > axis.min + 0.15`: 0.15 in log space ≈ one meaningful ROI step; reliably clears the collision without removing meaningful ticks higher up
+- x-axis: only inject median tick if not already within 0.01€ of an existing tick (prevents near-duplicate labels)
