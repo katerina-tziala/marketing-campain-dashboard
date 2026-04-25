@@ -64,7 +64,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
 }
 
 .dashboard-section {
-  @apply w-full px-6 mx-auto max-w-7xl;
+  @apply w-full mx-auto max-w-7xl;
 }
 
 .data-visualization {

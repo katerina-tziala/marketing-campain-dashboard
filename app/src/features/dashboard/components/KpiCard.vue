@@ -7,7 +7,7 @@ defineProps<{
 
 <template>
   <div
-    class="card card-smaller-spaces kpi-card"
+    class="card kpi-card"
     role="region"
     :aria-label="label"
   >
@@ -23,8 +23,8 @@ defineProps<{
 </template>
 
 <style lang="scss" scoped>
-  .card.card-smaller-spaces.kpi-card {
-    @apply w-full gap-1; 
+  .kpi-card {
+    @apply p-3 w-full gap-1; 
     @include cq-container('kpi-card');
   }
 

@@ -6122,3 +6122,29 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Vue SFCs always use default exports; named re-exports of SFCs are only possible through an intermediate barrel — without the barrel the import must be a default import
+
+
+## [#297] Dashboard layout refinements and upload modal flow improvements
+**Type:** update
+
+**Summary:** Refined the dashboard grid layout and table card styling in DashboardView, tightened the upload form layout and footer button ordering in UploadCampainData, and hardened the multi-step upload navigation logic in UploadModal.
+
+**Brainstorming:** Three files were modified as a set of incremental UI/UX improvements. DashboardView needed the table section to be properly bounded (max width, max height) with its title styled distinctly from card body text. UploadCampainData needed a constrained width for the form body and a responsive footer that reorders buttons at the xs (480px) breakpoint rather than stacking them awkwardly. UploadModal's back/proceed navigation needed to be bidirectional — going back from the duplicates step should return to the row-errors step if that step was traversed, not always to the form.
+
+**Prompt:** Make the following three targeted changes:
+
+1. **DashboardView.vue** — Convert the dashboard wrapper to a CSS grid with three rows (header / filter / scrollable content): `grid grid-cols-1 grid-rows-[min_content-min-content_1fr]` with `pt-5 gap-y-5`. Give `.data-visualization` `px-4 pb-6` padding plus `container-type: inline-size` (inline style, not @apply — not a Tailwind utility). Change the table card div to `class="card table-card max-h-full mx-auto max-w-7xl w-full"` and give its `<h3>` `class="card-title table-card-title"`. Add a scoped style `card-title.table-card-title { @apply text-base shrink-0 font-normal text-primary-300; }`.
+
+2. **UploadCampainData.vue** — Make it a multi-root component: template root is two sibling divs (`form-body` + `modal-footer`). Add scoped style `.form-body { @apply p-6 overflow-y-auto w-[90vw] max-w-2xl; }`. In the footer, the Upload button has no extra order class (stays first); Download Template gets `xs:order-3 xs:mr-auto`; Cancel gets `xs:order-2 min-w-24`. This reorders the footer at the 480px (`xs`) breakpoint: Upload | Cancel | Download Template (Download pushed to the right via `mr-auto`). File selection goes through `handleFileSelect(f)` which calls `isValidCsvFile(f)` from `parse-csv` — sets `fileError` and emits `update:file` with `null` on invalid type, clears error and emits the file on valid. Props: `title: string`, `file: File | null`, `parseError: string`, `isLoading: boolean`. Emits: `update:title`, `update:file`, `submit`, `close`, `downloadTemplate`.
+
+3. **UploadModal.vue** — Lift all form state (`title`, `file`, `parseError`, `isLoading`) to the modal level so it survives view switches; `watch(file, () => { parseError.value = '' })` clears parse error on file change. Implement bidirectional navigation: `handleBackFromDuplicates` checks `rowErrors.value.length > 0` — if true, return to `row-errors` view; if false, return to `form` and clear `validCampaigns` + `duplicateGroups`. `handleProceedFromDuplicates(selected: Campaign[])` calls `campaignStore.loadCampaigns(pendingTitle.value, [...validCampaigns.value, ...selected])` — merges the valid campaigns from the row-errors step with the user's selected duplicate resolutions. `handleProceedFromErrors` checks `duplicateGroups.value.length > 0` — if true, advance to `duplicate-rows`; if false, load and close. `close()` resets all state: `view = 'form'`, clears title/file/parseError/rowErrors/validCampaigns/duplicateGroups.
+
+**What changed:**
+- `app/src/features/dashboard/DashboardView.vue` — grid layout for dashboard wrapper; table card sizing + scoped title color style
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — multi-root template; constrained form-body width; xs-breakpoint footer button reordering; file validation via `isValidCsvFile`
+- `app/src/features/data-transfer/components/UploadModal.vue` — lifted form state; bidirectional back navigation (duplicates → row-errors → form); proceed-from-duplicates merges valid + selected campaigns
+
+**Key decisions & why:**
+- `xs:order-*` on footer buttons rather than flex-direction reversal: allows Upload to remain first in DOM (accessible tab order) while reordering visually at wider widths
+- `handleBackFromDuplicates` checks `rowErrors` length rather than tracking a navigation stack: the two-step flow is linear enough that checking state is simpler than a history array
+- `validCampaigns` and `selected` are spread into a new array in `handleProceedFromDuplicates` rather than mutating — avoids ref side-effects when `close()` later clears `validCampaigns.value`

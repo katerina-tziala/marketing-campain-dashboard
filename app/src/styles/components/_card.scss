@@ -13,15 +13,13 @@
       border-surface-outline;
 
 
-    .card-title {
-      @apply w-full font-medium tracking-widest text-on-surface-high; 
-    }
+    // .card-title {
+    //   @apply w-full font-medium tracking-widest text-on-surface-high; 
+    // }
 
-    h5.card-title {
-      @apply text-sm; 
-    }
-
-
+    // h5.card-title {
+    //   @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 
+    // }
   }
 
   .card-secondary {
@@ -58,8 +56,6 @@
   }
 
 
-  .card.card-smaller-spaces {
-    @apply p-3 gap-3;
-  }
+ 
 
 }

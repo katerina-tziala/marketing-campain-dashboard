@@ -32,10 +32,10 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
       <span v-if="showConnectedDot" class="connected-dot connected-status" aria-hidden="true" />
     </div>
   </div>
-  <p class="dashboard-details">
+  <p class="text-sm">
     <span class="detail-item">{{ store.title }}</span>
-    <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
     <span class="detail-item">{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</span>
+    <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
   </p>
 </template>
 
@@ -47,11 +47,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
     @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1;
   }
 }
-
-.dashboard-details {
-  @apply text-sm text-typography;
-}
-
+ 
 .ai-btn-wrapper {
   @apply relative shrink-0;
 }

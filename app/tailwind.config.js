@@ -10,8 +10,11 @@ export default {
         surface: "rgb(var(--color-surface) / <alpha-value>)",
         'surface-outline': "rgb(var(--color-surface-outline) / <alpha-value>)",
         'on-surface-high': "rgb(var(--color-on-surface-high) / <alpha-value>)",
+        'primary-subtle': "rgb(var(--color-primary-subtle) / <alpha-value>)",
 
+        
 
+        // --color-border-primary-low
         // 
         black: {
           DEFAULT: '#000000', 
@@ -25,7 +28,7 @@ export default {
           // intense: '#cbd5e1'
 //  --color-typography
           DEFAULT: "rgb(var(--color-typography) / <alpha-value>)", // main text
-          subtle: '#94a3b8',    // secondary text
+          subtle: "rgb(var(--color-typography-low) / <alpha-value>)",
           intense: '#f1f5f9'    // headings / emphasis
         
         },

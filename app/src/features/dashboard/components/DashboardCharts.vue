@@ -95,7 +95,7 @@ const funnelValues = computed(() => [props.kpis.totalImpressions, props.kpis.tot
 
 <style lang="scss" scoped>
 .charts-grid {
-  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl px-4;;
+  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl;
 
   @container (min-width: 60rem) {
     @apply grid-cols-2;

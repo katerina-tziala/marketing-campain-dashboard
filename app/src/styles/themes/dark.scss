@@ -16,8 +16,9 @@
   --primary-1000: 15 14 37;
 
 
-  --neutral-100: 226 232 240; 
-  // --neutral-800: 10 20 48;   // surface
+  --neutral-100: 221 228 238; 
+  --neutral-300: 170 188 212; 
+  //   --neutral-500: 153 175 204;   
   // --neutral-900: 6 11 31;    // background
 
 
@@ -38,8 +39,12 @@
 // --color-surface-container-high: 18 34 70; // hover / active / emphasis
   
 
+--color-primary-subtle: var(--primary-400);
+
+
   /* Text */
   --color-typography: var(--neutral-100);
+  --color-typography-low: var(--neutral-300);
 //   --color-on-background: 226 232 240;
 //   --color-on-surface: 226 232 240;
   --color-on-surface-high: var(--primary-300);
@@ -50,7 +55,7 @@
 
   /* Borders (very subtle blue) */
   --color-surface-outline: 20 34 74;
-
+ 
 //   --color-outline: 30 58 95;
 //   --color-outline-variant: 20 40 80;
 
