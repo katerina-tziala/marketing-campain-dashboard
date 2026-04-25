@@ -15,11 +15,13 @@
     "pinia": "^3.0.4",
     "vue": "^3.5.30",
     "vue-chartjs": "^5.3.3",
-    "vue-router": "^4.6.4"
+    "vue-router": "^4.6.4",
+    "xxhashjs": "^0.2.2"
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
     "@types/papaparse": "^5.5.2",
+    "@types/xxhashjs": "^0.2.4",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
     "autoprefixer": "^10.4.27",

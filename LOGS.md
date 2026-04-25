@@ -6148,3 +6148,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `xs:order-*` on footer buttons rather than flex-direction reversal: allows Upload to remain first in DOM (accessible tab order) while reordering visually at wider widths
 - `handleBackFromDuplicates` checks `rowErrors` length rather than tracking a navigation stack: the two-step flow is linear enough that checking state is simpler than a history array
 - `validCampaigns` and `selected` are spread into a new array in `handleProceedFromDuplicates` rather than mutating — avoids ref side-effects when `close()` later clears `validCampaigns.value`
+
+
+## [#298] Install xxhashjs and hash cache keys deterministically
+**Type:** update
+
+**Summary:** Replaced the plain-string cache key in `getCacheKey` with a deterministic 64-bit xxHash, so identical inputs always produce the same compact hex key.
+
+**Brainstorming:** The existing key was a readable concatenated string (`provider::ch1|ch2`). For caching correctness this already worked, but hashing gives a fixed-length opaque key regardless of how many channel IDs are present. xxhashjs was chosen because it is pure JavaScript (browser-compatible with Vite), synchronous, and exposes an `h64` API matching the intended `hash64` use. The seed is fixed at 0 for full determinism.
+
+**Prompt:** Install and implement a hash function to hash cache keys — create the same hash key from the same input each time.
+
+**What changed:**
+- `app/package.json` — added `xxhashjs` (dependency) and `@types/xxhashjs` (dev dependency)
+- `app/src/features/ai-tools/ai-analysis/utils/utils.ts` — imports `XXH` from `xxhashjs`; `getCacheKey` now builds the raw key string internally then returns `XXH.h64(raw, 0).toString(16)` — a 16-char hex string
+
+**Key decisions & why:**
+- Seed fixed at `0` via named constant `HASH_SEED` — any non-zero seed would produce different hashes on different builds with no benefit here
+- Raw string still constructed the same way (sorted channel IDs, lowercased provider) — hashing is applied on top of the same normalization logic, not as a replacement for it
+- `xxhashjs` over inline FNV/djb2 — user asked to install a package; xxhash is a well-known algorithm with type definitions available
