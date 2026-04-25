@@ -66,6 +66,25 @@
      }
   }
 
+    .btn-secondary {
+    @extend .btn;
+ 
+    @apply text-xl
+      bg-none
+      p-1.5
+      text-primary-400;
+ 
+     &:not(:disabled) {
+       &:hover {
+        @apply text-primary-400 bg-primary-500/20;
+      }
+
+      &:focus-visible  {
+        @apply border-primary-400;
+      }
+     }
+  }
+
   .btn-secondary-outline {
     @extend .btn;
      @apply text-primary-300 border-primary-300 border;

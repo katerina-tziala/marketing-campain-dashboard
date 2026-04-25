@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { CsvCampaign, CsvDuplicateGroup } from '../../types'
-import { DataTableHeader, CheckIcon } from '../../../../ui'
-import type { DataTableColumn } from '../../../../ui'
-import { formatCurrency, formatNumber } from '../../../../common/utils/formatters'
+import type { Campaign } from '@/shared/types/campaign'
+import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
+import { DataTableHeader, CheckIcon } from '@/ui'
+import type { DataTableColumn } from '@/ui'
+import { formatCurrency, formatNumber } from '@/shared/utils/formatters'
 
 const props = defineProps<{
-  duplicateGroups: CsvDuplicateGroup[]
+  duplicateGroups: CampainDataDuplicateGroup[]
 }>()
 
 const emit = defineEmits<{
-  change: [selectedCampaigns: CsvCampaign[]]
+  change: [selectedCampaigns: Campaign[]]
 }>()
 
-type SortKey = 'rowNum' | 'conversions' | 'revenue'
+type SortKey = 'rowId' | 'conversions' | 'revenue'
 
-const sortKey = ref<SortKey>('rowNum')
+const sortKey = ref<SortKey>('rowId')
 const sortDir = ref<'asc' | 'desc'>('asc')
 
 function toggleSort(key: SortKey) {
@@ -33,7 +34,7 @@ function handleSort(key: string): void {
 
 const COLUMNS: DataTableColumn[] = [
   { key: 'select', label: '', ariaLabel: 'Select', class: 'w-9' },
-  { key: 'rowNum', label: 'Row', sortable: true },
+  { key: 'rowId', label: 'Row', sortable: true },
   { key: 'channel', label: 'Channel' },
   { key: 'budget', label: 'Budget' },
   { key: 'clicks', label: 'Clicks' },
@@ -54,21 +55,21 @@ const sortedGroups = computed(() =>
 
 const selections = ref<Map<string, number>>(new Map())
 
-function isSelected(campaignName: string, rowNum: number): boolean {
-  return selections.value.get(campaignName) === rowNum
+function isSelected(campaignName: string, rowId: number): boolean {
+  return selections.value.get(campaignName) === rowId
 }
 
 function isGroupSelected(campaignName: string): boolean {
   return selections.value.has(campaignName)
 }
 
-function selectRow(campaignName: string, rowNum: number): void {
-  selections.value = new Map(selections.value).set(campaignName, rowNum)
-  const selected: CsvCampaign[] = []
+function selectRow(campaignName: string, rowId: number): void {
+  selections.value = new Map(selections.value).set(campaignName, rowId)
+  const selected: Campaign[] = []
   for (const group of props.duplicateGroups) {
-    const selectedRowNum = selections.value.get(group.campaignName)
-    if (selectedRowNum !== undefined) {
-      const entry = group.rows.find((r) => r.rowNum === selectedRowNum)
+    const selectedRowId = selections.value.get(group.campaignName)
+    if (selectedRowId !== undefined) {
+      const entry = group.rows.find((r) => r.rowId === selectedRowId)
       if (entry) selected.push(entry)
     }
   }
@@ -98,24 +99,24 @@ function selectRow(campaignName: string, rowNum: number): void {
           </tr>
           <tr
             v-for="entry in group.rows"
-            :key="entry.rowNum"
+            :key="entry.rowId"
             class="data-table-row row-selectable"
-            :class="{ 'row-selected': isSelected(group.campaignName, entry.rowNum) }"
-            @click="selectRow(group.campaignName, entry.rowNum)"
+            :class="{ 'row-selected': isSelected(group.campaignName, entry.rowId) }"
+            @click="selectRow(group.campaignName, entry.rowId)"
           >
             <td class="data-table-cell cell-select">
               <span class="flex items-center justify-center">
                 <input
                   type="radio"
                   :name="`group-${group.campaignName}`"
-                  :value="entry.rowNum"
-                  :checked="isSelected(group.campaignName, entry.rowNum)"
-                  :aria-label="`Select row ${entry.rowNum}`"
-                  @change="selectRow(group.campaignName, entry.rowNum)"
+                  :value="entry.rowId"
+                  :checked="isSelected(group.campaignName, entry.rowId)"
+                  :aria-label="`Select row ${entry.rowId}`"
+                  @change="selectRow(group.campaignName, entry.rowId)"
                 />
               </span>
             </td>
-            <td class="data-table-cell">{{ entry.rowNum }}</td>
+            <td class="data-table-cell">{{ entry.rowId }}</td>
             <td class="data-table-cell">
               <span class="badge info">{{ entry.channel }}</span>
             </td>
@@ -139,7 +140,7 @@ function selectRow(campaignName: string, rowNum: number): void {
     font-semibold
     tracking-wide
     text-typography-subtle
-    bg-surface-secondary
+    // bg-surface-secondary
     border-t
     border-b
     border-surface-border-secondary

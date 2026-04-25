@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { Channel } from '@/shared/types/channel'
+
 defineProps<{
-  channels: string[]
+  channels: Channel[]
   selected: string[]
 }>()
 
 const emit = defineEmits<{
-  toggle: [channel: string]
+  toggle: [channelId: string]
   clearAll: []
 }>()
 </script>
@@ -13,21 +15,22 @@ const emit = defineEmits<{
 <template>
   <div class="channel-filter" role="group" aria-label="Filter by channel">
     <button
-      class="btn-icon-secondary filter-btn"
-      :class="selected.length === 0 ? 'active' : 'inactive'" 
+      class="btn-secondary filter-btn all"
+      :class="selected.length === 0 ? 'active' : 'inactive'"
       @click="emit('clearAll')"
     >
       All
     </button>
     <button
       v-for="channel in channels"
-      :key="channel"
-      class="btn-icon-secondary filter-btn"
-      :class="selected.includes(channel) ? 'active' : 'inactive'"
-      :aria-pressed="selected.includes(channel)"
-      @click="emit('toggle', channel)"
+      :key="channel.id"
+      class="btn-secondary filter-btn"
+      :class="selected.includes(channel.id) ? 'active' : 'inactive'"
+      :aria-pressed="selected.includes(channel.id)"
+      @click="emit('toggle', channel.id)"
     >
-      {{ channel }}
+      {{ channel.name }}
+      <span class="filter-count">{{ channel.campaigns.length }}</span>
     </button>
   </div>
 </template>
@@ -40,7 +43,8 @@ const emit = defineEmits<{
 .filter-btn {
   @apply rounded-full
   border-2 
-  px-3
+  pr-1
+  pl-2
   py-1
   text-sm
   font-medium
@@ -54,9 +58,24 @@ const emit = defineEmits<{
   &.inactive {
     @apply border-surface-border
     bg-surface
-    text-typography-subtle 
+    text-typography-subtle
     hover:border-primary-400
-    focus-within:border-primary-400;
+    focus-visible:border-primary-400;
   }
+
+  &.all {
+    @apply px-3;
+  }
+}
+
+.filter-count {
+  @apply inline-flex items-center justify-center
+  rounded-full
+  px-1.5
+  min-w-[1.25rem]
+  h-5
+  text-xs
+  font-normal
+  bg-white/10;
 }
 </style>

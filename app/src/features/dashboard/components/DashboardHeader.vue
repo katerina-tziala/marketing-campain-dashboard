@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SparklesIcon } from '../../../ui'
-import { useCampaignStore } from '../../../stores/campaignStore'
-import { useAiStore } from '../../../stores/aiStore'
+import { SparklesIcon } from '@/ui'
+import { useCampaignStore } from '@/stores/campaign.store'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 
 const store = useCampaignStore()
-const aiStore = useAiStore()
+const aiStore = useAiConnectionStore()
 
 const emit = defineEmits<{ 'aiClick': [] }>()
 
 const selectedChannelCount = computed(() =>
-  store.selectedChannels.length === 0
-    ? store.availableChannels.length
-    : store.selectedChannels.length,
+  store.selectedChannelsIds.length === 0
+    ? store.portfolioChannels.size
+    : store.selectedChannelsIds.length,
 )
 
 const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelOpen)
@@ -32,10 +32,10 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
       <span v-if="showConnectedDot" class="connected-dot connected-status" aria-hidden="true" />
     </div>
   </div>
-  <p class="dashboard-details">
+  <p class="text-sm">
     <span class="detail-item">{{ store.title }}</span>
+    <span class="detail-item">{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</span>
     <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
-    <span class="detail-item">{{ selectedChannelCount }} of {{ store.availableChannels.length }} channels</span>
   </p>
 </template>
 
@@ -47,11 +47,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
     @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1;
   }
 }
-
-.dashboard-details {
-  @apply text-sm text-typography;
-}
-
+ 
 .ai-btn-wrapper {
   @apply relative shrink-0;
 }
@@ -69,5 +65,11 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
   items-center
   justify-center
   overflow-visible;
+  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes dot-pop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
 }
 </style>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { CampaignScope } from '../../../../../common/types/campaign'
+import type { PortfolioScope } from '@/shared/types/campaign'
 
 defineProps<{
   title: string
   period?: string | null
-  scope: CampaignScope
+  scope: PortfolioScope
 }>()
 </script>
 

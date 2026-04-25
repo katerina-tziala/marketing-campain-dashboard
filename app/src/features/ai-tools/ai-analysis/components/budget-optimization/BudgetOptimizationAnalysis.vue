@@ -1,24 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../../../stores/campaignStore'
-import AnalysisState from '../shared/AnalysisState.vue'
-import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
+import type { PortfolioScope } from '@/shared/types/campaign'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
-import BudgetOptimizationTopPerformers from './BudgetOptimizationTopPerformers.vue'
-import BudgetOptimizationUnderperformers from './BudgetOptimizationUnderperformers.vue'
-import BudgetOptimizationQuickWins from './BudgetOptimizationQuickWins.vue'
-import BudgetOptimizationRisks from './BudgetOptimizationRisks.vue'
+
+defineProps<{
+  scope: PortfolioScope
+}>()
 
 const analysisStore = useAiAnalysisStore()
-const campaignStore = useCampaignStore()
 
-const status = computed(() => analysisStore.optimizerStatus)
-const response = computed(() => analysisStore.optimizerResponse)
-const error = computed(() => analysisStore.optimizerError)
-const errorFallback = computed(() => analysisStore.optimizerErrorFallback)
-const cacheTimestamp = computed(() => analysisStore.optimizerCacheTimestamp)
+const status = computed(() => analysisStore.budgetOptimizer.status)
+const response = computed(() => analysisStore.budgetOptimizer.response)
+const error = computed(() => analysisStore.budgetOptimizer.error)
+const notice = computed(() => analysisStore.budgetOptimizer.notice)
+const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
@@ -27,7 +25,7 @@ const actionLabel = computed(() => analysisActivated.value ? 'Re-Analyze' : 'Ana
 const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
 
 function handleAnalyze(): void {
-  analysisStore.analyze('optimizer')
+  analysisStore.analyze('budgetOptimizer')
 }
 </script>
 
@@ -39,24 +37,20 @@ function handleAnalyze(): void {
     loading-text="Analyzing campaigns…"
     :status="status"
     :error="error"
-    :error-fallback="errorFallback"
+    :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"
     :cache-timestamp="cacheTimestamp"
-    :model-name="response?.model?.display_name"
+    :model-name="response?.model?.displayName"
     @analyze="handleAnalyze"
   >
-    <BudgetOptimizationOverview
-      :summary="response!.executive_summary"
-      :period="response!.period"
-      :scope="campaignStore.campaignScope"
-    />
-    <BudgetOptimizationRecommendations :recommendations="response!.recommendations" />
-    <BudgetOptimizationTopPerformers :performers="response!.top_performers" />
-    <BudgetOptimizationUnderperformers :underperformers="response!.underperformers" />
-    <BudgetOptimizationQuickWins :quick-wins="response!.quick_wins" />
-    <AnalysisCorrelations :correlations="response!.correlations" />
-    <BudgetOptimizationRisks :risks="response!.risks" />
+    <template v-if="response">
+      <BudgetOptimizationOverview
+        :summary="response.summary"
+        :scope="scope"
+      />
+      <BudgetOptimizationRecommendations :recommendations="response.recommendations" />
+    </template>
   </AnalysisState>
 </template>

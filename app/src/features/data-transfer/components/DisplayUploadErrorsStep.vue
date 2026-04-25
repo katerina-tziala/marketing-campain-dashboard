@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { CsvCampaign, CsvRowError } from '../types'
-import { getRowErrorSummaryWords } from '../utils/error-messages'
+import type { Campaign } from '@/shared/types/campaign'
+import type { CampainDataRowError } from '@/features/data-transfer/types'
+import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-messages'
 import DataErrorsTable from './validation/DataErrorsTable.vue'
 import DataErrorSummary from './validation/DataErrorSummary.vue'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
 
 const props = defineProps<{
-  rowErrors: CsvRowError[]
-  validCampaigns: CsvCampaign[]
+  rowErrors: CampainDataRowError[]
+  validCampaigns: Campaign[]
   duplicateGroupCount: number
 }>()
 

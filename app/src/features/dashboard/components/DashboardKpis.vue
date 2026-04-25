@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { CampaignKPIs } from '../../../common/types/campaign'
+import type { PortfolioKPIs } from '@/shared/types/campaign'
 import {
   formatCompactCurrency,
   formatCompactNumber,
   formatPercentage,
-} from '../../../common/utils/formatters'
-import { roiClass } from '../../../common/utils/roi'
+} from '@/shared/utils/formatters'
+import { percentageClass } from '@/shared/utils/campaign-performance'
 import KpiCard from './KpiCard.vue'
 
-defineProps<{ kpis: CampaignKPIs }>()
+defineProps<{ kpis: PortfolioKPIs }>()
 </script>
 
 <template>
@@ -22,7 +22,7 @@ defineProps<{ kpis: CampaignKPIs }>()
         :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <template #secondary>
-          ROI: <span class="roi-text" :class="roiClass(kpis.roi)">{{ formatPercentage(kpis.roi) }}</span>
+          <span>ROI</span><span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
         </template>
       </KpiCard>
       <KpiCard
@@ -30,23 +30,24 @@ defineProps<{ kpis: CampaignKPIs }>()
         :value="formatCompactNumber(kpis.totalConversions)"
       >
         <template #secondary>
-          CVR: <span class="roi-text" :class="roiClass(kpis.cvr)">{{ formatPercentage(kpis.cvr) }}</span>
+         <p>CVR</p>
+         <span class="roi-text" :class="percentageClass(kpis.aggregatedCVR)">{{ formatPercentage(kpis.aggregatedCVR) }}</span>
         </template>
       </KpiCard>
       <KpiCard
         label="CTR"
-        :value="formatPercentage(kpis.ctr)"
+        :value="formatPercentage(kpis.aggregatedCTR)"
       />
       <KpiCard
-        label="CAC"
-        :value="kpis.cac !== null ? formatCompactCurrency(kpis.cac) : null"
+        label="CPA"
+        :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
       />
     </section>
 </template>
 
 <style lang="scss" scoped>
 .kpi-grid {
-  @apply w-full grid grid-cols-1 gap-4 mx-auto max-w-7xl px-4;
+  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl;
 
   @container (min-width: 22.5rem) {
     @apply grid-cols-2;

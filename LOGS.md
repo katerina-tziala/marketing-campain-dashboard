@@ -4367,3 +4367,2274 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Flipped leave translation to `-translate-x-4` so toasts slide out to the left, consistent with their anchor position
+
+
+## [#215] Pre-calculate campaign metrics in store
+**Type:** refactor
+
+**Summary:** Introduced `CampaignPerformance` model that extends `Campaign` with pre-calculated roi, ctr, cvr, cac; the store now maps raw campaigns to this model on load so the table reads values directly instead of computing them inline.
+
+**Brainstorming:** The table was recalculating roi/ctr/cvr/cac inside helper functions and sort comparators on every render. Moving calculation to load time keeps the table as pure display logic and creates a single authoritative source for per-campaign derived metrics. `null` on zero-divisor (instead of the `safeDivide` zero fallback) correctly represents "not applicable" for display and sorting purposes.
+
+**Prompt:** When setting campaigns in the store we should calculate all values for campaigns that we display on the campaign table. Campaigns in the campaignStore will be of a new model called CampaignPerformance that extends Campaign. When setting the campaigns iterate through each one and calculate roi, ctr, cvr, cac — if dividers are zero values must be null.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — added `CampaignPerformance` interface extending `Campaign` with `roi/ctr/cvr/cac: number | null`
+- `app/src/common/utils/campaign-performance.ts` — new file; `toCampaignPerformance(c: Campaign): CampaignPerformance` calculates all four metrics with null on zero-divisor using `round2`
+- `app/src/stores/campaignStore.ts` — `campaigns` ref typed as `CampaignPerformance[]`; both mock init and `loadCampaigns` map through `toCampaignPerformance`
+- `app/src/features/dashboard/components/CampaignTable.vue` — prop changed to `CampaignPerformance[]`; removed all inline calculation helpers; reads `c.roi/ctr/cvr/cac` directly; `getFieldValue` simplified with null → 0 fallback (cac → Infinity)
+
+**Key decisions & why:**
+- `null` instead of `0` for zero-divisor cases: correctly distinguishes "not computable" from "zero value" for both display (shows N/A) and sorting (sorts as 0 or Infinity for CAC)
+- Did not use `safeDivide` in the converter — it returns `0`, not `null`, so inline null checks were needed
+- `CampaignPerformance extends Campaign` means all existing consumers typed as `Campaign[]` (charts, AI data builders) remain valid without changes
+- KPI aggregations in the store are untouched — they operate on filtered totals, not per-row derived values
+
+
+## [#216] Sort null campaign metrics last
+**Type:** fix
+
+**Summary:** Removed `Infinity` sentinel from CAC sorting; null metric values now always sort last regardless of direction.
+
+**Brainstorming:** Using `Infinity` as a sort proxy for null CAC is a marketing nonsense — CAC can't be infinite. Null means "not computable", so the correct UX is to push those rows to the bottom in both asc and desc. The comparator handles null explicitly before the direction logic.
+
+**Prompt:** Remove Infinity from campaign table. Null values should always sort last.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — `getFieldValue` return type widened to `number | string | null`, Infinity special-case removed; comparator handles null-last before applying sort direction
+
+**Key decisions & why:**
+- Null always last regardless of direction: null means no data, not a metric value — it should never compete with real values in either direction
+
+
+## [#217] Extract sort helpers into common/utils/sorting.ts
+**Type:** refactor
+
+**Summary:** Extracted null-safe sorting logic from CampaignTable into reusable utilities so the comparator is not inline ad-hoc code.
+
+**Brainstorming:** The sort comparator in CampaignTable had two distinct concerns — null handling and directional comparison. Splitting them into named functions makes each testable and reusable. `sortWithNullsLast` composes both into a single call site.
+
+**Prompt:** In common utils create a sorting.ts file. Create a function for the null checks, a function for the directional comparison, then use those to create a single sortWithNullsLast function. Use it in CampaignTable.
+
+**What was built:**
+- `app/src/common/utils/sorting.ts` — new file; `compareNullsLast(a, b)` returns 0/1/-1 or null if no nulls present; `compareDirectional(a, b, dir)` handles directional comparison; `sortWithNullsLast(a, b, dir)` composes both via `??`
+- `app/src/features/dashboard/components/CampaignTable.vue` — comparator body replaced with single `sortWithNullsLast` call
+
+**Key decisions & why:**
+- `compareNullsLast` returns `null` (not a number) when both values are non-null — signals "no null decision made", allowing `??` composition in `sortWithNullsLast`
+
+
+## [#218] Fix formatNumber locale
+**Type:** fix
+
+**Summary:** Changed `formatNumber` locale from `'en-US'` to `'en'` to match the rest of the formatters and the app's European context.
+
+**Brainstorming:** `formatCurrency` and `formatCompactNumber` already use `'en'`; `'en-US'` was inconsistent and wrong for a EUR-denominated European app.
+
+**Prompt:** formatNumber should not be en-US, app is for Europe.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — `formatNumber` locale changed from `'en-US'` to `'en'`
+
+**Key decisions & why:**
+- Used `'en'` to be consistent with all other formatters in the same file rather than introducing a new locale
+
+
+## [#219] Move null fallback into formatPercentage and formatCurrency
+**Type:** refactor
+
+**Summary:** `formatPercentage` and `formatCurrency` now accept `number | null` and an optional fallback string, removing inline null checks from call sites.
+
+**Brainstorming:** Null checks scattered in templates are noise — the formatter already owns the display contract, so it should own the null case too. A `fallback` parameter keeps it flexible without forcing a hardcoded 'N/A'.
+
+**Prompt:** formatPercentage and formatCurrency return string — pass a parameter for the default displayed value and move the null check there.
+
+**What changed:**
+- `app/src/common/utils/formatters.ts` — `formatPercentage(value: number | null, fallback = 'N/A')` and `formatCurrency(val: number | null, decimals = 0, fallback = 'N/A')` handle null internally
+- `app/src/features/dashboard/components/CampaignTable.vue` — removed inline `c.ctr !== null ? ... : 'N/A'` ternaries for ctr, cvr, cac; now plain function calls
+
+**Key decisions & why:**
+- `fallback` defaults to `'N/A'` so all existing call sites are unaffected; callers can override if needed
+
+
+## [#220] Use formatPercentage for ROI in CampaignTable
+**Type:** fix
+
+**Summary:** ROI column now uses `formatPercentage` instead of an inline `toFixed(0)` expression, consistent with ctr and cvr columns.
+
+**Brainstorming:** Inline formatting bypassed the formatter and used 0 decimals instead of the app standard of 2.
+
+**Prompt:** ROI in table should use formatPercentage.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — ROI cell replaced inline ternary with `formatPercentage(c.roi)`
+
+**Key decisions & why:**
+- `formatPercentage` already handles null, so no ternary needed
+
+
+## [#221] Pre-calculate percentageClass on CampaignPerformance
+**Type:** refactor
+
+**Summary:** Moved ROI CSS class calculation out of the table template into the model; `roiClass` updated to handle null; `CampaignTable` derives a computed Map for class lookups.
+
+**Brainstorming:** The table was calling `roiClass` inline per row per render. Since `roi` is already pre-calculated on the model, the class can be derived at the same time. A computed Map in the table then gives O(1) lookup per row with no per-render function calls. `roiClass` needed to accept null to avoid callers guarding it externally.
+
+**Prompt:** Move roiClass into CampaignPerformance, rename to percentageClass. For the table create a computed value for roi class so we do not calculate each time. The function should also handle null.
+
+**What changed:**
+- `app/src/common/utils/roi.ts` — `roiClass(roi: number | null)` returns `''` for null
+- `app/src/common/types/campaign.ts` — `CampaignPerformance` gains `percentageClass: string`
+- `app/src/common/utils/campaign-performance.ts` — calculates `percentageClass: roiClass(roi)` after deriving roi; imports roiClass
+- `app/src/features/dashboard/components/CampaignTable.vue` — `percentageClassMap` computed (Map from sortedCampaigns); revenue and ROI columns use `percentageClassMap.get(c.campaign)`; roiClass import removed
+
+**Key decisions & why:**
+- `percentageClassMap` derived from `sortedCampaigns` (not `props.campaigns`) so it stays in sync with the rendered rows
+- `roiClass` returns `''` for null so bindings are clean with no ternary guards
+
+
+## [#222] Remove percentageClassMap — read c.percentageClass directly
+**Type:** fix
+
+**Summary:** Removed the intermediate `percentageClassMap` computed; template reads `c.percentageClass` directly from the model.
+
+**Prompt:** Do not use the map, use the function directly.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — `percentageClassMap` computed removed; revenue and ROI `:class` bindings use `c.percentageClass` directly
+
+**Key decisions & why:**
+- `percentageClass` is already on the model so a Map lookup adds no value — direct property access is simpler and just as efficient
+
+
+## [#223] Move percentageClass function to campaign-performance.ts
+**Type:** refactor
+
+**Summary:** Moved `roiClass` (renamed `percentageClass`) out of `roi.ts` into `campaign-performance.ts`; removed `percentageClass` from the `CampaignPerformance` model; table calls the function directly.
+
+**Brainstorming:** `percentageClass` is display logic tied to campaign metrics, not a general ROI utility. Keeping it in `campaign-performance.ts` groups it with its domain. The model doesn't need to store a CSS class string — the function is cheap and called only in the template.
+
+**Prompt:** Move the function to campaign-performance.ts so we eventually delete roi.ts. Do not put percentageClass on the model.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `percentageClass` field removed from `CampaignPerformance`
+- `app/src/common/utils/campaign-performance.ts` — `percentageClass(value: number|null): string` exported; `roiClass` import removed; `toCampaignPerformance` no longer sets `percentageClass`
+- `app/src/common/utils/roi.ts` — `roiClass` removed (now dead; to be deleted)
+- `app/src/features/dashboard/components/CampaignTable.vue` — imports `percentageClass` from `campaign-performance`; template uses `percentageClass(c.roi)` for revenue and ROI columns
+
+**Key decisions & why:**
+- Function lives in `campaign-performance.ts` rather than the model — CSS class derivation is view concern, not domain data
+- `roi.ts` left in place for now; `roiValue` and `formatROI` remain but are unused — full deletion is a follow-up
+
+
+## [#224] Use formatNumber for conversions in CampaignTable
+**Type:** fix
+
+**Summary:** Replaced inline `toLocaleString('en')` with `formatNumber` for the conversions column.
+
+**Prompt:** Use formatter for conversions, not toLocaleString.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — conversions cell uses `formatNumber(c.conversions)`; `formatNumber` added to import
+
+**Key decisions & why:**
+- `formatCurrency` was not appropriate — conversions is a count, not a monetary value
+
+
+
+## [#225] Use pre-calculated roi in DashboardCharts
+**Type:** refactor
+
+**Summary:** Updated DashboardCharts to use `CampaignPerformance` prop type and read `c.roi` directly instead of recalculating inline.
+
+**Brainstorming:** After campaigns moved to `CampaignPerformance[]` in the store, DashboardCharts was still accepting `Campaign[]` and recalculating ROI inline with a duplicated formula. Straightforward fix: update the prop type and replace the inline calculation with the pre-calculated field.
+
+**Prompt:** DashboardCharts should use calculated values. Adjust the functions.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — prop type changed from `Campaign[]` to `CampaignPerformance[]`; `roiChartData` uses `c.roi ?? 0` instead of inline formula
+
+**Key decisions & why:**
+- `c.roi ?? 0` falls back to `0` when ROI is null (zero-budget campaign) — consistent with the previous inline behaviour which also returned 0 in that case
+
+
+## [#226] Delete roi.ts
+**Type:** fix
+
+**Summary:** Removed `roi.ts` — all three of its functions (`roiValue`, `roiClass`, `formatROI`) were unused after previous refactoring moved `roiClass` to `campaign-performance.ts` as `percentageClass`.
+
+**Brainstorming:** Grep confirmed zero imports of `roi.ts` across the entire `src/` tree. Safe to delete.
+
+**Prompt:** Check roi.ts. If none of its functions are used please remove the file.
+
+**What changed:**
+- `app/src/common/utils/roi.ts` — deleted
+- `CLAUDE.md` — entry removed from architecture
+
+**Key decisions & why:**
+- No replacement needed — `percentageClass` in `campaign-performance.ts` covers the class derivation use case; `roiValue` and `formatROI` had no callers
+
+
+## [#227] Use PerformanceMetrics in CampaignPerformance
+**Type:** fix
+
+**Summary:** Removed the duplicated fields from `CampaignPerformance` and made it extend `PerformanceMetrics` instead.
+
+**Brainstorming:** `PerformanceMetrics` was already declared with the same four nullable fields. `CampaignPerformance` was simply re-declaring them inline. Extending the interface removes the duplication.
+
+**Prompt:** In campaign.ts use PerformanceMetrics to extend the models where necessary.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `CampaignPerformance` now extends `Campaign, PerformanceMetrics` with an empty body instead of redeclaring the four fields
+
+**Key decisions & why:**
+- `CampaignKPIs` was not changed — its metric fields are non-nullable (except `cac`) and represent aggregated portfolio values, not per-campaign calculated metrics, so `PerformanceMetrics` does not apply
+
+
+## [#228] Refactor campaign type hierarchy and metric calculation pipeline
+**Type:** refactor
+
+**Summary:** Extracted `CampaignMetrics` as the numeric base type, added `aggregateCampaignMetrics` and `computePerformanceMetrics` as a composable pipeline, collapsed `CampaignKPIs` to `extends CampaignMetrics, PerformanceMetrics {}`, and simplified the store to a single `filteredTotals` computed.
+
+**Brainstorming:** Several problems existed in parallel: the store recalculated roi/ctr/cvr/cac inline with wrong zero semantics (0 instead of null); `CampaignKPIs` duplicated the five numeric fields under `totalX` aliases, forcing redundant mappings everywhere; there was no reusable aggregation function, so every reduce was written inline. Solving them together — extract `CampaignMetrics`, add `aggregateCampaignMetrics` + `computePerformanceMetrics`, collapse `CampaignKPIs` — removed all the duplication in one coherent pass. Dead imports from the previously deleted `roi.ts` in `DashboardKpis.vue` and `ExecutiveSummaryMetrics.vue` were fixed as part of the same session.
+
+**Prompt:** CampaignKPIs should also extend PerformanceMetrics. In campaignStore there is also the same calculation for KPIs as in toCampaignPerformance — extract that part so we can use the same calculation. KPIs can also have null values — fix FE consumers. computePerformanceMetrics should accept the campaign model and use object destructuring. Check exported members of campaignStore — remove anything not consumed. Create a function in campaign-performance that accepts an array of campaigns and returns CampaignMetrics. Use this function in campaignStore. CampaignKPIs should extend CampaignMetrics and PerformanceMetrics — avoid multiple mappings. Update everything related to those.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `CampaignMetrics` interface added (budget/revenue/impressions/clicks/conversions); `Campaign extends CampaignMetrics`; `CampaignKPIs` collapsed to `extends CampaignMetrics, PerformanceMetrics {}`
+- `app/src/common/utils/campaign-performance.ts` — `computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics` extracted (null on zero-divisor); `aggregateCampaignMetrics(campaigns: Campaign[]): CampaignMetrics` added (single-pass reduce); `toCampaignPerformance` delegates to `computePerformanceMetrics`
+- `app/src/stores/campaignStore.ts` — five individual `totalX` computeds replaced by `filteredTotals` (via `aggregateCampaignMetrics`); `kpis` simplified to `{ ...filteredTotals.value, ...computePerformanceMetrics(filteredTotals.value) }: CampaignKPIs`; `totalImpressions/totalClicks/totalConversions` removed from public return (no external consumers); `safeDivide`/`round2` imports removed
+- `app/src/features/dashboard/components/DashboardKpis.vue` — broken `roiClass` import from deleted `roi.ts` replaced with `percentageClass`; `kpis.totalBudget/totalRevenue/totalConversions` → `kpis.budget/revenue/conversions`
+- `app/src/features/dashboard/components/DashboardCharts.vue` — `kpis.totalImpressions/totalClicks/totalConversions` → `kpis.impressions/clicks/conversions`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — broken `roiClass` import from deleted `roi.ts` replaced with `percentageClass`
+
+**Key decisions & why:**
+- `CampaignMetrics` accepts `Campaign[]` in `aggregateCampaignMetrics` — only numeric base fields matter for aggregation; `CampaignPerformance[]` would also work structurally but the base type is the correct constraint
+- `computePerformanceMetrics` uses null (not 0) for zero-divisor cases — consistent with per-campaign semantics; `safeDivide` returning 0 was semantically wrong for portfolio KPIs
+- `filteredTotals` kept as an intermediate computed rather than inlined into `kpis` — allows future reuse without recalculation
+- `buildExecutiveSummaryData.ts` / `buildBudgetOptimizerData.ts` not touched — their `totalX` locals are internal variables; they operate on raw `Campaign[]` with deliberate `Infinity`-based CAC for comparison logic and are not consumers of `CampaignKPIs`
+- Explicit `: CampaignKPIs` return type on `kpis` computed — catches shape mismatches at the store boundary
+
+
+## [#235] Add rowId to Campaign and wire through data transfer
+**Type:** update
+
+**Summary:** Added `rowId: number` to `Campaign` as a system-generated identity field, assigned from `rowNum` during CSV parsing, and set explicitly on all 21 mock campaigns.
+
+**Brainstorming:** `rowId` is not a CSV column — it's assigned by the system at parse time from the row's position in the file. `EXPECTED_HEADERS` and `CSV_HEADERS` are left unchanged since `rowId` is never in the uploaded or downloaded CSV. `extractCampaignFields` now receives `rowId` as a parameter (set to `rowNum` by `processRows`). `map-campaign.ts` requires no change — destructuring strips `rowNum` and naturally retains `rowId` on the campaign passed to the store.
+
+**Prompt:** Add a property rowId: number in Campaign model. Update data transfer logic to include this field.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — `rowId: number` added to `Campaign`
+- `app/src/common/data/MOCK_CAMPAIN_DATA.ts` — `rowId: 1–21` added to all mock campaigns
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — `extractCampaignFields` accepts third `rowId: number` param and includes it in the returned `Campaign`; `processRows` passes `rowNum` as `rowId`
+
+**Key decisions & why:**
+- `rowId` placed on `Campaign` (not `CampaignMetrics`) — it's an identity field, not a numeric performance metric
+- `EXPECTED_HEADERS` / `CSV_HEADERS` unchanged — `rowId` is system-assigned, never user-supplied or exported
+- `map-campaign.ts` unchanged — rest-spread already keeps all `Campaign` fields including `rowId` after stripping `rowNum`
+
+
+## [#236] Rename Csv* types to CampainData* and remove CsvCampaign
+**Type:** refactor
+
+**Summary:** Renamed all `Csv*` data-transfer types to `CampainData*` to decouple from the CSV format, and removed `CsvCampaign` since `Campaign` (with `rowId`) now covers all its fields.
+
+**Brainstorming:** The data-transfer feature is intended to support multiple file formats in the future. Using `Csv` as a prefix tied the type names to a specific format. The new `CampainData` prefix is format-agnostic. `CsvCampaign` became unnecessary after `rowId` was added to `Campaign` in the previous session — it was `Campaign + rowNum`, but `rowId === rowNum`, making it a redundant wrapper. Removing it simplifies the entire data flow: `processRows` now pushes `Campaign` directly without the `rowNum` spread, `map-campaign.ts` became an identity function and was deleted, and all downstream consumers use `Campaign` directly.
+
+**Prompt:** data-transfer feature must support different file types in the future. Update models and move away from naming Csv.... use CampainData.... . Clean up unnecessary types like CsvCampain. Update consumers as well.
+
+**What was built:**
+- `app/src/features/data-transfer/types/index.ts` — all types renamed: `CsvRowIssueType` → `CampainDataRowIssueType`, `CsvFieldIssue` → `CampainDataFieldIssue`, `CsvRowError` → `CampainDataRowError`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`, `CsvValidationErrorType` → `CampainDataValidationErrorType`, `CsvValidationError` → `CampainDataValidationError`, `CsvParseResult` → `CampainDataParseResult`, `ProcessRowsResult` → `CampainDataProcessRowsResult`; `CsvCampaign` removed — `rows: Campaign[]` in `CampainDataDuplicateGroup`; `CampainDataParseResult.campaigns` and `CampainDataProcessRowsResult.campaigns` are `Campaign[]`
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — imports updated; `processRows` now pushes `fields` (Campaign) directly without `rowNum` spread; return types updated
+- `app/src/features/data-transfer/utils/detect-campaign-duplication.ts` — `CsvCampaign` replaced with `Campaign`; `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/utils/validate-row-data.ts` — `CsvRowError` → `CampainDataRowError` throughout
+- `app/src/features/data-transfer/utils/error-messages.ts` — all four `Csv*` type imports renamed
+- `app/src/features/data-transfer/utils/parse-csv.ts` — `CsvParseResult` → `CampainDataParseResult`
+- `app/src/features/data-transfer/utils/map-campaign.ts` — **deleted**; became identity function after `CsvCampaign` removal
+- `app/src/features/data-transfer/components/UploadModal.vue` — removed `toCampaigns` import; replaced all three call sites with direct value/spread; `CsvCampaign` → `Campaign`, `CsvRowError` → `CampainDataRowError`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/components/DisplayUploadErrorsStep.vue` — `CsvCampaign` → `Campaign`, `CsvRowError` → `CampainDataRowError`
+- `app/src/features/data-transfer/components/ResolveDuplicationsStep.vue` — `CsvCampaign` → `Campaign`, `CsvDuplicateGroup` → `CampainDataDuplicateGroup`
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — type renames; `rowNum` → `rowId` throughout (SortKey, COLUMNS key, sort comparator, selection map, template bindings)
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — `CsvRowError` → `CampainDataRowError`
+
+**Key decisions & why:**
+- `CampainData` prefix chosen (not `Data` or `FileData`) — consistent with existing project naming convention (`CampainDuplicationsTable`, `MOCK_CAMPAINS`, etc.)
+- `CsvCampaign` removed entirely rather than renamed — with `rowId` on `Campaign`, the type added no new fields; keeping it would have been a redundant alias
+- `map-campaign.ts` deleted — once `CsvCampaign` was gone, `toCampaigns` became `(c: Campaign[]) => c`; dead code deleted rather than left as dead weight
+- `rowNum` local variable kept in `processRows` for the `+2` calculation clarity, but no longer spread onto the campaign object
+
+
+## [#237] Add Channel type, campainChannels store ref, and buildChannelMap utility
+**Type:** feature
+
+**Summary:** Added `Channel` type extending `CampaignMetrics`, a `buildChannelMap` utility split into a pure grouping phase and an immutable sort phase, and a `campainChannels` ref in `campaignStore` populated on load.
+
+**Brainstorming:** `Channel` aggregates campaign metrics per channel and carries `CampaignPerformance[]` for future channel views and AI context. The id is derived deterministically (lowercase, trim, hyphenate) so it is URL-safe and stable. `buildChannelMap` accepts `Campaign[]` and calls `toCampaignPerformance` internally — callers pass the natural load-time type and get back a fully typed map. A `ref` is the right store primitive because channel membership belongs to the full loaded dataset, not the filtered view; a computed would rebuild the map on every filter toggle for no benefit. The builder is split into `groupCampaignsByChannel` (accumulation, no sorting) and a sort phase that iterates sorted keys and spreads each entry with a freshly sorted campaigns array — no data is mutated at any point.
+
+**Prompt:** Create `channel.ts` in `common/types` — `Channel extends CampaignMetrics` with `id: string`, `name: string`, `campaigns: CampaignPerformance[]`. Create `campaign-channel.ts` with `buildChannelMap(campaigns: Campaign[]) → Map<string, Channel>`: extract a private `groupCampaignsByChannel` that accumulates channel entries using `aggregateCampaignMetrics` over the growing campaigns list (new object on every collision, no mutation); then sort the map keys, iterate them, and reduce into a new Map spreading each channel with `[...campaigns].sort()` — no in-place sort anywhere. `buildChannelMap` calls `toCampaignPerformance` internally. Add a `campainChannels` ref to `campaignStore` (type `Map<string, Channel>`), initialise it from mock data, set it in `loadCampaigns`, and return it from the store.
+
+**What was built:**
+- `app/src/common/types/channel.ts` — `Channel extends CampaignMetrics` with `id`, `name`, `campaigns: CampaignPerformance[]`
+- `app/src/common/utils/campaign-channel.ts` — `toChannelId` helper; `groupCampaignsByChannel` (private, pure accumulation via `aggregateCampaignMetrics` + spread on collision); `buildChannelMap` (sorts keys, reduces into new Map with `[...campaigns].sort()` per entry)
+- `app/src/stores/campaignStore.ts` — `campainChannels` ref (`Map<string, Channel>`), initialised with `buildChannelMap(MOCK_CAMPAINS)` in dev-mock mode, updated in `loadCampaigns`, returned from store
+
+**Key decisions & why:**
+- `Map<string, Channel>` over `Record` — preserves sorted insertion order; communicates that iteration order matters
+- `ref` over `computed` — channel structure is load-time data; filters should not trigger a full rebuild
+- `toCampaignPerformance` called inside the builder — callers pass `Campaign[]` (the natural type); the builder owns the conversion
+- `aggregateCampaignMetrics(updatedCampaigns)` on collision — reuses the already-computed `CampaignPerformance[]` list; keeps campaigns as the single source of truth for totals
+- two-phase split — grouping and sorting are separate concerns; the sort phase never touches `groupCampaignsByChannel` output after creation
+
+
+## [#238] Refactor channel filter to use portfolioChannels and selectedChannelsIds
+**Type:** refactor
+
+**Summary:** Replaced string-based channel filter with Channel-object-based approach — ChannelFilter now renders from `portfolioChannels` Map, `selectedChannels` renamed to `selectedChannelsIds` (stores Map keys), and KPIs now aggregate pre-summed Channel objects instead of iterating all campaigns.
+
+**Brainstorming:** Three connected changes discussed: (1) `selectedChannels` → `selectedChannelsIds` to reflect that stored values are channel IDs (Map keys, not display names); (2) ChannelFilter driven by `portfolioChannels` values (Channel objects with id + name) instead of a separate `availableChannels` computed that re-derived strings from campaigns; (3) KPIs computed from Channel objects which already carry pre-aggregated metrics — avoids re-iterating all campaigns on every filter change. `campaignScope.selectedChannels` maps IDs back to human-readable names so AI prompts receive correct strings. `filteredCampaigns` also optimized to flatMap campaign arrays from selected Channel objects instead of filtering the full campaigns array.
+
+**Prompt:** Use portfolioChannels to render channel filters. selectedChannels should be renamed to selectedChannelsIds. kpis should be computed from selected channels so calculation is faster.
+
+**What changed:**
+- `campaignStore.ts` — renamed `selectedChannels` → `selectedChannelsIds`; removed `availableChannels` computed; added `selectedChannelObjects` computed (Channel[] for selected IDs or all); `filteredCampaigns` now flatMaps from Channel objects; `kpis` aggregates `selectedChannelObjects` (pre-summed); `campaignScope.selectedChannels` maps IDs to names; `toggleChannel`/`clearFilters`/`loadCampaigns` updated
+- `ChannelFilter.vue` — prop `channels` changed from `string[]` to `Channel[]`; template uses `channel.id` as key and for toggle, `channel.name` for display
+- `DashboardView.vue` — passes `[...store.portfolioChannels.values()]` and `store.selectedChannelsIds` to ChannelFilter
+- `DashboardHeader.vue` — `selectedChannels` → `selectedChannelsIds`, `availableChannels.length` → `portfolioChannels.size`
+- `aiAnalysisStore.ts` — three references to `campaignStore.selectedChannels` updated: cache keys use `selectedChannelsIds`; prompt `filteredChannels` uses `campaignStore.campaignScope.selectedChannels` (names); watcher updated to `selectedChannelsIds`
+
+**Key decisions & why:**
+- `selectedChannelsIds` stores channel IDs (Map keys) not names — IDs are stable, normalized strings; names are for display only
+- `campaignScope.selectedChannels` maps IDs → names — AI prompts receive human-readable channel names, not hyphenated IDs
+- KPIs aggregate `Channel[]` (pre-summed) instead of `CampaignPerformance[]` — Channel already carries budget/revenue/etc totals; no need to re-sum campaigns on every filter interaction
+- `filteredCampaigns` flatMaps from selected Channel objects — O(selected channels × campaigns per channel) instead of O(all campaigns); order changes (grouped by channel) but table is sortable so it doesn't matter
+- `availableChannels` computed removed — redundant once ChannelFilter accepts `Channel[]`; `portfolioChannels.size` replaces `.length` for the header count
+
+
+## [#239] Replace channelTotals with selectedChannels Channel array in store and charts
+**Type:** refactor
+
+**Summary:** Removed `channelTotals` computed and `campaign-aggregation.ts`, renamed `selectedChannelObjects` → `selectedChannels` (Channel[]), and updated DashboardCharts to map data directly from Channel objects.
+
+**Brainstorming:** `channelTotals` was a `Record<string, ChannelTotals>` derived by iterating all filtered campaigns — redundant now that `portfolioChannels` already holds pre-aggregated Channel objects. Replacing it with `selectedChannels: Channel[]` gives charts direct access to `ch.name`, `ch.budget`, `ch.revenue` etc. without a separate accumulation pass. `groupByChannel` and `ChannelTotals` type become dead code, so `campaign-aggregation.ts` is deleted entirely.
+
+**Prompt:** Remove channelTotals, create a selectedChannels array, use that in charts to map data, clean up groupByChannel function, selectedChannelObjects should be selectedChannels.
+
+**What changed:**
+- `campaignStore.ts` — removed `groupByChannel` import and `channelTotals` computed; renamed `selectedChannelObjects` → `selectedChannels`; added `selectedChannels` to return
+- `DashboardCharts.vue` — prop `channelTotals: Record<string, ChannelTotals>` replaced with `channels: Channel[]`; `revVsBudgetData` maps from `channels` directly (`ch.name`, `ch.budget`, `ch.revenue`)
+- `DashboardView.vue` — `:channel-totals` replaced with `:channels="store.selectedChannels"`
+- `campaign-aggregation.ts` — deleted (no remaining usages)
+
+**Key decisions & why:**
+- `Channel[]` instead of `Record<string, ChannelTotals>` — Channel already carries all needed fields; a flat array is simpler to map over in chart computeds
+- File deleted rather than emptied — `ChannelTotals` type and `groupByChannel` function had no other consumers; keeping an empty file would be misleading
+
+
+## [#240] Derive filteredCampaigns from selectedChannels; campaignScope.campaigns from portfolioChannels
+**Type:** refactor
+
+**Summary:** Simplified `filteredCampaigns` to always flatMap from `selectedChannels` Channel objects (no conditional), and updated `campaignScope.campaigns` to derive from `portfolioChannels` instead of the raw `campaigns` ref.
+
+**Brainstorming:** Two connected simplifications: (1) `filteredCampaigns` had a conditional — return `campaigns.value` when no filter, else flatMap from selected Channel objects. Since `selectedChannels` already resolves to all channels when nothing is selected, the conditional is redundant — always flatMap from `selectedChannels`. (2) `campaignScope.campaigns` sourced from `campaigns.value` (raw ref); portfolioChannels is now the canonical structure, so flatMap from its values makes portfolioChannels the single source of truth. Rename to `selectionScope` was requested then cancelled by user mid-implementation — name stays `campaignScope`.
+
+**Prompt:** filteredCampaigns should be populated from selected channels. campainScope campaigns in scope map it from portfolioChannels.
+
+**What changed:**
+- `campaignStore.ts` — `selectedChannels` moved above `filteredCampaigns` (dependency order); `filteredCampaigns` simplified to `selectedChannels.value.flatMap(ch => ch.campaigns)`; `campaignScope.campaigns` changed from `campaigns.value.map(...)` to `[...portfolioChannels.value.values()].flatMap(ch => ch.campaigns.map(c => c.campaign))`
+
+**Key decisions & why:**
+- `selectedChannels` declared before `filteredCampaigns` — `filteredCampaigns` now depends on it, order matters in the setup function
+- `portfolioChannels` as source for `campaignScope.campaigns` — portfolioChannels is already the canonical sorted structure; raw `campaigns` ref is now an internal implementation detail only needed for loadCampaigns and empty-state checks
+
+
+## [#241] Derive campaigns computed from portfolioChannels; remove campaigns ref
+**Type:** refactor
+
+**Summary:** Replaced the `campaigns` ref with a computed that flatMaps from `portfolioChannels`, making portfolioChannels the single source of truth and removing `toCampaignPerformance` from the store.
+
+**Brainstorming:** `buildChannelMap` already calls `toCampaignPerformance` internally — portfolioChannels already holds all `CampaignPerformance[]` data. The raw `campaigns` ref was redundant duplication of that same data. Making `campaigns` a computed simplifies `loadCampaigns` (one less assignment), removes the `toCampaignPerformance` import from the store, and lets `campaignScope.campaigns` use the computed directly instead of the verbose flatMap from the previous session.
+
+**Prompt:** Compute campaigns from all channels, use that to populate campaigns in campaignScope, make sure campaignStore is clean.
+
+**What changed:**
+- `campaignStore.ts` — removed `campaigns` ref and `toCampaignPerformance` import; added `campaigns` computed (flatMaps all ch.campaigns from portfolioChannels); `campaignScope.campaigns` simplified to `campaigns.value.map(c => c.campaign)`; `loadCampaigns` removes the `campaigns.value = ...` assignment; DEV_MOCK comment updated
+
+**Key decisions & why:**
+- `campaigns` as computed not ref — portfolioChannels is already the authoritative structure built by `buildChannelMap`; a separate ref was a copy that had to be kept in sync manually
+- `toCampaignPerformance` removed from store imports — conversion now happens exclusively inside `buildChannelMap`; the store no longer needs to know about it
+
+
+## [#242] Show campaign count pill in channel filter chips
+**Type:** update
+
+**Summary:** Added a subtle count pill inside each channel chip showing how many campaigns belong to that channel.
+
+**Brainstorming:** `Channel` already carries `campaigns: CampaignPerformance[]`, so the count is available via `channel.campaigns.length` with no prop or store changes. Two visual options considered: inline text ("Email (4)") vs a small rounded pill. Pill chosen for cleaner visual separation between name and count. Styled with `bg-white/10` so it adapts to both active (primary) and inactive (surface) chip states without needing variant-specific overrides.
+
+**Prompt:** Show campaign count in the channel chips — option 2 (subtle pill).
+
+**What changed:**
+- `ChannelFilter.vue` — added `<span class="filter-count">` inside each channel button; added `.filter-count` scoped style (inline-flex, rounded-full, px-1.5, min-w-[1.25rem], h-5, text-xs, bg-white/10, ml-1)
+
+**Key decisions & why:**
+- `bg-white/10` for the pill background — semi-transparent white works on both the active primary-500 and inactive surface backgrounds without needing per-state color overrides
+
+
+## [#243] Extract provider implementations into dedicated providers/ module
+**Type:** refactor
+
+**Summary:** Broke the monolithic `ai-connection/gemini.ts`, `ai-connection/groq.ts`, and `ai-connection/shared.ts` files into a structured `providers/` module with per-provider subfolders (gemini/, qroq/) each owning its types, API calls, and connection logic, plus shared utils for error handling and model ranking.
+
+**Brainstorming:** The old structure put every concern for a provider into one large file — raw HTTP calls, model filtering, model evaluation prompt, fallback logic, and shared utilities all mixed together. As the codebase grew and a second provider (Groq) was added alongside Gemini, the duplication became visible: both `gemini.ts` and `groq.ts` had their own copies of `buildFallbackModel`, `filterModels`, `getOptimalModel`, and both imported from a flat `shared.ts`. The goal was single-responsibility: each provider folder gets `types.ts` (raw API shapes), `api.ts` (fetch wrappers), and `connect.ts` (full connection flow). Shared error utilities (`normalizeConnectionError`, `assertResponseOk`, `assertChatResponseOk`) and model utilities (`buildFallbackModel`, `rankModels`, `parseJsonResponse`) were lifted into `providers/utils/`. A new generic `runProviderPrompt<T>` was added as a clean replacement for the inline `callGemini`/`callGroq` pattern inside `callProviderForAnalysis` — though the analysis call path is only partially migrated. `assertChatResponseOk` is a notable new addition: it reads the response body to detect token-limit patterns before throwing, which was previously done inline inside `callProviderForAnalysis`.
+
+**Prompt:** Refactor the ai-connection provider files (gemini.ts, groq.ts, shared.ts) into a dedicated providers/ module. Each provider should have its own subfolder with types, api, and connect files. Shared utilities for error handling and model ranking go into providers/utils/. Add a generic runProviderPrompt<T> as the future replacement for callProviderForAnalysis. Update connectProvider to import from the new module.
+
+**What changed:**
+- `providers/` (new folder) — dedicated provider module
+- `providers/index.ts` — barrel exporting connectGemini, connectGroq, requestGeminiChatCompletion, requestGroqChatCompletion, runProviderPrompt, connectProvider
+- `providers/connect-provider.ts` — thin connectProvider dispatcher with no error wrapping (errors thrown by individual providers)
+- `providers/run-provider-prompt.ts` — generic runProviderPrompt<T>; dispatches to provider caller, parses JSON, throws 'invalid-response' on parse failure
+- `providers/types.ts` — empty placeholder file
+- `providers/gemini/types.ts` — GeminiModel, GeminiModelsResponse (moved from ai-tools/types/)
+- `providers/gemini/api.ts` — fetchGeminiModels + requestGeminiChatCompletion; uses shared error utils
+- `providers/gemini/connect.ts` — connectGemini full flow; filterModels, getSortedModels (flash-first + version desc), getOptimalModel; AI evaluation prompt; falls back to buildFallbackModel
+- `providers/gemini/index.ts` — barrel
+- `providers/qroq/types.ts` — GroqModel, GroqModelsResponse (moved from ai-tools/types/); folder named qroq
+- `providers/qroq/api.ts` — fetchGroqModels + requestGroqChatCompletion; uses shared error utils
+- `providers/qroq/connect.ts` — connectGroq full flow; filterModels, getOptimalModel (most recently created); AI evaluation prompt; falls back to buildFallbackModel
+- `providers/qroq/index.ts` — barrel
+- `providers/utils/error-handling.ts` — normalizeConnectionError, errorCodeFromStatus (expanded: 400/401/403→invalid-key), assertResponseOk, assertChatResponseOk (new — reads body for token-limit detection)
+- `providers/utils/shared.ts` — buildFallbackModel, rankModels, parseJsonResponse (consolidated from old shared.ts and per-provider files)
+- `providers/utils/index.ts` — barrel re-exporting error-handling
+- `ai-connection/gemini.ts` — deleted (moved to providers/gemini/)
+- `ai-connection/groq.ts` — deleted (moved to providers/qroq/)
+- `ai-connection/shared.ts` — deleted (moved to providers/utils/)
+- `ai-connection/connectProvider.ts` — updated to import from providers/ barrel; uses normalizeConnectionError from providers/utils
+- `ai-analysis/callProvider.ts` — imports parseJsonResponse from providers/utils/shared (partial migration; inline callGemini/callGroq remain)
+- `ai-connection/utils/index.ts` — added invalid-response to ERROR_MESSAGES and ERROR_HINTS
+- `types/index.ts` — added invalid-response to AiConnectionErrorCode; removed GeminiModel/GeminiModelsResponse/GroqModel/GroqModelsResponse (moved to provider files); replaced RankedModelsResponse with ModelsResponse (generic); promoted ConfidenceLevel to top-level export; added ExecutiveSummaryChannel, ExecutiveSummaryCampaign, ExecutiveSummaryOtherChannelsSummary as named types
+- `toastStore.ts` — auto-dismiss changed from 4s to 5s
+
+**Key decisions & why:**
+- `providers/` as a sibling to `ai-analysis/` and `ai-connection/` — provider logic is its own concern, not owned by either the connection or analysis path; this placement makes both consumers equal importers
+- Folder named `qroq` not `groq` — name chosen during authoring; kept as-is to avoid unnecessary rename churn
+- `assertChatResponseOk` separate from `assertResponseOk` — analysis calls need token-limit body inspection; connection calls only need status-based error codes; separating them avoids over-reading response bodies during model listing
+- `runProviderPrompt` added but not yet wired to `aiAnalysisStore` — incremental migration; the analysis store still calls `callProviderForAnalysis` from `ai-analysis/callProvider.ts`; full cutover is the next step
+- `rankModels.ts` in `ai-tools/utils/` kept for now — still referenced by existing code; removal deferred until the full migration to `providers/utils/shared.ts` is complete
+- `errorCodeFromStatus` now maps 400/401/403 → `invalid-key` — the old version only mapped 429 and 500+; this means auth errors from the connection endpoint now produce the correct user-facing message rather than 'unknown'
+
+
+## [#244] Wire aiStore to providers/connectProvider; move error mapping into store; delete old ai-connection wrappers
+**Type:** refactor
+
+**Summary:** Replaced the `ai-connection/connectProvider.ts` wrapper (which returned `AiModel[] | AiConnectionError`) with the new `providers/connectProvider` (which throws), moved error mapping into `aiStore.connect()`, and deleted the now-redundant `ai-connection/connectProvider.ts` and `ai-connection/index.ts`.
+
+**Brainstorming:** The old `ai-connection/connectProvider.ts` was a catch-and-return wrapper: it caught any thrown error, normalized it, and returned an `AiConnectionError` object so the store could check `isConnectionError(result)`. The new `providers/connect-provider.ts` is a thin dispatcher that throws — meaning the union return type `AiModel[] | AiConnectionError` was wrong, and error handling belonged somewhere else. The store is the right place: it already owns connection state (`connectionError`, `isConnected`), so catching there keeps the error path next to the state it affects. The `isConnectionError` type guard became unnecessary once the return type is `AiModel[]` only. The `console.log` in `selectBestModel` was removed as part of cleanup.
+
+**Prompt:** Use the new connectProvider from providers/. Move error mapping to aiStore. Clean up files not needed anymore.
+
+**What changed:**
+- `providers/connect-provider.ts` — return type corrected from `Promise<AiModel[] | AiConnectionError>` to `Promise<AiModel[]>`; unused `AiConnectionError` import removed; indentation normalized
+- `stores/aiStore.ts` — imports `connectProvider` from `providers/` and `normalizeConnectionError` from `providers/utils`; added `AiConnectionErrorCode` import and `ERROR_CODES` set; removed `isConnectionError` type guard; `connect()` rewritten as try/catch — success path sets state directly, catch path maps error via `normalizeConnectionError` + `ERROR_CODES`; removed `console.log` from `selectBestModel`
+- `ai-connection/connectProvider.ts` — deleted (logic split: dispatch moved to `providers/connect-provider.ts`, error mapping moved to `aiStore`)
+- `ai-connection/index.ts` — deleted (barrel had no remaining exports)
+
+**Key decisions & why:**
+- Error mapping in the store, not in a wrapper — the store is the only consumer of `connectProvider`; keeping error handling next to the state it sets avoids an indirection layer that existed solely to avoid a try/catch in the store
+- `isConnectionError` guard removed — with `connectProvider` returning `Promise<AiModel[]>` and throwing on failure, a union return type and its guard are no longer needed
+- `invalid-response` added to `ERROR_CODES` — it was missing from the old set and is now a valid `AiConnectionErrorCode`
+
+
+## [#245] Retry model evaluation across candidates; fix swapped args and wrong provider label
+**Type:** refactor
+
+**Summary:** Replaced the single-shot AI model evaluation call in `connectGemini` and `connectGroq` with a retry loop that iterates through sorted candidates, removes any model that fails (API error or parse error), and only falls back to `[fallback]` when all candidates are exhausted; also fixed two pre-existing bugs: swapped `model`/`prompt` args in both API calls, and wrong provider label (`PROVIDER_LABELS.groq`) used for the Gemini fallback model.
+
+**Brainstorming:** The old implementation picked one optimal model and ran the evaluation prompt with it — if that call failed for any reason, the whole evaluation was abandoned and only the fallback model was returned. The retry loop is the natural fix: if the best candidate can't run the prompt, try the next-best. Removing the failed candidate from `candidates` also means the evaluation prompt is rebuilt each iteration, so the AI isn't asked to evaluate models that have already proven unresponsive. The `attemptEvaluation` helper was extracted to keep `connectGemini`/`connectGroq` under the complexity threshold (the nested try/catch inside a while loop was flagged at complexity 11). Both implementations follow the same shape, differing only in provider-specific types and model ID format. The swapped-args bug (`requestGeminiChatCompletion(apiKey, prompt, optimal)` instead of `(apiKey, modelId, prompt)`) would have sent the full prompt text as the model identifier — the evaluation call was silently broken. The Gemini fallback used `PROVIDER_LABELS.groq` as the provider string — cosmetic but incorrect.
+
+**Prompt:** Update connectGroq and connectGemini. Iterate on multiple models if call fails, rather than just picking the optimal and falling back to it if the evaluation fails. Models that failed should be removed from the filtered models list. Make sure to add a new error handling in case parsing of JSON response fails.
+
+**What changed:**
+- `providers/gemini/connect.ts` — complete rewrite; `getSortedCandidates` replaces `getFlashModelSortDir` + `getSortedModels` + `getOptimalModel`; `attemptEvaluation(apiKey, modelId, candidates, fallback)` → `AiModel[]|null` encapsulates one attempt (API call + parse); `connectGemini` runs the retry loop, shifts failed candidates; fixed `PROVIDER_LABELS.groq` → `PROVIDER_LABELS.gemini`; fixed arg order `(apiKey, modelId, prompt)`; removed console.logs and TODO comments
+- `providers/qroq/connect.ts` — complete rewrite; `getSortedCandidates` (sort by `created` desc) replaces `getOptimalModel`; same `attemptEvaluation` pattern; `connectGroq` runs the retry loop; fixed arg order `(apiKey, runner.id, prompt)`; removed console.logs and TODO comments
+- `prompts/model-evaluation-prompt.ts` — import of `GeminiModel`/`GroqModel` updated to source from `providers/gemini/types` and `providers/qroq/types` (auto-fixed; the old `../types` import was broken after the providers refactor)
+
+**Key decisions & why:**
+- `attemptEvaluation` extracted as a module-private helper — the nested try/catch inside a while loop pushed `connectGemini` to complexity 11; the helper reduces the public function to a simple loop with an early return, bringing complexity down to an acceptable level
+- Failed candidates removed from `candidates` before each retry — the evaluation prompt is rebuilt from the remaining list each iteration, so the AI is never asked to evaluate a model that already failed; this keeps the prompt consistent with what's actually available
+- `null` return from `attemptEvaluation` rather than throwing — makes the retry loop a simple `if (result) return result` without any additional try/catch at the call site
+- Fallback returned only when all candidates are exhausted — connection still succeeds with the optimal model as a baseline; the AI evaluation is a best-effort ranking, not a hard requirement
+
+
+## [#246] Replace fallback model with recursive evaluation; throw on exhaustion; filter ranked output against candidates
+**Type:** refactor
+
+**Summary:** Replaced the while-loop-with-fallback pattern in `connectGemini` and `connectGroq` with a recursive `evaluateModels` function; removed `buildFallbackModel` and `rankModels` from `providers/utils/shared.ts`; the ranked output is now validated against the actual candidates list, and if all candidates are exhausted the error propagates to the store which blocks connection.
+
+**Brainstorming:** The fallback model was a silent safety net: if every AI evaluation attempt failed, the user was "connected" with an untested model. The argument against keeping it is that a fallback that passes all prompts would also pass the evaluation — so if the evaluation consistently fails, it's likely a deeper problem (rate limit, API instability) and silently connecting is misleading. The recursive structure is a natural fit: base case throws, recursive case tries the head and falls through to tail on failure. `tryWithModel` extracts the single-attempt logic so `evaluateModels` has no branching beyond the base case and `.catch`, keeping both functions well within the complexity budget. The ranked output validation (`toRankedModels` filtering by `validIds`) prevents hallucinated model IDs from leaking through — previously `rankModels` would push a fallback if the AI returned nothing matching, now an empty validated result triggers another retry instead. `buildFallbackModel` and `rankModels` in `providers/utils/shared.ts` became dead code once both providers stopped using them.
+
+**Prompt:** Refine the logic. Use recursive calling instead of while. Filter out all models that are not in the candidates list or in the runner. Do not keep fallback model — if the prompt fails, the rest will fail too. In that case throw an error and do not establish connection in the store.
+
+**What changed:**
+- `providers/gemini/connect.ts` — complete rewrite; `flashPriority` extracted for sort readability; `isSufficientModel`/`buildValidIds`/`byStrengthDesc`/`withLimitReset` extracted as named helpers to keep `toRankedModels` below complexity threshold; `toRankedModels` validates response against candidate IDs (both `models/` prefixed and stripped forms), filters strength_score≥6, throws `no-models` if result is empty; `tryWithModel` runs one prompt+parse attempt and throws on any failure; `evaluateModels` is recursive — base case throws `no-models`, catches `tryWithModel` failure and recurses with `remaining`; `connectGemini` just filters, sorts, and delegates; `PROVIDER_LABELS` import removed (no fallback)
+- `providers/qroq/connect.ts` — same structure; `buildValidIds` inlined as a single `new Set(candidates.map(c => c.id))` (no prefix stripping needed for Groq); otherwise identical shape
+- `providers/utils/shared.ts` — `buildFallbackModel` and `rankModels` removed (dead code); only `parseJsonResponse` remains
+- `aiStore.ts` — no change needed; the store's existing catch block maps the thrown `no-models` error to `{ code: 'no-models', provider }`, which blocks connection and shows the appropriate error message
+
+**Key decisions & why:**
+- Recursive `evaluateModels` over while loop — natural base-case/recursive-case fit; removes mutable `candidates.shift()` mutation; each frame gets its own immutable `[runner, ...remaining]` destructure
+- `tryWithModel` extracted — isolates the async attempt logic so `evaluateModels` contains no branching except the base case and the `.catch`; this is what keeps both functions under the complexity threshold
+- Throw on exhaustion, not silent fallback — if every candidate fails the evaluation call, connecting with an unverified model is misleading; the error propagates to `aiStore` which sets `connectionError` and leaves `isConnected = false`
+- `toRankedModels` validates output against `validIds` — prevents the AI from returning hallucinated model identifiers; an empty validation result triggers a retry rather than a silent empty connection
+- `buildFallbackModel` / `rankModels` removed from `providers/utils/shared.ts` — both were only used by the connect files and are now fully superseded by the per-provider `toRankedModels` implementations
+
+
+## [#247] Move shared ranking logic (strength filter, sort, limitReset, no-models throw) to connect-provider
+**Type:** refactor
+
+**Summary:** Extracted the universal post-evaluation ranking step — strength_score≥6 filter, byStrengthDesc sort, withLimitReset map, and no-models throw — from each provider's `toRankedModels` into `connect-provider.ts`; providers now only validate the AI response against their own candidate ID sets.
+
+**Brainstorming:** The `isSufficientModel`, `byStrengthDesc`, and `withLimitReset` helpers were duplicated verbatim in both `gemini/connect.ts` and `qroq/connect.ts`. The strength score threshold, sort order, and `limitReached` reset are universal concerns independent of any provider — they belong at the aggregation point, not inside each provider. Moving them to `connect-provider` means a single `rankModels` function owns that logic, providers only need to answer "did the AI return something that matches a known model ID?", and any future provider automatically gets the same ranking applied. The retry logic (evaluateModels recursion) is unaffected: `toRankedModels` still throws `no-models` if no candidate IDs match, which triggers the next recursion frame. The strength/sort/map step happens once, after the winning evaluation round completes. The Groq file also needed named function references (`isAllowed`, `byCreatedDesc`) instead of inline arrows to keep the cumulative file complexity under the linter threshold.
+
+**Prompt:** Lets move `.sort(byStrengthDesc)` `.map(withLimitReset)` to the connect-provider without missing any error handling — filtering by strength_score should also happen there and throwing a no models error there.
+
+**What changed:**
+- `providers/connect-provider.ts` — added `byStrengthDesc`, `withLimitReset`, and `rankModels` (strength≥6 filter + sort + map + no-models throw); `connectProvider` now calls `rankModels(await CONNECTORS[provider](apiKey))` instead of returning the raw result
+- `providers/gemini/connect.ts` — removed `isSufficientModel`, `byStrengthDesc`, `withLimitReset`; `toRankedModels` now filters by `validIds` only and throws `no-models` if empty; `isSufficientModel` check (`strength_score >= 6`) removed from this file
+- `providers/qroq/connect.ts` — same removals; additionally introduced `BANNED` constant, `isAllowed(m)` named predicate used as a direct reference in `filterModels` (eliminates inline arrow), `byCreatedDesc` named comparator used as a direct reference in `getSortedCandidates` (eliminates inline arrow), and `buildValidIds` helper (mirrors Gemini's pattern) — all required to keep cumulative file complexity under the linter threshold
+
+**Key decisions & why:**
+- Ranking moved to `connect-provider`, not to a shared utils file — the dispatcher is already the natural integration point between providers and the store; putting `rankModels` here means it runs exactly once regardless of provider, with no duplication
+- `toRankedModels` in each provider retains the validIds throw — this is what drives the retry recursion; if the AI hallucinated all model IDs the loop still tries the next candidate; only the universal quality bar (strength, sort, reset) moved up
+- Named function references in Groq file — the linter reports cumulative file complexity and was hitting the threshold at `toRankedModels`; extracting `isAllowed` and `byCreatedDesc` as named functions (used by reference, not as inline arrows) removes their branch cost from the calling functions, bringing cumulative complexity to 4
+
+
+## [#248] Extract toValidModels into shared utils; remove toRankedModels from provider connect files
+**Type:** refactor
+
+**Summary:** Moved the duplicate candidate-validation logic from both provider `toRankedModels` functions into a shared `toValidModels(validIds, parsed)` utility in `providers/utils/shared.ts`; `tryWithModel` in each provider now calls it directly with the provider-built `validIds` set.
+
+**Brainstorming:** Both `toRankedModels` implementations were identical in logic — filter parsed AI response against a `Set<string>` of valid IDs, throw `no-models` if nothing matches. The only difference between providers was how `validIds` was built (Gemini strips `models/` prefix, Groq uses raw IDs), and that already lived in the provider-specific `buildValidIds` helpers. Moving the shared filter+throw step to a named utility makes the logic explicit, removes the last duplication between the two connect files, and gives the function a name that accurately describes what it does: it validates the AI response against known model IDs, not ranks them.
+
+**Prompt:** toRankedModels is wrong naming — create a function in shared, name it toValidModels and use validIds Set<string> and AiModel[] as inputs; reuse the same function.
+
+**What changed:**
+- `providers/utils/shared.ts` — added `toValidModels(validIds: Set<string>, parsed: AiModel[]): AiModel[]`; filters parsed by `validIds.has(m.id) || validIds.has(m.model)`, throws `no-models` if result is empty
+- `providers/gemini/connect.ts` — removed `toRankedModels`; `tryWithModel` now calls `toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)`; added `toValidModels` to import from `../utils/shared`
+- `providers/qroq/connect.ts` — same: removed `toRankedModels`, updated `tryWithModel`, added `toValidModels` to import
+
+**Key decisions & why:**
+- Signature is `(validIds, parsed)` not `(parsed, candidates)` — the caller already has `validIds` from `buildValidIds`; passing the set directly keeps the function decoupled from provider-specific model shapes
+- `buildValidIds` stays in each provider — it handles provider-specific ID formats (Gemini `models/` prefix stripping vs Groq plain IDs); only the generic filter step is shared
+
+
+## [#249] Align Gemini filterModels architecture with Groq
+**Type:** refactor
+
+**Summary:** Refactored `filterModels` in `gemini/connect.ts` to match the Groq pattern: `BANNED` module constant, `isAllowed(m)` named predicate, `filterModels` uses `isAllowed` as a direct reference with no inline arrow.
+
+**Brainstorming:** The two providers now have identical structural shape for the filter step — a constant, a named predicate, and a one-liner `filterModels`. The Gemini predicate is slightly richer (checks `supportedGenerationMethods` in addition to the banned-name check), but the pattern is the same. `!!` coerces `boolean | undefined` from the optional chain to `boolean` so the return type is satisfied without a cast.
+
+**Prompt:** filterModels in gemini must have same architecture as in groq. update.
+
+**What changed:**
+- `providers/gemini/connect.ts` — extracted `BANNED` constant; extracted `isAllowed(m: GeminiModel): boolean` (uses `!!` on optional-chain result + `!BANNED.some(...)`); `filterModels` now calls `models.filter(isAllowed)` with no inline arrow
+
+**Key decisions & why:**
+- `!!` on `m.supportedGenerationMethods?.includes('generateContent')` — the optional chain returns `boolean | undefined`; `!!` coerces to `boolean` so the named function satisfies its declared return type without needing `=== true` or a broader signature
+
+
+## [#250] Wire runProviderPrompt into aiAnalysisStore; delete unused callProvider and rankModels files
+**Type:** refactor
+
+**Summary:** Replaced `callProviderForAnalysis` in `aiAnalysisStore` with `runProviderPrompt` from the providers module, then deleted the now-unused `ai-analysis/callProvider.ts`, `ai-analysis/index.ts`, `utils/rankModels.ts`, and removed the stale `RankedModelsResponse` type.
+
+**Brainstorming:** `callProviderForAnalysis` was a parallel implementation of the HTTP calls already living in `providers/gemini/api.ts` and `providers/qroq/api.ts`. `runProviderPrompt` is the proper thin dispatcher that delegates to those same provider callers, parses JSON, and throws `'invalid-response'` on parse failure. The error codes that flow out of the provider API functions (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) match what the store's `handleRequestError` expects, so the swap is a direct one-to-one replacement with no error-handling changes needed. `utils/rankModels.ts` had already been superseded by the `rankModels` function in `connect-provider.ts` — nothing else imported it. `RankedModelsResponse` was only used by `rankModels.ts`.
+
+**Prompt:** Wire `runProviderPrompt` into `aiAnalysisStore` to replace `callProviderForAnalysis`. Then clean up all unused files: `ai-analysis/callProvider.ts`, `ai-analysis/index.ts`, `utils/rankModels.ts`; remove `RankedModelsResponse` type.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — import changed from `callProviderForAnalysis` (via `ai-analysis` barrel) to `runProviderPrompt` (via `providers`); call site updated accordingly
+- `features/ai-tools/ai-analysis/callProvider.ts` — deleted (parallel HTTP implementation, fully replaced)
+- `features/ai-tools/ai-analysis/index.ts` — deleted (barrel that only re-exported `callProviderForAnalysis`)
+- `features/ai-tools/utils/rankModels.ts` — deleted (superseded by `rankModels` in `connect-provider.ts`)
+- `features/ai-tools/types/index.ts` — removed `RankedModelsResponse` type (only used by the deleted file)
+- `CLAUDE.md` — architecture updated: removed deleted files, updated `run-provider-prompt.ts` description, updated checklist and status
+
+**Key decisions & why:**
+- No error-handling changes in the store — `runProviderPrompt` surfaces the same error codes (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) that `handleRequestError` already handles; `'invalid-response'` on parse failure falls through to the `?? ERROR_MESSAGES.unknown` fallback
+- Deleted `ai-analysis/index.ts` rather than leaving an empty barrel — an empty barrel is dead weight
+
+
+## [#251] Unify error codes, extract AsyncStatus, move AiModel to providers
+**Type:** refactor
+
+**Summary:** Merged `AiConnectionErrorCode` and `AiAnalysisErrorCode` into a single `AiErrorCode` union; extracted `AsyncStatus` into `common/types/`; moved `AiModel` and `ModelsResponse` from `ai-tools/types/` to `providers/types.ts`.
+
+**Brainstorming:** Three separate type concerns were addressed together since they all touched the same type boundary. `AiConnectionErrorCode` and `AiAnalysisErrorCode` had overlapping codes and both ended up surfaced in the same error records — unifying them into `AiErrorCode` removes the duplicate and forces exhaustive coverage everywhere via `Record<AiErrorCode, ...>`. `AsyncStatus` is a plain four-value union that every async operation uses — it belongs in `common/types/` rather than inside a feature folder. `AiModel` and `ModelsResponse` describe provider-layer data (model IDs, strength scores, limit flags) and are only meaningful inside the providers layer — moving them to `providers/types.ts` and exporting via the providers barrel keeps the public API clean while removing the circular feel of `ai-tools/types/` importing back from the providers it configures.
+
+**Prompt:** AiConnectionErrorCode and AiAnalysisErrorCode should be unified. Also 'idle' | 'loading' | 'done' | 'error' should be a type status in common folder. Move models related to providers only there.
+
+**What changed:**
+- `common/types/async-status.ts` — new file; exports `AsyncStatus = 'idle' | 'loading' | 'done' | 'error'`
+- `providers/types.ts` — was empty placeholder; now contains `AiModel` and `ModelsResponse` definitions
+- `providers/index.ts` — added `export * from './types'` to expose `AiModel`/`ModelsResponse` via the barrel
+- `ai-tools/types/index.ts` — removed `AiConnectionErrorCode`, `AiAnalysisErrorCode`, `AiAnalysisStatus`, `AiModel` (definition), `ModelsResponse`, `RankedModelsResponse`; added `AiErrorCode` (10-code unified union); `AiConnectionError.code` and `AiAnalysisError.code` now use `AiErrorCode`; added internal `import type { AiModel }` from providers for response types that stamp the model
+- `providers/utils/error-handling.ts` — `AiConnectionErrorCode` → `AiErrorCode`
+- `ai-connection/utils/index.ts` — `AiConnectionErrorCode` → `AiErrorCode` throughout; `ERROR_MESSAGES` and `ERROR_HINTS` expanded to `Record<AiErrorCode, ...>` covering all 10 codes (added `parse-error` entries)
+- `stores/aiStore.ts` — `AiConnectionErrorCode` → `AiErrorCode`; `AiModel` now imported from `providers/types`; `Set<AiConnectionErrorCode>` → `Set<AiErrorCode>`
+- `stores/aiAnalysisStore.ts` — `AiAnalysisStatus` → `AsyncStatus`; `AiAnalysisErrorCode` → `AiErrorCode`; `ERROR_MESSAGES` expanded to all 10 `AiErrorCode` values
+- `providers/connect-provider.ts` — `AiModel` import split: from `./types` instead of `../types`
+- `providers/gemini/connect.ts` — `AiModel`/`ModelsResponse` import: `../types` instead of `../../types`
+- `providers/qroq/connect.ts` — same import path update
+- `providers/utils/shared.ts` — `AiModel` import: `../types` instead of `../../types`
+- `mocks/budget-optimizer-mocks.ts` — `AiModel` import split from `../providers/types`
+- `mocks/executive-summary-mocks.ts` — same split
+- `ai-analysis/components/shared/AnalysisState.vue` — replaced `AiAnalysisStatus` import with `AsyncStatus`; `status` prop type updated to `AsyncStatus`
+- `CLAUDE.md` — architecture updated: `async-status.ts` added, `providers/types.ts` description updated, `types/index.ts` description rewritten, `error-handling.ts` and `ai-connection/utils/index.ts` descriptions updated, `AnalysisState.vue` prop types corrected
+
+**Key decisions & why:**
+- `AiModel` re-exported from `providers/index.ts` barrel so consumers that already import from `providers` don't need a deeper path — the type is public but lives in the right layer
+- `types/index.ts` imports `AiModel` internally (not re-exported) to satisfy `BudgetOptimizerResponse.model?` and `ExecutiveSummaryResponse.model?` — the response types stay in the feature types file while the definition stays in providers
+- `Record<AiErrorCode, ...>` for all error maps — TypeScript enforces exhaustiveness, preventing silent gaps when a new code is added
+- `parse-error` added to `ai-connection/utils/index.ts` error records even though it's an analysis-only code — exhaustiveness requires all 10 entries everywhere the record type is used
+
+
+## [#252] Refactor AiModel DTO, add AiModelCandidate mapping, providers-meta rules
+**Type:** refactor
+
+**Summary:** Updated AiModel to a clean camelCase DTO (added family, removed model/provider, renamed display_name/strength_score), introduced per-provider AiModelCandidate conversion in connect files, extracted provider rules to providers-meta.ts, and updated generateModelEvaluationPrompt to accept models + providerRules as separate parameters.
+
+**Brainstorming:** Three concerns were addressed together because they form a single coherent data-flow change. AiModel had snake_case fields (display_name, strength_score) inconsistent with the rest of the codebase, a redundant model field (duplicate of id), a provider field that duplicates aiStore.provider, and was missing family (which the prompt already produced in its output schema but the type didn't capture). AiModelCandidate already existed in providers/types.ts — the connect files were still passing raw provider types (GroqModel[]/GeminiModel[]) to the prompt instead of using it. Moving the provider-specific rules to providers-meta.ts as string[] makes the prompt function reusable and testable without conditionals. Gemini's buildValidIds was simplified to stripped IDs only since candidates now have stripped IDs. Groq inactive model filtering was also added (m.active === true) which was the original impetus.
+
+**Prompt:** Remove inactive models when filtering Groq models. Convert Groq and Gemini models to AiModelCandidate after filtering. Update AiModel to new DTO (id/displayName/family/strength/strengthScore/reason/limitReached). generateModelEvaluationPrompt must be called with models: AiModelCandidate[] and providerRules: string[]. Add providers-meta.ts with Groq and Gemini rules as string[].
+
+**What changed:**
+- `providers/types.ts` — AiModel updated: removed model/provider, renamed display_name→displayName/strength_score→strengthScore, added family; AiModelCandidate kept as-is
+- `providers/providers-meta.ts` — new file; GROQ_PROVIDER_RULES and GEMINI_PROVIDER_RULES as string[]
+- `prompts/model-evaluation-prompt.ts` — new signature (models: AiModelCandidate[], providerRules: string[]); removed provider param and getProviderSpecificInstructions; renders providerRules as bullet list; fixed stale import from model-evaluation-prompt2
+- `providers/qroq/connect.ts` — isAllowed adds m.active===true check; toAiModelCandidate(GroqModel)→AiModelCandidate mapper added; tryWithModel maps candidates before passing to prompt with GROQ_PROVIDER_RULES; removed TODO comments
+- `providers/gemini/connect.ts` — stripPrefix helper extracted; buildValidIds uses stripped IDs only; toAiModelCandidate(GeminiModel)→AiModelCandidate mapper added; tryWithModel maps candidates before passing to prompt with GEMINI_PROVIDER_RULES; removed TODO comments
+- `providers/utils/shared.ts` — toValidModels: removed || validIds.has(m.model) branch (model field gone)
+- `providers/connect-provider.ts` — strength_score → strengthScore in byStrengthDesc and rankModels filter
+- `stores/aiStore.ts` — selectBestModel: strength_score → strengthScore; markModelLimitReached: m.model → m.id
+- `stores/aiAnalysisStore.ts` — selectedModel.model → selectedModel.id in getCurrentCacheKey, handleRequestError, executeAnalysis
+- `mocks/executive-summary-mocks.ts` — MOCK_GEMINI_FLASH and MOCK_GROQ_LLAMA updated to new DTO (added family, removed model/provider, renamed fields)
+- `mocks/budget-optimizer-mocks.ts` — same mock updates
+- `ExecutiveSummaryAnalysis.vue` — model?.display_name → model?.displayName
+- `BudgetOptimizationAnalysis.vue` — model?.display_name → model?.displayName
+- `CLAUDE.md` — architecture updated: providers/types.ts, providers-meta.ts, connect files, model-evaluation-prompt, shared.ts, connect-provider.ts descriptions
+
+**Key decisions & why:**
+- provider removed from AiModel — aiStore already knows the provider at the connection level; per-model duplication was noise
+- model field removed — id now serves both roles (prompt input identifier and API call identifier); Gemini connect strips the models/ prefix in toAiModelCandidate so id is already the API-call form
+- Gemini buildValidIds simplified to stripped forms only — since candidates now carry stripped IDs, the AI always returns stripped IDs; the previous both-forms logic was a workaround for ambiguous input
+- providerRules as string[] rather than derived from provider enum — keeps the prompt function free of provider knowledge and makes rules independently testable
+- prompt2 files left untouched — user explicitly excluded them
+
+
+## [#253] Split provider metadata and error messages to correct feature boundaries
+**Type:** refactor
+
+**Summary:** Moved `PROVIDER_LABELS`, `PROVIDER_HELP`, and `PROVIDER_OPTIONS` from `ai-connection/utils` into `providers/providers-meta.ts`; extracted the inline `ERROR_MESSAGES` from `aiAnalysisStore` into a dedicated `ai-tools/utils/analysis-error-messages.ts`; `ai-connection/utils` now only contains connection-form error display constants.
+
+**Brainstorming:** `ai-connection/utils/index.ts` was acting as a grab-bag for both provider-level metadata (labels, help text, options) and connection-form display strings. Provider metadata belongs in the provider layer alongside the existing rule arrays in `providers-meta.ts`. Error messages split along feature lines: the connection form needs provider-aware functions `(provider) => string`; the analysis store needs plain strings. The analysis store was also defining its error map inline — extracting it to `ai-tools/utils/` makes it a proper module-level concern and removes hidden coupling between store logic and display strings.
+
+**Prompt:** `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS` should also be part of `providers-meta`. `ERROR_MESSAGES` and `ERROR_HINTS` are both in `ai-connection/utils` and used in different features — split them properly.
+
+**What changed:**
+- `providers/providers-meta.ts` — added `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS`; imports `AiProviderType` from types
+- `ai-connection/utils/index.ts` — removed the three provider metadata constants; now imports `PROVIDER_LABELS` from `providers-meta` for use in error message functions; retains `ERROR_MESSAGES` (provider-aware functions) and `ERROR_HINTS` (plain strings) as connection-form-specific display constants
+- `ai-tools/utils/analysis-error-messages.ts` — new file; `ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, string>` (all 10 codes, plain strings) extracted from `aiAnalysisStore`
+- `stores/aiAnalysisStore.ts` — removed inline `ERROR_MESSAGES` constant and its comment block; imports `ANALYSIS_ERROR_MESSAGES` from `ai-tools/utils/analysis-error-messages`; usage updated at `handleRequestError`
+- `ai-connection/components/AiConnectionForm.vue` — imports `PROVIDER_OPTIONS, PROVIDER_HELP` from `providers/providers-meta`; imports `ERROR_MESSAGES, ERROR_HINTS` from `../utils`
+- `ai-connection/components/AiConnectedStatus.vue` — imports `PROVIDER_LABELS` from `providers/providers-meta`
+- `CLAUDE.md` — updated `providers-meta.ts`, `ai-connection/utils/index.ts`, `AiConnectionForm.vue` descriptions; added `analysis-error-messages.ts` entry
+
+**Key decisions & why:**
+- Provider metadata in `providers-meta.ts` — it was already home to provider rule arrays; labels, help text, and form options are all provider-level knowledge that the connection UI consumes, not produces
+- Two separate error message constants (`ERROR_MESSAGES` vs `ANALYSIS_ERROR_MESSAGES`) kept intentionally separate — connection form messages are provider-aware functions; analysis panel messages are plain strings; merging them would require artificial branching or overloading
+- `ai-connection/utils` retained (not deleted) — it still owns the connection-form error display constants, which are specific to the connection UI and not reusable elsewhere
+
+
+## [#254] Move analysis-error-messages to ai-analysis/utils/
+**Type:** fix
+
+**Summary:** Relocated `analysis-error-messages.ts` from `ai-tools/utils/` into the correct `ai-analysis/utils/` subfolder so analysis-specific constants live within their own feature boundary.
+
+**Brainstorming:** `analysis-error-messages.ts` was placed in the shared `ai-tools/utils/` folder in #253, but it is exclusively used by the analysis feature. The `ai-analysis/` feature folder is the right home; a new `utils/` subfolder was created for it.
+
+**Prompt:** ANALYSIS_ERROR_MESSAGES should be in the ai-analysis feature — why is it not?
+
+**What changed:**
+- `ai-tools/utils/analysis-error-messages.ts` — moved to `ai-tools/ai-analysis/utils/analysis-error-messages.ts`
+- `stores/aiAnalysisStore.ts` — import path updated accordingly
+- `CLAUDE.md` — removed entry from `ai-tools/utils/`; added `ai-analysis/utils/` section with the file entry
+
+**Key decisions & why:**
+- New `ai-analysis/utils/` subfolder created — `ai-analysis/` had only `components/`; utils is the natural parallel for non-component module-level code scoped to this feature
+
+
+## [#255] Add PerformanceMetrics to Channel type
+**Type:** update
+
+**Summary:** Extended `Channel` to include `PerformanceMetrics` (roi/ctr/cvr/cac) computed from the channel's aggregated campaign totals, reusing `computePerformanceMetrics` from `campaign-performance.ts`.
+
+**Brainstorming:** `Channel` already aggregates raw `CampaignMetrics` totals across its campaigns. Adding `PerformanceMetrics` is a natural extension — the channel-level ROI, CTR, CVR, and CAC are derived from those same aggregated totals using the same formula already applied at the campaign level. The `computePerformanceMetrics` function takes any `CampaignMetrics` object, so it works on channel aggregates without modification. Both the create and update paths in `groupCampaignsByChannel` need to spread the result.
+
+**Prompt:** Add PerformanceMetrics in Channel and calculate them correctly based on the campaigns of the channel. Re-use functionality from the campaign performance.
+
+**What changed:**
+- `common/types/channel.ts` — `Channel` now extends both `CampaignMetrics` and `PerformanceMetrics`; imports `PerformanceMetrics` from `./campaign`
+- `common/utils/campaign-channel.ts` — imports `computePerformanceMetrics`; both the new-channel and update-channel branches in `groupCampaignsByChannel` now spread `computePerformanceMetrics(metrics)` on top of the aggregated raw metrics
+
+**Key decisions & why:**
+- Performance metrics re-computed on every campaign addition (update branch) — channel aggregates change with each new campaign, so metrics must be derived from the final aggregated totals, not accumulated incrementally
+- `computePerformanceMetrics` called on the extracted `metrics` object (not on the full channel) — avoids passing extra fields and matches the function's `CampaignMetrics` parameter contract exactly
+
+
+## [#256] Move computePerformanceMetrics call to buildChannelMap sort phase
+**Type:** fix
+
+**Summary:** Moved `computePerformanceMetrics` from the per-campaign accumulation loop in `groupCampaignsByChannel` to the final sort phase in `buildChannelMap`, so it is called once per channel rather than on every campaign addition.
+
+**Brainstorming:** Previously, every time a campaign was added to an existing channel entry, `computePerformanceMetrics` was called on the intermediate aggregate — meaning a channel with N campaigns triggered N-1 redundant computations. The accumulator only needs raw metric totals; performance metrics are derived values that belong at the end. Introduced a local `ChannelAccumulator` type (`Omit<Channel, keyof PerformanceMetrics>`) so `groupCampaignsByChannel` is correctly typed without performance fields, and `buildChannelMap` stamps them once after sorting.
+
+**Prompt:** computePerformanceMetrics better to call once when we build the sorted map.
+
+**What changed:**
+- `common/utils/campaign-channel.ts` — added `ChannelAccumulator` local type; `groupCampaignsByChannel` now returns `Map<string, ChannelAccumulator>` and accumulates raw metrics only; `buildChannelMap` spreads `computePerformanceMetrics(sorted)` once per channel in the reduce step
+
+**Key decisions & why:**
+- `ChannelAccumulator = Omit<Channel, keyof PerformanceMetrics>` — ties the type to `PerformanceMetrics` structurally; if new performance fields are added later, the omit stays correct without manual updates
+
+
+## [#257] Move aggregateCampaignMetrics to buildChannelMap sort phase
+**Type:** fix
+
+**Summary:** Removed `aggregateCampaignMetrics` from the per-campaign accumulation loop; `ChannelAccumulator` is now minimal (`{ id, name, campaigns }`), with both metric aggregation and performance computation deferred to the single `buildChannelMap` reduce step.
+
+**Brainstorming:** Same reasoning as #256 — `aggregateCampaignMetrics` was being called on every campaign addition to an existing channel, re-iterating all accumulated campaigns each time (O(N²) total). The accumulator only needs to collect campaigns; all derived values belong at the end. With this change `groupCampaignsByChannel` is purely a grouping function and `buildChannelMap` owns all derivation in one pass.
+
+**Prompt:** Can we do the same for aggregateCampaignMetrics?
+
+**What changed:**
+- `common/utils/campaign-channel.ts` — `ChannelAccumulator` simplified to `{ id, name, campaigns }`; `groupCampaignsByChannel` loop only appends campaigns; `buildChannelMap` reduce calls `aggregateCampaignMetrics` then `computePerformanceMetrics` once per channel; `PerformanceMetrics` import removed (no longer needed for Omit)
+
+**Key decisions & why:**
+- Accumulator reduced to the minimum needed for grouping — raw metrics and performance metrics are all derived; keeping them out of the loop makes the separation of concerns explicit
+
+
+## [#258] Replace 12 individual refs with two reactive display objects in aiAnalysisStore
+**Type:** refactor
+
+**Summary:** Removed the 12 per-tab named refs (`optimizerStatus`, `optimizerResponse`, etc.) and the `syncRefsFromTab`/`syncCacheTimestamp` sync functions; replaced them with two typed `reactive()` display objects (`optimizer` and `summary`) that are mutated directly wherever state changes.
+
+**Brainstorming:** The 12 individual refs existed only because `createTabState()` returned a plain object that Vue cannot observe — requiring a manual copy step (`syncRefsFromTab`) after every mutation. The fix is to separate display state (needs reactivity, consumed by components) from internal state (controllers, timers, caches — no reactivity needed). Two `reactive()` objects per tab provide the reactive surface without the sync overhead. `firstAnalyzeCompleted` stays internal (nothing outside the store reads it). `syncRefsFromTab` and `syncCacheTimestamp` are removed entirely; mutations happen in place at every call site.
+
+**Prompt:** Do we really need the 12 individual reactive wrappers and their sync functions in aiAnalysis store?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — removed 12 individual refs; removed `syncRefsFromTab` and `syncCacheTimestamp`; added `optimizer` and `summary` reactive objects (typed per response type); `createTabState()` trimmed to internal-only fields; all mutation sites updated to use `d = getDisplay(tab)` directly; `optimizerCanAnalyze`/`summaryCanAnalyze` read from reactive objects; return statement exposes `optimizer` and `summary` instead of 12 named refs; `reactive` imported
+- `BudgetOptimizationAnalysis.vue` — computed refs updated from `analysisStore.optimizerX` to `analysisStore.optimizer.x`
+- `ExecutiveSummaryAnalysis.vue` — computed refs updated from `analysisStore.summaryX` to `analysisStore.summary.x`
+- `CLAUDE.md` — aiAnalysisStore description updated
+
+**Key decisions & why:**
+- Two separate reactive objects rather than one generic — preserves per-tab response typing (`BudgetOptimizerResponse | null` vs `ExecutiveSummaryResponse | null`) without casts in components
+- Internal state kept as plain objects — AbortController, Map, setTimeout timers should not be reactive; separating them is also clearer about intent
+- `firstAnalyzeCompleted` moved to internal state only — nothing outside the store used the exposed refs; `analysisActivated` (shared ref) serves the same role for the UI
+
+
+## [#259] Fix unsafe response casts in aiAnalysisStore
+**Type:** fix
+
+**Summary:** Replaced all 10 `as typeof d.response` / `as typeof otherD.response` / `as typeof prevD.response` casts with `as unknown as typeof d.response` to silence the legitimate IDE warning about non-overlapping types.
+
+**Brainstorming:** TypeScript's `as T` assertion requires the source type to overlap with T. `TabResponse` (non-null) doesn't sufficiently overlap with `X | null` at the union member level, so the cast was flagged. The two-step `as unknown as T` pattern is the standard escape hatch for intentional narrowing casts where the developer knows the runtime value is correct.
+
+**Prompt:** Line 354 is problematic.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — all 10 response assignment casts changed from `as typeof d.response` to `as unknown as typeof d.response`
+
+**Key decisions & why:**
+- `as unknown as T` rather than a different typing approach — the union return type of `getDisplay` is correct; the unsafe cast is a deliberate trade-off to avoid duplicating response-assignment logic per tab
+
+
+## [#260] Consolidate per-tab cache maps into a single CacheEntry map
+**Type:** refactor
+
+**Summary:** Replaced the three co-keyed maps (`cache`, `cacheTimestamps`, `cooldowns`) in `createTabState()` with a single `Map<string, CacheEntry>` where each entry carries `response`, `timestamp`, and `cooldownUntil` together.
+
+**Brainstorming:** All three maps shared the same key (`provider::model::sorted-labels`) and were always written atomically on a successful analysis call. Keeping them as parallel maps created partial-state risk (a key present in one but not another) and required three lookups at every read site. A single `CacheEntry` type eliminates the redundancy. The `dataCache` map uses a different key format (labels only, no provider/model prefix) so it stays separate — merging it would force re-building data per model, which is wasteful. The cooldown semantics also improved: instead of storing a start timestamp and subtracting on read, `cooldownUntil` stores the expiry time directly (`now + COOLDOWN_MS`), making the `canAnalyze` check a simple `Date.now() >= entry.cooldownUntil`.
+
+**Prompt:** Instead of having 4 maps (cache, cacheTimestamps, dataCache, cooldowns), does it make sense to have one map with a CacheEntry type extending TabResponse with cooldown, timestamp, and data?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — added `CacheEntry` type (`response`, `timestamp`, `cooldownUntil`); removed `cacheTimestamps` and `cooldowns` from `createTabState()`; `cache` map retyped to `Map<string, CacheEntry>`; all read sites updated to use `entry.response` / `entry.timestamp` / `entry.cooldownUntil`; success path collapsed to single `t.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })`; `clearStateForNewCSV` no longer needs separate `cacheTimestamps.clear()` / `cooldowns.clear()` calls; `canAnalyze` simplified to `Date.now() >= entry.cooldownUntil`
+
+**Key decisions & why:**
+- `dataCache` kept separate — uses a label-only key (no provider/model); merging would cause unnecessary data rebuilds per model switch
+- `cooldownUntil` instead of `cooldownStart` — storing expiry rather than start time makes the check a direct comparison with no arithmetic
+
+
+## [#261] Remove model from response cache key
+**Type:** refactor
+
+**Summary:** Changed the response cache key from `provider::model::labels` to `provider::labels` because model selection is system-controlled (auto-fallback), not user-controlled, making per-model cache isolation unnecessary.
+
+**Brainstorming:** The model is in the key because different models could produce different responses. However, users never pick a model — the system selects the highest-scored available model and silently falls back on token-limit. Keeping the model in the key meant a cache miss on every system-initiated model switch, forcing a redundant API call even when a valid cached response already existed. Removing it means model switches reuse cached responses across the same provider+labels combination. The token-limit fallback path (`executeAnalysis(tab, false)`) bypasses the cache check entirely (`isAutomatic=false`), so it still fetches a fresh response from the next model when needed. The provider stays in the key because Gemini and Groq produce structurally different responses. `response.model` stamp on each entry preserves traceability — the UI still shows which model generated the response.
+
+**Prompt:** Cache uses provider::model::labels — since model switching is done by the system, should we remove model from the key?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `createCacheKey` signature reduced from `(labels, provider, model)` to `(labels, provider)`; key format changes from `provider::model::labels` to `provider::labels`; `getCurrentCacheKey` no longer passes `aiStore.selectedModel.id`
+- `CLAUDE.md` — Status and aiAnalysisStore description updated to reflect new key format and `CacheEntry` type
+
+**Key decisions & why:**
+- Model removed, provider kept — provider determines response structure; model within a provider is an implementation detail the user never controls
+- Token-limit fallback unaffected — it calls `executeAnalysis(tab, false)` which skips the cache check, so a fresh response is always fetched on the first call after model switch
+
+
+## [#262] Move cacheTimestamp into response — stamp timestamp on TabResponse
+**Type:** refactor
+
+**Summary:** Removed the standalone `cacheTimestamp` field from reactive display state; `timestamp` is now stamped directly onto the response object alongside `model`, so it travels with the response automatically.
+
+**Brainstorming:** The reactive display objects (`optimizer`, `summary`) each held a `cacheTimestamp: number | null` field that was written at every cache-restore site (~9 write sites total). Since `model` is already stamped onto the response as an infrastructure concern, there is an established pattern for attaching metadata to the response. Adding `timestamp` to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse` follows the same approach: stamp once at write time, read anywhere via `response?.timestamp`. This removes the `cacheTimestamp` field from reactive state entirely, collapses all `d.cacheTimestamp = entry.timestamp` assignments, and means that wherever `d.response` is set from a cache entry the timestamp comes for free — no separate assignment needed. Components read `response?.timestamp ?? null` instead of a dedicated computed.
+
+**Prompt:** d.cacheTimestamp — can't we use timestamp in the TabResponse without breaking anything?
+
+**What changed:**
+- `features/ai-tools/types/index.ts` — added `timestamp?: number` to `BudgetOptimizerResponse` and `ExecutiveSummaryResponse`
+- `stores/aiAnalysisStore.ts` — removed `cacheTimestamp` from both `optimizer` and `summary` reactive objects; stamped `result.timestamp = now` in `executeAnalysis` success path alongside `result.model`; removed all `d.cacheTimestamp = ...` write sites (~9 total) across `handleRequestError`, `executeAnalysis`, `evaluateTab`, `clearStateForNewCSV`, and the label-change watcher
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `cacheTimestamp` computed changed to `analysisStore.summary.response?.timestamp ?? null`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `cacheTimestamp` computed changed to `analysisStore.optimizer.response?.timestamp ?? null`
+- `CLAUDE.md` — Status and aiAnalysisStore description updated to reflect that `timestamp` is on the response, not in reactive state
+
+**Key decisions & why:**
+- Pattern follows `model` stamp — `model` was already an infrastructure field on the response; `timestamp` is consistent with that precedent
+- No cache-restore sites need changing — `d.response = entry.response` implicitly carries `response.timestamp` already set at write time; all restore paths just work
+
+
+
+## [#263] Executive Summary — full refactor to camelCase schema, derivedSignals-first prompt, and new builder
+**Type:** refactor
+
+**Summary:** Replaced the snake_case `ExecutiveSummaryData`/`ExecutiveSummaryResponse` pipeline (with `icon`, `key_metrics`, `channel_summary`) with a new camelCase `ExecutiveSummaryInput`/`ExecutiveSummaryResponse` pipeline driven by `derivedSignals`, switching to `executive-summary-prompt2` and rewriting all mocks to match.
+
+**Brainstorming:** The existing executive summary pipeline had grown unwieldy: snake_case keys across prompts, types, and UI components; a `key_metrics` grid and `channel_summary` table that added noise without improving the actionability of the output; `icon` fields on insights that required the AI to emit an emoji (unreliable); and a builder (`buildExecutiveSummaryData`) that computed deltas and classifications at the data layer rather than letting the prompt guide AI reasoning. The new direction: (1) camelCase everywhere for consistency with the rest of the TypeScript codebase; (2) `derivedSignals` — pre-computed signals (topCampaigns, bottomCampaigns, positiveChannels, negativeChannels, budgetConcentration, roiOutlierSpread) that give the AI structured facts without exhaustive raw data; (3) `executive-summary-prompt2` which uses these signals as the primary reasoning input and emits a strict, noise-free schema (healthScore, bottomLine, insights, priorityActions, correlations — no icon, no key_metrics, no channel_summary); (4) `buildExecutiveSummaryInput` accepts `Channel[]` directly from `campaignStore.selectedChannels` instead of re-aggregating from campaigns. Badge variant maps were also updated to match the new enum string forms (`NeedsAttention`, `ThisQuarter`, `NextQuarter`).
+
+**Prompt:** Refactor the executive summary pipeline end-to-end. Replace the existing `buildExecutiveSummaryData` builder and `ExecutiveSummaryData`/`ExecutiveSummaryResponse` types (snake_case, with `icon`, `key_metrics`, `channel_summary`) with a new camelCase `ExecutiveSummaryInput`-based flow. Update `buildExecutiveSummaryData.ts` in-place — do not create a new file alongside it — renaming the export to `buildExecutiveSummaryInput` and refining the logic to accept `Channel[]` directly from `campaignStore.selectedChannels`. Integrate `getExecutiveSummaryDerivedInputs` from `common/analysis/executive-summary-analysis` to compute `topCampaigns`, `bottomCampaigns`, and `derivedSignals`. Update `ExecutiveSummaryResponse` in `ai-tools/types` to the new camelCase shape (healthScore, bottomLine, insights with metricHighlight, priorityActions, correlations — no icon, no key_metrics, no channel_summary). Wire the store to call `executive-summary-prompt2`. Update all UI components and rewrite all 5 executive summary mocks to match the new shape.
+
+**What changed:**
+- `common/analysis/executive-summary-analysis.ts` — refined: `getBottomCampaigns` now takes `excludedNames?: Set<string>` and filters `budgetShare >= MIN_BUDGET_SHARE (0.01)`; `getExecutiveSummaryDerivedInputs` computes `topCampaigns` first, derives `topCampaignNames` Set, passes it to `getBottomCampaigns` to prevent overlap
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — completely rewritten; renamed export to `buildExecutiveSummaryInput(campaigns, channels)`; adds `computeChannelStatus` (Strong/Moderate/Weak via ±10% band around portfolioRoi), `toCampaignSummary`, `toChannelSummary`; portfolioRoi in percentage form; passes `Channel[]` directly
+- `features/ai-tools/types/index.ts` — replaced `PerformanceDeltas`, `ExecutiveSummaryChannel/Campaign/OtherChannelsSummary/Data` with new camelCase `ExecutiveSummaryResponse` (healthScore, bottomLine, insights, priorityActions, correlations — no icon, no key_metrics, no channel_summary)
+- `features/ai-tools/ai-analysis/types/index.ts` — added `export * from './executive-summary.types'` barrel entry
+- `features/ai-tools/prompts/index.ts` — swapped `executive-summary-prompt` for `executive-summary-prompt2`
+- `stores/aiAnalysisStore.ts` — updated imports (`ExecutiveSummaryData` → `ExecutiveSummaryInput`, `buildExecutiveSummaryData` → `buildExecutiveSummaryInput`); `dataCache` type updated; `getOrBuildData` passes `campaignStore.selectedChannels`; `buildPrompt` derives `isFiltered: boolean` and passes to new prompt signature
+- `features/ai-tools/utils/analysis-badge-variants.ts` — `HEALTH_SCORE_MAP` key updated to `'needsattention'`; `URGENCY_MAP` keys updated to `'thisquarter'` / `'nextquarter'`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — removed `period` prop; updated to `healthScore` / `bottomLine` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryInsights.vue` — removed icon span and related styles; updated to `metricHighlight` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryPriorityActions.vue` — updated to `priorityActions` / `expectedOutcome` / `successMetric` (camelCase)
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — removed `ExecutiveSummaryChannels` and `ExecutiveSummaryMetrics` imports/usage; updated all prop names to camelCase
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryChannels.vue` — DELETED
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryMetrics.vue` — DELETED
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — all 5 mock objects rewritten to match new camelCase `ExecutiveSummaryResponse` shape (no period, no icon, no key_metrics, no channel_summary); `AiModel` import updated to `providers/types`
+- `CLAUDE.md` — Status, Architecture (added `common/analysis/`, updated all executive summary component and type descriptions, removed deleted files), checklist updated
+
+**Key decisions & why:**
+- `buildExecutiveSummaryInput` not a new file — user clarified to update the existing builder in-place rather than add a parallel file; this keeps the import path stable and avoids dead code
+- `excludedNames` Set passed to `getBottomCampaigns` — prevents a campaign appearing in both top and bottom lists; computed once from `topCampaigns` results before calling bottom
+- `MIN_BUDGET_SHARE = 0.01` threshold — micro-campaigns (< 1% of portfolio budget) are excluded from the bottom list to avoid noise in the AI prompt
+- Badge variant keys lowercased — `healthScoreVariant` / `urgencyVariant` / `insightTypeVariant` all call `.toLowerCase()` on the input; keys in maps updated to match the new enum string casing
+- `isFiltered` as boolean to prompt — `executive-summary-prompt2` signature uses `filteredChannels: boolean`; store derives this from `selectedChannelsIds.length > 0` at call time
+
+
+## [#257] Store PerformanceMetrics as decimal ratios, format percentages at display time
+**Type:** fix
+
+**Summary:** Changed `roi`, `ctr`, and `cvr` in `PerformanceMetrics` from percentage values (e.g. 168 = 168%) to decimal ratios (e.g. 1.68 = 168%), rounded to 4 decimal places, and moved the ×100 multiplication into `formatPercentage`.
+
+**Brainstorming:** The previous implementation computed `roi/ctr/cvr` by multiplying the raw ratio by 100 and rounding to 2 decimal places, so the stored value was already a percentage. This conflated two concerns — calculation and display formatting — making it impossible to use these values in arithmetic or AI prompts without knowing the implicit unit. The fix stores clean decimal ratios (4 d.p. for precision) and lets each display site apply the ×100 via `formatPercentage`. The `percentageClass` threshold for "warning" moved from 50 to 0.5 to match the new unit. `cac` is unaffected (it's a currency amount, not a ratio). The ROI bar chart multiplies by 100 in the data mapping to preserve correct axis labels. `portfolioRoi` in `buildExecutiveSummaryData` was already typed as a decimal in `ExecutiveSummaryInput` but was being calculated as a percentage — this is now consistent.
+
+**Prompt:** `computePerformanceMetrics` should keep decimals with 4 decimal digits. The calculation to percentage must happen when formatting values for display. Update the function, add comments to the models, and update formatters.
+
+**What changed:**
+- `common/utils/math.ts` — added `round4` (4 decimal places)
+- `common/utils/campaign-performance.ts` — `computePerformanceMetrics` removes `* 100` from roi/ctr/cvr, uses `round4` for those three; `percentageClass` warning threshold changed from `<= 50` to `<= 0.5`
+- `common/utils/formatters.ts` — `formatPercentage` now multiplies by 100 before `toFixed(2)`; added unit comment
+- `common/types/campaign.ts` — `PerformanceMetrics` fields annotated with JSDoc describing units (decimal ratio vs EUR)
+- `features/dashboard/components/DashboardCharts.vue` — ROI bar chart data mapping changed from `c.roi ?? 0` to `(c.roi ?? 0) * 100` so axis labels remain in percentage scale
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — `portfolioRoi` calculation removes `* 100`, uses `round4`; imports `round4`
+
+**Key decisions & why:**
+- `round4` not `round2` for ratios — low-CTR channels (e.g. 0.3% CTR) need 4 d.p. to avoid `0.00` values after rounding
+- `cac` stays `round2` — it's a currency amount (EUR), where 2 decimal places is the standard
+- Chart data multiplied by 100 inline — the chart y-label is "ROI (%)" so raw decimal values would produce a misleading axis; the multiplication lives in the chart mapping, not in the formatter, because chart tooltips read the raw number
+
+
+## [#258] Replace CampaignScope/CampaignKPIs with PortfolioScope/PortfolioKPIs
+**Type:** refactor
+
+**Summary:** Removed `CampaignScope` and `CampaignKPIs` from the type system, replacing them with `PortfolioScope` and `PortfolioKPIs` (explicit named fields), and extracted portfolio KPI computation into `computePortfolioKPIs`.
+
+**Brainstorming:** `CampaignKPIs extends CampaignMetrics, PerformanceMetrics` used the same flat field names (`budget`, `roi`, etc.) as individual campaign objects, making it easy to accidentally mix up portfolio-level and campaign-level values. `PortfolioKPIs` uses explicit `total*` / `aggregated*` prefixes that make the semantic level clear at every call site. `CampaignScope` was renamed to `PortfolioScope` for the same reason — it describes portfolio selection state, not a single campaign. The new `computePortfolioKPIs` function encapsulates the `aggregateCampaignMetrics` + `computePerformanceMetrics` + field-mapping steps that the store was doing inline, making the store computed trivially simple and the logic reusable.
+
+**Prompt:** Replace `CampaignScope` with `PortfolioScope` and `CampaignKPIs` with `PortfolioKPIs`. Create a function in `campaign-performance` that uses `aggregateCampaignMetrics` and `computePerformanceMetrics` to calculate values and returns `PortfolioKPIs`.
+
+**What changed:**
+- `common/types/campaign.ts` — removed `CampaignScope` and `CampaignKPIs`; `PortfolioScope` and `PortfolioKPIs` (already present) are now the sole types
+- `common/utils/campaign-performance.ts` — added `computePortfolioKPIs(channels: Channel[]): PortfolioKPIs`; imports `PortfolioKPIs`
+- `stores/campaignStore.ts` — imports `PortfolioKPIs`, `PortfolioScope`, `computePortfolioKPIs`; `campaignScope` renamed to `portfolioScope`; `kpis` computed simplified to `computePortfolioKPIs(selectedChannels.value)`; removed `aggregateCampaignMetrics` and `computePerformanceMetrics` imports
+- `features/dashboard/components/DashboardKpis.vue` — prop type `CampaignKPIs` → `PortfolioKPIs`; all field accesses updated (`budget` → `totalBudget`, `revenue` → `totalRevenue`, `roi` → `aggregatedROI`, `ctr` → `aggregatedCTR`, `cvr` → `aggregatedCVR`, `cac` → `aggregatedCAC`, `conversions` → `totalConversions`)
+- `features/dashboard/components/DashboardCharts.vue` — prop type `CampaignKPIs` → `PortfolioKPIs`; funnel values updated (`impressions/clicks/conversions` → `totalImpressions/totalClicks/totalConversions`)
+- `features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationOverview.vue` — prop type `CampaignScope` → `PortfolioScope`
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `campaignStore.campaignScope` → `campaignStore.portfolioScope`
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `campaignStore.campaignScope` → `campaignStore.portfolioScope`
+- `stores/aiAnalysisStore.ts` — `campaignStore.campaignScope.selectedChannels` → `campaignStore.portfolioScope.selectedChannels`
+
+**Key decisions & why:**
+- `computePortfolioKPIs` takes `Channel[]` not `Campaign[]` — channels are already aggregated; passing channels avoids re-flattening and mirrors how the store already builds its `selectedChannels` computed
+- `PortfolioKPIs` field names use `total*`/`aggregated*` prefix — distinguishes portfolio-level values from same-named fields on `CampaignMetrics`/`PerformanceMetrics` at every use site
+
+
+## [#259] Use PortfolioSummary for ExecutiveSummaryInput.portfolio; pass kpis + scope to buildExecutiveSummaryInput
+**Type:** refactor
+
+**Summary:** Changed `ExecutiveSummaryInput.portfolio` from an inline object type to `PortfolioSummary`, and updated `buildExecutiveSummaryInput` to accept `PortfolioKPIs` and `PortfolioScope` directly instead of recomputing portfolio totals from raw campaigns.
+
+**Brainstorming:** `PortfolioSummary` already existed in `executive-summary-analysis.types.ts` (extends `PortfolioKPIs` + `campaignCount` + `channelCount`) but `ExecutiveSummaryInput.portfolio` was still an inline type with a subset of those fields. Meanwhile, `buildExecutiveSummaryInput` was recomputing `totalBudget`, `totalRevenue`, `totalConversions`, `portfolioRoi`, and `aggregatedCAC` from `campaigns` arrays — the exact same values already available in `campaignStore.kpis` (a `PortfolioKPIs`). Passing `kpis` and `scope` removes the redundant computation, and typing `portfolio` as `PortfolioSummary` makes the structure explicit and reusable.
+
+**Prompt:** `ExecutiveSummaryInput.portfolio` should be of type `PortfolioSummary`. Notice that kpis in campaign store can be used for `PortfolioSummary` without any further calculations. Pass kpis and portfolio scope in `buildExecutiveSummaryInput` to map required data and avoid recalculations.
+
+**What changed:**
+- `common/analysis/executive-summary-analysis.types.ts` — `ExecutiveSummaryInput.portfolio` changed from inline object type to `PortfolioSummary`
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — signature updated to `(campaigns, channels, kpis: PortfolioKPIs, scope: PortfolioScope)`; portfolio built as `{ ...kpis, campaignCount: scope.selectedCampaigns.length, channelCount: scope.selectedChannels.length }`; removed internal recalculation of totals and ratios; removed `round2`/`round4` imports (no longer needed); added `PortfolioSummary` to imports; cleaned up stale commented-out code
+- `stores/aiAnalysisStore.ts` — `buildExecutiveSummaryInput` call now passes `campaignStore.kpis` and `campaignStore.portfolioScope` as third and fourth arguments
+
+**Key decisions & why:**
+- `scope.selectedCampaigns.length` and `scope.selectedChannels.length` used for counts — these mirror `campaigns.length` and `channels.length` exactly, but using scope makes the intent explicit (these are portfolio-scoped counts, not raw array lengths)
+- `aggregatedROI` from `kpis` used directly for channel status comparison — it is already a decimal ratio matching the same unit as `ch.roi`, so `computeChannelStatus` works unchanged
+
+
+## [#260] Extract ShareEfficiency interface and computeShareEfficiency function
+**Type:** refactor
+
+**Summary:** Created `ShareEfficiency` interface and `computeShareEfficiency` function to eliminate the repeated `budgetShare/revenueShare/efficiencyGap` fields across `ChannelSummary`, `CampaignSummary`, and signal types, and removed inline share computations from `buildExecutiveSummaryData.ts`.
+
+**Brainstorming:** `ChannelSummary` and `CampaignSummary` both declared the same three fields (`budgetShare`, `revenueShare`, `efficiencyGap`) as inline properties, and `buildExecutiveSummaryData.ts` computed them inline in both `toCampaignSummary` and `toChannelSummary` using duplicated `safeDivide` calls. A named interface and a single function eliminate the duplication at both the type and computation level. The function belongs in `campaign-performance.ts` (it operates on `CampaignMetrics`, same as the other helpers there); the interface belongs in `campaign.ts` (shared data type, not analysis-specific). The signal types (`InefficientChannelSignal`, `ScalingCandidateSignal`) were not extended — `InefficientChannelSignal` has all three fields but is a signal DTO not a metrics summary; `ScalingCandidateSignal` has `revenueShare?` as optional so the shape doesn't match.
+
+**Prompt:** Create and reuse `ShareEfficiency { budgetShare, revenueShare, efficiencyGap }` interface. Create a function to get `ShareEfficiency` either from a campaign or a channel in `campaign-performance`. From now on never use one letter to describe variables.
+
+**What changed:**
+- `common/types/campaign.ts` — added `ShareEfficiency` interface with JSDoc unit comments on all three fields
+- `common/utils/campaign-performance.ts` — added `computeShareEfficiency(item: CampaignMetrics, totalBudget: number, totalRevenue: number): ShareEfficiency`; added `ShareEfficiency` to type import; added `safeDivide` to math import
+- `common/analysis/executive-summary-analysis.types.ts` — `ChannelSummary` now extends `ShareEfficiency` (removed the three inline field declarations); `CampaignSummary` now extends `ShareEfficiency` (same); added `ShareEfficiency` to import; removed stale commented-out code
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — `toCampaignSummary` and `toChannelSummary` now spread `computeShareEfficiency(...)` instead of computing shares inline; removed `safeDivide` import (no longer needed); replaced single-letter parameter names (`c` → `campaign`, `ch` → `channel`) throughout; replaced `s` in reduce with meaningful names
+
+**Key decisions & why:**
+- `ShareEfficiency` in `campaign.ts` not in analysis types — `computeShareEfficiency` takes `CampaignMetrics` which lives in `campaign.ts`; putting the interface there avoids a reverse dependency (utils importing from analysis types)
+- Function accepts `CampaignMetrics` not a union — both `CampaignPerformance` and `Channel` extend `CampaignMetrics`, so the function works for both without overloads or a union type
+- Single-letter variable names banned going forward — `campaign`, `channel` etc. used in all map/reduce callbacks
+
+
+## [#261] Fix toChannelSummary name-to-channel mapping
+**Type:** fix
+
+**Summary:** Fixed `toChannelSummary` to correctly map `Channel.name` to `ChannelSummary.channel` when using object destructuring.
+
+**Brainstorming:** The destructure `{ campaigns, id, ...channelMetrics }` left `name` in the spread, which would produce `name: string` in the result object — but `ChannelSummary` expects `channel: string`, not `name`. The fix extracts `name` from the destructure and sets `channel: name` explicitly, keeping the rest of the metrics spread intact.
+
+**Prompt:** Fix `toChannelSummary` but keep object destructuring.
+
+**What changed:**
+- `features/ai-tools/utils/buildExecutiveSummaryData.ts` — destructure updated to `{ campaigns, id, name, ...metrics }`; return object sets `channel: name` explicitly before spreading `metrics`
+
+**Key decisions & why:**
+- `name` extracted explicitly from the destructure — prevents it leaking into the spread as a wrong-named field while allowing the alias `channel: name` in the return literal
+
+
+## [#262] Refactor executive-summary-analysis.ts — sorting, naming, complexity
+**Type:** refactor
+
+**Summary:** Replaced the opaque `n()` helper with `toFinite`, eliminated redundant field recomputation by reading `efficiencyGap` directly from typed inputs, and extracted multi-condition predicates into named functions to bring all cyclomatic complexity scores into the "cool" range.
+
+**Brainstorming:** The file had several issues: `n()` was a single-letter function name that violated the naming convention; `getInefficientChannels` was recomputing `efficiencyGap` manually even though `ChannelSummary` already carries it via `ShareEfficiency`; `getBottomCampaigns` was recomputing `gapA/gapB` inline for the same reason; `n()` was wrapping fields that are typed as `number` (never null); and inline multi-condition filter predicates in `getInefficientChannels` and `getScalingCandidates` pushed cyclomatic complexity to 7–10. `sortWithNullsLast` from `sorting.ts` was considered but does not fit — it requires a direction parameter and puts nulls last, whereas the analysis sorts either filter out nulls first or treat null as 0 for ranking purposes, making `toFinite` the correct tool for the one remaining nullable field (roi in bottom-campaign secondary sort).
+
+**Prompt:** Refactor executive-summary-analysis. Since we know the data types we can improve sorting functions in there, replace the use of the n function with something more meaningful if necessary. If you can use functions from utils for sorting do that.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — `n()` renamed to `toFinite` with an explanatory comment; `getTopCampaigns` filter and sort use direct field access (`campaign.budget`, `campaign.revenue`, `campaign.conversions`, `b.roi!`, `b.revenue`); `getBottomCampaigns` sort uses `b.efficiencyGap - a.efficiencyGap` directly; `getInefficientChannels` reordered to filter-then-map (more efficient), reads `channel.efficiencyGap` directly; `getScalingCandidates` broken into `hasCampaignScalingData`, `campaignOutperformsPortfolio`, `isChannelScalingCandidate`, `toCampaignScalingSignals`, `toChannelScalingSignals` — all predicates and pipelines extracted so the exported function is a single merge+sort; `getConcentrationFlag` sort uses `b.revenue - a.revenue` directly, `??` replaces `n()` for the optional chained access
+
+**Key decisions & why:**
+- `toFinite` retained (not inlined) — still needed for `roi` in `getBottomCampaigns` secondary sort and for coercing `channel.roi` in `getInefficientChannels` map; a named helper is clearer than repeated ternaries
+- `sortWithNullsLast` not used — its API (`dir: 1 | -1`) is designed for UI table sorts; analysis sorts are multi-key domain sorts where null handling semantics differ per call site
+- filter-before-map in `getInefficientChannels` — avoids constructing signal objects for channels that will be discarded; possible because `efficiencyGap` is already present on `ChannelSummary`
+- Predicate extraction driven by complexity linter — each extracted function landed at complexity ≤ 5; `getScalingCandidates` itself dropped to complexity 3
+
+
+## [#263] Implement dynamic thresholds for campaign filtering
+**Type:** refactor
+
+**Summary:** Replaced static MIN_REVENUE and MIN_CONVERSIONS constants with a getDynamicThresholds function that scales floor values relative to the actual portfolio size, so small portfolios are not over-filtered and large portfolios use proportionally meaningful cutoffs.
+
+**Brainstorming:** Static floors (100 revenue, 3 conversions) work poorly at the extremes: a portfolio with 5 campaigns and €2000 total revenue would have almost every campaign exceed the €100 floor, giving no useful signal; a portfolio with 50 campaigns and €500k revenue would need a higher floor to avoid surfacing micro-campaigns. The user-provided formula — 2% of portfolio total, with absolute floor (€50 / 2 conversions) — scales naturally. The thresholds are needed in two places: getTopCampaigns (has the campaigns array directly) and hasCampaignScalingData (called per-campaign from toCampaignScalingSignals). The cleanest approach is to compute once per call site and pass as a DynamicThresholds parameter, avoiding global state and keeping each function pure.
+
+**Prompt:** implement dynamic thresholds — getDynamicThresholds(campaigns) returning { minRevenue: Math.max(totalRevenue * 0.02, 50), minConversions: Math.max(totalConversions * 0.02, 2) }
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — removed MIN_REVENUE and MIN_CONVERSIONS constants; added DynamicThresholds interface and getDynamicThresholds function; getTopCampaigns computes thresholds from its input and uses minRevenue/minConversions in the filter; hasCampaignScalingData accepts a DynamicThresholds parameter (destructured inline); toCampaignScalingSignals computes thresholds and passes to hasCampaignScalingData; remaining single-letter variable c fixed to campaign in getExecutiveSummaryDerivedInputs
+
+**Key decisions & why:**
+- Compute per call site, not once at the top — both getTopCampaigns and toCampaignScalingSignals receive the same campaigns array, so the result is identical; avoids threading thresholds through every function signature in the call chain
+- DynamicThresholds interface defined locally — only used within this module; no need to export to types file
+- hasCampaignScalingData receives thresholds as a parameter — it does not have access to the full campaigns array, so the caller (toCampaignScalingSignals) computes and passes them
+
+
+## [#264] ExecutiveSummaryResponse extends ExecutiveSummaryOutput
+**Type:** refactor
+
+**Summary:** Replaced the inline duplicate field declarations on ExecutiveSummaryResponse with an intersection of ExecutiveSummaryOutput, eliminating redundant inline unions that already had named types.
+
+**Brainstorming:** ExecutiveSummaryResponse in types/index.ts was repeating every field from ExecutiveSummaryOutput verbatim — including literal unions ("Excellent" | "Good" | ...) that already exist as HealthLabel, InsightType, ActionUrgency in analysis types. ExecutiveSummaryOutput is the canonical shape; the response type only adds model and timestamp. Correlation stays in types/index.ts because BudgetOptimizerResponse still uses it.
+
+**Prompt:** ExecutiveSummaryResponse should extend ExecutiveSummaryOutput. Clean up the rest.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — added import of ExecutiveSummaryOutput; ExecutiveSummaryResponse replaced with ExecutiveSummaryOutput & { model?: AiModel; timestamp?: number }; all inline field duplicates removed
+
+**Key decisions & why:**
+- Intersection type rather than interface extends — ExecutiveSummaryResponse is a type alias (not interface), so & is the correct composition form
+- Correlation retained — still used by BudgetOptimizerResponse; removing it would break the optimizer types
+
+
+## [#265] Rename ExecutiveSummaryInput to SummaryAnalysis
+**Type:** refactor
+
+**Summary:** Renamed ExecutiveSummaryInput to SummaryAnalysis (and its builder to buildSummaryAnalysis) across all files that reference it — arrived at the final name after discarding "Insights" as too output-oriented.
+
+**Brainstorming:** "Input" was a leaky implementation detail describing the type's role as a prompt argument rather than what it represents. "Insights" was considered but rejected — it implies AI output. "SummaryAnalysis" better reflects that this is computed analysis data (portfolio summary, derived signals, top/bottom campaigns) assembled from campaign/channel data and used as structured input to the AI prompt. Vue component references to ExecutiveSummaryInsights.vue were left untouched throughout — that is a separate UI component for rendering AI response insights, unrelated to this type.
+
+**Prompt:** Rename ExecutiveSummaryInput to ExecutiveSummaryInsights. / Rename ExecutiveSummaryInsights to SummaryAnalysis.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.types.ts` — interface renamed to SummaryAnalysis
+- `app/src/features/ai-tools/utils/buildExecutiveSummaryData.ts` — type import and function renamed to buildSummaryAnalysis
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — type import and parameter type updated
+- `app/src/stores/aiAnalysisStore.ts` — type import, function import, Map type param, return type, cast, and call site updated
+
+**Key decisions & why:**
+- "SummaryAnalysis" chosen over "Insights" — "Insights" reads as AI output; this type is prompt input (computed analysis)
+- Builder renamed to buildSummaryAnalysis for consistency with the type name
+- Vue component ExecutiveSummaryInsights.vue not renamed — unrelated to the analysis data type
+
+
+## [#266] Move summary assembly into executive-summary-analysis and rename to computeSummaryAnalysis
+**Type:** refactor
+
+**Summary:** Moved the `buildSummaryAnalysis` function and its helpers out of the feature-layer `buildExecutiveSummaryData.ts` file into `common/analysis/executive-summary-analysis.ts`, renamed it `computeSummaryAnalysis`, and deleted the now-empty utility file.
+
+**Brainstorming:** `buildExecutiveSummaryData.ts` was a thin wrapper that converted raw store data into `SummaryAnalysis`. Its helpers (`computeChannelStatus`, `toCampaignSummary`, `toChannelSummary`) and the assembly function belong logically in the same module as the derived-signal computation already in `executive-summary-analysis.ts`. Keeping them separate created an artificial split: `common/analysis/` had the analysis logic while a feature-layer utils file had the data shaping — both operating on the same types. Consolidating into `common/analysis/` makes the module self-contained and removes the cross-layer dependency. The rename from `build` to `compute` aligns with the `compute*` naming convention already used throughout `common/utils/`.
+
+**Prompt:** Move all functions from `buildExecutiveSummaryData.ts` into `executive-summary-analysis.ts`, rename `buildSummaryAnalysis` to `computeSummaryAnalysis`, update the store import, and delete the file.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — added imports for `CampaignPerformance`, `PortfolioKPIs`, `PortfolioScope`, `Channel`, `computeShareEfficiency`, `PortfolioSummary`, `SummaryAnalysis`, `SummaryMetricStatus`; appended `computeChannelStatus`, `toCampaignSummary`, `toChannelSummary`, and `computeSummaryAnalysis` (exported)
+- `app/src/stores/aiAnalysisStore.ts` — updated import from `buildSummaryAnalysis` at `buildExecutiveSummaryData` to `computeSummaryAnalysis` at `common/analysis/executive-summary-analysis`; updated call site
+- `app/src/features/ai-tools/utils/buildExecutiveSummaryData.ts` — deleted
+- `CLAUDE.md` — removed deleted file from architecture; updated `executive-summary-analysis.ts` description; updated status and campaign-performance.ts description
+
+**Key decisions & why:**
+- Moved into `common/analysis/` not `common/utils/` — this function is specific to the executive summary analysis domain, not a generic utility
+- Rename to `compute` prefix — consistent with `computePerformanceMetrics`, `computeShareEfficiency`, `computePortfolioKPIs` already in `common/utils/`
+- No intermediate barrel needed — `aiAnalysisStore` imports directly from `common/analysis/executive-summary-analysis`
+
+
+## [#267] Update executive-summary-analysis imports and mappings for restructured signal types
+**Type:** fix
+
+**Summary:** Moved `ScalingCandidateSignal` import to `campaign.ts` (its new home) and added the required `efficiencyGap` field to both `toCampaignScalingSignals` and `toChannelScalingSignals` mappers after `ScalingCandidateSignal` was updated to extend `ShareEfficiency`.
+
+**Brainstorming:** The types restructure moved `ScalingCandidateSignal` from `executive-summary-analysis.types.ts` to `campaign.ts` and changed it to extend `ShareEfficiency` — making `efficiencyGap` a required field. The analysis file's import was still pointing to the old location, and both mapping functions were missing `efficiencyGap` in their object literals. Two targeted fixes: correct the import source and add the missing field in both mappers.
+
+**Prompt:** Read the updates in the types and update executive-summary-analysis.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.ts` — moved `ScalingCandidateSignal` from `./executive-summary-analysis.types` import to `../types/campaign` import; added `efficiencyGap: campaign.efficiencyGap` to `toCampaignScalingSignals` mapper; added `efficiencyGap: channel.efficiencyGap` to `toChannelScalingSignals` mapper
+
+**Key decisions & why:**
+- `efficiencyGap` is already present on both `CampaignSummary` (via `ShareEfficiency`) and `ChannelSummary` (via `ShareEfficiency`) — no computation needed, just a direct field read
+
+
+## [#268] Extract businessContext from SummaryAnalysis into separate prompt parameter
+**Type:** refactor
+
+**Summary:** Removed `businessContext` from `SummaryAnalysis` and added it as an explicit optional parameter to `generateExecutiveSummaryPrompt`, matching the same pattern used by `generateBudgetOptimizationPrompt`.
+
+**Brainstorming:** `SummaryAnalysis` is a computed data structure built from campaign and channel metrics — it describes portfolio state, not the user's business configuration. `businessContext` is caller-supplied metadata that informs prompt interpretation but is not derived from the data. Keeping it inside `SummaryAnalysis` mixed two different concerns. Making it a separate prompt parameter keeps the data type pure and aligns with how the budget optimizer already handles it.
+
+**Prompt:** `generateExecutiveSummaryPrompt` businessContext should be an additional input — implement this.
+
+**What changed:**
+- `app/src/common/analysis/executive-summary-analysis.types.ts` — removed `businessContext?: BusinessContext` from `SummaryAnalysis`; removed now-unused `BusinessContext` import
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — added `import type { BusinessContext }` from types; added `businessContext?: BusinessContext` as third parameter; updated `getBusinessContextBlock` call to use the standalone parameter instead of `input.businessContext`
+
+**Key decisions & why:**
+- Parameter is optional — no call sites currently pass business context, and the prompt handles `undefined` gracefully via `getBusinessContextBlock`
+- Store call site unchanged — omitting the optional third arg is valid; it will be wired when the UI provides business context input
+
+
+## [#269] Refactor Budget Optimizer to use computeBudgetOptimizerAnalysis and BudgetOptimizerOutput
+**Type:** refactor
+
+**Summary:** Replaced the old flat `BudgetOptimizerData` pipeline with a `computeBudgetOptimizerAnalysis` function in `common/analysis/`, mirroring the executive summary pattern exactly; updated the AI response shape to the new camelCase `BudgetOptimizerOutput` (summary + recommendations with fromCampaign/toCampaign/budgetShift/expectedImpact/confidence/executionRisk); removed four obsolete UI section components (TopPerformers, Underperformers, QuickWins, Risks).
+
+**Brainstorming:** The executive summary already had a clean pattern: domain data computation in `common/analysis/`, a typed analysis struct with derivedSignals, a prompt function that takes that struct, and slim UI components. The budget optimizer was still using a flat `buildBudgetOptimizerData` util and a snake_case AI response shape from a different era. The goal was to make both tabs structurally identical: same layer boundaries, same data-building pattern, same camelCase response convention. The old response had top_performers, underperformers, quick_wins, correlations, and risks — all removed in favour of a minimal summary + recommendations schema that the AI can actually produce reliably.
+
+**Prompt:** In common/analysis/budget-optimization-analysis build the BudgetOptimizerAnalysis data in a similar way as the executive-summary-analysis. Update types and UI and use BudgetOptimizerOutput and budget-optimization-prompt2. Make sure scope and businessContext is handled the same way in the prompt as in the executive-summary-prompt2.
+
+**What was built / What changed:**
+- `app/src/common/analysis/budget-optimization-analysis.types.ts` — fully rewritten: ConfidenceLevel/ExecutionRisk, InefficientCampaignSignal, BudgetScalingCandidate, TransferCandidate, BudgetOptimizerAnalysis
+- `app/src/common/analysis/budget-optimization-analysis.ts` — written: getInefficientCampaigns, getBudgetScalingCandidates, getTransferCandidates, computeBudgetOptimizerAnalysis
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt2.ts` — rewritten: uses BudgetOptimizerAnalysis as input type, local getScopeBlock(isFiltered), getBusinessContextBlock(businessContext), camelCase OUTPUT_SCHEMA (summary + recommendations[])
+- `app/src/features/ai-tools/prompts/index.ts` — updated: exports generateBudgetOptimizationPrompt from budget-optimization-prompt2
+- `app/src/features/ai-tools/types/index.ts` — updated: BudgetOptimizerResponse = BudgetOptimizerOutput & {model?,timestamp?}; imports BudgetOptimizerOutput from executive-summary.types
+- `app/src/stores/aiAnalysisStore.ts` — updated: uses computeBudgetOptimizerAnalysis; dataCache typed as BudgetOptimizerAnalysis|SummaryAnalysis; buildPrompt calls generateBudgetOptimizationPrompt(data, isFiltered)
+- `app/src/features/ai-tools/utils/analysis-badge-variants.ts` — added executionRiskVariant (low→success, medium→warning, high→danger)
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — simplified orchestrator: renders Overview + Recommendations only; uses response.summary (not executive_summary); no period prop
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — redesigned: fromCampaign→toCampaign header with arrow, budgetShift, expectedImpact (revenueChange/conversionChange/roiEstimate), confidence + executionRisk badges; v-if on length
+- `app/src/features/ai-tools/mocks/budget-optimizer-mocks.ts` — rewritten: 5 camelCase BudgetOptimizerResponse mocks (aggressive reallocation, conservative, seasonal pivot, channel consolidation, no strong opportunity)
+- Deleted: BudgetOptimizationTopPerformers.vue, BudgetOptimizationUnderperformers.vue, BudgetOptimizationQuickWins.vue, BudgetOptimizationRisks.vue
+
+**Key decisions & why:**
+- `computeBudgetOptimizerAnalysis` takes `(campaigns, channels, kpis, scope)` — same signature as `computeSummaryAnalysis` so the store's `getOrBuildData` stays symmetric
+- `ConfidenceLevel` and `ExecutionRisk` canonical home is `budget-optimization-analysis.types.ts` — `executive-summary.types.ts` already imports them from there
+- Old `budget-optimization-prompt.ts` kept as dead-but-compilable code so its dependent legacy types in `types/index.ts` remain valid
+- Mock 5 changed from "growth expansion" to "no strong opportunity" (empty recommendations) — exercises the v-if guard on the Recommendations component and matches the prompt's instruction to prefer an empty array over weak suggestions
+- `executionRiskVariant` uses the same low/medium/high→success/warning/danger mapping as confidence to keep the badge language consistent
+
+
+## [#270] Create portfolio-analysis module and campaignStore getter
+**Type:** refactor
+
+**Summary:** Introduced `common/portfolio-analysis/` as a self-contained analysis module that unifies both AI tab data computation into a single `PortfolioAnalysis` structure, exposed as a `portfolioAnalysis` computed getter on `campaignStore`.
+
+**Brainstorming:** Both `computeSummaryAnalysis` and `computeBudgetOptimizerAnalysis` duplicate core mapping logic (`toCampaignSummary`, `toChannelSummary`, `computeChannelStatus`) and diverge only in their `derivedSignals`. The goal is a single authoritative computation that both AI prompt functions will eventually consume. The unified `derivedSignals` disambiguates the `scalingCandidates` name collision: `scalingOpportunities` (mixed campaign+channel, top 5 by ROI — for summary) vs `budgetScalingCandidates` (campaign-only with capacity data — for budget optimizer). The module imports only from `common/types/` — no dependency on the old `analysis/` files so it can become the sole source of truth when cleanup happens. Existing analysis files are left in place (no cleanup in this phase). The `filteredChannels` boolean is passed as a fifth parameter since only the store knows `selectedChannelsIds.length`.
+
+**Prompt:** Create a portfolio-analysis folder in common/ with types.ts (self-contained, no imports from old analysis files), utils.ts (all signal computation and mapping helpers), and portfolio-analysis.ts (assembly function). Add portfolioAnalysis as a computed getter in campaignStore. No prompt changes, no cleanup of existing files.
+
+**What was built:**
+- `app/src/common/portfolio-analysis/types.ts` — `PortfolioAnalysis` interface; all signal types defined here (InefficientChannelSignal, InefficientCampaignSignal, BudgetScalingCandidate, TransferCandidate, ConcentrationLevel, ConcentrationFlagSignal, CorrelationSignal); imports only from `common/types/campaign`
+- `app/src/common/portfolio-analysis/utils.ts` — all mapping and signal computation: toCampaignSummary, toChannelSummary, computeChannelStatus, toFinite, getDynamicThresholds, getTopCampaigns, getBottomCampaigns, getInefficientChannels, getInefficientCampaigns, getScalingOpportunities, getBudgetScalingCandidates, getTransferCandidates, getConcentrationFlag, getCorrelations
+- `app/src/common/portfolio-analysis/portfolio-analysis.ts` — `computePortfolioAnalysis(campaigns, channels, kpis, scope, filteredChannels)` → `PortfolioAnalysis`; thin assembly only, delegates to utils
+- `app/src/stores/campaignStore.ts` — added `portfolioAnalysis` computed getter calling `computePortfolioAnalysis` with filteredCampaigns, selectedChannels, kpis, portfolioScope, and `selectedChannelsIds.length > 0`
+
+**Key decisions & why:**
+- `types.ts` imports nothing from `common/analysis/` — makes the module independently deletable and avoids circular dependency risk when the old files are eventually removed
+- `scalingOpportunities` vs `budgetScalingCandidates` naming — summary needs a mixed campaign+channel narrative list; budget optimizer needs campaign-only operational data with capacity fields; different names prevent confusion when both appear in the same `derivedSignals` object
+- `filteredChannels` as a fifth parameter — the boolean is derived from `selectedChannelsIds.length` which is store state; the pure function has no access to it
+- Old `analysis/` files left intact — prompt integration is a separate phase; no cleanup until both prompts are migrated
+
+
+## [#271] Add campaign and channel classification with four mutually exclusive groups
+**Type:** refactor
+
+**Summary:** Replaced `topCampaigns`/`bottomCampaigns` in `PortfolioAnalysis` with a four-bucket classification system (`CampaignGroups`, `ChannelGroups`) extracted into dedicated files, adding Opportunity and Watch categories with documented marketing rationale.
+
+**Brainstorming:** The existing top/bottom split was too coarse — it missed campaigns that are under-invested (Opportunity) or show contradictory signals worth monitoring (Watch). "High variance" from the requirement cannot be computed from a static snapshot (no time series), so Watch was redefined as campaigns/channels with specific contradictory signals detectable in a single data point: funnel leak (high CTR + low CVR vs dataset median) or positive-but-underperforming ROI. Mutual exclusivity is enforced via a priority cascade (Top→Opportunity→Bottom→Watch for campaigns; Strong→Opportunity→Weak→Watch for channels), so each item appears in exactly one bucket. Small dataset handling is per-item — no minimum size guards — so 1, 2, or 3 campaigns/channels are classified correctly with empty buckets where nothing qualifies. All numeric thresholds are centralised in a single CLASSIFY_THRESHOLDS constant in classify-utils.ts to serve as the natural seam for future user configurability. Comments in each predicate explain the marketing reasoning behind the condition, not just what the code does. The user requested splitting classify into one file per entity type, with a shared utils file only for genuinely shared helpers (getMedian, getDynamicThresholds, CLASSIFY_THRESHOLDS). channels: ChannelSummary[] is kept as-is on PortfolioAnalysis (for table enumeration) alongside the new channelGroups.
+
+**Prompt:** Refine the top/bottom campaign and channel classification in portfolio-analysis. Add Opportunity (under-invested, efficient) and Watch (contradictory signals: funnel leak or positive underperforming ROI) categories. Enforce mutual exclusivity via priority cascade. Remove minimum dataset size guards — classify per-item, allow empty buckets. Extract into classify-campaigns.ts, classify-channels.ts, and classify-utils.ts. Add inline documentation explaining the marketing rationale. All thresholds in one CLASSIFY_THRESHOLDS constant for future configurability. Keep channels: ChannelSummary[] on PortfolioAnalysis; add channelGroups alongside it.
+
+**What changed:**
+- `app/src/common/portfolio-analysis/classify-utils.ts` (new) — `CLASSIFY_THRESHOLDS` (all decision boundaries with full marketing rationale comments); `getMedian(values)`; `getDynamicThresholds(campaigns)` (moved from utils.ts)
+- `app/src/common/portfolio-analysis/classify-campaigns.ts` (new) — `classifyCampaigns(campaigns, portfolioRoi) → CampaignGroups`; priority cascade Top→Opportunity→Bottom→Watch; Watch detects funnel leak (CTR > medianCtr×1.2 AND CVR < medianCvr×0.8) or underperforming positive ROI (roi < portfolioRoi×0.9); each bucket sorted most-actionable-first
+- `app/src/common/portfolio-analysis/classify-channels.ts` (new) — `classifyChannels(channels, portfolioRoi) → ChannelGroups`; priority cascade Strong→Opportunity→Weak→Watch; Watch at channel level interpreted as structural audience/format issue rather than individual campaign execution
+- `app/src/common/portfolio-analysis/types.ts` — added `CampaignGroups` and `ChannelGroups` interfaces with JSDoc; `PortfolioAnalysis` replaces `topCampaigns`/`bottomCampaigns` with `campaignGroups: CampaignGroups` and adds `channelGroups: ChannelGroups`
+- `app/src/common/portfolio-analysis/utils.ts` — removed `getDynamicThresholds`, `getTopCampaigns`, `getBottomCampaigns`; imports `getDynamicThresholds` from classify-utils; removed unused `MIN_BUDGET_SHARE_BOTTOM` constant
+- `app/src/common/portfolio-analysis/portfolio-analysis.ts` — imports `classifyCampaigns` + `classifyChannels`; removes `getTopCampaigns`/`getBottomCampaigns` calls; updated empty-guard return and full return shape
+
+**Key decisions & why:**
+- Watch = specific contradictory signals, not catch-all — gives the category a defined, actionable meaning rather than being a residual bin; campaigns with no signal stay unclassified
+- 1.2×/0.8× funnel leak thresholds — symmetric 20% deviation from median; meaningful above statistical noise in marketing data; AND requirement (both conditions together) further reduces false positives
+- watchRoiFactor 0.9 (10% buffer) — campaigns near the portfolio average are normal performers; the buffer ensures only a consistent, meaningful lag fires the signal
+- Single CLASSIFY_THRESHOLDS object — all boundaries in one place; the natural seam if thresholds become user-configurable in the future
+- classify-utils.ts exports getDynamicThresholds — avoids duplication between classify-campaigns.ts (Top gate) and utils.ts (scaling signal filtering); utils.ts imports it from there
+- Kept channels: ChannelSummary[] — flat list needed for table enumeration and raw channel access; channelGroups is additive, not a replacement
+
+
+## [#272] Simplify classifiers to single-pass loop and extract shared getFunnelMedians
+**Type:** refactor
+
+**Summary:** Replaced the four-pass loop pattern in both classifier functions with a single `else if` cascade, and extracted the duplicated `getFunnelMedians` helper into `classify-utils.ts`.
+
+**Brainstorming:** Both `classifyCampaigns` and `classifyChannels` used four separate `for` loops — one per priority level — plus a `Set` to track assigned items. The `else if` cascade achieves identical mutual exclusivity in a single pass: each item hits the first matching branch and falls through to nothing if no predicate matches. The `Set` becomes unnecessary. Additionally, both classifier files contained an identical `getFunnelMedians` function; with structural typing (`{ ctr: number | null; cvr: number | null }`) it can live in `classify-utils.ts` and serve both without coupling to either concrete type.
+
+**Prompt:** classifyChannels is over complicated. Refactor it to loop through channels once only. Check if there are functions we can extract and re-use between classification files and utils in portfolio-analysis.
+
+**What changed:**
+- `app/src/common/portfolio-analysis/classify-utils.ts` — added `getFunnelMedians(items: Array<{ ctr, cvr }>) → { medianCtr, medianCvr }`; shared by both classifiers
+- `app/src/common/portfolio-analysis/classify-campaigns.ts` — removed local `getFunnelMedians`; imports shared one from classify-utils; collapsed four loops + Set into single `else if` cascade
+- `app/src/common/portfolio-analysis/classify-channels.ts` — same refactor: removed local `getFunnelMedians`, imports shared one, single-pass loop
+
+**Key decisions & why:**
+- `else if` over `Set` tracking — mutual exclusivity is guaranteed by the branch structure itself; no auxiliary data structure needed; simpler to read and reason about
+- Structural typing for `getFunnelMedians` — accepts `Array<{ ctr: number | null; cvr: number | null }>` rather than a union of `CampaignSummary | ChannelSummary`; avoids coupling the shared helper to either concrete type; both types satisfy the shape
+- Complexity lint hint acknowledged but not acted on — the hint fires on `isWatch` (many `&&` conditions) which is already split into two named booleans (`hasFunnelLeak`, `hasUnderperformingRoi`); extracting further would reduce clarity rather than improve it
+
+
+## [#273] Refactor portfolio analysis, store computeds, and AI prompt inputs
+**Type:** refactor
+
+**Summary:** Consolidated `computePortfolioAnalysis` to a 2-param function that derives everything internally, removed `kpis` as a separate store computed, eliminated `dataCache` from `aiAnalysisStore`, and wired both prompt generators to accept `PortfolioAnalysis` directly — removing all intermediate analysis adapter types.
+
+**Brainstorming:** The previous design had several redundancies: `campaignStore` computed `kpis`, `portfolioScope`, and `portfolioAnalysis` separately despite significant overlap; `aiAnalysisStore` maintained a `Map<string, BudgetOptimizerAnalysis|SummaryAnalysis>` data cache that duplicated what Vue's `computed` already provides; prompt generators accepted bespoke adapter types (`BudgetOptimizerAnalysis`, `SummaryAnalysis`) that were built by separate analysis functions in `common/analysis/`. The simplification: `computePortfolioAnalysis(selectedChannels, selectedChannelsIds)` derives `kpis`, `scope`, `portfolio`, campaign/channel classifications, and all signals internally; `campaignStore.portfolioAnalysis` Vue computed replaces the data cache entirely (memoized by Vue, invalidated only on channel selection change); prompt generators accept `PortfolioAnalysis` and curate a local `promptInput` from the relevant fields — no adapter types needed. `PortfolioScope` kept for display and passed as a prop into both tab orchestrators (not read from store directly inside them). `channels: string[]` added to `PortfolioScope` for components that need the full portfolio channel list regardless of current filter. `v-if="response"` guard added to both tab slot contents to eliminate non-null assertions and prevent reactive timing issues. Budget optimization display bug was also root-caused to missing null guard on slot content — fixed by the same `v-if` addition.
+
+**Prompt:** portfolioAnalysis in campaignStore should accept only 2 inputs — selectedChannels and selectedChannelsIds. Move all calculations into computePortfolioAnalysis. Remove portfolioScope and kpis from the store as separate computeds and update consumers. aiAnalysisStore should not maintain data in a Map — create a function to get portfolioAnalysis and map it to the prompt input. All related models and functions should live in ai-tools/ai-analysis. No single-character variables. Keep portfolioScope for display, add channels property, pass as prop to components. Fix budget optimization panel display. Use PortfolioAnalysis as direct input to prompt generators.
+
+**What changed:**
+- `app/src/common/types/campaign.ts` — added `channels: string[]` to `PortfolioScope` (full portfolio channel names, not filtered)
+- `app/src/common/portfolio-analysis/portfolio-analysis.ts` — rewritten to 2-param signature `(selectedChannels, selectedChannelsIds)`; all derivations (kpis, scope, portfolio, classifications, signals) computed internally; imports `computePortfolioKPIs` from campaign-performance utils
+- `app/src/stores/campaignStore.ts` — removed `kpis` computed entirely; `portfolioScope` now includes `channels` field; `portfolioAnalysis` calls `computePortfolioAnalysis(selectedChannels.value, selectedChannelsIds.value)` only
+- `app/src/features/dashboard/DashboardView.vue` — `store.kpis` → `store.portfolioAnalysis.portfolio` in DashboardKpis and DashboardCharts props
+- `app/src/stores/aiAnalysisStore.ts` — removed `dataCache` from `createTabState()`; removed `getOrBuildData()` function; removed imports of `computeBudgetOptimizerAnalysis`, `computeSummaryAnalysis`, `BudgetOptimizerAnalysis`, `SummaryAnalysis`; `buildPrompt()` now reads `campaignStore.portfolioAnalysis` directly; all single-char vars renamed (`t` → `tabState`, `d` → `display`, `e` → `error`)
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt2.ts` — input type changed from `BudgetOptimizerAnalysis` to `PortfolioAnalysis`; curates `promptInput` locally; added CAMPAIGN GROUP CONTEXT block
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — input type changed from `SummaryAnalysis` to `PortfolioAnalysis`; curates `promptInput` locally; added CAMPAIGN GROUP CONTEXT and CHANNEL GROUP CONTEXT blocks
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — imports `useCampaignStore`; passes `:scope="campaignStore.portfolioScope"` to both tab components
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — added `scope: PortfolioScope` prop; removed `useCampaignStore`; slot content wrapped in `<template v-if="response">`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — added `scope: PortfolioScope` prop; removed `useCampaignStore`; slot content wrapped in `<template v-if="response">`
+
+**Key decisions & why:**
+- Vue `computed` replaces `dataCache` Map — the store's `portfolioAnalysis` computed is already memoized by Vue and invalidated only when `selectedChannels` or `selectedChannelsIds` change; a separate Map cache was redundant and added complexity
+- `PortfolioScope` kept as a store computed — it serves display purposes (campaign/channel counts, filter summaries) independent of the analysis computation; passing it as a prop into tab components keeps those components free of direct store reads
+- Prompt generators curate `promptInput` locally — each tab's AI context is different; the curation belongs inside the prompt function, not in an adapter layer; this removes the need for `BudgetOptimizerAnalysis` and `SummaryAnalysis` types entirely
+- `v-if="response"` over non-null assertion — the slot is only rendered when `hasResult` is true, but the `!` assertions were fragile against reactive timing; `v-if` makes the guard explicit in the template and eliminates the assertions cleanly
+- `scope.campaigns === scope.selectedCampaigns` inside `computePortfolioAnalysis` — the analysis scope is defined by what is selected; the full portfolio campaign list (needed by `PortfolioScope` for display) is maintained separately in the store's `portfolioScope` computed from `portfolioChannels`
+
+
+## [#274] Delete common/analysis, buildBudgetOptimizerData, and inline orphaned types
+**Type:** refactor
+
+**Summary:** Removed the dead `common/analysis/` folder (4 files) and `buildBudgetOptimizerData.ts`, inlined the 5 AI response literal types into `executive-summary.types.ts`, and removed the duplicate `ConfidenceLevel` from `ai-tools/types/index.ts`.
+
+**Brainstorming:** With `PortfolioAnalysis` now the direct input to both prompt generators, the intermediate analysis layer in `common/analysis/` became fully dead code — the function files were never called, and the `.types.ts` files were only imported for 5 string union literals (`ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency`). Those 5 literals belong in the AI feature, not in `common`, since they describe AI response output shapes. `buildBudgetOptimizerData.ts` was similarly dead — not called anywhere active (the old `budget-optimization-prompt.ts` imports only the type `BudgetOptimizerData`, not the function). `common/utils/` was confirmed correct where it is: all 5 files are shared between dashboard and portfolio-analysis layers with no clear migration target. The `ConfidenceLevel` duplicate was removed from `types/index.ts` — its use in `BudgetOptimizerCampaign.spendTier` replaced with an inlined `'high' | 'medium' | 'low'` literal.
+
+**Prompt:** Clean up: without touching prompts folder, check if we need common/analysis folder; move related interfaces and functions to ai-analysis feature; check which of common/utils can move to portfolio-analysis; check if we need buildBudgetOptimizerData.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/types/executive-summary.types.ts` — removed imports from `common/analysis`; inlined `ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency` as local type declarations; cleaned up comments; standardised quote style
+- `app/src/features/ai-tools/types/index.ts` — removed `ConfidenceLevel` type declaration; replaced `Lowercase<ConfidenceLevel>` in `BudgetOptimizerCampaign.spendTier` with `'high' | 'medium' | 'low'`
+- `app/src/common/analysis/` — deleted entirely (budget-optimization-analysis.types.ts, budget-optimization-analysis.ts, executive-summary-analysis.types.ts, executive-summary-analysis.ts)
+- `app/src/features/ai-tools/utils/buildBudgetOptimizerData.ts` — deleted
+
+**Key decisions & why:**
+- Inline literal types rather than re-export from types/index.ts — `executive-summary.types.ts` is imported by `types/index.ts`, so the reverse import would be circular; inlining avoids the dependency and keeps the types next to the interfaces that use them
+- `common/utils/` stays unchanged — `campaign-performance.ts` is used by both `portfolio-analysis` and dashboard components; `formatters.ts`/`sorting.ts` are dashboard-facing; `campaign-channel.ts` is store-facing; `math.ts` is foundational; none have a clear home in `portfolio-analysis`
+- Legacy `BudgetOptimizerData`/`BudgetOptimizerCampaign`/`BudgetOptimizerChannel` kept in `types/index.ts` — the old `budget-optimization-prompt.ts` imports them; removing them would break the legacy file which is intentionally kept compilable
+
+
+## [#275] Merge ai-analysis/types into ai-tools/types/index.ts
+**Type:** refactor
+
+**Summary:** Moved all types from `ai-analysis/types/executive-summary.types.ts` into the central `ai-tools/types/index.ts`, deleted the `ai-analysis/types/` folder, and replaced the duplicate `Correlation` type with `ExecutiveCorrelation`.
+
+**Brainstorming:** `ai-analysis/types/` was a two-file folder (`executive-summary.types.ts` + barrel `index.ts`) with a single external consumer: `ai-tools/types/index.ts` imported `BudgetOptimizerOutput` and `ExecutiveSummaryOutput` from it. With `common/analysis/` already deleted and both output type trees belonging to the same feature, maintaining a separate subfolder added indirection with no benefit. The `Correlation` type in `types/index.ts` (`{ finding: string; implication: string }`) was structurally identical to `ExecutiveCorrelation` in `executive-summary.types.ts`; after merging, only `ExecutiveCorrelation` is needed. `AnalysisCorrelations.vue` was the one active consumer of `Correlation` — updated to `ExecutiveCorrelation`.
+
+**Prompt:** Clean up types in ai-tools/types and move all executive-summary.types to index since it does not make sense anymore.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — removed import from `ai-analysis/types/executive-summary.types`; inlined all response literal types, output interfaces, and response types directly; removed `Correlation` type (replaced by `ExecutiveCorrelation`); reorganised with section comments
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue` — updated import from `Correlation` to `ExecutiveCorrelation`
+- `app/src/features/ai-tools/ai-analysis/types/` — deleted entirely (executive-summary.types.ts + index.ts)
+
+**Key decisions & why:**
+- All types in one file rather than re-exported from a subfolder — the subfolder only existed to group output types; with `common/analysis/` gone and the types folded into the feature's single index, the grouping adds no value
+- `ExecutiveCorrelation` kept over `Correlation` — `ExecutiveCorrelation` is the more specific name and comes from the response schema; `Correlation` was a generic alias with no added meaning
+
+
+## [#276] Mark upload-replace flow as complete in CLAUDE.md
+**Type:** update
+
+**Summary:** Removed the stale "Upload-replace flow is next" placeholder from the Status section and replaced it with an accurate description of what was built.
+
+**Brainstorming:** The upload-replace flow was already fully implemented (`ReplaceDataModal`, `useUploadModal` composable, header button wiring in `AppShell`) and marked `[x]` in the feature checklist. The only stale reference was the trailing sentence in the Status paragraph. No code changes needed — documentation-only update.
+
+**Prompt:** This has been completed, update CLAUDE.md respectively.
+
+**What changed:**
+- `CLAUDE.md` — replaced "Upload-replace flow is next." with a concise description of the implemented flow: header Upload CSV button → `ReplaceDataModal` confirmation when data exists → confirmed opens `UploadModal`; `useUploadModal` composable owns all state and provides `openUploadModal`
+
+**Key decisions & why:**
+- Description follows the same inline style as the rest of the Status paragraph — no separate section needed since the feature is small and already documented in the architecture and checklist
+
+
+## [#277] Wire analysis-prompt utils into aiAnalysisStore
+**Type:** refactor
+
+**Summary:** Replaced the inline prompt-building, `runProviderPrompt` call, and manual model+timestamp stamping in `aiAnalysisStore` with the new `runAnalysisPrompt` util; replaced the local `createCacheKey`/`normalizeLabels` helpers with `getCacheKey`; replaced the local `TabResponse` alias with the shared `AnalysisResponse` type.
+
+**Brainstorming:** The new `ai-analysis/utils/` files (`analysis-prompt.ts`, `utils.ts`, `types.ts`) already encapsulate exactly what `aiAnalysisStore` was doing inline: building the prompt from a tab type + portfolio analysis, dispatching to `runProviderPrompt`, and stamping `model`/`timestamp` on the result. The store no longer needs to import the prompt generators or `runProviderPrompt` directly — `runAnalysisPrompt` owns that boundary. `getCacheKey` is a direct drop-in for the local `createCacheKey`/`normalizeLabels` pair. `AnalysisResponse` replaces the local `TabResponse` alias which was defined identically.
+
+**Prompt:** use analysis-prompt utils in aiAnalysisStore
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — removed imports of `generateBudgetOptimizationPrompt`, `generateExecutiveSummaryPrompt`, `runProviderPrompt`; added imports of `runAnalysisPrompt`, `getCacheKey` from `ai-analysis/utils` barrel and `AnalysisResponse` from `ai-analysis/utils/types`; added `AiAnalysisType` to types import; removed `ALL_LABELS_KEY`, `TabResponse`, `normalizeLabels`, `createCacheKey`, `buildPrompt`; updated `CacheEntry.response` to `AnalysisResponse`; updated `getCurrentCacheKey` to call `getCacheKey`; replaced the `buildPrompt` + `runProviderPrompt` + manual stamp block in `executeAnalysis` with a single `runAnalysisPrompt` call + `if (!result) return` guard
+
+**Key decisions & why:**
+- `if (!result) return` replaces `if (controller.signal.aborted) return` after the await — `runAnalysisPrompt` returns `null` on abort, so the explicit signal check is no longer needed at the call site; the catch block still checks `signal.aborted` for abort-related throws from lower layers
+- `AiAnalysisTab` → `AiAnalysisType` mapping inline (`tab === 'optimizer' ? 'budgetOptimizer' : 'executiveSummary'`) — keeps the mapping co-located with the only place it's needed; no shared helper warranted for a two-value switch
+
+
+## [#278] evaluationDisabled, setDisplay helper, optimizer minimum campaign guard
+**Type:** refactor
+
+**Summary:** Extracted a `evaluationDisabled` computed to replace repeated panel/provider/model guards; introduced a `setDisplay` helper to collapse the repeated 4-field display mutation; and added a minimum-2-campaign guard on the Budget Optimizer tab with an explicit error message.
+
+**Brainstorming:** Three separate but related cleanups. `evaluationDisabled` captures the identical 2-line guard (`!aiPanelOpen || !provider || !selectedModel`) that appeared in `executeAnalysis`, `evaluateTab`, and both watchers — a computed is the right home since it reacts to the same signals everywhere. `setDisplay` eliminates ~12 repetitions of the `display.status / display.response (cast) / display.error / display.errorFallback` assignment pattern; the cast `as unknown as typeof display.response` is now in one place. The optimizer minimum-campaign guard is behaviour: with only 1 campaign there is no source and destination for a budget reallocation, so running the analysis produces meaningless output — block it before the API call and surface a clear message rather than letting the AI return empty recommendations.
+
+**Prompt:** use evaluationDisabled for checks in aiAnalysisStore; create function to set display state with required inputs to avoid repetition; disable evaluation running for budget if selected campaigns <2 -> add error message for this
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — added `MIN_OPTIMIZER_CAMPAIGNS = 2` constant; added `OPTIMIZER_MIN_CAMPAIGNS_ERROR: AiAnalysisError` constant; added `evaluationDisabled` computed; added `setDisplay(tab, status, response?, error?, errorFallback?)` helper; replaced all manual 4-field display assignments with `setDisplay` calls throughout (`handleRequestError`, `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, `clearStateForNewCSV`, debounced watcher); replaced `!aiStore.aiPanelOpen` / `!aiStore.provider || !aiStore.selectedModel` guard pairs with `evaluationDisabled.value`; destructured `provider`/`apiKey`/`selectedModel` after guard in `executeAnalysis` to satisfy TypeScript narrowing; added `< MIN_OPTIMIZER_CAMPAIGNS` check in `executeAnalysis`, `evaluateTab`, and debounced watcher; updated `optimizerCanAnalyze` to return false when `filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS`
+
+**Key decisions & why:**
+- `evaluationDisabled` does not include `apiKey` — the key is a memory-only secret; its absence is an internal invariant (should never happen post-connect), not a display-facing condition; keeping it as a separate check in `executeAnalysis` makes the intent clearer
+- Non-null assertions (`provider!`, `selectedModel!`) after the `evaluationDisabled` guard — TypeScript cannot narrow through a computed getter; the assertions are safe because the guard already verified non-null; extracting to locals also makes the `runAnalysisPrompt` call site cleaner
+- `setDisplay` uses positional params (not an options object) — all 5 fields, response/error/errorFallback default to null; call sites read naturally (`setDisplay(tab, 'done', entry.response)`)
+- `OPTIMIZER_MIN_CAMPAIGNS_ERROR` uses `code: 'unknown'` — no specific `AiErrorCode` exists for validation failures; `handleRequestError` only special-cases `token-limit`; all other codes just surface the message, which is the desired behaviour here
+- Both `executeAnalysis` and `evaluateTab` enforce the guard (not just one) — `evaluateTab` is the auto-eval path (panel open, tab switch, model change); `executeAnalysis` is the manual and debounced path; both need the check so the error state is set regardless of how analysis was triggered
+
+
+## [#279] AiAnalysisType unification, ref display state, module-level helpers, type cleanup
+**Type:** refactor
+
+**Summary:** Replaced `AiAnalysisTab` with `AiAnalysisType` as the single key type throughout the store and components, converted display state from `reactive()` to `ref<TabDisplay<T>>` with whole-object replacement, moved `setDisplay` and `getOtherAnalysisType` outside the store as module-level helpers, and removed stray dead code.
+
+**Brainstorming:** The store had two parallel tab-key types (`AiAnalysisTab` 'optimizer'|'summary' and `AiAnalysisType` 'budgetOptimizer'|'executiveSummary') that both mapped to the same concept. Unifying on `AiAnalysisType` eliminates the ternary mapping in `executeAnalysis` and all string duplication. The `reactive()` display objects allowed scattered property mutation — converting to `ref<TabDisplay<T>>` with `display.value = { ... }` replacement makes all updates explicit and atomic. Pure helpers with no dependency on reactive state (`getOtherAnalysisType`, `setDisplay`) belong at module scope. `PromptBuilder` was exported from `analysis-prompt.ts` without any external consumer — made internal. The stray `getCacheKey(selectedChannelsIds.value, 'groq')` dev-test call in `campaignStore.ts` was removed.
+
+**Prompt:** Check created types in ai-connection types. Move related and reused types and interfaces to that feature only there. Instead of AiAnalysisTab use AiAnalysisType. Avoid data mutation in this store. Write helper functions outside the store on top of the file for repeated logic.
+
+**What changed:**
+- `stores/campaignStore.ts` — removed stray `getCacheKey` import and dead call inside `selectedChannels` computed
+- `features/ai-tools/types/index.ts` — deleted `AiAnalysisTab` type
+- `features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — made `PromptBuilder` type non-exported (internal)
+- `stores/aiAnalysisStore.ts` — full refactor: `AiAnalysisTab` → `AiAnalysisType` everywhere; `tabs`/display refs renamed `optimizer`→`budgetOptimizer`, `summary`→`executiveSummary`; `reactive()` → `ref<TabDisplay<T>>` for display state; `setDisplay` and `getOtherAnalysisType` moved to module scope; `TabDisplay<T>` type defined at module level; `analyze` uses spread instead of direct property assignment; `activeTab` default changed to `'executiveSummary'`
+- `ai-analysis/components/AiAnalysis.vue` — tab IDs updated to `'executiveSummary'`/`'budgetOptimizer'`; cast changed to `AiAnalysisType`; `v-if` check updated
+- `ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — store refs `optimizer` → `budgetOptimizer`; `analyze('optimizer')` → `analyze('budgetOptimizer')`
+- `ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — store refs `summary` → `executiveSummary`; `analyze('summary')` → `analyze('executiveSummary')`
+
+**Key decisions & why:**
+- `AiAnalysisTab` deleted (not aliased) — the type was purely a UI naming accident; `AiAnalysisType` is the correct domain term; no external consumers outside the store and three components
+- `ref<TabDisplay<T>>` with full `.value` replacement instead of `reactive()` — avoids scattered property mutation; `getDisplay` returns `Ref<TabDisplay>` (widened via cast) so `setDisplay` can remain generic; Pinia auto-unwraps the specific typed ref for consumers, preserving `BudgetOptimizerResponse|null` precision at component level
+- `setDisplay` at module scope takes `Ref<TabDisplay>` parameter — decouples the helper from the store's closure; call sites pass `getDisplay(tab)` which centralises the ref lookup
+- `getOtherAnalysisType` at module scope — pure function, no reactive dependencies; replaces the inline ternary in `executeAnalysis` and makes the "other tab" concept named
+- `PromptBuilder` made internal — was exported but had zero external consumers; leaking implementation types widens the public API unnecessarily
+- `activeTab` default `'executiveSummary'` — aligns with the Summary-first tab order in the UI (Summary tab is shown first)
+
+
+## [#280] aiAnalysisStore: derived getters from aiStore, unified evaluationDisabled, allModelsLimitReached handling
+**Type:** refactor
+
+**Summary:** Replaced local `tokenLimitReached` ref and duplicated `evaluationDisabled` logic with derived getters from `aiStore`, combined the no-campaigns gate into `evaluationDisabled`, and added `showTokenLimitState` to properly show cached responses or error when all models are exhausted.
+
+**Brainstorming:** `aiStore` already exposed `evaluationDisabled` (panel open + provider + selectedModel + allModelsLimitReached) and `allModelsLimitReached`. The analysis store was duplicating a subset of that check in its own `evaluationDisabled` and tracking `tokenLimitReached` as an independent ref that had to be manually set and reset. Deriving both from aiStore eliminates the duplication and makes the two stores consistent. The `filteredCampaigns.length === 0` check was scattered across three sites — folding it into `evaluationDisabled` reduces it to one definition. The `allModelsLimitReached` inclusion in `evaluationDisabled` means `evaluateTab` now returns early when token-limited, so a dedicated `showTokenLimitState` helper is needed to ensure cached responses are restored (or token-limit error shown) in that path. The filter watcher gained an immediate token-limit branch (no debounce needed when no API call is possible) to keep the display current when filters change while exhausted. `getCurrentCacheKey` no longer needs the `selectedModel` check — provider alone is the requirement for `getCacheKey`.
+
+**Prompt:** evaluationDisabled in aiAnalysisStore should read evaluationDisabled from aiStore and combine campaignStore.filteredCampaigns.length === 0. When allModelsLimitReached we should show previous cached responses and error message if not. Create getters that derive everything needed from aiStore if necessary. We will not deviate from this approach.
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `tokenLimitReached` changed from `ref(false)` to `computed(() => aiStore.allModelsLimitReached)`; `evaluationDisabled` now reads `aiStore.evaluationDisabled || filteredCampaigns.length === 0`; added `showTokenLimitState(tab)` internal helper; `getCurrentCacheKey` drops `selectedModel` null-guard; `evaluateTab` calls `showTokenLimitState` when `evaluationDisabled && tokenLimitReached`; `executeAnalysis` token pre-flight calls `showTokenLimitState` instead of setting ref; `handleRequestError` removes explicit `tokenLimitReached.value = true`; filter watcher handles token-limited case immediately before debounce; `optimizerCanAnalyze` and `summaryCanAnalyze` gate on `tokenLimitReached`; `clearStateForNewCSV` removes `tokenLimitReached.value = false`
+- `CLAUDE.md` — updated Status paragraph and aiAnalysisStore architecture entry
+
+**Key decisions & why:**
+- `tokenLimitReached` as computed not ref — `aiStore.allModelsLimitReached` is the single source of truth for model exhaustion; a local ref that shadowed it required manual sync and could drift; computed is always accurate
+- `evaluationDisabled` combines `aiStore.evaluationDisabled` (includes allModelsLimitReached) with `filteredCampaigns.length === 0` — both are "cannot analyze" conditions; one computed replaces three scattered checks
+- `showTokenLimitState` called inside the `evaluationDisabled` branch of `evaluateTab` — when `allModelsLimitReached` gates the evaluation, the old cache-restore path is unreachable; this helper re-establishes that path specifically for the token-limit case
+- Filter watcher: token-limit check before debounce — when models are exhausted, filter changes should update the display immediately (lookup new cache key or show error); no point debouncing since no API call will happen
+- `optimizerCanAnalyze`/`summaryCanAnalyze` gated on `tokenLimitReached` — `AnalysisState.vue` controls the button only via `isButtonDisabled`; without the gate the button would be enabled when all models are exhausted even though clicking does nothing
+- `getCurrentCacheKey` only checks `!aiStore.provider` — `selectedModel` is not used by `getCacheKey`; provider is non-null whenever the computed's callers have already passed the `evaluationDisabled` guard
+
+
+## [#281] getCurrentCacheKey: remove null return, propagate provider guard to canAnalyze
+**Type:** refactor
+
+**Summary:** Changed `getCurrentCacheKey` to always return `string` (was `string | null`), moved the provider null-guard into `canAnalyze` (its only unguarded caller), and removed the now-dead `if (!cacheKey) return` checks from `executeAnalysis`, `evaluateTab`, and the debounce watcher.
+
+**Brainstorming:** After the previous refactor, every call site of `getCurrentCacheKey` except `canAnalyze` was already guarded by `evaluationDisabled` (which includes `!aiStore.provider`). The null check inside `getCurrentCacheKey` was redundant in those paths. `canAnalyze` is called from `optimizerCanAnalyze`/`summaryCanAnalyze` without an `evaluationDisabled` guard, so it needs its own provider check. Moving the guard there lets `getCurrentCacheKey` be a pure, non-nullable function. The downstream `if (!cacheKey) return` guards in `executeAnalysis`, `evaluateTab`, and the debounce callback become dead code and can be deleted.
+
+**Prompt:** getCurrentCacheKey — do we really need to check again provider?
+
+**What changed:**
+- `stores/aiAnalysisStore.ts` — `getCurrentCacheKey` return type changed from `string | null` to `string`, non-null assertion on `aiStore.provider!`; `canAnalyze` adds `if (!aiStore.provider) return false` guard; `showTokenLimitState` drops the `cacheKey ?` ternary (always a string now); removed `if (!cacheKey) return` from `executeAnalysis`, `evaluateTab`, and the debounce callback
+
+**Key decisions & why:**
+- Guard moved to `canAnalyze`, not inlined at each call site — `canAnalyze` is the only path that can reach `getCurrentCacheKey` without an `evaluationDisabled` guard; the other callers are already safe by construction
+- `getCurrentCacheKey` returns `string` unconditionally — callers after the `evaluationDisabled` guard have a non-null provider by definition; making the return type reflect that removes defensive checks that were pure noise
+
+
+## [#282] Container query system + CSS variable theme tokens
+**Type:** architecture
+
+**Summary:** Introduced a SCSS mixin library for container queries globally injected via Vite, extracted dark theme tokens into a dedicated `themes/dark.scss` file, migrated key Tailwind color tokens to CSS custom properties, and rewired the KPI grid and KpiCard to use container queries instead of viewport media queries.
+
+**Brainstorming:** The dashboard's KPI grid was using viewport-based media queries, which break when the AI drawer opens and compresses the content area — the viewport width does not change but the available space for the grid does. Container queries solve this precisely: the grid reacts to the width of its own container, not the viewport. To use container queries cleanly across multiple components without per-file imports, the mixin library is injected globally via Vite's `additionalData`. The theme tokens were scattered across `style.scss` as hardcoded values — extracting them to `themes/dark.scss` and wiring them into Tailwind as CSS variables makes the color system coherent and prepares for future theme switching.
+
+**Prompt:** Set up a container query SCSS mixin system and make it globally available. Extract the dark theme into a proper tokens file. Migrate the KPI grid layout to use container queries so it responds to the AI drawer compression rather than viewport width. Wire CSS variable-based color tokens into Tailwind.
+
+**What was built:**
+- `app/src/styles/container-queries.scss` — new SCSS mixin library: `$container-sizes` scale (tiny 220px / xs 280px / sm 320px / md 400px / lg 480px / xl 640px / 2xl 768px); mixins `cq-container`, `cq-up`, `cq-down`, `cq-between` with optional named-container support
+- `app/src/styles/themes/dark.scss` — new file; CSS custom properties for the dark theme (primary scale 50–1000, color-background, color-surface, color-typography, color-on-surface-high, color-surface-outline); applied on `:root` and `[data-theme="dark"]`
+- `app/src/styles/index.scss` — updated to `@use './themes/dark.scss'` as first import
+- `app/src/style.scss` — simplified; theme tokens removed (now live in `themes/dark.scss`)
+- `app/tailwind.config.js` — `background`, `surface`, `surface-outline`, `on-surface-high`, and `typography.DEFAULT` now reference CSS custom properties via `rgb(var(--color-*) / <alpha-value>)` instead of hardcoded values
+- `app/vite.config.ts` — added `css.preprocessorOptions.scss.additionalData` to globally inject `@use "@/styles/container-queries" as *` into every SCSS file
+- `app/src/features/dashboard/DashboardView.vue` — `.data-visualization` scoped style adds `container-type: inline-size` to establish the container context for child grid queries
+- `app/src/features/dashboard/components/DashboardKpis.vue` — `.kpi-grid` now uses `@container (min-width: Xrem)` breakpoints (360px → 2 cols, 640px → 3 cols, 1024px → 5 cols) instead of viewport media queries
+- `app/src/features/dashboard/components/KpiCard.vue` — uses `@include cq-container('kpi-card')` on the card root and `@include cq-up(tiny, 'kpi-card')` to scale the value font size from 2xl to 3xl when the card is wide enough
+- Minor style token updates across `_card.scss`, `_forms.scss`, `Tabs.vue`, `RadioToggle.vue`, `ToastNotification.vue`, `CampainDuplicationsTable.vue` to align with the new CSS variable token names
+
+**Key decisions & why:**
+- Vite `additionalData` for global mixin injection — avoids per-file `@use` boilerplate; the mixin file contains no CSS output (only variables and mixins) so injecting it globally has zero bundle cost
+- Container queries over media queries for the KPI grid — the AI drawer compresses the content area without changing the viewport width; only container queries respond to actual available space
+- Named container on KpiCard (`kpi-card`) — allows the card to query its own width independently of the grid; a single card can appear in different layout contexts without needing separate media query overrides
+- Theme tokens in a dedicated `themes/dark.scss` — keeps the token definitions co-located with the theme they belong to; `style.scss` stays as a thin entry point; future light theme would be a sibling file
+- CSS variables in Tailwind via `rgb(var(--color-*) / <alpha-value>)` — preserves Tailwind's opacity modifier support (`bg-surface/50`) while making the underlying value runtime-configurable
+
+
+## [#283] Move analysis-badge-variants into ai-analysis/utils; remove panel-formatters
+**Type:** refactor
+
+**Summary:** Relocated `analysis-badge-variants.ts` from the orphaned `ai-tools/utils/` folder into `ai-analysis/utils/` where its consumers live, deleted `panel-formatters.ts` entirely, and replaced its two callers (`formatEuro`, `formatRoi`) with `formatCurrency` and `formatPercentage` from `common/utils/formatters`.
+
+**Brainstorming:** `ai-tools/utils/` held two files with no barrel and no consumers outside `ai-analysis/` — a folder that existed only to hold these two files. `analysis-badge-variants.ts` belongs beside the other AI analysis utilities it's always used with. `panel-formatters.ts` duplicated functionality already present in `common/utils/formatters` with minor locale differences (`en-IE` vs `en`) and slightly different precision for ROI (no decimals vs 2 decimals via `toFixed`). The common formatters are the single source of truth for display formatting; duplicating them in a feature folder creates drift risk. Removing `panel-formatters.ts` leaves the `ai-tools/utils/` folder empty, so it is deleted too.
+
+**Prompt:** Move analysis-badge-variants out of ai-tools/utils and into ai-analysis/utils. Remove panel-formatters.ts and use the formatters from common instead.
+
+**What changed:**
+- `ai-tools/ai-analysis/utils/analysis-badge-variants.ts` — new location; same content, import path for `BadgeVariant` updated to `../../../../ui/types/badge-variant`
+- `ai-tools/ai-analysis/utils/index.ts` — added `export * from './analysis-badge-variants'`
+- `ai-tools/utils/analysis-badge-variants.ts` — deleted (old location)
+- `ai-tools/utils/panel-formatters.ts` — deleted
+- `ai-tools/utils/` folder — deleted (now empty)
+- `BudgetOptimizationRecommendations.vue` — import updated to `'../../utils/analysis-badge-variants'`; panel-formatters import removed; `formatEuro` → `formatCurrency`, `formatRoi` → `formatPercentage` from `common/utils/formatters`; template call sites updated accordingly
+- `ExecutiveSummaryPriorityActions.vue`, `ExecutiveSummaryInsights.vue`, `ExecutiveSummaryHealth.vue` — import paths updated from `'../../../utils/analysis-badge-variants'` to `'../../utils/analysis-badge-variants'`
+
+**Key decisions & why:**
+- `ai-analysis/utils/` as destination — badge variants are consumed exclusively by ai-analysis components; co-locating them with the other ai-analysis utilities (getCacheKey, analysis-prompt, error-messages) removes the cross-folder hop
+- `formatCurrency` for euro amounts, `formatPercentage` for ROI — direct functional equivalents in common; locale difference (`en-IE` → `en`) and ROI decimal change (0 → 2) are acceptable since the common formatters are the project standard
+- Deleted the `ai-tools/utils/` folder entirely — an empty folder with no barrel serves no purpose
+
+
+## [#284] Isolate types per feature — portfolio-analysis barrel, slim ai-tools/types, ai-analysis/types expansion, prompts/types
+**Type:** refactor
+
+**Summary:** Split the monolithic `ai-tools/types/index.ts` into feature-scoped type files, moved portfolio-specific summary types out of `common/types/campaign.ts` into `common/portfolio-analysis/types.ts`, created a barrel for `common/portfolio-analysis/`, extracted prompt-building primitives into `ai-tools/prompts/types.ts`, expanded `ai-analysis/types/index.ts` to own all AI response types, and relocated legacy types into the legacy prompt file where they belong.
+
+**Brainstorming:** `ai-tools/types/index.ts` had grown into a 199-line mega-hub mixing provider/connection types, analysis meta-types, prompt-building primitives, response literal types, output interfaces, response types, building blocks, and legacy data types. Similarly, `common/types/campaign.ts` contained portfolio classification summary types (`CampaignSummary`, `ChannelSummary`, `PortfolioSummary`, `SummaryMetricStatus`, `ScalingCandidateSignal`) that are exclusively consumed within `common/portfolio-analysis/` — a clear misplacement. The goal was feature-scoped isolation: each folder's types live in that folder, each layer imports only what it owns. The ai-tools feature was split into three focused type files: `ai-tools/types/` (5 cross-feature provider+meta types), `ai-analysis/types/` (all response types + BusinessContext), and `prompts/types.ts` (prompt-building primitives). Legacy types were moved locally into the legacy prompt file.
+
+**Prompt:** Audit every type and interface across the codebase. Move each type to the folder that owns it. Create barrel files per folder for clean imports. Remove types from shared hubs that are only used within one sub-feature. Move all types used only by legacy prompt files directly into those files as local (non-exported) types. The goal is to isolate related types per feature so that each feature folder's index.ts or types/ barrel is the sole source of truth for that feature's types.
+
+**What changed:**
+- `common/types/campaign.ts` — removed `PortfolioSummary`, `SummaryMetricStatus`, `ChannelSummary`, `CampaignSummary`, `ScalingCandidateSignal` (moved to portfolio-analysis/types.ts)
+- `common/portfolio-analysis/types.ts` — added the 5 portfolio-only summary types as local definitions; updated import from `../types/campaign` to only pull base types
+- `common/portfolio-analysis/index.ts` — new barrel: exports `computePortfolioAnalysis` + all types from `types.ts`
+- `common/portfolio-analysis/classify-campaigns.ts` — `CampaignSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/classify-utils.ts` — `CampaignSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/classify-channels.ts` — `ChannelSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/portfolio-analysis.ts` — `PortfolioSummary` import: `../types/campaign` → `./types`
+- `common/portfolio-analysis/utils.ts` — `CampaignSummary, ChannelSummary, ScalingCandidateSignal, SummaryMetricStatus` import: `../types/campaign` → `./types`
+- `ai-tools/types/index.ts` — slimmed to 5 types only: `AiProviderType`, `AiErrorCode`, `AiConnectionError`, `AiAnalysisType`, `AiAnalysisError`
+- `ai-tools/ai-analysis/types/index.ts` — expanded to own all AI response types: `BusinessContext`, `ConfidenceLevel`, `ExecutionRisk`, `HealthLabel`, `InsightType`, `ActionUrgency`, `ExecutiveInsight`, `PriorityAction`, `ExecutiveCorrelation`, `ExecutiveSummaryOutput`, `BudgetRecommendation`, `BudgetOptimizerOutput`, `BudgetOptimizerResponse`, `ExecutiveSummaryResponse` + existing `AnalysisResponse`, `AnalysisContext`, `AIProviderState`
+- `ai-tools/prompts/types.ts` — new file: `PromptList`, `PromptInstructions`, `PromptInstructionStep`, `PromptScopeConfig`
+- `ai-tools/prompts/index.ts` — added `export type { ... } from './types'`
+- `ai-tools/prompts/prompt-utils.ts` — import from `'../types'` → `'./types'`
+- `ai-tools/prompts/budget-optimization-prompt.ts` — all legacy types (`BudgetOptimizerData`, `BudgetOptimizerCampaign`, `BudgetOptimizerChannel`, building blocks, `BudgetOptimizerContextInput`) defined locally; import updated to `'./types'`
+- `ai-tools/prompts/executive-summary-prompt.ts` — legacy file; imports fixed: `BusinessContext` from `'../ai-analysis/types'`, `PromptScopeConfig` from `'./types'`, `ExecutiveSummaryData` defined locally
+- `ai-tools/prompts/budget-optimization-prompt2.ts` — `BusinessContext` import: `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/prompts/executive-summary-prompt2.ts` — `BusinessContext` import: `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/ai-analysis/utils/analysis-prompt.ts` — split import: `AiAnalysisType` stays in `'../../types'`, `BusinessContext` → `'../types'`
+- `stores/aiAnalysisStore.ts` — `BudgetOptimizerResponse`, `ExecutiveSummaryResponse` moved from `ai-tools/types` import to `ai-analysis/types` import
+- `ai-tools/mocks/budget-optimizer-mocks.ts` — `BudgetOptimizerResponse` from `'../types'` → `'../ai-analysis/types'`
+- `ai-tools/mocks/executive-summary-mocks.ts` — `ExecutiveSummaryResponse` from `'../types'` → `'../ai-analysis/types'`
+- `CLAUDE.md` — updated architecture entries for all changed files
+
+**Key decisions & why:**
+- `common/portfolio-analysis/types.ts` as destination for summary types — `CampaignSummary`, `ChannelSummary` etc. were defined in `campaign.ts` but imported exclusively by `portfolio-analysis/` internals; co-locating them with the classification logic they support removes the leaky abstraction
+- `ai-analysis/types/index.ts` as the owner of all AI response types — response types, literal types, and `BusinessContext` are all consumed within the `ai-analysis` sub-feature (components, store, prompts); centralising them here eliminates the need for external callers to import from the parent `ai-tools/types` hub
+- `prompts/types.ts` as a dedicated file — prompt-building primitives are only used by `prompt-utils.ts` and the legacy prompt files; keeping them separate from both the provider/connection hub and the analysis response types avoids cross-concern leakage
+- Legacy types moved locally (not deleted) — the old `budget-optimization-prompt.ts` and `executive-summary-prompt.ts` are non-exported dead code but are kept compilable; inlining their types makes them fully self-contained and removes all traces from the shared hub
+- `common/portfolio-analysis/index.ts` created — the folder had no barrel despite having five internal files; the barrel lets external consumers (`campaignStore`, `ai-analysis/types`) import from a single path rather than reaching into internals
+
+
+## [#285] Move aiStore to ai-connection/stores as useAiConnectionStore; tighten providers barrel
+**Type:** refactor
+
+**Summary:** Moved the AI connection Pinia store from `stores/aiStore.ts` into `features/ai-tools/ai-connection/stores/` as `useAiConnectionStore`, co-locating it with the connection UI it serves; tightened `providers/index.ts` to export only symbols consumed externally.
+
+**Brainstorming:** The store was sitting in the global `stores/` folder despite being exclusively an ai-connection concern — it holds provider state, API key, connection status, model list, and panel open/close. Moving it into `ai-connection/stores/` makes the feature folder self-contained: components, utils, and store all live together. The rename from `useAiStore` / `'ai'` to `useAiConnectionStore` / `'aiConnection'` clarifies intent. The `providers/index.ts` barrel was exporting everything from `./utils` (including internal error-handling symbols only used inside providers) and `./providers-meta` (imported directly by components, never via the barrel); narrowing to named exports removes accidental leakage of internal API surface.
+
+**Prompt:** Move aiStore to ai-connection/stores folder, define it as aiConnection, update barrel files in ai-tools folder to export only what is consumed.
+
+**What changed:**
+- `features/ai-tools/ai-connection/stores/aiConnectionStore.ts` — new file; store content moved from `stores/aiStore.ts`; store id changed from `'ai'` to `'aiConnection'`; export renamed from `useAiStore` to `useAiConnectionStore`; import paths updated to resolve from new location
+- `features/ai-tools/ai-connection/stores/index.ts` — new barrel; exports `useAiConnectionStore`
+- `stores/aiStore.ts` — replaced with location comment (pending deletion); all consumers updated
+- `features/ai-tools/providers/index.ts` — removed `export * from './utils'` (wildcard) and `export * from './providers-meta'`; replaced with named exports: `getAllModelsLimitReached`, `getModelById`, `getNextAvailableMode` from utils; kept `export * from './types'`, `runProviderPrompt`, `connectProvider`
+- `shell/AppShell.vue` — import + usage updated to `useAiConnectionStore`
+- `features/dashboard/components/DashboardHeader.vue` — import + usage updated
+- `features/ai-tools/components/AiToolsContent.vue` — import + usage updated
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — import + usage updated
+- `features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — import + usage updated
+- `stores/aiAnalysisStore.ts` — import + usage updated
+- `CLAUDE.md` — architecture updated: removed `aiStore.ts` entry, added `ai-connection/stores/` sub-tree, updated `providers/index.ts` description, updated `DashboardHeader.vue` and `AppShell.vue` descriptions, updated `aiAnalysisStore.ts` description
+
+**Key decisions & why:**
+- Store placed in `ai-connection/stores/` (not a top-level `ai-tools/stores/`) — the store serves only the connection sub-feature; placing it alongside the connection components and utils gives the clearest ownership boundary
+- Rename to `'aiConnection'` store id — the old `'ai'` id was ambiguous; `'aiConnection'` matches the folder name and signals the store's single responsibility
+- `providers/index.ts` named exports only — `export * from './utils'` was leaking `normalizeConnectionError`, `assertResponseOk`, `parseJsonResponse`, `toValidModels` — all internal to provider implementations and not consumed by any external caller; named exports make the public API explicit
+- `export * from './providers-meta'` removed — `PROVIDER_LABELS`, `PROVIDER_HELP`, `PROVIDER_OPTIONS` are imported directly from `providers-meta` by the two connection components, not via the barrel; removing the re-export eliminates a redundant path without breaking anything
+
+
+## [#286] Refactor analysis error and notice types — move message mapping to one file in the analysis feature
+**Type:** refactor
+
+**Summary:** Removed message text from `AiAnalysisError`, replaced `errorFallback: string` with a typed `AiAnalysisNotice`, and consolidated all analysis-panel message text into a single `analysis-messages.ts` file so the store only stores error codes and components resolve display text.
+
+**Brainstorming:** The store was doing two jobs: tracking error state and resolving human-readable message strings via `ANALYSIS_ERROR_MESSAGES`. This created a split where some message text lived in the store constant file and some was hardcoded directly in `AnalysisState.vue` (the token-limit notice block). `errorFallback: string | null` was an untyped raw string with no connection to a code or mapping. The fix: strip message resolution out of the store entirely, add typed `AiAnalysisNotice` alongside `AiAnalysisError`, collect every analysis-panel string into one mapping file (`analysis-messages.ts`), and have `AnalysisState.vue` resolve display text from that file. A new `'min-campaigns'` error code was added so the optimizer threshold case has a real code instead of piggybacking on `'unknown'`. `rawMessage` on `AiAnalysisError` provides a runtime fallback for any truly unhandled error whose code falls through the map.
+
+**Prompt:** Move the mapping of error types to displayed errors into the analysis feature. The store should only save errors. Errors should ideally carry a rawMessage for unhandled cases. errorFallback should be renamed to a typed notice. All message text should live in one file. Add error types if necessary.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — added `'min-campaigns'` to `AiErrorCode`; changed `AiAnalysisError` from `{ code, message }` to `{ code, rawMessage? }`; added `AiAnalysisNoticeCode` ('stale-result') and `AiAnalysisNotice ({ code })`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` (NEW) — `ANALYSIS_ERROR_MESSAGES` (11 codes), `ANALYSIS_NOTICE_MESSAGES` ('stale-result'), `TOKEN_LIMIT_MESSAGES` ({ notice, hint }); replaces `analysis-error-messages.ts`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-error-messages.ts` (DELETED) — replaced by `analysis-messages.ts`
+- `app/src/features/ai-tools/ai-analysis/utils/index.ts` — barrel updated to re-export `analysis-messages` instead of `analysis-error-messages`
+- `app/src/stores/aiAnalysisStore.ts` — removed `ANALYSIS_ERROR_MESSAGES` import; `OPTIMIZER_MIN_CAMPAIGNS_ERROR` now `{ code: 'min-campaigns' }`; `TabDisplay` field `errorFallback: string|null` → `notice: AiAnalysisNotice|null`; `setDisplay` 5th param renamed to `notice`; `handleRequestError` stores `{ code, rawMessage }` — no message lookup; `showTokenLimitState` stores `{ code: 'token-limit' }` — no message lookup; stale-result case stores `{ code: 'stale-result' }` notice; `analyze()` clears `notice: null`
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — prop `errorFallback: string|null` → `notice: AiAnalysisNotice|null`; imports `ANALYSIS_ERROR_MESSAGES`, `ANALYSIS_NOTICE_MESSAGES`, `TOKEN_LIMIT_MESSAGES`; `errorMessage` computed resolves from map with `rawMessage` fallback; `noticeText` computed resolves from notice map; token-limit template strings use `TOKEN_LIMIT_MESSAGES`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — `errorFallback` → `notice` in computed + template prop
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — `errorFallback` → `notice` in computed + template prop
+- `CLAUDE.md` — updated types description, aiAnalysisStore description, analysis-messages entry, barrel entry, AnalysisState description, Status paragraph
+
+**Key decisions & why:**
+- `rawMessage` on `AiAnalysisError` (not only when code === 'unknown') — always capturing the raw error text is cheap and lets the component decide whether to show it; the component prioritises the map lookup and only falls back to rawMessage if the map has no entry for that code (defensive against future unhandled codes at runtime)
+- `TOKEN_LIMIT_MESSAGES` as a plain object in `analysis-messages.ts` (not a notice code) — the token-limit notice is driven by a prop, not a `TabDisplay.notice` field; adding it to the mapping file still satisfies "one file for all message text" without forcing a second notice code
+- `'min-campaigns'` added as a real `AiErrorCode` — the optimizer threshold case previously borrowed `'unknown'` and baked a long message inline in the store constant; a real code gives it a proper entry in the map and removes the inline string from the store entirely
+
+
+## [#287] Refactor aiAnalysisStore to remove repetition
+**Type:** refactor
+
+**Summary:** Extracted three internal helpers from `aiAnalysisStore` to eliminate repeated code patterns across `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, and the channel-filter watcher.
+
+**Brainstorming:** Three patterns repeated across the store: (1) "cancel in-flight + revert to last known state" was an identical 4-line block in three places; (2) the optimizer minimum campaign check was duplicated four times inline; (3) "look up cache entry → setDisplay('done') → update lastVisibleCacheKey" appeared in five locations including as two separate near-identical blocks inside `evaluateTab`. Extracting each into a named helper eliminates the duplication, gives each pattern a descriptive name, and makes the callers read as intent rather than mechanics. The derived-state section was also tidied: `tokenLimitReached`, `evaluationDisabled`, and the two `canAnalyze` computeds are now co-located under one section header. Two separate reset sections (`clearStateForNewCSV`, `clearStateForDisconnect`) were collapsed into a single "Reset" section. All logic is unchanged; zero TypeScript errors after refactor.
+
+**Prompt:** The aiAnalysisStore has a lot of repetition. Clean up the store, maintain the functionality but make it more readable.
+
+**What changed:**
+- `app/src/stores/aiAnalysisStore.ts` — extracted `isBelowOptimizerMinimum(): boolean`, `showOptimizerMinimumError(tab): boolean`, `showCachedResult(tab, cacheKey): boolean`, and `revertTab(tab): void`; simplified `showTokenLimitState`, `canAnalyze`, `optimizerCanAnalyze`, `handleRequestError`, `executeAnalysis`, `evaluateTab`, `setActiveTab`, `onPanelClose`, and the channel-filter watcher to use the new helpers; merged single-getter sections into "Derived state"; merged reset sections into "Reset"; removed spurious double blank line in watcher
+- `CLAUDE.md` — updated `aiAnalysisStore.ts` architecture description to document the new store-internal helpers
+
+**Key decisions & why:**
+- `revertTab` encapsulates "cancel + show last known state" — this exact sequence appeared identically when switching tabs, when pre-empting the other tab before a new request, and when closing the panel; a single named function makes each call site's intent obvious
+- `showCachedResult` returns a boolean so callers can gate on it (`if (showCachedResult(...)) return`) — this collapses `evaluateTab`'s two near-identical cache-check blocks into one call and simplifies the watcher debounce body
+- `isBelowOptimizerMinimum` keeps the raw boolean check separate so `optimizerCanAnalyze` can use it without side effects; `showOptimizerMinimumError` layers the display call on top and returns a boolean for the same early-return pattern, collapsing the repeated 4-line block in `executeAnalysis`, `evaluateTab`, and the watcher debounce into a single `if (showOptimizerMinimumError(tab)) return`
+- `setDisplay` moved inside the store and its first parameter changed from `display: Ref<TabDisplay>` to `tab: AiAnalysisType` — it now calls `getDisplay(tab).value = { status, response, error, notice }` internally (full object replacement, the correct Vue reactivity pattern), removing the repeated `setDisplay(getDisplay(tab), ...)` pattern from every call site
+
+
+## [#288] Background connection: toast notifications + green dot pop-in
+**Type:** update
+
+**Summary:** When the AI panel is closed while a connection request is in flight, the request completes in the background and shows a success or error toast; the connected dot gains a spring pop-in animation so it appears immediately and visibly on background success.
+
+**Brainstorming:** The connection store's `connect()` already continued in the background when the panel closed (no AbortController, no cancel call in `closePanel`). What was missing was feedback: the user had no way to know the request succeeded or failed. Solution: check `aiPanelOpen` at completion time inside `connect()` and fire toasts conditionally. Analysis cancellation on panel close was confirmed to remain unchanged. For the green dot, it already appeared reactively when `isConnected && !aiPanelOpen`, but the static appearance made it easy to miss. A one-shot spring keyframe animation makes it pop into view so the user notices it immediately.
+
+**Prompt:** When the AI panel is closed while a connection request is in flight: let the request complete in background, show a success toast ("Connected to [Provider]") or error toast ("Connection failed. Reopen the panel for details.") if the panel is still closed at completion time. Also add a pop-in animation to the connected dot in DashboardHeader so it's immediately noticeable on background success. Analysis requests still cancel on panel close.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnectionStore.ts` — imported `useToastStore` and `PROVIDER_LABELS`; `connect()` checks `!aiPanelOpen.value` after success and after catch, showing the appropriate toast only when panel is closed
+- `app/src/features/dashboard/components/DashboardHeader.vue` — added `dot-pop` scoped `@keyframes` (cubic-bezier spring, scale 0→1, 0.4s) applied to `.connected-status` so the dot animates in each time it appears
+
+**Key decisions & why:**
+- Check `aiPanelOpen.value` at completion time (not captured at call start) — the panel might be closed mid-flight, so the relevant question is whether it's open when the result arrives
+- `useToastStore()` called inside `connect()` rather than at store definition level — avoids circular initialization risk since both stores are Pinia setup stores; Pinia resolves setup-store instances lazily so calling inside an action is safe
+- No new reactive state — the dot's appearance is already driven by `isConnected && !aiPanelOpen`; the animation triggers naturally via `v-if` re-mount each time the condition becomes true
+- Error toast message intentionally vague ("Reopen the panel for details") — the granular error codes and hints are displayed in the connection form, not appropriate for a transient toast
+
+
+## [#289] Normalize all component emits and listeners to camelCase
+**Type:** fix
+
+**Summary:** Renamed the one kebab-case emit (`'download-template'`) to `'downloadTemplate'` in `UploadCampainData.vue` and updated its emit call and listener in `UploadModal.vue`; also updated the `@clear-all` listener in `DashboardView.vue` to `@clearAll` to match the existing camelCase emit in `ChannelFilter.vue`.
+
+**Brainstorming:** Audited all `defineEmits` definitions and `@event` listeners across the codebase. Found three inconsistencies: one kebab-case emit name in `UploadCampainData.vue`, one matching kebab-case listener in `UploadModal.vue`, and one kebab-case listener `@clear-all` in `DashboardView.vue` (the emit itself was already `clearAll`). All other emits were already camelCase. Vue 3 accepts either form but camelCase in both emit definition and listener keeps the codebase consistent.
+
+**Prompt:** Make all component outputs/emits camelCase
+
+**What changed:**
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — renamed emit `'download-template'` → `'downloadTemplate'`; updated `emit('download-template')` call to `emit('downloadTemplate')`
+- `app/src/features/data-transfer/components/UploadModal.vue` — updated listener `@download-template` → `@downloadTemplate`
+- `app/src/features/dashboard/DashboardView.vue` — updated listener `@clear-all` → `@clearAll`
+
+**Key decisions & why:**
+- No logic changes — purely naming consistency; Vue 3 auto-maps both forms so behavior is unchanged
+- `ChannelFilter` emit was already `clearAll`; only the call-site listener needed updating
+
+
+## [#290] Enforce camelCase/kebab-case split between script and template
+**Type:** fix
+
+**Summary:** Applied the project naming convention — JS/TS uses camelCase, templates/HTML use kebab-case — to violations found in three modified files.
+
+**Brainstorming:** The rule is that the two halves of a Vue SFC use different case conventions: script block (defineEmits keys, defineProps keys, emit() call arguments, variable names) → camelCase; template attributes (prop bindings, event listeners, v-model argument) → kebab-case. Vue 3 auto-maps between them. Three files had violations from a previous commit that uniformly moved everything to camelCase.
+
+**Prompt:** Inputs and outputs in Vue components must follow this pattern: JavaScript / TypeScript → camelCase; Templates / HTML → kebab-case.
+
+**What changed:**
+- `app/src/features/dashboard/DashboardView.vue` — `@aiClick` → `@ai-click`
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — `:modelValue` → `:model-value`; `@update:modelValue` → `@update:model-value`; emit definition `'download-template'` → `downloadTemplate`; inline `emit('download-template')` → `emit('downloadTemplate')`
+- `app/src/features/data-transfer/components/UploadModal.vue` — `@download-template` was already kebab-case; no changes needed
+
+**Key decisions & why:**
+- Emit definition keys in `defineEmits` are JS/TS → camelCase; corresponding template listeners are HTML → kebab-case; Vue maps them automatically
+- `v-model:title` / `v-model:file` argument names follow the prop name and stay as-is; the generated `update:title` / `update:file` event names are a Vue convention, not free-form strings
+
+
+## [#291] Replace all relative path imports with @ alias
+**Type:** refactor
+
+**Summary:** Replaced every `../` relative import across the entire `src/` tree with `@/` alias paths, and fixed a set of pre-existing type errors exposed by making the paths explicit.
+
+**Brainstorming:** The `@` alias (pointing to `src/`) was already declared in both `vite.config.ts` and `tsconfig.app.json` but was not used in any source file — all 177 cross-folder imports used relative `../../..` chains. A Python script resolved each relative import to its absolute `src/`-rooted path and rewrote it as `@/...`. This also surfaced pre-existing errors that had been masked: five analysis components imported response types from `@/features/ai-tools/types` (the slim meta-types module) when they needed `@/features/ai-tools/ai-analysis/types`; `business-context.ts` had the same wrong module for `BusinessContext`; `error-handling.ts` was missing `min-campaigns` from both `ERROR_MESSAGES` and `ERROR_HINTS` records after the error code was added to `AiErrorCode`; two accidental Finder copy files (`budget-optimization-prompt copy.ts`, `executive-summary-prompt copy.ts`) were in `src/` and failed to compile; a string literal in `executive-summary-mocks.ts` had an unescaped apostrophe; and both orchestrator components passed `:error-fallback` after the prop was renamed to `notice` in `AnalysisState`. All fixed as part of this change. Build is now clean.
+
+**Prompt:** Use alias in vite for imports and not relative paths.
+
+**What changed:**
+- 80 source files — all `../` relative imports replaced with `@/` equivalents via automated script
+- `features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue`, `ExecutiveSummaryInsights.vue`, `ExecutiveSummaryPriorityActions.vue`, `AnalysisCorrelations.vue` (shared), `BudgetOptimizationRecommendations.vue` — import of response types fixed from `@/features/ai-tools/types` → `@/features/ai-tools/ai-analysis/types`
+- `features/ai-tools/prompts/business-context.ts` — `BusinessContext` import fixed to `@/features/ai-tools/ai-analysis/types`
+- `features/ai-tools/ai-connection/utils/error-handling.ts` — `min-campaigns` entry added to both `ERROR_MESSAGES` and `ERROR_HINTS`
+- `features/ai-tools/mocks/executive-summary-mocks.ts` — unescaped apostrophe in string literal fixed (outer quotes changed to double quotes)
+- `features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue`, `executive-summary/ExecutiveSummaryAnalysis.vue` — `:error-fallback` → `:notice` to match renamed prop in `AnalysisState`
+- `features/ai-tools/prompts/budget-optimization-prompt copy.ts`, `executive-summary-prompt copy.ts` — deleted (accidental Finder duplicates; not referenced anywhere)
+
+**Key decisions & why:**
+- Same-directory `./foo` imports left as-is — they don't benefit from an alias and are already unambiguous
+- Double-quoted imports handled in a second pass to catch provider utils that used `"../..."` style
+- Pre-existing type errors fixed inline rather than deferred — the build must be clean after a refactor
+
+
+## [#292] Rename `common/` folder to `shared/`
+**Type:** refactor
+
+**Summary:** Renamed `src/common/` to `src/shared/` and updated all `@/common/` imports across the codebase to `@/shared/`.
+
+**Brainstorming:** The folder name `common` is ambiguous — it could mean anything generic. `shared` more clearly communicates that this module contains domain types, utilities, and logic shared across features (dashboard, data-transfer, AI tools, stores). Since all imports were already migrated to use the `@/` alias in the previous session, this was a clean two-step operation: rename the folder and bulk-replace the import prefix.
+
+**Prompt:** Rename the `common` folder to `shared`. Update all imports accordingly and update CLAUDE.md.
+
+**What changed:**
+- `app/src/common/` → `app/src/shared/` — folder rename; no file contents changed
+- 33 `.ts` and `.vue` files — `@/common/` import prefix replaced with `@/shared/`
+- `CLAUDE.md` — architecture section updated (`common/` → `shared/` in all references)
+
+**Key decisions & why:**
+- Bulk sed on the entire `src/` tree rather than file-by-file — safe because every cross-folder import already used the `@/` alias; no relative paths remained to confuse the replace pattern
+- TypeScript reported zero errors after the rename — confirms no missed references
+
+
+## [#293] Rename store files to `.store.ts` pattern
+**Type:** refactor
+
+**Summary:** Renamed all four store files to use the `<name>.store.ts` convention, matching the explicit file-type suffix pattern already used for `.vue` components.
+
+**Brainstorming:** `campaignStore.ts` bundles the role ("store") into the identifier, making it redundant when the function name (`useCampaignStore`) already signals that. The `<name>.store.ts` pattern separates the domain name from the file type, aligns with common Vue/Pinia conventions, and makes the role scannable at a glance in a file tree without reading the function export.
+
+**Prompt:** Rename aiConnectionStore to aiConnection.store.ts. Apply the same pattern to the rest of the stores.
+
+**What changed:**
+- `aiConnectionStore.ts` → `aiConnection.store.ts`
+- `aiAnalysisStore.ts` → `aiAnalysis.store.ts`
+- `campaignStore.ts` → `campaign.store.ts`
+- `toastStore.ts` → `toast.store.ts`
+- 14 `.ts` and `.vue` files — import paths updated to match new filenames
+- `CLAUDE.md` — architecture section updated with new filenames
+
+**Key decisions & why:**
+- Sed on import path segments (`/campaignStore` → `/campaign.store`) rather than full paths — handles both `@/stores/` and `./stores/` forms without needing separate patterns
+- Internal self-references inside store files (e.g. `aiConnectionStore.ts` importing `toastStore`) were caught by the same bulk replace
+
+
+## [#294] Remove pass-through barrel files project-wide
+**Type:** refactor
+
+**Summary:** Deleted 10 barrel index.ts files that were pure pass-throughs with no real module API value, and updated all import sites to use direct file paths.
+
+**Brainstorming:** Flat utility/type folders benefit from deep imports — each consumer's import line is self-documenting about exactly what it depends on, there's no extra file to maintain, and circular imports can't sneak through a pass-through. An audit of all 24 barrel files in the project identified 10 candidates for removal: 6 with zero imports (outright dead) and 4 that were used but added no curation. The remaining 14 barrels serve as real module API boundaries (type hubs, feature public surfaces, UI library entry points) and were left in place.
+
+**Prompt:** Audit all barrel index.ts files in the project. Delete the ones that are pure pass-throughs or unused. Update all import sites to use direct file paths. Keep barrels that serve as real module API boundaries.
+
+**What changed:**
+- Deleted: `ai-tools/index.ts` (empty), `ai-connection/components/index.ts`, `ai-connection/stores/index.ts`, `ai-connection/utils/index.ts`, `ai-analysis/components/index.ts`, `ai-analysis/utils/index.ts`, `mocks/index.ts`, `providers/gemini/index.ts`, `providers/qroq/index.ts`, `ui/forms/index.ts`
+- `stores/aiAnalysis.store.ts` — split `ai-analysis/utils` import into two direct imports (`analysis-prompt`, `utils`)
+- `ui/index.ts` — replaced `export * from './forms'` with three direct `.vue` component exports
+- 9 other `.ts`/`.vue` files — import paths updated to direct file targets
+- `CLAUDE.md` — architecture section updated to remove deleted barrel entries
+
+**Key decisions & why:**
+- `ui/index.ts` needed a manual fix: it re-exported `./forms` which pointed at the now-deleted barrel; replaced with explicit named exports for the three form components so the UI library public API is unchanged for consumers
+- `ai-analysis/utils` had four wildcard re-exports from different files; the single import site needed two separate lines since `runAnalysisPrompt` and `getCacheKey` live in different source files
+
+
+## [#295] Restore gemini and qroq provider barrel files
+**Type:** fix
+
+**Summary:** Recreated the deleted `index.ts` barrels for `providers/gemini/` and `providers/qroq/` after the barrel removal pass broke the Vite dev build with an unresolved import error.
+
+**Brainstorming:** The previous barrel audit classified these two as "0 imports" and deleted them. But `connect-provider.ts` and `run-provider-prompt.ts` both import from `"./gemini"` and `"./qroq"` using folder-style resolution — which requires an `index.ts` to exist. Without it Vite throws a "Failed to resolve import" error at startup. The fix is to restore the barrels with only the exports actually consumed by those two callers.
+
+**Prompt:** The Vite dev server throws "Failed to resolve import './gemini'" from connect-provider.ts. The gemini/index.ts and qroq/index.ts barrel files were deleted in the last session. Put them back, exporting only what the callers need.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/gemini/index.ts` — recreated; exports `connectGemini` from `./connect` and `requestGeminiChatCompletion` from `./api`
+- `app/src/features/ai-tools/providers/qroq/index.ts` — recreated; exports `connectGroq` from `./connect` and `requestGroqChatCompletion` from `./api`
+
+**Key decisions & why:**
+- Both barrels export the full public surface of their module (connect + api functions) rather than only the currently-used subset, so future callers don't need to know the internal file split
+- TypeScript type check (`tsc --noEmit`) confirmed clean after recreation
+
+
+## [#296] Fix broken named import of AiAnalysis.vue in AiToolsContent
+**Type:** fix
+
+**Summary:** Corrected a broken named import `{ AiAnalysis }` that was left behind when the `ai-analysis/components/index.ts` barrel was deleted — Vue SFCs are default exports, not named exports.
+
+**Brainstorming:** The barrel removal pass updated the import path to point directly at `AiAnalysis.vue` but kept the curly-brace named import syntax from the barrel. At runtime Vite resolved the file but found no named export called `AiAnalysis`, causing a blank screen. The fix is a one-line change from `{ AiAnalysis }` to `AiAnalysis` (default import).
+
+**Prompt:** The app shows a blank screen after the barrel removal. Running `vite build` reveals: "AiAnalysis is not exported by AiAnalysis.vue" in AiToolsContent.vue. Fix the import.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — line 5: changed `import { AiAnalysis }` to `import AiAnalysis` (default import for Vue SFC)
+
+**Key decisions & why:**
+- Vue SFCs always use default exports; named re-exports of SFCs are only possible through an intermediate barrel — without the barrel the import must be a default import
+
+
+## [#297] Dashboard layout refinements and upload modal flow improvements
+**Type:** update
+
+**Summary:** Refined the dashboard grid layout and table card styling in DashboardView, tightened the upload form layout and footer button ordering in UploadCampainData, and hardened the multi-step upload navigation logic in UploadModal.
+
+**Brainstorming:** Three files were modified as a set of incremental UI/UX improvements. DashboardView needed the table section to be properly bounded (max width, max height) with its title styled distinctly from card body text. UploadCampainData needed a constrained width for the form body and a responsive footer that reorders buttons at the xs (480px) breakpoint rather than stacking them awkwardly. UploadModal's back/proceed navigation needed to be bidirectional — going back from the duplicates step should return to the row-errors step if that step was traversed, not always to the form.
+
+**Prompt:** Make the following three targeted changes:
+
+1. **DashboardView.vue** — Convert the dashboard wrapper to a CSS grid with three rows (header / filter / scrollable content): `grid grid-cols-1 grid-rows-[min_content-min-content_1fr]` with `pt-5 gap-y-5`. Give `.data-visualization` `px-4 pb-6` padding plus `container-type: inline-size` (inline style, not @apply — not a Tailwind utility). Change the table card div to `class="card table-card max-h-full mx-auto max-w-7xl w-full"` and give its `<h3>` `class="card-title table-card-title"`. Add a scoped style `card-title.table-card-title { @apply text-base shrink-0 font-normal text-primary-300; }`.
+
+2. **UploadCampainData.vue** — Make it a multi-root component: template root is two sibling divs (`form-body` + `modal-footer`). Add scoped style `.form-body { @apply p-6 overflow-y-auto w-[90vw] max-w-2xl; }`. In the footer, the Upload button has no extra order class (stays first); Download Template gets `xs:order-3 xs:mr-auto`; Cancel gets `xs:order-2 min-w-24`. This reorders the footer at the 480px (`xs`) breakpoint: Upload | Cancel | Download Template (Download pushed to the right via `mr-auto`). File selection goes through `handleFileSelect(f)` which calls `isValidCsvFile(f)` from `parse-csv` — sets `fileError` and emits `update:file` with `null` on invalid type, clears error and emits the file on valid. Props: `title: string`, `file: File | null`, `parseError: string`, `isLoading: boolean`. Emits: `update:title`, `update:file`, `submit`, `close`, `downloadTemplate`.
+
+3. **UploadModal.vue** — Lift all form state (`title`, `file`, `parseError`, `isLoading`) to the modal level so it survives view switches; `watch(file, () => { parseError.value = '' })` clears parse error on file change. Implement bidirectional navigation: `handleBackFromDuplicates` checks `rowErrors.value.length > 0` — if true, return to `row-errors` view; if false, return to `form` and clear `validCampaigns` + `duplicateGroups`. `handleProceedFromDuplicates(selected: Campaign[])` calls `campaignStore.loadCampaigns(pendingTitle.value, [...validCampaigns.value, ...selected])` — merges the valid campaigns from the row-errors step with the user's selected duplicate resolutions. `handleProceedFromErrors` checks `duplicateGroups.value.length > 0` — if true, advance to `duplicate-rows`; if false, load and close. `close()` resets all state: `view = 'form'`, clears title/file/parseError/rowErrors/validCampaigns/duplicateGroups.
+
+**What changed:**
+- `app/src/features/dashboard/DashboardView.vue` — grid layout for dashboard wrapper; table card sizing + scoped title color style
+- `app/src/features/data-transfer/components/UploadCampainData.vue` — multi-root template; constrained form-body width; xs-breakpoint footer button reordering; file validation via `isValidCsvFile`
+- `app/src/features/data-transfer/components/UploadModal.vue` — lifted form state; bidirectional back navigation (duplicates → row-errors → form); proceed-from-duplicates merges valid + selected campaigns
+
+**Key decisions & why:**
+- `xs:order-*` on footer buttons rather than flex-direction reversal: allows Upload to remain first in DOM (accessible tab order) while reordering visually at wider widths
+- `handleBackFromDuplicates` checks `rowErrors` length rather than tracking a navigation stack: the two-step flow is linear enough that checking state is simpler than a history array
+- `validCampaigns` and `selected` are spread into a new array in `handleProceedFromDuplicates` rather than mutating — avoids ref side-effects when `close()` later clears `validCampaigns.value`
+
+
+## [#298] Install xxhashjs and hash cache keys deterministically
+**Type:** update
+
+**Summary:** Replaced the plain-string cache key in `getCacheKey` with a deterministic 64-bit xxHash, so identical inputs always produce the same compact hex key.
+
+**Brainstorming:** The existing key was a readable concatenated string (`provider::ch1|ch2`). For caching correctness this already worked, but hashing gives a fixed-length opaque key regardless of how many channel IDs are present. xxhashjs was chosen because it is pure JavaScript (browser-compatible with Vite), synchronous, and exposes an `h64` API matching the intended `hash64` use. The seed is fixed at 0 for full determinism.
+
+**Prompt:** Install and implement a hash function to hash cache keys — create the same hash key from the same input each time.
+
+**What changed:**
+- `app/package.json` — added `xxhashjs` (dependency) and `@types/xxhashjs` (dev dependency)
+- `app/src/features/ai-tools/ai-analysis/utils/utils.ts` — imports `XXH` from `xxhashjs`; `getCacheKey` now builds the raw key string internally then returns `XXH.h64(raw, 0).toString(16)` — a 16-char hex string
+
+**Key decisions & why:**
+- Seed fixed at `0` via named constant `HASH_SEED` — any non-zero seed would produce different hashes on different builds with no benefit here
+- Raw string still constructed the same way (sorted channel IDs, lowercased provider) — hashing is applied on top of the same normalization logic, not as a replacement for it
+- `xxhashjs` over inline FNV/djb2 — user asked to install a package; xxhash is a well-known algorithm with type definitions available
+
+
+## [#299] portfolioData.store architecture — brainstorm + implementation
+**Type:** architecture
+
+**Summary:** Introduced `portfolioData.store` as a dedicated data layer for portfolio entries, refactored `campaign.store` into a selection/filter layer, updated `aiAnalysis.store` to use a nested per-portfolio cache, and wired the upload flow directly to `portfolioData.store`.
+
+**Brainstorming:** Extensive multi-turn design session covering: store location (app-level `stores/` — no feature owns this data yet); `PortfolioEntry` shape (id via `crypto.randomUUID()`, title, channelMap, `fullAnalysis` pre-computed at add time, uploadedAt); no raw campaigns stored (channel map already contains them via `Channel.campaigns`); `fullAnalysis` pre-computed once at upload time so full-portfolio view never recomputes and future portfolio comparison arrives with analysis ready; selection signal pattern — `pendingSelectionId` ref on `portfolioData.store` watched by `campaign.store` with `{ immediate: true }` (handles both first upload and replace without the array-length-stays-same atomicity bug); `lastEvictedId` signal for explicit user-initiated delete (future); nested `Map<portfolioId, Map<cacheKey, CacheEntry>>` in `aiAnalysis.store` so switching portfolios preserves cached AI responses (each portfolio's results are retrievable when switching back); `getCacheKey` signature unchanged — portfolioId is the outer map key, not part of the hash; portfolio switch triggers `onPortfolioSwitch` (resets display + flags, cache preserved); filter watcher double-guarded on `analysisActivated` + `firstAnalyzeCompleted` to prevent spurious auto-calls during portfolio switch; `clearStateForNewCSV` removed — replaced by portfolio switch watcher; `data-transfer` writes to `portfolioData.store` directly (mechanism-agnostic — future API fetch works the same way); `campaign.store` watches signals reactively, never writes to `portfolioData.store`; `aiAnalysis.store` watches `activePortfolioId` + `lastEvictedId` reactively. IndexedDB noted as future cache persistence layer (TODO).
+
+**Prompt:** Introduce a portfolioData.store as a data layer holding PortfolioEntry objects (id, title, channelMap, fullAnalysis, uploadedAt). Refactor campaign.store into a selection/filter layer that watches portfolioData signals. Update aiAnalysis.store to use nested per-portfolio cache. Wire UploadModal to portfolioData.store directly. Preserve all existing public APIs of campaign.store so no dashboard components change.
+
+**What was built:**
+- `app/src/stores/portfolioData.store.ts` — new store; `PortfolioEntry` interface exported; `addPortfolio`, `replacePortfolio`, `loadPortfolio` (delegates), `deletePortfolio`, `getById` actions; `pendingSelectionId` + `lastEvictedId` signals; `buildChannelMap` + `computePortfolioAnalysis` called at write time; DEV_MOCK block initialises mock portfolio on first load
+- `app/src/stores/campaign.store.ts` — `activePortfolioId` ref added; `portfolioChannels` + `title` converted from direct state to computeds derived from active portfolio entry; `portfolioAnalysis` short-circuits to `entry.fullAnalysis` when no filter; watchers on `pendingSelectionId` (immediate) and `lastEvictedId`; `loadCampaigns` removed; all existing computed names/types preserved
+- `app/src/stores/aiAnalysis.store.ts` — cache type changed to `Map<string, Map<string, CacheEntry>>`; `getCacheEntry` + `setCacheEntry` helpers scope all cache access to `activePortfolioId`; `onPortfolioSwitch` internal function (cancel + reset flags + show cached or idle, no cache clear); watcher on `activePortfolioId` → `onPortfolioSwitch`; watcher on `lastEvictedId` → delete portfolio cache entry; filter watcher adds `firstAnalyzeCompleted` guard; `clearStateForNewCSV` removed from public API; campaigns watcher removed
+- `app/src/features/data-transfer/composables/useUploadModal.ts` — `hasCampaigns` now reads `portfolioData.portfolios.length`; `useCampaignStore` import removed
+- `app/src/features/data-transfer/components/UploadModal.vue` — all three `loadCampaigns` call sites replaced with `portfolioData.loadPortfolio(campaigns, title)`
+
+**Key decisions & why:**
+- `pendingSelectionId` signal over length watch — delete+add (replace) leaves array length unchanged so the length watcher would never fire; a dedicated signal is unambiguous and works for both add and replace
+- `fullAnalysis` on `PortfolioEntry` — computed once at upload time; short-circuit in `portfolioAnalysis` computed avoids recomputation on filter clear; future portfolio comparison has both sides pre-computed
+- Nested cache by portfolioId — switching portfolios preserves LLM responses; switching back to a previous portfolio restores its cached results; only explicit `deletePortfolio` evicts a portfolio's cache
+- `getCacheKey` unchanged — portfolioId scoping is handled by the outer map, not by changing the hash input
+- Filter watcher double guard — `analysisActivated` was already checked; adding `firstAnalyzeCompleted` closes the timing window where a portfolio switch (which changes `selectedChannelsIds` to `[]`) could trigger a spurious debounced auto-call before `onPortfolioSwitch` resets the flag
+- `data-transfer` writes directly to `portfolioData.store` with no store in `data-transfer` — the upload feature is a write mechanism; future API fetches would follow the same pattern
+
+
+## [#300] Add ROI by Channel chart to dashboard
+**Type:** feature
+
+**Summary:** Added a horizontal bar chart showing ROI by channel, placed immediately after the existing ROI by campaign chart in DashboardCharts.vue.
+
+**Brainstorming:** Reused the existing `BarChart` component in horizontal mode — same pattern as ROI by campaign. Data comes from the `channels` prop already passed to `DashboardCharts.vue` (each `Channel` carries `roi` via `PerformanceMetrics`). Colors assigned from `CHART_COLORS` by index, matching the per-channel visual language used elsewhere (Revenue vs Budget chart). No new components needed.
+
+**Prompt:** Add a ROI by channel horizontal bar chart to the dashboard, placed after the ROI by campaign chart.
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `roiChannelChartData` computed (maps `channels` to ROI % values with `CHART_COLORS` by index); inserted "ROI by Channel" card between ROI by campaign and Budget Allocation cards
+
+**Key decisions & why:**
+- Horizontal bar chart — matches ROI by campaign visual style and keeps channel names readable on the Y axis
+- `CHART_COLORS` by channel index — consistent with the existing per-channel color convention; `campaignColorMap` is campaign-keyed so a separate index-based mapping is cleaner here
+
+
+## [#301] Add Chart.js conversion funnel for comparison
+**Type:** feature
+
+**Summary:** Created a Chart.js-based funnel chart (FunnelBarChart.vue) as an alternative to the existing custom HTML/SCSS FunnelChart, and rendered both on the dashboard so the user can compare and decide which to keep.
+
+**Brainstorming:** Chart.js has no native funnel type, so the closest equivalent is a horizontal bar chart — impressions/clicks/conversions naturally produce a funnel shape since values decrease at each stage. The existing FunnelChart uses cube-root width scaling and inline rate labels; the Chart.js version shows drop rates (CTR/CVR) in the tooltip via the afterLabel callback instead. Same FUNNEL_COLORS used for visual consistency. Both components share the same labels/values prop interface so they are drop-in interchangeable.
+
+**Prompt:** Create a Chart.js-based conversion funnel chart (FunnelBarChart.vue) using a horizontal bar chart. Keep both the existing FunnelChart and the new FunnelBarChart visible in DashboardCharts.vue so the user can compare them.
+
+**What was built:**
+- `app/src/ui/charts/FunnelBarChart.vue` — new component; horizontal Bar chart; FUNNEL_COLORS per bar; `rates` computed for CTR/CVR drop rates; tooltip `afterLabel` callback shows rate label + value; X axis ticks formatted K/M; same `labels`/`values` props as FunnelChart
+- `app/src/ui/charts/index.ts` — added `FunnelBarChart` export
+- `app/src/features/dashboard/components/DashboardCharts.vue` — imported `FunnelBarChart`; added "Conversion Funnel (Chart.js)" card after existing funnel card
+
+**Key decisions & why:**
+- Horizontal bar over vertical — matches funnel reading direction (top to bottom = Impressions → Clicks → Conversions) and keeps stage labels readable
+- Drop rates in tooltip rather than inline — Chart.js bar charts don't have a clean way to render inline labels without the datalabels plugin; tooltip afterLabel is dependency-free and unambiguous
+- Both charts kept simultaneously — user explicitly requested side-by-side comparison before deciding which to remove
+
+
+## [#302] Add step and stacked funnel chart variants
+**Type:** feature
+
+**Summary:** Created two more Chart.js funnel chart alternatives (FunnelStepChart and FunnelStackedChart) and added them to the dashboard alongside the existing two, so all four variants are visible for comparison.
+
+**Brainstorming:** Step chart uses Chart.js Line with `stepped: true` and fill below — the cliff drops between stages make drop-off viscerally clear; good for "shock" communication of funnel loss. Stacked progression uses a horizontal stacked bar with Progressed (green) + Dropped (red) datasets per stage — every bar sums to the full stage total, making conversion rates readable as proportions; better for analytical audiences. `LineElement`, `PointElement`, and `Filler` were not registered; added them to register.ts. Stacked tooltip uses `afterBody` (fires once per tooltip, not per dataset) to show the progression rate for the hovered stage.
+
+**Prompt:** Add a step line chart and a stacked progression bar chart as additional conversion funnel variants. Register the missing Chart.js elements. Keep all four funnel charts visible on the dashboard.
+
+**What was built:**
+- `app/src/ui/charts/register.ts` — added LineElement, PointElement, Filler registrations
+- `app/src/ui/charts/FunnelStepChart.vue` — Line chart, stepped: true, fill below with semi-transparent indigo; Y axis ticks formatted K/M; tooltip afterLabel shows CTR/CVR per stage
+- `app/src/ui/charts/FunnelStackedChart.vue` — stacked horizontal Bar; Progressed + Dropped datasets; progression rate shown via tooltip afterBody; legend at bottom
+- `app/src/ui/charts/index.ts` — exported FunnelStackedChart and FunnelStepChart
+- `app/src/features/dashboard/components/DashboardCharts.vue` — imported and rendered both new components as additional chart cards
+
+**Key decisions & why:**
+- `stepped: true` (not 'before'/'after') — centers the step transition at the midpoint between stages, giving a balanced look rather than holding the line until the last moment
+- `afterBody` in stacked tooltip — fires once per tooltip group rather than once per dataset (afterLabel), avoids the progression rate appearing twice
+- Dropped dataset opacity 0.45 — muted intentionally so the green "progressed" portion reads as the primary signal
+
+
+## [#303] Normalize FunnelBarChart values and show actual values as bar labels
+**Type:** update
+
+**Summary:** Updated FunnelBarChart to use normalized values (% of impressions) so all bars are visually comparable, and added chartjs-plugin-datalabels to render formatted actual values inside each bar.
+
+**Brainstorming:** Raw values (impressions=1M, conversions=~1.4K) make the bottom bars invisible at scale — normalization fixes this. chartjs-plugin-datalabels is the standard Chart.js solution for on-bar text; registered per-instance via the `:plugins` prop on the Bar component so other charts are unaffected. Anchor 'start' + align 'end' + clamp: true places labels at the left of each bar reading rightward, clamped to stay inside even for very short bars. Tooltip updated to show normalized %, actual value, and CTR/CVR rate.
+
+**Prompt:** Use normalized values (% of impressions) for FunnelBarChart so bars are visually comparable. Display formatted actual values (K/M notation) on the bars. Install chartjs-plugin-datalabels.
+
+**What changed:**
+- `app/package.json` / `package-lock.json` — added chartjs-plugin-datalabels dependency
+- `app/src/ui/charts/FunnelBarChart.vue` — `normalized` computed maps values to % of first value; chartData uses normalized values; X axis fixed 0–100 with `%` tick suffix; ChartDataLabels imported and passed via `:plugins`; datalabels config: anchor start, align end, clamp true, formatter returns formatActual(rawValue); tooltip label shows normalized %, afterLabel shows actual + rate
+
+**Key decisions & why:**
+- Per-instance plugin registration — avoids polluting all other charts with datalabels; Chart.js global registration would require every other chart to explicitly opt out
+- `values[0]` as the normalization base — impressions is always the first (and largest) stage; using max() would be equivalent but fragile if order changed
+- `clamp: true` — prevents label overflow on the very short conversions bar without needing conditional positioning logic
+
+
+## [#304] Remove Chart.js funnel variants — keep original FunnelChart
+**Type:** update
+
+**Summary:** Removed all three Chart.js funnel alternatives (FunnelBarChart, FunnelStepChart, FunnelStackedChart) after user chose the original custom HTML/SCSS FunnelChart as the best visual.
+
+**Brainstorming:** No trade-offs — user decision after seeing all four side by side.
+
+**Prompt:** Keep only the original FunnelChart. Remove the three Chart.js variants, their files, exports, registrations, and the chartjs-plugin-datalabels dependency.
+
+**What changed:**
+- Deleted `app/src/ui/charts/FunnelBarChart.vue`, `FunnelStepChart.vue`, `FunnelStackedChart.vue`
+- `app/src/ui/charts/register.ts` — removed LineElement, PointElement, Filler registrations
+- `app/src/ui/charts/index.ts` — removed FunnelBarChart, FunnelStepChart, FunnelStackedChart exports
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed all three imports and their chart cards
+- `app/package.json` / `package-lock.json` — uninstalled chartjs-plugin-datalabels
+
+**Key decisions & why:**
+- Full removal rather than keeping files unused — no orphaned code
+
+
+## [#305] RevVsBudgetChart — toggle between Budget vs Revenue and Efficiency Gap views
+**Type:** feature
+
+**Summary:** Extracted "Revenue vs Budget by Channel" into a dedicated component with a view toggle (Budget vs Revenue / Efficiency Gap), and added `gapAmount` to `ShareEfficiency` so the euro gap propagates across all portfolio analysis models.
+
+**Brainstorming:** The toggle needed two distinct chart configs — the grouped bars view uses the standard legend + Amount (€) axis, while the gap view needs per-bar green/red coloring by sign, no legend, Gap (%) axis, and euro amounts visible without hover. Evaluated two options for showing euros on the gap chart: (1) tooltip-only — cleaner axis but requires hover, (2) x-axis label strings including the euro gap — always visible, slightly busier. Chose (2). For the chart component, direct `Bar` from vue-chartjs is simpler than adding an `extraOptions` escape hatch to `GroupedBarChart`. `RadioToggle` already exists and fits the 2-option toggle exactly. `gapAmount` (`revenue - budget`) added to `ShareEfficiency` so AI prompts and analysis signals carry the absolute EUR gap alongside the share-based `efficiencyGap`.
+
+**Prompt:** Update Revenue vs Budget by Channel. Add a toggle [ Budget vs Revenue ] (default) [ Efficiency Gap ]. Amount (€) → Gap (%). Labels for gap chart should include value in euros. Create a component for this chart to handle view switch. Also add the gap in euros in the campaign analysis calculations and update all models.
+
+**What was built / What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — new component; owns `view` ref (ChartView union); `TOGGLE_OPTIONS` drives RadioToggle; `revVsBudgetData` + `revVsBudgetOptions` for grouped view; `efficiencyGapData` (x-axis labels include `+€N` / `-€N`, per-bar colors by sign) + `gapOptions` (Gap (%) axis, no legend) for gap view; renders `Bar` directly from vue-chartjs
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed `revVsBudgetData` computed and `GroupedBarChart` import; added `RevVsBudgetChart` import; replaced the inline card body with `<RevVsBudgetChart>`
+- `app/src/shared/types/campaign.ts` — `ShareEfficiency` gains `gapAmount: number` (revenue − budget in EUR)
+- `app/src/shared/utils/campaign-performance.ts` — `computeShareEfficiency` computes `gapAmount: item.revenue - item.budget`
+- `app/src/shared/portfolio-analysis/utils.ts` — all 5 explicit `ShareEfficiency` object literals updated to include `gapAmount` from the parent summary object
+
+**Key decisions & why:**
+- `Bar` directly rather than extending `GroupedBarChart` — the gap view has fundamentally different options; an escape-hatch prop would bleed app-specific logic into the UI library
+- Euro amount in axis label string — always visible without requiring hover; implemented as `${ch.name} (+€N)` format with explicit `+` prefix for positive values
+- `gapAmount` on `ShareEfficiency` rather than a separate field — all signal types extend `ShareEfficiency`, so a single change propagates to `CampaignSummary`, `ChannelSummary`, `InefficientChannelSignal`, `InefficientCampaignSignal`, `BudgetScalingCandidate`, `ScalingCandidateSignal`
+
+
+## [#306] Rename CAC → CPA across all models and UI
+**Type:** fix
+
+**Summary:** Corrected a metric naming error — the formula `budget / conversions` is CPA (Cost Per Acquisition), not CAC (Customer Acquisition Cost); renamed the field and all references across types, utils, UI, prompts, and mocks.
+
+**Brainstorming:** Pure rename — no logic changes. Scope covered: `PerformanceMetrics.cac` → `cpa`, `PortfolioKPIs.aggregatedCAC` → `aggregatedCPA`, all downstream KPI card and table labels, and all "CAC" string occurrences in AI prompts and mock responses. Legacy prompt files kept compilable with the rename applied. `channel.ts` description updated in CLAUDE.md (no code change needed there — Channel inherits from PerformanceMetrics).
+
+**Prompt:** CAC formula is actually CPA. Rename cac → cpa in models and update UI too.
+
+**What changed:**
+- `app/src/shared/types/campaign.ts` — `PerformanceMetrics.cac` → `cpa`; `PortfolioKPIs.aggregatedCAC` → `aggregatedCPA`
+- `app/src/shared/utils/campaign-performance.ts` — `cac:` → `cpa:` in `computePerformanceMetrics`; destructured `cac` → `cpa` and `aggregatedCAC` → `aggregatedCPA` in `computePortfolioKPIs`
+- `app/src/features/dashboard/components/DashboardKpis.vue` — label "CAC" → "CPA"; `kpis.aggregatedCAC` → `kpis.aggregatedCPA`
+- `app/src/features/dashboard/components/CampaignTable.vue` — column key `cac` → `cpa`; label "CAC" → "CPA"; ariaLabel "Customer acquisition cost" → "Cost per acquisition"; `c.cac` → `c.cpa`
+- `app/src/features/ai-tools/mocks/executive-summary-mocks.ts` — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/executive-summary-prompt2.ts` — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/executive-summary-prompt.ts` (legacy) — all "CAC" string occurrences → "CPA"
+- `app/src/features/ai-tools/prompts/budget-optimization-prompt.ts` (legacy) — all "CAC" string occurrences → "CPA"; local `CampainSummaryTotals.cac` → `cpa`
+
+**Key decisions & why:**
+- No logic change — the formula `budget / conversions` is correct, only the name was wrong
+- Legacy prompt files updated for consistency even though they are unused — kept compilable
+
+
+## [#307] Efficiency Gap chart — move euro gap from x-axis labels to tooltip
+**Type:** fix
+
+**Summary:** Removed the inline euro gap from efficiency gap x-axis labels and moved it into a tooltip `afterLabel` callback instead.
+
+**Brainstorming:** The euro gap embedded in the label (`Email (+€1,234)`) cluttered the x-axis and made rotation labels harder to read. Tooltip is the correct place for supplementary detail — the label should only identify the channel.
+
+**Prompt:** Efficiency gap chart should not show gap amount in labels, only on tooltips.
+
+**What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — `efficiencyGapData` labels simplified to `ch.name` only; `gapOptions` extended with `tooltip.callbacks.afterLabel` that returns `Gap: +€X` or `Gap: -€X` for the hovered channel
+
+**Key decisions & why:**
+- Used `afterLabel` callback (renders on a separate line below the percentage value) so the euro gap supplements rather than replaces the primary value
+- Spread `basePlugins.tooltip` inside the override to preserve dark-theme tooltip styling
+
+
+## [#308] Efficiency Gap chart — format axis ticks and tooltip values as percentages
+**Type:** fix
+
+**Summary:** Y-axis tick labels and tooltip primary value in the Efficiency Gap chart now display with a `%` suffix instead of raw numbers.
+
+**Brainstorming:** The raw number on the axis (e.g. `12.5`) was ambiguous without the unit. Adding a `ticks.callback` to format axis labels as `N.N%` and a `tooltip.callbacks.label` to show `N.NN%` makes the chart self-explanatory. The euro gap remains in `afterLabel` unchanged.
+
+**Prompt:** Efficiency gap should be a percentage — axis as well.
+
+**What changed:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — `gapOptions.scales.y.ticks.callback` formats axis ticks as `N.N%`; `gapOptions.plugins.tooltip.callbacks.label` formats the hovered value as `N.NN%`
+
+**Key decisions & why:**
+- Axis ticks use 1 decimal (`toFixed(1)`) for readability at small label size; tooltip uses 2 decimals (`toFixed(2)`) for precision on hover
+
+
+## [#309] ROI vs CPA — Decision Quadrants scatter chart
+**Type:** feature
+
+**Summary:** Added a full-width scatter chart above the campaign table that plots each campaign by ROI (y-axis) vs CPA (x-axis), split into four color-coded decision quadrants divided by portfolio average reference lines.
+
+**Brainstorming:** Considered a bubble chart with budget-encoded size but concluded that position (ROI vs CPA) carries the decision signal and bubble size would add cognitive load without proportionate value. Quadrant coloring (green/yellow/indigo/red) gives immediate actionability without reading axis values. Four datasets (one per quadrant) provide a built-in legend with action labels. Custom inline Chart.js plugin draws quadrant background tints and dashed reference lines at aggregatedROI / aggregatedCPA without needing the annotation plugin. PointElement was missing from Chart.js registration — added it to register.ts as Scatter requires it.
+
+**Prompt:** Create a ROI vs CPA scatter chart above the campaign table occupying full width. Colored scatter + quadrants + reference lines, no bubble sizing.
+
+**What was built:**
+- `app/src/ui/charts/register.ts` — added `PointElement` import and registration (required by Scatter chart type)
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — new component; Scatter from vue-chartjs; 4 datasets keyed by quadrant (Scale aggressively / Optimize cost / Improve funnel / Cut or rethink); inline `quadrantPlugin` draws colored background tints + dashed reference lines at portfolio avg ROI and avg CPA; tooltip shows campaign name, channel, ROI%, CPA€; axis ticks formatted with formatCurrency (x) and formatPercentage (y)
+- `app/src/features/dashboard/DashboardView.vue` — imported RoiCpaScatter; inserted full-width between DashboardCharts and the campaign table card
+
+**Key decisions & why:**
+- 4 datasets rather than 1 with per-point colors: Chart.js legend entry per dataset gives action labels (Scale/Optimize/Improve/Cut) for free
+- Custom plugin reads `props.kpis` directly on each `beforeDraw` call — no computed needed, always uses latest values, avoids plugin re-registration
+- No bubble sizing: position alone tells the story; size added noise vs value for this dataset size
+- PointElement added globally in register.ts rather than locally — consistent with the existing registration pattern for all other Chart.js elements
+
+
+## [#310] RoiCpaScatter — fix chart not filling card width
+**Type:** fix
+
+**Summary:** Chart wrapper div was missing `w-full` — added the class so the Scatter canvas fills the full card width.
+
+**Brainstorming:** Chart.js `responsive: true` fills the container, but the container div only had a height set and no width, so it defaulted to content width. Adding `w-full` gives it 100% width for the canvas to fill.
+
+**Prompt:** The chart does not cover all the width of the card.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `class="w-full"` to the chart height-wrapper div
+
+**Key decisions & why:**
+- Single class addition; no structural change needed
+
+
+## [#311] RoiCpaScatter — log scale ROI axis + visible campaign labels
+**Type:** update
+
+**Summary:** Y-axis now uses a log1p transform for better separation of closely-clustered ROI values, and campaign names are drawn directly on the chart next to each point.
+
+**Brainstorming:** Chart.js native logarithmic scale only handles positive values; since ROI can be negative, used Math.log1p / Math.expm1 transform on a linear scale instead. log1p(x) = ln(1+x) is defined for x > -1 (ROI cannot be worse than -100%). The transform is monotonic so quadrant assignment logic is unchanged. Visible labels drawn in afterDraw via canvas fillText — no extra plugin dependency needed.
+
+**Prompt:** ROI axis should use log scale; add visible campaign name labels on the chart.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `roi` field to ScatterPoint (original value for tooltip); `y` stores `logRoi(c.roi)` = Math.log1p(clamped); quadrantPlugin.beforeDraw uses `logRoi(avgRoi)` for the y reference line pixel; quadrantPlugin.afterDraw draws campaign name labels via ctx.fillText colored by dataset border; y-axis ticks callback reverses with Math.expm1; tooltip uses p.roi (original); axis title updated to "ROI (log scale)"; CHART_HEIGHT increased to 420
+
+**Key decisions & why:**
+- Math.log1p transform rather than Chart.js logarithmic type — handles negative ROI values cleanly
+- Clamp at -0.999 in logRoi helper to avoid log(0) = -Infinity for near-total-loss campaigns
+- afterDraw for labels rather than chartjs-plugin-datalabels — no extra dependency, full control; labels offset 9px right and 3px up from the point center
+
+
+## [#312] RoiCpaScatter — quadrant labels on chart + bubble sizing by budget
+**Type:** update
+
+**Summary:** Added in-chart quadrant corner labels (Scale / Optimize / Improve / Cut) and switched from Scatter to Bubble chart with bubble radius scaled from campaign budget.
+
+**Brainstorming:** Quadrant labels drawn in beforeDraw after backgrounds — positioned at the top-left corner of each quadrant using the same i%2/i<2 index logic used for background rects. Short labels (tag field) used on chart; full labels (label field) kept for the legend. Bubble radius: MIN_R=5 to MAX_R=28 pixels, linearly scaled from budget share of maxBudget in the filtered set. Campaign name labels in afterDraw now offset by r+4 from point center so they clear the bubble edge regardless of size.
+
+**Prompt:** Update quadrant labels to Scale/Optimize/Improve/Cut; add bubble size scaled from budget.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `tag` field to QUADRANTS; added `r` and `roi` to BubblePoint type; switched from Scatter to Bubble (vue-chartjs); added budget-to-radius scaling (MIN_R=5, MAX_R=28); quadrantPlugin.beforeDraw draws short tag labels per quadrant corner at 55% opacity; afterDraw campaign label x-offset uses r+4 to clear bubble edge; ChartOptions type updated to 'bubble'
+
+**Key decisions & why:**
+- Separate `tag` (short) from `label` (long) in QUADRANTS — legend keeps descriptive text, chart label stays compact
+- globalAlpha 0.55 on quadrant tags — readable but doesn't compete with the data points
+- r offset in afterDraw label positioning so labels don't overlap the bubble for large-budget campaigns
+
+
+## [#313] RoiCpaScatter — selective labels (largest per quadrant) with clipping prevention
+**Type:** update
+
+**Summary:** Labels now only appear for the largest-budget campaign per quadrant; all others appear on hover via tooltip; labels are repositioned to never overflow the chart area.
+
+**Brainstorming:** "Important" defined as largest bubble (highest budget) per quadrant — the most impactful decision point in each zone. Per-dataset loop finds max-r point; draws only that label. Clipping prevention: measureText for width, flip to left-aligned if right edge would overflow, clamp y between top+halfLineHeight and bottom-halfLineHeight.
+
+**Prompt:** Labels only for really important items (rest on hover); labels must never be cut outside chart area.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — afterDraw rewrites to find max-r index per dataset; draws one label per quadrant; ctx.measureText used to detect right-edge overflow and flip to left; y clamped to stay inside chartArea; textBaseline changed to 'middle' for vertical centering
+
+**Key decisions & why:**
+- Largest bubble per quadrant = highest budget = most impactful decision — natural "importance" definition for a budget tool
+- Flip-to-left rather than truncate — preserves full campaign name readability
+- textBaseline 'middle' + y clamp keeps label anchored to the bubble center regardless of proximity to chart edges
+
+
+## [#314] RoiCpaScatter — bubble size from revenue (min=6, max=20) + semi-transparent tooltip
+**Type:** update
+
+**Summary:** Bubble radius now encodes revenue (not budget), clamped to 6–20px; tooltip background changed to 75% opacity so overlapping bubbles remain visible through it.
+
+**Prompt:** minSize=6, maxSize=20, size=normalize(revenue); tooltips are opaque and this is a problem.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — MIN_R 5→6, MAX_R 28→20; radius computed from revenue/maxRevenue; tooltip backgroundColor overridden to rgba(31,41,55,0.75); BubblePoint comment updated
+
+**Key decisions & why:**
+- Revenue as size metric: revenue is the output signal — a large revenue bubble in the top-left is the clearest "scale this" signal
+- 75% opacity tooltip: retains readability of tooltip text while letting chart content show through
+
+
+## [#315] RoiCpaScatter — top-3 labels per quadrant, opacity scaling, smaller bubbles, visible tooltip
+**Type:** update
+
+**Summary:** Labels now show for top 3 revenue campaigns per quadrant; bubble opacity scales with size (smaller = more transparent); bubbles restrained to MIN_R=4/MAX_R=14; tooltip is nearly opaque with a brighter border; labels are white.
+
+**Prompt:** Top 3 labels per category by meaning; smaller dots more opaque; restrain size; tooltip not visible; labels white.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added `revenue` to BubblePoint for ranking; QUADRANT_RGB array for per-point rgba construction; pointOpacity(r) helper scales 0.35→0.85 by radius; backgroundColor is now an array per dataset; afterDraw ranks by revenue desc and labels top LABELS_PER_QUADRANT=3; label fillStyle '#ffffff'; tooltip backgroundColor 'rgba(15,23,42,0.95)' + brighter border; MIN_R 6→4, MAX_R 20→14
+
+**Key decisions & why:**
+- Revenue ranking for labels: highest revenue = highest business impact, consistent with bubble size metric
+- Opacity 0.35–0.85 range: smallest bubbles fade back visually; largest stay prominent — reduces perceived overlap
+- Tooltip rgba(15,23,42,0.95): near-opaque dark navy, clearly readable against both light and dark chart backgrounds
+
+
+## [#316] RoiCpaScatter — restore bubble colors, labels under tooltip, updated quadrant text
+**Type:** fix
+
+**Summary:** Restored fixed bubble colors per quadrant (removed per-point opacity variation); moved campaign label drawing to afterDatasetsDraw so tooltips always render on top; updated quadrant labels to Scale / Optimize cost / Improve funnel / Rethink / Watch.
+
+**Prompt:** Colors of areas should not have changed; labels appearing above tooltips is wrong; update text to Scale / Optimize cost / Improve funnel / Rethink / Watch.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — restored single `color` per QUADRANT dataset (removed QUADRANT_RGB + pointOpacity); renamed labels/tags: "Scale aggressively"→"Scale", "Cut or rethink"→"Rethink / Watch", tag "Optimize"→"Optimize cost", "Improve"→"Improve funnel", "Cut"→"Rethink / Watch"; label drawing moved from `afterDraw` to `afterDatasetsDraw` (runs before tooltip plugin renders, so tooltip draws on top)
+
+**Key decisions & why:**
+- afterDatasetsDraw for labels: Chart.js tooltip plugin hooks into a later draw phase; moving labels to afterDatasetsDraw ensures they are drawn to the canvas before the tooltip, so the tooltip always appears on top
+- Fixed colors restored: per-point opacity caused unexpected visual divergence from previous appearance
+
+
+## [#317] RoiCpaScatter — median splits, updated quadrant names, removed kpis prop
+**Type:** update
+
+**Summary:** Quadrant split lines now use medianROI and medianCPA computed from the visible campaigns instead of portfolio averages; quadrant labels updated to Efficient / Costly / Weak funnel / Inefficient; kpis prop removed as it is no longer needed.
+
+**Prompt:** Arbitrary average split unfairly flips categories — use medianCPA and medianROI. Update quadrant names to Efficient / Costly / Weak funnel / Inefficient.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — added getMedian helper; added medians computed (roi + cpa from non-null campaign values); bubbleData and quadrantPlugin.beforeDraw now read medians.value instead of props.kpis; kpis prop removed; quadrant labels updated to Efficient / Costly / Weak funnel / Inefficient with descriptive legend text
+- `app/src/features/dashboard/DashboardView.vue` — removed :kpis binding from RoiCpaScatter
+
+**Key decisions & why:**
+- Median over mean: median is not skewed by extreme outliers (a single very high CPA campaign would push the mean right, misclassifying the majority); median gives a stable "middle ground" split
+- kpis prop removed entirely: medians are derived from campaigns, so kpis is no longer a required input
+
+
+## [#318] RoiCpaScatter — median annotations, round tooltip markers, text shadow, axis padding, bubble size subtitle
+**Type:** update
+
+**Summary:** Added median value labels on reference lines, removed corner quadrant tags, added text shadow to campaign labels, set explicit ROI tick values, added 5% axis grace padding, made tooltip point markers round, added bubble size subtitle.
+
+**Prompt:** Add reference line value labels; remove corner area tags; round tooltip shape; bubble size legend subtitle; text shadow on labels; axis padding.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed corner tag rendering from beforeDraw; added median annotation labels ("Median CPA: €X" above vertical line, "Median ROI: X%" above horizontal line at right edge); afterDatasetsDraw adds ctx.shadowColor/shadowBlur for label readability; tooltip usePointStyle: true for round markers; tooltip label callback adds Revenue line; ROI_TICKS array drives afterBuildTicks for clean y-axis tick values (-50%, 0%, 50%, 100%, 200%, 500%, 1000%); grace: '5%' on both axes prevents edge clipping; layout.padding.top: 16 to accommodate median CPA label above chart area; scatter-header + scatter-subtitle added to template
+
+**Key decisions & why:**
+- Median labels positioned outside chart area top (CPA) and inside at right edge above line (ROI) — non-overlapping with data
+- afterBuildTicks for explicit ticks: the cleanest Chart.js 3 API for overriding auto-generated ticks without affecting data positions
+- grace instead of manual min/max: proportional to data range, works across different datasets automatically
+
+
+## [#319] RoiCpaScatter redesign — fixed size, ghost layer, portfolio benchmarks, adaptive quadrants
+**Type:** update
+
+**Summary:** Redesigned RoiCpaScatter with fixed-size points, a ghost context layer for filtered views, portfolio-median reference lines, adaptive quadrant zones, and a clamped y-axis to prevent extreme ROI values from compressing the chart.
+
+**Brainstorming:** The bubble chart was visually noisy due to varying bubble sizes causing overlaps and the log-scale y-axis stretching to accommodate 1000%+ ROI outliers while compressing the interesting region. The redesign separates two concerns: position tells the story (no bubble sizing), and a ghost layer provides portfolio context when filtering. Portfolio medians (not filtered medians) serve as benchmark midlines so the reference lines remain stable across filter changes. Quadrant backgrounds are suppressed below 5 campaigns to avoid misleading splits on thin data. Y-axis max is computed from filtered data p-max + 0.25 in log space to prevent ghost-layer outliers from stretching the scale.
+
+**Prompt:** Redesign RoiCpaScatter: use portfolio medians for midlines; plot filtered campaigns as fixed-size main points; add background ghost points (all non-filtered campaigns, low opacity, small) when filter active; disable quadrant zones if <5 filtered campaigns but keep reference lines; clamp y-axis to filtered data range; dynamic subtitle "Portfolio overview" / "Compared to portfolio benchmarks"; top 2 labels per quadrant by revenue.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — full redesign: new props (allCampaigns + campaigns), fixed POINT_R=5 / GHOST_R=3, ghost dataset (non-filtered campaigns only, isGhost flag), medians always from allCampaigns, showQuadrants gate (≥5), yAxisMax computed from filtered data, dynamic subtitle computed, tooltip handles isGhost "(not in filter)" label
+- `app/src/features/dashboard/DashboardView.vue` — added `:all-campaigns="store.campaigns"` prop binding
+
+**Key decisions & why:**
+- Fixed point size (r=5): position is the primary signal; bubble overlap was the main readability problem
+- Ghost layer excludes filtered campaigns (rowId Set): avoids z-order overlap and double tooltips at same position
+- Medians from allCampaigns: reference lines stay stable when channel filter changes — consistent benchmark
+- yAxisMax from filtered data: ghost-layer outliers can't stretch the visible range; ghost points above max simply clip
+- showQuadrants threshold (5): splits are not meaningful with very few data points — colored zones removed but reference lines remain
+- Y-axis min fixed at logRoi(-0.7): ensures the scale always shows down to ~-70% ROI regardless of data
+
+
+## [#320] RoiCpaScatter — remove quadrant gate, fix axis padding symmetry
+**Type:** fix
+
+**Summary:** Removed the <5-campaigns quadrant suppression gate and replaced asymmetric grace/fixed-min axis padding with symmetric 10% bounds computed from the filtered data range on all four sides.
+
+**Brainstorming:** The quadrant gate was unhelpful — it removed visual context for small filtered sets rather than helping. The large empty left side was caused by `grace: '5%'` on the x-axis (which adds 5% of the full range, pushing the minimum into negative CPA territory) combined with a hardcoded `logRoi(-0.7)` y-min that didn't match the actual data. The fix: a single `axisBounds` computed derives xMin/xMax/yMin/yMax from the filtered campaign data and applies a uniform 10% padding on each side, with xMin clamped to 0 (CPA can't be negative).
+
+**Prompt:** Remove the quadrant-disable logic for <5 campaigns. Fix the huge empty left side: replace grace and fixed min with symmetric 10% padding on all 4 dimensions computed from the actual data range.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed `MIN_CAMPAIGNS_FOR_QUADRANTS` constant, `showQuadrants` computed, and the conditional guard in `beforeDraw`; removed `yAxisMax` computed; added `axisBounds` computed (symmetric 10% PAD on x and y from filtered data, xMin clamped ≥0); updated chartOptions x/y scales to use `axisBounds.value.*` instead of `grace`/`yAxisMax`
+
+**Key decisions & why:**
+- Single `axisBounds` computed for both axes: ensures padding is symmetric and derived from the same data snapshot
+- xMin clamped to 0: CPA is always positive; preventing negative axis values avoids misleading empty space
+- 10% PAD: small enough to keep points near edges, large enough for labels not to clip
+- Ghost-layer points excluded from bounds calculation: chart always focuses on filtered data, ghost context clips gracefully if outside range
+
+
+## [#321] RoiCpaScatter — fix median label positions, vertical ROI label outside chart
+**Type:** fix
+
+**Summary:** Moved "Median CPA" annotation inside the chart area to stop it clashing with the legend, and drew "Median ROI" vertically outside the right edge of the chart using canvas translate + rotate.
+
+**Brainstorming:** The Median CPA text was drawn at `top - 2` (just above the chart area), which put it in the same space as the Chart.js legend, causing overlap. Moving it to `top + 4` with `textBaseline = 'top'` places it inside the chart right below the top edge — still visually connected to the vertical reference line, no legend clash. The Median ROI text was horizontal at the right edge of the chart area and overlapping with data points; rotating it -90° and translating it to `right + 14` (outside the chart area) keeps it readable and out of the data space. Added `layout.padding.right = 20` to ensure the canvas has room for the rotated label.
+
+**Prompt:** Move the legend up so it doesn't clash with the Median CPA tag. Draw Median ROI vertically outside the chart area on the right so it doesn't overlap with data.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — `layout.padding` → `{ top: 24, right: 20 }`; Median CPA text moved to `(xMid, top + 4)` with `textBaseline = 'top'` (inside chart); Median ROI redrawn with `ctx.translate(right + 14, yMid)` + `ctx.rotate(-Math.PI / 2)` (vertical, outside right edge)
+
+**Key decisions & why:**
+- Median CPA inside chart (top + 4): removes legend clash entirely without any layout tricks; still visually associated with the vertical reference line
+- Median ROI rotated -90°: reads naturally bottom-to-top alongside the horizontal reference line; placed outside chart area so it never overlaps data
+- right padding 20px: minimum space needed for the rotated text's rendered height (~12px at 10px font)
+
+
+## [#322] RoiCpaScatter — median ticks on both axes (pink), fix bottom y-axis collision
+**Type:** update
+
+**Summary:** Replaced canvas text annotations for median values with proper pink-coloured axis tick labels on both axes, and filtered y-axis ticks that crowd the axis floor to prevent collision with x-axis labels.
+
+**Brainstorming:** The canvas text approach for median annotations was fragile (could overlap data, hard to align with gridlines) and the Median ROI label was colliding with data points. Moving the annotations to axis tick labels is cleaner: they align exactly with the gridline, respect the axis scale, and are styled consistently with other ticks. The `ticks.color` callback in Chart.js 3 accepts a `ScriptableScaleContext` — comparing `ctx.tick.value` to the median tick value (with a small epsilon for float comparison) returns pink only for the median tick. For the bottom collision: `afterBuildTicks` filters out any tick whose log-space value is within 0.15 of `axis.min` — this clears ticks that would render at the very bottom of the chart area where x-axis labels live.
+
+**Prompt:** Add median ROI as a pink tick label on the y-axis (between other tick lines, in log scale). Add median CPA as a pink tick label on the x-axis. Fix the bottom y-axis tick colliding with x-axis labels.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — removed both canvas text annotation blocks from `beforeDraw`; removed `layout.padding.right`; x-axis gains `afterBuildTicks` (injects medCpa tick) + `ticks.color` callback (pink for median); y-axis `afterBuildTicks` now injects `logRoi(medRoi)` into sorted tick list and filters ticks within 0.15 log-units of axis floor; y-axis gains `ticks.color` callback (pink for median)
+
+**Key decisions & why:**
+- Axis tick labels instead of canvas text: align precisely with gridlines, never overlap data, scale-aware
+- `ticks.color` as function (Chart.js scriptable option): per-tick colour without a custom plugin
+- Bottom filter `v > axis.min + 0.15`: 0.15 in log space ≈ one meaningful ROI step; reliably clears the collision without removing meaningful ticks higher up
+- x-axis: only inject median tick if not already within 0.01€ of an existing tick (prevents near-duplicate labels)
+
+
+## [#323] Dev analysis cycle helper
+**Type:** update
+
+**Summary:** Added a dev-only helper that fakes a Groq connection and cycles through all mock responses and every error code, allowing UI work on AI analysis panels without real API calls.
+
+**Brainstorming:** The goal was to make it fast and safe to work on AI summary and optimizer UIs without a real API key or live requests. The key design choices were: intercept at `runAnalysisPrompt` (after prompt building, before the HTTP call) so the full store pipeline runs exactly as in production; keep all dev logic in a single file that is inert unless explicitly activated; use a simple module-level counter per tab so cycles are independent; include every `AiErrorCode` reachable from the analysis path to exercise all UI error states; handle `token-limit` specially with a 100 ms auto-reset so the cycle can continue without reconnecting; expose a commented-out block in `AiToolsContent.vue` as the single activation point.
+
+**Prompt:** Add a dev helper function that fakes a Groq AI connection and cycles through all mock responses interleaved with every error code (including hints). 2 s fixed delay per call to show the loader. Per-tab independent counters. No real API calls. Easy to activate/deactivate programmatically via TODO-marked comments.
+
+**What was built:**
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — new file; `DEV_GROQ_MODEL` fake AiModel; `BUDGET_SEQUENCE` and `SUMMARY_SEQUENCE` arrays (5 mocks + 10 error codes each, interleaved); module-level `counters` record; `runDevCycle` override function (2 s sleep, cycles entries, throws `Error(code)` for error entries, resets `token-limit` model flag after 100 ms); `devConnect()` patches aiConnectionStore via `$patch` with fake Groq state; `devDisconnect()` clears override + calls store.disconnect(); `useDevAnalysisCycle()` composable returns `activate`/`deactivate`
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — added `_devOverride` module-level slot + `setDevAnalysisOverride` export; `runAnalysisPrompt` checks override first and returns early if set; all marked with `TODO: [DEV ONLY]`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — added commented-out activation block (4 lines + import) marked with `TODO: [DEV ONLY]`; uncomment to enable, comment to disable
+
+**Key decisions & why:**
+- Intercept in `runAnalysisPrompt` not the store: exercises the full store state machine (loading, caching, error display, cooldown) with no real network hop
+- Module-level override slot (not reactive): zero runtime overhead when dev cycle is inactive; a simple null-check
+- `token-limit` auto-reset after 100 ms: the store marks the model as exhausted, shows the token-limit state, then the reset re-enables the button so the cycle can continue without reconnecting
+- Per-tab counters (not shared): matches the requirement that tabs cycle independently
+- Single commented block in `AiToolsContent.vue`: one place to uncomment/re-comment; no build flags or env vars

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseModal } from '../../../ui'
+import { BaseModal } from '@/ui'
 
 const emit = defineEmits<{
   confirm: []

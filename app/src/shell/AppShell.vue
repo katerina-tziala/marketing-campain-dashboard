@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { provide, ref } from 'vue'
-import { UploadIcon } from '../ui'
-import { ToastContainer } from '../ui/toast'
-import { useAiStore } from '../stores/aiStore'
-import { useAiAnalysisStore } from '../stores/aiAnalysisStore'
-import { useUploadModal, UploadModal, ReplaceDataModal } from '../features/data-transfer'
+import { UploadIcon } from '@/ui'
+import { ToastContainer } from '@/ui/toast'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import { useUploadModal, UploadModal, ReplaceDataModal } from '@/features/data-transfer'
 import AiToolsDrawer from './AiToolsDrawer.vue'
 
-const aiStore = useAiStore()
+const aiStore = useAiConnectionStore()
 const analysisStore = useAiAnalysisStore()
 const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
 const { hasCampaigns, showReplaceConfirm, requestUpload, onReplaceConfirm, closeReplaceConfirm } = useUploadModal(uploadModal)
@@ -76,8 +76,10 @@ function onCloseAiPanel(): void {
     m-0
     leading-9
     bg-gradient-to-r
-    from-primary-500
-    to-secondary-500
+    // from-primary-500
+    // to-secondary-500
+    // bg-gradient-to-tr
+    from-primary-500 via-purple-500 to-secondary-500
     bg-clip-text
     text-transparent;
 }

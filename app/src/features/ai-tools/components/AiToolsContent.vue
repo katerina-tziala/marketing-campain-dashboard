@@ -1,11 +1,22 @@
 <script setup lang="ts">
-import { useAiStore } from '../../../stores/aiStore'
-import AiConnectionForm from '../ai-connection/components/AiConnectionForm.vue'
-import AiConnectedStatus from '../ai-connection/components/AiConnectedStatus.vue'
-import { AiAnalysis } from '../ai-analysis/components'
-import { CloseIcon, SparklesIcon } from '../../../ui/icons'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
+import AiConnectionForm from '@/features/ai-tools/ai-connection/components/AiConnectionForm.vue'
+import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue'
+import AiAnalysis from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
+import { CloseIcon, SparklesIcon } from '@/ui/icons'
 
-const store = useAiStore()
+// TODO: [DEV ONLY] Uncomment the block below to enable the dev analysis cycle.
+// Cycles through all mock responses and every error code without real API calls.
+// Comment it back out (or delete it) before shipping to production.
+// ─────────────────────────────────────────────────────────────────────────────
+import { onMounted, onUnmounted } from 'vue'
+import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
+const { activate, deactivate } = useDevAnalysisCycle()
+onMounted(activate)
+onUnmounted(deactivate)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const store = useAiConnectionStore()
 const emit = defineEmits<{ close: [] }>()
 </script>
 

@@ -4,42 +4,27 @@
 @tailwind components;
 @tailwind utilities;
 
-// ─── Theme tokens ─────────────────────────────────────────────────────────────
-
-:root {
-  --color-bg: #070a15;
-  --color-surface: #151b2e;
-  --color-text: #cbd5e1; /* slate.300 */
-  --color-text-secondary: #94a3b8;
-  --color-title: #a5b4fc;
-  --color-border: #1e2a4a;
-  --color-header-bg: #070a15;
-  --color-header-text: #f1f5f9;
-}
-
-
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+  @apply box-border;
 }
 
 html {
-  background-color: var(--color-bg);
+  @apply bg-background;
 }
 
 body {
-  margin: 0;
-  font-family: theme('fontFamily.sans');
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  @apply font-sans bg-background m-0 text-typography-subtle;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease; 
 }
 
 #app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  @apply w-screen h-screen overflow-hidden;
+}
+
+
+h5 {
+  @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 
 }

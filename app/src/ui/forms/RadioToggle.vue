@@ -31,7 +31,8 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
 
 <style lang="scss" scoped>
 .radio-toggle {
-  @apply grid grid-rows-1 gap-0.5 rounded-md overflow-hidden bg-surface-secondary min-h-[2.625rem];
+  // bg-surface-secondary
+  @apply grid grid-rows-1 gap-0.5 rounded-md overflow-hidden  min-h-[2.625rem];
 }
 
 .option-label {

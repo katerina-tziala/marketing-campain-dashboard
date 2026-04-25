@@ -1,4 +1,4 @@
-import type { BusinessContext } from "../types";
+import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types';
 import { getPromptList } from "./prompt-utils";
 
 const CONTEXT_DICTIONARY: Record<keyof BusinessContext, string | undefined> = {
@@ -11,6 +11,36 @@ const CONTEXT_DICTIONARY: Record<keyof BusinessContext, string | undefined> = {
   scalingTolerance: 'Scaling Tolerance',
   constraints: undefined,
 };
+
+
+ export function getBusinessContextBlock(context?: BusinessContext): string {
+  if (!context) {
+    return `BUSINESS CONTEXT:
+- No additional business context provided.
+- Base conclusions only on the input data.`;
+  }
+
+  const lines: string[] = ["BUSINESS CONTEXT:"];
+
+  if (context.period) lines.push(`- Period: ${context.period}`);
+  if (context.industry) lines.push(`- Industry: ${context.industry}`);
+  if (context.goal) lines.push(`- Goal: ${context.goal}`);
+  if (context.businessStage) lines.push(`- Business stage: ${context.businessStage}`);
+  if (context.attributionModel) lines.push(`- Attribution model: ${context.attributionModel}`);
+  if (context.riskTolerance) lines.push(`- Risk tolerance: ${context.riskTolerance}`);
+  if (context.scalingTolerance) lines.push(`- Scaling tolerance: ${context.scalingTolerance}`);
+  if (context.constraints?.length) {
+    lines.push(`- Constraints: ${context.constraints.join("; ")}`);
+  }
+
+  lines.push(
+    `- Use this context to refine interpretation, prioritization, and risk framing, but do not let it override the performance signals in the input data.`,
+  );
+
+  return lines.join("\n");
+}
+
+
 
 export function getBusinessContextLinesForPrompt(
   context: BusinessContext,

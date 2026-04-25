@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '../../../types'
-import type { CampaignScope } from '../../../../../common/types/campaign'
-import AnalysisSummary from '../shared/AnalysisSummary.vue'
-import { healthScoreVariant } from '../../../utils/analysis-badge-variants'
+import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
+import type { PortfolioScope } from '@/shared/types/campaign'
+import AnalysisSummary from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue'
+import { healthScoreVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 
 defineProps<{
-  healthScore: ExecutiveSummaryResponse['health_score']
+  healthScore: ExecutiveSummaryResponse['healthScore']
   bottomLine: string
-  period?: string
-  scope: CampaignScope
+  scope: PortfolioScope
 }>()
 </script>
 
 <template>
   <AnalysisSummary
     title="Portfolio Health"
-    :period="period"
     :scope="scope"
   >
     <template #badge>

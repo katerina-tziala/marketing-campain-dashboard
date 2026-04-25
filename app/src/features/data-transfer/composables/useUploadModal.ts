@@ -1,11 +1,11 @@
 import { computed, provide, ref, type Ref } from 'vue'
-import { useCampaignStore } from '../../../stores/campaignStore'
-import type UploadModal from '../components/UploadModal.vue'
+import { usePortfolioDataStore } from '@/stores/portfolioData.store'
+import type UploadModal from '@/features/data-transfer/components/UploadModal.vue'
 
 export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadModal> | null>) {
-  const campaignStore = useCampaignStore()
+  const portfolioData = usePortfolioDataStore()
   const showReplaceConfirm = ref(false)
-  const hasCampaigns = computed(() => campaignStore.campaigns.length > 0)
+  const hasCampaigns = computed(() => portfolioData.portfolios.length > 0)
 
   function openUploadModal(): void {
     modalRef.value?.open()

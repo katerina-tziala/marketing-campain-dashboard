@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
-import type { NotificationVariant } from '../types/notification-variant'
-import { AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '../icons'
+import type { NotificationVariant } from '@/ui/types/notification-variant'
+import { AlertCircleIcon, AlertTriangleIcon, CheckCircleIcon, CloseIcon, InfoIcon } from '@/ui/icons'
 
 const props = defineProps<{
   message: string
@@ -45,7 +45,7 @@ const iconComponent = computed(() => ICON_MAP[props.variant])
     min-w-[17.5rem]
     max-w-[25rem]
     border
-    bg-surface-secondary
+    // bg-surface-secondary
     shadow-lg;
 
   &.success {

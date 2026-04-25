@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiStore } from '../../../../stores/aiStore'
-import { useAiAnalysisStore } from '../../../../stores/aiAnalysisStore'
-import { PROVIDER_LABELS } from '../utils'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 
-const store = useAiStore()
+const store = useAiConnectionStore()
 const analysisStore = useAiAnalysisStore()
 const providerLabel = computed(() =>
   store.provider ? PROVIDER_LABELS[store.provider] : '',

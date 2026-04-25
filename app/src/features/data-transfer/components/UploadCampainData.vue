@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DownloadIcon, UploadIcon, FileDropzone } from '../../../ui'
-import { isValidCsvFile } from '../utils/parse-csv'
+import { DownloadIcon, UploadIcon, FileDropzone } from '@/ui'
+import { isValidCsvFile } from '@/features/data-transfer/utils/parse-csv'
 
 const props = defineProps<{
   title: string
@@ -15,7 +15,7 @@ const emit = defineEmits<{
   'update:file': [value: File | null]
   submit: []
   close: []
-  'download-template': []
+  downloadTemplate: []
 }>()
 
 const titleError = ref('')
@@ -71,11 +71,11 @@ function handleSubmit(): void {
       <label class="field-label" for="csv-file">CSV File</label>
       <FileDropzone
         id="csv-file"
-        :modelValue="file"
+        :model-value="file"
         :disabled="isLoading"
         accept=".csv,text/csv"
         hint="CSV"
-        @update:modelValue="handleFileSelect"
+        @update:model-value="handleFileSelect"
       >
         <template v-if="fileError || parseError" #error>
           <p class="field-error">{{ fileError || parseError }}</p>
@@ -88,7 +88,7 @@ function handleSubmit(): void {
       <UploadIcon />
       {{ isLoading ? 'Uploading…' : 'Upload' }}
     </button>
-    <button class="btn-secondary-outline xs:order-3 xs:mr-auto" @click="emit('download-template')">
+    <button class="btn-secondary-outline xs:order-3 xs:mr-auto" @click="emit('downloadTemplate')">
       <DownloadIcon />
       Download Template
     </button>

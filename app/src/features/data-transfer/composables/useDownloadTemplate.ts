@@ -1,6 +1,6 @@
-import { downloadCsv } from '../utils/download-csv'
-import { MOCK_CAMPAINS } from '../../../common/data/MOCK_CAMPAIN_DATA'
-import { useToastStore } from '../../../stores/toastStore'
+import { downloadCsv } from '@/features/data-transfer/utils/download-csv'
+import { MOCK_CAMPAINS } from '@/shared/data/MOCK_CAMPAIN_DATA'
+import { useToastStore } from '@/stores/toast.store'
 
 export function useDownloadTemplate() {
   const toastStore = useToastStore()

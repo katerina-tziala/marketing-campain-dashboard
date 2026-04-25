@@ -6,6 +6,16 @@ export default {
   theme: {
     extend: {
       colors: { 
+        background: "rgb(var(--color-background) / <alpha-value>)",
+        surface: "rgb(var(--color-surface) / <alpha-value>)",
+        'surface-outline': "rgb(var(--color-surface-outline) / <alpha-value>)",
+        'on-surface-high': "rgb(var(--color-on-surface-high) / <alpha-value>)",
+        'primary-subtle': "rgb(var(--color-primary-subtle) / <alpha-value>)",
+
+        
+
+        // --color-border-primary-low
+        // 
         black: {
           DEFAULT: '#000000', 
         },
@@ -13,9 +23,14 @@ export default {
           DEFAULT: '#ffffff', 
         },
         typography: {
-          DEFAULT: '#b5bdc9',
-          subtle: '#94a3b8',
-          intense: '#cbd5e1'
+          // DEFAULT: '#b5bdc9',
+          // subtle: '#94a3b8',
+          // intense: '#cbd5e1'
+//  --color-typography
+          DEFAULT: "rgb(var(--color-typography) / <alpha-value>)", // main text
+          subtle: "rgb(var(--color-typography-low) / <alpha-value>)",
+          intense: '#f1f5f9'    // headings / emphasis
+        
         },
         danger: {
           DEFAULT: '#f43f5e',
@@ -48,14 +63,14 @@ export default {
         secondary: { 
           500: '#ec4899', 
         },
-        surface: {
-          DEFAULT: '#151b2e',
-          // secondary: '#0d1226'
-          secondary: '#070913',
-          'secondary-10': '#0d1226',
-          // modal: 
-          '-10': '#101523',
-        },
+        // surface: {
+        //   DEFAULT: '#151b2e',
+        //   // secondary: '#0d1226'
+        //   secondary: '#070913',
+        //   'secondary-10': '#0d1226',
+        //   // modal: 
+        //   '-10': '#101523',
+        // },
         'surface-border': {
           DEFAULT: '#1e2a4a',
           secondary: 'rgba(255, 255, 255, 0.06)'

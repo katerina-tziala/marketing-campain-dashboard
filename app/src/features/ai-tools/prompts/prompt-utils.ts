@@ -1,4 +1,4 @@
-import type { PromptInstructionStep, PromptInstructions, PromptScopeConfig } from "../types";
+import type { PromptInstructionStep, PromptInstructions, PromptScopeConfig } from './types';
 
 export const JSON_SCHEMA_LABEL = 'Respond ONLY in this JSON schema:';
 

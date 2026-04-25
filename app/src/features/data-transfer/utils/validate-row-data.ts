@@ -1,5 +1,5 @@
-import type { Campaign } from '../../../common/types/campaign'
-import type { CsvRowError } from '../types'
+import type { Campaign } from '@/shared/types/campaign'
+import type { CampainDataRowError } from '@/features/data-transfer/types'
 
 function isValidString(value?: string | null): boolean {
   if (!value || value.length === 0) {
@@ -16,8 +16,8 @@ function isNonNegativeInteger(value: number): boolean {
   return isNonNegativeNumber(value) && Number.isInteger(value)
 }
 
-function validateStringFields(campaign: string, channel: string, rowNum: number): CsvRowError[] {
-  const issues: CsvRowError[] = []
+function validateStringFields(campaign: string, channel: string, rowNum: number): CampainDataRowError[] {
+  const issues: CampainDataRowError[] = []
 
   if (!isValidString(campaign))
     issues.push({ row: rowNum, column: 'campaign', issue: 'empty' })
@@ -28,8 +28,8 @@ function validateStringFields(campaign: string, channel: string, rowNum: number)
   return issues
 }
 
-function validateNumericFields(budget: number, revenue: number, rowNum: number): CsvRowError[] {
-  const issues: CsvRowError[] = []
+function validateNumericFields(budget: number, revenue: number, rowNum: number): CampainDataRowError[] {
+  const issues: CampainDataRowError[] = []
 
   if (!isNonNegativeNumber(budget) || budget === 0)
     issues.push({ row: rowNum, column: 'budget', issue: 'positive_number' })
@@ -45,8 +45,8 @@ function validateFunnelFields(
   clicks: number,
   conversions: number,
   rowNum: number,
-): CsvRowError[] {
-  const issues: CsvRowError[] = []
+): CampainDataRowError[] {
+  const issues: CampainDataRowError[] = []
 
   const impressionsValid = isNonNegativeInteger(impressions)
   if (!impressionsValid)
@@ -69,7 +69,7 @@ function validateFunnelFields(
   return issues
 }
 
-export function validateRow(fields: Campaign, rowNum: number): CsvRowError[] {
+export function validateRow(fields: Campaign, rowNum: number): CampainDataRowError[] {
   const { campaign, channel, budget, impressions, clicks, conversions, revenue } = fields
   return [
     ...validateStringFields(campaign, channel, rowNum),

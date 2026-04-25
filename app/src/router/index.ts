@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import DashboardView from '../features/dashboard/DashboardView.vue'
+import DashboardView from '@/features/dashboard/DashboardView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),

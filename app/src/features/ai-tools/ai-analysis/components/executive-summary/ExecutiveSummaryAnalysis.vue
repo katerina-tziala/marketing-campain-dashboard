@@ -1,23 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useAiAnalysisStore } from '../../../../../stores/aiAnalysisStore'
-import { useCampaignStore } from '../../../../../stores/campaignStore'
-import AnalysisState from '../shared/AnalysisState.vue'
-import AnalysisCorrelations from '../shared/AnalysisCorrelations.vue'
+import type { PortfolioScope } from '@/shared/types/campaign'
+import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
+import AnalysisCorrelations from '@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue'
 import ExecutiveSummaryHealth from './ExecutiveSummaryHealth.vue'
 import ExecutiveSummaryPriorityActions from './ExecutiveSummaryPriorityActions.vue'
-import ExecutiveSummaryMetrics from './ExecutiveSummaryMetrics.vue'
 import ExecutiveSummaryInsights from './ExecutiveSummaryInsights.vue'
-import ExecutiveSummaryChannels from './ExecutiveSummaryChannels.vue'
+
+defineProps<{
+  scope: PortfolioScope
+}>()
 
 const analysisStore = useAiAnalysisStore()
-const campaignStore = useCampaignStore()
 
-const status = computed(() => analysisStore.summaryStatus)
-const response = computed(() => analysisStore.summaryResponse)
-const error = computed(() => analysisStore.summaryError)
-const errorFallback = computed(() => analysisStore.summaryErrorFallback)
-const cacheTimestamp = computed(() => analysisStore.summaryCacheTimestamp)
+const status = computed(() => analysisStore.executiveSummary.status)
+const response = computed(() => analysisStore.executiveSummary.response)
+const error = computed(() => analysisStore.executiveSummary.error)
+const notice = computed(() => analysisStore.executiveSummary.notice)
+const cacheTimestamp = computed(() => analysisStore.executiveSummary.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
@@ -26,7 +27,7 @@ const actionLabel = computed(() => analysisActivated.value ? 'Re-Summarize' : 'S
 const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
 
 function handleSummarize(): void {
-  analysisStore.analyze('summary')
+  analysisStore.analyze('executiveSummary')
 }
 </script>
 
@@ -38,27 +39,23 @@ function handleSummarize(): void {
     loading-text="Generating summary…"
     :status="status"
     :error="error"
-    :error-fallback="errorFallback"
+    :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :is-button-disabled="isButtonDisabled"
     :has-result="!!response"
     :cache-timestamp="cacheTimestamp"
-    :model-name="response?.model?.display_name"
+    :model-name="response?.model?.displayName"
     @analyze="handleSummarize"
   >
-    <ExecutiveSummaryHealth
-      :health-score="response!.health_score"
-      :bottom-line="response!.bottom_line"
-      :period="response!.period"
-      :scope="campaignStore.campaignScope"
-    />
-    <ExecutiveSummaryPriorityActions :actions="response!.priority_actions" />
-    <ExecutiveSummaryMetrics :metrics="response!.key_metrics" />
-    <ExecutiveSummaryInsights :insights="response!.insights" />
-    <ExecutiveSummaryChannels
-      :channels="response!.channel_summary"
-      :additional-channels-note="response!.additional_channels_note"
-    />
-    <AnalysisCorrelations :correlations="response!.correlations" />
+    <template v-if="response">
+      <ExecutiveSummaryHealth
+        :health-score="response.healthScore"
+        :bottom-line="response.bottomLine"
+        :scope="scope"
+      />
+      <ExecutiveSummaryPriorityActions :actions="response.priorityActions" />
+      <ExecutiveSummaryInsights :insights="response.insights" />
+      <AnalysisCorrelations :correlations="response.correlations" />
+    </template>
   </AnalysisState>
 </template>
