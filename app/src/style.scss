@@ -15,7 +15,7 @@ html {
 }
 
 body {
-  @apply font-sans bg-background m-0 text-typography-subtle;
+  @apply font-sans m-0 p-0 bg-background text-typography-subtle;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -25,9 +25,9 @@ body {
 }
 
 h2 {
-  @apply text-xl font-semibold tracking-wider text-primary-400;
+  @apply text-xl font-semibold tracking-wider text-typography-primary;
 }
 
-h5 {
-  @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 
-}
+// h5 {
+//   @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 
+// }

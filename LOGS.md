@@ -6675,3 +6675,31 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `.dashboard-header-container` with `max-w-7xl mx-auto`: keeps the header and filter aligned with the table card's max width for visual consistency
 - Two-row grid: with filter inside the header section there is no need for a third `min-content` row; the content area takes `1fr`
 - Visualizations commented out (not deleted): layout is in progress — components will be re-enabled once the new layout is validated
+
+
+## [#326] Refactor design token system and add MetaRow/MetaItem UI components
+**Type:** refactor
+
+**Summary:** Extracted the raw color palette into a dedicated `dark-pallette.scss` file, refactored `dark.scss` to a semantic token layer, updated `tailwind.config.js` to consume the new token names, and added `MetaRow`/`MetaItem` reusable UI components for inline metadata display with bullet and divider variants.
+
+**Brainstorming:** The previous `dark.scss` mixed raw color scales with semantic role assignments in one file. Splitting palette from semantics makes it easier to swap palettes or add themes without touching the semantic layer. The new token naming (surface-0/1/2/3, color-border-subtle/default/strong, color-text-muted/subtle etc.) aligns the CSS vars with the Tailwind token names already used in components. `MetaRow`/`MetaItem` were added as generic slot-based wrappers to replace ad-hoc inline patterns for metadata like campaign/channel counts — the bullet and divider variants are driven by modifier classes so no props are needed. The RoiCpaScatter quadrant labels were renamed from action-oriented (Scale/Optimize/Improve/Cut) to descriptive (Efficient/Costly/Weak funnel/Inefficient) to better reflect what the axes measure.
+
+**Prompt:** Check the changed files (RoiCpaScatter.vue, style.scss, _card.scss, _detail-item.scss, dark.scss, MetaItem.vue, MetaRow.vue, tailwind.config.js, dark-pallette.scss), update CLAUDE.md to reflect all changes, write the LOGS.md entry, and give a commit message.
+
+**What changed:**
+- `app/src/styles/themes/dark-pallette.scss` — new file; raw color scale variables (primary 50–1000, secondary, accent, success, warning, danger, info, neutral 50–950); applied on :root + [data-theme="dark"]
+- `app/src/styles/themes/dark.scss` — @use dark-pallette; refactored to semantic token layer (surface 0–3/hover/active, border subtle/default/strong/divider, text default/muted/subtle/inverse/primary variants, full semantic color groups, focus-ring, disabled, elevation shadows)
+- `app/tailwind.config.js` — updated to consume new CSS var names (surface layers, typography variants, border tokens); added primary CSS-var-backed tokens (DEFAULT/light/lighter/dark/darker); added missing tokens from semantic layer
+- `app/src/styles/components/_card.scss` — updated to use `border-subtle` (was `border-surface-outline`); removed commented-out dead code
+- `app/src/styles/components/_detail-item.scss` — bullet separator updated to `bg-primary-light` (was `bg-typography-subtle`)
+- `app/src/style.scss` — removed commented-out h5 rule
+- `app/src/ui/meta/MetaItem.vue` — new; inline `<span>` slot wrapper; no props
+- `app/src/ui/meta/MetaRow.vue` — new; `<p>` flex-wrap row; .meta-row--bullet (::before dot via :slotted) and .meta-row--divider (border-l separator) variants
+- `app/src/ui/meta/index.ts` — new; barrel export for MetaItem + MetaRow
+- `app/src/features/dashboard/components/RoiCpaScatter.vue` — quadrant labels renamed to Efficient/Costly/Weak funnel/Inefficient; scatter-title styled with text-primary-300 font-normal; scatter-subtitle uses opacity-50
+
+**Key decisions & why:**
+- Palette extracted to `dark-pallette.scss`: keeps the semantic token file (`dark.scss`) free of raw hex/RGB values — palette can be swapped independently
+- Semantic surface layers (0–3) instead of named variants: gives a clear depth ordering that maps directly to elevation without requiring arbitrary name invention
+- `MetaRow` uses `:slotted` for bullet/divider: avoids requiring every child to be a `MetaItem`; works with any slotted element
+- RoiCpaScatter quadrant rename: "Efficient/Costly/Weak funnel/Inefficient" is descriptive of the axes (ROI + CPA) rather than prescriptive; clearer to a first-time reader

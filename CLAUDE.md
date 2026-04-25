@@ -92,11 +92,15 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── FileDropzone.vue    # File drop zone — v-model (File|null), id?, accept?, hint?, disabled? props; button element; hidden input (tabindex="-1"); hintId computed from id prop; hasError() plain function (Comment-node filtering) drives input-error class; disabled guards open/drop/drag handlers; named error slot; scoped @apply styles
 │   │   │   ├── PasswordInput.vue   # Password/secret input — v-model, id?, placeholder?, disabled?, autocomplete? props; toggle show/hide via EyeIcon/EyeOffIcon; named error slot drives input-error class via slot content detection (Comment node filtering); scoped non-BEM styles
 │   │   │   ├── RadioToggle.vue     # Pill-style radio group — v-model, options ({value,label}[]), name?, disabled? props; grid-template-columns driven by options.length; scoped non-BEM styles
+│   │   ├── meta/               # Inline metadata display components
+│   │   │   ├── MetaItem.vue    # Inline `<span>` wrapper — default slot; no props; no scoped styles
+│   │   │   ├── MetaRow.vue     # `<p>` flex-wrap row for metadata items — scoped .meta-row (flex, gap); .meta-row--bullet variant adds ::before bullet dot via :slotted(*:not(:first-child)); .meta-row--divider variant adds left border separator
+│   │   │   └── index.ts        # Barrel export for meta components
 │   │   ├── BaseModal.vue       # Generic modal shell — Teleport to body; backdrop (click-to-close via @click.self, aria-modal/role="dialog"/aria-label); header (title prop + close button using .btn-icon-secondary), single default slot; Escape to close
 │   │   ├── Spinner.vue         # Reusable spinner — size (sm/md/lg/xl/xxl) + variant (primary/secondary) props; aria-hidden; colors via tailwind spinner tokens; @apply throughout
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   ├── DataTableHeader.vue # Reusable thead — columns: DataTableColumn[] (key, label, sortable?, align?: 'left'|'right', ariaLabel?, class?); sticky?: bool; sortKey?: string; sortDir?: SortDir; emits sort:[key]; non-sortable → data-table-header; sortable → data-table-sortable-header + ArrowUpIcon; right-align via scoped .th-right; exports DataTableColumn + SortDir types
-│   │   └── index.ts            # Barrel export for the full ui library — re-exports charts/*, icons/*, toast/*, types/*; exports Tabs, BaseModal, Spinner, DataTableHeader, FileDropzone, PasswordInput, RadioToggle directly
+│   │   └── index.ts            # Barrel export for the full ui library — re-exports charts/*, icons/*, toast/*, types/*, meta/*; exports Tabs, BaseModal, Spinner, DataTableHeader, FileDropzone, PasswordInput, RadioToggle directly
 │   ├── shell/
 │   │   ├── AppShell.vue            # Top-level layout wrapper — flat @apply styles (shell-header/shell-title/shell-body/shell-main); flex col always: full-width header + shell-body row (main + drawer) below; header never compressed by AI drawer; provides openUploadModal and openAiPanel via provide(); uses useAiConnectionStore.aiPanelOpen for panel state; wires panel open/close to aiAnalysis.store; header "Upload CSV" button uses .btn-secondary-outline and routes through ReplaceDataModal when data exists; gradient title (indigo→pink)
 │   │   └── AiToolsDrawer.vue       # Push drawer at lg+ (width 0→30rem, sticky top-0); fixed overlay at <lg (max 90vw/90vh, backdrop, slide-in transition); Escape to close; flat @apply styles (push-drawer/push-drawer-panel/overlay/overlay-panel, open modifier class)
@@ -213,15 +217,16 @@ app/                        # Vue 3 + Vite project
 │   ├── styles/
 │   │   ├── index.scss              # Root barrel — @use themes/dark + components/index + utilities/index; imported by style.scss
 │   │   ├── themes/
-│   │   │   └── dark.scss           # CSS custom properties for dark theme — primary scale (50–1000), neutral-100, color-background, color-surface, color-typography, color-on-surface-high, color-surface-outline; applied on :root and [data-theme="dark"]
+│   │   │   ├── dark-pallette.scss  # Raw color scale variables — primary (50–1000), secondary, accent, success, warning, danger, info, neutral (50–950); applied on :root + [data-theme="dark"]; @used by dark.scss
+│   │   │   └── dark.scss           # Semantic design tokens — @use dark-pallette; maps palette vars to semantic roles: surface layers (0–3/hover/active), borders (subtle/default/strong/divider), text (default/muted/subtle/inverse/primary variants), primary/secondary/accent/success/warning/danger/info color groups, focus-ring, disabled, elevation shadows; applied on :root + [data-theme="dark"]
 │   │   ├── container-queries.scss  # SCSS mixin library for container queries — $container-sizes scale (tiny/xs/sm/md/lg/xl/2xl); mixins: cq-container($name?, $type?), cq-up($size, $name?), cq-down($size, $name?), cq-between($min, $max, $name?); globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
 │   │   │   ├── _ai-summary.scss    # @layer components — .ai-panel, .ai-section (with p > strong); flat child classes: .section-title, .section-subtitle, .section-note, .analysis-details
 │   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
-│   │   │   ├── _card.scss          # @layer components — .card (border-surface-outline), .card-secondary; flat child classes: .card-head, .card-title, .card-content; .card.card-smaller-spaces modifier
-│   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-typography-subtle)
+│   │   │   ├── _card.scss          # @layer components — .card (border-subtle), .card-secondary; flat child classes: .card-head, .card-title, .card-content
+│   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-primary-light)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell
@@ -233,7 +238,7 @@ app/                        # Vue 3 + Vite project
 │   ├── main.ts                 # Entry point — registers Pinia, Router, Chart.js
 │   └── style.scss              # Global styles: Tailwind directives, dark mode; imports styles/index (theme tokens now in styles/themes/dark.scss)
 ├── index.html                  # <html class="dark"> — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class', indigo primary theme; background/surface/surface-outline/on-surface-high/typography.DEFAULT via CSS vars; danger (default + -5p), success, warning, surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class'; background/surface (0/elevated/raised/overlay/hover/active)/typography (DEFAULT/muted/subtle/inverse/primary variants)/border (subtle/DEFAULT/strong) via CSS vars; primary (50–1000 + DEFAULT/light/lighter/dark/darker via CSS vars), secondary, danger (default + -5p), success, warning, surface-border (default/secondary), spinner color tokens (primary/secondary arc + track); connection box-shadow token; xs screen breakpoint
 ├── postcss.config.js
 ├── vite.config.ts              # @ alias → src/; SCSS additionalData globally injects container-queries.scss as *
 └── package.json                # Locked via package-lock.json — dependencies include xxhashjs (deterministic h64 cache key hashing)
@@ -272,7 +277,7 @@ app/                        # Vue 3 + Vite project
 - [x] Bar chart: ROI by channel
 - [x] Donut chart: Budget allocation by channel
 - [x] Revenue vs Budget by Channel chart — toggle between Budget vs Revenue (grouped bars) and Efficiency Gap (% axis, euro gap in tooltip)
-- [x] ROI vs CPA — Decision Quadrants scatter chart — 4 color-coded quadrants (Scale/Optimize/Improve/Cut), reference lines at portfolio averages, full-width above table
+- [x] ROI vs CPA — Decision Quadrants scatter chart — 4 color-coded quadrants (Efficient/Costly/Weak funnel/Inefficient), reference lines at portfolio averages, full-width above table
 - [x] Conversion Funnel: Impressions → Clicks → Conversions
 - [x] Campaign table: sortable by any column
 - [x] Channel filters — dynamic from data, real-time updates across all charts and table

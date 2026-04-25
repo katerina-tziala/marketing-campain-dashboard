@@ -357,6 +357,6 @@ const chartOptions = computed<ChartOptions<'bubble'>>(() => ({
 }
 
 .scatter-subtitle {
-  @apply text-xs text-on-surface-high opacity-50;
+  @apply text-xs  opacity-50;
 }
 </style>

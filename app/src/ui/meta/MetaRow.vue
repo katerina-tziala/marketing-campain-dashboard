@@ -17,19 +17,21 @@
 .meta-row--bullet :slotted(*:not(:first-child))::before {
   content: "";
   @apply inline-block
-  w-1
-  h-1
-  rounded-full
-  bg-primary-subtle
-  align-middle
-  mr-1.5;
+    w-1
+    h-1
+    rounded-full
+    bg-primary-light
+    align-middle
+    mr-1.5;
 }
 
 /* divider variant */
 .meta-row--divider :slotted(*:not(:first-child))  {
   @apply border-l
-  border-primary-subtle 
-  pl-2;
+    border-primary-light 
+    pl-2;
 }
- 
+ .meta-row--divider .meta-item + .meta-item {
+  @apply border-l border-primary-light pl-2;
+}
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <span class="inline-flex items-center gap-1">
+  <span class="inline-block">
     <slot />
   </span>
 </template>
