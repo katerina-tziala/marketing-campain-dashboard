@@ -61,7 +61,8 @@ export default {
           // 1050: '#0f0e25'
         },
         secondary: { 
-          500: '#ec4899', 
+          // 500: '#ec4899',
+          500: '#ff33bb' 
         },
         // surface: {
         //   DEFAULT: '#151b2e',

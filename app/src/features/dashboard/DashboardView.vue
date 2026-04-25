@@ -22,33 +22,36 @@ const openAiPanel = inject<() => void>('openAiPanel')
   <!-- Dashboard -->
   <div v-else class="dashboard">
     <!-- Header -->
-    <section class="dashboard-section">
-      <DashboardHeader @ai-click="openAiPanel?.()" />
+    <section class="dashboard-header">
+      <div class="dashboard-header-container">
+        <DashboardHeader @ai-click="openAiPanel?.()" />
+        <ChannelFilter
+          :channels="[...store.portfolioChannels.values()]"
+          :selected="store.selectedChannelsIds"
+          @toggle="store.toggleChannel"
+          @clear-all="store.clearFilters"
+        />
+      </div>
     </section>
     <!-- Channel Filter -->
-    <section class="dashboard-section">
-      <ChannelFilter
-        :channels="[...store.portfolioChannels.values()]"
-        :selected="store.selectedChannelsIds"
-        @toggle="store.toggleChannel"
-        @clear-all="store.clearFilters"
-      />
-    </section>
+    <!-- <section class="dashboard-section">
+     
+    </section> -->
     <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
         <!-- KPI Cards -->
-        <DashboardKpis :kpis="store.portfolioAnalysis.portfolio" />
-        <!-- Charts -->
+        <!-- <DashboardKpis :kpis="store.portfolioAnalysis.portfolio" /> -->
+        <!-- Charts
         <DashboardCharts
           :campaigns="store.filteredCampaigns"
           :channels="store.selectedChannels"
           :kpis="store.portfolioAnalysis.portfolio"
         />
-        <!-- ROI vs CPA Scatter -->
+        ROI vs CPA Scatter
         <RoiCpaScatter
           :all-campaigns="store.campaigns"
           :campaigns="store.filteredCampaigns"
           class="mx-auto max-w-7xl w-full"
-        />
+        /> -->
         <!-- Campaign Table -->
         <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
           <h3 class="card-title table-card-title">Campaign Details</h3>
@@ -65,13 +68,20 @@ const openAiPanel = inject<() => void>('openAiPanel')
   overflow-hidden
   grid
   grid-cols-1
-  grid-rows-[min_content-min-content_1fr]
+  grid-rows-[min-content_1fr]
   pt-5
   gap-y-5;
+
+
+  // border: 1px solid yellow;
 }
 
-.dashboard-section {
-  @apply w-full mx-auto max-w-7xl;
+.dashboard-header {
+  @apply w-full px-7;
+
+  .dashboard-header-container {
+    @apply w-full mx-auto max-w-7xl flex flex-col gap-3; 
+  }
 }
 
 .data-visualization {
@@ -83,11 +93,11 @@ const openAiPanel = inject<() => void>('openAiPanel')
     container-type: inline-size;
 }
 
-// .card.table-card {
-//   @apply p-4;
-// }
+// // .card.table-card {
+// //   @apply p-4;
+// // }
 
-.card-title.table-card-title {
-  @apply text-base shrink-0 font-normal text-primary-300;
-}
+// .card-title.table-card-title {
+//   @apply text-base shrink-0 font-normal text-primary-300;
+// }
 </style>

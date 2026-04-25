@@ -24,6 +24,9 @@ body {
   @apply w-screen h-screen overflow-hidden;
 }
 
+h2 {
+  @apply text-xl font-semibold tracking-wider text-primary-400;
+}
 
 h5 {
   @apply w-full font-medium tracking-widest text-on-surface-high text-sm; 

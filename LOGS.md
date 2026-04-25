@@ -6657,3 +6657,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `h-full` on push-drawer-panel: `h-screen` no longer works once the panel is nested inside `.shell-body` rather than at viewport root; `h-full` fills the parent's constrained height correctly
 - No changes to the overlay path (`<lg`): the fixed overlay is already positioned independently of the layout flow
+
+
+## [#325] Refactor DashboardView header layout — co-locate filter with header
+**Type:** refactor
+
+**Summary:** Merged the channel filter into the header section of DashboardView, replacing the separate `.dashboard-section` wrapper with a unified `.dashboard-header` + `.dashboard-header-container`, and reduced the grid from three rows to two.
+
+**Brainstorming:** Previously the header and filter lived in separate `.dashboard-section` rows, giving the grid three rows (`min-content min-content 1fr`). Since the filter is logically part of the header controls area, grouping them inside a single `.dashboard-header` section simplifies the layout — one row for header+filter, one row for the scrollable content area. This also removes the unused `.dashboard-section` class.
+
+**Prompt:** Refactor DashboardView so the channel filter is co-located inside the header section. Replace the separate .dashboard-section wrappers with a unified .dashboard-header layout and update the grid rows accordingly.
+
+**What changed:**
+- `app/src/features/dashboard/DashboardView.vue` — header section renamed from `.dashboard-section` to `.dashboard-header` with inner `.dashboard-header-container` (max-w-7xl centered, flex col gap-3); `ChannelFilter` moved inside `.dashboard-header-container` alongside `DashboardHeader`; grid updated to `grid-rows-[min-content_1fr]` (two rows); `DashboardKpis`, `DashboardCharts`, `RoiCpaScatter` temporarily commented out while layout work is in progress; `.card-title.table-card-title` scoped override commented out
+
+**Key decisions & why:**
+- `.dashboard-header-container` with `max-w-7xl mx-auto`: keeps the header and filter aligned with the table card's max width for visual consistency
+- Two-row grid: with filter inside the header section there is no need for a third `min-content` row; the content area takes `1fr`
+- Visualizations commented out (not deleted): layout is in progress — components will be re-enabled once the new layout is validated

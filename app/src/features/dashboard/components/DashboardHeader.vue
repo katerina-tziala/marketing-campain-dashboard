@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { SparklesIcon } from '@/ui'
+import { SparklesIcon, MetaRow, MetaItem } from '@/ui'
 import { useCampaignStore } from '@/stores/campaign.store'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-
+ 
+// inputs ?
 const store = useCampaignStore()
 const aiStore = useAiConnectionStore()
 
@@ -20,7 +21,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
 
 <template>
   <div class="dashboard-title-row">
-    <h2 class="dashboard-title">Campaign Performance</h2>
+    <h2 class="grow pt-1">Campaign Performance</h2>
     <div class="ai-btn-wrapper">
       <button
         class="btn-primary"
@@ -32,20 +33,20 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
       <span v-if="showConnectedDot" class="connected-dot connected-status" aria-hidden="true" />
     </div>
   </div>
-  <p class="text-sm">
-    <span class="detail-item">{{ store.title }}</span>
-    <span class="detail-item">{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</span>
-    <span class="detail-item">{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</span>
-  </p>
+  <MetaRow class="meta-row--bullet">
+    <MetaItem>{{ store.title }}</MetaItem>
+    <MetaItem>{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</MetaItem>
+    <MetaItem>{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</MetaItem>
+  </MetaRow>
 </template>
 
 <style lang="scss" scoped>
 .dashboard-title-row {
   @apply flex items-start justify-center gap-x-4 gap-y-2;
 
-  .dashboard-title {
-    @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1;
-  }
+  // .dashboard-title {
+  //   @apply grow text-lg font-semibold tracking-wider text-primary-400 pt-1;
+  // }
 }
  
 .ai-btn-wrapper {

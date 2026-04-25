@@ -21,6 +21,7 @@ const emit = defineEmits<{
     >
       All
     </button>
+    <!-- :aria-pressed="selected" -->
     <button
       v-for="channel in channels"
       :key="channel.id"
