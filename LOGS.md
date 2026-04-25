@@ -6703,3 +6703,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Semantic surface layers (0–3) instead of named variants: gives a clear depth ordering that maps directly to elevation without requiring arbitrary name invention
 - `MetaRow` uses `:slotted` for bullet/divider: avoids requiring every child to be a `MetaItem`; works with any slotted element
 - RoiCpaScatter quadrant rename: "Efficient/Costly/Weak funnel/Inefficient" is descriptive of the axes (ROI + CPA) rather than prescriptive; clearer to a first-time reader
+
+
+## [#327] Refactor channel filter — move toggle logic to ChannelFilter, replace store actions with setChannelFilter
+**Type:** refactor
+
+**Summary:** Replaced `toggleChannel` + `clearFilters` store actions with a single `setChannelFilter(ids)` setter; moved all selection logic (toggle, normalize all-selected → `[]`) into ChannelFilter, which now reads `selectedChannelsIds` from the store directly and calls the setter on change.
+
+**Brainstorming:** The previous design had the store owning toggle/clear behavior and ChannelFilter as a fully dumb prop-driven component. This meant the store contained UI behavior (toggling individual items) that only ChannelFilter ever called. The agreed refactor keeps `selectedChannelsIds` in the store (needed by portfolioAnalysis, filteredCampaigns, AI cache key derivations) but makes the store a dumb holder — one setter, no logic. ChannelFilter owns the behavior: it reads the current selection from the store reactively (no local copy, no sync issue on portfolio switch), handles toggle/normalize internally, and writes via `setChannelFilter`. Normalization (all selected → `[]`) happens in the component because it already has the full channel list via its `channels` prop.
+
+**Prompt:** Replace toggleChannel + clearFilters store actions with a single setChannelFilter(ids) setter. Move toggle/select-all/clear logic into ChannelFilter. ChannelFilter reads selectedChannelsIds from store directly (no selected prop, no emits). DashboardView passes only :channels.
+
+**What changed:**
+- `app/src/stores/campaign.store.ts` — removed `toggleChannel` + `clearFilters`; added `setChannelFilter(ids: string[])` (assigns selectedChannelsIds.value directly); updated return object
+- `app/src/features/dashboard/components/ChannelFilter.vue` — removed `selected` prop and all emits; imports `useCampaignStore`; `toggle(channelId)` builds next array and normalizes (length === channels.length → `[]`) before calling `store.setChannelFilter`; template reads `store.selectedChannelsIds` directly for active/inactive state; "All" button calls `store.setChannelFilter([])` inline
+- `app/src/features/dashboard/DashboardView.vue` — removed `:selected`, `@toggle`, `@clear-all` bindings; `<ChannelFilter>` now receives only `:channels`
+
+**Key decisions & why:**
+- No local state in ChannelFilter: displayed selection derived from store reactively — portfolio switch resets the store ref and the component updates automatically with no extra watcher
+- Normalization in component: ChannelFilter has the `channels` prop (total count) needed to detect "all selected"; the store setter doesn't need to know about total channel count
+- Single setter over toggle action: callers compose the next state themselves, giving them full control without relying on store-internal array mutation logic

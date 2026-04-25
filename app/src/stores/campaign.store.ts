@@ -60,14 +60,8 @@ export const useCampaignStore = defineStore('campaigns', () => {
 
   // ── Actions ───────────────────────────────────────────────────────────
 
-  function toggleChannel(channelId: string): void {
-    const index = selectedChannelsIds.value.indexOf(channelId)
-    if (index === -1) selectedChannelsIds.value.push(channelId)
-    else selectedChannelsIds.value.splice(index, 1)
-  }
-
-  function clearFilters(): void {
-    selectedChannelsIds.value = []
+  function setChannelFilter(ids: string[]): void {
+    selectedChannelsIds.value = ids
   }
 
   // ── Watchers ──────────────────────────────────────────────────────────
@@ -104,7 +98,6 @@ export const useCampaignStore = defineStore('campaigns', () => {
     portfolioScope,
     portfolioAnalysis,
     // actions
-    toggleChannel,
-    clearFilters,
+    setChannelFilter,
   }
 })

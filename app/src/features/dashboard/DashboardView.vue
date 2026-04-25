@@ -25,12 +25,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
     <section class="dashboard-header">
       <div class="dashboard-header-container">
         <DashboardHeader @ai-click="openAiPanel?.()" />
-        <ChannelFilter
-          :channels="[...store.portfolioChannels.values()]"
-          :selected="store.selectedChannelsIds"
-          @toggle="store.toggleChannel"
-          @clear-all="store.clearFilters"
-        />
+        <ChannelFilter :channels="[...store.portfolioChannels.values()]" />
       </div>
     </section>
     <!-- Channel Filter -->

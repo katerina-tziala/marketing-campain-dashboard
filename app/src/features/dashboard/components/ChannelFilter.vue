@@ -1,34 +1,38 @@
 <script setup lang="ts">
 import type { Channel } from '@/shared/types/channel'
+import { useCampaignStore } from '@/stores/campaign.store'
 
-defineProps<{
+const props = defineProps<{
   channels: Channel[]
-  selected: string[]
 }>()
 
-const emit = defineEmits<{
-  toggle: [channelId: string]
-  clearAll: []
-}>()
+const store = useCampaignStore()
+
+function toggle(channelId: string): void {
+  const current = store.selectedChannelsIds
+  const next = current.includes(channelId)
+    ? current.filter(id => id !== channelId)
+    : [...current, channelId]
+  store.setChannelFilter(next.length === props.channels.length ? [] : next)
+}
 </script>
 
 <template>
   <div class="channel-filter" role="group" aria-label="Filter by channel">
     <button
       class="btn-secondary filter-btn all"
-      :class="selected.length === 0 ? 'active' : 'inactive'"
-      @click="emit('clearAll')"
+      :class="store.selectedChannelsIds.length === 0 ? 'active' : 'inactive'"
+      @click="store.setChannelFilter([])"
     >
       All
     </button>
-    <!-- :aria-pressed="selected" -->
     <button
       v-for="channel in channels"
       :key="channel.id"
       class="btn-secondary filter-btn"
-      :class="selected.includes(channel.id) ? 'active' : 'inactive'"
-      :aria-pressed="selected.includes(channel.id)"
-      @click="emit('toggle', channel.id)"
+      :class="store.selectedChannelsIds.includes(channel.id) ? 'active' : 'inactive'"
+      :aria-pressed="store.selectedChannelsIds.includes(channel.id)"
+      @click="toggle(channel.id)"
     >
       {{ channel.name }}
       <span class="filter-count">{{ channel.campaigns.length }}</span>
