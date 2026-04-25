@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { BaseModal } from '@/ui'
 import { parseCsv } from '@/features/data-transfer/utils/parse-csv'
 import { getValidationErrorMessage } from '@/features/data-transfer/utils/error-messages'
-import { useCampaignStore } from '@/stores/campaign.store'
+import { usePortfolioDataStore } from '@/stores/portfolioData.store'
 import { useDownloadTemplate } from '@/features/data-transfer/composables/useDownloadTemplate'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup, CampainDataRowError } from '@/features/data-transfer/types'
@@ -11,7 +11,7 @@ import UploadCampainData from './UploadCampainData.vue'
 import DisplayUploadErrorsStep from './DisplayUploadErrorsStep.vue'
 import ResolveDuplicationsStep from './ResolveDuplicationsStep.vue'
 
-const campaignStore = useCampaignStore()
+const portfolioData = usePortfolioDataStore()
 const { downloadTemplate } = useDownloadTemplate()
 
 // ── Open / close ───────────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ async function handleSubmit(): Promise<void> {
       parseError.value = getValidationErrorMessage(result.errors[0])
       return
     }
-    campaignStore.loadCampaigns(title.value, result.campaigns)
+    portfolioData.loadPortfolio(result.campaigns, title.value)
     close()
     return
   }
@@ -99,7 +99,7 @@ function handleProceedFromErrors(): void {
     view.value = 'duplicate-rows'
     return
   }
-  campaignStore.loadCampaigns(pendingTitle.value, validCampaigns.value)
+  portfolioData.loadPortfolio(validCampaigns.value, pendingTitle.value)
   close()
 }
 
@@ -114,7 +114,7 @@ function handleBackFromDuplicates(): void {
 }
 
 function handleProceedFromDuplicates(selected: Campaign[]): void {
-  campaignStore.loadCampaigns(pendingTitle.value, [...validCampaigns.value, ...selected])
+  portfolioData.loadPortfolio([...validCampaigns.value, ...selected], pendingTitle.value)
   close()
 }
 </script>

@@ -9,6 +9,7 @@ import type {
 } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useCampaignStore } from './campaign.store'
+import { usePortfolioDataStore } from './portfolioData.store'
 import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
 
@@ -49,7 +50,7 @@ function createTabState() {
     firstAnalyzeCompleted: false,
     controller: null as AbortController | null,
     debounceTimer: null as ReturnType<typeof setTimeout> | null,
-    cache: new Map<string, CacheEntry>(),
+    cache: new Map<string, Map<string, CacheEntry>>(), // portfolioId → cacheKey → entry
     lastVisibleCacheKey: null as string | null,
   }
 }
@@ -65,6 +66,7 @@ function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()
   const campaignStore = useCampaignStore()
+  const portfolioData = usePortfolioDataStore()
 
   // ── Shared state ──────────────────────────────────────────────────────
   const activeTab = ref<AiAnalysisType>('executiveSummary')
@@ -124,6 +126,22 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     return getCacheKey(campaignStore.selectedChannelsIds, aiStore.provider!)
   }
 
+  function getCacheEntry(tab: AiAnalysisType, cacheKey: string): CacheEntry | undefined {
+    const portfolioId = campaignStore.activePortfolioId ?? ''
+    return getTabState(tab).cache.get(portfolioId)?.get(cacheKey)
+  }
+
+  function setCacheEntry(tab: AiAnalysisType, cacheKey: string, entry: CacheEntry): void {
+    const portfolioId = campaignStore.activePortfolioId ?? ''
+    const tabState = getTabState(tab)
+    let portfolioCache = tabState.cache.get(portfolioId)
+    if (!portfolioCache) {
+      portfolioCache = new Map()
+      tabState.cache.set(portfolioId, portfolioCache)
+    }
+    portfolioCache.set(cacheKey, entry)
+  }
+
   function isBelowOptimizerMinimum(): boolean {
     return campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS
   }
@@ -135,11 +153,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   function showCachedResult(tab: AiAnalysisType, cacheKey: string): boolean {
-    const tabState = getTabState(tab)
-    const entry = tabState.cache.get(cacheKey)
+    const entry = getCacheEntry(tab, cacheKey)
     if (!entry) return false
     setDisplay(tab, 'done', entry.response)
-    tabState.lastVisibleCacheKey = cacheKey
+    getTabState(tab).lastVisibleCacheKey = cacheKey
     return true
   }
 
@@ -169,7 +186,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function canAnalyze(tab: AiAnalysisType): boolean {
     void cooldownTick.value // reactive dependency — triggers re-evaluation when cooldown expires
     if (!aiStore.provider) return false
-    const entry = getTabState(tab).cache.get(getCurrentCacheKey())
+    const entry = getCacheEntry(tab, getCurrentCacheKey())
     return !entry || Date.now() >= entry.cooldownUntil
   }
 
@@ -195,7 +212,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function revertTab(tab: AiAnalysisType): void {
     cancelActiveRequest(tab)
     const tabState = getTabState(tab)
-    const entry = tabState.lastVisibleCacheKey ? tabState.cache.get(tabState.lastVisibleCacheKey) : null
+    const entry = tabState.lastVisibleCacheKey ? getCacheEntry(tab, tabState.lastVisibleCacheKey) : null
     setDisplay(tab, entry ? 'done' : 'idle', entry?.response ?? null)
   }
 
@@ -217,7 +234,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       // All models exhausted — fall through to show cache or error below
     }
 
-    const entry = getTabState(tab).cache.get(cacheKey)
+    const entry = getCacheEntry(tab, cacheKey)
     if (entry) {
       setDisplay(tab, 'done', entry.response, null, { code: 'stale-result' })
     } else {
@@ -271,7 +288,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       const now = result.timestamp!
       setDisplay(tab, 'done', result)
       tabState.firstAnalyzeCompleted = true
-      tabState.cache.set(cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
+      setCacheEntry(tab, cacheKey, { response: result, timestamp: now, cooldownUntil: now + COOLDOWN_MS })
       scheduleCooldownExpiry()
       tabState.lastVisibleCacheKey = cacheKey
       tabState.controller = null
@@ -319,7 +336,20 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Reset ─────────────────────────────────────────────────────────────
 
-  function clearStateForNewCSV(): void {
+  function onPortfolioSwitch(): void {
+    cancelAllRequests()
+    clearCooldownTimers()
+    analysisActivated.value = false
+
+    for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
+      const tabState = getTabState(tab)
+      tabState.firstAnalyzeCompleted = false
+      tabState.lastVisibleCacheKey = null
+      if (!showCachedResult(tab, getCurrentCacheKey())) setDisplay(tab, 'idle')
+    }
+  }
+
+  function clearStateForDisconnect(): void {
     cancelAllRequests()
     clearCooldownTimers()
     analysisActivated.value = false
@@ -333,10 +363,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       tabState.lastVisibleCacheKey = null
       setDisplay(tab, 'idle')
     }
-  }
-
-  function clearStateForDisconnect(): void {
-    clearStateForNewCSV()
   }
 
   // ── Panel open/close ──────────────────────────────────────────────────
@@ -363,6 +389,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       const tabState = getTabState(tab)
 
       if (!analysisActivated.value) return
+      if (!tabState.firstAnalyzeCompleted) return
 
       // Token-limited: update display for new filter immediately (no API call possible)
       if (tokenLimitReached.value) {
@@ -397,11 +424,20 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     },
   )
 
-  // Watch CSV upload — reset everything
+  // Watch portfolio switch — reset display state, preserve cache
   watch(
-    () => campaignStore.campaigns,
-    (newVal, oldVal) => {
-      if (oldVal.length > 0 && newVal !== oldVal) clearStateForNewCSV()
+    () => campaignStore.activePortfolioId,
+    () => onPortfolioSwitch(),
+  )
+
+  // Watch portfolio eviction — remove evicted portfolio's cache entries
+  watch(
+    () => portfolioData.lastEvictedId,
+    (id) => {
+      if (!id) return
+      for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
+        getTabState(tab).cache.delete(id)
+      }
     },
   )
 
@@ -421,7 +457,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     setActiveTab,
     onPanelOpen,
     onPanelClose,
-    clearStateForNewCSV,
     clearStateForDisconnect,
   }
 })
