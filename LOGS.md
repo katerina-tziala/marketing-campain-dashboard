@@ -7281,3 +7281,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **What changed:**
 - `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — replaced `errorEntry`, `errorMessage`, `errorHint` with `errorNotification` computed returning `{ title, message } | null`; template updated to `errorDisplay?.title` and `errorDisplay?.message`
+
+
+## [#358] Slim AnalysisState; move idle + result meta to orchestrators; add min-campaigns to dev cycle
+**Type:** refactor
+
+**Summary:** Removed the idle wrapper div/styles and result-meta display from `AnalysisState` — idle is now a plain `#state` slot, result meta (timestamp/notice) lives in each orchestrator's default slot, error notifications and token-limit stay in `AnalysisState`; also added `min-campaigns` to the budget dev cycle sequence.
+
+**Brainstorming:** `AnalysisState` owned three things that didn't belong to it: (1) a wrapper div with scoped `idle-text` styles around the `#idle` slot — scoped styles can't reach projected slot content anyway, so the div was cosmetic noise and the parent should own its own idle styling; (2) the response-meta display (timestamp/notice/model name) inside the `hasResult` block — this depended on three extra props (`cacheTimestamp`, `modelName`, `notice`) whose values come directly from the orchestrators; (3) it exposed `notice` as a prop only to resolve `ANALYSIS_NOTICE_MESSAGES` which is trivially done in the orchestrators. Error notifications and token-limit stay because they are genuinely generic (same message, same logic, no business context from the tab). The `#idle` slot is renamed to `#state` as a more neutral name for the non-loading, non-result idle state. For the dev cycle, `min-campaigns` was missing from the budget sequence despite being a valid `AiErrorCode` — added as first entry so it is the first thing exercised.
+
+**Prompt:** AnalysisState does too much now. v-else-if="hasResult" should be the final template and the rest will be projected from the parent components — move them properly. idle should be a plain projection, no div, no styles. error notifications should not be touched. Also add a min-campaigns case to the dev analysis cycle.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — removed props `notice`, `cacheTimestamp`, `modelName`; removed `formattedCacheTime` and `noticeEntry` computeds; removed result-meta block from `hasResult` branch; `hasResult` branch is now a plain `<slot v-else-if="hasResult" />`; renamed `#idle` slot to `#state` (plain, no wrapper div); removed `.idle-text` scoped style; kept `error`, `tokenLimitReached` props and all notification rendering unchanged
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — removed `:notice`, `:cache-timestamp`, `:model-name` props; added `formattedCacheTime` and `noticeEntry` computeds; response-meta block (timestamp + notice) moved into default slot before result components; replaced `#idle` with `#state` containing min-campaigns warning or idle text; `ANALYSIS_NOTICE_MESSAGES` imported; `TOKEN_LIMIT_MESSAGE` import removed (handled by AnalysisState)
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — same meta-move pattern; `#state` slot contains only idle text `<p>`; `ANALYSIS_NOTICE_MESSAGES` imported; `Notification`, `ANALYSIS_ERROR_MESSAGES`, `TOKEN_LIMIT_MESSAGE` imports removed
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — added `{ kind: 'error', code: 'min-campaigns' }` as first entry in `BUDGET_SEQUENCE`
+
+**Key decisions & why:**
+- Error notifications stay in `AnalysisState` — they are identical for both tabs, depend only on the generic `error` and `tokenLimitReached` props, and would be pure duplication if moved out
+- `#state` slot name (not `#idle`) — it is the non-loading, non-result state bucket; `idle` would be misleading when it also covers situations like the min-campaigns constraint which sets `status: 'idle'` with an error code
+- `min-campaigns` in BUDGET_SEQUENCE only — it is a budget-optimizer-specific constraint; the summary tab has no minimum campaign requirement

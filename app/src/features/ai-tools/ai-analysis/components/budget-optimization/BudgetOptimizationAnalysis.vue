@@ -3,7 +3,10 @@ import { computed } from 'vue'
 import type { PortfolioScope } from '@/shared/types/campaign'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
 import { Notification } from '@/ui'
-import { ANALYSIS_ERROR_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
+import {
+  ANALYSIS_ERROR_MESSAGES,
+  ANALYSIS_NOTICE_MESSAGES,
+} from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
 import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import AnalysisHeader from '@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
@@ -19,12 +22,25 @@ const status = computed(() => analysisStore.budgetOptimizer.status)
 const response = computed(() => analysisStore.budgetOptimizer.response)
 const error = computed(() => analysisStore.budgetOptimizer.error)
 const notice = computed(() => analysisStore.budgetOptimizer.notice)
-const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
 const isBelowMinimum = computed(() => error.value?.code === 'min-campaigns')
 const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES['min-campaigns']
+
+const formattedCacheTime = computed(() => {
+  const ts = response.value?.timestamp
+  if (!ts) return null
+  return new Date(ts).toLocaleTimeString('en-IE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+})
+
+const noticeEntry = computed(() =>
+  notice.value ? ANALYSIS_NOTICE_MESSAGES[notice.value.code] : null,
+)
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive
@@ -53,15 +69,12 @@ function handleAnalyze(): void {
   <AnalysisState
     :status="status"
     :error="error"
-    :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
     :has-result="!!response"
-    :cache-timestamp="cacheTimestamp"
-    :model-name="response?.model?.displayName"
   >
     <template #loading>Analyzing campaigns…</template>
 
-    <template #idle>
+    <template #state>
       <Notification
         v-if="isBelowMinimum"
         variant="warning"
@@ -73,13 +86,27 @@ function handleAnalyze(): void {
         </template>
         {{ minCampaignsEntry.message }}
       </Notification>
-      <template v-else>
-        Get budget reallocation recommendations based on campaign performance.
-        Identify underperforming channels and reallocate budget for higher ROI.
-      </template>
+      <p v-else class="text-sm text-typography py-2 leading-5">
+        Get budget reallocation recommendations based on campaign performance
+      </p>
     </template>
 
     <template v-if="response">
+      <div class="response-meta">
+        <p
+          v-if="formattedCacheTime"
+          class="italic text-typography-subtle"
+          role="status"
+        >
+          Generated at {{ formattedCacheTime
+          }}<template v-if="response.model?.displayName"> with {{ response.model.displayName }}</template>
+          <span class="block italic text-typography-subtle">AI can make mistakes</span>
+        </p>
+        <p v-if="noticeEntry" class="text-typography-subtle" role="status">
+          <span class="font-medium">{{ noticeEntry.title }}</span>
+          {{ noticeEntry.message }}
+        </p>
+      </div>
       <BudgetOptimizationOverview
         :summary="response.summary"
         :scope="scope"

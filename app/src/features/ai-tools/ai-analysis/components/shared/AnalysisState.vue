@@ -1,35 +1,19 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { Spinner, Notification } from "@/ui";
 import type { AsyncStatus } from "@/shared/types/async-status";
-import type {
-  AiAnalysisError,
-  AiAnalysisNotice,
-} from "@/features/ai-tools/types";
+import type { AiAnalysisError } from "@/features/ai-tools/types";
 import {
   ANALYSIS_ERROR_MESSAGES,
-  ANALYSIS_NOTICE_MESSAGES,
   TOKEN_LIMIT_MESSAGE,
 } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
+import { computed } from "vue";
 
 const props = defineProps<{
   status: AsyncStatus;
   error: AiAnalysisError | null;
-  notice: AiAnalysisNotice | null;
   tokenLimitReached: boolean;
   hasResult: boolean;
-  cacheTimestamp: string | number | null;
-  modelName?: string;
 }>();
-
-const formattedCacheTime = computed(() => {
-  if (!props.cacheTimestamp) return null;
-  return new Date(props.cacheTimestamp).toLocaleTimeString("en-IE", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-});
 
 const errorNotification = computed(() => {
   if (!props.error) return null;
@@ -39,14 +23,9 @@ const errorNotification = computed(() => {
     message: entry.message ?? null,
   };
 });
-
-const noticeEntry = computed(() =>
-  props.notice ? ANALYSIS_NOTICE_MESSAGES[props.notice.code] : null,
-);
 </script>
 
 <template>
-  <!-- Loading always takes exclusive priority -->
   <div v-if="status === 'loading'" class="loader">
     <Spinner class="xxl" />
     <p role="status" class="loader-text">
@@ -55,7 +34,6 @@ const noticeEntry = computed(() =>
   </div>
 
   <template v-else>
-    <!-- Token limit notice -->
     <Notification
       v-if="tokenLimitReached && status !== 'done'"
       variant="warning"
@@ -68,12 +46,8 @@ const noticeEntry = computed(() =>
       {{ TOKEN_LIMIT_MESSAGE.message }}
     </Notification>
 
-    <!-- Idle — projected content from parent -->
-    <div v-if="status === 'idle' && !tokenLimitReached" class="idle-text">
-      <slot name="idle" />
-    </div>
+    <slot v-if="status === 'idle' && !tokenLimitReached" name="state" />
 
-    <!-- Error (no cached result) -->
     <Notification
       v-else-if="status === 'error' && error && !tokenLimitReached"
       variant="error"
@@ -86,35 +60,11 @@ const noticeEntry = computed(() =>
       {{ errorNotification?.message }}
     </Notification>
 
-    <!-- Result -->
-    <div v-else-if="hasResult" class="result">
-      <div class="response-meta">
-        <p
-          v-if="formattedCacheTime"
-          class="italic text-typography-subtle"
-          role="status"
-        >
-          Generated at {{ formattedCacheTime
-          }}<template v-if="modelName"> with {{ modelName }}</template>
-          <span class="block italic text-typography-subtle"
-            >AI can make mistakes</span
-          >
-        </p>
-        <p v-if="noticeEntry" class="text-typography-subtle" role="status">
-          <span class="font-medium">{{ noticeEntry.title }}</span>
-          {{ noticeEntry.message }}
-        </p>
-      </div>
-      <slot />
-    </div>
+    <slot v-else-if="hasResult" />
   </template>
 </template>
 
 <style lang="scss" scoped>
-.idle-text {
-  @apply text-typography text-sm py-2 leading-5;
-}
-
 .loader {
   @apply flex flex-col items-center gap-4 p-8;
 }

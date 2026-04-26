@@ -38,6 +38,7 @@ type DevEntry = MockEntry | ErrorEntry
 const BUDGET_SEQUENCE: DevEntry[] = [
   // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[0] },
   // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[1] },
+  { kind: 'error', code: 'min-campaigns' },
   { kind: 'error', code: 'network' },
   // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[2] },
   { kind: 'error', code: 'rate-limit' },
