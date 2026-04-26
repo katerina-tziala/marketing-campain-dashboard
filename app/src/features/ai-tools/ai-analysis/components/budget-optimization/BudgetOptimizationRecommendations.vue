@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { BudgetOptimizerResponse } from '@/features/ai-tools/ai-analysis/types'
+import type { BudgetRecommendation } from '@/features/ai-tools/ai-analysis/types'
 import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
-import { Badge } from '@/ui'
+import { Badge, Card } from '@/ui'
 
 defineProps<{
-  recommendations: BudgetOptimizerResponse['recommendations']
+  recommendations: BudgetRecommendation[]
 }>()
 </script>
 
 <template>
   <section v-if="recommendations.length" class="ai-section">
     <h4 class="section-title">Recommendations</h4>
-    <div
+    <Card
       v-for="(rec, i) in recommendations"
       :key="i"
       class="card-secondary rec-card"
@@ -47,7 +47,7 @@ defineProps<{
         </p>
       </div>
       <p class="card-content">{{ rec.reason }}</p>
-    </div>
+    </Card>
   </section>
 </template>
 

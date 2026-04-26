@@ -7508,3 +7508,185 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `AnalysisSummary` deleted alongside `BudgetOptimizationOverview` — no other file imported it, keeping it would be dead code
+
+
+## [#370] Update Card to class-based, move styles to non-scoped block
+**Type:** refactor
+
+**Summary:** Removed the `variant` prop from `Card.vue`, replaced the scoped style block with a non-scoped one so `.card` and `.card-secondary` work as plain CSS classes everywhere.
+
+**Brainstorming:** The old scoped styles only applied to elements rendered by the `Card` component itself, but many files already used `class="card-secondary"` directly on divs without importing `Card`. Non-scoped styles in `Card.vue` keep all styles in the component file while making them globally available — consistent with how the rest of the project uses these classes.
+
+**Prompt:** update card component to use classes instead of inputs / all styles must be in the class vue component
+
+**What changed:**
+- `app/src/ui/Card.vue` — removed script block and `CardVariant` type; template uses `<article class="card">`; scoped style block replaced with non-scoped; `.card`, `.card-secondary` (with `.card-head`, `.card-title`, `.card-content` children), and top-level `.card-title` defined globally
+- `app/src/ui/index.ts` — removed `CardVariant` type export
+
+**Key decisions & why:**
+- Non-scoped style block — callers already use `class="card-secondary"` directly on divs without the `Card` component; scoped styles would not reach those elements
+- Styles kept in `Card.vue` not in a separate `.scss` file — consistent with project convention (component owns its styles)
+
+
+## [#371] Use Card component in analysis sections, switch to direct interface types
+**Type:** refactor
+
+**Summary:** Replaced raw `<div class="card-secondary">` with `<Card class="card-secondary">` in all analysis section components, and switched prop types from response-indexed types to dedicated interfaces.
+
+**Brainstorming:** Analysis components were using `ExecutiveSummaryResponse['priorityActions']`, `ExecutiveSummaryResponse['insights']`, and `BudgetOptimizerResponse['recommendations']` — these tie the component to the response shape. Using `PriorityAction[]`, `ExecutiveInsight[]`, `BudgetRecommendation[]` directly decouples them. For the Card usage: `<Card class="card-secondary">` passes the class via Vue's attribute inheritance to the `<article>` root; since `.card-secondary` is defined after `.card` in Card.vue's non-scoped block, it overrides conflicting properties correctly.
+
+**Prompt:** implement secondary cards in priority actions / in all analysis components use dedicated interfaces instead of accessing it from response
+
+**What changed:**
+- `ExecutiveSummaryPriorityActions.vue` — prop type `PriorityAction[]`; `<div class="card-secondary">` → `<Card class="card-secondary">`; added `Card` import
+- `ExecutiveSummaryInsights.vue` — prop type `ExecutiveInsight[]`; `<div class="card-secondary">` → `<Card class="card-secondary">`; added `Card` import
+- `AnalysisCorrelations.vue` — `<div class="card-secondary">` → `<Card class="card-secondary">`; added `Card` import
+- `BudgetOptimizationRecommendations.vue` — prop type `BudgetRecommendation[]`; `<div class="card-secondary rec-card">` → `<Card class="card-secondary rec-card">`; added `Card` import
+
+**Key decisions & why:**
+- Direct interfaces not response-indexed types — section components are reusable display units; tying them to the response type creates unnecessary coupling
+- `<Card>` used for all secondary cards — consistent with Badge: base class always applied by component, variant via class inheritance
+
+
+## [#372] Extract HealthScore interface, add readable label map to HealthStatus
+**Type:** refactor
+
+**Summary:** Extracted `HealthScore` as a dedicated interface from `ExecutiveSummaryOutput`, updated `HealthStatus` to use it directly, and added `HEALTH_LABEL_MAP` to convert `NeedsAttention` → `Needs Attention`.
+
+**Brainstorming:** `HealthStatus` was using `ExecutiveSummaryResponse["healthScore"]` — an indexed type like the other analysis components we just updated. Extracting `HealthScore` as a named interface makes the coupling explicit and consistent with `PriorityAction[]`, `ExecutiveInsight[]`, etc. The readable label map is needed because `HealthLabel` values are camelCase identifiers (`NeedsAttention`) — not suitable for display.
+
+**Prompt:** Update health status as well / create map for readable label too
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/types/index.ts` — extracted `HealthScore` interface (`score/label/reasoning`); `ExecutiveSummaryOutput.healthScore` now typed as `HealthScore`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/HealthStatus.vue` — prop type changed to `HealthScore`; added `HEALTH_LABEL_MAP: Record<HealthLabel, string>` with human-readable labels; `readableLabel` computed used in template instead of raw `healthScore.label`
+
+**Key decisions & why:**
+- `HEALTH_LABEL_MAP` keyed on `HealthLabel` (not `string`) — exhaustive mapping enforced by the type; fallback to raw label guards against future additions to the union
+
+
+## [#373] Soften text-typography-soft token
+**Type:** update
+
+**Summary:** Shifted `--color-text-soft` from `neutral-200` to `neutral-300` to make it visually softer.
+
+**Brainstorming:** The token sits between `text` (neutral-100) and `text-muted` (neutral-300). Moving it to neutral-300 collapses the gap between `soft` and `muted`, but the user wants the card body text noticeably softer than the default. If separation is needed later, a custom midpoint value can be added.
+
+**Prompt:** make color text soft a bit softer
+
+**What changed:**
+- `app/src/styles/themes/dark.scss` — `--color-text-soft` changed from `var(--neutral-200)` to `var(--neutral-300)`
+
+**Key decisions & why:**
+- Used existing `neutral-300` step rather than introducing a new raw value — keeps the palette clean; `text-muted` can be nudged to `neutral-400` later if more separation is needed
+
+
+## [#374] Rename executive-summary section components — drop ExecutiveSummary prefix
+**Type:** refactor
+
+**Summary:** Renamed `ExecutiveSummaryInsights.vue` → `Insights.vue` and `ExecutiveSummaryPriorityActions.vue` → `PriorityActions.vue` inside the executive-summary folder; updated imports and template references in `ExecutiveSummaryAnalysis.vue`.
+
+**Brainstorming:** Components scoped to their own folder don't need the folder name repeated in their filename. `HealthStatus.vue` was already unprefixed; aligning the other two removes the redundancy and keeps names concise. `ExecutiveSummaryAnalysis.vue` is the orchestrator and keeps its full name so it's immediately identifiable from outside the folder.
+
+**Prompt:** Remove ExecutiveSummary from components name inside the executive-summary folder except ExecutiveSummaryAnalysis.
+
+**What changed:**
+- `executive-summary/ExecutiveSummaryInsights.vue` → `executive-summary/Insights.vue` (file rename, content unchanged)
+- `executive-summary/ExecutiveSummaryPriorityActions.vue` → `executive-summary/PriorityActions.vue` (file rename, content unchanged)
+- `executive-summary/ExecutiveSummaryAnalysis.vue` — updated imports and template tags to `PriorityActions` / `Insights`
+
+**Key decisions & why:**
+- Kept `ExecutiveSummaryAnalysis.vue` name as requested — it is the entry point imported from outside the folder
+- Updated both import name and template tag together to avoid unused-import warnings
+
+
+## [#375] Move Card to card/ folder, add CardHeader component
+**Type:** refactor
+
+**Summary:** Moved `Card.vue` into a `ui/card/` folder, added `CardHeader.vue` to encapsulate the `.card-head` layout, and updated `PriorityActions.vue` to use it; removed the redundant `.priority-head` scoped override.
+
+**Brainstorming:** Card was a standalone file; moving it to a folder allows co-locating related components (CardHeader) without polluting the ui/ root. CardHeader is a thin wrapper — a `div.card-head` with a default slot and no props — so any class passed from the outside is applied via Vue's fallthrough attribute inheritance, enabling per-usage layout overrides without leaking implementation details. The `.priority-head` rule (just `items-start`) was identical to what `.card-head` already applies, so it was removed.
+
+**Prompt:** Move card in a card folder. Create a card header component that will handle the layout. Implement this in priority actions component. Make sure we can override from outside the items style.
+
+**What changed:**
+- `app/src/ui/card/Card.vue` — new location for Card (content unchanged)
+- `app/src/ui/card/CardHeader.vue` — new component; renders `div.card-head` with default slot; class fallthrough enables external overrides
+- `app/src/ui/card/index.ts` — barrel exporting Card and CardHeader
+- `app/src/ui/Card.vue` — deleted
+- `app/src/ui/index.ts` — replaced `Card.vue` direct export with `export * from './card'`
+- `executive-summary/PriorityActions.vue` — `div.card-head` replaced with `<CardHeader>`; redundant `.priority-head` scoped rule removed
+
+**Key decisions & why:**
+- No props on CardHeader — class fallthrough is sufficient for overrides and avoids an unnecessary API surface
+- Removed `.priority-head` because it duplicated `.card-head`'s existing `items-start`; the override capability is demonstrated by the fact that any class can be passed to `<CardHeader>`
+- Non-scoped styles kept in Card.vue (not a separate .scss file) per established project rule
+
+
+## [#376] Move urgencyVariant into PriorityActions, add URGENCY_LABEL_MAP
+**Type:** refactor
+
+**Summary:** Moved `URGENCY_MAP` and `urgencyVariant` from the shared utils into `PriorityActions.vue` as internal constants/function, and added `URGENCY_LABEL_MAP` to display readable urgency labels instead of raw camelCase values.
+
+**Brainstorming:** `urgencyVariant` had only one caller (`PriorityActions.vue`), so keeping it in the shared util was unjustified indirection. Moving it inward removes the external dependency and co-locates all urgency display logic. The label map follows the same pattern as `HEALTH_LABEL_MAP` in `HealthStatus.vue` — `ActionUrgency` used as a typed `Record` key for exhaustive mapping (`ThisQuarter` → `This Quarter`, `NextQuarter` → `Next Quarter`).
+
+**Prompt:** If urgencyVariant is used only in priority actions move the function and map there. Create map for label.
+
+**What changed:**
+- `executive-summary/PriorityActions.vue` — added internal `URGENCY_VARIANT_MAP`, `URGENCY_LABEL_MAP`, `urgencyVariant`; badge now renders `URGENCY_LABEL_MAP[action.urgency]` instead of raw `action.urgency`; prop type uses `ActionUrgency` for both maps
+- `utils/analysis-badge-variants.ts` — removed `URGENCY_MAP` constant and `urgencyVariant` export
+
+**Key decisions & why:**
+- Used `ActionUrgency` as the `Record` key type (not `string`) — exhaustive mapping, type-checked at compile time
+- Removed the `'this month'` entry from the old map — it was not a valid `ActionUrgency` value and appears to have been a leftover from an earlier schema
+
+
+## [#377] Refactor Insights — Badge for metric, internalize insightTypeVariant, add label map
+**Type:** refactor
+
+**Summary:** Replaced the custom `p.insight-metric` with `<Badge>` in `Insights.vue`, moved `insightTypeVariant` + its map out of the shared utils into the component, added `INSIGHT_TYPE_LABEL_MAP`, and added a type label badge at the top of each insight card.
+
+**Brainstorming:** `insightTypeVariant` had only one caller so it belonged in the component, following the same pattern as `urgencyVariant` in PriorityActions. The insight-metric's color logic duplicated Badge's variant token system; switching to `<Badge class="insight-metric">` lets Badge own the colors while the scoped `.insight-metric` class only overrides layout (w-full, justify-between, rounded-sm, gap-2). `INSIGHT_TYPE_LABEL_MAP` is used to render a type indicator badge at the top of each card, giving each insight immediate visual context.
+
+**Prompt:** Update insights — use badge for insight-metric; insightTypeVariant if not used anywhere else move it in the component.
+
+**What changed:**
+- `executive-summary/Insights.vue` — imports `InsightType`; internal `INSIGHT_TYPE_VARIANT_MAP`, `INSIGHT_TYPE_LABEL_MAP`, `insightTypeVariant`; type label badge added above insight text; metric row uses `<Badge class="insight-metric">` instead of `<p class="insight-metric">`; scoped `.insight-metric` reduced to layout-only overrides
+- `utils/analysis-badge-variants.ts` — removed `INSIGHT_TYPE_MAP` constant and `insightTypeVariant` export
+
+**Key decisions & why:**
+- `InsightType` used as typed `Record` key — exhaustive, compile-time checked
+- Scoped `.insight-metric` retains only layout overrides; all color tokens delegated to Badge's variant system
+
+
+## [#378] Badge — enable text wrapping
+**Type:** fix
+
+**Summary:** Removed `overflow-hidden` and `flex-shrink-0` from `.badge`, changed `leading-none` to `leading-tight`, and added `flex-wrap gap-1` so badge text wraps instead of being clipped.
+
+**Brainstorming:** Three properties combined to prevent wrapping: `overflow-hidden` clipped any content that escaped the single-line height; `leading-none` collapsed inter-line spacing making wrapped text illegible; `flex-shrink-0` prevented the badge from sizing to content. `flex-wrap` + `gap-1` + `leading-tight` + no overflow clip lets multi-word content reflow naturally.
+
+**Prompt:** Investigate badge and make text wrap.
+
+**What changed:**
+- `app/src/ui/Badge.vue` — removed `overflow-hidden`, `flex-shrink-0`; added `flex-wrap`, `gap-1`; changed `leading-none` → `leading-tight`; replaced `gap-y-1` with `gap-1`
+
+**Key decisions & why:**
+- `leading-tight` instead of `leading-normal` — badges are small/dense UI; tight line height reads better than full paragraph spacing
+- Kept `::before` pseudo-element background intact — it relies on `absolute inset-0`, not on overflow clipping
+
+
+## [#379] Revert Badge wrap changes
+**Type:** fix
+
+**Summary:** Reverted the Badge text-wrap changes from #378 — restored `flex-shrink-0`, `leading-none`, `overflow-hidden`, `gap-y-1` and removed `flex-wrap`, `leading-tight`.
+
+**Brainstorming:** The wrap approach caused visual regressions. Reverted to the pre-#378 state.
+
+**Prompt:** Revert it.
+
+**What changed:**
+- `app/src/ui/Badge.vue` — restored to pre-#378 state: `flex-shrink-0`, `leading-none`, `overflow-hidden`, `gap-y-1`; removed `flex-wrap`, `gap-1`, `leading-tight`
+
+**Key decisions & why:**
+- Full revert to last known good state

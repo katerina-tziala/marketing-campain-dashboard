@@ -8,17 +8,17 @@
 .badge {
   @apply relative
     rounded-full
-    border
-    flex-shrink-0
+    border 
     inline-flex
     items-center
-    justify-center
+    justify-start
     capitalize
-    whitespace-nowrap
+    gap-y-1
     py-1
     px-2
     text-xs
     font-semibold
+    text-center
     leading-none
     text-primary-lighter
     overflow-hidden;
@@ -39,7 +39,7 @@
   &.danger {
     @apply border-danger-lighter/35 bg-danger-lighter/10 text-danger-light;
   }
-  
+
   &.info {
     @apply border-info/35 bg-info/10 text-info-light;
   }
@@ -51,18 +51,38 @@
   &.rounded-rectangle {
     @apply rounded-md;
   }
+}
 
-  &.text-only {
-    @apply bg-transparent border-none;
-    &::before {
-      @apply hidden;
-    }
+.badge.rectangle-sharp {
+  @apply rounded-none;
+}
+
+.badge.text-only {
+  @apply bg-transparent border-none;
+  &::before {
+    @apply hidden;
+  }
+}
+
+.badge.dimmed {
+  &.success {
+    @apply border-success-dark/30 bg-success-dark/10 text-success-dark/90;
   }
 
-  &.lighter {
-    &::before {
-      @apply bg-transparent;
-    }
+  &.warning {
+    @apply border-warning-dark/30 bg-warning-dark/10 text-warning-dark/90;
+  }
+
+  &.danger {
+    @apply border-danger-lighter/30 bg-danger-lighter/10 text-danger-light/90;
+  }
+
+  &.info {
+    @apply border-info-dark/30 bg-info-dark/10 text-info/90;
+  }
+
+  &.opportunity {
+    @apply border-primary-light/30 bg-primary-light/10 text-primary-light/90;
   }
 }
 </style>

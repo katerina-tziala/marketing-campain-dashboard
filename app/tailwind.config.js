@@ -81,6 +81,8 @@ export default {
             "rgb(var(--color-text-primary-strong) / <alpha-value>)",
           "primary-subtle":
             "rgb(var(--color-text-primary-subtle) / <alpha-value>)",
+          "primary-light":
+            "rgb(var(--color-text-primary-light) / <alpha-value>)",
         },
       },
       fontFamily: {

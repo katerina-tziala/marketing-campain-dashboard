@@ -47,12 +47,14 @@ export interface ExecutiveCorrelation {
   implication: string
 }
 
+export interface HealthScore {
+  score: number
+  label: HealthLabel
+  reasoning: string
+}
+
 export interface ExecutiveSummaryOutput {
-  healthScore: {
-    score: number
-    label: HealthLabel
-    reasoning: string
-  }
+  healthScore: HealthScore
   bottomLine: string
   insights: ExecutiveInsight[]
   priorityActions: PriorityAction[]

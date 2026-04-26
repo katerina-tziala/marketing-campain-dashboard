@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ExecutiveSummaryResponse } from "@/features/ai-tools/ai-analysis/types";
+import type { HealthScore, HealthLabel } from "@/features/ai-tools/ai-analysis/types";
 import type { BadgeVariant } from "@/ui/types/badge-variant";
 import { Badge } from "@/ui";
 
 const props = defineProps<{
-  healthScore: ExecutiveSummaryResponse["healthScore"];
+  healthScore: HealthScore;
 }>();
 
 const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
@@ -15,8 +15,19 @@ const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
   critical: "danger",
 };
 
+const HEALTH_LABEL_MAP: Record<HealthLabel, string> = {
+  Excellent: "Excellent",
+  Good: "Good",
+  NeedsAttention: "Needs Attention",
+  Critical: "Critical",
+};
+
 const variant = computed<BadgeVariant>(
   () => HEALTH_SCORE_MAP[props.healthScore.label.toLowerCase()] ?? "info",
+);
+
+const readableLabel = computed(
+  () => HEALTH_LABEL_MAP[props.healthScore.label] ?? props.healthScore.label,
 );
 </script>
 
@@ -26,7 +37,7 @@ const variant = computed<BadgeVariant>(
       <span class="text-lg font-extrabold leading-none">{{ healthScore.score }}</span>
       <span class="leading-none">&nbsp;/&nbsp;100</span>
     </Badge>
-    <Badge class="text-only" :class="variant">{{ healthScore.label }}</Badge>
+    <Badge class="text-only" :class="variant">{{ readableLabel }}</Badge>
   </div>
 </template>
 

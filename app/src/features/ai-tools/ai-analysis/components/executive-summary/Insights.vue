@@ -1,0 +1,87 @@
+<script setup lang="ts">
+import type {
+  ExecutiveInsight,
+  InsightType,
+} from "@/features/ai-tools/ai-analysis/types";
+import type { BadgeVariant } from "@/ui/types/badge-variant";
+import { Badge, Card } from "@/ui";
+import CardHeader from "@/ui/card/CardHeader.vue";
+
+defineProps<{
+  insights: ExecutiveInsight[];
+}>();
+
+const INSIGHT_TYPE_VARIANT_MAP: Record<InsightType, BadgeVariant> = {
+  Performance: "info",
+  Opportunity: "opportunity",
+  Warning: "warning",
+  Achievement: "success",
+};
+
+const INSIGHT_TYPE_LABEL_MAP: Record<InsightType, string> = {
+  Performance: "Performance",
+  Opportunity: "Opportunity",
+  Warning: "Warning",
+  Achievement: "Achievement",
+};
+
+function insightTypeVariant(type: InsightType): BadgeVariant {
+  return INSIGHT_TYPE_VARIANT_MAP[type] ?? "info";
+}
+</script>
+
+<template>
+  <section class="ai-section">
+    <h4 class="section-title">Insights</h4>
+    <Card v-for="(insight, i) in insights" :key="i" class="card-secondary">
+      <p>
+        <Badge
+          class="float-right ml-2 mb-1"
+          :class="insightTypeVariant(insight.type)"
+          >{{ INSIGHT_TYPE_LABEL_MAP[insight.type] }}</Badge
+        >{{ insight.text }}
+      </p>
+      <Badge
+        :class="insightTypeVariant(insight.type)"
+        class="rectangle-sharp gap-x-2 w-full flex-wrap dimmed"
+      >
+        <span class="insight-metric-label">{{
+          insight.metricHighlight.label
+        }}</span>
+        <span class="insight-metric-value">{{
+          insight.metricHighlight.value
+        }}</span>
+      </Badge>
+    </Card>
+  </section>
+</template>
+
+<style lang="scss" scoped>
+.insight-metric {
+  @apply w-full justify-between rounded-sm gap-2;
+}
+
+.insight-metric-label {
+  @apply grow text-left;
+}
+
+.insight-metric-value {
+  @apply font-bold;
+}
+
+.insight {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.text {
+  grid-column: 1 / -1; /* take full width */
+}
+
+.chip {
+  grid-column: 2;
+  justify-self: end;
+}
+</style>

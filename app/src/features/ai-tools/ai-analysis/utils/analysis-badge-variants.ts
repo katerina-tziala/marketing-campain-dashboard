@@ -6,20 +6,6 @@ const CHANNEL_STATUS_MAP: Record<string, BadgeVariant> = {
   weak: 'danger',
 }
 
-const URGENCY_MAP: Record<string, BadgeVariant> = {
-  immediate: 'danger',
-  thisquarter: 'warning',
-  nextquarter: 'info',
-  'this month': 'opportunity',
-}
-
-const INSIGHT_TYPE_MAP: Record<string, BadgeVariant> = {
-  performance: 'info',
-  opportunity: 'opportunity',
-  warning: 'warning',
-  achievement: 'success',
-}
-
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
   high: 'success',
   medium: 'warning',
@@ -49,14 +35,6 @@ function badgeVariant(map: Record<string, BadgeVariant>, key: string): BadgeVari
 
 export function channelStatusVariant(status: string): BadgeVariant {
   return badgeVariant(CHANNEL_STATUS_MAP, status)
-}
-
-export function urgencyVariant(urgency: string): BadgeVariant {
-  return badgeVariant(URGENCY_MAP, urgency)
-}
-
-export function insightTypeVariant(type: string): BadgeVariant {
-  return badgeVariant(INSIGHT_TYPE_MAP, type)
 }
 
 export function confidenceVariant(level: string): BadgeVariant {

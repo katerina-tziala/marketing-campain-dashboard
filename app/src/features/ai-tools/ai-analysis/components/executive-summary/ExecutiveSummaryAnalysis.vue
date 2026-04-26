@@ -7,8 +7,8 @@ import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/An
 import AnalysisCorrelations from "@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue";
 import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
 import HealthStatus from "./HealthStatus.vue";
-import ExecutiveSummaryPriorityActions from "./ExecutiveSummaryPriorityActions.vue";
-import ExecutiveSummaryInsights from "./ExecutiveSummaryInsights.vue";
+import PriorityActions from "./PriorityActions.vue";
+import Insights from "./Insights.vue";
 
 defineProps<{
   scope: PortfolioScope;
@@ -71,17 +71,25 @@ function handleSummarize(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <div class="flex flex-col gap-6 pt-5 text-sm">
+      <div class="flex flex-col gap-6 py-5 text-sm">
         <div class="flex flex-col gap-3">
           <div class="flex flex-nowrap items-start gap-3">
-            <p>{{ response.healthScore.reasoning }}</p>
-            <HealthStatus :health-score="response.healthScore" />
+            <p>
+              <HealthStatus
+                class="float-right ml-2 mb-1"
+                :health-score="response.healthScore"
+              />{{ response.healthScore.reasoning }}
+            </p>
           </div>
-          <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-2">Bottom Line</h5>
+          <h5
+            class="text-sm tracking-wide font-semibold text-primary-soft -mb-2"
+          >
+            Bottom Line
+          </h5>
           <p>{{ response.bottomLine }}</p>
         </div>
-        <ExecutiveSummaryPriorityActions :actions="response.priorityActions" />
-        <ExecutiveSummaryInsights :insights="response.insights" />
+        <PriorityActions :actions="response.priorityActions" />
+        <Insights :insights="response.insights" />
         <AnalysisCorrelations :correlations="response.correlations" />
       </div>
     </template>
