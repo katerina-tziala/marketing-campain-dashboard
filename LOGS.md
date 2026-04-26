@@ -3786,7 +3786,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** Both `CsvErrorTable` and `CsvDuplicateTable` had inline summary blocks with identical structure (title + badge + body text) — extracting `DataErrorSummary` as a slot-driven presentational component removes the duplication and makes the pattern reusable. Modal global classes (`modal__body`, `modal__footer`) were BEM-style holdovers — renamed to flat `modal-body` / `modal-footer` consistent with the project's move away from BEM. `BaseModal` was missing `Teleport`, which meant it rendered in-tree rather than on `body`; also added proper ARIA attributes and backdrop click-to-close for completeness.
 
-**Prompt:** Read changed files on the feat/ui-polish branch and update CLAUDE.md and LOGS.md accordingly. This conversation is not logged.
+**Prompt:** Extract a shared DataErrorSummary presentational component from the duplicate summary blocks in CsvErrorTable and CsvDuplicateTable. Rename modal global classes from BEM (modal__body, modal__footer) to flat names. Improve BaseModal with Teleport to body, ARIA attributes, and backdrop click-to-close.
 
 **What changed:**
 - `csv-file/components/validation/DataErrorSummary.vue` — new presentational component; three named slots (title, badge, summary); no props, no scoped styles; used by both error screens
@@ -4056,7 +4056,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** Several components shared the same bullet-separated inline metadata pattern (AnalysisSummary analysis-details, DashboardView dashboard-details) but each had its own scoped implementation. Extracting `.detail-item` to a global partial makes this a reusable primitive. FileDropzone used `div[role="button"]` which is an accessibility antipattern — a native `<button>` is semantically correct and handles keyboard interaction natively. Tabs had a BEM modifier `.tab--active` which was replaced with flat `.tab-active` consistent with the project's no-BEM rule. BaseModal header classes were already partially de-BEMed in a prior commit; remaining scoped names are now flat. Button style: `.btn-secondary-outline` border weight dropped from `border-2` to `border` (1px) to match the visual weight of the outline variant; `.btn-small` became a standalone class so it can be extended independently.
 
-**Prompt:** Check the modified files, create a log entry for the changes, and update CLAUDE.md if necessary.
+**Prompt:** Extract .detail-item as a global SCSS class and apply it in AnalysisSummary and DashboardView. De-BEM Tabs (.tab--active → .tab-active) and BaseModal header classes. Replace FileDropzone div[role="button"] with a native button element. Update btn-secondary-outline to 1px border and extract btn-small as a standalone class.
 
 **What changed:**
 - `app/src/styles/components/_detail-item.scss` — new file; `.detail-item` global component class (inline-block, pr-1.5) with bullet separator via `& + &::before` pseudo-element
@@ -4213,7 +4213,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** A batch of incremental UI polish changes across the dashboard: the table needed zebra-striping utilities that could be toggled per-table, the DataTableHeader's align prop was replaced with a generic class string to keep it flexible without special-casing right-alignment, the charts grid needed a container query so it collapses to one column when the drawer is open, the dashboard layout needed a stable scroll zone with max-width constraints to match the rest of the page, formatCurrency needed a decimals param to serve both integer (KPIs) and decimal (CAC) use cases, and the ReplaceDataModal button order was corrected so the primary action comes first.
 
-**Prompt:** Check the files I worked on and create a log.
+**Prompt:** Add zebra-striping modifier classes to the global table system. Refactor DataTableHeader to accept a class string on columns instead of an align prop. Add a container-query-driven 2-column charts grid. Restructure dashboard layout with sticky header/filter and scrollable data-visualization zone. Add a decimals param to formatCurrency. Fix ReplaceDataModal button order.
 
 **What changed:**
 - `app/src/styles/components/_table.scss` — added `.table-wrapper` global class (overflow-auto); added `.data-table.stripped-odd` and `.data-table.stripped-even` modifier classes for zebra striping; removed sticky header from global scope (moved to DataTableHeader scoped styles)
@@ -5665,7 +5665,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** The upload-replace flow was already fully implemented (`ReplaceDataModal`, `useUploadModal` composable, header button wiring in `AppShell`) and marked `[x]` in the feature checklist. The only stale reference was the trailing sentence in the Status paragraph. No code changes needed — documentation-only update.
 
-**Prompt:** This has been completed, update CLAUDE.md respectively.
+**Prompt:** The upload-replace flow is fully implemented. Remove the stale "Upload-replace flow is next" placeholder from the CLAUDE.md Status section and replace it with an accurate description of what was built.
 
 **What changed:**
 - `CLAUDE.md` — replaced "Upload-replace flow is next." with a concise description of the implemented flow: header Upload CSV button → `ReplaceDataModal` confirmation when data exists → confirmed opens `UploadModal`; `useUploadModal` composable owns all state and provides `openUploadModal`
@@ -6862,7 +6862,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** AnalysisState was acting as both the layout host and the action trigger, which coupled button placement to the wrapper. Moving the button to the parent's action slot gives each tab full control over its header (label, icon, styling) without modifying the shared component. SectionHeaderLayout provides the flex scaffolding (header grows, action shrinks) that was being duplicated. The MagicWandIcon in the Button replaces the prior SparklesIcon in the panel-head. DashboardHeader already had MetaRow/MetaItem available in the ui barrel and was the right place to use them instead of raw spans.
 
-**Prompt:** Read all changes, update your files, update last log to include all changes not present in previous log and give me commit message.
+**Prompt:** Extract a reusable SectionHeaderLayout shell component for the header+action flex row pattern. Move the analyze button out of AnalysisState into each tab orchestrator as a slot action. Wire Button and MagicWandIcon into ExecutiveSummaryAnalysis. Update DashboardHeader to use MetaRow/MetaItem for the meta line. Clean up dev cycle error sequences.
 
 **What changed:**
 - `app/src/ui/SectionHeaderLayout.vue` — new layout component; header slot (grows, centered) + action slot beside it in a nowrap flex row; default slot below; no props, no scoped styles
@@ -7769,10 +7769,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Order maps (Record<Literal, number>) over `indexOf` — O(1) lookup, exhaustive at compile time
 - `[...props.x].sort(...)` — never mutates the prop array
 - Execution risk tiebreaker sorts Low→High (least risky first) to surface easiest wins after filtering by confidence
-
-
-
-
+ 
 ## [#384] Add ArrowRightIcon, update BudgetRecommendations, remove unused SCSS partials
 **Type:** update
 
@@ -7794,3 +7791,62 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `.rec-arrow` class kept on the icon element so existing scoped color/size styles apply unchanged
 - Confirmed zero usages of `.detail-item` across all `.vue` and `.ts` files before deleting
+
+
+## [#385] Add AnalysisResponseMeta, rework BudgetRecommendations layout, add MetaRow variants, reorder tabs
+**Type:** refactor
+
+**Summary:** Extracted response meta display (timestamp, model, AI disclaimer, stale notice) into a new shared `AnalysisResponseMeta` component; reworked the `BudgetRecommendations` From/To header to a two-column labeled layout (removing the arrow icon); added `tiny` and `info.*` color variants to `MetaRow`; moved Summary tab before Optimizer in `AiAnalysis`; slimmed `AiToolsContent` layout class; updated `AnalysisState` to minimal props (notice/timestamp/model now live in `AnalysisResponseMeta`).
+
+**Brainstorming:** The response metadata (timestamp, model name, AI disclaimer, stale-result notice) was previously spread across each tab orchestrator and `AnalysisState`. Extracting it into `AnalysisResponseMeta` eliminates duplication and makes the meta strip consistent. The arrow between `fromCampaign` and `toCampaign` in BudgetRecommendations was visually noisy; a two-column stacked layout with "From"/"To" labels is cleaner and works better at narrow widths. The `tiny` MetaRow variant was needed to size the meta footer down without inline font-size overrides.
+
+**Prompt:** Extract response meta display (timestamp, model, AI disclaimer, stale notice) into a shared AnalysisResponseMeta component used by both tab orchestrators. Rework the BudgetRecommendations From/To header — replace the arrow icon with a two-column labeled layout and add 4 detail metrics. Add tiny and info color variants to MetaRow. Move Summary tab before Optimizer in AiAnalysis. Slim AiToolsContent layout.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue` — new shared component; MetaRow with `.divider.tiny.info.italic`; shows formatted timestamp + model name, "AI can make mistakes" disclaimer, stale-result notice
+- `app/src/ui/meta/MetaRow.vue` — added `.tiny` variant (0.75rem font-size); added `.info.bullet` and `.info.divider` color modifiers for info-colored dot/border
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — removed ArrowRightIcon; replaced arrow header with two-column From/To layout with "From"/"To" label spans; 4 detail metrics (Reallocate / Est. ROI / Est. Revenue / Est. Conversions) in responsive grid
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — tab order: Summary first, Optimizer second
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — `.ai-tools-content` gains `grow`; `.ai-tools-analysis` grid `grid-rows-[min-content_min-content_1fr]`
+- `CLAUDE.md` — added AnalysisResponseMeta to architecture; updated MetaRow, AnalysisState, BudgetRecommendations, both tab orchestrators, AiAnalysis, AiToolsContent descriptions; fixed tab order in Status section; updated analysis-messages entry (TOKEN_LIMIT_MESSAGE singular)
+
+**Key decisions & why:**
+- `AnalysisResponseMeta` placed inside the result slot (`v-if="response"`) in both orchestrators so it only renders when there is a result — avoids showing the meta footer in loading/error/idle states
+- `-mt-5 -mb-2` offsets on `AnalysisResponseMeta` collapse the gap between the response header and the result content without introducing a new layout wrapper
+- Two-column From/To layout uses `flex-wrap gap-x-8` so it degrades to stacked at very narrow widths without a media query
+
+
+## [#386] Sync CLAUDE.md with project
+**Type:** update
+
+**Summary:** Audited the full codebase against CLAUDE.md and fixed all discrepancies: added three undocumented icons (CheckIcon, MagicWandIcon, XPolygonIcon), added the missing _connected-dot.scss utility, removed the stale BudgetOptimizationOverview.vue entry, and cleaned up a stale _detail-item.scss reference.
+
+**Brainstorming:** A full disk-vs-docs audit revealed five gaps: three icons added to the icon library without updating the architecture tree, one SCSS utility partial missing from the utilities section, one component documented that no longer exists on disk (BudgetOptimizationOverview — removed in a prior refactor), and one reference to a deleted SCSS partial (_detail-item.scss) still present in AnalysisSummary's description. No code changes needed — documentation-only pass.
+
+**Prompt:** Sync CLAUDE.md with the current project state — audit all files on disk against the architecture section and fix every discrepancy.
+
+**What changed:**
+- `CLAUDE.md` — added CheckIcon.vue (plain checkmark, used in CampainDuplicationsTable), MagicWandIcon.vue (AI action icon, used in AnalysisHeader), XPolygonIcon.vue (X in hexagon, error/blocked state) to icons list; added _connected-dot.scss to utilities section; removed stale BudgetOptimizationOverview.vue entry from budget-optimization folder; removed stale _detail-item.scss reference from AnalysisSummary description
+
+**Key decisions & why:**
+- BudgetOptimizationOverview.vue removed from docs (not disk) — the file was deleted in a prior refactor; the summary line is now inline in BudgetOptimizationAnalysis itself
+- _detail-item.scss reference removed from AnalysisSummary description — the partial was deleted in entry #384; the description was not updated at the time
+
+
+## [#387] Inline badge variant logic into BudgetRecommendations, delete analysis-badge-variants.ts
+**Type:** refactor
+
+**Summary:** Moved `confidenceVariant` and `executionRiskVariant` (with their maps and the `badgeVariant` helper) directly into `BudgetRecommendations.vue`, then deleted `analysis-badge-variants.ts` — the only remaining consumer was that component, and the other three exports (`channelStatusVariant`, `actionVariant`, `effortVariant`) were already dead.
+
+**Brainstorming:** The file existed to share badge variant logic across multiple AI panel components. Over earlier refactors, `urgencyVariant` and `insightTypeVariant` were already moved into their respective components (`PriorityActions.vue`, `Insights.vue`). After that, only `BudgetRecommendations.vue` still imported from it — and only two of the five exports. With a single consumer, the indirection adds no value. Inlining removes the dependency and lets the file be deleted entirely. The three unused exports (`channelStatusVariant`, `actionVariant`, `effortVariant`) were dead code and are gone with the file.
+
+**Prompt:** Move `confidenceVariant` and `executionRiskVariant` (plus their maps and the shared `badgeVariant` helper) from `analysis-badge-variants.ts` into `BudgetRecommendations.vue`. Verify no other file imports from `analysis-badge-variants.ts`, then delete it. Update CLAUDE.md and write log.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — removed import of `analysis-badge-variants`; inlined `CONFIDENCE_MAP`, `EXECUTION_RISK_MAP`, `badgeVariant` helper, `confidenceVariant`, and `executionRiskVariant` in script setup
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-badge-variants.ts` — deleted (no remaining consumers)
+- `CLAUDE.md` — removed `analysis-badge-variants.ts` entry from architecture; updated `BudgetRecommendations.vue` description to note inlined badge logic
+
+**Key decisions & why:**
+- Inlined rather than extracted to a new shared location — there is only one consumer; a shared util is only justified when two or more components use the same logic
+- Deleted the file entirely rather than leaving it empty — dead exports have no value and add noise to the `utils/` folder

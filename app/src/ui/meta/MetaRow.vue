@@ -13,11 +13,10 @@
   }
 
   &.meta-row.tiny {
-    @apply gap-x-1;
     font-size: 0.75rem;
   }
 }
- 
+
 /* bullet variant */
 .meta-row.bullet :slotted(*:not(:first-child))::before {
   content: "";
@@ -39,5 +38,13 @@
 
 .meta-row.divider .meta-item + .meta-item {
   @apply border-l border-primary-light pl-2;
+}
+
+.meta-row.info.bullet :slotted(*:not(:first-child))::before {
+  @apply bg-info;
+}
+
+.meta-row.info.divider :slotted(*:not(:first-child)) {
+  @apply border-info;
 }
 </style>

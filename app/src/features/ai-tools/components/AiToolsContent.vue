@@ -70,6 +70,7 @@ const emit = defineEmits<{ close: [] }>()
     grid
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
-    overflow-hidden;
+    overflow-hidden
+    pb-4;
 }
 </style>
