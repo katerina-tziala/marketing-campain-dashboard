@@ -39,7 +39,11 @@
     &:not(:disabled)  {
       &:focus-visible, &:hover  {
         @apply border-primary bg-primary;
-      } 
+      }
+
+      &:active {
+        @apply border-primary-dark bg-primary-darker;
+      }
     }
   }
 

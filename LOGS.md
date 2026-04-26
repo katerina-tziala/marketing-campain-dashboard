@@ -6943,3 +6943,341 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Interface defined in the store, not in AnalysisHeader — the store is the producer of this shape; component types should flow from data layer toward presentation layer, not the reverse
 - `filtersActive` included in the interface — it is part of the computed object the store already returns; omitting it would require a separate computed or type cast
+
+
+## [#339] Fix AnalysisState double-render during token-limit state
+**Type:** fix
+
+**Summary:** Added `!tokenLimitReached` guard to the error box condition in `AnalysisState.vue` to prevent it from rendering alongside the token-limit warning notice.
+
+**Brainstorming:** The token-limit notice and the idle/loading/error/result block are two independent `v-if` chains. When `status === 'error'` and `tokenLimitReached === true` (e.g. during the dev cycle's token-limit entry), both the warning notice (chain 1) and the error box (chain 2) rendered simultaneously — two visible messages at once. The fix is a single guard on the error box condition so it defers to the warning notice when `tokenLimitReached` is true.
+
+**Prompt:** The dev analysis cycle shows 2 messages simultaneously at the token-limit step. The token-limit notice and error box are separate v-if chains in AnalysisState — both render when tokenLimitReached is true and status is 'error'. Add `!tokenLimitReached` to the error box condition.
+
+**What changed:**
+- `ai-analysis/components/shared/AnalysisState.vue` — error box `v-else-if` condition extended with `&& !tokenLimitReached`
+
+**Key decisions & why:**
+- Guard on the component condition rather than changing store display logic — the store correctly sets `status: 'error'` with the error code; the component is responsible for not showing competing UI states
+- One-character change, zero behaviour change when `tokenLimitReached` is false (production path unaffected)
+
+
+## [#340] Move token-limit to end of dev sequences, remove artificial reset
+**Type:** fix
+
+**Summary:** Moved `token-limit` to the last position in both dev sequences and removed `resetTokenLimit()` so the state behaves identically to production — terminal, with the button disabled.
+
+**Brainstorming:** `resetTokenLimit()` was resetting `model.limitReached` after 100ms so the cycle could continue past the token-limit entry. This caused non-production behaviour: the Analyze button would re-enable and the display would flicker as `tokenLimitReached` flipped back. Moving token-limit last means all other error states are fully observable before reaching the terminal state. Removing the reset means token-limit lands exactly as in production — warning notice stays, button stays disabled, only disconnect clears it.
+
+**Prompt:** Move token-limit to the end of both dev sequences and remove resetTokenLimit() so the state matches production exactly.
+
+**What changed:**
+- `dev/dev-analysis-cycle.ts` — `token-limit` moved to last in BUDGET_SEQUENCE and SUMMARY_SEQUENCE; `resetTokenLimit` function removed; its call in `runDevCycle` removed
+
+**Key decisions & why:**
+- Terminal position for token-limit — all other states are iterable one click at a time before reaching the terminal state; matches real usage where token exhaustion is end-of-session
+- `sleep` helper left in place — still useful for the commented-out latency simulation line
+
+
+## [#341] Restore token-limit reset on cycle wrap in dev analysis cycle
+**Type:** fix
+
+**Summary:** Brought back `resetTokenLimit` but scoped it to fire only when the cycle wraps — when `counters[type] === 0` after `nextEntry` returns the last entry — so the terminal state is visible for 1.5s then auto-clears to allow re-cycling.
+
+**Brainstorming:** Removing the reset entirely made token-limit a hard stop requiring manual disconnect each time. The right approach is to detect the natural cycle boundary (`counters[type] === 0` after `nextEntry`) and reset only then. This keeps each state production-accurate during the cycle and auto-resets only at the seam between repetitions. 1500ms gives enough time to actually observe the terminal state before the button re-enables.
+
+**Prompt:** Check if the cycle just wrapped (counters[type] === 0 after nextEntry) and call resetTokenLimit only then, with a 1500ms delay so the terminal state is visible before re-enabling.
+
+**What changed:**
+- `dev/dev-analysis-cycle.ts` — `resetTokenLimit` re-added with 1500ms delay; `runDevCycle` captures `cycleWrapped = counters[type] === 0` after `nextEntry` and calls `resetTokenLimit()` only when true
+
+**Key decisions & why:**
+- `cycleWrapped` read after `nextEntry` — the counter is already incremented at that point, so `=== 0` means it just wrapped
+- 1500ms delay — short enough to not feel broken, long enough to see the warning notice settle before the button re-enables
+
+
+## [#342] Add pressed state to primary button
+**Type:** update
+
+**Summary:** Added `:active` state to `.btn-primary` using `bg-primary-darker` (700) and `border-primary-dark` (600) — one step darker than default, giving a natural depressed feel.
+
+**Brainstorming:** The existing primary button uses primary-600 at rest and brightens to primary-500 on hover. The pressed state should go the other way — darker than rest — to give tactile feedback. primary-700 (primary-darker) is the natural next step down. Border pulls back to primary-600 (primary-dark) to frame it without adding contrast.
+
+**Prompt:** Add a pressed state to the primary button that fits the current token scale.
+
+**What changed:**
+- `styles/components/_button.scss` — added `&:active` block inside `.btn-primary :not(:disabled)` with `bg-primary-darker border-primary-dark`
+
+**Key decisions & why:**
+- primary-700 for active background — symmetrical to hover (which goes lighter to 500); press goes darker to 700 for clear directionality
+- No scale/transform — kept consistent with the existing transition-colors-only pattern on `.btn`
+
+
+## [#343] Rewrite analysis error messages and add per-code hint map
+**Type:** update
+
+**Summary:** Rewrote all analysis error messages to be diagnosis-only, added `ANALYSIS_ERROR_HINTS` for per-code prescriptions with a generic "try again" fallback, and updated `AnalysisState` to render the dynamic hint.
+
+**Brainstorming:** Three problems existed: weak messages (`invalid-key`, `no-models`, `unknown` all said "Something went wrong"), `parse-error` and `invalid-response` were identical strings, and the hardcoded "Click to try again" hint was wrong for non-retryable errors like `invalid-key` (requires reconnect, not retry). Option D was chosen: messages stay as diagnosis, a `Partial<Record<AiErrorCode, string>>` hint map provides per-code prescriptions, with the generic `Click "[actionLabel]" to try again.` as fallback for retryable errors with no specific guidance.
+
+**Prompt:** Update error messages with meaningful content. Messages = diagnosis only. Add ANALYSIS_ERROR_HINTS map with per-code action guidance; fallback to generic "try again" for retryable codes with no specific hint.
+
+**What changed:**
+- `ai-analysis/utils/analysis-messages.ts` — ANALYSIS_ERROR_MESSAGES rewritten (diagnosis only); ANALYSIS_ERROR_HINTS Partial map added (network/rate-limit/token-limit/server-error/invalid-key/no-models/min-campaigns); NON_RETRYABLE_CODES removed (superseded); TOKEN_LIMIT_MESSAGES updated with session-focused copy
+- `ai-analysis/components/shared/AnalysisState.vue` — imports ANALYSIS_ERROR_HINTS; adds errorHint computed (map lookup with generic fallback); template uses errorHint instead of hardcoded string
+
+**Key decisions & why:**
+- Partial map not full Record — only codes that need custom guidance are listed; absence = generic fallback, no need to enumerate retryable codes explicitly
+- Generic fallback uses actionLabel prop — stays in sync if the button label ever changes
+- server-error gets a specific hint ("Try again in a moment") — slight improvement over generic since it implies waiting, not immediate retry
+
+
+## [#344] Hoist loading state to top-level exclusive branch in AnalysisState
+**Type:** refactor
+
+**Summary:** Restructured AnalysisState.vue template so `status === 'loading'` is the outermost exclusive check, making it structurally impossible for the spinner to co-render with the token-limit notice or any other state.
+
+**Brainstorming:** The token-limit notice was a standalone `v-if` independent of the main `v-else-if` chain, meaning it could render alongside the loading spinner if `tokenLimitReached` became true mid-request. The fix was to hoist loading out as the first `v-if`, wrap all other branches in a `<template v-else>`, and remove the now-redundant `status !== 'loading'` guard concern from the notice. Inside the `v-else`, the existing idle/error/result chain remains unchanged.
+
+**Prompt:** Refactor AnalysisState.vue so loading has exclusive top-level priority — no other state can render while loading.
+
+**What changed:**
+- `ai-analysis/components/shared/AnalysisState.vue` — loading moved to top-level `v-if`; all other branches (token-limit notice, idle, error, result) wrapped in `<template v-else>`; indentation corrected inside result block
+
+**Key decisions & why:**
+- `<template v-else>` wrapper — renders no DOM element, keeps the flat `.ai-panel` structure unchanged
+- Loading first, not last — makes the priority hierarchy readable top-to-bottom: loading → token-limit → idle/error/result
+
+
+## [#345] Refactor Spinner to SVG with breathing arc animation, remove props
+**Type:** refactor
+
+**Summary:** Replaced the CSS border-trick spinner with an SVG material-style breathing arc, removed all props in favour of class pass-through for size and color.
+
+**Brainstorming:** The old spinner was a `<span>` with a border-radius and a top-border color trick — functional but visually plain. Removing props lets the caller control size with Tailwind w-*/h-* classes and color via text-* (since SVG uses currentColor), which is simpler and more composable. For animation, the material indeterminate spinner pattern was chosen: a rotating SVG combined with a stroke-dasharray animation that makes the arc appear to grow and shrink, creating a more elaborate "chasing tail" effect. Circumference at r=9.5 ≈ 60; arc peaks at 45 units (75%), dashoffset drives the head/tail offset cycle.
+
+**Prompt:** Refactor Spinner: remove props (size/variant), add an SVG with a material-style breathing arc animation, update all call sites to use class-based sizing.
+
+**What changed:**
+- `ui/Spinner.vue` — full rewrite: SVG with track circle (opacity 0.2) + arc circle; spinner-rotate (1.4s linear) + spinner-dash (1.4s ease-in-out) keyframes; no props
+- `ai-analysis/components/shared/AnalysisState.vue` — restored ai-panel root class (linter had zeroed it), removed duplicate loader block introduced by linter, updated `<Spinner class="w-16 h-16" />`
+- `ai-connection/components/AiConnectionForm.vue` — updated `<Spinner class="w-3.5 h-3.5" />` (color inherits from btn-primary text-on-primary)
+
+**Key decisions & why:**
+- currentColor for both track and arc strokes — inherits from parent text color; variant prop becomes unnecessary
+- No default size in component CSS — avoids specificity conflicts with Tailwind; callers always provide size class
+- stroke-dasharray/dashoffset on arc circle, rotation on SVG element — standard separation that produces the material indeterminate look
+
+
+## [#346] Add InlineNotification component to ui library
+**Type:** feature
+
+**Summary:** Created a reusable inline notification box component with five status variants, per-variant icons, ARIA role/live region wiring, and slots for extra content and action buttons.
+
+**Brainstorming:** The AnalysisState component already had two well-styled inline boxes (notice/error) using the bg-*/10 + border-*/15 pattern. The request was to extract this into a generic, reusable ui component that handles the five status variants needed across the app: error (operational failure), danger (severe/destructive), warning (caution), info, and default (neutral, no color semantics). The icon is optional and auto-selected per variant. ARIA is wired structurally: error and danger are assertive alerts (screen reader interrupts); warning and info are polite status regions; default has no ARIA role. Two slots: default for additional content below the message, and #actions for action buttons.
+
+**Prompt:** Create a reusable InlineNotification component in the ui folder. States: error, warning, danger, info, and a default neutral state. Each state has an auto-selected icon (icon is optional via showIcon prop). Styling follows the AnalysisState box pattern. ARIA role and aria-live are set based on variant. Provide a default slot for extra content and an #actions slot for action buttons. Add a BellIcon for the neutral default state. Export everything from the ui barrel. Do not implement anywhere yet.
+
+**What was built:**
+- `app/src/ui/icons/BellIcon.vue` — new Lucide-style bell SVG; neutral icon for the default notification state
+- `app/src/ui/InlineNotification.vue` — new component; variant prop (InlineNotificationVariant); title/message/showIcon props; auto icon map; aria role+live computed from variant; default + #actions slots; scoped flat styles with per-variant bg/border/text tokens; exports InlineNotificationVariant type
+- `app/src/ui/icons/index.ts` — added BellIcon export
+- `app/src/ui/index.ts` — added InlineNotification default export and InlineNotificationVariant type export
+
+**Key decisions & why:**
+- Five variants (error/danger/warning/info/default) rather than reusing NotificationVariant — error vs danger carry different semantic weight; default is a genuinely neutral state with no color connotation
+- error → AlertCircleIcon, danger → AlertTriangleIcon, both in danger red — icon shape communicates the distinction (operational vs structural severity)
+- BellIcon created for default — no existing icon was semantically neutral enough
+- aria-live="assertive" only for error/danger, polite for warning/info, omitted for default — matches WCAG guidance for urgency levels
+- Type exported directly from the component file, re-exported via barrel — consistent with DataTableColumn/Tab pattern already in the project
+
+
+## [#347] Fix InlineNotification compile error — move type export to separate script block
+**Type:** fix
+
+**Summary:** `export type` is not valid inside `<script setup>`; moved the type definition to a companion `<script lang="ts">` block so it can be re-exported from the barrel.
+
+**Brainstorming:** Vue 3's `<script setup>` is compiled as a function body, not a module, so `export` statements are syntax errors. The fix is a dual-block pattern: a plain `<script>` block owns the exported type, and `<script setup>` handles the runtime logic — the type is automatically in scope across both blocks without a self-import.
+
+**Prompt:** Fix compile error in InlineNotification.vue caused by `export type` inside `<script setup>`.
+
+**What changed:**
+- `app/src/ui/InlineNotification.vue` — extracted `InlineNotificationVariant` type into a separate `<script lang="ts">` block above `<script setup>`; removed invalid self-import
+
+**Key decisions & why:**
+- Dual script-block pattern (plain `<script>` + `<script setup>`) is the Vue 3 canonical way to export types from SFC files — avoids circular imports and keeps the type co-located with the component
+
+
+## [#348] Rename InlineNotification to Notification, fix invalid Tailwind class
+**Type:** fix
+
+**Summary:** Renamed the component file to Notification.vue and replaced `bg-surface-secondary/50` with `bg-surface-elevated` — `surface.secondary` does not exist in the Tailwind config.
+
+**Brainstorming:** Straightforward rename + class audit. The only invalid class was `bg-surface-secondary` — the `surface` token in tailwind.config.js has no `secondary` sub-key (it has DEFAULT/elevated/raised/overlay/hover/active). All opacity-modifier classes (`bg-danger/10`, `border-warning/15`, etc.) are valid because those color tokens use `<alpha-value>` in their definitions. `bg-surface-elevated` is the correct neutral surface step for the default notification variant.
+
+**Prompt:** Rename InlineNotification to Notification and remove style classes no longer in the Tailwind config.
+
+**What changed:**
+- `app/src/ui/InlineNotification.vue` → `app/src/ui/Notification.vue` — file renamed
+- `app/src/ui/Notification.vue` — `bg-surface-secondary/50` replaced with `bg-surface-elevated`
+- `app/src/ui/index.ts` — updated export to reference `Notification.vue`
+
+**Key decisions & why:**
+- `bg-surface-elevated` for the default variant — the closest valid token that gives a subtle lifted surface without color connotation; no opacity needed since the token itself is already a distinct surface layer
+
+
+## [#349] Refactor Notification: slots for title/message, reuse NotificationVariant, remove actions slot
+**Type:** refactor
+
+**Summary:** Replaced title/message string props with content projection (#title slot + default slot), reused the existing NotificationVariant type with variant made optional, removed the #actions slot, and dropped the custom InlineNotificationVariant type entirely.
+
+**Brainstorming:** The previous design had title and message as string props and a custom type. Using slots for content projection is more flexible and consistent with Vue patterns. Making variant optional (undefined = neutral/no-color state) is cleaner than a 'default' string variant and lets the component reuse the existing NotificationVariant type. Removing the actions slot keeps the component focused. Default icon/title colors moved to base class definitions rather than nested inside .notification to avoid IDE @apply warnings in plain nested selectors.
+
+**Prompt:** Remove #actions slot, add content projection for title and message, clean up inputs, reuse NotificationVariant or undefined.
+
+**What changed:**
+- `app/src/ui/Notification.vue` — removed title/message/actions; added #title named slot + default slot; variant now optional NotificationVariant (undefined = neutral); added success variant styling; removed InlineNotificationVariant custom type and dual script block; default icon/title colors moved to base class definitions
+- `app/src/ui/index.ts` — removed InlineNotificationVariant type re-export
+
+**Key decisions & why:**
+- variant?: NotificationVariant instead of InlineNotificationVariant — reuses existing type, undefined replaces the 'default' string cleanly
+- Default colors on .notification-icon/.notification-title base classes, not nested inside .notification — avoids IDE @apply warnings for non-variant nested selectors
+- #title named slot + unwrapped default slot — title gets a styled wrapper, body content is unrestricted
+
+
+## [#350] Notification: rectangle InfoIcon, XPolygonIcon for error, #action slot in header
+**Type:** update
+
+**Summary:** Updated InfoIcon to use a rounded rectangle background, added a new XPolygonIcon (diamond + X) for the error state in Notification, and added an #action slot next to the title header row.
+
+**Brainstorming:** InfoIcon background changed from circle to rounded rect to match the requested visual — the info lines stay identical, only the background shape changes. A new XPolygonIcon was created rather than modifying AlertCircleIcon, since that icon is also used by toast notifications and changing it would be a broader breaking change. The action slot is wrapped in a flex .notification-head row that only renders when either a title or action is projected, keeping the DOM clean when neither is used.
+
+**Prompt:** For info icon must have a rectangle background. For error lets add a polygon with an x. Maintain my changes. Lets add a section to project one action next to header.
+
+**What changed:**
+- `app/src/ui/icons/InfoIcon.vue` — replaced `<circle>` with `<rect x="2" y="2" width="20" height="20" rx="4" />` for rounded rectangle background
+- `app/src/ui/icons/XPolygonIcon.vue` — new icon: diamond polygon + X lines
+- `app/src/ui/icons/index.ts` — added XPolygonIcon export
+- `app/src/ui/Notification.vue` — error state now uses XPolygonIcon; template restructured with .notification-head (flex row, space-between) wrapping #title slot + new #action slot; .notification-head/.notification-action styles added
+
+**Key decisions & why:**
+- New XPolygonIcon instead of modifying AlertCircleIcon — toast still uses the circle icon; keeping them separate avoids unintended visual regressions
+- .notification-head only renders when $slots.title or $slots.action has content — no empty wrapper in the DOM for body-only notifications
+- .notification-action shrink-0 — prevents the action from being compressed by a long title
+
+
+## [#351] XPolygonIcon: change to hexagon (6-sided polygon)
+**Type:** fix
+
+**Summary:** Replaced the 4-sided diamond polygon in XPolygonIcon with a regular hexagon (6 sides).
+
+**Brainstorming:** The points are computed for a regular hexagon centered at (12,12) with radius 10, at 0°/60°/120°/180°/240°/300°: (22,12) (17,20.7) (7,20.7) (2,12) (7,3.3) (17,3.3). X lines unchanged.
+
+**Prompt:** Not the correct polygon, it has to have 6 sides.
+
+**What changed:**
+- `app/src/ui/icons/XPolygonIcon.vue` — polygon points updated to a regular hexagon
+
+**Key decisions & why:**
+- Flat-top orientation (first point at 3 o'clock) — natural for a 0° start angle, visually balanced with the X inside
+
+
+## [#352] Notification: conditional pl-1 on content when showIcon is true
+**Type:** fix
+
+**Summary:** Made the `pl-1` padding on the notification body content conditional on the `showIcon` prop so it only aligns with the icon when one is shown.
+
+**Brainstorming:** The left padding exists to visually align body text with the icon. When showIcon is false there is no icon to align with, so the padding should be absent.
+
+**Prompt:** If showIcon apply padding pl-1 in content.
+
+**What changed:**
+- `app/src/ui/Notification.vue` — `pl-1` moved from static class to `:class="{ 'pl-1': showIcon }"`
+
+**Key decisions & why:**
+- Binding directly to the `showIcon` prop — same source of truth, no extra computed needed
+
+
+## [#353] Refactor analysis-messages to object shape with title/message
+**Type:** refactor
+
+**Summary:** Converted all message constants in `analysis-messages.ts` from flat strings to `{ title, message? }` objects, renamed `TOKEN_LIMIT_MESSAGES` to `TOKEN_LIMIT_MESSAGE`, and unified `parse-error`/`invalid-response` into a single user-facing message.
+
+**Brainstorming:** The previous structure kept error text and hint text in two separate exports (`ANALYSIS_ERROR_MESSAGES` and `ANALYSIS_ERROR_HINTS`), requiring the component to look up both independently. Consolidating into objects co-locates the title and message for each code, makes the intent clearer, and removes the need for `Partial` typing on hints. `TOKEN_LIMIT_MESSAGES` (plural) was renamed to the singular `TOKEN_LIMIT_MESSAGE` since it represents one notification. `parse-error` and `invalid-response` had distinct technical titles but are indistinguishable to users — both now read "The AI returned an unusable response" with a shared actionable hint.
+
+**Prompt:** Convert analysis messages to a map of objects with title and message. TOKEN_LIMIT_MESSAGES → TOKEN_LIMIT_MESSAGE. Refactor maintaining my changes. Also: parse-error and invalid-response — do we really need separate messages? Make them more meaningful.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` — `ANALYSIS_ERROR_MESSAGES` changed to `Record<AiErrorCode, { title: string; message?: string }>`, `ANALYSIS_ERROR_HINTS` removed (merged into objects), `ANALYSIS_NOTICE_MESSAGES` changed to `Record<AiAnalysisNoticeCode, { title: string; message: string }>`, `TOKEN_LIMIT_MESSAGES` renamed to `TOKEN_LIMIT_MESSAGE` with `notice`/`hint` keys renamed to `title`/`message`; `parse-error` and `invalid-response` now share the same user-facing title and message
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — updated imports; `errorMessage`/`errorHint` computeds read from `errorEntry.title`/`errorEntry.message`; `noticeText` renamed to `noticeEntry`; template updated to use `TOKEN_LIMIT_MESSAGE.title`/`.message` and `noticeEntry.title`/`.message`
+
+**Key decisions & why:**
+- `message` is optional on error entries — codes with no actionable hint fall back to the dynamic `Click "${actionLabel}" to try again.` string in the component, preserving existing fallback behaviour
+- `parse-error` and `invalid-response` unified — the distinction is internal; both result in an unusable AI response from the user's perspective, so separate titles add noise without value
+
+
+## [#354] Polish analysis error messages: polite tone, no dashes, all codes have message
+**Type:** update
+
+**Summary:** Made all error messages polite (added "please"), removed em dashes, filled in missing `message` for `timeout` and `unknown`, and tightened the `message` field to required.
+
+**Brainstorming:** Two codes (`timeout`, `unknown`) had no `message`, leaving the component to fall back to a dynamic string. With all codes covered the fallback is dead code. Tone was also inconsistent — some messages used em dashes and imperative phrasing without "please".
+
+**Prompt:** Make try again messages more polite with no dash between them. All errors must have a message.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` — `message` type changed from optional to required; `timeout` and `unknown` given messages; em dashes removed; "please" added to all actionable hints
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — dynamic fallback in `errorHint` removed; now returns `errorEntry.value?.message ?? null`
+
+**Key decisions & why:**
+- `message` made required — all codes now have one, so the optional type was misleading and the fallback in the component was unreachable
+
+
+## [#355] Extract internal constants for repeated error message strings
+**Type:** refactor
+
+**Summary:** Pulled repeated message strings into module-level constants so identical values are defined once and referenced, not duplicated.
+
+**Brainstorming:** Three duplicates existed: `'Please try again in a moment.'` shared by `timeout` and `server-error`, and the full `{ title, message }` object shared by `parse-error` and `invalid-response`. Extracting them removes the risk of the copies drifting apart.
+
+**Prompt:** Same messages should be in internal constants and reused.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` — added module-private `TRY_AGAIN_LATER` string and `UNUSABLE_RESPONSE` object; `timeout`/`server-error` reference `TRY_AGAIN_LATER`; `parse-error`/`invalid-response` reference `UNUSABLE_RESPONSE` directly
+
+**Key decisions & why:**
+- Constants are unexported — they are implementation details of this module, not part of its public API
+
+
+## [#356] Refactor AnalysisState to slot-based projection; min-campaigns as idle warning
+**Type:** refactor
+
+**Summary:** Removed unused props from `AnalysisState`, replaced prop-based idle/loading text with named slots, and changed the min-campaigns check to set `status: 'idle'` so `BudgetOptimizationAnalysis` can project a warning notification into the `#idle` slot rather than triggering the generic error path.
+
+**Brainstorming:** `AnalysisState` had five props (`title`, `actionLabel`, `idleText`, `loadingText`, `isButtonDisabled`) and an `analyze` emit that were never consumed in the template — the panel-head they belonged to had been commented out, and the template used named slots for idle/loading instead. `BudgetOptimizationAnalysis` was passing those props as dead bindings while not filling the slots, so idle/loading text never rendered. Setting min-campaigns to `status: 'idle'` (instead of `status: 'error'`) lets the `#idle` slot projection in `BudgetOptimizationAnalysis` handle the warning display — keeping budget-specific logic out of the shared component entirely. No store export needed; `error?.code` is already available in the orchestrator.
+
+**Prompt:** Use AnalysisState slot-based projection for BudgetAnalysis. Clean up unused inputs. Set min-campaigns to idle so the warning can be caught in the idle projection of the budget analysis component.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — removed props `title`, `actionLabel`, `idleText`, `loadingText`, `isButtonDisabled` and `analyze` emit; removed all commented-out style blocks; idle container changed to `div` to support slot content beyond plain text
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — removed dead prop bindings; added `#loading` and `#idle` named slots; `#idle` conditionally shows `Notification variant="warning"` when `error?.code === 'min-campaigns'`, otherwise shows idle text; imports `ANALYSIS_ERROR_MESSAGES` to reuse min-campaigns message text; inline Tailwind classes used instead of `message-title` (scoped to `AnalysisState`, unreachable from slot content)
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — removed dead prop bindings; `#loading` and `#idle` slots already present, kept
+- `app/src/stores/aiAnalysis.store.ts` — `showOptimizerMinimumError`: changed `setDisplay` from `status: 'error'` to `status: 'idle'` for min-campaigns
+
+**Key decisions & why:**
+- `status: 'idle'` for min-campaigns — the constraint is advisory (not enough data yet), not a failure; idle + slot projection is a cleaner model than hijacking the error state
+- No new store export — `error` is already available in the orchestrator; `error?.code === 'min-campaigns'` is sufficient to detect the condition in the template
+- Scoped `.message-title` not used in slot content — replaced with inline `text-sm font-normal` Tailwind classes since scoped styles from `AnalysisState` cannot reach projected slot content
+
+
+## [#357] Unify errorEntry/errorMessage/errorHint into single errorDisplay computed
+**Type:** refactor
+
+**Summary:** Replaced three separate error computeds with one `errorNotification` that resolves title and message together in a single pass.
+
+**Brainstorming:** `errorEntry`, `errorMessage`, and `errorHint` each re-derived from `props.error` independently. A single computed that returns `{ title, message } | null` avoids the redundancy and makes the dependency chain explicit.
+
+**Prompt:** errorEntry, errorMessage, errorHint should be unified to compute one object once.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — replaced `errorEntry`, `errorMessage`, `errorHint` with `errorNotification` computed returning `{ title, message } | null`; template updated to `errorDisplay?.title` and `errorDisplay?.message`

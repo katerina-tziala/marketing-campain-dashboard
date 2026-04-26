@@ -36,39 +36,39 @@ type DevEntry = MockEntry | ErrorEntry
 // can continue without a manual disconnect/reconnect.
 
 const BUDGET_SEQUENCE: DevEntry[] = [
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[0] },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[1] },
-  // { kind: 'error', code: 'network' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[2] },
-  // { kind: 'error', code: 'rate-limit' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[3] },
-  // { kind: 'error', code: 'server-error' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[4] },
-  // { kind: 'error', code: 'timeout' },
-  // { kind: 'error', code: 'token-limit' },
-  // { kind: 'error', code: 'parse-error' },
-  // { kind: 'error', code: 'invalid-response' },
-  // { kind: 'error', code: 'invalid-key' },
-  // { kind: 'error', code: 'no-models' },
-  // { kind: 'error', code: 'unknown' },
+  // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[0] },
+  // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[1] },
+  { kind: 'error', code: 'network' },
+  // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[2] },
+  { kind: 'error', code: 'rate-limit' },
+  // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[3] },
+  { kind: 'error', code: 'server-error' },
+  // { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[4] },
+  { kind: 'error', code: 'timeout' },
+  { kind: 'error', code: 'parse-error' },
+  { kind: 'error', code: 'invalid-response' },
+  { kind: 'error', code: 'invalid-key' },
+  { kind: 'error', code: 'no-models' },
+  { kind: 'error', code: 'unknown' },
+  { kind: 'error', code: 'token-limit' }, // terminal — button disabled after this; disconnect to reset
 ]
 
 const SUMMARY_SEQUENCE: DevEntry[] = [
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[0] },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[1] },
-  // { kind: 'error', code: 'network' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[2] },
-  // { kind: 'error', code: 'rate-limit' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[3] },
-  // { kind: 'error', code: 'server-error' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[4] },
-  // { kind: 'error', code: 'timeout' },
-  // { kind: 'error', code: 'token-limit' },
-  // { kind: 'error', code: 'parse-error' },
-  // { kind: 'error', code: 'invalid-response' },
-  // { kind: 'error', code: 'invalid-key' },
-  // { kind: 'error', code: 'no-models' },
-  // { kind: 'error', code: 'unknown' },
+  // { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[0] },
+  // { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[1] },
+  { kind: 'error', code: 'network' },
+  // { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[2] },
+  { kind: 'error', code: 'rate-limit' },
+  // { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[3] },
+  { kind: 'error', code: 'server-error' },
+  // { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[4] },
+  { kind: 'error', code: 'timeout' },
+  { kind: 'error', code: 'parse-error' },
+  { kind: 'error', code: 'invalid-response' },
+  { kind: 'error', code: 'invalid-key' },
+  { kind: 'error', code: 'no-models' },
+  { kind: 'error', code: 'unknown' },
+  { kind: 'error', code: 'token-limit' }, // terminal — button disabled after this; disconnect to reset
 ]
 
 const SEQUENCES: Record<AiAnalysisType, DevEntry[]> = {
@@ -102,13 +102,11 @@ function sleep(ms: number): Promise<void> {
 }
 
 function resetTokenLimit(): void {
-  // After the store marks the model as limit-reached and shows the token-limit
-  // state, reset limitReached so the cycle can continue without reconnecting.
-  setTimeout(() => {
+  // setTimeout(() => {
     const store = useAiConnectionStore()
     const model = store.models.find(m => m.id === DEV_GROQ_MODEL.id)
     if (model) model.limitReached = false
-  }, 100)
+  // }, 1500)
 }
 
 // ── Override function (replaces runProviderPrompt in analysis-prompt.ts) ──────
@@ -118,13 +116,13 @@ async function runDevCycle(type: AiAnalysisType, signal: AbortSignal): Promise<A
   if (signal.aborted) return null
 
   const entry = nextEntry(type)
+  const cycleWrapped = counters[type] === 0
+  if (cycleWrapped) resetTokenLimit()
 
   if (entry.kind === 'mock') {
     return { ...entry.response, timestamp: Date.now() }
   }
-
-  if (entry.code === 'token-limit') resetTokenLimit()
-
+ 
   throw new Error(entry.code)
 }
 

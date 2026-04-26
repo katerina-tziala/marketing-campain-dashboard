@@ -81,13 +81,6 @@ export default {
           "primary-subtle":
             "rgb(var(--color-text-primary-subtle) / <alpha-value>)",
         },
-        // 
-        spinner: {
-          primary: "#6366f1",
-          "primary-track": "rgba(99, 102, 241, 0.2)",
-          secondary: "#eef2ff",
-          "secondary-track": "rgba(255, 255, 255, 0.3)",
-        },
       },
       fontFamily: {
         sans: [

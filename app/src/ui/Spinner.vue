@@ -1,49 +1,45 @@
 <template>
-  <span class="spinner" :class="[`spinner-${size}`, `spinner-${variant}`]" aria-hidden="true" />
+  <svg class="spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="9.5" stroke-width="2" stroke="currentColor" class="spinner-track" />
+    <circle cx="12" cy="12" r="9.5" stroke-width="2" stroke="currentColor" stroke-linecap="round" class="spinner-arc" />
+  </svg>
 </template>
-
-<script setup lang="ts">
-withDefaults(
-  defineProps<{
-    size?: 'sm' | 'md' | 'lg' | 'xl' | 'xxl'
-    variant?: 'primary' | 'secondary'
-  }>(),
-  { size: 'md', variant: 'primary' },
-)
-</script>
 
 <style lang="scss" scoped>
 .spinner {
-  @apply inline-block rounded-full shrink-0 animate-spin;
-  animation-duration: 0.75s;
+  @apply block shrink-0 w-24 h-24;
+  animation: spinner-rotate 1.8s linear infinite;
 
-  &-sm {
-    @apply w-3.5 h-3.5 border-2;
+  .spinner-track {
+    @apply text-primary/30;
   }
 
-  &-md {
-    @apply block w-6 h-6 border-2;
-  }
-
-  &-lg {
-    @apply block w-9 h-9 border-4;
-  }
-
-  &-xl {
-    @apply block w-12 h-12 border-4;
-  }
-
-  &-xxl {
-    @apply block w-16 h-16 border-4;
-  }
-
-
-  &-primary {
-    @apply border-spinner-primary-track border-t-spinner-primary;
-  }
-
-  &-secondary {
-    @apply border-spinner-secondary-track border-t-spinner-secondary;
+  .spinner-arc {
+    stroke-dasharray: 1 60;
+    stroke-dashoffset: 0;
+    animation: spinner-dash 1.8s ease-in-out infinite;
+    @apply text-primary-light;
   }
 }
+
+@keyframes spinner-rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinner-dash {
+  0% {
+    stroke-dasharray: 1 60;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 45 60;
+    stroke-dashoffset: -16;
+  }
+  100% {
+    stroke-dasharray: 45 60;
+    stroke-dashoffset: -62;
+  }
+}
+
+
 </style>

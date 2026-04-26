@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import type { PortfolioScope } from '@/shared/types/campaign'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import { Notification } from '@/ui'
+import { ANALYSIS_ERROR_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
 import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import AnalysisHeader from '@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
@@ -20,6 +22,9 @@ const notice = computed(() => analysisStore.budgetOptimizer.notice)
 const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.timestamp ?? null)
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
+
+const isBelowMinimum = computed(() => error.value?.code === 'min-campaigns')
+const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES['min-campaigns']
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive
@@ -46,20 +51,34 @@ function handleAnalyze(): void {
   />
 
   <AnalysisState
-    title="Budget Optimizer"
-    :action-label="actionLabel"
-    idle-text="Get budget reallocation recommendations based on campaign performance. Identify underperforming channels and reallocate budget for higher ROI."
-    loading-text="Analyzing campaigns…"
     :status="status"
     :error="error"
     :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
-    :is-button-disabled="isButtonDisabled"
     :has-result="!!response"
     :cache-timestamp="cacheTimestamp"
     :model-name="response?.model?.displayName"
-    @analyze="handleAnalyze"
   >
+    <template #loading>Analyzing campaigns…</template>
+
+    <template #idle>
+      <Notification
+        v-if="isBelowMinimum"
+        variant="warning"
+        class="mt-6"
+        :show-icon="false"
+      >
+        <template #title>
+          <span class="text-sm font-normal">{{ minCampaignsEntry.title }}</span>
+        </template>
+        {{ minCampaignsEntry.message }}
+      </Notification>
+      <template v-else>
+        Get budget reallocation recommendations based on campaign performance.
+        Identify underperforming channels and reallocate budget for higher ROI.
+      </template>
+    </template>
+
     <template v-if="response">
       <BudgetOptimizationOverview
         :summary="response.summary"

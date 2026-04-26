@@ -84,6 +84,13 @@
       &:focus-visible {
         @apply ring-2 ring-primary ring-offset-1	ring-offset-background;
       }
+
+      &:active {
+         &::after {
+          @apply opacity-60;
+        }
+
+      }
     }
   }
 

@@ -54,20 +54,21 @@ function handleSummarize(): void {
   />
 
   <AnalysisState
-    title="Executive Summary"
-    :action-label="actionLabel"
-    idle-text="Generate a summary highlighting top and underperforming campaigns with actionable insights."
-    loading-text="Generating summary…"
     :status="status"
     :error="error"
     :notice="notice"
     :token-limit-reached="analysisStore.tokenLimitReached"
-    :is-button-disabled="isButtonDisabled"
     :has-result="!!response"
     :cache-timestamp="cacheTimestamp"
     :model-name="response?.model?.displayName"
-    @analyze="handleSummarize"
   >
+    <template #loading>Generating summary…</template>
+
+    <template #idle>
+      Generate an AI summary for the current portfolio view, including
+      performance context and recommended next actions.
+    </template>
+
     <template v-if="response">
       <ExecutiveSummaryHealth
         :health-score="response.healthScore"

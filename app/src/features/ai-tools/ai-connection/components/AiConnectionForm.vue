@@ -83,7 +83,7 @@ async function handleConnect(): Promise<void> {
         </PasswordInput>
       </div>
       <button class="btn-primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
-        <Spinner v-if="store.isConnecting" size="sm" variant="secondary" />
+        <Spinner v-if="store.isConnecting" class="w-3.5 h-3.5" />
         {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
       </button>
     </form>

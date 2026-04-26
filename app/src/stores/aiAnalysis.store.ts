@@ -167,7 +167,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   function showOptimizerMinimumError(tab: AiAnalysisType): boolean {
     if (tab !== 'budgetOptimizer' || !isBelowOptimizerMinimum()) return false
-    setDisplay(tab, 'error', null, OPTIMIZER_MIN_CAMPAIGNS_ERROR)
+    setDisplay(tab, 'idle', null, OPTIMIZER_MIN_CAMPAIGNS_ERROR)
     return true
   }
 

@@ -10,8 +10,8 @@
     aria-hidden="true"
     style="width: 1em; height: 1em; display: inline-block;"
   >
-    <rect x="2" y="2" width="20" height="20" rx="4" />
-    <line x1="12" y1="16" x2="12" y2="12" />
-    <line x1="12" y1="8" x2="12.01" y2="8" />
+    <polygon points="22,12 17,20.7 7,20.7 2,12 7,3.3 17,3.3" />
+    <line x1="9" y1="9" x2="15" y2="15" />
+    <line x1="15" y1="9" x2="9" y2="15" />
   </svg>
 </template>

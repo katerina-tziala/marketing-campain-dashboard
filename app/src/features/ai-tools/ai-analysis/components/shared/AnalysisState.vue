@@ -1,162 +1,125 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Spinner } from '@/ui'
-import { SparklesIcon } from '@/ui/icons'
-import type { AsyncStatus } from '@/shared/types/async-status'
-import type { AiAnalysisError, AiAnalysisNotice } from '@/features/ai-tools/types'
-import { ANALYSIS_ERROR_MESSAGES, ANALYSIS_NOTICE_MESSAGES, TOKEN_LIMIT_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
+import { computed } from "vue";
+import { Spinner, Notification } from "@/ui";
+import type { AsyncStatus } from "@/shared/types/async-status";
+import type {
+  AiAnalysisError,
+  AiAnalysisNotice,
+} from "@/features/ai-tools/types";
+import {
+  ANALYSIS_ERROR_MESSAGES,
+  ANALYSIS_NOTICE_MESSAGES,
+  TOKEN_LIMIT_MESSAGE,
+} from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
 
 const props = defineProps<{
-  title: string
-  actionLabel: string
-  idleText: string
-  loadingText: string
-  status: AsyncStatus
-  error: AiAnalysisError | null
-  notice: AiAnalysisNotice | null
-  tokenLimitReached: boolean
-  isButtonDisabled: boolean
-  hasResult: boolean
-  cacheTimestamp: string | number | null
-  modelName?: string
-}>()
-
-const emit = defineEmits<{ analyze: [] }>()
+  status: AsyncStatus;
+  error: AiAnalysisError | null;
+  notice: AiAnalysisNotice | null;
+  tokenLimitReached: boolean;
+  hasResult: boolean;
+  cacheTimestamp: string | number | null;
+  modelName?: string;
+}>();
 
 const formattedCacheTime = computed(() => {
-  if (!props.cacheTimestamp) return null
-  return new Date(props.cacheTimestamp).toLocaleTimeString('en-IE', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-})
+  if (!props.cacheTimestamp) return null;
+  return new Date(props.cacheTimestamp).toLocaleTimeString("en-IE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+});
 
-const errorMessage = computed(() => {
-  if (!props.error) return null
-  return ANALYSIS_ERROR_MESSAGES[props.error.code] ?? props.error.rawMessage ?? ANALYSIS_ERROR_MESSAGES.unknown
-})
+const errorNotification = computed(() => {
+  if (!props.error) return null;
+  const entry = ANALYSIS_ERROR_MESSAGES[props.error.code] ?? ANALYSIS_ERROR_MESSAGES.unknown;
+  return {
+    title: entry.title ?? props.error.rawMessage ?? ANALYSIS_ERROR_MESSAGES.unknown.title,
+    message: entry.message ?? null,
+  };
+});
 
-const noticeText = computed(() =>
+const noticeEntry = computed(() =>
   props.notice ? ANALYSIS_NOTICE_MESSAGES[props.notice.code] : null,
-)
+);
 </script>
 
 <template>
-  <div class="ai-panel">
-    <!-- Header -->
-    <!-- <div class="panel-head">
-      <h3 class="panel-title">{{ title }}</h3>
-      <button class="btn-primary" :disabled="isButtonDisabled" @click="emit('analyze')">
-        <SparklesIcon />
-        {{ actionLabel }}
-      </button>
-    </div> -->
+  <!-- Loading always takes exclusive priority -->
+  <div v-if="status === 'loading'" class="loader">
+    <Spinner class="xxl" />
+    <p role="status" class="loader-text">
+      <slot name="loading" />
+    </p>
+  </div>
 
+  <template v-else>
     <!-- Token limit notice -->
-    <div v-if="tokenLimitReached && status !== 'done'" class="notice" role="status">
-      <p class="notice-text">{{ TOKEN_LIMIT_MESSAGES.notice }}</p>
-      <p class="notice-hint">{{ TOKEN_LIMIT_MESSAGES.hint }}</p>
-    </div>
+    <Notification
+      v-if="tokenLimitReached && status !== 'done'"
+      variant="warning"
+      class="mt-6"
+      :show-icon="false"
+    >
+      <template #title>
+        <span class="message-title">{{ TOKEN_LIMIT_MESSAGE.title }}</span>
+      </template>
+      {{ TOKEN_LIMIT_MESSAGE.message }}
+    </Notification>
 
-    <!-- Idle -->
-    <p v-if="status === 'idle' && !tokenLimitReached" class="idle-text">{{ idleText }}</p>
-
-    <!-- Loading -->
-    <div v-else-if="status === 'loading'" class="loader">
-      <Spinner size="xxl" />
-      <p class="loader-text">{{ loadingText }}</p>
+    <!-- Idle — projected content from parent -->
+    <div v-if="status === 'idle' && !tokenLimitReached" class="idle-text">
+      <slot name="idle" />
     </div>
 
     <!-- Error (no cached result) -->
-    <div v-else-if="status === 'error' && error" class="error-box" role="alert">
-      <p class="error-message">{{ errorMessage }}</p>
-      <p class="error-hint">Click "{{ actionLabel }}" to try again.</p>
-    </div>
+    <Notification
+      v-else-if="status === 'error' && error && !tokenLimitReached"
+      variant="error"
+      class="mt-6"
+      :show-icon="false"
+    >
+      <template #title>
+        <span class="message-title">{{ errorNotification?.title }}</span>
+      </template>
+      {{ errorNotification?.message }}
+    </Notification>
 
     <!-- Result -->
     <div v-else-if="hasResult" class="result">
       <div class="response-meta">
-        <p v-if="formattedCacheTime" class="italic text-typography-subtle" role="status">
-          Generated at {{ formattedCacheTime }}<template v-if="modelName"> with {{ modelName }}</template>
-        <span class="block italic text-typography-subtle">AI can make mistakes</span>
+        <p
+          v-if="formattedCacheTime"
+          class="italic text-typography-subtle"
+          role="status"
+        >
+          Generated at {{ formattedCacheTime
+          }}<template v-if="modelName"> with {{ modelName }}</template>
+          <span class="block italic text-typography-subtle"
+            >AI can make mistakes</span
+          >
         </p>
-        <p v-if="noticeText" class="text-typography-subtle" role="status">{{ noticeText }}</p>
+        <p v-if="noticeEntry" class="text-typography-subtle" role="status">
+          <span class="font-medium">{{ noticeEntry.title }}</span>
+          {{ noticeEntry.message }}
+        </p>
       </div>
       <slot />
     </div>
-  </div>
+  </template>
 </template>
 
 <style lang="scss" scoped>
-.panel-head {
-  @apply flex items-center justify-center gap-3;
-}
-
-.panel-title {
-  @apply grow m-0 font-bold text-base text-primary-light;
-}
-
 .idle-text {
-  @apply text-on-primary text-sm py-2 leading-5;
+  @apply text-typography text-sm py-2 leading-5;
 }
 
 .loader {
   @apply flex flex-col items-center gap-4 p-8;
 }
 
-.loader-text,
-.notice-hint,
-.error-hint {
-  @apply text-typography text-sm;
-}
-
-.notice {
-  @apply flex
-    flex-col
-    gap-1.5
-    text-center
-    p-4
-    rounded-lg
-    bg-warning/10
-    border
-    border-warning/15;
-}
-
-.notice-text {
-  @apply text-warning font-medium text-sm;
-}
-
-.error-box {
-  @apply flex
-    flex-col
-    gap-1.5
-    text-center
-    p-4
-    rounded-lg
-    bg-danger/10
-    border
-    border-danger/15;
-}
-
-.error-message {
-  @apply text-danger font-medium text-sm;
-}
-
-.result {
-  @apply flex flex-col gap-6 pb-4;
-}
-
-.response-meta {
-  @apply flex flex-col gap-1 text-xs text-typography;
-}
-
-.response-meta-text,
-.response-meta-disclaimer {
-  @apply italic;
-}
-
-.response-meta-fallback {
-  @apply text-warning font-medium;
+.message-title {
+  @apply text-sm font-normal;
 }
 </style>
