@@ -6884,3 +6884,62 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Button action slot placement rather than AnalysisState internal button — decouples the shared wrapper from per-tab action label/icon choices; AnalysisState stays a pure status/slot display component
 - MetaRow + MetaItem in DashboardHeader instead of raw spans — consistent with the same pattern used across the rest of the app; bullet separator comes for free from the global .meta-row--bullet rule
 - Dev cycle errors commented out (not deleted) — easy to re-enable individual error codes for targeted UI testing
+
+
+## [#336] Extract AnalysisHeader shared component for AI tab orchestrators
+**Type:** refactor
+
+**Summary:** Extracted a fully props-only `AnalysisHeader.vue` to eliminate the duplicated `SectionHeaderLayout` + MetaRow + analyze button pattern between both AI tab orchestrators.
+
+**Brainstorming:** Both `ExecutiveSummaryAnalysis` and `BudgetOptimizationAnalysis` share the same structural header: a `SectionHeaderLayout` with a dynamic title, a `Button.primary.square` with `MagicWandIcon` in the action slot, and a `MetaRow` showing portfolio title / channel count / campaign count. Options considered: (A) fully dumb props-only component — parent computes all values and passes them down; (B) fully smart component reading the store internally; (C) mixed (store + props). Option A chosen: mixing store reads with props in a shared component creates unclear ownership. The orchestrators already read stores and compute derived values — three extra props is trivial. The component stays purely presentational.
+
+**Prompt:** Extract a shared `AnalysisHeader.vue` component (props-only, no store reads) for the SectionHeaderLayout + MetaRow + analyze button pattern shared by both AI tab orchestrators. Props: title, actionLabel, isButtonDisabled, portfolioTitle, channelCount, campaignCount. Emits: analyze. Update both orchestrators to use it, passing all values as props. Icon is baked in (MagicWandIcon) — same for both tabs.
+
+**What changed:**
+- `ai-analysis/components/shared/AnalysisHeader.vue` — new; SectionHeaderLayout with dynamic title h3 + Button.primary.square + MagicWandIcon in #action slot + MetaRow with portfolioTitle/channelCount/campaignCount; fully props-only
+- `executive-summary/ExecutiveSummaryAnalysis.vue` — replaced inline SectionHeaderLayout/MetaRow/Button/MagicWandIcon block with `<AnalysisHeader>`; added headerTitle + channelCount computeds; removed unused imports; no scoped styles remain
+- `budget-optimization/BudgetOptimizationAnalysis.vue` — added `<AnalysisHeader>` (was missing entirely); added campaignStore + headerTitle ("Portfolio Optimizer" / "Budget Optimizer") + channelCount + actionLabel computeds; now reads both aiAnalysis.store and campaign.store
+
+**Key decisions & why:**
+- Props-only over store-reading: avoids mixed-responsibility component where ownership of data is ambiguous; orchestrators already read stores, extra props cost nothing
+- Icon baked in (not a prop): both tabs use the same MagicWandIcon — no variation exists, so no prop needed; simpler call sites
+- Optimizer title "Portfolio Optimizer" / "Budget Optimizer" mirrors the Summary pattern — consistent dynamic title behaviour across both tabs
+
+
+## [#337] Add portfolioContext getter to aiAnalysisStore
+**Type:** refactor
+
+**Summary:** Introduced a `portfolioContext` computed on `aiAnalysisStore` grouping `{ portfolioTitle, filtersActive, channelCount, campaignCount }` so both tab orchestrators read from a single store and the duplicated channelCount derivation is removed.
+
+**Brainstorming:** The channelCount logic (`filtersActive ? selectedChannelsIds.length : portfolioChannels.size`) was duplicated in both orchestrators after the AnalysisHeader extraction. Options: add flat getters to campaignStore (natural owner but orchestrators still need two imports); add a grouped computed to aiAnalysisStore (orchestrators already heavily import it, aiAnalysisStore already reads campaignStore). Grouped object chosen over flat getters — cleaner destructuring at call sites and fewer surface additions to the store. aiAnalysisStore already uses campaignStore extensively so no new cross-store coupling direction is introduced.
+
+**Prompt:** Add a `portfolioContext` computed to `aiAnalysisStore` returning `{ portfolioTitle, filtersActive, channelCount, campaignCount }` derived from campaignStore. Expose it in the return statement. Update both tab orchestrators to read from `analysisStore.portfolioContext` and drop their campaignStore imports.
+
+**What changed:**
+- `stores/aiAnalysis.store.ts` — added `portfolioContext` computed (filtersActive gate, channelCount derivation, portfolioTitle, campaignCount); exposed in return
+- `executive-summary/ExecutiveSummaryAnalysis.vue` — dropped campaignStore import; headerTitle uses `portfolioContext.filtersActive`; AnalysisHeader props read from `analysisStore.portfolioContext`
+- `budget-optimization/BudgetOptimizationAnalysis.vue` — dropped campaignStore import; same pattern
+
+**Key decisions & why:**
+- Grouped object over flat getters: single addition to store surface; destructuring at call sites reads naturally
+- Placed in aiAnalysisStore not campaignStore: orchestrators already import aiAnalysisStore exclusively — avoids re-adding a second store import that was just removed
+
+
+## [#338] Introduce PortfolioContext interface and collapse AnalysisHeader props to single object
+**Type:** refactor
+
+**Summary:** Defined and exported `PortfolioContext` from `aiAnalysis.store.ts` and collapsed the three flat `AnalysisHeader` props (`portfolioTitle`, `channelCount`, `campaignCount`) into a single `:context` prop.
+
+**Brainstorming:** Three individual props for what is already a grouped computed object in the store creates unnecessary spread at call sites. Defining the interface at the producer (the store) and importing it in the consumer (AnalysisHeader) is the natural ownership direction — the store defines the shape it produces, the component declares it accepts that shape.
+
+**Prompt:** Define and export `PortfolioContext` interface in `aiAnalysis.store.ts`. Update `AnalysisHeader` to replace the three flat props (portfolioTitle/channelCount/campaignCount) with a single `context: PortfolioContext` prop. Update both orchestrators to pass `:context="analysisStore.portfolioContext"`.
+
+**What changed:**
+- `stores/aiAnalysis.store.ts` — added exported `PortfolioContext` interface ({ portfolioTitle, channelCount, campaignCount, filtersActive })
+- `shared/AnalysisHeader.vue` — replaced three flat props with `context: PortfolioContext`; template reads `context.portfolioTitle` etc.; imports PortfolioContext from store
+- `ExecutiveSummaryAnalysis.vue` — AnalysisHeader call site collapsed to `:context="analysisStore.portfolioContext"`
+- `BudgetOptimizationAnalysis.vue` — same; titles updated to "Portfolio Budget Optimizer" / "Selection Budget Optimizer"
+
+**Key decisions & why:**
+- Interface defined in the store, not in AnalysisHeader — the store is the producer of this shape; component types should flow from data layer toward presentation layer, not the reverse
+- `filtersActive` included in the interface — it is part of the computed object the store already returns; omitting it would require a separate computed or type cast

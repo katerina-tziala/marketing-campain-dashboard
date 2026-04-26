@@ -3,19 +3,11 @@ import { computed } from "vue";
 import type { PortfolioScope } from "@/shared/types/campaign";
 import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
 import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
+import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
 import AnalysisCorrelations from "@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue";
 import ExecutiveSummaryHealth from "./ExecutiveSummaryHealth.vue";
 import ExecutiveSummaryPriorityActions from "./ExecutiveSummaryPriorityActions.vue";
 import ExecutiveSummaryInsights from "./ExecutiveSummaryInsights.vue";
-import { useCampaignStore } from "@/stores/campaign.store";
-
-import {
-  MagicWandIcon,
-  MetaRow,
-  MetaItem,
-  Button,
-  SectionHeaderLayout,
-} from "@/ui";
 
 defineProps<{
   scope: PortfolioScope;
@@ -33,6 +25,12 @@ const cacheTimestamp = computed(
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze);
 const analysisActivated = computed(() => analysisStore.analysisActivated);
 
+const headerTitle = computed(() =>
+  analysisStore.portfolioContext.filtersActive
+    ? "Performance Summary"
+    : "Portfolio Summary",
+);
+
 const actionLabel = computed(() =>
   analysisActivated.value ? "Re-Summarize" : "Summarize",
 );
@@ -44,39 +42,16 @@ const isButtonDisabled = computed(
 function handleSummarize(): void {
   analysisStore.analyze("executiveSummary");
 }
-
-const campaignStore = useCampaignStore();
-const selectedChannelCount = computed(() =>
-  campaignStore.selectedChannelsIds.length === 0
-    ? campaignStore.portfolioChannels.size
-    : campaignStore.selectedChannelsIds.length,
-);
 </script>
 
 <template>
-  <SectionHeaderLayout>
-    <template #header>
-      <h3 class="header-title">
-        {{
-          campaignStore.selectedChannelsIds.length === 0
-            ? "Portfolio Summary"
-            : "Performance Summary"
-        }}
-      </h3>
-    </template>
-    <template #action>
-      <Button class="primary square" :aria-label="actionLabel">
-        <MagicWandIcon />
-      </Button>
-    </template>
-    <MetaRow class="bullet text-typography-subtle">
-      <MetaItem>{{ campaignStore.title }}</MetaItem>
-      <MetaItem>{{ selectedChannelCount }} channels</MetaItem>
-      <MetaItem
-        >{{ campaignStore.filteredCampaigns.length }} campaigns</MetaItem
-      >
-    </MetaRow>
-  </SectionHeaderLayout>
+  <AnalysisHeader
+    :title="headerTitle"
+    :action-label="actionLabel"
+    :is-button-disabled="isButtonDisabled"
+    :context="analysisStore.portfolioContext"
+    @analyze="handleSummarize"
+  />
 
   <AnalysisState
     title="Executive Summary"
@@ -105,15 +80,3 @@ const selectedChannelCount = computed(() =>
     </template>
   </AnalysisState>
 </template>
-
-<style lang="scss" scoped>
-.header-container {
-  @apply w-full flex flex-nowrap items-stretch justify-start gap-2;
-
-  // border: 1px dashed yellow;
-}
-
-.header-title {
-  @apply grow;
-}
-</style>

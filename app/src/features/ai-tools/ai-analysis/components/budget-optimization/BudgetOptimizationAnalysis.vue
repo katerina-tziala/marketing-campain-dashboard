@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import type { PortfolioScope } from '@/shared/types/campaign'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
 import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
+import AnalysisHeader from '@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
 
@@ -20,6 +21,12 @@ const cacheTimestamp = computed(() => analysisStore.budgetOptimizer.response?.ti
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
 const analysisActivated = computed(() => analysisStore.analysisActivated)
 
+const headerTitle = computed(() =>
+  analysisStore.portfolioContext.filtersActive
+    ? 'Selection Budget Optimizer'
+    : 'Portfolio Budget Optimizer',
+)
+
 const actionLabel = computed(() => analysisActivated.value ? 'Re-Analyze' : 'Analyze')
 
 const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
@@ -30,6 +37,14 @@ function handleAnalyze(): void {
 </script>
 
 <template>
+  <AnalysisHeader
+    :title="headerTitle"
+    :action-label="actionLabel"
+    :is-button-disabled="isButtonDisabled"
+    :context="analysisStore.portfolioContext"
+    @analyze="handleAnalyze"
+  />
+
   <AnalysisState
     title="Budget Optimizer"
     :action-label="actionLabel"

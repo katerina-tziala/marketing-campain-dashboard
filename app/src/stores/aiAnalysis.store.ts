@@ -63,6 +63,13 @@ function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
+export interface PortfolioContext {
+  portfolioTitle: string
+  channelCount: number
+  campaignCount: number
+  filtersActive: boolean
+}
+
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()
   const campaignStore = useCampaignStore()
@@ -88,6 +95,18 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const evaluationDisabled = computed(() =>
     aiStore.evaluationDisabled || campaignStore.filteredCampaigns.length === 0,
   )
+
+  const portfolioContext = computed(() => {
+    const filtersActive = campaignStore.selectedChannelsIds.length > 0
+    return {
+      portfolioTitle: campaignStore.title,
+      filtersActive,
+      channelCount: filtersActive
+        ? campaignStore.selectedChannelsIds.length
+        : campaignStore.portfolioChannels.size,
+      campaignCount: campaignStore.filteredCampaigns.length,
+    }
+  })
 
   const optimizerCanAnalyze = computed(() => {
     if (budgetOptimizer.value.status === 'loading') return false
@@ -450,6 +469,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     budgetOptimizer,
     executiveSummary,
     // Computed
+    portfolioContext,
     optimizerCanAnalyze,
     summaryCanAnalyze,
     // Actions
