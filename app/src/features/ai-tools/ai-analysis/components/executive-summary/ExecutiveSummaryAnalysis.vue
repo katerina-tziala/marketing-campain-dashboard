@@ -67,26 +67,25 @@ function handleSummarize(): void {
 
     <template v-if="response">
       <AnalysisResponseMeta
+        class="-mt-5 -mb-2"
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <div class="flex flex-col gap-6 py-5 text-sm">
-        <p class="-mb-4">
-          <HealthStatus
-            class="float-right ml-2 mb-1"
-            :health-score="response.healthScore"
-          />
-          {{ response.healthScore.reasoning }}
-        </p>
-        <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-5">
-          Bottom Line
-        </h5>
-        <p>{{ response.bottomLine }}</p>
-        <PriorityActions :actions="response.priorityActions" />
-        <Insights :insights="response.insights" />
-        <Correlations :correlations="response.correlations" />
-      </div>
+      <p class="-mb-4">
+        <HealthStatus
+          class="float-right ml-2 mb-1"
+          :health-score="response.healthScore"
+        />
+        {{ response.healthScore.reasoning }}
+      </p>
+      <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-5">
+        Bottom Line
+      </h5>
+      <p>{{ response.bottomLine }}</p>
+      <PriorityActions :actions="response.priorityActions" />
+      <Insights :insights="response.insights" />
+      <Correlations :correlations="response.correlations" />
     </template>
   </AnalysisState>
 </template>

@@ -7749,3 +7749,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - No logic changes — pure rename
+
+
+## [#383] Sort priority actions, insights, and budget recommendations in their components
+**Type:** refactor
+
+**Summary:** Added deterministic display-time sorting to PriorityActions, Insights, and BudgetRecommendations so items always render in a meaningful order regardless of AI response order.
+
+**Brainstorming:** Sorting belongs in the display layer — the store and prompt don't need to enforce order. Each component owns its sort logic via a local computed so the sorted array is reactive and the prop contract stays unchanged.
+
+**Prompt:** Sort priority actions by urgency: Immediate, ThisQuarter, NextQuarter. Sort insights by type: Achievement, Performance, Opportunity, Warning. Sort recommendations by confidence High→Medium→Low, then execution risk Low→Medium→High. Compute sorting in respective components.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue` — added `URGENCY_ORDER` map + `sortedActions` computed; `v-for` updated to iterate `sortedActions`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue` — added `INSIGHT_TYPE_ORDER` map + `sortedInsights` computed; `v-for` updated to iterate `sortedInsights`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — added `CONFIDENCE_ORDER` + `EXECUTION_RISK_ORDER` maps + `sortedRecommendations` computed (confidence primary, execution risk secondary); `v-if` and `v-for` updated to use `sortedRecommendations`
+
+**Key decisions & why:**
+- Order maps (Record<Literal, number>) over `indexOf` — O(1) lookup, exhaustive at compile time
+- `[...props.x].sort(...)` — never mutates the prop array
+- Execution risk tiebreaker sorts Low→High (least risky first) to surface easiest wins after filtering by confidence

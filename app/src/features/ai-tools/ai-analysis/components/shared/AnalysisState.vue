@@ -17,9 +17,14 @@ const props = defineProps<{
 
 const errorNotification = computed(() => {
   if (!props.error) return null;
-  const entry = ANALYSIS_ERROR_MESSAGES[props.error.code] ?? ANALYSIS_ERROR_MESSAGES.unknown;
+  const entry =
+    ANALYSIS_ERROR_MESSAGES[props.error.code] ??
+    ANALYSIS_ERROR_MESSAGES.unknown;
   return {
-    title: entry.title ?? props.error.rawMessage ?? ANALYSIS_ERROR_MESSAGES.unknown.title,
+    title:
+      entry.title ??
+      props.error.rawMessage ??
+      ANALYSIS_ERROR_MESSAGES.unknown.title,
     message: entry.message ?? null,
   };
 });
@@ -37,7 +42,6 @@ const errorNotification = computed(() => {
     <Notification
       v-if="tokenLimitReached && status !== 'done'"
       variant="warning"
-      class="mt-6"
       :show-icon="false"
     >
       <template #title>
@@ -51,7 +55,6 @@ const errorNotification = computed(() => {
     <Notification
       v-else-if="status === 'error' && error && !tokenLimitReached"
       variant="error"
-      class="mt-6"
       :show-icon="false"
     >
       <template #title>

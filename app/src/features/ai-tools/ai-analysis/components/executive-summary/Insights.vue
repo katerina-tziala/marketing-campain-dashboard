@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type {
   ExecutiveInsight,
   InsightType,
@@ -7,9 +8,16 @@ import type { BadgeVariant } from "@/ui/types/badge-variant";
 import { Badge, Card } from "@/ui";
 import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 
-defineProps<{
+const props = defineProps<{
   insights: ExecutiveInsight[];
 }>();
+
+const INSIGHT_TYPE_ORDER: Record<InsightType, number> = {
+  Achievement: 0,
+  Performance: 1,
+  Opportunity: 2,
+  Warning: 3,
+};
 
 const INSIGHT_TYPE_VARIANT_MAP: Record<InsightType, BadgeVariant> = {
   Performance: "info",
@@ -25,6 +33,12 @@ const INSIGHT_TYPE_LABEL_MAP: Record<InsightType, string> = {
   Achievement: "Achievement",
 };
 
+const sortedInsights = computed(() =>
+  [...props.insights].sort(
+    (a, b) => INSIGHT_TYPE_ORDER[a.type] - INSIGHT_TYPE_ORDER[b.type],
+  ),
+);
+
 function insightTypeVariant(type: InsightType): BadgeVariant {
   return INSIGHT_TYPE_VARIANT_MAP[type] ?? "info";
 }
@@ -32,7 +46,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 <template>
   <AnalysisSection title="Insights">
-    <Card v-for="(insight, i) in insights" :key="i" class="card-secondary">
+    <Card v-for="(insight, i) in sortedInsights" :key="i" class="card-secondary">
       <p>
         <Badge
           class="float-right ml-2 mb-1"

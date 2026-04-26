@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ExecutiveCorrelation } from '@/features/ai-tools/ai-analysis/types'
 import { Card } from '@/ui'
-import AnalysisSection from './AnalysisSection.vue'
+import AnalysisSection from '../shared/AnalysisSection.vue'
 
 defineProps<{
   correlations: ExecutiveCorrelation[]

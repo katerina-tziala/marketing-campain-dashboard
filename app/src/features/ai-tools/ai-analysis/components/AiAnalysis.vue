@@ -33,11 +33,13 @@ const tabs: Tab[] = [
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply px-4
-  pt-4
+  @apply p-4
     pr-3
     h-full
     overflow-y-auto
-    overflow-x-hidden;
+    overflow-x-hidden
+    flex flex-col gap-6 
+    text-sm
+    text-typography;
 }
 </style>

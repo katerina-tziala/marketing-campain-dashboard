@@ -61,12 +61,7 @@ function handleAnalyze(): void {
     <template #loading>Analyzing campaigns…</template>
 
     <template #state>
-      <Notification
-        v-if="isBelowMinimum"
-        variant="warning"
-        class="mt-6"
-        :show-icon="false"
-      >
+      <Notification v-if="isBelowMinimum" variant="warning" :show-icon="false">
         <template #title>
           <span class="text-sm font-normal">{{ minCampaignsEntry.title }}</span>
         </template>
@@ -79,16 +74,13 @@ function handleAnalyze(): void {
 
     <template v-if="response">
       <AnalysisResponseMeta
+        class="-mt-5 -mb-2"
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <div class="flex flex-col gap-6 pt-5 text-sm">
-        <p>{{ response.summary }}</p>
-        <BudgetRecommendations
-          :recommendations="response.recommendations"
-        />
-      </div>
+      <p>{{ response.summary }}</p>
+      <BudgetRecommendations :recommendations="response.recommendations" />
     </template>
   </AnalysisState>
 </template>

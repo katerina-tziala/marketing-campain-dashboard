@@ -1,19 +1,40 @@
 <script setup lang="ts">
-import type { BudgetRecommendation } from '@/features/ai-tools/ai-analysis/types'
+import { computed } from 'vue'
+import type { BudgetRecommendation, ConfidenceLevel, ExecutionRisk } from '@/features/ai-tools/ai-analysis/types'
 import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
 import { Badge, Card } from '@/ui'
 import AnalysisSection from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue'
 
-defineProps<{
+const props = defineProps<{
   recommendations: BudgetRecommendation[]
 }>()
+
+const CONFIDENCE_ORDER: Record<ConfidenceLevel, number> = {
+  High: 0,
+  Medium: 1,
+  Low: 2,
+}
+
+const EXECUTION_RISK_ORDER: Record<ExecutionRisk, number> = {
+  Low: 0,
+  Medium: 1,
+  High: 2,
+}
+
+const sortedRecommendations = computed(() =>
+  [...props.recommendations].sort((a, b) => {
+    const cDiff = CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence]
+    if (cDiff !== 0) return cDiff
+    return EXECUTION_RISK_ORDER[a.executionRisk] - EXECUTION_RISK_ORDER[b.executionRisk]
+  }),
+)
 </script>
 
 <template>
-  <AnalysisSection v-if="recommendations.length" title="Recommendations">
+  <AnalysisSection v-if="sortedRecommendations.length" title="Recommendations">
     <Card
-      v-for="(rec, i) in recommendations"
+      v-for="(rec, i) in sortedRecommendations"
       :key="i"
       class="card-secondary rec-card"
     >
