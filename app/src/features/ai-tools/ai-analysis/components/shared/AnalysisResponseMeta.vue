@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { AiAnalysisNotice } from "@/features/ai-tools/types";
-import { ANALYSIS_NOTICE_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
 import { MetaRow, MetaItem } from "@/ui";
 
 const props = defineProps<{
@@ -21,10 +20,6 @@ const formattedTime = computed(() => {
     second: "2-digit",
   });
 });
-
-const noticeEntry = computed(() =>
-  props.notice ? ANALYSIS_NOTICE_MESSAGES[props.notice.code] : null,
-);
 </script>
 
 <template>
@@ -34,6 +29,6 @@ const noticeEntry = computed(() =>
       }}<template v-if="modelDisplayName"> with {{ modelDisplayName }}</template>
     </MetaItem>
     <MetaItem>AI can make mistakes</MetaItem>
-    <MetaItem v-if="noticeEntry">{{ noticeEntry.message }} ({{ noticeEntry.title }})</MetaItem>
+    <MetaItem v-if="notice">Latest request failed (Previous result)</MetaItem>
   </MetaRow>
 </template>

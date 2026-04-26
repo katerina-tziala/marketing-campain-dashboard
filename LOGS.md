@@ -7356,3 +7356,100 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `timestamp ?? null` at the call site — `response.timestamp` is `number | undefined`; the prop is typed `number | null` so the nullish coalescing normalises the undefined case without changing the component's type contract
+
+
+## [#362] Remove noticeEntry computed from AnalysisResponseMeta
+**Type:** fix
+
+**Summary:** Removed the overengineered `noticeEntry` computed and its backing map — notice text is now inline in the template.
+
+**Brainstorming:** `noticeEntry` was a computed that looked up `ANALYSIS_NOTICE_MESSAGES[notice.code]` and returned `{ title, message } | null`. With only one notice code (`stale-result`) and `ANALYSIS_NOTICE_MESSAGES` used nowhere else, the lookup added indirection with no benefit. The text goes directly in the template guarded by `v-if="notice"`.
+
+**Prompt:** noticeEntry is overengineered. lets check if it exists and have the text in the template directly
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue` — removed `noticeEntry` computed; removed `ANALYSIS_NOTICE_MESSAGES` import; `v-if="noticeEntry"` replaced with `v-if="notice"` and text inlined
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts` — removed `ANALYSIS_NOTICE_MESSAGES` export and `AiAnalysisNoticeCode` import (now unused)
+
+**Key decisions & why:**
+- Text inlined rather than keeping a lookup: only one notice code exists; the messages file was the only consumer; no indirection needed for a single static string
+
+
+## [#363] Remove variant prop from Badge component
+**Type:** fix
+
+**Summary:** Removed the `variant` prop from `Badge.vue` — variant is now applied as a plain CSS class by the caller, not an input.
+
+**Brainstorming:** No component in the codebase uses `<Badge variant="...">` — all consumers already use `<span class="badge success/warning/...">` directly. The prop was dead weight. Removing it makes the component a simple slot wrapper; callers pass the variant class themselves.
+
+**Prompt:** update badge to use variant as style class only — not as an input
+
+**What changed:**
+- `app/src/ui/Badge.vue` — removed `<script>` block entirely (no prop, no import); removed `:class="variant"` binding; scoped styles unchanged
+
+**Key decisions & why:**
+- `BadgeVariant` type kept — `analysis-badge-variants.ts` still uses it as the return type for all variant helper functions; removing it would require touching unrelated code
+
+
+## [#364] Add text-typography-soft token
+**Type:** update
+
+**Summary:** Added `text-typography-soft` as a new text color token sitting between `text-typography` (neutral-100) and `text-typography-muted` (neutral-300).
+
+**Brainstorming:** The existing scale jumped from neutral-100 (full brightness) to neutral-300 (noticeably dimmed). neutral-200 fills the gap cleanly for text that should be slightly de-emphasised without being muted.
+
+**Prompt:** add a text variant between typography and typography muted — brighter than muted, darker than typography
+
+**What changed:**
+- `app/src/styles/themes/dark.scss` — added `--color-text-soft: var(--neutral-200)` between `--color-text` and `--color-text-muted`
+- `app/tailwind.config.js` — added `soft: "rgb(var(--color-text-soft) / <alpha-value>)"` to the typography scale
+- `CLAUDE.md` — updated tailwind.config.js description to include `soft` in the typography token list
+
+**Key decisions & why:**
+- Named `soft` to match the existing `primary-soft` naming pattern in the palette
+
+
+## [#365] Use Badge component for health-badge in ExecutiveSummaryHealth
+**Type:** fix
+
+**Summary:** Replaced the raw `<div class="badge health-badge">` with the `Badge` component, relying on Vue class inheritance to pass the variant and scoped override.
+
+**Brainstorming:** Since `Badge` now has no props and is a plain slot wrapper, the variant class and the `health-badge` override both pass through via Vue's class attribute inheritance on the component root. No structural changes needed.
+
+**Prompt:** use badge for health-badge
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — imported `Badge` from `@/ui`; replaced `<div class="badge health-badge">` with `<Badge class="health-badge">`; variant class still applied via `:class`
+
+**Key decisions & why:**
+- `class="health-badge"` on the Badge component: Vue merges parent-supplied classes onto the root element, so both Badge's scoped `.badge` styles and the parent's scoped `.health-badge` override apply correctly
+
+
+## [#366] Replace all badge instances with Badge component, remove CSS layer
+**Type:** refactor
+
+**Summary:** Replaced every raw `<span class="badge ...">` with the `Badge` component and removed the global `_badge.scss` CSS layer — all badge styles now live in the component's scoped styles.
+
+**Brainstorming:** The old layer used global `.badge`, `.badge-text`, and `.badge-background` classes. With those gone, all usages needed to either use the `Badge` component or own their own scoped variant styles. `ExecutiveSummaryInsights` and `ExecutiveSummaryHealth` used `badge-text`/`badge-background` for colored rows/labels — these got scoped variant blocks instead. `CampaignTable` needed `:deep(> span)` to override the inner span's `whitespace-nowrap` for channel names that may wrap.
+
+**Prompt:** replace all badge instances with new component and remove css layer
+
+**What changed:**
+- `app/src/ui/Badge.vue` — removed dead `.rounded-rectangle` child rule; all five variants present (success/warning/danger/info/opportunity)
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryPriorityActions.vue` — `<span class="badge">` → `<Badge>`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — two `<span class="badge">` → `<Badge>`
+- `app/src/features/data-transfer/components/DisplayUploadErrorsStep.vue` — two spans → `<Badge>`
+- `app/src/features/data-transfer/components/validation/DuplicateSummary.vue` — two spans → `<Badge>`
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — one span → `<Badge>`
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — one span → `<Badge>`
+- `app/src/features/dashboard/components/CampaignTable.vue` — one span → `<Badge class="info channel-badge">`; added `.channel-badge :deep(> span)` to restore `whitespace-break-spaces` on inner span
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryInsights.vue` — removed `badge-background badge-text` dead classes; added scoped variant color rules on `.insight-metric`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — removed `badge-text` dead class; added scoped variant text color rules on `.health-label`
+- `app/src/styles/components/index.scss` — removed `@use './badge'`
+- `app/src/styles/components/_badge.scss` — emptied
+
+**Key decisions & why:**
+- `InsightMetric` and `health-label` not converted to `Badge` — they are different shapes (full-width row / plain text label), so they own their variant colors via scoped styles using the same variant class names
+- `:deep(> span)` for `channel-badge` — the Badge inner span has scoped `whitespace-nowrap`; parent can't override scoped styles without `:deep`
+
+ 

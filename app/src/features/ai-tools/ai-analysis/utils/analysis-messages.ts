@@ -1,4 +1,4 @@
-import type { AiErrorCode, AiAnalysisNoticeCode } from '@/features/ai-tools/types'
+import type { AiErrorCode } from '@/features/ai-tools/types'
 
 const TRY_AGAIN_LATER = 'Please try again in a moment'
 const UNUSABLE_RESPONSE = {
@@ -18,10 +18,6 @@ export const ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, { title: string; messa
   'no-models': { title: 'No suitable AI models are available', message: 'Please disconnect and reconnect to refresh available models' },
   'min-campaigns': { title: 'Budget optimization requires at least 2 campaigns', message: 'Please adjust the channel filters' },
   'unknown': { title: 'An unexpected error occurred', message: 'Please try again or disconnect and reconnect' },
-}
-
-export const ANALYSIS_NOTICE_MESSAGES: Record<AiAnalysisNoticeCode, { title: string; message: string }> = {
-  'stale-result': { title: 'Showing previous result', message: 'The latest request failed' },
 }
 
 export const TOKEN_LIMIT_MESSAGE = {

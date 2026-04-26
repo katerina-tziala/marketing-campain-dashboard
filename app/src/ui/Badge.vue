@@ -1,53 +1,64 @@
 <template>
-  <span class="badge" :class="variant">
+  <span class="badge">
     <slot />
   </span>
 </template>
 
-<script setup lang="ts">
-import type { BadgeVariant } from '@/ui/types/badge-variant'
-
-withDefaults(
-  defineProps<{
-    variant?: BadgeVariant
-  }>(),
-  { variant: 'info' },
-)
-</script>
-
 <style lang="scss" scoped>
 .badge {
-  @apply text-xs
-    font-semibold
+  @apply relative
     rounded-full
     border
+    flex-shrink-0
+    inline-flex
+    items-center
+    justify-center
     capitalize
     whitespace-nowrap
-    flex-shrink-0
     py-1
     px-2
-    inline-block
-    w-fit
-    text-center;
+    text-xs
+    font-semibold
+    leading-none
+    text-primary-lighter
+    overflow-hidden;
+
+  &::before {
+    content: "";
+    @apply absolute inset-0 bg-background -z-[1];
+  }
 
   &.success {
-    @apply text-success bg-success/10 border-success/35;
+    @apply border-success/35 bg-success/10 text-success;
   }
-
   &.warning {
-    @apply text-warning bg-warning/10 border-warning/35;
+    @apply border-warning/35 bg-warning/10 text-warning;
   }
-
   &.danger {
-    @apply text-danger-light bg-danger-lighter/10 border-danger-lighter/35;
+    @apply border-danger-lighter/35 bg-danger-lighter/10 text-danger-light;
   }
-
   &.info {
-    @apply text-primary-light bg-primary/10 border-primary/35;
+    @apply border-info/35 bg-info/10 text-info-light;
+  }
+  &.opportunity {
+    @apply border-primary-lighter/35 bg-primary-lighter/10 text-primary-lighter;
   }
 
-  &.opportunity {
-    @apply text-primary-lighter bg-primary-lighter/10 border-primary-lighter/35;
+  &.rounded-rectangle {
+    @apply rounded-md;
+  }
+
+  &.text-only {
+    @apply bg-transparent border-none;
+    &::before {
+      @apply hidden;
+    }
+  }
+
+  &.lighter {
+    &::before {
+      @apply bg-transparent;
+    }
   }
 }
 </style>

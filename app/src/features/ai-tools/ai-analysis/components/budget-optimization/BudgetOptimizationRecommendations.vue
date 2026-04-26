@@ -2,6 +2,7 @@
 import type { BudgetOptimizerResponse } from '@/features/ai-tools/ai-analysis/types'
 import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
+import { Badge } from '@/ui'
 
 defineProps<{
   recommendations: BudgetOptimizerResponse['recommendations']
@@ -23,8 +24,8 @@ defineProps<{
           <span>{{ rec.toCampaign }}</span>
         </h5>
         <div class="rec-badges">
-          <span class="badge" :class="confidenceVariant(rec.confidence)">{{ rec.confidence }}</span>
-          <span class="badge" :class="executionRiskVariant(rec.executionRisk)">{{ rec.executionRisk }} risk</span>
+          <Badge :class="confidenceVariant(rec.confidence)">{{ rec.confidence }}</Badge>
+          <Badge :class="executionRiskVariant(rec.executionRisk)">{{ rec.executionRisk }} risk</Badge>
         </div>
       </div>
       <div class="rec-details">

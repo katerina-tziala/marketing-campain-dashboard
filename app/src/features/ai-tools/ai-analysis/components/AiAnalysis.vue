@@ -33,7 +33,8 @@ const tabs: Tab[] = [
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply p-4
+  @apply px-4
+  pt-4
     pr-3
     h-full
     overflow-y-auto

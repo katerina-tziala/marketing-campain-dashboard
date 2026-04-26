@@ -49,7 +49,6 @@ function handleAnalyze(): void {
     :context="analysisStore.portfolioContext"
     @analyze="handleAnalyze"
   />
-
   <AnalysisState
     :status="status"
     :error="error"

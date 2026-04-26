@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DataErrorSummary from './DataErrorSummary.vue'
+import { Badge } from '@/ui'
 
 const props = defineProps<{
   count: number
@@ -19,8 +20,8 @@ const nameHasWord = computed(() => (props.count === 1 ? 'name has' : 'names have
        Duplicate campaign names detected 
     </template>
     <template #badge>
-      <span v-if="variant === 'resolve' && !hasValidCampaigns" class="badge danger">Resolve duplicates</span>
-      <span v-else class="badge warning">Duplicate data</span>
+      <Badge v-if="variant === 'resolve' && !hasValidCampaigns" class="danger">Resolve duplicates</Badge>
+      <Badge v-else class="warning">Duplicate data</Badge>
     </template>
     <template #summary>
       <template v-if="variant === 'resolve'">

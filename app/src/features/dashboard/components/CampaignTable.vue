@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { CampaignPerformance } from '@/shared/types/campaign'
-import { DataTableHeader } from '@/ui'
+import { DataTableHeader, Badge } from '@/ui'
 import type { DataTableColumn, SortDir } from '@/ui'
 import { formatCompactNumber, formatCurrency, formatNumber, formatPercentage } from '@/shared/utils/formatters'
 import { sortWithNullsLast } from '@/shared/utils/sorting'
@@ -71,7 +71,7 @@ const COLUMNS: DataTableColumn[] = [
         >
           <td class="data-table-cell campaign-table-td text-left">{{ c.campaign }}</td>
           <td class="data-table-cell campaign-table-td text-center">
-            <span class="badge info whitespace-break-spaces">{{ c.channel }}</span>
+            <Badge class="info channel-badge">{{ c.channel }}</Badge>
           </td>
           <td class="data-table-cell campaign-table-td">{{ formatCurrency(c.budget) }}</td>
           <td class="data-table-cell campaign-table-td">{{ formatCompactNumber(c.clicks) }}</td>
@@ -96,6 +96,12 @@ const COLUMNS: DataTableColumn[] = [
 
   .data-table-cell.campaign-table-td {
     @apply py-3;
+  }
+}
+
+.channel-badge {
+  :deep(> span) {
+    @apply whitespace-break-spaces;
   }
 }
 </style>

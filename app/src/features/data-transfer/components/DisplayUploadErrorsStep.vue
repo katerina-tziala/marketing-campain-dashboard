@@ -6,6 +6,7 @@ import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-me
 import DataErrorsTable from './validation/DataErrorsTable.vue'
 import DataErrorSummary from './validation/DataErrorSummary.vue'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
+import { Badge } from '@/ui'
 
 const props = defineProps<{
   rowErrors: CampainDataRowError[]
@@ -35,7 +36,7 @@ const proceedLabel = computed(() =>
       <DataErrorSummary v-if="validCampaigns.length === 0 && duplicateGroupCount === 0">
         <template #title>Campaign data could not be imported</template>
         <template #badge>
-          <span class="badge danger">Invalid data</span>
+          <Badge class="danger">Invalid data</Badge>
         </template>
         <template #summary>
           <p>None of the rows could be imported because they contain errors.</p>
@@ -46,7 +47,7 @@ const proceedLabel = computed(() =>
       <DataErrorSummary v-else>
         <template #title>Some rows contain errors</template>
         <template #badge>
-          <span class="badge warning">Partial import</span>
+          <Badge class="warning">Partial import</Badge>
         </template>
         <template #summary>
           <p><strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>

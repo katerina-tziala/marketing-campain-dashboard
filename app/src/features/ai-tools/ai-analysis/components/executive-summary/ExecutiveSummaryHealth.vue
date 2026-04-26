@@ -1,39 +1,45 @@
 <script setup lang="ts">
-import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
-import type { PortfolioScope } from '@/shared/types/campaign'
-import AnalysisSummary from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue'
-import { healthScoreVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
+import type { ExecutiveSummaryResponse } from "@/features/ai-tools/ai-analysis/types";
+import type { PortfolioScope } from "@/shared/types/campaign";
+import { healthScoreVariant } from "@/features/ai-tools/ai-analysis/utils/analysis-badge-variants";
+import { Badge } from "@/ui";
 
 defineProps<{
-  healthScore: ExecutiveSummaryResponse['healthScore']
-  bottomLine: string
-  scope: PortfolioScope
-}>()
+  healthScore: ExecutiveSummaryResponse["healthScore"];
+  bottomLine: string;
+  scope: PortfolioScope;
+}>();
 </script>
 
 <template>
-  <AnalysisSummary
-    title="Performance Summary"
-    :scope="scope"
-  >
-    <template #badge>
+  <div class="flex flex-col gap-3">
+    <div class="flex flex-nowrap items-start gap-2">
+      <p>{{ healthScore.reasoning }}</p>
       <div class="health-container">
-        <div class="badge health-badge" :class="healthScoreVariant(healthScore.label)">
-          <span class="health-score">{{ healthScore.score }}</span>
-          <span>&nbsp;/&nbsp;100</span>
-        </div>
-        <p class="badge-text health-label" :class="healthScoreVariant(healthScore.label)">{{ healthScore.label }}</p>
+        <Badge
+          class="rounded-rectangle"
+          :class="healthScoreVariant(healthScore.label)"
+        >
+          <span class="text-lg font-extrabold leading-none">{{
+            healthScore.score
+          }}</span>
+          <span class="leading-none">&nbsp;/&nbsp;100</span>
+        </Badge>
+        <Badge class="text-only" :class="healthScoreVariant(healthScore.label)">
+          {{ healthScore.label }}
+        </Badge>
       </div>
-    </template>
-    <p>{{ healthScore.reasoning }}</p>
-    <h5 class="section-subtitle -mb-2">Bottom Line</h5>
+    </div>
+    <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-2">
+      Bottom Line
+    </h5>
     <p>{{ bottomLine }}</p>
-  </AnalysisSummary>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .health-container {
-  @apply flex flex-col gap-1 items-center justify-center ;
+  @apply flex flex-col gap-1 items-center justify-center;
 }
 
 .health-badge {
@@ -46,5 +52,21 @@ defineProps<{
 
 .health-label {
   @apply text-xs whitespace-nowrap font-bold text-center justify-self-center;
+
+  &.success {
+    @apply text-success;
+  }
+  &.warning {
+    @apply text-warning;
+  }
+  &.danger {
+    @apply text-danger-light;
+  }
+  &.info {
+    @apply text-info-light;
+  }
+  &.opportunity {
+    @apply text-primary-lighter;
+  }
 }
 </style>

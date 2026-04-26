@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import { DataTableHeader, CheckIcon } from '@/ui'
+import { DataTableHeader, CheckIcon, Badge } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 import { formatCurrency, formatNumber } from '@/shared/utils/formatters'
 
@@ -118,7 +118,7 @@ function selectRow(campaignName: string, rowId: number): void {
             </td>
             <td class="data-table-cell">{{ entry.rowId }}</td>
             <td class="data-table-cell">
-              <span class="badge info">{{ entry.channel }}</span>
+              <Badge class="info">{{ entry.channel }}</Badge>
             </td>
             <td class="data-table-cell">{{ formatCurrency(entry.budget) }}</td>
             <td class="data-table-cell">{{ formatNumber(entry.clicks) }}</td>

@@ -72,6 +72,7 @@ export default {
         },
         typography: {
           DEFAULT: "rgb(var(--color-text) / <alpha-value>)",
+          soft: "rgb(var(--color-text-soft) / <alpha-value>)",
           muted: "rgb(var(--color-text-muted) / <alpha-value>)",
           subtle: "rgb(var(--color-text-subtle) / <alpha-value>)",
           inverse: "rgb(var(--color-text-inverse) / <alpha-value>)",

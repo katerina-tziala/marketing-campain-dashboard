@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { CampainDataRowError } from '@/features/data-transfer/types'
 import { getRowErrorMessage } from '@/features/data-transfer/utils/error-messages'
-import { DataTableHeader } from '@/ui'
+import { DataTableHeader, Badge } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 
 const props = defineProps<{
@@ -46,7 +46,7 @@ const sortedErrors = computed(() =>
         >
           <td class="data-table-cell col-row cell-row">{{ err.row }}</td>
           <td class="data-table-cell col-campain">
-             <span class="badge danger">{{ err.column }}</span>
+             <Badge class="danger">{{ err.column }}</Badge>
           </td>
           <td class="data-table-cell text-left">{{ getRowErrorMessage(err) }}</td>
         </tr>

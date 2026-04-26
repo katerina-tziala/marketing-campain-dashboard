@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
 import { urgencyVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
+import { Badge } from '@/ui'
 
 defineProps<{
   actions: ExecutiveSummaryResponse['priorityActions']
@@ -18,7 +19,7 @@ defineProps<{
       <div class="card-head priority-head">
         <span class="priority-number">#{{ action.priority }}</span>
         <h5 class="card-title">{{ action.action }}</h5>
-        <span class="badge" :class="urgencyVariant(action.urgency)">{{ action.urgency }}</span>
+        <Badge :class="urgencyVariant(action.urgency)">{{ action.urgency }}</Badge>
       </div>
       <p class="card-content px-2">{{ action.expectedOutcome }}</p>
       <p class="card-content priority-metric">

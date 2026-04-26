@@ -71,7 +71,7 @@ function handleSummarize(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <div class="flex flex-col gap-6 pt-2">
+      <div class="flex flex-col gap-6 pt-6 text-sm">
         <ExecutiveSummaryHealth
           :health-score="response.healthScore"
           :bottom-line="response.bottomLine"
