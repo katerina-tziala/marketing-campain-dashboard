@@ -12,11 +12,11 @@ defineProps<{
   <section class="ai-section">
     <div class="flex flex-row items-start justify-between">
       <div class="flex flex-col gap-1 items-start justify-start">
-        <h4 class="section-title pt-1">{{ title }}</h4>
+        <h4 class="pt-1">{{ title }}</h4>
         <p class="analysis-details">
           <span v-if="period" class="detail-item">{{ period }}</span>
           <span class="detail-item">{{ scope.selectedCampaigns.length }} campaigns</span>
-          <span class="detail-item">{{ scope.selectedChannels.length }} channels</span>
+          <span class="detail-item">{{ scope.selectedChannels.length > 0 ? scope.selectedChannels.length : scope.channels.length }} channels</span>
         </p>
       </div>
       <slot name="badge" />

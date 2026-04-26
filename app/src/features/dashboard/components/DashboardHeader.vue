@@ -33,7 +33,7 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
       <span v-if="showConnectedDot" class="connected-dot connected-status" aria-hidden="true" />
     </div>
   </div>
-  <MetaRow class="meta-row--bullet">
+  <MetaRow class="bullet text-typography-subtle">
     <MetaItem>{{ store.title }}</MetaItem>
     <MetaItem>{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</MetaItem>
     <MetaItem>{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</MetaItem>

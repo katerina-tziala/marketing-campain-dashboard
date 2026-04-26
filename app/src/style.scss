@@ -24,9 +24,20 @@ body {
   @apply w-screen h-screen overflow-hidden;
 }
 
+
+
 h2 {
   @apply text-xl font-semibold tracking-wider text-typography-primary;
 }
+
+
+h3 {
+  @apply text-base font-medium tracking-wider m-0 text-primary-lighter;
+}
+
+// h4 {
+//   @apply text-base font-semibold tracking-wider m-0 text-primary-lighter;
+// }
 
 h5 {
   @apply w-full font-medium tracking-widest text-typography-primary-subtle text-sm; 

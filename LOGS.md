@@ -6778,3 +6778,109 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - All five broken refs resolved to their numeric equivalents based on the intended role (400 = light/interactive, 500 = base, 300 = subtle)
+
+
+## [#324] Add MagicWandIcon and scaffold Button, Card, Badge UI components
+**Type:** update
+
+**Summary:** Created a MagicWandIcon SVG component and three new shell UI components (Button, Card, Badge) with no implementation logic yet, registered in barrel files.
+
+**Brainstorming:** The icon uses Lucide-style paths for a wand with accent star marks (small cross at tip, trailing stars). Button, Card, and Badge are thin wrappers that delegate to the existing global SCSS classes (.btn, .card, .badge) via a `variant` prop — no inline styles or new SCSS needed for the scaffold.
+
+**Prompt:** Create a magic wand icon with stars for use in the re-generate button. Also create Button, Card, and Badge components in the ui/ folder — scaffold only, no implementation yet.
+
+**What was built:**
+- `app/src/ui/icons/MagicWandIcon.vue` — inline SVG magic wand with star accent paths, same style/size convention as all other icons
+- `app/src/ui/Button.vue` — wraps `<button>` with `variant` (primary/secondary-outline/destructive-small/icon-secondary) + `size` (sm/md) + `disabled` + `type` props; delegates to existing `.btn-*` global classes
+- `app/src/ui/Card.vue` — wraps `<div class="card">` with `variant` (default/secondary) prop; delegates to `.card` / `.card-secondary`
+- `app/src/ui/Badge.vue` — wraps `<span class="badge">` with `variant: BadgeVariant` prop; reuses existing `BadgeVariant` type
+- `app/src/ui/icons/index.ts` — added `MagicWandIcon` export
+- `app/src/ui/index.ts` — added `Button`, `ButtonVariant`, `ButtonSize`, `Card`, `CardVariant`, `Badge` exports
+
+**Key decisions & why:**
+- Components delegate to global SCSS classes rather than introducing new styles — keeps the scaffold consistent with the codebase convention and avoids duplication
+- `BadgeVariant` reused from existing `ui/types/badge-variant.ts` — single source of truth for variant values
+- `variantClass` resolved as a plain object lookup on props at setup time — avoids computed overhead for a static mapping
+
+
+## [#325] Add scoped styles to Button, Card, Badge UI components
+**Type:** update
+
+**Summary:** Ported the styles from `_button.scss`, `_card.scss`, and `_badge.scss` into each component's own `<style lang="scss" scoped>` block without removing the global classes.
+
+**Brainstorming:** The components already delegated to global classes via `@apply` + `@extend` chains. Moving those rules into scoped blocks makes each component self-contained while the global SCSS classes remain intact for direct className usage elsewhere in the app.
+
+**Prompt:** Add the styles from styles/components to Button, Card, and Badge without removing the previous global ones.
+
+**What changed:**
+- `app/src/ui/Button.vue` — added scoped `.btn` block with all variant modifiers (btn-primary, btn-secondary-outline, btn-destructive-small, btn-icon-secondary, btn-small) as nested `&.variant` rules
+- `app/src/ui/Card.vue` — added scoped `.card` block with nested `&.card-secondary` including `.card-head`, `.card-title`, `.card-content`
+- `app/src/ui/Badge.vue` — added scoped `.badge` block with all five variant modifiers (success/warning/danger/info/opportunity) inlined — text + bg + border tokens merged per variant
+
+**Key decisions & why:**
+- Badge collapses the separate `badge-text` / `badge-background` helper classes into a single `&.variant` rule per variant — scoped context removes the need for the split since there are no other consumers inside the component
+- Global `_button.scss`, `_badge.scss`, `_card.scss` left untouched — still needed for direct class usage across the rest of the app
+
+
+## [#326] Redraw MagicWandIcon as filled icon matching reference
+**Type:** update
+
+**Summary:** Replaced the stroked outline wand with a fully filled icon — diagonal shaft + eraser cap (two rotated rects) plus three 4-pointed sparkle stars using cubic-bezier curves.
+
+**Brainstorming:** The reference image shows a solid filled style. The wand body is modelled as two `<rect>` elements with `transform="rotate(-45)"` — a long shaft (rx=1.75 for fully rounded handle end) and a shorter wider cap (rx=1) at the upper-right tip. The four-pointed sparkle stars are drawn as closed bezier paths using the formula M cx,cy-r C cx+rk,cy-r cx+r,cy-rk cx+r,cy … with k=0.15 giving sharp inward-curved sides.
+
+**Prompt:** Update MagicWandIcon to look like the reference image (solid filled wand with eraser cap + 3 sparkle stars).
+
+**What changed:**
+- `app/src/ui/icons/MagicWandIcon.vue` — full rewrite; switched to fill="currentColor", removed stroke attributes; wand shaft rect (16×3.5, rx=1.75, rotate(-45,11,13)) + eraser cap rect (4×5, rx=1, rotate(-45,18,6)); three sparkle paths at (6,8,r=4.5), (14,2.5,r=2), (20,17.5,r=2) using cubic-bezier 4-pointed star formula
+
+**Key decisions & why:**
+- `<rect>` elements used for shaft/cap rather than explicit path — simpler, and SVG `transform="rotate(angle,cx,cy)"` handles the 45° orientation precisely
+- k=0.15 in sparkle bezier formula gives sharp points matching the reference; control points are placed at (cx±rk, cy±r) and (cx±r, cy±rk) which pulls the curves inward at each corner
+
+
+## [#327] Replace MagicWandIcon with Font Awesome wand-magic-sparkles-solid
+**Type:** update
+
+**Summary:** Replaced the hand-drawn wand paths with the Font Awesome Free "wand-magic-sparkles-solid" path data, keeping the same component API and size convention.
+
+**Brainstorming:** The FA icon already ships as a single combined <path> with all subpaths (two sparkle stars, one small sparkle, wand tip rect, wand shaft). Easiest and most accurate approach is to use the path as-is and set viewBox="0 0 640 640" to match the FA coordinate space — the browser scales it to 1em×1em automatically.
+
+**Prompt:** Update MagicWandIcon to use the Font Awesome wand-magic-sparkles-solid icon as reference.
+
+**What changed:**
+- `app/src/ui/icons/MagicWandIcon.vue` — viewBox changed to "0 0 640 640"; single <path> containing all FA subpaths (two medium sparkles, one small sparkle, wand tip, wand shaft); stroke attributes removed; fill="currentColor" kept
+
+**Key decisions & why:**
+- Kept the 640×640 viewBox rather than scaling coordinates — simpler, lossless, and the SVG viewport handles scaling to 1em×1em without any numeric rounding
+
+
+## [#331] UI restructuring — SectionHeaderLayout, Button in AI panel header, MetaRow in dashboard
+**Type:** refactor
+
+**Summary:** Extracted a reusable SectionHeaderLayout shell, moved the analyze button out of AnalysisState into each tab orchestrator's action slot, wired Button + MagicWandIcon into ExecutiveSummaryAnalysis, updated DashboardHeader to use MetaRow/MetaItem, and cleaned up the dev cycle error sequences.
+
+**Brainstorming:** AnalysisState was acting as both the layout host and the action trigger, which coupled button placement to the wrapper. Moving the button to the parent's action slot gives each tab full control over its header (label, icon, styling) without modifying the shared component. SectionHeaderLayout provides the flex scaffolding (header grows, action shrinks) that was being duplicated. The MagicWandIcon in the Button replaces the prior SparklesIcon in the panel-head. DashboardHeader already had MetaRow/MetaItem available in the ui barrel and was the right place to use them instead of raw spans.
+
+**Prompt:** Read all changes, update your files, update last log to include all changes not present in previous log and give me commit message.
+
+**What changed:**
+- `app/src/ui/SectionHeaderLayout.vue` — new layout component; header slot (grows, centered) + action slot beside it in a nowrap flex row; default slot below; no props, no scoped styles
+- `app/src/ui/index.ts` — added exports for Button, ButtonVariant, ButtonSize, Card, CardVariant, Badge, SectionHeaderLayout
+- `app/src/ui/Button.vue` — scoped styles in place; variant/size props commented out; class pass-through for primary/square modifiers; gradient primary styles in scoped block
+- `app/src/ui/Card.vue` — scoped .card + &.card-secondary styles in place
+- `app/src/ui/Badge.vue` — scoped .badge with per-variant text/bg/border rules in place
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — refactored to use SectionHeaderLayout with #header (dynamic title) and #action (Button.primary.square + MagicWandIcon); MetaRow shows portfolio title/channel count/campaign count; AnalysisState no longer owns the analyze button header; imports Button + MagicWandIcon + MetaRow + MetaItem + SectionHeaderLayout from @/ui
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — added scoped .health-container / .health-badge / .health-score / .health-label styles for the health score display block
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue` — panel-head (title h3 + SparklesIcon analyze button) commented out; analyze button responsibility moved to parent orchestrators
+- `app/src/features/dashboard/components/DashboardHeader.vue` — switched from raw spans to MetaRow (bullet variant) + MetaItem for the portfolio title/channel/campaign meta line
+- `app/src/styles/components/_badge.scss` — badge-text and badge-background kept as separate @extend helper classes; .badge @extends both
+- `app/src/style.scss` — h2/h3/h5 global typography rules updated
+- `app/src/shell/AiToolsDrawer.vue` — push drawer open width confirmed at w-[30rem]
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — error sequence entries commented out; dev cycle now iterates mocks only; sleep and token-limit reset also commented out for faster iteration
+
+**Key decisions & why:**
+- SectionHeaderLayout is props-free — slot-only API keeps it generic; callers own all rendering decisions
+- Button action slot placement rather than AnalysisState internal button — decouples the shared wrapper from per-tab action label/icon choices; AnalysisState stays a pure status/slot display component
+- MetaRow + MetaItem in DashboardHeader instead of raw spans — consistent with the same pattern used across the rest of the app; bullet separator comes for free from the global .meta-row--bullet rule
+- Dev cycle errors commented out (not deleted) — easy to re-enable individual error codes for targeted UI testing

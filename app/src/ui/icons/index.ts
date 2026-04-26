@@ -1,4 +1,5 @@
 export { default as AlertCircleIcon } from './AlertCircleIcon.vue'
+export { default as MagicWandIcon } from './MagicWandIcon.vue'
 export { default as AlertTriangleIcon } from './AlertTriangleIcon.vue'
 export { default as ArrowLeftIcon } from './ArrowLeftIcon.vue'
 export { default as ArrowUpIcon } from './ArrowUpIcon.vue'

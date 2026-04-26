@@ -11,6 +11,20 @@
   --color-surface-2: 13 26 58;
   --color-surface-3: 16 30 65;
 
+// --color-surface-2: 14 28 66;  /* slightly brighter + clearer step */
+// --color-surface-3: 20 36 82;  /* more lift for hover/elevation */
+
+
+// --color-surface-0: 14 16 34;   /* darkest, slight indigo bias */
+// --color-surface-1: 21 27 46;   /* #151B2E (your base) */
+// --color-surface-2: 30 32 58;   /* lifted, reduced blue dominance */
+// --color-surface-3: 42 40 74;   /* lighter, clear elevation */
+
+// --color-surface-0: 16 18 28;   /* darker, neutralized */
+// --color-surface-1: 21 27 46;   /* #151B2E (base) */
+// --color-surface-2: 32 36 52;   /* desaturated lift */
+// --color-surface-3: 44 48 64;   /* lighter, soft blue-gray */
+
   --color-surface-hover: var(--color-surface-2);
   --color-surface-active: var(--color-surface-3);
 

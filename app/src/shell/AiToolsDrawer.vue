@@ -57,14 +57,15 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     grid-cols-1
     grid-rows-[min-content_1fr]
     h-full
-    bg-surface
     border
     border
     overflow-hidden
     sticky
     top-0
     w-full
-    shadow-md;
+    shadow-md
+    
+    bg-surface-raised;
 }
 
 // ── Overlay (<lg) ───────────────────────────────────────────────────────────
@@ -101,6 +102,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     min-h-[50vh]
     max-h-[92vh]
     max-w-[92vh]
-    shadow-md;
+    shadow-md 
+    bg-surface-raised;
 }
 </style>

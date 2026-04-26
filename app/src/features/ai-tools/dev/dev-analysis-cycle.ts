@@ -38,37 +38,37 @@ type DevEntry = MockEntry | ErrorEntry
 const BUDGET_SEQUENCE: DevEntry[] = [
   { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[0] },
   { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[1] },
-  { kind: 'error', code: 'network' },
+  // { kind: 'error', code: 'network' },
   { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[2] },
-  { kind: 'error', code: 'rate-limit' },
+  // { kind: 'error', code: 'rate-limit' },
   { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[3] },
-  { kind: 'error', code: 'server-error' },
+  // { kind: 'error', code: 'server-error' },
   { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[4] },
-  { kind: 'error', code: 'timeout' },
-  { kind: 'error', code: 'token-limit' },
-  { kind: 'error', code: 'parse-error' },
-  { kind: 'error', code: 'invalid-response' },
-  { kind: 'error', code: 'invalid-key' },
-  { kind: 'error', code: 'no-models' },
-  { kind: 'error', code: 'unknown' },
+  // { kind: 'error', code: 'timeout' },
+  // { kind: 'error', code: 'token-limit' },
+  // { kind: 'error', code: 'parse-error' },
+  // { kind: 'error', code: 'invalid-response' },
+  // { kind: 'error', code: 'invalid-key' },
+  // { kind: 'error', code: 'no-models' },
+  // { kind: 'error', code: 'unknown' },
 ]
 
 const SUMMARY_SEQUENCE: DevEntry[] = [
   { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[0] },
   { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[1] },
-  { kind: 'error', code: 'network' },
+  // { kind: 'error', code: 'network' },
   { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[2] },
-  { kind: 'error', code: 'rate-limit' },
+  // { kind: 'error', code: 'rate-limit' },
   { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[3] },
-  { kind: 'error', code: 'server-error' },
+  // { kind: 'error', code: 'server-error' },
   { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[4] },
-  { kind: 'error', code: 'timeout' },
-  { kind: 'error', code: 'token-limit' },
-  { kind: 'error', code: 'parse-error' },
-  { kind: 'error', code: 'invalid-response' },
-  { kind: 'error', code: 'invalid-key' },
-  { kind: 'error', code: 'no-models' },
-  { kind: 'error', code: 'unknown' },
+  // { kind: 'error', code: 'timeout' },
+  // { kind: 'error', code: 'token-limit' },
+  // { kind: 'error', code: 'parse-error' },
+  // { kind: 'error', code: 'invalid-response' },
+  // { kind: 'error', code: 'invalid-key' },
+  // { kind: 'error', code: 'no-models' },
+  // { kind: 'error', code: 'unknown' },
 ]
 
 const SEQUENCES: Record<AiAnalysisType, DevEntry[]> = {
@@ -114,7 +114,7 @@ function resetTokenLimit(): void {
 // ── Override function (replaces runProviderPrompt in analysis-prompt.ts) ──────
 
 async function runDevCycle(type: AiAnalysisType, signal: AbortSignal): Promise<AnalysisResponse | null> {
-  await sleep(2000)
+  // await sleep(2000)
   if (signal.aborted) return null
 
   const entry = nextEntry(type)

@@ -13,7 +13,7 @@ defineProps<{
 
 <template>
   <AnalysisSummary
-    title="Portfolio Health"
+    title="Performance Summary"
     :scope="scope"
   >
     <template #badge>
@@ -33,7 +33,7 @@ defineProps<{
 
 <style lang="scss" scoped>
 .health-container {
-  @apply flex flex-col gap-1 items-center justify-center;
+  @apply flex flex-col gap-1 items-center justify-center ;
 }
 
 .health-badge {

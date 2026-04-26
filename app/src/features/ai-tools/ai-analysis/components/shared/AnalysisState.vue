@@ -45,13 +45,13 @@ const noticeText = computed(() =>
 <template>
   <div class="ai-panel">
     <!-- Header -->
-    <div class="panel-head">
+    <!-- <div class="panel-head">
       <h3 class="panel-title">{{ title }}</h3>
       <button class="btn-primary" :disabled="isButtonDisabled" @click="emit('analyze')">
         <SparklesIcon />
         {{ actionLabel }}
       </button>
-    </div>
+    </div> -->
 
     <!-- Token limit notice -->
     <div v-if="tokenLimitReached && status !== 'done'" class="notice" role="status">
@@ -77,11 +77,11 @@ const noticeText = computed(() =>
     <!-- Result -->
     <div v-else-if="hasResult" class="result">
       <div class="response-meta">
-        <p v-if="formattedCacheTime" class="response-meta-text" role="status">
+        <p v-if="formattedCacheTime" class="italic text-typography-subtle" role="status">
           Generated at {{ formattedCacheTime }}<template v-if="modelName"> with {{ modelName }}</template>
+        <span class="block italic text-typography-subtle">AI can make mistakes</span>
         </p>
-        <p class="response-meta-disclaimer">AI can make mistakes</p>
-        <p v-if="noticeText" class="response-meta-fallback" role="status">{{ noticeText }}</p>
+        <p v-if="noticeText" class="text-typography-subtle" role="status">{{ noticeText }}</p>
       </div>
       <slot />
     </div>
