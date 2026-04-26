@@ -1,12 +1,5 @@
 import type { BadgeVariant } from '@/ui/types/badge-variant'
 
-const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
-  excellent: 'success',
-  good: 'info',
-  needsattention: 'warning',
-  critical: 'danger',
-}
-
 const CHANNEL_STATUS_MAP: Record<string, BadgeVariant> = {
   strong: 'success',
   moderate: 'warning',
@@ -52,10 +45,6 @@ const EFFORT_MAP: Record<string, BadgeVariant> = {
 
 function badgeVariant(map: Record<string, BadgeVariant>, key: string): BadgeVariant {
   return map[key.toLowerCase()] ?? 'info'
-}
-
-export function healthScoreVariant(label: string): BadgeVariant {
-  return badgeVariant(HEALTH_SCORE_MAP, label)
 }
 
 export function channelStatusVariant(status: string): BadgeVariant {

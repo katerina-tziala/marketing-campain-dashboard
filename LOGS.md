@@ -7453,3 +7453,58 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `:deep(> span)` for `channel-badge` — the Badge inner span has scoped `whitespace-nowrap`; parent can't override scoped styles without `:deep`
 
  
+
+## [#367] Fix ::before in Badge to work as background layer
+**Type:** fix
+
+**Summary:** Made `::before` work as a solid background layer behind the semi-transparent variant tint, and fixed a dead `:deep(> span)` in CampaignTable left over from the removed inner span.
+
+**Brainstorming:** `::before` with `block w-full h-full` was a flex item alongside the slot content, not behind it. Fix: `absolute inset-0 -z-[1]` on a `relative` parent pulls it out of flow and stacks it behind the content. With the inner `<span>` removed, the `> span` variant selectors were dead — variant bg/text/border now apply directly on `.badge`. CampaignTable's `:deep(> span)` also became dead once the inner span was gone; replaced with a direct `whitespace-break-spaces` on `.channel-badge`.
+
+**Prompt:** make &::before { in badge work
+
+**What changed:**
+- `app/src/ui/Badge.vue` — added `relative overflow-hidden` to `.badge`; `::before` changed to `absolute inset-0 bg-background -z-[1]`; variant bg/text/border applied directly on `&.success/warning/danger/info/opportunity`; removed dead `> span` selectors; added `text-only` and `lighter` modifier variants
+- `app/src/features/dashboard/components/CampaignTable.vue` — replaced dead `:deep(> span) { whitespace-break-spaces }` with direct `@apply whitespace-break-spaces` on `.channel-badge`
+
+**Key decisions & why:**
+- `overflow-hidden` on `.badge` — clips the absolute `::before` to the border radius so background doesn't bleed outside
+- `-z-[1]` on `::before` — pushes it behind in-flow slot content without needing to wrap content in a positioned element
+
+
+## [#368] Extract HealthStatus component, inline health section, remove ExecutiveSummaryHealth
+**Type:** refactor
+
+**Summary:** Extracted a focused `HealthStatus.vue` for the score/label badges, inlined the health section into `ExecutiveSummaryAnalysis.vue`, and removed `ExecutiveSummaryHealth.vue` and its `healthScoreVariant` utility export.
+
+**Brainstorming:** `ExecutiveSummaryHealth` was a thin wrapper mixing layout (reasoning text + bottom line) with the badge display logic. Splitting it: `HealthStatus` owns only the visual badge pair with its variant computed, keeping the logic collocated with the UI that needs it. The surrounding health layout (reasoning, bottom line) is simple enough to inline in the orchestrator. `healthScoreVariant` was only used in one place so it moves into `HealthStatus` as an internal computed rather than a shared export.
+
+**Prompt:** Create a health status component. move healthScoreVariant there as computed and remove from other places if it is not used anywhere else. remove executiveSummaryHealth and move content in analysis.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/HealthStatus.vue` — new component; owns `HEALTH_SCORE_MAP` and `variant` computed from `healthScore.label`; renders score badge (`rounded-rectangle`) + label badge (`text-only`); scoped `.health-container` style
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — replaced `ExecutiveSummaryHealth` import+usage with `HealthStatus`; inlined health layout (reasoning + `<HealthStatus>` + bottom line heading + bottom line text) directly in template
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-badge-variants.ts` — removed `HEALTH_SCORE_MAP` and `healthScoreVariant` export (now internal to `HealthStatus`)
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryHealth.vue` — deleted
+
+**Key decisions & why:**
+- `HEALTH_SCORE_MAP` inlined into `HealthStatus` — it has no other consumers so collocation is cleaner than a shared export
+- Health layout inlined in orchestrator — reasoning/bottom-line are plain text paragraphs; wrapping them in a dedicated component was over-abstraction
+
+
+## [#369] Remove BudgetOptimizationOverview and AnalysisSummary
+**Type:** refactor
+
+**Summary:** Deleted the dead `BudgetOptimizationOverview` wrapper and its only dependency `AnalysisSummary`, removing the orphaned import from `BudgetOptimizationAnalysis`.
+
+**Brainstorming:** `BudgetOptimizationOverview` was already unused in the template — it had been superseded by a plain `<p>{{ response.summary }}</p>` inline. `AnalysisSummary` had no other consumers once `BudgetOptimizationOverview` was gone, so both could be removed cleanly with no regressions.
+
+**Prompt:** remove BudgetOptimizationOverview
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — removed dead `BudgetOptimizationOverview` import
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationOverview.vue` — deleted
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSummary.vue` — deleted (sole consumer was `BudgetOptimizationOverview`)
+
+**Key decisions & why:**
+- `AnalysisSummary` deleted alongside `BudgetOptimizationOverview` — no other file imported it, keeping it would be dead code

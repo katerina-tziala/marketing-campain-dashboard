@@ -100,8 +100,6 @@ const COLUMNS: DataTableColumn[] = [
 }
 
 .channel-badge {
-  :deep(> span) {
-    @apply whitespace-break-spaces;
-  }
+  @apply whitespace-break-spaces;
 }
 </style>

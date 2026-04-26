@@ -1,43 +1,46 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { PortfolioScope } from '@/shared/types/campaign'
-import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
-import { Notification } from '@/ui'
-import { ANALYSIS_ERROR_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
-import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
-import AnalysisHeader from '@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue'
-import AnalysisResponseMeta from '@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue'
-import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
-import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
+import { computed } from "vue";
+import type { PortfolioScope } from "@/shared/types/campaign";
+import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import { Notification } from "@/ui";
+import { ANALYSIS_ERROR_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
+import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
+import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
+import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
+import BudgetOptimizationRecommendations from "./BudgetOptimizationRecommendations.vue";
 
 defineProps<{
-  scope: PortfolioScope
-}>()
+  scope: PortfolioScope;
+}>();
 
-const analysisStore = useAiAnalysisStore()
+const analysisStore = useAiAnalysisStore();
 
-const status = computed(() => analysisStore.budgetOptimizer.status)
-const response = computed(() => analysisStore.budgetOptimizer.response)
-const error = computed(() => analysisStore.budgetOptimizer.error)
-const notice = computed(() => analysisStore.budgetOptimizer.notice)
-const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze)
-const analysisActivated = computed(() => analysisStore.analysisActivated)
+const status = computed(() => analysisStore.budgetOptimizer.status);
+const response = computed(() => analysisStore.budgetOptimizer.response);
+const error = computed(() => analysisStore.budgetOptimizer.error);
+const notice = computed(() => analysisStore.budgetOptimizer.notice);
+const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze);
+const analysisActivated = computed(() => analysisStore.analysisActivated);
 
-const isBelowMinimum = computed(() => error.value?.code === 'min-campaigns')
-const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES['min-campaigns']
+const isBelowMinimum = computed(() => error.value?.code === "min-campaigns");
+const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES["min-campaigns"];
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive
-    ? 'Selection Budget Optimizer'
-    : 'Portfolio Budget Optimizer',
-)
+    ? "Selection Budget Optimizer"
+    : "Portfolio Budget Optimizer",
+);
 
-const actionLabel = computed(() => analysisActivated.value ? 'Re-Analyze' : 'Analyze')
+const actionLabel = computed(() =>
+  analysisActivated.value ? "Re-Analyze" : "Analyze",
+);
 
-const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value)
+const isButtonDisabled = computed(
+  () => status.value === "loading" || !canAnalyze.value,
+);
 
 function handleAnalyze(): void {
-  analysisStore.analyze('budgetOptimizer')
+  analysisStore.analyze("budgetOptimizer");
 }
 </script>
 
@@ -80,11 +83,12 @@ function handleAnalyze(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <BudgetOptimizationOverview
-        :summary="response.summary"
-        :scope="scope"
-      />
-      <BudgetOptimizationRecommendations :recommendations="response.recommendations" />
+      <div class="flex flex-col gap-6 pt-5 text-sm">
+        <p>{{ response.summary }}</p>
+        <BudgetOptimizationRecommendations
+          :recommendations="response.recommendations"
+        />
+      </div>
     </template>
   </AnalysisState>
 </template>

@@ -6,7 +6,7 @@ import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/Ana
 import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
 import AnalysisCorrelations from "@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue";
 import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
-import ExecutiveSummaryHealth from "./ExecutiveSummaryHealth.vue";
+import HealthStatus from "./HealthStatus.vue";
 import ExecutiveSummaryPriorityActions from "./ExecutiveSummaryPriorityActions.vue";
 import ExecutiveSummaryInsights from "./ExecutiveSummaryInsights.vue";
 
@@ -71,12 +71,15 @@ function handleSummarize(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <div class="flex flex-col gap-6 pt-6 text-sm">
-        <ExecutiveSummaryHealth
-          :health-score="response.healthScore"
-          :bottom-line="response.bottomLine"
-          :scope="scope"
-        />
+      <div class="flex flex-col gap-6 pt-5 text-sm">
+        <div class="flex flex-col gap-3">
+          <div class="flex flex-nowrap items-start gap-3">
+            <p>{{ response.healthScore.reasoning }}</p>
+            <HealthStatus :health-score="response.healthScore" />
+          </div>
+          <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-2">Bottom Line</h5>
+          <p>{{ response.bottomLine }}</p>
+        </div>
         <ExecutiveSummaryPriorityActions :actions="response.priorityActions" />
         <ExecutiveSummaryInsights :insights="response.insights" />
         <AnalysisCorrelations :correlations="response.correlations" />
