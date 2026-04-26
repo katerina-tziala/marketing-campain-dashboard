@@ -53,8 +53,8 @@
   }
 }
 
-.badge.rectangle-sharp {
-  @apply rounded-none;
+.badge.rounded-rectangle-sm {
+  @apply rounded-sm;
 }
 
 .badge.text-only {

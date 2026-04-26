@@ -5,6 +5,7 @@ import type {
 } from "@/features/ai-tools/ai-analysis/types";
 import type { BadgeVariant } from "@/ui/types/badge-variant";
 import { Badge, Card, CardHeader } from "@/ui";
+import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 
 defineProps<{
   actions: PriorityAction[];
@@ -28,8 +29,7 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
 </script>
 
 <template>
-  <section class="ai-section">
-    <h4 class="section-title">Priority Actions</h4>
+  <AnalysisSection title="Priority Actions">
     <Card v-for="(action, i) in actions" :key="i" class="card-secondary">
       <CardHeader>
         <span class="font-extrabold text-sm min-w-5 text-primary-soft"
@@ -50,5 +50,5 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
         <strong>Success metric:</strong> {{ action.successMetric }}
       </p>
     </Card>
-  </section>
+  </AnalysisSection>
 </template>

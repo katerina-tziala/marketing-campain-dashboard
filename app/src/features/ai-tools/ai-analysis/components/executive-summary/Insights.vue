@@ -5,7 +5,7 @@ import type {
 } from "@/features/ai-tools/ai-analysis/types";
 import type { BadgeVariant } from "@/ui/types/badge-variant";
 import { Badge, Card } from "@/ui";
-import CardHeader from "@/ui/card/CardHeader.vue";
+import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 
 defineProps<{
   insights: ExecutiveInsight[];
@@ -31,8 +31,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 </script>
 
 <template>
-  <section class="ai-section">
-    <h4 class="section-title">Insights</h4>
+  <AnalysisSection title="Insights">
     <Card v-for="(insight, i) in insights" :key="i" class="card-secondary">
       <p>
         <Badge
@@ -43,7 +42,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
       </p>
       <Badge
         :class="insightTypeVariant(insight.type)"
-        class="rectangle-sharp gap-x-2 w-full flex-wrap dimmed"
+        class="rounded-rectangle-sm gap-x-2 w-full flex-wrap dimmed"
       >
         <span class="insight-metric-label">{{
           insight.metricHighlight.label
@@ -53,7 +52,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
         }}</span>
       </Badge>
     </Card>
-  </section>
+  </AnalysisSection>
 </template>
 
 <style lang="scss" scoped>

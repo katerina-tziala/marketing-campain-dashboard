@@ -3,6 +3,7 @@ import type { BudgetRecommendation } from '@/features/ai-tools/ai-analysis/types
 import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
 import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
 import { Badge, Card } from '@/ui'
+import AnalysisSection from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue'
 
 defineProps<{
   recommendations: BudgetRecommendation[]
@@ -10,8 +11,7 @@ defineProps<{
 </script>
 
 <template>
-  <section v-if="recommendations.length" class="ai-section">
-    <h4 class="section-title">Recommendations</h4>
+  <AnalysisSection v-if="recommendations.length" title="Recommendations">
     <Card
       v-for="(rec, i) in recommendations"
       :key="i"
@@ -48,7 +48,7 @@ defineProps<{
       </div>
       <p class="card-content">{{ rec.reason }}</p>
     </Card>
-  </section>
+  </AnalysisSection>
 </template>
 
 <style lang="scss" scoped>

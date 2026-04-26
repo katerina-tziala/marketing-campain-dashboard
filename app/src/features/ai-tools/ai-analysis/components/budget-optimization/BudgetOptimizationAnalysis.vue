@@ -7,7 +7,7 @@ import { ANALYSIS_ERROR_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/a
 import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
 import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
 import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
-import BudgetOptimizationRecommendations from "./BudgetOptimizationRecommendations.vue";
+import BudgetRecommendations from "./BudgetRecommendations.vue";
 
 defineProps<{
   scope: PortfolioScope;
@@ -85,7 +85,7 @@ function handleAnalyze(): void {
       />
       <div class="flex flex-col gap-6 pt-5 text-sm">
         <p>{{ response.summary }}</p>
-        <BudgetOptimizationRecommendations
+        <BudgetRecommendations
           :recommendations="response.recommendations"
         />
       </div>

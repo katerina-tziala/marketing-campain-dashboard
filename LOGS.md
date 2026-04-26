@@ -7690,3 +7690,62 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Full revert to last known good state
+
+
+## [#380] Extract AnalysisSection layout component, remove _ai-summary.scss
+**Type:** refactor
+
+**Summary:** Created `AnalysisSection.vue` to own the `.ai-section` + `.section-title` layout, implemented it in all four section components, and deleted the now-empty global `_ai-summary.scss` file.
+
+**Brainstorming:** The `ai-section` + `section-title` pattern was repeated across four components (PriorityActions, Insights, AnalysisCorrelations, BudgetOptimizationRecommendations) via global CSS classes. Extracting it into a component with a `title` prop and scoped styles removes the global dependency, co-locates the styles with the structure, and eliminates the need for `_ai-summary.scss` entirely — all remaining classes in that file (`.ai-panel`, `.section-subtitle`, `.section-note`, `.analysis-details`) were unused dead code.
+
+**Prompt:** Create an AnalysisSection layout component, use styles from the ai-analysis scss file, implement it in the analysis components and remove the style rules from scss file.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue` — new component; `title` prop + default slot; scoped `.analysis-section` (flex-col gap-3 text-sm, `:deep(p > strong)` rule) + `.section-title` styles
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue` — replaced `<section class="ai-section">` + `<h4 class="section-title">` with `<AnalysisSection title="Priority Actions">`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue` — same replacement; removed unused `CardHeader` import
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue` — same replacement with `v-if` preserved on `<AnalysisSection>`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — same replacement with `v-if` preserved
+- `app/src/styles/components/_ai-summary.scss` — deleted
+- `app/src/styles/components/index.scss` — removed `@use './ai-summary'`
+
+**Key decisions & why:**
+- `v-if` stays on the `<AnalysisSection>` call site (AnalysisCorrelations, BudgetOptimizationRecommendations) rather than inside the component — callers own their own visibility conditions; the component stays unconditional and reusable
+- `:deep(p > strong)` preserved in scoped styles — was part of the original `.ai-section` contract; slot content is projected from parents so it needs deep piercing
+- Deleted the entire `_ai-summary.scss` rather than just removing two rules — all other classes in the file were unused dead code with no component referencing them
+
+
+## [#381] Move AnalysisCorrelations to executive-summary, rename to Correlations
+**Type:** refactor
+
+**Summary:** Moved `AnalysisCorrelations.vue` from `shared/` into `executive-summary/` and renamed it `Correlations.vue`, since it is only used by `ExecutiveSummaryAnalysis`.
+
+**Brainstorming:** The component was placed in `shared/` but had a single caller in `executive-summary/`. Moving it follows the same pattern as `PriorityActions` and `Insights` — components that belong to one tab live in that tab's folder. The `AnalysisSection` import path required no change since both files now share the same folder.
+
+**Prompt:** AnalysisCorrelation move to summary and name it correlations.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue` — deleted (moved)
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Correlations.vue` — new location; `AnalysisSection` import updated to `./AnalysisSection.vue`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — import updated to `Correlations` from `./Correlations.vue`; template tag updated accordingly
+
+**Key decisions & why:**
+- No changes to component logic or template — pure rename and relocate
+
+
+## [#382] Rename BudgetOptimizationRecommendations to BudgetRecommendations
+**Type:** refactor
+
+**Summary:** Renamed `BudgetOptimizationRecommendations.vue` to `BudgetRecommendations.vue` and updated the import and template tag in `BudgetOptimizationAnalysis.vue`.
+
+**Brainstorming:** Shorter name, consistent with the pattern used in the executive-summary folder (Insights, PriorityActions, Correlations).
+
+**Prompt:** BudgetOptimizationRecommendations rename to BudgetRecommendations.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationRecommendations.vue` — renamed to `BudgetRecommendations.vue`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — import and template tag updated
+
+**Key decisions & why:**
+- No logic changes — pure rename

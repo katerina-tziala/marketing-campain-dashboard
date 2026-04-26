@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ExecutiveCorrelation } from '@/features/ai-tools/ai-analysis/types'
 import { Card } from '@/ui'
+import AnalysisSection from './AnalysisSection.vue'
 
 defineProps<{
   correlations: ExecutiveCorrelation[]
@@ -8,8 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <section v-if="correlations.length" class="ai-section">
-    <h4 class="section-title">Correlations</h4>
+  <AnalysisSection v-if="correlations.length" title="Correlations">
     <Card
       v-for="(corr, i) in correlations"
       :key="i"
@@ -18,5 +18,5 @@ defineProps<{
       <h5 class="card-title">{{ corr.finding }}</h5>
       <p>{{ corr.implication }}</p>
     </Card>
-  </section>
+  </AnalysisSection>
 </template>

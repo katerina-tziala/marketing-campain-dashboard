@@ -4,7 +4,7 @@ import type { PortfolioScope } from "@/shared/types/campaign";
 import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
 import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
 import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
-import AnalysisCorrelations from "@/features/ai-tools/ai-analysis/components/shared/AnalysisCorrelations.vue";
+import Correlations from "./Correlations.vue";
 import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
 import HealthStatus from "./HealthStatus.vue";
 import PriorityActions from "./PriorityActions.vue";
@@ -72,25 +72,20 @@ function handleSummarize(): void {
         :notice="notice"
       />
       <div class="flex flex-col gap-6 py-5 text-sm">
-        <div class="flex flex-col gap-3">
-          <div class="flex flex-nowrap items-start gap-3">
-            <p>
-              <HealthStatus
-                class="float-right ml-2 mb-1"
-                :health-score="response.healthScore"
-              />{{ response.healthScore.reasoning }}
-            </p>
-          </div>
-          <h5
-            class="text-sm tracking-wide font-semibold text-primary-soft -mb-2"
-          >
-            Bottom Line
-          </h5>
-          <p>{{ response.bottomLine }}</p>
-        </div>
+        <p class="-mb-4">
+          <HealthStatus
+            class="float-right ml-2 mb-1"
+            :health-score="response.healthScore"
+          />
+          {{ response.healthScore.reasoning }}
+        </p>
+        <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-5">
+          Bottom Line
+        </h5>
+        <p>{{ response.bottomLine }}</p>
         <PriorityActions :actions="response.priorityActions" />
         <Insights :insights="response.insights" />
-        <AnalysisCorrelations :correlations="response.correlations" />
+        <Correlations :correlations="response.correlations" />
       </div>
     </template>
   </AnalysisState>
