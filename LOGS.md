@@ -7769,3 +7769,28 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Order maps (Record<Literal, number>) over `indexOf` — O(1) lookup, exhaustive at compile time
 - `[...props.x].sort(...)` — never mutates the prop array
 - Execution risk tiebreaker sorts Low→High (least risky first) to surface easiest wins after filtering by confidence
+
+
+
+
+## [#384] Add ArrowRightIcon, update BudgetRecommendations, remove unused SCSS partials
+**Type:** update
+
+**Summary:** Created ArrowRightIcon and replaced the plain `→` text in BudgetRecommendations with the icon; removed unused `_badge.scss` and `_detail-item.scss` partials and their references.
+
+**Brainstorming:** The `→` glyph was a raw text character — replacing it with a proper SVG icon aligns with the icon system. The SCSS audit revealed two partials with no consumers: `_badge.scss` (Badge migrated to scoped styles) and `_detail-item.scss` (`.detail-item` class never used in any template or component). Both deleted to keep the global stylesheet clean.
+
+**Prompt:** Create arrow right icon and use it in recommendations. Check if ai-analysis / detail-item scss files are used — clean up if not.
+
+**What changed:**
+- `app/src/ui/icons/ArrowRightIcon.vue` — new SVG icon (ArrowLeftIcon geometry reversed)
+- `app/src/ui/icons/index.ts` — added ArrowRightIcon export
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — imports ArrowRightIcon; `<span class="rec-arrow">→</span>` replaced with `<ArrowRightIcon class="rec-arrow" />`
+- `app/src/styles/components/_badge.scss` — deleted (no consumers; Badge uses scoped styles)
+- `app/src/styles/components/_detail-item.scss` — deleted (`.detail-item` class unused)
+- `app/src/styles/components/index.scss` — removed `@use './detail-item'`
+- `CLAUDE.md` — removed stale `_badge.scss` and `_detail-item.scss` entries from architecture
+
+**Key decisions & why:**
+- `.rec-arrow` class kept on the icon element so existing scoped color/size styles apply unchanged
+- Confirmed zero usages of `.detail-item` across all `.vue` and `.ts` files before deleting

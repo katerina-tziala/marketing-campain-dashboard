@@ -69,6 +69,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── AlertCircleIcon.vue  # Circle with exclamation — error toast icon
 │   │   │   ├── AlertTriangleIcon.vue # Triangle with exclamation — warning toast icon
 │   │   │   ├── ArrowLeftIcon.vue
+│   │   │   ├── ArrowRightIcon.vue  # Right arrow icon — used in BudgetRecommendations rec-route
 │   │   │   ├── ArrowUpIcon.vue     # Up arrow icon — used for sort direction indicator
 │   │   │   ├── BellIcon.vue        # Bell icon — default/neutral notification state in InlineNotification
 │   │   │   ├── CheckCircleIcon.vue  # Circle with checkmark — success toast icon
@@ -233,9 +234,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── container-queries.scss  # SCSS mixin library for container queries — $container-sizes scale (tiny/xs/sm/md/lg/xl/2xl); mixins: cq-container($name?, $type?), cq-up($size, $name?), cq-down($size, $name?), cq-between($min, $max, $name?); globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
-│   │   │   ├── _badge.scss         # @layer components — .badge, .badge-text, .badge-background; variants: success/warning/danger/info/opportunity
 │   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
-│   │   │   ├── _detail-item.scss   # @layer components — .detail-item (inline-block, pr-1.5); bullet separator via & + &::before pseudo-element (1×1 dot, bg-primary-light)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell

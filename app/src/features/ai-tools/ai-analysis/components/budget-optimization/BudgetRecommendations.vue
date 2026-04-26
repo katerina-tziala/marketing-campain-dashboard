@@ -1,38 +1,49 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { BudgetRecommendation, ConfidenceLevel, ExecutionRisk } from '@/features/ai-tools/ai-analysis/types'
-import { confidenceVariant, executionRiskVariant } from '@/features/ai-tools/ai-analysis/utils/analysis-badge-variants'
-import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
-import { Badge, Card } from '@/ui'
-import AnalysisSection from '@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue'
+import { computed } from "vue";
+import type {
+  BudgetRecommendation,
+  ConfidenceLevel,
+  ExecutionRisk,
+} from "@/features/ai-tools/ai-analysis/types";
+import {
+  confidenceVariant,
+  executionRiskVariant,
+} from "@/features/ai-tools/ai-analysis/utils/analysis-badge-variants";
+import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
+import { Badge, Card, ArrowRightIcon } from "@/ui";
+import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 
 const props = defineProps<{
-  recommendations: BudgetRecommendation[]
-}>()
+  recommendations: BudgetRecommendation[];
+}>();
 
 const CONFIDENCE_ORDER: Record<ConfidenceLevel, number> = {
   High: 0,
   Medium: 1,
   Low: 2,
-}
+};
 
 const EXECUTION_RISK_ORDER: Record<ExecutionRisk, number> = {
   Low: 0,
   Medium: 1,
   High: 2,
-}
+};
 
 const sortedRecommendations = computed(() =>
   [...props.recommendations].sort((a, b) => {
-    const cDiff = CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence]
-    if (cDiff !== 0) return cDiff
-    return EXECUTION_RISK_ORDER[a.executionRisk] - EXECUTION_RISK_ORDER[b.executionRisk]
+    const cDiff =
+      CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
+    if (cDiff !== 0) return cDiff;
+    return (
+      EXECUTION_RISK_ORDER[a.executionRisk] -
+      EXECUTION_RISK_ORDER[b.executionRisk]
+    );
   }),
-)
+);
 </script>
 
 <template>
-  <AnalysisSection v-if="sortedRecommendations.length" title="Recommendations">
+  <AnalysisSection v-if="sortedRecommendations.length" title="Reallocation Recommendations">
     <Card
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
@@ -40,31 +51,43 @@ const sortedRecommendations = computed(() =>
     >
       <div class="card-head">
         <h5 class="card-title rec-route">
+          <span>From</span>
           <span>{{ rec.fromCampaign }}</span>
-          <span class="rec-arrow">→</span>
-          <span>{{ rec.toCampaign }}</span>
+          <ArrowRightIcon class="rec-arrow" />
+          <span>To</span>
+          <span  >{{ rec.toCampaign }}</span>
         </h5>
         <div class="rec-badges">
-          <Badge :class="confidenceVariant(rec.confidence)">{{ rec.confidence }}</Badge>
-          <Badge :class="executionRiskVariant(rec.executionRisk)">{{ rec.executionRisk }} risk</Badge>
+          <Badge :class="confidenceVariant(rec.confidence)">{{
+            rec.confidence
+          }} confidence</Badge>
+          <Badge :class="executionRiskVariant(rec.executionRisk)"
+            >{{ rec.executionRisk }} risk</Badge
+          >
         </div>
       </div>
       <div class="rec-details">
         <p class="rec-row">
-          <span class="rec-label">Budget shift</span>
-          <span class="rec-value">{{ formatCurrency(rec.budgetShift) }}</span>
+          <span class="rec-label">Amount</span>
+          <span class="rec-value text-typography">{{ formatCurrency(rec.budgetShift) }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. ROI</span>
-          <span class="rec-value">{{ formatPercentage(rec.expectedImpact.roiEstimate) }}</span>
+          <span class="rec-value text-typography">{{
+            formatPercentage(rec.expectedImpact.roiEstimate)
+          }}</span>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Revenue</span>
-          <span class="rec-value text-success">+{{ formatCurrency(rec.expectedImpact.revenueChange) }}</span>
+          <span class="rec-value text-success-dark"
+            >+{{ formatCurrency(rec.expectedImpact.revenueChange) }}</span
+          >
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Conversions</span>
-          <span class="rec-value text-success">+{{ rec.expectedImpact.conversionChange }}</span>
+          <span class="rec-value text-success-dark"
+            >+{{ rec.expectedImpact.conversionChange }}</span
+          >
         </p>
       </div>
       <p class="card-content">{{ rec.reason }}</p>
@@ -86,11 +109,11 @@ const sortedRecommendations = computed(() =>
 }
 
 .rec-badges {
-  @apply flex gap-2 items-center;
+  @apply w-full flex gap-2 items-center justify-start;
 
-  @container (max-width: 28.75rem) {
-    @apply flex-col;
-  }
+  // @container (max-width: 28.75rem) {
+  //   @apply flex-col;
+  // }
 }
 
 .rec-details {
@@ -110,6 +133,6 @@ const sortedRecommendations = computed(() =>
 }
 
 .rec-value {
-  @apply font-semibold;
+  @apply font-semibold ;
 }
 </style>
