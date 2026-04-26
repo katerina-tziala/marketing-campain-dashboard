@@ -3,12 +3,10 @@ import { computed } from 'vue'
 import type { PortfolioScope } from '@/shared/types/campaign'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
 import { Notification } from '@/ui'
-import {
-  ANALYSIS_ERROR_MESSAGES,
-  ANALYSIS_NOTICE_MESSAGES,
-} from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
+import { ANALYSIS_ERROR_MESSAGES } from '@/features/ai-tools/ai-analysis/utils/analysis-messages'
 import AnalysisState from '@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue'
 import AnalysisHeader from '@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue'
+import AnalysisResponseMeta from '@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue'
 import BudgetOptimizationOverview from './BudgetOptimizationOverview.vue'
 import BudgetOptimizationRecommendations from './BudgetOptimizationRecommendations.vue'
 
@@ -27,20 +25,6 @@ const analysisActivated = computed(() => analysisStore.analysisActivated)
 
 const isBelowMinimum = computed(() => error.value?.code === 'min-campaigns')
 const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES['min-campaigns']
-
-const formattedCacheTime = computed(() => {
-  const ts = response.value?.timestamp
-  if (!ts) return null
-  return new Date(ts).toLocaleTimeString('en-IE', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-})
-
-const noticeEntry = computed(() =>
-  notice.value ? ANALYSIS_NOTICE_MESSAGES[notice.value.code] : null,
-)
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive
@@ -92,21 +76,11 @@ function handleAnalyze(): void {
     </template>
 
     <template v-if="response">
-      <div class="response-meta">
-        <p
-          v-if="formattedCacheTime"
-          class="italic text-typography-subtle"
-          role="status"
-        >
-          Generated at {{ formattedCacheTime
-          }}<template v-if="response.model?.displayName"> with {{ response.model.displayName }}</template>
-          <span class="block italic text-typography-subtle">AI can make mistakes</span>
-        </p>
-        <p v-if="noticeEntry" class="text-typography-subtle" role="status">
-          <span class="font-medium">{{ noticeEntry.title }}</span>
-          {{ noticeEntry.message }}
-        </p>
-      </div>
+      <AnalysisResponseMeta
+        :timestamp="response.timestamp ?? null"
+        :model-display-name="response.model?.displayName"
+        :notice="notice"
+      />
       <BudgetOptimizationOverview
         :summary="response.summary"
         :scope="scope"

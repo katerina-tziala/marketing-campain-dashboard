@@ -1,0 +1,39 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import type { AiAnalysisNotice } from "@/features/ai-tools/types";
+import { ANALYSIS_NOTICE_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
+import { MetaRow, MetaItem } from "@/ui";
+
+const props = defineProps<{
+  timestamp: number | null;
+  modelDisplayName?: string | null;
+  notice?: AiAnalysisNotice | null;
+}>();
+
+const formattedTime = computed(() => {
+  if (!props.timestamp) return null;
+  return new Date(props.timestamp).toLocaleString("en-IE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+});
+
+const noticeEntry = computed(() =>
+  props.notice ? ANALYSIS_NOTICE_MESSAGES[props.notice.code] : null,
+);
+</script>
+
+<template>
+  <MetaRow class="divider tiny italic text-typography-muted py-3">
+    <MetaItem v-if="formattedTime">
+      Generated at {{ formattedTime
+      }}<template v-if="modelDisplayName"> with {{ modelDisplayName }}</template>
+    </MetaItem>
+    <MetaItem>AI can make mistakes</MetaItem>
+    <MetaItem v-if="noticeEntry">{{ noticeEntry.message }} ({{ noticeEntry.title }})</MetaItem>
+  </MetaRow>
+</template>

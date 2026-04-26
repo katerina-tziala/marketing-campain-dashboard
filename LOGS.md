@@ -7302,3 +7302,57 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Error notifications stay in `AnalysisState` — they are identical for both tabs, depend only on the generic `error` and `tokenLimitReached` props, and would be pure duplication if moved out
 - `#state` slot name (not `#idle`) — it is the non-loading, non-result state bucket; `idle` would be misleading when it also covers situations like the min-campaigns constraint which sets `status: 'idle'` with an error code
 - `min-campaigns` in BUDGET_SEQUENCE only — it is a budget-optimizer-specific constraint; the summary tab has no minimum campaign requirement
+
+
+## [#359] Show date in formattedCacheTime
+**Type:** fix
+
+**Summary:** Updated `formattedCacheTime` in both tab orchestrators to include the date alongside the time.
+
+**Brainstorming:** The timestamp was formatted with `toLocaleTimeString` which only rendered the time (e.g. "14:30:00"). Adding the date makes it unambiguous when a cached result was generated across sessions or after midnight. Switching to `toLocaleString` with explicit day/month/year options keeps the same locale and format style.
+
+**Prompt:** update formattedCacheTime to show date too
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — replaced `toLocaleTimeString` with `toLocaleString` adding `day: "2-digit"`, `month: "short"`, `year: "numeric"` options
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — same change
+
+**Key decisions & why:**
+- `month: "short"` — produces "26 Apr 2026, 14:30:00" which is compact and unambiguous without the verbosity of a full month name
+
+
+## [#360] Extract AnalysisResponseMeta shared component
+**Type:** refactor
+
+**Summary:** Extracted the response meta row (generated-at timestamp, model name, AI disclaimer, stale-result notice) into a dumb shared component `AnalysisResponseMeta.vue`, used by both tab orchestrators in place of their inline meta markup.
+
+**Brainstorming:** Both orchestrators displayed the same meta information in different markup styles — BudgetOptimizationAnalysis used a `<div class="response-meta">` with `<p>` tags and inline Tailwind; ExecutiveSummaryAnalysis had already been updated to the MetaRow/MetaItem format. Extracting to a shared dumb component removes the duplication, enforces the MetaRow format consistently across both tabs, and reduces each orchestrator's template. The component takes three props: `formattedTime`, `modelDisplayName`, and `notice` — all resolved in the parent so the component has no message-lookup dependencies. ExecutiveSummaryAnalysis also had leftover unused imports from before AnalysisHeader was extracted (`MagicWandIcon`, `Button`, `SectionHeaderLayout`, `AiAnalysisNoticeCode`) which were cleaned up, and the hardcoded dev `noticeEntry` was restored to the real `ANALYSIS_NOTICE_MESSAGES` lookup.
+
+**Prompt:** Extract the MetaRow response details block into a dumb component in the shared folder and use it for budget analysis too. Clean up unused imports. Maintain the format of the updated message.
+
+**What was built / What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue` — new dumb component; props: `formattedTime: string|null`, `modelDisplayName?: string|null`, `notice?: {title,message}|null`; renders a `MetaRow class="divider tiny italic text-typography-muted py-3"` with time+model MetaItem, AI disclaimer MetaItem, and conditional notice MetaItem
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — replaced inline MetaRow block with `<AnalysisResponseMeta>`; removed unused imports (`MagicWandIcon`, `Button`, `SectionHeaderLayout`, `AiAnalysisNoticeCode`, `MetaRow`, `MetaItem`); restored real `noticeEntry` computed from `ANALYSIS_NOTICE_MESSAGES`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — replaced `response-meta` div block with `<AnalysisResponseMeta>`; added import
+
+**Key decisions & why:**
+- `notice` prop typed as `{ title: string; message: string } | null` rather than `AiAnalysisNotice` — the component only needs the resolved display strings, not the code; keeps it free of analysis-domain type dependencies
+- Notice rendered as `{message} ({title})` inline in a single MetaItem — matches the MetaRow divider format where each item is a short phrase; splitting into two MetaItems would add an extra divider separator for what is one logical piece of information
+
+
+## [#361] Move formatting and notice lookup into AnalysisResponseMeta
+**Type:** refactor
+
+**Summary:** Moved `formattedCacheTime` and `noticeEntry` logic from both orchestrators into `AnalysisResponseMeta`, which now accepts a raw `timestamp` and `AiAnalysisNotice` and handles all display derivation internally.
+
+**Brainstorming:** Both orchestrators were doing the same two derivations — timestamp formatting and notice code→message lookup — before passing them as strings to `AnalysisResponseMeta`. Since the component owns the display, it should own the derivation too. The orchestrators now pass raw store values (`response.timestamp`, `notice`) and the component is self-contained.
+
+**Prompt:** formattedTime should happen in the component — it should accept a date and perform the formatting once. Also move noticeEntry mapping there.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue` — prop `formattedTime: string|null` replaced with `timestamp: number|null`; added `AiAnalysisNotice` type and `ANALYSIS_NOTICE_MESSAGES` import; `notice` prop now typed as `AiAnalysisNotice|null`; `formattedTime` and `noticeEntry` are internal computeds
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — removed `formattedCacheTime` and `noticeEntry` computeds; removed `ANALYSIS_NOTICE_MESSAGES` import; template updated to `:timestamp="response.timestamp ?? null"` and `:notice="notice"`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — same removals; `ANALYSIS_NOTICE_MESSAGES` import dropped (only `ANALYSIS_ERROR_MESSAGES` remains for min-campaigns); template updated to match
+
+**Key decisions & why:**
+- `timestamp ?? null` at the call site — `response.timestamp` is `number | undefined`; the prop is typed `number | null` so the nullish coalescing normalises the undefined case without changing the component's type contract
