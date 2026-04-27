@@ -11,7 +11,7 @@
   // --color-surface-2: 13 26 58;
   // --color-surface-3: 16 30 65;
 
-  --color-surface-0: 7 9 19; /* absolute base (secondary) */
+  --color-surface-0: 14 16 34; /* absolute base (secondary) */
   --color-surface-0h: 10 16 38; /* deep base / app background */
 
   --color-surface-1: 13 20 42; /* main surfaces (panels) */
@@ -34,6 +34,7 @@
   --color-border-subtle: 26 38 68; /* cards / inputs */
   --color-border: 30 42 74; /* DEFAULT (#1e2a4a) */
   --color-border-strong: 38 52 92; /* focus / emphasis */
+  --color-border-darker: 14 16 34;
 
   /* ─── Base text ───────────────────────── */
   --color-text: var(--neutral-100);

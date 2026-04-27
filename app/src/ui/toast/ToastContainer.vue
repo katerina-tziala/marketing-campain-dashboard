@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useToastStore } from '@/stores/toast.store'
-import ToastNotification from './ToastNotification.vue'
+import { useToastStore } from "@/stores/toast.store";
+import ToastNotification from "./ToastNotification.vue";
 
-const toastStore = useToastStore()
+const toastStore = useToastStore();
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="toast-container" aria-label="Notifications">
+    <div class="toast-container">
       <TransitionGroup name="toast" tag="div" class="toast-list">
         <ToastNotification
           v-for="toast in toastStore.toasts"
@@ -29,7 +29,7 @@ const toastStore = useToastStore()
 .toast-list {
   @apply flex flex-col gap-3 items-start;
 }
- 
+
 .toast-enter-active,
 .toast-leave-active {
   @apply transition-opacity transition-transform duration-300 ease-in-out;

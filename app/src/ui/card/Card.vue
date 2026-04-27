@@ -33,11 +33,11 @@
     gap-3
     text-sm
     text-typography-muted
-    bg-surface;
+    bg-surface
+    border-darker;
 
-    :slotted(h5) {
-      @apply font-medium text-typography-primary-light leading-5; 
-    }
+  :slotted(h5) {
+    @apply font-medium text-typography-primary-light leading-5;
+  }
 }
- 
 </style>

@@ -111,6 +111,7 @@ export default {
         faint: "rgb(var(--color-border-faint) / <alpha-value>)",
         subtle: "rgb(var(--color-border-subtle) / <alpha-value>)",
         strong: "rgb(var(--color-border-strong) / <alpha-value>)",
+        darker: "rgb(var(--color-border-darker) / <alpha-value>)",
       },
     },
   },
