@@ -55,7 +55,7 @@ function handleSummarize(): void {
     <template #loading>Generating summary…</template>
 
     <template #state>
-      <p class="text-sm text-typography py-2 leading-5">
+      <p class="text-sm text-typography py-2 leading-5 tracking-wide">
         Generate an AI summary for the current portfolio view, including
         performance context and recommended next actions
       </p>

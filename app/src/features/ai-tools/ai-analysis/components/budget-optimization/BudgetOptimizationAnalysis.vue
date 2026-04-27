@@ -63,7 +63,7 @@ function handleAnalyze(): void {
         </template>
         {{ minCampaignsEntry.message }}
       </Notification>
-      <p v-else class="text-sm text-typography py-2 leading-5">
+      <p v-else class="text-sm text-typography py-2 leading-5 tracking-wide">
         Get budget reallocation recommendations based on campaign performance
       </p>
     </template>
