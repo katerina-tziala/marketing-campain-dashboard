@@ -2,13 +2,17 @@
 import { ref, computed } from 'vue'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import { Table, TableHeader, CheckIcon, Badge } from '@/ui'
+import { Table, TableHeader, AlertTriangleIcon, CheckIcon, ClockIcon, CloseIcon, Badge, RadioItem } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 import { formatCurrency, formatNumber } from '@/shared/utils/formatters'
 
-const props = defineProps<{
-  duplicateGroups: CampainDataDuplicateGroup[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    duplicateGroups: CampainDataDuplicateGroup[]
+    requiredSelection?: boolean
+  }>(),
+  { requiredSelection: true },
+)
 
 const emit = defineEmits<{
   change: [selectedCampaigns: Campaign[]]
@@ -55,6 +59,10 @@ const sortedGroups = computed(() =>
 
 const selections = ref<Map<string, number>>(new Map())
 
+const needsAttentionMode = computed(
+  () => props.requiredSelection === true && selections.value.size === 0,
+)
+
 function isSelected(campaignName: string, rowId: number): boolean {
   return selections.value.get(campaignName) === rowId
 }
@@ -63,17 +71,29 @@ function isGroupSelected(campaignName: string): boolean {
   return selections.value.has(campaignName)
 }
 
-function selectRow(campaignName: string, rowId: number): void {
-  selections.value = new Map(selections.value).set(campaignName, rowId)
+function emitSelections(map: Map<string, number>): void {
   const selected: Campaign[] = []
   for (const group of props.duplicateGroups) {
-    const selectedRowId = selections.value.get(group.campaignName)
+    const selectedRowId = map.get(group.campaignName)
     if (selectedRowId !== undefined) {
       const entry = group.rows.find((r) => r.rowId === selectedRowId)
       if (entry) selected.push(entry)
     }
   }
   emit('change', selected)
+}
+
+function selectRow(campaignName: string, rowId: number): void {
+  const next = new Map(selections.value).set(campaignName, rowId)
+  selections.value = next
+  emitSelections(next)
+}
+
+function clearGroupSelection(campaignName: string): void {
+  const next = new Map(selections.value)
+  next.delete(campaignName)
+  selections.value = next
+  emitSelections(next)
 }
 </script>
 
@@ -89,10 +109,38 @@ function selectRow(campaignName: string, rowId: number): void {
     <tbody>
       <template v-for="group in sortedGroups" :key="group.campaignName">
         <tr class="group-header">
-          <td colspan="8" :class="{ selected: isGroupSelected(group.campaignName) }">
-            <span class="w-full flex items-center justify-start gap-2">
-              <CheckIcon class="group-check-icon" />
-              <span>{{ group.campaignName }} ({{ group.rows.length }})</span>
+          <td colspan="8">
+            <span class="group-title-row">
+              <span class="group-title-text">{{ group.campaignName }} ({{ group.rows.length }})</span>
+              <button
+                v-if="isGroupSelected(group.campaignName)"
+                type="button"
+                class="group-reset-btn"
+                aria-label="Clear selection"
+                @click.stop="clearGroupSelection(group.campaignName)"
+              >
+                <CloseIcon />
+              </button>
+              <Badge
+                :class="
+                  isGroupSelected(group.campaignName)
+                    ? 'success'
+                    : needsAttentionMode
+                      ? 'danger'
+                      : 'warning'
+                "
+              >
+                <CheckIcon v-if="isGroupSelected(group.campaignName)" class="group-badge-icon" />
+                <AlertTriangleIcon v-else-if="needsAttentionMode" class="group-badge-icon" />
+                <ClockIcon v-else class="group-badge-icon" />
+                {{
+                  isGroupSelected(group.campaignName)
+                    ? 'Resolved'
+                    : needsAttentionMode
+                      ? 'Needs Attention'
+                      : 'Pending'
+                }}
+              </Badge>
             </span>
           </td>
         </tr>
@@ -104,20 +152,17 @@ function selectRow(campaignName: string, rowId: number): void {
           @click="selectRow(group.campaignName, entry.rowId)"
         >
           <td class="cell-select">
-            <span class="flex items-center justify-center">
-              <input
-                type="radio"
-                :name="`group-${group.campaignName}`"
-                :value="entry.rowId"
-                :checked="isSelected(group.campaignName, entry.rowId)"
-                :aria-label="`Select row ${entry.rowId}`"
-                @change="selectRow(group.campaignName, entry.rowId)"
-              />
-            </span>
+            <RadioItem
+              :name="`group-${group.campaignName}`"
+              :value="entry.rowId"
+              :checked="isSelected(group.campaignName, entry.rowId)"
+              :aria-label="`Select row ${entry.rowId}`"
+              @change="selectRow(group.campaignName, entry.rowId)"
+            />
           </td>
           <td>{{ entry.rowId }}</td>
           <td>
-            <Badge class="info">{{ entry.channel }}</Badge>
+            <Badge class="info dimmed">{{ entry.channel }}</Badge>
           </td>
           <td>{{ formatCurrency(entry.budget) }}</td>
           <td>{{ formatNumber(entry.clicks) }}</td>
@@ -138,46 +183,48 @@ function selectRow(campaignName: string, rowId: number): void {
     font-semibold
     tracking-wide
     text-typography-subtle
-    // bg-surface-secondary
     border-t
-    border-b 
-    items-center
-    gap-2;
+    border-b;
 
-  .group-check-icon {
-    @apply text-base text-typography-subtle shrink-0;
+  .group-reset-btn {
+    @apply flex items-center justify-center shrink-0
+      w-5 h-5 rounded
+      text-typography-subtle
+      hover:text-typography-soft hover:bg-primary/10
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-lighter
+      transition-colors cursor-pointer;
   }
+}
 
-  &.selected {
-    @apply text-primary-light;
+.group-title-row {
+  @apply flex flex-wrap items-center gap-2;
+}
 
-    .group-check-icon {
-      @apply text-primary-light;
-    }
-  }
+.group-title-text {
+  @apply min-w-0 break-words;
+}
+
+.group-badge-icon {
+  @apply text-sm shrink-0;
 }
 
 .cell-select {
   @apply text-center;
-
-  input[type='radio'] {
-    @apply inline-block cursor-pointer accent-indigo-500 w-5 h-5 m-0;
-  }
 }
 
 .row-selectable {
   @apply cursor-pointer;
 
-  &:hover {
-    @apply bg-primary-deep/35;
-  }
+  // &:hover {
+  //   @apply bg-primary-deep/35;
+  // }
 
-  &.row-selected {
-    @apply bg-primary-muted;
+  // &.row-selected {
+  //   @apply bg-primary-muted;
 
-    td {
-      @apply font-semibold;
-    }
-  }
+  //   td {
+  //     @apply font-semibold;
+  //   }
+  // }
 }
 </style>

@@ -1,80 +1,73 @@
 <template>
   <span class="badge">
-    <slot />
+    <span class="badge-body">
+      <slot />
+    </span>
   </span>
 </template>
 
 <style lang="scss" scoped>
 .badge {
-  @apply rounded-full
-    border
-    inline-flex
-    items-center
-    justify-start
-    capitalize
-    gap-y-1
-    py-1
-    px-2
-    text-xs
-    font-semibold
-    text-center
-    leading-4
-    text-primary-lighter
-    bg-primary/10
-    border-primary-lighter/35;
+  @apply rounded-full inline-flex bg-primary-ink;
 
-  &.success {
-    @apply border-success/35 bg-success/10 text-success;
+  .badge-body {
+    @apply border inline-flex items-center justify-start capitalize gap-1
+      py-1 px-2 text-xs font-semibold leading-4 rounded-full
+      text-primary-lighter bg-primary/10 border-primary-lighter/25;
   }
 
-  &.warning {
-    @apply border-warning/35 bg-warning/10 text-warning;
+  &.success .badge-body {
+    @apply bg-success/10 border-success/25 text-success-light;
   }
 
-  &.danger {
-    @apply border-danger-lighter/35 bg-danger-lighter/10 text-danger-light;
+  &.warning .badge-body {
+    @apply bg-warning-light/10 border-warning-light/25 text-warning-light;
   }
 
-  &.info {
-    @apply border-info/35 bg-info/10 text-info-light;
+  &.danger .badge-body {
+    @apply bg-danger/10 border-danger/25 text-danger-light;
   }
 
-  &.opportunity {
-    @apply border-primary-lighter/35 bg-primary-lighter/10 text-primary-lighter;
+  &.info .badge-body {
+    @apply bg-info/10 border-info/25 text-info-light;
   }
 
-  &.rounded-rectangle {
+  &.opportunity .badge-body {
+    @apply bg-primary-lighter/10 border-primary-lighter/25 text-primary-lighter;
+  }
+
+  &.rounded-rectangle .badge-body {
     @apply rounded-md;
   }
-}
 
-.badge.rounded-rectangle-sm {
-  @apply rounded-sm;
-}
-
-.badge.text-only {
-  @apply bg-transparent border-none;
-}
-
-.badge.dimmed {
-  &.success {
-    @apply border-success-dark/30 bg-success-dark/10 text-success-dark/90;
+  &.rounded-rectangle-sm .badge-body {
+    @apply rounded-sm;
   }
 
-  &.warning {
-    @apply border-warning-dark/30 bg-warning-dark/10 text-warning-dark/90;
+  &.text-only .badge-body {
+    @apply bg-transparent border-none;
   }
 
-  &.danger {
-    @apply border-danger-lighter/30 bg-danger-lighter/10 text-danger-light/90;
-  }
+  &.dimmed {
+    &.success .badge-body {
+      @apply bg-success-dark/10 border-success-dark/25 text-success-dark/90;
+    }
 
-  &.info {
-    @apply border-info-dark/30 bg-info-dark/10 text-info/90;
-  }
+    &.warning .badge-body {
+      @apply bg-warning-dark/10 border-warning-dark/25 text-warning-dark/90;
+    }
 
-  &.opportunity {
-    @apply border-primary-light/30 bg-primary-light/10 text-primary-light/90;
+    &.danger .badge-body {
+      @apply bg-danger/10 border-danger/25 text-danger-light/90;
+    }
+
+    &.info .badge-body {
+      @apply bg-info-dark/10 border-info-dark/25 text-info/90;
+    }
+
+    &.opportunity .badge-body {
+      @apply bg-primary-light/10 border-primary-light/25 text-primary-light/90;
+    }
   }
 }
 </style>

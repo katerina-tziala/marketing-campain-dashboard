@@ -8397,3 +8397,191 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - No pseudo-element needed: transparent `bg-*/10` blends naturally with the parent surface, exactly as Notification.vue demonstrates
 - Default badge now has `bg-primary/10` so an unstyled badge is still visually present
+
+
+## [#48] RadioItem — custom single radio input component
+**Type:** feature
+
+**Summary:** Created a `RadioItem` UI component — a styled single radio input — and used it in `CampainDuplicationsTable` to replace the native browser-default input.
+
+**Brainstorming:** `RadioToggle` is a pill-style group that owns its options internally. The duplications table needed an individually-placed radio that could be dropped into a table cell without wrapper markup. The pattern is the same as RadioToggle: hidden `sr-only` native input + custom visual span, with CSS adjacent-sibling selectors for checked/hover/focus states.
+
+**Prompt:** Create a single radio item component in the forms folder and implement it in the duplications table.
+
+**What was built:**
+- `app/src/ui/forms/RadioItem.vue` — new component; hidden native input + `.radio-indicator` span with `::before` inner dot; checked/hover/focus-visible/disabled states via adjacent-sibling CSS
+- `app/src/ui/index.ts` — added `RadioItem` export
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — replaced native `<input type="radio">` with `<RadioItem>`; removed `input[type='radio']` rule from `.cell-select` scoped style
+- `CLAUDE.md` — added `RadioItem.vue` to architecture; updated `index.ts` barrel description
+
+**Key decisions & why:**
+- `::before` pseudo-element for inner dot: cleaner than a nested `<span>` for a purely decorative indicator
+- Hover on `input:hover + .radio-indicator`: since the input is a descendant of the `<label>`, hovering the label propagates `:hover` to the input, making the adjacent-sibling selector reliable without JavaScript
+- `value: string | number`: matches both string option groups and numeric rowId usage in the table
+
+
+## [#49] RadioItem — primary color palette, error state, aria-label
+**Type:** update
+
+**Summary:** Replaced placeholder border color with a full primary color scheme across all states, added an `error` prop with danger token variants, and confirmed `aria-label` sits on the native input for correct screen reader association.
+
+**Brainstorming:** The indicator needed a clear visual hierarchy: subtle default → brighter hover → solid checked → brighter checked+hover. The error state mirrors the same structure with danger tokens. `aria-label` belongs on the hidden `<input>` (not the wrapping `<label>`) because the input's accessible name is computed from its own attributes, not from a label with no text content.
+
+**Prompt:** Adjust RadioItem to use primary color combinations for all states, add an error state, and ensure aria-label can be passed.
+
+**What changed:**
+- `app/src/ui/forms/RadioItem.vue` — default border `border-primary-soft`; checked: `border-primary-light bg-primary-deep/30` + dot `bg-primary-light`; checked+hover: `border-primary bg-primary-deep/50` + dot `bg-primary`; hover: `border-primary-lighter`; focus-visible: `ring-primary-lighter`; added `error` prop — error state uses `border-danger-lighter` (default/checked) → `border-danger` (hover); `aria-label` kept on `<input>` not `<label>`
+- `CLAUDE.md` — updated RadioItem architecture description
+
+**Key decisions & why:**
+- `bg-primary-deep/30` fill on checked indicator: gives the circle a subtle tinted background that reinforces selection without being too heavy
+- `aria-label` on `<input>`: the wrapping label has no text content so the input's accessible name must come from its own `aria-label` attribute — putting it on the outer `<label>` element does not propagate
+
+
+## [#50] RadioItem — smaller indicator, bg fill on hover and focus
+**Type:** update
+
+**Summary:** Reduced the radio indicator from `w-5 h-5` to `w-4 h-4` (dot from `w-2.5` to `w-2`), and added a `bg-primary/10` fill on unchecked hover and focus-visible so the interactive state is more distinct than a border-only change.
+
+**Brainstorming:** A border-only hover is subtle — adding a background tint makes the affordance clearer. Focus-visible now mirrors hover (border + bg) plus the ring, giving a consistent visual weight. The error variants follow the same pattern with danger tokens.
+
+**Prompt:** Make the radio item a bit smaller and add a hover and focus state.
+
+**What changed:**
+- `app/src/ui/forms/RadioItem.vue` — indicator `w-4 h-4`, dot `w-2 h-2`; unchecked hover adds `bg-primary/10`; focus-visible adds `bg-primary/10` alongside existing ring; error hover adds `bg-danger/10`; error focus adds `bg-danger/10` + `ring-danger-lighter`
+
+**Key decisions & why:**
+- Background fill on hover/focus (not just border): border-only changes are easy to miss at small sizes; a tinted bg makes the state legible without being loud
+
+
+## [#51] CampainDuplicationsTable — reset group selection button
+**Type:** feature
+
+**Summary:** Added a per-group reset button in the group header row that clears that group's selection and re-emits the updated selection list.
+
+**Brainstorming:** The button only appears when the group has a selection (`v-if="isGroupSelected"`), keeping the header clean otherwise. `selectRow` and `clearGroupSelection` now share a private `emitSelections` helper to avoid duplicating the loop. `@click.stop` prevents the click from accidentally bubbling.
+
+**Prompt:** Add a button to reset the selection of a group in CampainDuplicationsTable.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — added `CloseIcon` import; extracted shared `emitSelections(map)` helper; added `clearGroupSelection(campaignName)` (deletes key from map, calls emitSelections); group header layout changed to `justify-between` with reset button on the right; scoped `.group-reset-btn` style
+
+**Key decisions & why:**
+- `v-if="isGroupSelected"`: no button rendered until there's something to clear — avoids a permanently visible but inactive control
+- Extracted `emitSelections`: both `selectRow` and `clearGroupSelection` needed identical emit logic; shared helper removes duplication
+
+
+## [#421] Group header badge + text wrapping in CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Added Pending/Resolved badge to each duplicate group header, removed CheckIcon, and made the title text wrap on small screens while keeping the badge and reset button always visible.
+
+**Brainstorming:** The badge state maps directly to `isGroupSelected` — no new state needed. The title cell uses `flex-wrap` so text folds on narrow containers; the badge and sticky reset cell sit outside the wrapping flow so they always stay pinned. Removing CheckIcon simplifies the header — the badge now carries all status signalling.
+
+**Prompt:** Add a badge next to the group header: pending → warning, resolved → success. Remove CheckIcon. Make the title text wrap on smaller screens while keeping the badge and reset button always visible.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — removed `CheckIcon` import; replaced icon+span in header cell with `.group-title-row` (flex-wrap) containing `.group-title-text` (break-words) + `Badge` toggling `success`/`warning` and "Resolved"/"Pending" label; removed `selected` class binding and associated SCSS blocks; added `.group-title-row` and `.group-title-text` scoped styles
+
+**Key decisions & why:**
+- `flex-wrap` on `.group-title-row`: lets the text line fold under the badge on narrow cells without pushing the badge off-screen
+- Badge on the title cell, reset button on the separate sticky cell: keeps the two concerns independent — text+badge wraps freely; the sticky cell is always pinned right regardless of wrapping
+- Removed `.selected` SCSS class from header `<td>`: color signalling is now fully delegated to the badge, so the text no longer needs a separate green state
+
+
+## [#422] Add CheckIcon inside Resolved badge in CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Added a CheckIcon inside the "Resolved" badge in the group header to give the resolved state a visual icon alongside the label.
+
+**Brainstorming:** Badge uses a default slot so the icon slots in naturally before the text. The icon only renders when the group is resolved (`v-if="isGroupSelected"`). A scoped `.group-badge-icon` class constrains it to `text-sm` so it matches the badge's `text-xs` line height without overflowing.
+
+**Prompt:** Add check icon for resolved inside badge.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — re-added `CheckIcon` import; added `<CheckIcon v-if="isGroupSelected" class="group-badge-icon" />` before the badge label text; added `.group-badge-icon { @apply text-sm shrink-0; }` scoped style
+
+**Key decisions & why:**
+- `v-if` on icon only (not the whole badge): the badge itself is always present; only the icon appearance is conditional on resolved state
+- `text-sm` on icon: SVG icons inherit `font-size` for their `1em` dimensions — one step above the badge's `text-xs` keeps it visually balanced without overflowing the badge height
+
+
+## [#423] Add ClockIcon to pending badge in CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Created a new ClockIcon component and added it to the Pending badge in the duplicate group header, mirroring the CheckIcon already shown in the Resolved badge.
+
+**Brainstorming:** No clock icon existed in the icon library so one was created following the same SVG pattern as the other icons. The icon slots into the badge default slot with `v-else` paired against the existing `v-if` on CheckIcon.
+
+**Prompt:** Add a clock icon in pending badge.
+
+**What changed:**
+- `app/src/ui/icons/ClockIcon.vue` — new SVG clock icon (circle + hour/minute hand polyline), same style conventions as existing icons
+- `app/src/ui/icons/index.ts` — added `ClockIcon` export
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — added `ClockIcon` import; added `<ClockIcon v-else class="group-badge-icon" />` in the pending branch of the badge
+
+**Key decisions & why:**
+- `v-else` paired with the existing `v-if` on CheckIcon: cleanest conditional — exactly one icon renders per badge state, no extra computed needed
+
+
+## [#424] Refactor Badge to two-layer structure matching Notification
+**Type:** refactor
+
+**Summary:** Refactored Badge to use the same outer-wrapper + inner-body structure as Notification, with matching color token ratios (bg/10, border/25) and all variant/modifier classes cascaded from the outer wrapper into the inner body.
+
+**Brainstorming:** Notification uses `.notification` (outer, just rounding) + `.notification-body` (inner, carries bg/border/color). Badge now mirrors this exactly: `.badge` (outer, inline-flex + rounded-full) + `.badge-body` (inner, all visual styles). Border opacity aligned to /25 to match Notification. All existing modifier classes (dimmed, rounded-rectangle, text-only) ported unchanged, now targeting `.badge-body` via nested selectors.
+
+**Prompt:** Implement Badge like Notification — a wrapper with a darker background exactly like Notification.
+
+**What changed:**
+- `app/src/ui/Badge.vue` — added inner `.badge-body` span inside template; moved all bg/border/color/padding/typography styles from `.badge` to `.badge-body`; outer `.badge` keeps only `inline-flex rounded-full`; all variant and modifier selectors now target `.badge-body` via nesting; border opacity unified to /25 to match Notification pattern
+
+**Key decisions & why:**
+- Inner span for body: exactly mirrors Notification's `.notification-body` — outer provides shape, inner provides color/background
+- Border /25 instead of /35: aligns with Notification's token ratios throughout
+- All modifier classes remain on the outer `.badge`: call sites don't change — `<Badge class="success dimmed">` still works
+
+
+## [#425] Move reset button inline, remove sticky column in CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Moved the clear-selection button into the group title row (before the badge), removed the separate sticky td, and restored the reset button styles.
+
+**Prompt:** Add the x button before the badge, remove sticky column.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — merged separate sticky `group-reset-cell` td back into the main cell (now `colspan="8"`); moved `group-reset-btn` button inside `.group-title-row` before the Badge; restored `.group-reset-btn` scoped styles (were commented out); removed commented-out `.group-reset-cell` dead code
+
+**Key decisions & why:**
+- `colspan="8"` restores full span now that there is no separate trailing cell
+- Button before badge in DOM order: visually sits between the name and the status badge — clear grouping of action then state
+
+
+## [#426] Add requiredSelection prop and Needs Attention badge state to CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Added `requiredSelection` prop to the table so groups show a "Needs Attention" danger badge when a selection is mandatory but nothing has been chosen yet; once any row is picked the remaining unresolved groups revert to "Pending".
+
+**Prompt:** Add requiredSelection prop — true when !hasValidCampaigns. Unselected groups show Needs Attention (danger + AlertTriangleIcon) when in that mode; once one item is selected they become Pending; if all cleared they go back to Needs Attention. Pass from ResolveDuplicationsStep.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — added `AlertTriangleIcon` import; added `requiredSelection?: boolean` prop; added `needsAttentionMode` computed (`requiredSelection === true && selections.size === 0`); updated badge to three-way logic: selected → success+CheckIcon+"Resolved", needsAttentionMode → danger+AlertTriangleIcon+"Needs Attention", else → warning+ClockIcon+"Pending"
+- `app/src/features/data-transfer/components/ResolveDuplicationsStep.vue` — passes `:required-selection="validCampaigns.length === 0"` to CampainDuplicationsTable
+
+**Key decisions & why:**
+- `needsAttentionMode` resets automatically when `selections.size > 0`: the computed derives from reactive Map size so flipping from 0→1 or back 1→0 selections updates all badges without extra logic
+- `requiredSelection === true` guard (not just truthiness): prop is optional and defaults to undefined — explicit true check avoids treating undefined as falsy-but-present
+
+
+## [#427] Add default value for requiredSelection prop in CampainDuplicationsTable
+**Type:** update
+
+**Summary:** Switched from bare `defineProps` to `withDefaults` to give `requiredSelection` an explicit default of `false`.
+
+**Prompt:** Add default value in table for requiredSelection.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — wrapped `defineProps` with `withDefaults`; `requiredSelection` defaults to `false`
+
+**Key decisions & why:**
+- `withDefaults` over the `=== true` guard already in the computed: the guard stays valid but an explicit default makes the prop contract self-documenting and removes any ambiguity about the `undefined` case

@@ -44,7 +44,11 @@ function handleProceed(): void {
     <p class="resolve-indicator" :class="{ resolved: allResolved }">
       <span>Resolve duplicates ({{ resolvedCount }}/{{ duplicateGroups.length }})</span>
     </p>
-    <CampainDuplicationsTable :duplicate-groups="duplicateGroups" @change="onSelectionChange" />
+    <CampainDuplicationsTable
+      :duplicate-groups="duplicateGroups"
+      :required-selection="validCampaigns.length === 0"
+      @change="onSelectionChange"
+    />
   </div>
   <!-- Footer -->
   <div class="modal-footer">

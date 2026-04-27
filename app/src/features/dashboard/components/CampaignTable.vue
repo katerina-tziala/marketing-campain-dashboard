@@ -82,19 +82,19 @@ const COLUMNS: DataTableColumn[] = [
       <tr v-for="c in sortedCampaigns" :key="c.campaign" class="data-table-row">
         <td class="left-alignment">{{ c.campaign }}</td>
         <td>
-          <Badge class="info channel-badge">{{ c.channel }}</Badge>
+          <Badge class="info dimmed">{{ c.channel }}</Badge>
         </td>
-        <td class=" ">{{ formatCurrency(c.budget) }}</td>
-        <td class=" ">{{ formatCompactNumber(c.clicks) }}</td>
-        <td class=" ">
+        <td>{{ formatCurrency(c.budget) }}</td>
+        <td>{{ formatCompactNumber(c.clicks) }}</td>
+        <td>
           {{ formatCompactNumber(c.impressions) }}
         </td>
-        <td class=" ">{{ formatPercentage(c.ctr) }}</td>
-        <td class=" ">{{ formatNumber(c.conversions) }}</td>
-        <td class=" ">{{ formatPercentage(c.cvr) }}</td>
-        <td class=" ">{{ formatCurrency(c.revenue) }}</td>
-        <td class=" ">{{ formatCurrency(c.cpa, 2) }}</td>
-        <td class=" ">
+        <td>{{ formatPercentage(c.ctr) }}</td>
+        <td>{{ formatNumber(c.conversions) }}</td>
+        <td>{{ formatPercentage(c.cvr) }}</td>
+        <td>{{ formatCurrency(c.revenue) }}</td>
+        <td>{{ formatCurrency(c.cpa, 2) }}</td>
+        <td>
           <RoiIndicator :value="c.roi" />
         </td>
       </tr>

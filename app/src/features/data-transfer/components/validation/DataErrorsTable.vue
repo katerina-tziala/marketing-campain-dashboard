@@ -35,7 +35,7 @@ const sortedErrors = computed(() =>
 </script>
 
 <template>
-  <Table>
+  <Table class="stripped-even">
     <TableHeader
       :columns="COLUMNS"
       class="sticky-header"

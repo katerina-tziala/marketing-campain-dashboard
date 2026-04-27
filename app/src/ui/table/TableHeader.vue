@@ -143,16 +143,9 @@ th {
 }
 
 .table-sortable-header {
-  @apply border-b bg-surface-lift;
-
   &.left-alignment > .sortable-button {
     @apply justify-start pl-2.5;
   }
-}
-
-.table-header,
-.table-sortable-header {
-  @apply bg-surface-lift;
 }
 
 </style>
