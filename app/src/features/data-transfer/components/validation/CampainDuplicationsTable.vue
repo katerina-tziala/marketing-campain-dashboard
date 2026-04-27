@@ -8,13 +8,13 @@ import {
   AlertTriangleIcon,
   CheckIcon,
   ClockIcon,
-  CloseIcon,
   Badge,
   Button,
   RadioItem,
 } from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { formatCurrency, formatNumber } from "@/shared/utils/formatters";
+import { useSort } from "@/shared/composables/useSort";
 
 const props = withDefaults(
   defineProps<{
@@ -30,17 +30,7 @@ const emit = defineEmits<{
 
 type SortKey = "rowId" | "conversions" | "revenue";
 
-const sortKey = ref<SortKey>("rowId");
-const sortDir = ref<"asc" | "desc">("asc");
-
-function toggleSort(key: SortKey) {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortDir.value = "asc";
-  }
-}
+const { sortKey, sortDir, toggleSort } = useSort<SortKey>("rowId");
 
 function handleSort(key: string): void {
   toggleSort(key as SortKey);

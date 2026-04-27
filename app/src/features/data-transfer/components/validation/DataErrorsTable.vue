@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed } from "vue";
+import { useSort } from "@/shared/composables/useSort";
 import type { CampainDataRowError } from "@/features/data-transfer/types";
 import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
 import { Table, TableHeader, Badge } from "@/ui";
@@ -9,11 +10,7 @@ const props = defineProps<{
   errors: CampainDataRowError[];
 }>();
 
-const sortDir = ref<"asc" | "desc">("asc");
-
-function toggleSort() {
-  sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-}
+const { sortDir, toggleSort } = useSort<string>("row");
 
 const COLUMNS: DataTableColumn[] = [
   {

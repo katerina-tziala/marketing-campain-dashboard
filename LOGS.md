@@ -8618,3 +8618,40 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Three Badge elements over a single one with dynamic bindings: each state is readable in isolation with no ternaries or object lookups; Vue's v-if/v-else-if/v-else chain guarantees only one renders and each check runs once
+
+
+## [#430] Extract useSort composable and apply to all sortable tables
+**Type:** refactor
+
+**Summary:** Extracted repeated sort state (sortKey, sortDir, toggleSort) into a shared `useSort<T>` composable and replaced inline implementations in all three sortable tables.
+
+**Brainstorming:** Three tables each owned identical sort state and toggle logic with minor variations (default key, default direction). A generic composable with a `defaultDir` param covers all cases without branching. CampaignTable resets to "desc" on key change; the others reset to "asc" — handled by passing defaultDir through to the new-key branch.
+
+**Prompt:** Implement useSort under shared/composables and update all tables sorting.
+
+**What was built / What changed:**
+- `app/src/shared/composables/useSort.ts` — new composable; `useSort<T extends string>(defaultKey, defaultDir?)` returns `{ sortKey, sortDir, toggleSort }`; toggleSort flips dir on same key, resets to defaultDir on new key
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — replaced inline sort state/functions with `useSort<SortKey>("rowId")`
+- `app/src/features/dashboard/components/CampaignTable.vue` — replaced inline sort state/functions with `useSort<SortField>("revenue", "desc")`; aliased `sortKey` → `sortField` at destructure; added `handleSort` wrapper for template string cast
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — replaced inline sort state/function with `useSort<string>("row")`; widened to `string` so `toggleSort` is directly assignable to the `@sort` handler
+
+**Key decisions & why:**
+- `defaultDir` reused for new-key reset: CampaignTable resets to "desc" on column change — passing defaultDir through covers this without an extra param
+- `useSort<string>` for DataErrorsTable: only one sortable column so key tracking is irrelevant; widening to string avoids a cast wrapper
+- `handleSort` wrapper kept in multi-column tables: TableHeader emits `string`, composable toggleSort is typed to `T` — cast wrapper keeps the type boundary explicit
+
+
+## [#431] Sync CLAUDE.md with current project state
+**Type:** update
+
+**Summary:** Updated CLAUDE.md architecture entries for Badge.vue, CampaignTable, DataErrorsTable, and CampainDuplicationsTable to reflect all changes made in this session.
+
+**Brainstorming:** Several entries were written before the Badge refactor, useSort extraction, and group-header badge redesign. Each needed to reflect the actual current implementation rather than the original description.
+
+**Prompt:** Sync your Claude files with the project.
+
+**What changed:**
+- `CLAUDE.md` — Badge.vue: updated to describe two-layer structure, class-based variants, dimmed/rounded-rectangle/text-only modifiers, removed incorrect "variant prop" reference; CampaignTable: added useSort usage and handleSort wrapper; DataErrorsTable: replaced inline sort description with useSort<string>; CampainDuplicationsTable: full rewrite to cover requiredSelection prop, useSort, needsAttentionMode, v-if/v-else-if/v-else badge states, destructive Button
+
+**Key decisions & why:**
+- All four entries rewritten from scratch rather than patched: the old descriptions referenced removed patterns (inline sort state, single Badge with ternaries, variant prop) that would mislead future reads

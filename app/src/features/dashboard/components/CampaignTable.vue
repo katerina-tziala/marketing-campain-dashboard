@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import type { CampaignPerformance } from "@/shared/types/campaign";
 import { TableHeader, Badge, Table } from "@/ui";
-import type { DataTableColumn, SortDir } from "@/ui";
+import type { DataTableColumn } from "@/ui";
+import { useSort } from "@/shared/composables/useSort";
 import {
   formatCompactNumber,
   formatCurrency,
@@ -16,16 +17,14 @@ const props = defineProps<{ campaigns: CampaignPerformance[] }>();
 
 type SortField = keyof CampaignPerformance;
 
-const sortField = ref<SortField>("revenue");
-const sortDir = ref<SortDir>("desc");
+const {
+  sortKey: sortField,
+  sortDir,
+  toggleSort,
+} = useSort<SortField>("revenue", "desc");
 
-function toggleSort(field: string) {
-  if (sortField.value === field) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortField.value = field as SortField;
-    sortDir.value = "desc";
-  }
+function handleSort(key: string): void {
+  toggleSort(key as SortField);
 }
 
 function getFieldValue(
@@ -76,7 +75,7 @@ const COLUMNS: DataTableColumn[] = [
       class="sticky-header"
       :sort-key="sortField"
       :sort-dir="sortDir"
-      @sort="toggleSort"
+      @sort="handleSort"
     />
     <tbody>
       <tr v-for="c in sortedCampaigns" :key="c.campaign" class="data-table-row">
@@ -86,17 +85,13 @@ const COLUMNS: DataTableColumn[] = [
         </td>
         <td>{{ formatCurrency(c.budget) }}</td>
         <td>{{ formatCompactNumber(c.clicks) }}</td>
-        <td>
-          {{ formatCompactNumber(c.impressions) }}
-        </td>
+        <td>{{ formatCompactNumber(c.impressions) }}</td>
         <td>{{ formatPercentage(c.ctr) }}</td>
         <td>{{ formatNumber(c.conversions) }}</td>
         <td>{{ formatPercentage(c.cvr) }}</td>
         <td>{{ formatCurrency(c.revenue) }}</td>
         <td>{{ formatCurrency(c.cpa, 2) }}</td>
-        <td>
-          <RoiIndicator :value="c.roi" />
-        </td>
+        <td><RoiIndicator :value="c.roi" /></td>
       </tr>
     </tbody>
   </Table>
