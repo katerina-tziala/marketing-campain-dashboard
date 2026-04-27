@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from "vue";
+import Button from "@/ui/Button.vue";
 import EyeIcon from "@/ui/icons/EyeIcon.vue";
 import EyeOffIcon from "@/ui/icons/EyeOffIcon.vue";
 
@@ -25,6 +26,8 @@ const hasError = computed(() => {
   if (!slots.error) return false;
   return slots.error().some((vnode) => vnode.type !== Comment);
 });
+
+const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
 </script>
 
 <template>
@@ -42,22 +45,26 @@ const hasError = computed(() => {
       :autocomplete="autocomplete"
       :disabled="disabled"
       spellcheck="false"
+      :aria-invalid="hasError ? 'true' : undefined"
+      :aria-describedby="hasError && errorId ? errorId : undefined"
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
     />
-    <button
+    <Button
+      class="text-only no-ring toggle-btn"
       type="button"
-      class="toggle-btn"
-      :aria-label="visible ? 'Hide' : 'Show'"
       :disabled="disabled"
+      :aria-label="visible ? 'Hide password' : 'Show password'"
       @click="visible = !visible"
     >
       <EyeOffIcon v-if="visible" />
       <EyeIcon v-else />
-    </button>
+    </Button>
   </div>
-  <slot name="error" />
+  <div :id="errorId">
+    <slot name="error" />
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -72,29 +79,19 @@ const hasError = computed(() => {
   }
 }
 
-.input-field {
-  @apply pr-12;
+.toggle-btn {
+  @apply absolute
+    right-0
+    w-9
+    h-[2.125rem]
+    border
+    border-transparent
+    mr-[1px]
+    rounded-l-none
+    rounded-r-md;
 }
 
-// .toggle-btn {
-//   @apply absolute
-//     right-0 w-10
-//     h-[2.25rem]
-//     border
-//     border-transparent
-//     flex
-//     items-center
-//     justify-center
-//     text-base
-//     rounded-l-none
-//     rounded-r-sm
-//     outline-none;
-
-//   &:not(:disabled) {
-//     &:focus,
-//     &:focus-visible {
-//       @apply border-primary/20 text-primary-light bg-primary/20;
-//     }
-//   }
-// }
+.input-field {
+  @apply pr-11;
+}
 </style>

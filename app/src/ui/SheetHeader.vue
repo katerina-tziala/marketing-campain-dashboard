@@ -34,8 +34,8 @@
   :slotted(h6) {
     @apply m-0
       bg-gradient-to-r
-      from-accent-lighter from-5%
-      via-info-lighter via-info-lighter via-primary-light via-primary-lighter
+      from-accent-lighter 
+      via-info-lighter via-info-lighter via-primary-lighter via-primary-lighter
       to-secondary-lighter
       bg-clip-text
       text-transparent
