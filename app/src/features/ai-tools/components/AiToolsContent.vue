@@ -4,6 +4,7 @@ import AiConnectionForm from '@/features/ai-tools/ai-connection/components/AiCon
 import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue'
 import AiAnalysis from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
 import { CloseIcon, SparklesIcon } from '@/ui/icons'
+import { Button, SheetHeader } from '@/ui'
 
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,13 +30,15 @@ const emit = defineEmits<{ close: [] }>()
 </script>
 
 <template>
-    <div class="ai-tools-header">
-      <SparklesIcon class="ai-tools-header-icon" />
-      <h2 class="ai-tools-title">AI Tools</h2>
-      <button class="btn-icon-secondary" aria-label="Close AI panel" @click="emit('close')">
-        <CloseIcon />
-      </button>
-    </div>
+    <SheetHeader>
+      <template #icon><SparklesIcon /></template>
+      <template #header><h2 class="ai-tools-title">AI Assistant</h2></template>
+      <template #action>
+        <Button class="btn icon-only text-only" aria-label="Close AI panel" @click="emit('close')">
+          <CloseIcon />
+        </Button>
+      </template>
+    </SheetHeader>
     <div class="ai-tools-content">
     <!-- Not connected: show connection form -->
     <AiConnectionForm v-if="!store.isConnected" />
@@ -50,23 +53,8 @@ const emit = defineEmits<{ close: [] }>()
 </template>
 
 <style lang="scss" scoped>
-.ai-tools-header {
-   @apply flex
-      items-center
-      justify-start
-      border
-      border
-      gap-2
-      py-3
-      px-4;
-}
-
-.ai-tools-header-icon {
-  @apply text-primary-light text-lg shrink-0;
-}
-
 .ai-tools-title {
-   @apply grow text-primary-light text-lg font-semibold m-0;
+  @apply text-lg font-semibold;
 }
 
 .ai-tools-content {
@@ -79,7 +67,6 @@ const emit = defineEmits<{ close: [] }>()
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
     overflow-hidden
-    pb-4
-    ;
+    pb-4;
 }
 </style>

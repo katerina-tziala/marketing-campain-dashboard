@@ -104,6 +104,39 @@
   }
 }
 
+/* variant text-only */
+.btn.text-only {
+  @apply transition-none text-primary-lighter/85;
+
+  &::after {
+    @apply -z-[1] transition-none bg-background opacity-0;
+  }
+
+  &::after {
+    @apply opacity-0;
+  }
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-background text-primary-lighter;
+
+      &::after {
+        @apply opacity-35 bg-primary-light;
+      }
+    }
+
+    &:focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+    }
+
+    &:active {
+      @apply text-primary-light;
+    }
+  }
+}
+
+/* variant destructive */
 .btn.destructive {
   @apply transition-none text-typography-soft;
 
@@ -134,6 +167,9 @@
     }
   }
 }
+ 
+
+
  
 //  @layer components {
 

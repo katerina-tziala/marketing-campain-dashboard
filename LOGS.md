@@ -7909,3 +7909,58 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `::after` pseudo-element for hover overlay rather than background transition — allows gradient backgrounds to stay static while the hover effect animates independently, avoiding the visual jump of animating a gradient directly
 - `.content-wrapper` span removed — z-ordering is now handled purely via CSS (`::after -z-[1]`, `:deep(*) z-10`), so the extra DOM node is unnecessary
 - Old class names left as comments — call sites still reference `.btn-primary` etc.; this refactor is intentionally incremental
+
+
+## [#391] Replace raw button with Button component in AiToolsContent
+**Type:** refactor
+
+**Summary:** Replaced the raw `<button class="btn-icon-secondary">` close button in AiToolsContent.vue with the `<Button class="btn icon-only">` component, continuing the call-site migration away from the deleted global button classes.
+
+**Brainstorming:** The close button in the AI panel header was still using the old `btn-icon-secondary` global class that was removed in the Button.vue migration (#390). Swapping it to `<Button class="btn icon-only">` aligns it with the new scoped variant system and removes the last dependency on the deleted class at this call site.
+
+**Prompt:** Replace the raw `<button class="btn-icon-secondary">` in AiToolsContent.vue with the Button component using `.btn.icon-only` modifier classes.
+
+**What changed:**
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — imported `Button` from `@/ui`; replaced `<button class="btn-icon-secondary">` with `<Button class="btn icon-only">`
+
+**Key decisions & why:**
+- `class="btn icon-only"` (space-separated) matches the modifier pattern established in Button.vue — `.btn.icon-only` targets the element that has both classes simultaneously
+
+
+## [#392] Add SheetHeader layout component
+**Type:** feature
+
+**Summary:** Created `SheetHeader.vue`, a layout-only ui component with three optional slots (icon, header, action) providing a consistent header structure for panels and modals, with the project gradient applied by default to the title area.
+
+**Brainstorming:** Both `AiToolsContent` and `BaseModal` had inline header markup with the same structural pattern: leading icon, growing title with gradient text, trailing close button. Extracting this into a shared layout component eliminates duplication and gives a single place to control panel/modal header structure. `SheetHeader` was chosen as the name because "sheet" is the design-system term covering both drawers and modals. The gradient is applied to the `.sheet-header-title` wrapper via `bg-clip-text text-transparent` — child text inherits `color: transparent` and the background gradient shows through, so the parent projects just markup and the gradient is automatic. Override is possible by projecting an element with an explicit color. `:slotted()` is used (not `:deep()`) to reset heading margins on projected `<h1>`–`<h6>` elements, which is the correct Vue 3 pseudo-class for slot content styling. All three slots are optional so the component works as a title-only, icon+title, or full icon+title+action header.
+
+**Prompt:** Create a `SheetHeader` layout component in `src/ui/` based on the `AiToolsContent` header. Three optional slots: icon, header, action. Apply the project gradient to the header title wrapper by default. All slots optional. Layout only — no props, no store reads. Export from `src/ui/index.ts`. Update `AiToolsContent.vue` to use it.
+
+**What was built:**
+- `app/src/ui/SheetHeader.vue` — new layout component; `.sheet-header` (flex, border-b, gap-2, py-3 px-4); `.sheet-header-icon` (text-primary-lighter, shrink-0); `.sheet-header-title` (grow + gradient bg-clip-text text-transparent — from-accent-light→to-secondary-light; :slotted heading margin reset); `.sheet-header-action` (shrink-0); icon and action slots conditionally rendered via v-if
+- `app/src/ui/index.ts` — added `SheetHeader` export
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — replaced inline header div with `<SheetHeader>`; removed `.ai-tools-header`, `.ai-tools-header-icon`, `.ai-tools-title` gradient styles; retained `.ai-tools-title` for text-lg font-semibold only
+
+**Key decisions & why:**
+- Gradient on the wrapper div (not the projected element) — keeps `SheetHeader` self-contained; slot content inherits `color: transparent` so gradient shows through any projected text without the parent needing to know the element type
+- `:slotted()` not `:deep()` — `:slotted()` is the correct Vue 3 scoped pseudo-class for styling elements passed into slots; `:deep()` is for penetrating child component scope
+- `border-b` instead of `border` — the original had a duplicated `border border` (typo); `border-b` is semantically correct for a header separator
+- Title wrapper always rendered (no `v-if`) — acts as a flexible spacer between icon and action even when no title is projected
+
+
+## [#393] Fix SheetHeader gradient not rendering on projected headings
+**Type:** fix
+
+**Summary:** Moved the gradient from the `.sheet-header-title` wrapper to `:slotted(h1–h6)` directly, and restructured the layout so icon and title share a grow flex wrapper with the action outside it.
+
+**Brainstorming:** The original approach applied `bg-clip-text text-transparent` to the `.sheet-header-title` div expecting the child `<h2>` text to inherit it. This does not work: `background-clip: text` clips the background to the element's own inline text content, not to text inside block-level descendants. The `<h2>` creates its own block box, so the parent wrapper had no direct text to clip to — the gradient was invisible. The fix is to apply `bg-gradient-to-r bg-clip-text text-transparent w-fit` directly to the projected heading via `:slotted(h1–h6)`. `w-fit` is required so the background only covers the text width and clips correctly. Layout also restructured: icon and title are co-wrapped in a `grow flex items-start gap-2` div so both move as a unit; `.sheet-header` becomes `items-start`.
+
+**Prompt:** Fix gradient not applying and text looking bolder in SheetHeader — sync CLAUDE.md and LOGS.md.
+
+**What changed:**
+- `app/src/ui/SheetHeader.vue` — removed gradient from `.sheet-header-title` wrapper (now just `grow`); added `:slotted(h1–h6)` with gradient + `bg-clip-text text-transparent w-fit m-0`; wrapped icon + title slots in a shared `grow flex justify-start items-start gap-2` div; `.sheet-header` changed to `items-start`; `.sheet-header-icon` gained `p-0`
+
+**Key decisions & why:**
+- Gradient on `:slotted()` not on wrapper — `background-clip: text` only clips to the element's own text, not block descendants; the heading must own the gradient for it to render
+- `w-fit` on slotted headings — ensures the background width matches the text content width so clipping works correctly; without it the full-width block background would not clip to the letter shapes
+- Icon + title co-wrapped in grow div — keeps them visually grouped and aligned together against the action button
