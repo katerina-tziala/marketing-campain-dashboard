@@ -8045,3 +8045,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - No variant prop, class fallthrough only — matches Badge.vue convention; keeps the component API at zero props and lets CSS handle all visual variants
 - .card.secondary compound selector (not .card-secondary) — requires the card base class to be present; prevents the secondary styles from being accidentally applied to non-Card elements
+
+
+## [#398] Use Button component in AiConnectionForm; move Disclosure into AiConnectionInstructions
+**Type:** refactor
+
+**Summary:** Replaced raw `<button>` elements in AiConnectionForm with the Button component, and moved the Disclosure wrapper + trigger button into AiConnectionInstructions so the component owns its own show/hide behaviour.
+
+**Brainstorming:** The connection form had two bare `<button>` elements — the Connect submit button (using the old global `btn-primary` class) and the instructions toggle (using `btn-icon-secondary btn-small`). Both should use the Button component to stay consistent with the rest of the codebase. Additionally, the Disclosure and its trigger button were inlined in AiConnectionForm as boilerplate that rightfully belongs inside AiConnectionInstructions, since the instructions card is the thing being disclosed.
+
+**Prompt:** Use Button component for connection form buttons. AiConnectionInstructions should implement the disclosure with the button.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — imports Button instead of Disclosure; Connect button is now `<Button class="primary" type="submit">`; Disclosure wrapper removed; instructions rendered as `<AiConnectionInstructions :instructions="providerHelp" />`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — imports Disclosure + Button; wraps card content in Disclosure; trigger slot renders `<Button class="small text-only self-start">` with aria-expanded/aria-controls wiring
+
+**Key decisions & why:**
+- `text-only small` on the instructions toggle — matches the visual intent of the old `btn-icon-secondary btn-small`; keeps it lightweight and non-primary
+- Disclosure ownership moved to AiConnectionInstructions — the parent no longer needs to know the card is collapsible; encapsulation is cleaner

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { Spinner, PasswordInput, RadioToggle, Disclosure } from '@/ui'
+import { Spinner, PasswordInput, RadioToggle, Button } from '@/ui'
 import type { AiProviderType } from '@/features/ai-tools/types'
 import { PROVIDER_OPTIONS, PROVIDER_HELP } from '@/features/ai-tools/providers/utils/providers-meta'
 import { ERROR_MESSAGES, ERROR_HINTS } from '@/features/ai-tools/ai-connection/utils/error-handling'
@@ -57,25 +57,12 @@ async function handleConnect(): Promise<void> {
         </PasswordInput>
       </div>
       <!-- Connect -->
-      <button class="btn-primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
+      <Button class="primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
         <Spinner v-if="store.isConnecting" class="w-3.5 h-3.5" />
         {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
-      </button>
+      </Button>
       <!-- Instructions -->
-      <Disclosure>
-        <template #trigger="{ open, toggle, contentId }">
-          <button
-            type="button"
-            class="btn-icon-secondary btn-small self-start"
-            :aria-expanded="open"
-            :aria-controls="contentId"
-            @click="toggle"
-          >
-            {{ open ? 'Hide instructions' : 'How to get your key?' }}
-          </button>
-        </template>
-        <AiConnectionInstructions :instructions="providerHelp" />
-      </Disclosure>
+      <AiConnectionInstructions :instructions="providerHelp" />
     </form>
   </div>
 </template>
@@ -90,6 +77,6 @@ async function handleConnect(): Promise<void> {
 }
 
 .conn-fieldset {
-  @apply pt-3.5;
+  @apply pt-3;
 }
 </style>

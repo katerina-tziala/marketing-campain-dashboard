@@ -52,7 +52,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 function scheduleAutoDisconnect(): void {
-  setTimeout(() => useAiConnectionStore().disconnect(), 1500)
+  setTimeout(() => useAiConnectionStore().disconnect(), 4000)
 }
 
 // ── Override function (replaces connectProvider in aiConnection.store) ─────────

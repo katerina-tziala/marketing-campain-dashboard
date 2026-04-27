@@ -31,8 +31,7 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
 
 <style lang="scss" scoped>
 .radio-toggle {
-  // bg-surface-secondary
-  @apply grid grid-rows-1 gap-0.5 rounded-md overflow-hidden  min-h-[2.625rem];
+  @apply grid grid-rows-1 gap-0.5 rounded-md overflow-hidden bg-surface border;
 }
 
 .option-label {
@@ -47,17 +46,17 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
     text-sm
     tracking-wider
     px-2
-    py-2.5
+    py-2
     text-primary-lighter;
 }
 
 input[type='radio'] {
   &:not(:disabled)+ .option-label {
-    @apply hover:bg-primary hover:text-on-primary;
+    @apply hover:bg-primary-dark hover:text-on-primary;
   }
 
   &:checked + .option-label {
-    @apply bg-primary-dark text-on-primary;
+    @apply bg-primary text-on-primary;
   }
 
   &:focus-visible + .option-label {

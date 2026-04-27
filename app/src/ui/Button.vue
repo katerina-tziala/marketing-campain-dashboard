@@ -19,7 +19,7 @@
     rounded-md
     opacity-85
     text-sm font-medium leading-none text-center tracking-wide
-    gap-2 px-2.5 py-2;
+    gap-2 px-2.5 py-3;
 
   &:deep(svg) {
     @apply text-lg;
@@ -41,7 +41,7 @@
   }
 
   &:disabled {
-    @apply cursor-not-allowed opacity-70;
+    @apply cursor-not-allowed opacity-60;
 
     &::after {
       @apply hidden;
