@@ -37,7 +37,7 @@ function onLeave(el: Element, done: () => void): void {
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div class="flex flex-col gap-0">
     <slot name="trigger" :open="isOpen" :toggle="toggle" :content-id="contentId" />
     <Transition :css="false" @enter="onEnter" @leave="onLeave">
       <div v-if="isOpen" :id="contentId">

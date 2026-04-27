@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Card, Disclosure, Button } from "@/ui";
+import { ChevronIcon } from "@/ui/icons";
 
 defineProps<{
   instructions: { title: string; steps: string[]; note?: string };
@@ -10,22 +11,25 @@ defineProps<{
   <Disclosure>
     <template #trigger="{ open, toggle, contentId }">
       <Button
-        class="small text-only self-start"
+        class="text-only self-start w-full !px-2.5 !justify-start"
         type="button"
         :aria-expanded="open"
         :aria-controls="contentId"
         @click="toggle"
       >
-        {{ open ? 'Hide instructions' : 'How to get your key?' }}
+        <ChevronIcon class="chevron" :class="{ 'chevron-open': open }" />
+        How to get your key?
       </Button>
     </template>
-    <Card class="secondary bg-surface-secondary/50 mt-2">
+    <Card class="secondary">
       <h5 class="card-title text-primary-lighter">{{ instructions.title }}</h5>
       <ol class="help-steps">
         <li v-for="step in instructions.steps" :key="step">{{ step }}</li>
       </ol>
       <p v-if="instructions.note" class="help-note">{{ instructions.note }}</p>
-      <p class="text-sm">Keep your API key private and never share it publicly</p>
+      <p class="text-sm">
+        Keep your API key private and never share it publicly
+      </p>
     </Card>
   </Disclosure>
 </template>
@@ -37,5 +41,13 @@ defineProps<{
   > li {
     @apply py-1;
   }
+}
+
+.chevron {
+  @apply transition-transform duration-200 mr-1 -rotate-90;
+}
+
+.chevron-open {
+  @apply rotate-0;
 }
 </style>

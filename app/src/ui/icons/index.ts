@@ -1,4 +1,5 @@
 export { default as AlertCircleIcon } from './AlertCircleIcon.vue'
+export { default as ChevronIcon } from './ChevronIcon.vue'
 export { default as BellIcon } from './BellIcon.vue'
 export { default as MagicWandIcon } from './MagicWandIcon.vue'
 export { default as AlertTriangleIcon } from './AlertTriangleIcon.vue'

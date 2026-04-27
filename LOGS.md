@@ -8082,3 +8082,75 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove success from cycle, not from the codebase — success is tested via the real form or BLOCK A; BLOCK B is specifically for error states
 - No change to production code (`AiToolsContent.vue` `v-if` stays as-is) — the fix is entirely in the dev file
 - `AiModel` import retained — still needed for `runDevConnect`'s return type annotation to satisfy the `DevConnectFn` type expected by `setDevConnectOverride`
+
+
+## [#400] Refactor connection error handling into single unified object
+**Type:** refactor
+
+**Summary:** Merged `ERROR_MESSAGES` and `ERROR_HINTS` into a single `CONNECTION_ERRORS` record, introduced `AiConnectionErrorCode` type excluding `min-campaigns`, and rewrote messages to be plain-language for non-technical users.
+
+**Brainstorming:** Two separate records for the same error code forced two lookups and two computeds in the form. A single record keyed by `AiConnectionErrorCode` with `{ message, hint }` per entry eliminates duplication. `min-campaigns` is an analysis error, not a connection error — moving the exclusion to the type level (`AiConnectionErrorCode = Exclude<AiErrorCode, 'min-campaigns'>`) makes it explicit at the `AiConnectionError` type in `types/index.ts`. The form computed was also split into two — merged into one `connectionErrorDisplay` computed that short-circuits on no error and unpacks message + hint in one pass.
+
+**Prompt:** Error hints and error messages for connection should be handled as one object with message and hint. Adjust the type to omit min-campaigns. Check messages — they should be meaningful for users with no tech experience. Also: errorMessage and errorHint computed separately — the form must compute one object at a time.
+
+**What changed:**
+- `app/src/features/ai-tools/types/index.ts` — added `AiConnectionErrorCode = Exclude<AiErrorCode, 'min-campaigns'>` and tightened `AiConnectionError.code` to use it
+- `app/src/features/ai-tools/ai-connection/utils/error-handling.ts` — replaced `ERROR_MESSAGES` + `ERROR_HINTS` with `CONNECTION_ERRORS: Record<AiConnectionErrorCode, { message, hint }>`, rewrote all copy in plain language, imports `AiConnectionErrorCode` from types; `getErrorCode` return type updated to `AiConnectionErrorCode`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — replaced two computeds with single `connectionErrorDisplay`, updated template bindings
+
+**Key decisions & why:**
+- `AiConnectionErrorCode` defined in `types/index.ts`, not `error-handling.ts` — the exclusion belongs at the type definition level so all consumers of `AiConnectionError` benefit automatically
+- Single `connectionErrorDisplay` computed over two — avoids double lookup into `CONNECTION_ERRORS` for the same error, keeps template binding straightforward
+- `v-if="connectionErrorDisplay"` in template replaces `v-if="store.connectionError"` — the gate now mirrors the computed's null check directly
+
+
+## [#401] Remove redundant ERROR_CODES Set
+**Type:** fix
+
+**Summary:** Eliminated the `ERROR_CODES` Set from `ai-connection/utils/error-handling.ts`, which duplicated the exact same 10 codes already present as keys in `CONNECTION_ERRORS`.
+
+**Brainstorming:** `ERROR_CODES` was a `Set<AiConnectionErrorCode>` used solely inside `getErrorCode` to validate whether a normalized error message was a known code. `CONNECTION_ERRORS` is a `Record<AiConnectionErrorCode, ConnectionErrorEntry>` whose keys are the same 10 codes — so the Set was redundant. Replacing `ERROR_CODES.has(code)` with `code in CONNECTION_ERRORS` removes the duplication with no behavior change.
+
+**Prompt:** getErrorCode seems to be duplicated as ERROR_CODES across the codebase. Extract it to a shared location and update imports.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/utils/error-handling.ts` — removed `ERROR_CODES` Set; `getErrorCode` now uses `code in CONNECTION_ERRORS` for validation
+
+**Key decisions & why:**
+- `code in CONNECTION_ERRORS` is the natural membership check when the source of truth for valid codes is already the `CONNECTION_ERRORS` record — no separate Set needed
+- No file moves required: `getErrorCode` depends on `CONNECTION_ERRORS` which lives in the same file, so extracting it elsewhere would create a dependency chain with no benefit
+
+
+## [#402] Static label + chevron for connection instructions toggle
+**Type:** update
+
+**Summary:** Replaced the toggling button text ("How to get your key?" / "Hide instructions") with a fixed label and an animated chevron that rotates 180° when the disclosure is open.
+
+**Brainstorming:** The original button swapped its full label on toggle. The request was to keep the text static and use only a visual indicator — a chevron that flips to ^ when expanded. A new `ChevronIcon` SVG (polyline, stroke-width 2.5) was added to the icon library since no chevron existed. The chevron rotates via a `rotate-180` Tailwind class toggled with `.chevron-open`, with a 200ms CSS transition.
+
+**Prompt:** Update connection instructions button text should not change — instead add an arrow chevron style but only like ^ to indicate expanded content.
+
+**What changed:**
+- `app/src/ui/icons/ChevronIcon.vue` — new downward chevron SVG icon
+- `app/src/ui/icons/index.ts` — exports `ChevronIcon`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — static button label; `ChevronIcon` added with `.chevron` / `.chevron-open` classes; rotation transition in scoped styles
+
+**Key decisions & why:**
+- Chevron points down (∨) by default and flips to up (^) when open — standard disclosure affordance
+- `rotate-180` on open rather than a separate "up" icon — single asset, CSS transition gives smooth flip
+
+
+## [#403] Reposition chevron before text, adjust open/closed rotation
+**Type:** update
+
+**Summary:** Moved the chevron icon before the button label and changed rotation: points right (>) when collapsed, points down (∨) when expanded.
+
+**Brainstorming:** Default `-rotate-90` makes the ∨ shape point right; `rotate-0` on open restores it to pointing down. `mr-1` replaces `ml-1` since the icon is now leading.
+
+**Prompt:** Icon should be before text — point right when expanded, point down when collapsed.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — chevron moved before label text; `.chevron` default is `-rotate-90` (right); `.chevron-open` is `rotate-0` (down); margin adjusted to `mr-1`
+
+**Key decisions & why:**
+- Right (>) when collapsed = "there's more to see"; down (∨) when open = "content is below" — tree/folder-style affordance

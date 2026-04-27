@@ -46,6 +46,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
     tracking-wide
     text-sm
     px-2 
+    py-1.5
     min-h-9
     text-primary-lighter
     overflow-hidden;

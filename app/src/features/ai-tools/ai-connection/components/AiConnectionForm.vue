@@ -7,10 +7,7 @@ import {
   PROVIDER_OPTIONS,
   PROVIDER_HELP,
 } from "@/features/ai-tools/providers/utils/providers-meta";
-import {
-  ERROR_MESSAGES,
-  ERROR_HINTS,
-} from "@/features/ai-tools/ai-connection/utils/error-handling";
+import { CONNECTION_ERRORS } from "@/features/ai-tools/ai-connection/utils/error-handling";
 import AiConnectionInstructions from "./AiConnectionInstructions.vue";
 
 const store = useAiConnectionStore();
@@ -25,15 +22,11 @@ watch(selectedProvider, () => {
 
 const providerHelp = computed(() => PROVIDER_HELP[selectedProvider.value]);
 
-const errorMessage = computed(() =>
-  store.connectionError
-    ? ERROR_MESSAGES[store.connectionError.code](store.connectionError.provider)
-    : null,
-);
-
-const errorHint = computed(() =>
-  store.connectionError ? ERROR_HINTS[store.connectionError.code] : null,
-);
+const connectionErrorDisplay = computed(() => {
+  if (!store.connectionError) return null
+  const { message, hint } = CONNECTION_ERRORS[store.connectionError.code]
+  return { message: message(store.connectionError.provider), hint }
+})
 
 async function handleConnect(): Promise<void> {
   if (!apiKey.value.trim()) return;
@@ -42,7 +35,7 @@ async function handleConnect(): Promise<void> {
 </script>
 
 <template>
-  <div class="conn-form">
+  <div class="scrollbar-stable scrollbar-on-surface conn-form">
     <p class="conn-intro">
       Connect your AI API key to enable Executive Summary and Budget Optimizer
       features
@@ -67,15 +60,15 @@ async function handleConnect(): Promise<void> {
           placeholder="Paste your API key"
           :disabled="store.isConnecting"
         >
-          <template v-if="store.connectionError" #error>
-            <p class="field-error" role="alert">{{ errorMessage }}</p>
-            <p v-if="errorHint" class="field-error-hint">{{ errorHint }}</p>
+          <template v-if="connectionErrorDisplay" #error>
+            <p class="field-error" role="alert">{{ connectionErrorDisplay.message }}</p>
+            <p class="field-error-hint">{{ connectionErrorDisplay.hint }}</p>
           </template>
         </PasswordInput>
       </div>
       <!-- Connect -->
       <Button
-        class="primary max-h-9"
+        class="primary"
         type="submit"
         :disabled="!apiKey.trim() || store.isConnecting"
       >
@@ -90,7 +83,7 @@ async function handleConnect(): Promise<void> {
 
 <style lang="scss" scoped>
 .conn-form {
-  @apply p-6 flex flex-col gap-5;
+  @apply p-6 flex flex-col gap-5 h-full pb-4 overflow-auto ;
 }
 
 .conn-intro {

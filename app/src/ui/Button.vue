@@ -20,7 +20,8 @@
     opacity-85
     text-sm font-medium leading-none text-center 
     tracking-wide
-    gap-2 px-2.5 py-3;
+    gap-2 px-2.5 py-3
+    max-h-9;
 
   &:deep(svg) {
     @apply text-lg;
