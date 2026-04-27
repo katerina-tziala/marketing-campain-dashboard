@@ -43,7 +43,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .tabs {
-  @apply flex w-full border-b border;
+  @apply flex w-full border-b;
 }
 
 .tab {

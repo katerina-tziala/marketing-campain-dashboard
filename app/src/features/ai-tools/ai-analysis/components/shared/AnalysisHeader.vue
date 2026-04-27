@@ -19,7 +19,7 @@ defineEmits<{ analyze: [] }>();
     </template>
     <template #action>
       <Button
-        class="primary square"
+        class="primary icon-only"
         :disabled="isButtonDisabled"
         :aria-label="actionLabel"
         @click="$emit('analyze')"

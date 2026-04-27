@@ -105,7 +105,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── Spinner.vue         # Reusable SVG spinner — no props; size via class (e.g. w-6 h-6), color via text-* (uses currentColor); two-circle material-style arc animation; aria-hidden
 │   │   ├── Tabs.vue            # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   ├── DataTableHeader.vue # Reusable thead — columns: DataTableColumn[] (key, label, sortable?, align?: 'left'|'right', ariaLabel?, class?); sticky?: bool; sortKey?: string; sortDir?: SortDir; emits sort:[key]; non-sortable → data-table-header; sortable → data-table-sortable-header + ArrowUpIcon; right-align via scoped .th-right; exports DataTableColumn + SortDir types
-│   │   ├── Button.vue          # Generic button wrapper — props: disabled?, type? (button/submit/reset); class pass-through for variant modifiers (primary/secondary-outline/destructive-small/icon-secondary) and size (square, small); scoped .btn base with nested &.primary gradient styles; ButtonVariant + ButtonSize types exported but currently commented out (variant/size props removed during simplification)
+│   │   ├── Button.vue          # Generic button wrapper — props: disabled?, type? (button/submit/reset); class pass-through for scoped modifier classes: .btn.primary (gradient bg, hover/focus text-typography-strong, ::after overlay), .btn.destructive (danger hover/focus with ::after bg tint), .btn.icon-only (9×9 square, p-0), .btn.small (xs text, tight padding); .btn base uses ::after pseudo-element for hover overlay (z layering via -z-[1] + :deep(*) z-10 on slot children); content-wrapper span removed — slot renders directly inside button; old global class names (.btn-primary etc.) commented out at bottom of file for reference
 │   │   ├── card/               # Card component module
 │   │   │   ├── Card.vue        # Generic card wrapper — class-based variants (card / card-secondary); non-scoped global styles so .card and .card-secondary work on elements that don't use the Card component directly; no props
 │   │   │   ├── CardHeader.vue  # Card header layout wrapper — flex row (items-start, gap-2), full width; default slot; no props; class fallthrough merges onto root for per-usage overrides
@@ -237,7 +237,6 @@ app/                        # Vue 3 + Vite project
 │   │   ├── container-queries.scss  # SCSS mixin library for container queries — $container-sizes scale (tiny/xs/sm/md/lg/xl/2xl); mixins: cq-container($name?, $type?), cq-up($size, $name?), cq-down($size, $name?), cq-between($min, $max, $name?); globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss          # Barrel — @use all component partials
-│   │   │   ├── _button.scss        # @layer components — .btn base, .btn-primary, .btn-icon-secondary, .btn-secondary-outline (border 1px), .btn-destructive-small, .btn-small (standalone)
 │   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   │   ├── _modal.scss         # @layer components — .modal-body, .modal-footer (flat, non-BEM)
 │   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell

@@ -7889,3 +7889,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Deleted the prop entirely rather than finding a use for it — `portfolioContext` in the store already covers the same data; adding a redundant data path would be noise
 - No replacement prop introduced — the store is the right single source for this; props-only purity applies to leaf display components, not store-connected orchestrators
+
+
+## [#390] Migrate button styles from global SCSS to scoped Button.vue variants
+**Type:** refactor
+
+**Summary:** Deleted `_button.scss` and moved all button styling into `Button.vue` as scoped modifier classes, replacing the old global class names with a cleaner `::after` pseudo-element overlay system.
+
+**Brainstorming:** The global `_button.scss` file defined `.btn-primary`, `.btn-icon-secondary`, `.btn-secondary-outline`, `.btn-destructive-small`, and `.btn-small` as `@layer components` classes applied directly in templates. This meant button styles lived outside the component, making them invisible to scoped style encapsulation and harder to maintain. Moving them into `Button.vue` as modifier classes (`.btn.primary`, `.btn.destructive`, `.btn.icon-only`, `.btn.small`) collocates all button logic in one file. The `::after` overlay mechanism was also cleaned up: the pseudo-element now uses `-z-[1]` and `:deep(*) z-10` to correctly layer slot content above the hover effect, removing the need for the `.content-wrapper` span that previously handled z-indexing. The old class names are left commented out at the bottom of `Button.vue` as a migration reference while call sites are updated.
+
+**Prompt:** Delete `_button.scss` and move all button variant styles into `Button.vue` as scoped modifier classes. Replace `.btn-primary`, `.btn-icon-secondary`, `.btn-secondary-outline`, `.btn-destructive-small`, and `.btn-small` with `.btn.primary`, `.btn.destructive`, `.btn.icon-only`, and `.btn.small`. Clean up the `::after` z-layering by adding `-z-[1]` to the pseudo-element and `:deep(*) z-10` to slot children. Remove the `.content-wrapper` span — render the slot directly inside `<button>`. Leave old class names commented out at the bottom for reference while call sites migrate. Update CLAUDE.md and write log.
+
+**What changed:**
+- `app/src/styles/components/_button.scss` — deleted; all styles migrated into Button.vue
+- `app/src/ui/Button.vue` — removed `.content-wrapper` span from template; `.btn` base cleaned up (z-layering via `::after -z-[1]` + `:deep(*) z-10`); new scoped variant blocks: `.btn.primary` (gradient, hover/focus `text-typography-strong`, active `opacity-90`), `.btn.destructive` (danger hover/focus with `::after bg-danger opacity-25`), `.btn.icon-only` (9×9 square, `p-0`, `text-xl` svg), `.btn.small` (xs, tight padding); old global class definitions commented out at bottom
+
+**Key decisions & why:**
+- Scoped modifier classes (`.btn.primary`) over props-driven variants — keeps the component's API surface minimal (just `disabled` and `type`) while still allowing flexible composition via class pass-through
+- `::after` pseudo-element for hover overlay rather than background transition — allows gradient backgrounds to stay static while the hover effect animates independently, avoiding the visual jump of animating a gradient directly
+- `.content-wrapper` span removed — z-ordering is now handled purely via CSS (`::after -z-[1]`, `:deep(*) z-10`), so the extra DOM node is unnecessary
+- Old class names left as comments — call sites still reference `.btn-primary` etc.; this refactor is intentionally incremental

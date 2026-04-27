@@ -76,6 +76,7 @@ export default {
           muted: "rgb(var(--color-text-muted) / <alpha-value>)",
           subtle: "rgb(var(--color-text-subtle) / <alpha-value>)",
           inverse: "rgb(var(--color-text-inverse) / <alpha-value>)",
+          strong: "rgb(var(--color-text-strong) / <alpha-value>)",
           primary: "rgb(var(--color-text-primary) / <alpha-value>)",
           "primary-strong":
             "rgb(var(--color-text-primary-strong) / <alpha-value>)",
@@ -98,7 +99,7 @@ export default {
         1000: "1000",
       },
       boxShadow: {
-        connection: "0 0 5px rgba(16, 185, 129, 0.6)",
+        connection: "0 0 4px rgb(var(--color-success) / 0.6)",
       },
       screens: {
         xs: "480px",

@@ -1,52 +1,59 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
-import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
+import { computed } from "vue";
+import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
+import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import { PROVIDER_LABELS } from "@/features/ai-tools/providers/utils/providers-meta";
+import { Button } from "@/ui";
 
-const store = useAiConnectionStore()
-const analysisStore = useAiAnalysisStore()
+const store = useAiConnectionStore();
+const analysisStore = useAiAnalysisStore();
 const providerLabel = computed(() =>
-  store.provider ? PROVIDER_LABELS[store.provider] : '',
-)
+  store.provider ? PROVIDER_LABELS[store.provider] : "",
+);
 
 function handleDisconnect(): void {
-  analysisStore.clearStateForDisconnect()
-  store.disconnect()
+  analysisStore.clearStateForDisconnect();
+  store.disconnect();
 }
 </script>
 
 <template>
   <div class="ai-status">
     <p class="status-provider">{{ providerLabel }}</p>
-    <p class="connected-dot status-connected">Connected</p>
-    <button class="btn-destructive-small" @click="handleDisconnect">Disconnect</button>
+    <div class="flex flex-wrap items-center justify-between grow shrink gap-x-4 gap-y-2">
+      <p role="status" class="connected-dot status-connected">Connected</p>
+      <Button class="destructive small text" @click="handleDisconnect"
+        >Disconnect</Button
+      >
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .ai-status {
   @apply flex
+    flex-wrap
     items-center
     justify-between
-    gap-2
+    gap-y-2
+    gap-x-4
     py-2
     pl-6
     pr-4
     border-b
-    border
     w-full
     bg-success/[0.05];
 }
 
 .status-provider {
-  @apply text-sm font-medium text-on-primary grow;
+  @apply text-sm font-semibold text-typography-soft grow shrink-0;
+  flex-grow: 100;
 }
 
 .status-connected {
-  @apply text-xs font-semibold text-success relative;
+  @apply text-xs font-semibold text-success relative whitespace-nowrap;
 
-  &::before { 
+  &::before {
     @apply mr-1.5;
   }
 }
