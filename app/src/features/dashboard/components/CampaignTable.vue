@@ -80,38 +80,24 @@ const COLUMNS: DataTableColumn[] = [
     />
     <tbody>
       <tr v-for="c in sortedCampaigns" :key="c.campaign" class="data-table-row">
-        <td class="campaign-table-td left-alignment">{{ c.campaign }}</td>
-        <td class="campaign-table-td text-center">
+        <td class="left-alignment">{{ c.campaign }}</td>
+        <td>
           <Badge class="info channel-badge">{{ c.channel }}</Badge>
         </td>
-        <td class="campaign-table-td">{{ formatCurrency(c.budget) }}</td>
-        <td class="campaign-table-td">{{ formatCompactNumber(c.clicks) }}</td>
-        <td class="campaign-table-td">
+        <td class=" ">{{ formatCurrency(c.budget) }}</td>
+        <td class=" ">{{ formatCompactNumber(c.clicks) }}</td>
+        <td class=" ">
           {{ formatCompactNumber(c.impressions) }}
         </td>
-        <td class="campaign-table-td">{{ formatPercentage(c.ctr) }}</td>
-        <td class="campaign-table-td">{{ formatNumber(c.conversions) }}</td>
-        <td class="campaign-table-td">{{ formatPercentage(c.cvr) }}</td>
-        <td class="campaign-table-td">{{ formatCurrency(c.revenue) }}</td>
-        <td class="campaign-table-td">{{ formatCurrency(c.cpa, 2) }}</td>
-        <td class="campaign-table-td">
+        <td class=" ">{{ formatPercentage(c.ctr) }}</td>
+        <td class=" ">{{ formatNumber(c.conversions) }}</td>
+        <td class=" ">{{ formatPercentage(c.cvr) }}</td>
+        <td class=" ">{{ formatCurrency(c.revenue) }}</td>
+        <td class=" ">{{ formatCurrency(c.cpa, 2) }}</td>
+        <td class=" ">
           <RoiIndicator :value="c.roi" />
         </td>
       </tr>
     </tbody>
   </Table>
 </template>
-
-<style lang="scss" scoped>
-// .campaign-table {
-//   // @apply w-full h-full;
-
-//   //   .campaign-table-td {
-//   //   @apply py-3;
-//   // }
-// }
-
-// .channel-badge {
-//   @apply whitespace-break-spaces;
-// }
-</style>

@@ -8345,3 +8345,55 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Value `16 26 58` chosen as a midpoint between `surface-elevated` (`13 22 48`) and `border-subtle` (`20 34 74`) — visible enough to register as a border but very low contrast
+
+
+## [#414] Refactor DataErrorsTable and CampainDuplicationsTable to use Table component
+**Type:** refactor
+
+**Summary:** Replaced legacy `<div class="table-wrapper"><table class="data-table">` pattern in both validation table components with the `<Table>` UI component, removing all stale `data-table-*` class names from rows and cells.
+
+**Brainstorming:** Both components were using an older pre-component pattern: a manual wrapper div with scrollbar utility classes and a raw `<table>` with `data-table` class. The `Table.vue` component now owns that shell. The fix was mechanical — swap the wrapper, remove dead class names from `<tr>` and `<td>`, fix the sticky header class (`data-table-sticky-header` → `sticky-header`), and consolidate the hover+selected states in `CampainDuplicationsTable` since the orphaned `.data-table-row:hover` block was targeting a class that no longer existed on the rows.
+
+**Prompt:** For DataErrorsTable and ResolveDuplicationsStep use the table component properly.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — added `Table` import; replaced div+table wrapper with `<Table>`; changed `class="data-table-sticky-header"` to `class="sticky-header"` on `TableHeader`; removed `data-table-row` from rows and `data-table-cell` from cells; updated COLUMNS `class` values (`left-alignment` for issue column); removed unused `.col-row` and `.col-campain` scoped styles
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — added `Table` import; replaced div+table wrapper with `<Table>`; changed `class="data-table-sticky-header"` to `class="sticky-header"`; removed `data-table-row` and `data-table-cell` class usage; merged orphaned `.data-table-row:hover` into `.row-selectable` block; added `cursor-pointer` to `.row-selectable`
+
+**Key decisions & why:**
+- `sticky-header` class on `TableHeader` matches the pattern established in `CampaignTable.vue` — it's the correct class in the refactored component
+- Hover style merged into `.row-selectable` because that's the class on all interactive rows; the old `.data-table-row` class was removed from the template so its hover rule was never applying
+
+
+## [#415] Fix Badge ::before stacking context so transparent backgrounds render correctly
+**Type:** fix
+
+**Summary:** Badge's `::before` pseudo-element was invisible because the badge had no stacking context, causing `-z-[1]` to fall behind the page surface rather than behind the badge's own background layer.
+
+**Brainstorming:** The `::before` uses `position: absolute`, `inset-0`, and `z-index: -1` to act as an opaque base underneath the badge's semi-transparent `bg-*` variant colors. Without `isolation: isolate` on `.badge`, the `-z-[1]` is resolved relative to the nearest stacking context ancestor (the page), not the badge itself — so the `::before` sits below the table/card surface and `overflow: hidden` clips it invisibly. Adding `isolate` creates a local stacking context so `-z-[1]` is contained within the badge. Also changed `bg-background` to `bg-surface-elevated` to match the card/panel surfaces where badges typically appear.
+
+**Prompt:** Fix badge before background — it is not displayed properly; I want a background before the transparent background.
+
+**What changed:**
+- `app/src/ui/Badge.vue` — added `isolate` to `.badge` base styles; changed `::before` background from `bg-background` to `bg-surface-elevated`
+
+**Key decisions & why:**
+- `isolate` (CSS `isolation: isolate`) is the minimal fix — it creates a stacking context without affecting z-index of the badge relative to its siblings
+- `bg-surface-elevated` chosen over `bg-background` because most badges appear inside cards, which use `bg-surface-elevated` as their background
+
+
+## [#416] Simplify Badge — remove ::before backdrop, apply transparent bg directly
+**Type:** fix
+
+**Summary:** Removed the broken `::before` pseudo-element backdrop from Badge and applied transparent variant backgrounds directly on the element, matching the pattern used by Notification.vue.
+
+**Brainstorming:** The `::before` + `isolate` approach was architecturally broken: within a stacking context, `z-index: -1` children paint above the element's own background, so the opaque `::before` always covered the transparent variant tint. Notification.vue uses `bg-success/10` directly on the element with no backdrop — the transparent color blends naturally with whatever surface is behind it. Adopting the same approach removes all z-index complexity. Also added a default `bg-primary/10 border-primary-lighter/35` to the base badge so it has a visible default state.
+
+**Prompt:** Use Notification component as a reference — transparent backgrounds should be visible without a ::before backdrop.
+
+**What changed:**
+- `app/src/ui/Badge.vue` — removed `relative`, `isolate`, `overflow-hidden`, and `::before` pseudo-element entirely; added `bg-primary/10 border-primary-lighter/35` to base `.badge`; `.text-only` simplified (no `::before` to hide)
+
+**Key decisions & why:**
+- No pseudo-element needed: transparent `bg-*/10` blends naturally with the parent surface, exactly as Notification.vue demonstrates
+- Default badge now has `bg-primary/10` so an unstyled badge is still visually present

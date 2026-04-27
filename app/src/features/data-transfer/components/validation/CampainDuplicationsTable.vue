@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import { TableHeader, CheckIcon, Badge } from '@/ui'
+import { Table, TableHeader, CheckIcon, Badge } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 import { formatCurrency, formatNumber } from '@/shared/utils/formatters'
 
@@ -78,58 +78,56 @@ function selectRow(campaignName: string, rowId: number): void {
 </script>
 
 <template>
-  <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
-    <table class="data-table">
-      <TableHeader
-        :columns="COLUMNS"
-        class="data-table-sticky-header"
-        :sort-key="sortKey"
-        :sort-dir="sortDir"
-        @sort="handleSort"
-      />
-      <tbody>
-        <template v-for="group in sortedGroups" :key="group.campaignName">
-          <tr class="group-header">
-            <td colspan="8" :class="{ selected: isGroupSelected(group.campaignName) }">
-              <span class="w-full flex items-center justify-start gap-2">
-                <CheckIcon class="group-check-icon" />
-                <span>{{ group.campaignName }} ({{ group.rows.length }})</span>
-              </span>
-            </td>
-          </tr>
-          <tr
-            v-for="entry in group.rows"
-            :key="entry.rowId"
-            class="data-table-row row-selectable"
-            :class="{ 'row-selected': isSelected(group.campaignName, entry.rowId) }"
-            @click="selectRow(group.campaignName, entry.rowId)"
-          >
-            <td class="data-table-cell cell-select">
-              <span class="flex items-center justify-center">
-                <input
-                  type="radio"
-                  :name="`group-${group.campaignName}`"
-                  :value="entry.rowId"
-                  :checked="isSelected(group.campaignName, entry.rowId)"
-                  :aria-label="`Select row ${entry.rowId}`"
-                  @change="selectRow(group.campaignName, entry.rowId)"
-                />
-              </span>
-            </td>
-            <td class="data-table-cell">{{ entry.rowId }}</td>
-            <td class="data-table-cell">
-              <Badge class="info">{{ entry.channel }}</Badge>
-            </td>
-            <td class="data-table-cell">{{ formatCurrency(entry.budget) }}</td>
-            <td class="data-table-cell">{{ formatNumber(entry.clicks) }}</td>
-            <td class="data-table-cell">{{ formatNumber(entry.impressions) }}</td>
-            <td class="data-table-cell">{{ formatNumber(entry.conversions) }}</td>
-            <td class="data-table-cell">{{ formatCurrency(entry.revenue) }}</td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
-  </div>
+  <Table>
+    <TableHeader
+      :columns="COLUMNS"
+      class="sticky-header"
+      :sort-key="sortKey"
+      :sort-dir="sortDir"
+      @sort="handleSort"
+    />
+    <tbody>
+      <template v-for="group in sortedGroups" :key="group.campaignName">
+        <tr class="group-header">
+          <td colspan="8" :class="{ selected: isGroupSelected(group.campaignName) }">
+            <span class="w-full flex items-center justify-start gap-2">
+              <CheckIcon class="group-check-icon" />
+              <span>{{ group.campaignName }} ({{ group.rows.length }})</span>
+            </span>
+          </td>
+        </tr>
+        <tr
+          v-for="entry in group.rows"
+          :key="entry.rowId"
+          class="row-selectable"
+          :class="{ 'row-selected': isSelected(group.campaignName, entry.rowId) }"
+          @click="selectRow(group.campaignName, entry.rowId)"
+        >
+          <td class="cell-select">
+            <span class="flex items-center justify-center">
+              <input
+                type="radio"
+                :name="`group-${group.campaignName}`"
+                :value="entry.rowId"
+                :checked="isSelected(group.campaignName, entry.rowId)"
+                :aria-label="`Select row ${entry.rowId}`"
+                @change="selectRow(group.campaignName, entry.rowId)"
+              />
+            </span>
+          </td>
+          <td>{{ entry.rowId }}</td>
+          <td>
+            <Badge class="info">{{ entry.channel }}</Badge>
+          </td>
+          <td>{{ formatCurrency(entry.budget) }}</td>
+          <td>{{ formatNumber(entry.clicks) }}</td>
+          <td>{{ formatNumber(entry.impressions) }}</td>
+          <td>{{ formatNumber(entry.conversions) }}</td>
+          <td>{{ formatCurrency(entry.revenue) }}</td>
+        </tr>
+      </template>
+    </tbody>
+  </Table>
 </template>
 
 <style lang="scss" scoped>
@@ -168,18 +166,18 @@ function selectRow(campaignName: string, rowId: number): void {
 }
 
 .row-selectable {
+  @apply cursor-pointer;
+
+  &:hover {
+    @apply bg-primary-deep/35;
+  }
+
   &.row-selected {
     @apply bg-primary-muted;
 
     td {
       @apply font-semibold;
     }
-  }
-}
-
-.data-table-row {
-  &:hover {
-    @apply bg-primary-deep/35;
   }
 }
 </style>

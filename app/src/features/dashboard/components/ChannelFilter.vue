@@ -44,9 +44,7 @@ function toggle(channelId: string): void {
 .channel-filter {
   @apply flex flex-wrap items-center gap-2.5;
 
-
-  // border: 1px dashed yellow;
-
+ 
   max-height: 100px;
   overflow: auto
 }

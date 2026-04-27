@@ -1,71 +1,59 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { CampainDataRowError } from '@/features/data-transfer/types'
-import { getRowErrorMessage } from '@/features/data-transfer/utils/error-messages'
-import { TableHeader, Badge } from '@/ui'
-import type { DataTableColumn } from '@/ui'
+import { ref, computed } from "vue";
+import type { CampainDataRowError } from "@/features/data-transfer/types";
+import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
+import { Table, TableHeader, Badge } from "@/ui";
+import type { DataTableColumn } from "@/ui";
 
 const props = defineProps<{
-  errors: CampainDataRowError[]
-}>()
+  errors: CampainDataRowError[];
+}>();
 
-const sortDir = ref<'asc' | 'desc'>('asc')
+const sortDir = ref<"asc" | "desc">("asc");
 
 function toggleSort() {
-  sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
 }
 
 const COLUMNS: DataTableColumn[] = [
-  { key: 'row', label: 'Row', sortable: true, ariaLabel: 'row index', class: 'text-center w-6' },
-  { key: 'column', label: 'Column', class: 'text-center' },
-  { key: 'issue', label: 'Issue', class: 'text-left' },
-]
+  {
+    key: "row",
+    label: "Row",
+    sortable: true,
+    ariaLabel: "row index",
+    class: "max-w-6",
+  },
+  { key: "column", label: "Column", },
+  { key: "issue", label: "Issue", class: "left-alignment" },
+];
 
 const sortedErrors = computed(() =>
   [...props.errors].sort((a, b) =>
-    sortDir.value === 'asc' ? a.row - b.row : b.row - a.row,
+    sortDir.value === "asc" ? a.row - b.row : b.row - a.row,
   ),
-)
+);
 </script>
 
 <template>
-  <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
-    <table class="data-table stripped-odd">
-      <TableHeader
-        :columns="COLUMNS"
-        class="data-table-sticky-header"
-        sort-key="row"
-        :sort-dir="sortDir"
-        @sort="toggleSort"
-      />
-      <tbody>
-        <tr
-          v-for="(err, i) in sortedErrors"
-          :key="`${err.row}-${err.column}-${i}`"
-          class="data-table-row"
-        >
-          <td class="data-table-cell col-row cell-row">{{ err.row }}</td>
-          <td class="data-table-cell col-campain">
-             <Badge class="danger">{{ err.column }}</Badge>
-          </td>
-          <td class="data-table-cell text-left">{{ getRowErrorMessage(err) }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <Table>
+    <TableHeader
+      :columns="COLUMNS"
+      class="sticky-header"
+      sort-key="row"
+      :sort-dir="sortDir"
+      @sort="toggleSort"
+    />
+    <tbody>
+      <tr
+        v-for="(err, i) in sortedErrors"
+        :key="`${err.row}-${err.column}-${i}`"
+      >
+        <td class="font-semibold tabular-nums">{{ err.row }}</td>
+        <td>
+          <Badge class="danger dimmed">{{ err.column }}</Badge>
+        </td>
+        <td class="left-alignment">{{ getRowErrorMessage(err) }}</td>
+      </tr>
+    </tbody>
+  </Table>
 </template>
-
-<style lang="scss" scoped> 
-.col-row {
-  @apply text-center w-6;
-}
-
-.col-campain {
-  @apply text-center;
-}
-
-.cell-row {
-  @apply font-semibold tabular-nums;
-}
- 
-</style>

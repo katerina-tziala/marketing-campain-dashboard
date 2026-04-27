@@ -6,9 +6,8 @@
 
 <style lang="scss" scoped>
 .badge {
-  @apply relative
-    rounded-full
-    border 
+  @apply rounded-full
+    border
     inline-flex
     items-center
     justify-start
@@ -19,14 +18,10 @@
     text-xs
     font-semibold
     text-center
-    leading-none
+    leading-4
     text-primary-lighter
-    overflow-hidden;
-
-  &::before {
-    content: "";
-    @apply absolute inset-0 bg-background -z-[1];
-  }
+    bg-primary/10
+    border-primary-lighter/35;
 
   &.success {
     @apply border-success/35 bg-success/10 text-success;
@@ -59,9 +54,6 @@
 
 .badge.text-only {
   @apply bg-transparent border-none;
-  &::before {
-    @apply hidden;
-  }
 }
 
 .badge.dimmed {
