@@ -8793,3 +8793,40 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `portfolioValue` as a string prop (not raw number): keeps KpiCard format-agnostic — DashboardKpis owns all formatting decisions
 - Portfolio secondary rendered inline in the existing secondary slot (not a new slot): avoids adding slot API surface to KpiCard; DashboardKpis already controls what goes in the secondary area
 - Label span as `w-full text-right` in `.kpi-secondary`: forces label onto its own line via flex-wrap; values then flow side-by-side below — no wrapper div needed inside the slot
+
+
+## [#438] data-transfer components — structural refactor + renames
+**Type:** refactor
+
+**Summary:** Separated public-facing components from internal validation UI inside the data-transfer feature, renamed components for clarity, and introduced barrel files at each level with the feature index delegating to the components barrel.
+
+**Brainstorming:** The root `components/` folder mixed exported modal shells with internal multi-step validation UI — no signal at the folder level about what was public vs private. The rename of `UploadModal` to `UploadDataModal` and `UploadCampainData` to `UploadDataForm` brings names in line with what the components actually do. Moving the two review steps (`UploadErrorsStep` → `ReviewErrorsComponent`, `ResolveDuplicationsStep` → `ReviewDuplicatedCampaigns`) into `data-validation/` subfolders groups them by concern and makes each subfolder self-contained with its own barrel. `shared/` under `data-validation/` holds only the two components used by both review steps (`DataErrorSummary`, `DuplicateSummary`); table components sit beside their sole consumer.
+
+**Prompt:** Refactor data-transfer components structure: root keeps only exported components; move validation steps into data-validation/ with review-errors/ and review-duplications/ subfolders; rename UploadModal→UploadDataModal, UploadCampainData→UploadDataForm, UploadErrorsStep→ReviewErrorsComponent, ResolveDuplicationsStep→ReviewDuplicatedCampaigns; add barrel index at each level; feature index must re-export from components/index.
+
+**What changed:**
+- `components/UploadDataModal.vue` — renamed from `UploadModal.vue`; imports updated to `UploadDataForm`, `ReviewErrorsComponent`, `ReviewDuplicatedCampaigns` (named imports from barrels); template component tags updated
+- `components/UploadDataForm.vue` — renamed from `UploadCampainData.vue`; no logic changes
+- `components/ReplaceDataModal.vue` — unchanged, now exported via components barrel
+- `components/FileActions.vue` — unchanged, now exported via components barrel
+- `components/index.ts` — new barrel; exports `UploadDataModal`, `ReplaceDataModal`, `FileActions`
+- `components/data-validation/shared/DataErrorSummary.vue` — moved from `validation/`
+- `components/data-validation/shared/DuplicateSummary.vue` — moved from `validation/`; same-dir import unchanged
+- `components/data-validation/shared/index.ts` — new barrel; exports `DataErrorSummary`, `DuplicateSummary`
+- `components/data-validation/review-errors/ReviewErrorsComponent.vue` — renamed from `UploadErrorsStep.vue`; imports updated to use shared barrel and same-dir `DataErrorsTable`
+- `components/data-validation/review-errors/DataErrorsTable.vue` — moved from `validation/`; no import changes
+- `components/data-validation/review-errors/index.ts` — new barrel; exports `ReviewErrorsComponent`
+- `components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — renamed from `ResolveDuplicationsStep.vue`; imports updated to use shared barrel and same-dir `CampainDuplicationsTable`
+- `components/data-validation/review-duplications/CampainDuplicationsTable.vue` — moved from `validation/campain-duplications/`; same-dir `DuplicationGroupHeader` import unchanged
+- `components/data-validation/review-duplications/DuplicationGroupHeader.vue` — moved from `validation/campain-duplications/`; no import changes
+- `components/data-validation/review-duplications/index.ts` — new barrel; exports `ReviewDuplicatedCampaigns`
+- `features/data-transfer/index.ts` — replaced three explicit component exports with `export * from './components'`
+- `composables/useUploadModal.ts` — updated type import to `UploadDataModal`
+- `shell/AppShell.vue` — updated import, ref type, and template tag to `UploadDataModal`
+- `features/playground/PlaygroundView.vue` — updated imports and template tags to `ReviewErrorsComponent` / `ReviewDuplicatedCampaigns`
+- Deleted: `UploadModal.vue`, `UploadCampainData.vue`, `UploadErrorsStep.vue`, `ResolveDuplicationsStep.vue`, `validation/DataErrorSummary.vue`, `validation/DuplicateSummary.vue`, `validation/DataErrorsTable.vue`, `validation/campain-duplications/DuplicationGroupHeader.vue`, `validation/campain-duplications/CampainDuplicationsTable.vue`
+
+**Key decisions & why:**
+- `UploadDataForm` stays in the root `components/` (not in `data-validation/`): it is the upload form step, not a validation concern — placing it beside the modal orchestrator it feeds is semantically accurate
+- Tables live beside their sole consumer, not in `shared/`: `DataErrorsTable` is only used by `ReviewErrorsComponent`; `CampainDuplicationsTable`/`DuplicationGroupHeader` only by `ReviewDuplicatedCampaigns` — `shared/` stays lean with only the two truly cross-used components
+- Named imports from barrels in `UploadDataModal.vue` (not default): the barrel uses `export { default as X }` which produces named exports; default imports from a barrel resolve to `undefined` at runtime

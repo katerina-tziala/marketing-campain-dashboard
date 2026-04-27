@@ -3,9 +3,8 @@ import { computed } from 'vue'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataRowError } from '@/features/data-transfer/types'
 import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-messages'
-import DataErrorsTable from './validation/DataErrorsTable.vue'
-import DataErrorSummary from './validation/DataErrorSummary.vue'
-import DuplicateSummary from './validation/DuplicateSummary.vue'
+import { DataErrorSummary, DuplicateSummary } from '@/features/data-transfer/components/data-validation/shared'
+import DataErrorsTable from './DataErrorsTable.vue'
 import { Badge, Button, ModalFooter } from '@/ui'
 
 const props = defineProps<{

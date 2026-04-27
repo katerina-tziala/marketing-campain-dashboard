@@ -9,15 +9,20 @@ const props = defineProps<{
   hasValidCampaigns?: boolean
 }>()
 
-const groupWord = computed(() => (props.count === 1 ? 'campaign name' : 'campaign names'))
-const verbWord = computed(() => (props.count === 1 ? 'appears' : 'appear'))
-const nameHasWord = computed(() => (props.count === 1 ? 'name has' : 'names have'))
+const words = computed(() => {
+  const singular = props.count === 1
+  return {
+    group: singular ? 'campaign name' : 'campaign names',
+    verb: singular ? 'appears' : 'appear',
+    nameHas: singular ? 'name has' : 'names have',
+  }
+})
 </script>
 
 <template>
   <DataErrorSummary>
     <template #title>
-       Duplicate campaign names detected 
+       Duplicate campaign names detected
     </template>
     <template #badge>
       <Badge v-if="variant === 'resolve' && !hasValidCampaigns" class="danger">Resolve duplicates</Badge>
@@ -25,12 +30,12 @@ const nameHasWord = computed(() => (props.count === 1 ? 'name has' : 'names have
     </template>
     <template #summary>
       <template v-if="variant === 'resolve'">
-        <p><strong>{{ count }} {{ groupWord }}</strong> {{ verbWord }} more than once in the file.</p>
+        <p><strong>{{ count }} {{ words.group }}</strong> {{ words.verb }} more than once in the file.</p>
         <p>Select one row from each group to include in the import. Groups without a selection will be skipped.</p>
         <p v-if="!hasValidCampaigns">Select at least one row to proceed.</p>
       </template>
       <template v-else>
-        <p><strong>{{ count }} campaign {{ nameHasWord }}</strong> duplicate rows that will need to be resolved.</p>
+        <p><strong>{{ count }} campaign {{ words.nameHas }}</strong> duplicate rows that will need to be resolved.</p>
         <p>You will be asked to resolve these duplicates in the next step.</p>
       </template>
     </template>

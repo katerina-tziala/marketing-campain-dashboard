@@ -3,8 +3,8 @@ import { ref, computed } from 'vue'
 import { Button, ModalFooter } from '@/ui'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import DuplicateSummary from './validation/DuplicateSummary.vue'
-import CampainDuplicationsTable from './validation/campain-duplications/CampainDuplicationsTable.vue'
+import { DuplicateSummary } from '@/features/data-transfer/components/data-validation/shared'
+import CampainDuplicationsTable from './CampainDuplicationsTable.vue'
 
 const props = defineProps<{
   duplicateGroups: CampainDataDuplicateGroup[]

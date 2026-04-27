@@ -37,10 +37,10 @@
 
 .table-container > table {
   &:deep(th) {
-    @apply border-b border-b-info-darker/45;
+    @apply border-b border-b-info-darker/50;
   }
   &:deep(td) {
-    @apply border-b border-b-info-dark/10;
+    @apply border-b border-b-info-dark/15;
   }
 }
 

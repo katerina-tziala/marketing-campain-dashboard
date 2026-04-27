@@ -4,12 +4,12 @@ import { Button, UploadIcon } from '@/ui'
 import { ToastContainer } from '@/ui/toast'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
-import { useUploadModal, UploadModal, ReplaceDataModal } from '@/features/data-transfer'
+import { useUploadModal, UploadDataModal, ReplaceDataModal } from '@/features/data-transfer'
 import AiToolsDrawer from './AiToolsDrawer.vue'
 
 const aiStore = useAiConnectionStore()
 const analysisStore = useAiAnalysisStore()
-const uploadModal = ref<InstanceType<typeof UploadModal> | null>(null)
+const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null)
 const { hasCampaigns, showReplaceConfirm, requestUpload, onReplaceConfirm, closeReplaceConfirm } = useUploadModal(uploadModal)
 
 provide('openAiPanel', () => { aiStore.openPanel(); analysisStore.onPanelOpen() })
@@ -40,7 +40,7 @@ function onCloseAiPanel(): void {
       <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
     </div>
 
-    <UploadModal ref="uploadModal" />
+    <UploadDataModal ref="uploadModal" />
     <ReplaceDataModal
       v-if="showReplaceConfirm"
       @confirm="onReplaceConfirm"

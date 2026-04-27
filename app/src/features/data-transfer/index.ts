@@ -1,4 +1,2 @@
-export { default as UploadModal } from './components/UploadModal.vue'
-export { default as ReplaceDataModal } from './components/ReplaceDataModal.vue'
-export { default as FileActions } from './components/FileActions.vue'
+export * from './components'
 export { useUploadModal } from './composables/useUploadModal'

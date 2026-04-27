@@ -1,8 +1,8 @@
 import { computed, provide, ref, type Ref } from 'vue'
 import { usePortfolioDataStore } from '@/stores/portfolioData.store'
-import type UploadModal from '@/features/data-transfer/components/UploadModal.vue'
+import type UploadDataModal from '@/features/data-transfer/components/UploadDataModal.vue'
 
-export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadModal> | null>) {
+export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal> | null>) {
   const portfolioData = usePortfolioDataStore()
   const showReplaceConfirm = ref(false)
   const hasCampaigns = computed(() => portfolioData.portfolios.length > 0)
