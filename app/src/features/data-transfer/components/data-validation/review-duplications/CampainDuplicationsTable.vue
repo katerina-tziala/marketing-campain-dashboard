@@ -6,7 +6,7 @@ import { Table, TableHeader, Badge, RadioItem } from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { formatCurrency, formatNumber } from "@/shared/utils/formatters";
 import { useSort } from "@/shared/composables/useSort";
-import DuplicationGroupHeader from "./DuplicationGroupHeader.vue";
+import DuplicationsHeader from "./DuplicationsHeader.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -87,6 +87,13 @@ function clearGroupSelection(campaignName: string): void {
   selections.value = next;
   emitSelections(next);
 }
+
+function reset(): void {
+  selections.value = new Map();
+  emitSelections(selections.value);
+}
+
+defineExpose({ reset });
 </script>
 
 <template>
@@ -102,7 +109,7 @@ function clearGroupSelection(campaignName: string): void {
       <template v-for="group in sortedGroups" :key="group.campaignName">
         <tr class="group-header">
           <td colspan="8">
-            <DuplicationGroupHeader
+            <DuplicationsHeader
               :campaign-name="group.campaignName"
               :row-count="group.rows.length"
               :is-selected="isGroupSelected(group.campaignName)"

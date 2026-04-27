@@ -1,42 +1,45 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Button, ModalFooter } from '@/ui'
-import type { Campaign } from '@/shared/types/campaign'
-import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import { DuplicateSummary } from '@/features/data-transfer/components/data-validation/shared'
-import CampainDuplicationsTable from './CampainDuplicationsTable.vue'
+import { ref, computed } from "vue";
+import { Button, ModalFooter } from "@/ui";
+import type { Campaign } from "@/shared/types/campaign";
+import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
+import { DuplicateSummary } from "@/features/data-transfer/components/data-validation/shared";
+import CampainDuplicationsTable from "./CampainDuplicationsTable.vue";
+import ModalBody from "@/ui/modal/ModalBody.vue";
 
 const props = defineProps<{
-  duplicateGroups: CampainDataDuplicateGroup[]
-  validCampaigns: Campaign[]
-}>()
+  duplicateGroups: CampainDataDuplicateGroup[];
+  validCampaigns: Campaign[];
+}>();
 
 const emit = defineEmits<{
-  back: []
-  proceed: [selectedCampaigns: Campaign[]]
-  close: []
-}>()
+  back: [];
+  proceed: [selectedCampaigns: Campaign[]];
+  close: [];
+}>();
 
-const selectedCampaigns = ref<Campaign[]>([])
+const selectedCampaigns = ref<Campaign[]>([]);
 
-const resolvedCount = computed(() => selectedCampaigns.value.length)
-const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length)
+const resolvedCount = computed(() => selectedCampaigns.value.length);
+const allResolved = computed(
+  () => resolvedCount.value === props.duplicateGroups.length,
+);
 
 const canProceed = computed(
   () => props.validCampaigns.length > 0 || selectedCampaigns.value.length > 0,
-)
+);
 
 function onSelectionChange(campaigns: Campaign[]): void {
-  selectedCampaigns.value = campaigns
+  selectedCampaigns.value = campaigns;
 }
 
 function handleProceed(): void {
-  emit('proceed', selectedCampaigns.value)
+  emit("proceed", selectedCampaigns.value);
 }
 </script>
 
 <template>
-  <div class="duplicate-body">
+  <ModalBody class="duplicate-body">
     <DuplicateSummary
       :count="duplicateGroups.length"
       variant="resolve"
@@ -50,11 +53,20 @@ function handleProceed(): void {
       :required-selection="validCampaigns.length === 0"
       @change="onSelectionChange"
     />
-  </div>
+  </ModalBody>
   <ModalFooter>
-    <Button class="primary min-w-24 xs:order-1" @click="emit('back')">Back</Button>
-    <Button class="outline xs:order-3 xs:mr-auto" :disabled="!canProceed" @click="handleProceed">Proceed with selection</Button>
-    <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
+    <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
+      >Back</Button
+    >
+    <Button
+      class="outline xs:order-3 xs:mr-auto"
+      :disabled="!canProceed"
+      @click="handleProceed"
+      >Proceed with selection</Button
+    >
+    <Button class="outline min-w-24 xs:order-2" @click="emit('close')"
+      >Cancel</Button
+    >
   </ModalFooter>
 </template>
 
@@ -66,7 +78,7 @@ function handleProceed(): void {
     grid
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
-    gap-6
+    gap-3
     p-6
     h-fit
     max-h-[75vh]

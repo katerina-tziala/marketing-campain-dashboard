@@ -69,7 +69,7 @@
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface-hover text-primary-lighter;
+      @apply bg-primary-light/15 text-primary-lighter;
     }
 
     &:not(.no-ring):focus-visible {
@@ -89,7 +89,7 @@
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface-hover text-primary-lighter;
+      @apply bg-primary-light/15 text-primary-lighter;
     }
 
     &:focus-visible {

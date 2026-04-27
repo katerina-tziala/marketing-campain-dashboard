@@ -6,6 +6,9 @@ const props = defineProps<{
   rowCount: number;
   isSelected: boolean;
   needsAttentionMode: boolean;
+  resolvedCount?: number;
+  clearable?: boolean;
+  clearLabel?: string;
 }>();
 
 const emit = defineEmits<{ clear: [] }>();
@@ -13,7 +16,7 @@ const emit = defineEmits<{ clear: [] }>();
 
 <template>
   <span class="group-title-row">
-    <span class="group-title-text">{{ props.campaignName }} ({{ props.rowCount }})</span>
+    <span class="group-title-text">{{ props.campaignName }} ({{ props.resolvedCount !== undefined ? `${props.resolvedCount}/${props.rowCount}` : props.rowCount }})</span>
     <!-- Badge based on state -->
     <Badge v-if="props.isSelected" class="success dimmed">
       <CheckIcon />Resolved
@@ -26,11 +29,11 @@ const emit = defineEmits<{ clear: [] }>();
     </Badge>
     <!-- Clear button -->
     <Button
-      v-if="props.isSelected"
+      v-if="props.isSelected || props.clearable"
       class="destructive small"
       @click.stop="emit('clear')"
     >
-      Clear selection
+      {{ props.clearLabel ?? 'Clear selection' }}
     </Button>
   </span>
 </template>

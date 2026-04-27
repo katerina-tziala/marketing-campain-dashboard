@@ -9,11 +9,11 @@ import { Button, SheetHeader } from "@/ui";
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK A — Analysis cycle: auto-connects, cycles mock responses + error codes on Analyze.
-// import { onMounted, onUnmounted } from 'vue'
-// import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
-// const { activate, deactivate } = useDevAnalysisCycle()
-// onMounted(activate)
-// onUnmounted(deactivate)
+import { onMounted, onUnmounted } from 'vue'
+import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
+const { activate, deactivate } = useDevAnalysisCycle()
+onMounted(activate)
+onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK B — Connection cycle: type any API key once, then each Connect click
 //           advances through all 8 connection error codes (spinner ~1.5 s each).

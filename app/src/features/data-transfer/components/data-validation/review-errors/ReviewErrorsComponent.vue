@@ -1,38 +1,53 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { Campaign } from '@/shared/types/campaign'
-import type { CampainDataRowError } from '@/features/data-transfer/types'
-import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-messages'
-import { DataErrorSummary, DuplicateSummary } from '@/features/data-transfer/components/data-validation/shared'
-import DataErrorsTable from './DataErrorsTable.vue'
-import { Badge, Button, ModalFooter } from '@/ui'
+import { computed } from "vue";
+import type { Campaign } from "@/shared/types/campaign";
+import type { CampainDataRowError } from "@/features/data-transfer/types";
+import { getRowErrorSummaryWords } from "@/features/data-transfer/utils/error-messages";
+import {
+  DataErrorSummary,
+  DuplicateSummary,
+} from "@/features/data-transfer/components/data-validation/shared";
+import DataErrorsTable from "./DataErrorsTable.vue";
+import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
 
 const props = defineProps<{
-  rowErrors: CampainDataRowError[]
-  validCampaigns: Campaign[]
-  duplicateGroupCount: number
-}>()
+  rowErrors: CampainDataRowError[];
+  validCampaigns: Campaign[];
+  duplicateGroupCount: number;
+}>();
 
 const emit = defineEmits<{
-  back: []
-  proceed: []
-  close: []
-}>()
+  back: [];
+  proceed: [];
+  close: [];
+}>();
 
-const invalidRowCount = computed(() => new Set(props.rowErrors.map((e) => e.row)).size)
-const totalRows = computed(() => invalidRowCount.value + props.validCampaigns.length)
-const summaryWords = computed(() => getRowErrorSummaryWords(invalidRowCount.value, props.validCampaigns.length))
-const showProceed = computed(() => props.validCampaigns.length > 0 || props.duplicateGroupCount > 0)
+const invalidRowCount = computed(
+  () => new Set(props.rowErrors.map((e) => e.row)).size,
+);
+const totalRows = computed(
+  () => invalidRowCount.value + props.validCampaigns.length,
+);
+const summaryWords = computed(() =>
+  getRowErrorSummaryWords(invalidRowCount.value, props.validCampaigns.length),
+);
+const showProceed = computed(
+  () => props.validCampaigns.length > 0 || props.duplicateGroupCount > 0,
+);
 const proceedLabel = computed(() =>
-  props.validCampaigns.length > 0 ? 'Proceed with valid rows' : 'Review duplicate campaigns',
-)
+  props.validCampaigns.length > 0
+    ? "Proceed with valid rows"
+    : "Review duplicate campaigns",
+);
 </script>
 
 <template>
   <!-- Body -->
-  <div class="error-body">
+  <ModalBody class="error-body">
     <div class="flex flex-col gap-4">
-      <DataErrorSummary v-if="validCampaigns.length === 0 && duplicateGroupCount === 0">
+      <DataErrorSummary
+        v-if="validCampaigns.length === 0 && duplicateGroupCount === 0"
+      >
         <template #title>Campaign data could not be imported</template>
         <template #badge>
           <Badge class="danger">Invalid data</Badge>
@@ -49,21 +64,44 @@ const proceedLabel = computed(() =>
           <Badge class="warning">Partial import</Badge>
         </template>
         <template #summary>
-          <p><strong>{{ invalidRowCount }} of {{ totalRows }} {{ summaryWords.totalRowWord }}</strong>
-        {{ summaryWords.verb }} errors and
-        {{ summaryWords.wasWord }} skipped.</p>
-          <p>You can proceed with the <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong>, or go back and fix the file.</p>
+          <p>
+            <strong
+              >{{ invalidRowCount }} of {{ totalRows }}
+              {{ summaryWords.totalRowWord }}</strong
+            >
+            {{ summaryWords.verb }} errors and
+            {{ summaryWords.wasWord }} skipped.
+          </p>
+          <p>
+            You can proceed with the
+            <strong
+              >{{ validCampaigns.length }} valid
+              {{ summaryWords.validRowWord }}</strong
+            >, or go back and fix the file.
+          </p>
         </template>
       </DataErrorSummary>
 
-      <DuplicateSummary v-if="duplicateGroupCount > 0" :count="duplicateGroupCount" />
+      <DuplicateSummary
+        v-if="duplicateGroupCount > 0"
+        :count="duplicateGroupCount"
+      />
     </div>
     <DataErrorsTable :errors="rowErrors" />
-  </div>
+  </ModalBody>
   <ModalFooter>
-    <Button class="primary min-w-24 xs:order-1" @click="emit('back')">Back</Button>
-    <Button v-if="showProceed" class="outline xs:order-3 xs:mr-auto" @click="emit('proceed')">{{ proceedLabel }}</Button>
-    <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
+    <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
+      >Back</Button
+    >
+    <Button
+      v-if="showProceed"
+      class="outline xs:order-3 xs:mr-auto"
+      @click="emit('proceed')"
+      >{{ proceedLabel }}</Button
+    >
+    <Button class="outline min-w-24 xs:order-2" @click="emit('close')"
+      >Cancel</Button
+    >
   </ModalFooter>
 </template>
 
