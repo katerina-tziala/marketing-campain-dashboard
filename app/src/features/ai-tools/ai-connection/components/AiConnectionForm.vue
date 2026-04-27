@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import { Spinner, PasswordInput, RadioToggle, Button } from "@/ui";
+import { PlugIcon } from "@/ui/icons";
 import type { AiProviderType } from "@/features/ai-tools/types";
 import {
   PROVIDER_OPTIONS,
@@ -73,6 +74,7 @@ async function handleConnect(): Promise<void> {
         :disabled="!apiKey.trim() || store.isConnecting"
       >
         <Spinner class="sm inverse" v-if="store.isConnecting" />
+        <PlugIcon v-else />
         {{ store.isConnecting ? "Connecting…" : "Connect" }}
       </Button>
       <!-- Instructions -->

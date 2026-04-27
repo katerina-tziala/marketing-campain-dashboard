@@ -65,7 +65,8 @@ function onCloseAiPanel(): void {
     py-3
     shadow-md
     border-b
-    border-primary-deeper;
+    border-primary-deeper
+    bg-ink;
 }
 
 .shell-title {

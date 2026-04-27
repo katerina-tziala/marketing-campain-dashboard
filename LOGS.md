@@ -8154,3 +8154,40 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Right (>) when collapsed = "there's more to see"; down (∨) when open = "content is below" — tree/folder-style affordance
+
+
+## [#404] Use SheetHeader and Button in BaseModal header
+**Type:** refactor
+
+**Summary:** Replaced the custom `.modal-header` markup and raw `<button class="btn-icon-secondary">` in `BaseModal.vue` with the shared `SheetHeader` layout component and the `Button` component.
+
+**Brainstorming:** `SheetHeader` already provides the correct flex layout, border-b separator, and gradient title slot treatment. `BaseModal` had its own duplicate header block with raw button markup. Switching to `SheetHeader` + `Button` unifies both modal and panel headers behind the same component, removing the redundant styles and raw button element.
+
+**Prompt:** Use SheetHeader to replace headers in modals. Also use Button component in these header sections.
+
+**What changed:**
+- `app/src/ui/BaseModal.vue` — imports `SheetHeader` + `Button`; replaced `.modal-header` block with `<SheetHeader>`; close button is now `<Button class="icon-only text-only">`; removed `.modal-header` and `.modal-header-title` scoped styles; added `.modal-title` for the h2 inside `#header` slot
+
+**Key decisions & why:**
+- `SheetHeader` `#header` slot receives an `h2.modal-title` so `:slotted(h2)` gradient styles apply automatically — no extra styling needed for the title color
+- `Button class="icon-only text-only"` matches the close button used in `AiToolsContent` for visual consistency
+
+
+## [#405] Add PlugIcon and LinkIcon; use PlugIcon in Connect button
+**Type:** update
+
+**Summary:** Added `PlugIcon` and `LinkIcon` to the icon library and placed `PlugIcon` in the Connect button as a visual complement to the loading spinner.
+
+**Brainstorming:** No connection-themed icon existed in the library. Created `PlugIcon` (Lucide plug shape — filled body rect + two prongs + tail) and `LinkIcon` (Font Awesome link-solid path, `viewBox="0 0 640 640"`, `fill="currentColor"`). Iterated `PlugIcon` shape across several turns: filled rectangle body, adjusted rect height and vertical position, shortened prongs to 3 units (stroke 2.5), shortened cable to 2 units (stroke 2.5). Both icons kept in the library; `PlugIcon` chosen for the button.
+
+**Prompt:** Add a connection icon in the connect button. Keep both icons but use the plug.
+
+**What changed:**
+- `app/src/ui/icons/PlugIcon.vue` — new plug SVG icon (filled rect y=7–18, prongs `M9 7V4` / `M15 7V4` stroke 2.5, cable `M12 21v-2` stroke 2.5)
+- `app/src/ui/icons/LinkIcon.vue` — new icon using Font Awesome link-solid path
+- `app/src/ui/icons/index.ts` — exports `PlugIcon` and `LinkIcon`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — imports `PlugIcon`; `<PlugIcon v-else />` paired with `<Spinner v-if>` so exactly one is visible at a time
+
+**Key decisions & why:**
+- `v-else` on `PlugIcon` (paired with `v-if` on `Spinner`) keeps exactly one icon visible at a time with no extra state
+- `LinkIcon` kept in the library for potential future use even though it's not used in the button

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import CloseIcon from './icons/CloseIcon.vue'
+import SheetHeader from './SheetHeader.vue'
+import Button from './Button.vue'
 
 defineProps<{
   title: string
@@ -29,12 +31,14 @@ onUnmounted(() => {
   <Teleport to="body">
     <div class="modal-backdrop" aria-modal="true" role="dialog" :aria-label="title" @click.self="emit('close')">
       <div class="modal">
-        <div class="modal-header">
-          <h2 class="modal-header-title">{{ title }}</h2>
-          <button class="btn-icon-secondary" aria-label="Close" @click="emit('close')">
-            <CloseIcon /> 
-          </button>
-        </div>
+        <SheetHeader>
+          <template #header><h2 class="modal-title">{{ title }}</h2></template>
+          <template #action>
+            <Button class="icon-only text-only" aria-label="Close" @click="emit('close')">
+              <CloseIcon />
+            </Button>
+          </template>
+        </SheetHeader>
         <slot />
       </div>
     </div>
@@ -69,18 +73,7 @@ onUnmounted(() => {
     auto-rows-auto;
 }
 
-  .modal-header {
-    @apply flex
-      items-start
-      justify-between
-      border
-      border
-      gap-2
-      py-3
-      px-4;
-  }
-
-  .modal-header-title {
-    @apply text-primary-light text-lg font-semibold m-0 pt-1;
+  .modal-title {
+    @apply text-lg font-semibold m-0;
   }
 </style>

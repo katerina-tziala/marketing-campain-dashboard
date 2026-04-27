@@ -7,7 +7,7 @@
       <div class="sheet-header-title">
         <slot name="header" />
       </div>
-    </div> 
+    </div>
     <div v-if="$slots.action" class="sheet-header-action">
       <slot name="action" />
     </div>
@@ -33,12 +33,8 @@
   :slotted(h5),
   :slotted(h6) {
     @apply m-0
-      bg-gradient-to-r
-      from-accent-lighter 
-      via-info-lighter via-info-lighter via-primary-lighter via-primary-lighter
-      to-secondary-lighter
-      bg-clip-text
-      text-transparent
+      text-primary-lighter
+      font-semibold 
       w-fit;
   }
 }
