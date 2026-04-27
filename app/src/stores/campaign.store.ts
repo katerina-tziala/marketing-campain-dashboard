@@ -58,6 +58,11 @@ export const useCampaignStore = defineStore('campaigns', () => {
     return computePortfolioAnalysis(selectedChannels.value, selectedChannelsIds.value)
   })
 
+  const fullPortfolioKpis = computed(() => {
+    const portfolio = portfolioData.getById(activePortfolioId.value ?? '')
+    return portfolio?.fullAnalysis.portfolio ?? null
+  })
+
   // ── Actions ───────────────────────────────────────────────────────────
 
   function setChannelFilter(ids: string[]): void {
@@ -97,6 +102,7 @@ export const useCampaignStore = defineStore('campaigns', () => {
     filteredCampaigns,
     portfolioScope,
     portfolioAnalysis,
+    fullPortfolioKpis,
     // actions
     setChannelFilter,
   }

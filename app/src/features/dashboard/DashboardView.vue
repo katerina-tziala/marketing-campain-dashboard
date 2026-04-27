@@ -34,7 +34,10 @@ const openAiPanel = inject<() => void>('openAiPanel')
     </section> -->
     <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
         <!-- KPI Cards -->
-        <!-- <DashboardKpis :kpis="store.portfolioAnalysis.portfolio" /> -->
+        <DashboardKpis
+          :kpis="store.portfolioAnalysis.portfolio"
+          :portfolio-kpis="store.selectedChannelsIds.length > 0 ? store.fullPortfolioKpis : undefined"
+        />
         <!-- Charts
         <DashboardCharts
           :campaigns="store.filteredCampaigns"

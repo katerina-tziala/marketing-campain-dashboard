@@ -8771,3 +8771,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ModalBody` and `ModalFooter` as separate components rather than named slots on `Modal`: the multi-root pattern (body + footer as sibling roots in the slot) continues to work; component wrappers give consumers a semantic API without requiring knowledge of CSS class names
 - Global `_modal.scss` fully deleted: both class names are now exclusively owned by the components — no risk of stale global usage
 
+
+
+## [#437] KPI cards — portfolio context overlay when channels filtered
+**Type:** update
+
+**Summary:** When a channel filter is active, each KPI card now shows the full-portfolio value in its top-right corner; ROI/CVR secondary indicators display filtered vs portfolio side by side; fixed missing `formatPercentage` import on the CTR card.
+
+**Brainstorming:** The filtered KPI values lose meaning without a benchmark — showing the full-portfolio value in the card corner gives immediate context. For secondary metrics (ROI, CVR) the side-by-side pattern (filtered / portfolio) in the same compact area communicates both values without extra space. The portfolio KPIs are already available via the portfolio entry's `fullAnalysis`; exposing a `fullPortfolioKpis` computed from the campaign store keeps DashboardView clean.
+
+**Prompt:** DashboardKpis when some channels selected add on top right of each card the value of the portfolio. Use roi component to display roi. Fix formatPercentage issue. For kpis with secondary values also add the secondary values — add the text side by side.
+
+**What changed:**
+- `stores/campaign.store.ts` — added `fullPortfolioKpis` computed (always returns `fullAnalysis.portfolio` for the active portfolio, null otherwise); exported
+- `features/dashboard/DashboardView.vue` — passes `:portfolio-kpis` to `DashboardKpis` when `selectedChannelsIds.length > 0`
+- `features/dashboard/components/DashboardKpis.vue` — added `portfolioKpis?: PortfolioKPIs | null` prop; fixed missing `formatPercentage` import; passes `portfolioValue` to every `KpiCard`; Revenue and Conversions secondary slots now include portfolio ROI/CVR after a `/` separator when `portfolioKpis` is present; fixed `<p>CVR</p>` → `<span>CVR</span>` inconsistency
+- `features/dashboard/components/KpiCard.vue` — added `portfolioValue?: string | null` prop; wrapped `h5` and portfolio value in `.kpi-header` flex row; `.kpi-secondary` updated to `flex flex-wrap justify-end`; first-of-type span (label) gets `w-full text-right` so values wrap below it side by side; `.sep` deep style for the `/` separator
+
+**Key decisions & why:**
+- `fullPortfolioKpis` on the campaign store (not in DashboardView): the store already owns the active portfolio reference; adding the computed there avoids repeating `portfolioData.getById` logic in the view
+- `portfolioValue` as a string prop (not raw number): keeps KpiCard format-agnostic — DashboardKpis owns all formatting decisions
+- Portfolio secondary rendered inline in the existing secondary slot (not a new slot): avoids adding slot API surface to KpiCard; DashboardKpis already controls what goes in the secondary area
+- Label span as `w-full text-right` in `.kpi-secondary`: forces label onto its own line via flex-wrap; values then flow side-by-side below — no wrapper div needed inside the slot

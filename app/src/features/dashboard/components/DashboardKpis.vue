@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { PortfolioKPIs } from '@/shared/types/campaign'
-import { formatCompactCurrency, formatCompactNumber } from '@/shared/utils/formatters'
+import { formatCompactCurrency, formatCompactNumber, formatPercentage } from '@/shared/utils/formatters'
 import KpiCard from './KpiCard.vue'
 import RoiIndicator from './RoiIndicator.vue'
 
-defineProps<{ kpis: PortfolioKPIs }>()
+defineProps<{
+  kpis: PortfolioKPIs
+  portfolioKpis?: PortfolioKPIs | null
+}>()
 </script>
 
 <template>
@@ -12,31 +15,45 @@ defineProps<{ kpis: PortfolioKPIs }>()
       <KpiCard
         label="Budget"
         :value="formatCompactCurrency(kpis.totalBudget)"
+        :portfolio-value="portfolioKpis ? formatCompactCurrency(portfolioKpis.totalBudget) : undefined"
       />
       <KpiCard
         label="Revenue"
         :value="formatCompactCurrency(kpis.totalRevenue)"
+        :portfolio-value="portfolioKpis ? formatCompactCurrency(portfolioKpis.totalRevenue) : undefined"
       >
         <template #secondary>
-          <span>ROI</span><RoiIndicator :value="kpis.aggregatedROI" />
+          <span>ROI</span>
+          <RoiIndicator :value="kpis.aggregatedROI" />
+          <template v-if="portfolioKpis">
+            <span class="sep">/</span>
+            <RoiIndicator :value="portfolioKpis.aggregatedROI" />
+          </template>
         </template>
       </KpiCard>
       <KpiCard
         label="Conversions"
         :value="formatCompactNumber(kpis.totalConversions)"
+        :portfolio-value="portfolioKpis ? formatCompactNumber(portfolioKpis.totalConversions) : undefined"
       >
         <template #secondary>
-         <p>CVR</p>
-         <RoiIndicator :value="kpis.aggregatedCVR" />
+          <span>CVR</span>
+          <RoiIndicator :value="kpis.aggregatedCVR" />
+          <template v-if="portfolioKpis">
+            <span class="sep">/</span>
+            <RoiIndicator :value="portfolioKpis.aggregatedCVR" />
+          </template>
         </template>
       </KpiCard>
       <KpiCard
         label="CTR"
         :value="formatPercentage(kpis.aggregatedCTR)"
+        :portfolio-value="portfolioKpis ? formatPercentage(portfolioKpis.aggregatedCTR) : undefined"
       />
       <KpiCard
         label="CPA"
         :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
+        :portfolio-value="portfolioKpis ? (portfolioKpis.aggregatedCPA !== null ? formatCompactCurrency(portfolioKpis.aggregatedCPA) : 'N/A') : undefined"
       />
     </section>
 </template>
