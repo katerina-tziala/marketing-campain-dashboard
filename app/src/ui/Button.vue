@@ -146,7 +146,7 @@
       @apply bg-background text-danger;
 
       &::after {
-        @apply opacity-25 bg-danger;
+        @apply opacity-15 bg-danger-light;
       }
     }
 

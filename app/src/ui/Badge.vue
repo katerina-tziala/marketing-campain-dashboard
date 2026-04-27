@@ -50,7 +50,7 @@
 
   &.dimmed {
     &.success .badge-body {
-      @apply bg-success-dark/10 border-success-dark/25 text-success-dark/90;
+      @apply bg-success-dark/10 border-success-dark/25 text-success/90;
     }
 
     &.warning .badge-body {

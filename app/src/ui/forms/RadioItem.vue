@@ -38,7 +38,7 @@ defineEmits<{ change: [value: string | number] }>()
 
 .radio-indicator {
   @apply w-4 h-4 rounded-full border-2 flex items-center justify-center
-    border-primary-soft transition-colors;
+    border-primary transition-colors;
 
   &::before {
     @apply content-[''] block w-2 h-2 rounded-full bg-transparent transition-colors;
@@ -47,28 +47,28 @@ defineEmits<{ change: [value: string | number] }>()
 
 input[type='radio'] {
   &:checked + .radio-indicator {
-    @apply border-primary-light bg-primary-deep/30;
+    @apply border-primary bg-primary-deep/30;
 
     &::before {
-      @apply bg-primary-light;
+      @apply bg-primary;
     }
   }
 
   &:not(:disabled) {
     &:hover + .radio-indicator {
-      @apply border-primary-lighter bg-primary/10;
+      @apply border-primary-light bg-primary/10;
     }
 
     &:checked:hover + .radio-indicator {
-      @apply border-primary bg-primary-deep/50;
+      @apply border-primary-light bg-primary-deep/50;
 
       &::before {
-        @apply bg-primary;
+        @apply bg-primary-light;
       }
     }
 
     &:focus-visible + .radio-indicator {
-      @apply border-primary-lighter bg-primary/10
+      @apply border-primary-light bg-primary/10
         ring-2 ring-offset-1 ring-offset-background ring-primary;
     }
   }

@@ -8585,3 +8585,36 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `withDefaults` over the `=== true` guard already in the computed: the guard stays valid but an explicit default makes the prop contract self-documenting and removes any ambiguity about the `undefined` case
+
+
+## [#428] Replace group reset button with destructive Button component and text label
+**Type:** update
+
+**Summary:** Converted the icon-only clear-selection button in CampainDuplicationsTable group headers to a proper destructive Button with a CloseIcon and "Clear" label.
+
+**Brainstorming:** The old button was a custom-styled icon-only element. Replacing it with the shared `Button` component using `.destructive.small` gives it consistent hover/focus danger coloring and proper accessible sizing while adding visible text improves clarity of the action.
+
+**Prompt:** The x button to reset group selection must become a destructive button with text. Add a proper text for this.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — imported `Button` from `@/ui`; replaced `<button class="group-reset-btn">` with `<Button class="destructive small">` containing CloseIcon + "Clear" text; removed `.group-reset-btn` scoped styles
+
+**Key decisions & why:**
+- "Clear" as label: short, action-oriented, unambiguous in the context of a resolved-group row
+- `.destructive.small` variant: matches the danger semantic (clearing a confirmed selection) while keeping the button compact enough for the table header row
+
+
+## [#429] Refactor group header badge to use v-if/v-else-if/v-else per badge state
+**Type:** refactor
+
+**Summary:** Replaced the single Badge with ternary bindings for class/icon/text with three separate Badge elements using v-if/v-else-if/v-else, so each check runs once and each state is self-contained.
+
+**Brainstorming:** The original single Badge repeated `isGroupSelected` and `needsAttentionMode` checks three times each — once for class, once for icon, once for label. Using v-if/v-else-if/v-else on three Badge elements means each condition is evaluated once per chain evaluation, and each badge variant is fully self-contained with its own class, icon, and text.
+
+**Prompt:** Badge types in group header perform same check 3 times. Render one badge with proper state and perform check once with templates — v-if/v-else, no objects.
+
+**What changed:**
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — replaced single Badge with ternary bindings with three Badge elements: `v-if="isGroupSelected(...)"` → success/CheckIcon/Resolved, `v-else-if="needsAttentionMode"` → danger/AlertTriangleIcon/Needs Attention, `v-else` → warning/ClockIcon/Pending
+
+**Key decisions & why:**
+- Three Badge elements over a single one with dynamic bindings: each state is readable in isolation with no ternaries or object lookups; Vue's v-if/v-else-if/v-else chain guarantees only one renders and each check runs once
