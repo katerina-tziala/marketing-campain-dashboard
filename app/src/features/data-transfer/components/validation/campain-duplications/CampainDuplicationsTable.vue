@@ -2,19 +2,11 @@
 import { ref, computed } from "vue";
 import type { Campaign } from "@/shared/types/campaign";
 import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
-import {
-  Table,
-  TableHeader,
-  AlertTriangleIcon,
-  CheckIcon,
-  ClockIcon,
-  Badge,
-  Button,
-  RadioItem,
-} from "@/ui";
+import { Table, TableHeader, Badge, RadioItem } from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { formatCurrency, formatNumber } from "@/shared/utils/formatters";
 import { useSort } from "@/shared/composables/useSort";
+import DuplicationGroupHeader from "./DuplicationGroupHeader.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -110,35 +102,13 @@ function clearGroupSelection(campaignName: string): void {
       <template v-for="group in sortedGroups" :key="group.campaignName">
         <tr class="group-header">
           <td colspan="8">
-            <span class="group-title-row">
-              <span class="group-title-text"
-                >{{ group.campaignName }} ({{ group.rows.length }})</span
-              >
-
-              <Badge
-                v-if="isGroupSelected(group.campaignName)"
-                class="success dimmed"
-              >
-                <CheckIcon />
-                Resolved
-              </Badge>
-              <Badge v-else-if="needsAttentionMode" class="danger">
-                <AlertTriangleIcon />
-                Needs Attention
-              </Badge>
-              <Badge v-else class="warning">
-                <ClockIcon />
-                Pending
-              </Badge>
-              <Button
-                v-if="isGroupSelected(group.campaignName)"
-                class="destructive small"
-                @click.stop="clearGroupSelection(group.campaignName)"
-              >
-                <!-- <CloseIcon /> -->
-                Clear selection
-              </Button>
-            </span>
+            <DuplicationGroupHeader
+              :campaign-name="group.campaignName"
+              :row-count="group.rows.length"
+              :is-selected="isGroupSelected(group.campaignName)"
+              :needs-attention-mode="needsAttentionMode"
+              @clear="clearGroupSelection(group.campaignName)"
+            />
           </td>
         </tr>
         <tr
@@ -182,16 +152,8 @@ function clearGroupSelection(campaignName: string): void {
     font-medium
     tracking-wide
     text-typography/85
-     bg-background/30
+    bg-background/30
     border-b;
-}
-
-.group-title-row {
-  @apply flex flex-wrap items-center gap-2;
-}
-
-.group-title-text {
-  @apply min-w-0 break-words;
 }
 
 .cell-select {
@@ -209,7 +171,7 @@ function clearGroupSelection(campaignName: string): void {
     @apply bg-surface-raised;
 
     td {
-      @apply text-typography-inverse;
+      @apply text-typography-inverse font-medium;
     }
   }
 }

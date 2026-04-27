@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseModal } from '@/ui'
+import { BaseModal, Button } from '@/ui'
 
 const emit = defineEmits<{
   confirm: []
@@ -17,8 +17,8 @@ const emit = defineEmits<{
       <p class="text-sm font-semibold text-primary-lighter">Do you want to continue?</p>
     </div>
     <div class="modal-footer">
-      <button class="btn-primary" @click="emit('confirm')">Replace data</button>
-      <button class="btn-secondary-outline" @click="emit('close')">Cancel</button>
+      <Button class="primary" @click="emit('confirm')">Replace data</Button>
+      <Button class="outline" @click="emit('close')">Cancel</Button>
     </div>
   </BaseModal>
 </template>

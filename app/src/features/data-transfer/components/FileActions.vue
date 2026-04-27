@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DownloadIcon, UploadIcon } from '@/ui'
+import { Button, DownloadIcon, UploadIcon } from '@/ui'
 import { useDownloadTemplate } from '@/features/data-transfer/composables/useDownloadTemplate'
 
 const emit = defineEmits<{ upload: [] }>()
@@ -8,14 +8,14 @@ const { downloadTemplate } = useDownloadTemplate()
 
 <template>
   <div class="file-actions">
-    <button class="btn-primary grow w-full" @click="emit('upload')">
+    <Button class="primary grow w-full" @click="emit('upload')">
       <UploadIcon />
       Upload
-    </button>
-    <button class="btn-secondary-outline grow w-full" @click="downloadTemplate">
+    </Button>
+    <Button class="outline grow w-full" @click="downloadTemplate">
       <DownloadIcon />
       Download Template
-    </button>
+    </Button>
   </div>
 </template>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { DownloadIcon, UploadIcon, FileDropzone } from '@/ui'
+import { Button, DownloadIcon, UploadIcon, FileDropzone } from '@/ui'
 import { isValidCsvFile } from '@/features/data-transfer/utils/parse-csv'
 
 const props = defineProps<{
@@ -84,15 +84,15 @@ function handleSubmit(): void {
     </div>
   </div>
   <div class="modal-footer">
-     <button class="btn-primary" :disabled="isLoading" @click="handleSubmit">
+    <Button class="primary" :disabled="isLoading" @click="handleSubmit">
       <UploadIcon />
       {{ isLoading ? 'Uploading…' : 'Upload' }}
-    </button>
-    <button class="btn-secondary-outline xs:order-3 xs:mr-auto" @click="emit('downloadTemplate')">
+    </Button>
+    <Button class="outline xs:order-3 xs:mr-auto" @click="emit('downloadTemplate')">
       <DownloadIcon />
       Download Template
-    </button>
-    <button class="btn-secondary-outline min-w-24 xs:order-2" @click="emit('close')">Cancel</button>
+    </Button>
+    <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
   </div>
 </template>
 

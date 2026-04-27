@@ -8655,3 +8655,137 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - All four entries rewritten from scratch rather than patched: the old descriptions referenced removed patterns (inline sort state, single Badge with ternaries, variant prop) that would mislead future reads
+
+
+## [#432] Extract DuplicationGroupHeader and move table into campain-duplications folder
+**Type:** refactor
+
+**Summary:** Moved `CampainDuplicationsTable` into a dedicated `campain-duplications/` subfolder and extracted its group-title-row markup into a new `DuplicationGroupHeader` component.
+
+**Brainstorming:** The group header row (campaign name, count, status badge, clear button) was an inline `<span>` block inside the table template. Extracting it into its own component gives it a clear boundary, moves its scoped styles out of the table, and makes each piece independently readable. Foldering the table alongside its sub-component follows the pattern used elsewhere (e.g. `ai-analysis/`, `budget-optimization/`) where a feature's components live together in a named folder.
+
+**Prompt:** Move CampainDuplicationsTable into a folder campain-duplications under validation/. Extract the group title row as a component DuplicationGroupHeader. Update all consumer imports.
+
+**What changed:**
+- `validation/campain-duplications/DuplicationGroupHeader.vue` — new component; props: campaignName/rowCount/isSelected/needsAttentionMode; emits clear; owns the group-title-row span, v-if/v-else-if/v-else badge chain, and destructive Button; carries `.group-title-row` + `.group-title-text` scoped styles from the old table
+- `validation/campain-duplications/CampainDuplicationsTable.vue` — moved here from `validation/`; replaced inline group-header markup with `<DuplicationGroupHeader>` bound via props + `@clear`; removed AlertTriangleIcon/CheckIcon/ClockIcon/Button imports (now in DuplicationGroupHeader); `.group-title-row`/`.group-title-text` scoped styles removed (live in DuplicationGroupHeader)
+- `validation/CampainDuplicationsTable.vue` — deleted (old location)
+- `components/ResolveDuplicationsStep.vue` — import path updated to `./validation/campain-duplications/CampainDuplicationsTable.vue`
+- `dashboard/components/DevTablePlayground.vue` — import path updated to `@/features/data-transfer/components/validation/campain-duplications/CampainDuplicationsTable.vue`
+- `CLAUDE.md` — validation/ tree updated: old flat CampainDuplicationsTable entry replaced with campain-duplications/ subfolder listing both new files
+
+**Key decisions & why:**
+- Props mirror exactly what the table already computed (`isGroupSelected`, `needsAttentionMode`) — no new state, just a boundary; the table passes computed booleans so DuplicationGroupHeader is fully dumb
+- `emit('clear')` (no payload) keeps the event minimal; the table passes the campaignName via `@clear="clearGroupSelection(group.campaignName)"`
+- Scoped styles for `.group-title-row`/`.group-title-text` moved into the new component where they belong; `.group-header td`, `.row-selectable`, `.cell-select` remain in the table
+
+
+## [#433] Add CircleCheckIcon and use it in DuplicationGroupHeader
+**Type:** update
+
+**Summary:** Added `CircleCheckIcon` (dashed circle + checkmark) to the icon library and replaced `ClockIcon` with it in `DuplicationGroupHeader`'s "Select one" pending badge.
+
+**Brainstorming:** The pending badge needed an icon that reads as "awaiting action" without implying time. A dashed circle + checkmark SVG signals incompleteness (dashed = not yet done) while the checkmark shape previews the completed state — fitting for "Select one". `ClockIcon` is preserved in the library for future use.
+
+**Prompt:** Replace clock icon with a circle and a checkmark. Do not remove clock icon — add a new one and replace it in the duplication header.
+
+**What changed:**
+- `ui/icons/CircleCheckIcon.vue` — new icon; dashed circle (`stroke-dasharray="3 2"`) + checkmark polyline; same SVG conventions as existing icons (1em size, currentColor, aria-hidden)
+- `ui/icons/index.ts` — added `CircleCheckIcon` export
+- `campain-duplications/DuplicationGroupHeader.vue` — swapped `ClockIcon` import for `CircleCheckIcon`; template "Select one" badge updated accordingly
+- `CLAUDE.md` — added `CircleCheckIcon.vue` entry; updated `CheckIcon` and `ClockIcon` descriptions
+
+**Key decisions & why:**
+- Dashed circle chosen over solid to visually distinguish from `CheckCircleIcon` (solid, success) and to suggest a pending/incomplete state
+- `ClockIcon` left in the library: still exported, just no longer used in this component
+
+
+## [#434] Fix CircleCheckIcon — solid circle stroke
+**Type:** fix
+
+**Summary:** Removed `stroke-dasharray` from `CircleCheckIcon` so the circle renders with a solid stroke like all other circle icons.
+
+**Brainstorming:** The dashed stroke made the icon look dotted/broken rather than a clean pending-state indicator. Solid stroke matches the rest of the icon library; badge color (warning) already differentiates the pending state.
+
+**Prompt:** Fix the circle check icon — the line looks dotted, it should be solid.
+
+**What changed:**
+- `ui/icons/CircleCheckIcon.vue` — removed `stroke-dasharray="3 2"` from circle element
+- `CLAUDE.md` — updated CircleCheckIcon description from "Dashed" to "Solid"
+
+**Key decisions & why:**
+- No shape change needed — just the stroke style; the warning badge color is sufficient to distinguish it from CheckCircleIcon (success)
+
+
+## [#435] Clean up Button.vue styles and add button playground section
+**Type:** refactor
+
+**Summary:** Removed all dead code from Button.vue (`::after` overlay infrastructure, duplicate blocks, `.content-wrapper` ghost reference, commented-out variant) and added a full button variant showcase to DevTablePlayground.
+
+**Brainstorming:** The `::after` overlay was the original mechanism for hover tints on `text-only` and `destructive` variants — an absolutely-positioned pseudo-element layered over a `bg-background` base. The linter confirmed it was unused infrastructure (no content, no visible effect in base). Once removed, the variant `::after` blocks became dead (no `content`/`position`), so hover tints collapsed. Resolved by applying `bg-background` directly on the button hover, folding the tint into a single-class approach like `primary` already did. Dev playground section added to expose all variants (primary/text-only/destructive × normal/small/icon-only × with-icon/disabled).
+
+**Prompt:** Clean up button styles, investigate thoroughly. ::after does not really apply any styles — remove it. Add some button variations under the dev playground title.
+
+**What changed:**
+- `ui/Button.vue` — removed: base `::after` block, `:deep(*)` z-10, hover/focus `::after { opacity-0 }` block, `.content-wrapper` dead reference, `primary::after { hidden }`, duplicate `::after` blocks in `text-only`/`destructive`, redundant `-z-[1]` overrides, commented-out old primary variant; hover for `text-only`/`destructive` simplified to `bg-background` direct on the button element
+- `dashboard/components/DevTablePlayground.vue` — added `Button`/`SparklesIcon`/`DownloadIcon`/`CloseIcon` imports; added "Buttons" playground section with 7 rows covering all variant × size × state combinations; added `.playground-row` (flex, gap-3) + `.row-label` (monospace, w-40) scoped styles
+
+**Key decisions & why:**
+- `bg-background` for hover instead of a tinted color: the old effect was `bg-background` + `::after bg-primary-light/25` overlay; without layering, `bg-primary-light/25` over a transparent button was invisible; `bg-background` restores a visible hover surface with the color change carrying the variant meaning
+- `relative` and `overflow-hidden` kept on base `.btn` — still needed for rounded-corner clipping and potential future overlay patterns
+
+
+## [#436] Add outline button variant
+**Type:** update
+
+**Summary:** Added `.btn.outline` variant to Button.vue — transparent background with a border that always matches the text color — and added it to the dev playground.
+
+**Brainstorming:** "text with border same color" maps cleanly to `border border-current`: `currentColor` tracks the text color automatically, so border/text stay in sync across all states without duplicating color declarations. Hover and focus-visible reuse the same `bg-background` pattern as `text-only`.
+
+**Prompt:** Add button outline variation — in normal state like text with border same color. Add all states too.
+
+**What changed:**
+- `ui/Button.vue` — added `.btn.outline`: normal state `text-primary-lighter/95 border border-current`; hover/focus `bg-background text-primary-lighter`; focus-visible ring; active `text-primary-light`
+- `dashboard/components/DevTablePlayground.vue` — added three outline rows (normal, small, icon-only) with text/icon/disabled examples
+- `CLAUDE.md` — Button.vue description rewritten to reflect cleaned-up variants (no ::after, outline added)
+
+**Key decisions & why:**
+- `border-current` used instead of a named color: border always matches text color precisely across all states without repeating color tokens
+
+
+## [#437] Fix hover background on text-only, outline, destructive buttons
+**Type:** fix
+
+**Summary:** Replaced `bg-background` with `bg-surface-hover` on hover/focus for `text-only`, `outline`, and `destructive` button variants — `bg-background` is the darkest page color and was invisible against dark surfaces.
+
+**Brainstorming:** The old `::after` approach layered a tinted pseudo-element over `bg-background`, so the tint was what created the visible hover effect. Without the `::after` layer, `bg-background` alone is effectively transparent on dark backgrounds. `bg-surface-hover` is the semantic token designed specifically for hover surfaces — it's a step above background and provides a visible lift.
+
+**Prompt:** Backgrounds from destructive and text buttons are gone again — hover and focus states.
+
+**What changed:**
+- `ui/Button.vue` — `bg-background` → `bg-surface-hover` in `text-only`, `outline`, and `destructive` hover/focus-visible rules
+
+**Key decisions & why:**
+- `bg-surface-hover` over an arbitrary tint: it's the right semantic token for this exact purpose; keeps the design system internally consistent
+
+
+## [#438] Replace secondary button usages with Button component
+**Type:** refactor
+
+**Summary:** Replaced all raw `<button class="btn-secondary-outline">` and `<button class="btn-primary">` elements with the `<Button>` component across the app; channel filter buttons skipped (custom pill styling incompatible with `.btn` base).
+
+**Brainstorming:** `btn-secondary-outline` and `btn-primary` are legacy global class names with no actual style definitions — those buttons were unstyled. All usages are straightforward swaps to `<Button class="outline">` and `<Button class="primary">` respectively, preserving all existing utility classes (min-w-*, xs:order-*, disabled binding). ChannelFilter uses a custom pill shape with its own scoped styles that conflict with `.btn` base (`border-none`, `rounded-md`) so it was intentionally skipped.
+
+**Prompt:** Find buttons that use secondary and replace them with new button (button component). Skip channel filters.
+
+**What changed:**
+- `shell/AppShell.vue` — `Button` added to import; upload CSV button converted to `<Button class="outline">`
+- `data-transfer/components/ReplaceDataModal.vue` — `Button` added to import; both footer buttons converted
+- `data-transfer/components/FileActions.vue` — `Button` added to import; both buttons converted
+- `data-transfer/components/ResolveDuplicationsStep.vue` — `Button` added to import; all three footer buttons converted
+- `data-transfer/components/UploadCampainData.vue` — `Button` added to import; all three footer buttons converted
+- `data-transfer/components/DisplayUploadErrorsStep.vue` — `Button` added to import; all three footer buttons converted
+
+**Key decisions & why:**
+- All non-Button extra classes (min-w-*, xs:order-*, xs:mr-auto, :disabled binding) preserved — they pass through via `v-bind="$attrs"` on the underlying `<button>`
+- ChannelFilter left as native `<button>` — its scoped `.filter-btn` styles override `.btn` base in ways that would break the pill appearance

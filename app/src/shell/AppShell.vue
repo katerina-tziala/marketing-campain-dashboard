@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, ref } from 'vue'
-import { UploadIcon } from '@/ui'
+import { Button, UploadIcon } from '@/ui'
 import { ToastContainer } from '@/ui/toast'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
@@ -25,10 +25,10 @@ function onCloseAiPanel(): void {
     <!-- Header — full width, never compressed by drawer -->
     <header class="shell-header">
       <h1 class="shell-title">Marketing Campaign Dashboard</h1>
-      <button v-if="hasCampaigns" class="btn-secondary-outline" @click="requestUpload">
+      <Button v-if="hasCampaigns" class="outline" @click="requestUpload">
         <UploadIcon />
         Upload CSV
-      </button>
+      </Button>
     </header>
 
     <!-- Body row — main content + AI drawer side by side -->

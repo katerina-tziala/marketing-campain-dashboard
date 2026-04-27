@@ -8,7 +8,8 @@
 .btn {
   @apply cursor-pointer
     outline-none
-    border-none
+    border-2
+    border-transparent
     relative
     overflow-hidden
     inline-flex
@@ -18,7 +19,7 @@
     transition ease-in-out duration-150
     rounded-md
     opacity-85
-    text-sm font-medium leading-none text-center 
+    text-sm font-medium leading-none text-center
     tracking-wide
     gap-2 px-2.5 py-3
     max-h-9;
@@ -27,47 +28,14 @@
     @apply text-lg;
   }
 
-  &:deep(*) {
-    @apply z-10;
-  }
-
-  &::after {
-    content: "";
-    @apply block
-      w-full
-      h-full
-      absolute
-      inset-0
-      -z-[1]
-      transition ease-in-out duration-300;
-  }
-
   &:disabled {
     @apply cursor-not-allowed opacity-50;
-
-    &::after {
-      @apply hidden;
-    }
-  }
-
-  &:not(:disabled):focus-visible,
-  &:not(:disabled):hover {
-    &::after {
-      @apply opacity-0;
-    }
-    .content-wrapper {
-      @apply opacity-100;
-    }
   }
 }
 
-/* variant square */
+/* variant icon-only */
 .btn.icon-only {
   @apply h-8 w-8 min-h-8 min-w-8 p-0;
-
-  &:deep(svg) {
-    @apply text-lg;
-  }
 }
 
 /* variant small */
@@ -75,11 +43,9 @@
   @apply text-xs px-2 py-1 leading-4;
 }
 
+/* variant primary */
 .btn.primary {
   @apply bg-primary-dark text-typography-strong;
-  &::after {
-    @apply hidden;
-  }
 
   &:not(:disabled) {
     &:hover {
@@ -98,24 +64,12 @@
 
 /* variant text-only */
 .btn.text-only {
-  @apply transition-none text-primary-lighter/95;
-
-  &::after {
-    @apply -z-[1] transition-none bg-background opacity-0;
-  }
-
-  &::after {
-    @apply opacity-0;
-  }
+  @apply text-primary-lighter/95;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-background text-primary-lighter;
-
-      &::after {
-        @apply opacity-25 bg-primary-light;
-      }
+      @apply bg-surface-hover text-primary-lighter;
     }
 
     &:not(.no-ring):focus-visible {
@@ -128,26 +82,34 @@
   }
 }
 
-/* variant destructive */
-.btn.destructive {
-  @apply transition-none text-typography-soft;
-
-  &::after {
-    @apply -z-[1] transition-none bg-background opacity-0;
-  }
-
-  &::after {
-    @apply opacity-0;
-  }
+/* variant outline */
+.btn.outline {
+  @apply text-primary-lighter/95 border border-primary-lighter;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-background text-danger;
+      @apply bg-surface-hover text-primary-lighter;
+    }
 
-      &::after {
-        @apply opacity-15 bg-danger-light;
-      }
+    &:focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+    }
+
+    &:active {
+      @apply text-primary-light;
+    }
+  }
+}
+
+/* variant destructive */
+.btn.destructive {
+  @apply text-typography-soft;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-danger-darker/10 text-danger;
     }
 
     &:focus-visible {
@@ -159,34 +121,4 @@
     }
   }
 }
-
-
-
-// /* variant primary */
-// .btn.primary {
-//   @apply bg-primary-dark text-typography-strong;
-
-//   &:not(:disabled) {
-//     @apply bg-gradient-to-br
-//         from-primary-dark from-5%
-//         via-primary
-//         to-secondary;
-
-//     &::after {
-//       @apply bg-gradient-to-br from-accent via-info-dark to-primary;
-//     }
-
-//     &:focus-visible {
-//       @apply ring-2 ring-primary ring-offset-1 ring-offset-background;
-//     }
-
-//     &:active {
-//       @apply text-typography-strong/80;
-//       &::after {
-//         @apply opacity-90;
-//       }
-//     }
-//   }
-// }
-
 </style>

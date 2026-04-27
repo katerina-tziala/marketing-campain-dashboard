@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { Button } from '@/ui'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
-import CampainDuplicationsTable from './validation/CampainDuplicationsTable.vue'
+import CampainDuplicationsTable from './validation/campain-duplications/CampainDuplicationsTable.vue'
 
 const props = defineProps<{
   duplicateGroups: CampainDataDuplicateGroup[]
@@ -52,9 +53,9 @@ function handleProceed(): void {
   </div>
   <!-- Footer -->
   <div class="modal-footer">
-    <button class="btn-primary min-w-24 xs:order-1" @click="emit('back')">Back</button>
-    <button class="btn-secondary-outline xs:order-3 xs:mr-auto" :disabled="!canProceed" @click="handleProceed">Proceed with selection</button>
-    <button class="btn-secondary-outline min-w-24 xs:order-2" @click="emit('close')">Cancel</button>
+    <Button class="primary min-w-24 xs:order-1" @click="emit('back')">Back</Button>
+    <Button class="outline xs:order-3 xs:mr-auto" :disabled="!canProceed" @click="handleProceed">Proceed with selection</Button>
+    <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
   </div>
 </template>
 
