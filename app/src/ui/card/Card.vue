@@ -18,7 +18,7 @@
     text-typography-soft
     bg-surface-elevated
     border
-    border-subtle;
+    border-faint;
 }
 
 .card.secondary {

@@ -2,14 +2,6 @@ import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics
 import type { Channel } from '@/shared/types/channel'
 import { round2, round4, safeDivide } from './math'
 
-// Threshold is 0.5 because roi/ctr/cvr are stored as decimal ratios (e.g. 0.5 = 50%)
-export function percentageClass(value: number | null): string {
-  if (value === null) return ''
-  if (value <= 0) return 'negative'
-  if (value <= 0.5) return 'warning'
-  return 'positive'
-}
-
 export function computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics {
   const { budget, revenue, impressions, clicks, conversions } = campain;
 

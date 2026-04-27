@@ -56,7 +56,9 @@ onUnmounted(() => {
     overflow-hidden
     z-1000
     inset-0
-    bg-primary-ink/[0.7];
+    bg-surface-backdrop/60;
+
+  // background-color: rgb(var(--color-overlay) / 0.9);
 }
 
 .modal {
@@ -65,9 +67,9 @@ onUnmounted(() => {
     overflow-hidden
     rounded-md
     shadow-md
-    bg-surface
+     bg-surface-elevated
     border
-    border
+    border-faint
     grid 
     grid-cols-1
     auto-rows-auto;

@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { CampainDataRowError } from '@/features/data-transfer/types'
 import { getRowErrorMessage } from '@/features/data-transfer/utils/error-messages'
-import { DataTableHeader, Badge } from '@/ui'
+import { TableHeader, Badge } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 
 const props = defineProps<{
@@ -31,9 +31,9 @@ const sortedErrors = computed(() =>
 <template>
   <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
     <table class="data-table stripped-odd">
-      <DataTableHeader
+      <TableHeader
         :columns="COLUMNS"
-        :sticky="true"
+        class="data-table-sticky-header"
         sort-key="row"
         :sort-dir="sortDir"
         @sort="toggleSort"

@@ -66,7 +66,7 @@ function onCloseAiPanel(): void {
     shadow-md
     border-b
     border-primary-deeper
-    bg-ink;
+    bg-primary-ink;
 }
 
 .shell-title {

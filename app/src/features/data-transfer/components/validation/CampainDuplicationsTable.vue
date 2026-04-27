@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
-import { DataTableHeader, CheckIcon, Badge } from '@/ui'
+import { TableHeader, CheckIcon, Badge } from '@/ui'
 import type { DataTableColumn } from '@/ui'
 import { formatCurrency, formatNumber } from '@/shared/utils/formatters'
 
@@ -80,9 +80,9 @@ function selectRow(campaignName: string, rowId: number): void {
 <template>
   <div class="table-wrapper scrollbar-stable scrollbar-on-surface">
     <table class="data-table">
-      <DataTableHeader
+      <TableHeader
         :columns="COLUMNS"
-        :sticky="true"
+        class="data-table-sticky-header"
         :sort-key="sortKey"
         :sort-dir="sortDir"
         @sort="handleSort"
@@ -142,8 +142,7 @@ function selectRow(campaignName: string, rowId: number): void {
     text-typography-subtle
     // bg-surface-secondary
     border-t
-    border-b
-    border-divider
+    border-b 
     items-center
     gap-2;
 

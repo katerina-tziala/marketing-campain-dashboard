@@ -8191,3 +8191,157 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `v-else` on `PlugIcon` (paired with `v-if` on `Spinner`) keeps exactly one icon visible at a time with no extra state
 - `LinkIcon` kept in the library for potential future use even though it's not used in the button
+
+
+## [#406] Add generic Table component to ui library
+**Type:** feature
+
+**Summary:** Created a generic `Table.vue` shell in the ui library — scrollable container div with a border and a `data-table` inside, with a default slot for content.
+
+**Brainstorming:** The request called for a minimal, reusable base table component with no inputs, no style variations, and a bordered scrollable wrapper. Placing it in `src/ui/` alongside `DataTableHeader` and other generic components is the natural fit. The component uses a default slot so consumers can project any thead/tbody content into the table.
+
+**Prompt:** Create a table component with a scrollable container div, a table tag inside, no inputs, no style variations, and scoped styles with a border on the div.
+
+**What was built:**
+- `app/src/ui/Table.vue` — scrollable bordered wrapper div with `data-table` inside; default slot; scoped SCSS using `@apply`
+- `app/src/ui/index.ts` — added `Table` export
+
+**Key decisions & why:**
+- Used `data-table` on the inner `<table>` to stay consistent with the project's existing global table class
+- Border applied via `border border-border rounded-md` to use the semantic border token rather than a raw color
+- Default slot with no constraints so consumers control all thead/tbody content
+
+
+## [#407] Use Table component in CampaignTable
+**Type:** update
+
+**Summary:** Replaced the hand-rolled `div + table` wrapper in `CampaignTable.vue` with the new generic `Table` component from the ui library.
+
+**Brainstorming:** Straightforward swap — `Table` owns the scrollable bordered container, so the old `overflow-auto` in the local scoped style was removed to avoid duplication. The `scrollbar-stable scrollbar-on-surface campaign-table` classes fall through onto `Table`'s root div via Vue class fallthrough.
+
+**Prompt:** Use the new Table component in CampaignTable.
+
+**What changed:**
+- `app/src/features/dashboard/components/CampaignTable.vue` — imports `Table` from `@/ui`; template uses `<Table>` instead of `<div><table>`; removed `overflow-auto` from scoped `.campaign-table` rule (now owned by `Table`)
+
+**Key decisions & why:**
+- Kept `scrollbar-stable scrollbar-on-surface` as class fallthrough on `<Table>` so scrollbar styling is still applied to the container div
+- Removed only `overflow-auto` from local styles; `w-full h-full` stays because it is specific to this usage context
+
+
+## [#408] Move Table + TableHeader into ui/table module; rename DataTableHeader
+**Type:** refactor
+
+**Summary:** Renamed `DataTableHeader` to `TableHeader`, moved both `Table` and `TableHeader` into a new `src/ui/table/` folder with a barrel index, and updated all three consumer files.
+
+**Brainstorming:** Grouping related table primitives into a dedicated folder follows the same pattern already used for `card/`, `charts/`, `toast/`, etc. Renaming drops the redundant "Data" prefix — the component lives in the table module and the name "Header" is unambiguous in context.
+
+**Prompt:** Rename DataTableHeader to TableHeader, replace all instances, move Table and TableHeader into a new folder, use a barrel index to export components.
+
+**What changed:**
+- `app/src/ui/table/Table.vue` — moved from `ui/Table.vue`; no logic change
+- `app/src/ui/table/TableHeader.vue` — moved + renamed from `ui/DataTableHeader.vue`; updated internal icon import to `../icons`
+- `app/src/ui/table/index.ts` — new barrel; exports `Table`, `TableHeader`, `DataTableColumn`, `SortDir`
+- `app/src/ui/index.ts` — replaced individual `DataTableHeader` + `Table` exports with `export * from './table'`; removed stale `Table` export line
+- `app/src/features/dashboard/components/CampaignTable.vue` — import + template updated to `TableHeader`
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — import + template updated to `TableHeader`
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — import + template updated to `TableHeader`
+- `app/src/ui/DataTableHeader.vue`, `app/src/ui/Table.vue` — deleted
+
+**Key decisions & why:**
+- Barrel-only export from `ui/index.ts` keeps the public API flat — consumers still import from `@/ui` with no path changes beyond the renamed symbol
+- `DataTableColumn` type alias kept unchanged (renaming it would break all column definitions across the codebase with no benefit)
+
+
+## [#409] Add RoiIndicator component; remove roi-text global utility
+**Type:** refactor
+
+**Summary:** Extracted ROI color logic and formatting into a self-contained `RoiIndicator` component, removing the global `roi-text` utility class and `percentageClass` shared helper.
+
+**Brainstorming:** The `roi-text` + `percentageClass` pattern was scattered across multiple templates with no single owner. Moving both the class logic (`roiClass`) and `formatPercentage` into `RoiIndicator` makes the coloring behavior a component concern — callers just pass a raw `number | null` value. The revenue cell in `CampaignTable` lost its ROI coloring since the adjacent ROI cell already communicates performance via `RoiIndicator`.
+
+**Prompt:** Create a RoiIndicator component in dashboard. Move roi-text styles and remove utility scss. Move percentageClass as roiClass and formatter in that component. Implement it in CampaignTable and KPIs.
+
+**What changed:**
+- `app/src/features/dashboard/components/RoiIndicator.vue` — new component; props: `value: number | null`; internalizes `roiClass` + `formatPercentage`; scoped styles (positive/warning/negative) replacing the global utility
+- `app/src/features/dashboard/components/CampaignTable.vue` — imports `RoiIndicator`; ROI cell uses `<RoiIndicator :value="c.roi" />`; revenue cell plain currency (no ROI coloring); removed `percentageClass` import
+- `app/src/features/dashboard/components/DashboardKpis.vue` — imports `RoiIndicator`; both `roi-text` spans replaced; removed `percentageClass` + `formatPercentage` imports
+- `app/src/shared/utils/campaign-performance.ts` — `percentageClass` removed
+- `app/src/styles/utilities/_roi.scss` — deleted
+- `app/src/styles/utilities/index.scss` — removed `@use './roi'`
+
+**Key decisions & why:**
+- `roiClass` kept as a plain function inside the component (not a composable) — it's only used in one place and has no reactive dependencies
+- Revenue cell coloring dropped rather than re-implemented via a prop — the ROI cell immediately to its right already encodes the same signal
+
+
+## [#410] Remove sticky prop from TableHeader; apply via class from parent
+**Type:** refactor
+
+**Summary:** Dropped the `sticky` boolean prop from `TableHeader` and moved sticky behaviour to a global `.data-table-sticky-header` class applied at each call site.
+
+**Brainstorming:** The `sticky` prop was a style concern — the component shouldn't decide whether its header is sticky. A CSS class passed from the parent via Vue class fallthrough is more composable and keeps the component generic. Because `TableHeader` has a single `<thead>` root, any class applied on the component element falls through to that root automatically, so `.data-table-sticky-header` lands exactly where the scoped styles used to target it. Moving the styles to `_table.scss` makes them globally available alongside the other table utility classes.
+
+**Prompt:** sticky should not be an input of table header. it should be applied as a class from parent
+
+**What changed:**
+- `app/src/ui/table/TableHeader.vue` — removed `sticky` prop and default, removed `:class="{ 'data-table-sticky-header': sticky }"` binding from `<thead>`, removed `.data-table-sticky-header` scoped style block
+- `app/src/styles/components/_table.scss` — added `.data-table-sticky-header` global rule targeting `.data-table-header` and `.data-table-sortable-header` children with `sticky top-0 z-10 bg-primary-ink`
+- `app/src/features/dashboard/components/CampaignTable.vue` — replaced `:sticky="true"` with `class="data-table-sticky-header"`
+- `app/src/features/data-transfer/components/validation/DataErrorsTable.vue` — same replacement
+- `app/src/features/data-transfer/components/validation/CampainDuplicationsTable.vue` — same replacement
+
+**Key decisions & why:**
+- Styles moved to `_table.scss` rather than a new utility partial — sticky is table-specific behaviour and belongs alongside the other `.data-table-*` global classes
+- Vue class fallthrough makes this zero-boilerplate: no `inheritAttrs: false`, no `:class` binding needed in the component
+
+
+## [#411] Add surface-lift token between surface default and elevated
+**Type:** update
+
+**Summary:** Added `surface-lift` (`bg-surface-lift`) as a new surface step between `surface` (default) and `surface-elevated`.
+
+**Brainstorming:** The existing surface scale jumps from `14 16 34` (DEFAULT) straight to `11 23 57` (elevated) — a visible step that's too coarse for fine-grained layering. A midpoint value of `12 19 45` fills the gap. Named `lift` to fit the positional idiom (default → lift → elevated → raised → overlay) without conflicting with the existing tokens.
+
+**Prompt:** add a surface color between elevated and default
+
+**What changed:**
+- `app/src/styles/themes/dark.scss` — added `--color-surface-0h: 12 19 45` between `--color-surface-0` and `--color-surface-1`
+- `app/tailwind.config.js` — added `surface.lift` token pointing to `--color-surface-0h`, inserted between `DEFAULT` and `elevated`
+
+**Key decisions & why:**
+- CSS variable named `--color-surface-0h` (half-step between 0 and 1) to keep the numeric sequence legible without renaming existing vars
+- Tailwind token named `lift` — conveys "slightly raised" without implying a full elevation step; fits naturally in the scale
+
+
+## [#412] Reduce blue on surface-elevated token
+**Type:** update
+
+**Summary:** Toned down the blue channel on `surface-elevated` from `11 23 57` to `13 22 48` to make it less saturated.
+
+**Brainstorming:** The original value had a strong blue bias (57 blue vs 11/23 red/green). Reducing blue to 48 and nudging red up slightly preserves the elevation step in lightness while pulling back the colour cast.
+
+**Prompt:** can you make elevated less blue?
+
+**What changed:**
+- `app/src/styles/themes/dark.scss` — updated `--color-surface-1` from `11 23 57` to `13 22 48`
+
+**Key decisions & why:**
+- Blue reduced by ~16% (57 → 48); red nudged +2 to keep it from reading too dark/flat
+
+
+## [#413] Add border-faint token darker than border-subtle
+**Type:** update
+
+**Summary:** Added `border-faint` as a new border step below `border-subtle`, for barely-there separators close to the surface colour.
+
+**Brainstorming:** The existing border scale starts at `border-subtle` (`20 34 74`). A step below that — `16 26 58` — sits just above the elevated surface colour and reads as a near-invisible divider. Named `faint` to convey minimal contrast without conflicting with the existing naming.
+
+**Prompt:** add a border darker than subtle
+
+**What changed:**
+- `app/src/styles/themes/dark.scss` — added `--color-border-faint: 16 26 58` above `--color-border-subtle`
+- `app/tailwind.config.js` — added `faint` entry to `borderColor` between `DEFAULT` and `subtle`
+
+**Key decisions & why:**
+- Value `16 26 58` chosen as a midpoint between `surface-elevated` (`13 22 48`) and `border-subtle` (`20 34 74`) — visible enough to register as a border but very low contrast

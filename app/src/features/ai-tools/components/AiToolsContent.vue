@@ -32,7 +32,7 @@ const emit = defineEmits<{ close: [] }>();
 <template>
   <SheetHeader>
     <template #icon><SparklesIcon class="mt-1" /></template>
-    <template #header><h2 class="ai-tools-title">AI Assistant</h2></template>
+    <template #header><h2>AI Assistant</h2></template>
     <template #action>
       <Button
         class="btn icon-only text-only"
@@ -57,10 +57,6 @@ const emit = defineEmits<{ close: [] }>();
 </template>
 
 <style lang="scss" scoped>
-.ai-tools-title {
-  @apply text-lg font-semibold;
-}
-
 .ai-tools-content {
   @apply grow shrink-0 overflow-hidden pb-4;
 }

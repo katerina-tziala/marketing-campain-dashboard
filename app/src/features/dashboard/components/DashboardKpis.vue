@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import type { PortfolioKPIs } from '@/shared/types/campaign'
-import {
-  formatCompactCurrency,
-  formatCompactNumber,
-  formatPercentage,
-} from '@/shared/utils/formatters'
-import { percentageClass } from '@/shared/utils/campaign-performance'
+import { formatCompactCurrency, formatCompactNumber } from '@/shared/utils/formatters'
 import KpiCard from './KpiCard.vue'
+import RoiIndicator from './RoiIndicator.vue'
 
 defineProps<{ kpis: PortfolioKPIs }>()
 </script>
@@ -22,7 +18,7 @@ defineProps<{ kpis: PortfolioKPIs }>()
         :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <template #secondary>
-          <span>ROI</span><span class="roi-text" :class="percentageClass(kpis.aggregatedROI)">{{ formatPercentage(kpis.aggregatedROI) }}</span>
+          <span>ROI</span><RoiIndicator :value="kpis.aggregatedROI" />
         </template>
       </KpiCard>
       <KpiCard
@@ -31,7 +27,7 @@ defineProps<{ kpis: PortfolioKPIs }>()
       >
         <template #secondary>
          <p>CVR</p>
-         <span class="roi-text" :class="percentageClass(kpis.aggregatedCVR)">{{ formatPercentage(kpis.aggregatedCVR) }}</span>
+         <RoiIndicator :value="kpis.aggregatedCVR" />
         </template>
       </KpiCard>
       <KpiCard

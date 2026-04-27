@@ -98,7 +98,7 @@
 
 /* variant text-only */
 .btn.text-only {
-  @apply transition-none text-primary-lighter/85;
+  @apply transition-none text-primary-lighter/95;
 
   &::after {
     @apply -z-[1] transition-none bg-background opacity-0;

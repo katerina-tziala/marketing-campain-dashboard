@@ -1,24 +1,39 @@
-@use './dark-pallette.scss';
+@use "./dark-pallette.scss";
 
 :root,
 [data-theme="dark"] {
-
   /* ─── Background & surfaces ───────────────────────── */
   --color-background: var(--neutral-900);
 
-  --color-surface-0: 14 16 34;   /* darkest, slight indigo bias */
-  --color-surface-1: 11 23 57;
-  --color-surface-2: 13 26 58;
-  --color-surface-3: 16 30 65;
- 
+  // --color-surface-0: 14 16 34; /* darkest, slight indigo bias */
+  // --color-surface-0h: 10 16 38; /* between default and elevated */
+  // --color-surface-1: 13 22 48;
+  // --color-surface-2: 13 26 58;
+  // --color-surface-3: 16 30 65;
+
+  --color-surface-0: 7 9 19; /* absolute base (secondary) */
+  --color-surface-0h: 10 16 38; /* deep base / app background */
+
+  --color-surface-1: 13 20 42; /* main surfaces (panels) */
+  --color-surface-2: 16 24 52; /* elevated (cards, inputs) */
+  --color-surface-3: 20 28 60; /* higher elevation */
+  // --color-surface-4: 24 34 72; /* hover / active / highlight */
+
   --color-surface-hover: var(--color-surface-2);
   --color-surface-active: var(--color-surface-3);
 
+  --color-backdrop: 0 0 0;
+
   /* ─── Borders & dividers ───────────────────────── */
-  --color-border-subtle: 20 34 74;
-  --color-border: 32 50 96;
-  --color-border-strong: 45 65 115;
-  --color-divider: 255 255 255;
+  // --color-border-faint: 16 26 58;
+  // --color-border-subtle: 20 34 74;
+  // --color-border: 32 50 96;
+  // --color-border-strong: 45 65 115;
+
+  --color-border-faint: 20 30 58; /* barely visible, separators */
+  --color-border-subtle: 26 38 68; /* cards / inputs */
+  --color-border: 30 42 74; /* DEFAULT (#1e2a4a) */
+  --color-border-strong: 38 52 92; /* focus / emphasis */
 
   /* ─── Base text ───────────────────────── */
   --color-text: var(--neutral-100);
@@ -53,7 +68,7 @@
   --color-secondary-light: var(--secondary-400);
   --color-secondary-dark: var(--secondary-600);
   --color-secondary-darker: var(--secondary-700);
-  --color-on-secondary: var(--neutral-50);
+  // --color-on-secondary: var(--neutral-50);
 
   /* ─── Accent ───────────────────────── */
   --color-accent: var(--accent-500);
@@ -61,7 +76,7 @@
   --color-accent-lighter: var(--accent-300);
   --color-accent-dark: var(--accent-600);
   --color-accent-darker: var(--accent-700);
-  --color-on-accent: var(--neutral-900);
+  // --color-on-accent: var(--neutral-900);
 
   /* ─── Success ───────────────────────── */
   --color-success: var(--success-500);
@@ -69,7 +84,7 @@
   --color-success-lighter: var(--success-300);
   --color-success-dark: var(--success-600);
   --color-success-darker: var(--success-700);
-  --color-on-success: var(--neutral-50);
+  // --color-on-success: var(--neutral-50);
 
   /* ─── Warning ───────────────────────── */
   --color-warning: var(--warning-500);
@@ -77,7 +92,7 @@
   --color-warning-lighter: var(--warning-300);
   --color-warning-dark: var(--warning-600);
   --color-warning-darker: var(--warning-700);
-  --color-on-warning: var(--neutral-900);
+  // --color-on-warning: var(--neutral-900);
 
   /* ─── Danger ───────────────────────── */
   --color-danger: var(--danger-500);
@@ -85,7 +100,7 @@
   --color-danger-lighter: var(--danger-300);
   --color-danger-dark: var(--danger-600);
   --color-danger-darker: var(--danger-700);
-  --color-on-danger: var(--neutral-50);
+  // --color-on-danger: var(--neutral-50);
 
   /* ─── Info ───────────────────────── */
   --color-info: var(--info-500);
@@ -93,16 +108,10 @@
   --color-info-lighter: var(--info-300);
   --color-info-dark: var(--info-600);
   --color-info-darker: var(--info-700);
-  --color-on-info: var(--neutral-900);
-
-  /* ─── Focus & disabled ───────────────────────── */
-  --color-focus-ring: var(--primary-400);
-  --color-disabled-bg: var(--neutral-700);
-  --color-disabled-text: var(--neutral-400);
-  --opacity-disabled: 0.5;
+  // --color-on-info: var(--neutral-900);
 
   /* ─── Elevation ───────────────────────── */
-  --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.28);
-  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 0.38);
-  --shadow-overlay: 0 18px 48px rgb(0 0 0 / 0.48);
+  // --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.28);
+  // --shadow-elevated: 0 8px 24px rgb(0 0 0 / 0.38);
+  // --shadow-overlay: 0 18px 48px rgb(0 0 0 / 0.48);
 }
