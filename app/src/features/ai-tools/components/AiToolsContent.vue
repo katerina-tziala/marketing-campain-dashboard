@@ -5,15 +5,23 @@ import AiConnectedStatus from '@/features/ai-tools/ai-connection/components/AiCo
 import AiAnalysis from '@/features/ai-tools/ai-analysis/components/AiAnalysis.vue'
 import { CloseIcon, SparklesIcon } from '@/ui/icons'
 
-// TODO: [DEV ONLY] Uncomment the block below to enable the dev analysis cycle.
-// Cycles through all mock responses and every error code without real API calls.
-// Comment it back out (or delete it) before shipping to production.
+// TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
+// BLOCK A — Analysis cycle: auto-connects, cycles mock responses + error codes on Analyze.
 import { onMounted, onUnmounted } from 'vue'
 import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
 const { activate, deactivate } = useDevAnalysisCycle()
 onMounted(activate)
 onUnmounted(deactivate)
+// ─────────────────────────────────────────────────────────────────────────────
+// BLOCK B — Connection cycle: each Connect click cycles through success + all
+//           connection error codes (spinner always shows for ~1.5 s; success
+//           auto-disconnects after 1.5 s so the next click continues the cycle).
+// import { onMounted, onUnmounted } from 'vue'
+// import { useDevConnectionCycle } from '@/features/ai-tools/dev/dev-connection-cycle'
+// const { activate, deactivate } = useDevConnectionCycle()
+// onMounted(activate)
+// onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const store = useAiConnectionStore()
@@ -71,6 +79,7 @@ const emit = defineEmits<{ close: [] }>()
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
     overflow-hidden
-    pb-4;
+    pb-4
+    ;
 }
 </style>

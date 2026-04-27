@@ -7,6 +7,13 @@ import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, 
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 import { useToastStore } from '@/stores/toast.store'
 
+// [DEV ONLY] — cleared by setDevConnectOverride(null) on deactivate
+type DevConnectFn = (provider: AiProviderType) => Promise<AiModel[]>
+let _devConnectOverride: DevConnectFn | null = null
+export function setDevConnectOverride(fn: DevConnectFn | null): void {
+  _devConnectOverride = fn
+}
+
 export const useAiConnectionStore = defineStore('aiConnection', () => {
   const provider = ref<AiProviderType | null>(null)
   const apiKey = ref('')
@@ -22,7 +29,9 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
     isConnecting.value = true
     connectionError.value = null
     try {
-      const providerModels = await connectProvider(providerType, APIkey)
+      const providerModels = _devConnectOverride
+        ? await _devConnectOverride(providerType)
+        : await connectProvider(providerType, APIkey)
       provider.value = providerType
       apiKey.value = APIkey
       models.value = providerModels

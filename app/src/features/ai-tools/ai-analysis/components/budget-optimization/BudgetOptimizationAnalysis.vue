@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PortfolioScope } from "@/shared/types/campaign";
 import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
 import { Notification } from "@/ui";
 import { ANALYSIS_ERROR_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
@@ -9,9 +8,6 @@ import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/An
 import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
 import BudgetRecommendations from "./BudgetRecommendations.vue";
 
-defineProps<{
-  scope: PortfolioScope;
-}>();
 
 const analysisStore = useAiAnalysisStore();
 

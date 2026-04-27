@@ -7850,3 +7850,42 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Inlined rather than extracted to a new shared location — there is only one consumer; a shared util is only justified when two or more components use the same logic
 - Deleted the file entirely rather than leaving it empty — dead exports have no value and add noise to the `utils/` folder
+
+
+## [#388] Add dev-connection-cycle for testing connection states and errors
+**Type:** feature
+
+**Summary:** Added a dev-only connection cycle composable that intercepts `connectProvider` so every Connect click cycles through a scripted outcome (success → all 8 connection error codes), letting connection UI states be tested without real API calls.
+
+**Brainstorming:** The existing `dev-analysis-cycle` pattern (module-level override slot + composable) translates directly. The override slot belongs on the store's `connect()` call, exported as `setDevConnectOverride` from the store file — consistent with how `setDevAnalysisOverride` lives in `analysis-prompt.ts`. The sequence puts success first so the connected state is immediately visible on mount, then auto-disconnects after 1.5 s so the cycle can continue. A 1.5 s sleep before each outcome keeps the spinner visible long enough to verify. Error codes `parse-error`, `min-campaigns`, and `token-limit` are omitted — they are analysis-only and unreachable during connection. The two dev cycles (connection + analysis) are mutually exclusive in practice; the `AiToolsContent.vue` comment block pattern (BLOCK A / BLOCK B) makes the switch-over explicit.
+
+**Prompt:** Create a dev-connection-cycle composable parallel to dev-analysis-cycle. Each Connect click should cycle: success (auto-disconnects after 1.5 s) → invalid-key → network → timeout → rate-limit → server-error → no-models → invalid-response → unknown. Intercept connectProvider via a setDevConnectOverride export on the store. Add a commented BLOCK B in AiToolsContent.vue. Update CLAUDE.md and write log.
+
+**What was built:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — added module-level `_devConnectOverride` + `setDevConnectOverride(fn|null)` export; `connect()` now delegates to the override when set
+- `app/src/features/ai-tools/dev/dev-connection-cycle.ts` — new file; `CONNECTION_SEQUENCE` (9 entries); `runDevConnect` sleeps 1.5 s then advances counter; success schedules auto-disconnect; error throws with code string; `useDevConnectionCycle()` exports `activate`/`deactivate`
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — dev block restructured as BLOCK A (analysis, currently active) + BLOCK B (connection, commented out); comment explains mutual exclusivity
+
+**Key decisions & why:**
+- Override slot on the store rather than wrapping the form — the form calls `store.connect()` directly; intercepting at the store boundary keeps the form untouched and means the spinner/error display path is exercised naturally
+- Auto-disconnect on success (1.5 s) rather than requiring a manual disconnect — lets the cycle continue uninterrupted across repeated Connect clicks
+- Counter resets on `activate()` — predictable sequence every time the cycle is enabled, regardless of prior state
+
+
+## [#389] Remove unused scope prop from tab orchestrators
+**Type:** refactor
+
+**Summary:** Deleted the vestigial `scope: PortfolioScope` prop from both tab orchestrators and cleaned up `AiAnalysis.vue`, making all three components pure store readers with no mixed data sourcing.
+
+**Brainstorming:** Both `ExecutiveSummaryAnalysis` and `BudgetOptimizationAnalysis` declared a `scope` prop that was never referenced in their script or template — the display data it was meant to supply had already moved into `portfolioContext` on the store. `AiAnalysis.vue` was importing `useCampaignStore` solely to pass `portfolioScope` down as that prop. Removing the prop eliminates the mixed data sourcing and lets `AiAnalysis.vue` drop its `campaignStore` import entirely.
+
+**Prompt:** Remove the unused `scope: PortfolioScope` prop from `ExecutiveSummaryAnalysis.vue` and `BudgetOptimizationAnalysis.vue`. Remove the `PortfolioScope` import and `defineProps` block from both. In `AiAnalysis.vue`, remove the `useCampaignStore` import, the `campaignStore` variable, and the `:scope` bindings on both tab components. Update CLAUDE.md and write log.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — removed `PortfolioScope` import and `defineProps` block; no props
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — removed `PortfolioScope` import and `defineProps` block; no props
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — removed `useCampaignStore` import, `campaignStore` variable, and `:scope` bindings on both tab components; reads only `aiAnalysis.store` now
+
+**Key decisions & why:**
+- Deleted the prop entirely rather than finding a use for it — `portfolioContext` in the store already covers the same data; adding a redundant data path would be noise
+- No replacement prop introduced — the store is the right single source for this; props-only purity applies to leaf display components, not store-connected orchestrators

@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import type { Component } from 'vue'
+import { onMounted } from "vue";
+import type { Component } from "vue";
 
 export type Tab<T = string> = {
-  id: T
-  label: string
-  icon?: Component
-}
+  id: T;
+  label: string;
+  icon?: Component;
+};
 
 const props = defineProps<{
-  tabs: Tab[]
-  activeTab?: string
-}>()
+  tabs: Tab[];
+  activeTab?: string;
+}>();
 
 const emit = defineEmits<{
-  change: [tab: string]
-}>()
+  change: [tab: string];
+}>();
 
 onMounted(() => {
   if (!props.activeTab && props.tabs.length) {
-    emit('change', props.tabs[0].id)
+    emit("change", props.tabs[0].id);
   }
-})
+});
 </script>
 
 <template>
@@ -43,13 +43,11 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .tabs {
-  // bg-surface-secondary/20
-  @apply flex w-full border-b border ;
-
+  @apply flex w-full border-b border;
 }
 
 .tab {
-    @apply flex
+  @apply flex
       items-center
       justify-center
       gap-2
@@ -68,18 +66,16 @@ onMounted(() => {
       duration-150
       ease-in-out;
 
-    &.tab-active {
-      @apply text-primary-light border-primary;
-    }
-
-    .tab-icon {
-     @apply shrink-0 text-lg;
-    }
-
-
-    &:hover:not(.tab-active) {
-      @apply bg-primary/10 text-primary-lighter;
-    }
-
+  &.tab-active {
+    @apply text-primary-light border-primary;
   }
+
+  .tab-icon {
+    @apply shrink-0 text-lg;
+  }
+
+  &:hover:not(.tab-active) {
+    @apply bg-primary/20 text-primary-lighter;
+  }
+}
 </style>
