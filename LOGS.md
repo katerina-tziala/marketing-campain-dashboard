@@ -8641,23 +8641,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `handleSort` wrapper kept in multi-column tables: TableHeader emits `string`, composable toggleSort is typed to `T` — cast wrapper keeps the type boundary explicit
 
 
-## [#431] Sync CLAUDE.md with current project state
-**Type:** update
-
-**Summary:** Updated CLAUDE.md architecture entries for Badge.vue, CampaignTable, DataErrorsTable, and CampainDuplicationsTable to reflect all changes made in this session.
-
-**Brainstorming:** Several entries were written before the Badge refactor, useSort extraction, and group-header badge redesign. Each needed to reflect the actual current implementation rather than the original description.
-
-**Prompt:** Sync your Claude files with the project.
-
-**What changed:**
-- `CLAUDE.md` — Badge.vue: updated to describe two-layer structure, class-based variants, dimmed/rounded-rectangle/text-only modifiers, removed incorrect "variant prop" reference; CampaignTable: added useSort usage and handleSort wrapper; DataErrorsTable: replaced inline sort description with useSort<string>; CampainDuplicationsTable: full rewrite to cover requiredSelection prop, useSort, needsAttentionMode, v-if/v-else-if/v-else badge states, destructive Button
-
-**Key decisions & why:**
-- All four entries rewritten from scratch rather than patched: the old descriptions referenced removed patterns (inline sort state, single Badge with ternaries, variant prop) that would mislead future reads
-
-
-## [#432] Extract DuplicationGroupHeader and move table into campain-duplications folder
+## [#431] Extract DuplicationGroupHeader and move table into campain-duplications folder
 **Type:** refactor
 
 **Summary:** Moved `CampainDuplicationsTable` into a dedicated `campain-duplications/` subfolder and extracted its group-title-row markup into a new `DuplicationGroupHeader` component.
@@ -8680,7 +8664,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Scoped styles for `.group-title-row`/`.group-title-text` moved into the new component where they belong; `.group-header td`, `.row-selectable`, `.cell-select` remain in the table
 
 
-## [#433] Add CircleCheckIcon and use it in DuplicationGroupHeader
+## [#432] Add CircleCheckIcon and use it in DuplicationGroupHeader
 **Type:** update
 
 **Summary:** Added `CircleCheckIcon` (dashed circle + checkmark) to the icon library and replaced `ClockIcon` with it in `DuplicationGroupHeader`'s "Select one" pending badge.
@@ -8700,7 +8684,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ClockIcon` left in the library: still exported, just no longer used in this component
 
 
-## [#434] Fix CircleCheckIcon — solid circle stroke
+## [#433] Fix CircleCheckIcon — solid circle stroke
 **Type:** fix
 
 **Summary:** Removed `stroke-dasharray` from `CircleCheckIcon` so the circle renders with a solid stroke like all other circle icons.
@@ -8717,59 +8701,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No shape change needed — just the stroke style; the warning badge color is sufficient to distinguish it from CheckCircleIcon (success)
 
 
-## [#435] Clean up Button.vue styles and add button playground section
+## [#434] Clean up Button.vue styles and add outline variant
 **Type:** refactor
 
-**Summary:** Removed all dead code from Button.vue (`::after` overlay infrastructure, duplicate blocks, `.content-wrapper` ghost reference, commented-out variant) and added a full button variant showcase to DevTablePlayground.
+**Summary:** Removed all dead `::after` infrastructure from Button.vue, added the `outline` variant, and fixed hover backgrounds — `bg-background` was invisible on dark surfaces and replaced with `bg-surface-hover` across `text-only`, `outline`, and `destructive`.
 
-**Brainstorming:** The `::after` overlay was the original mechanism for hover tints on `text-only` and `destructive` variants — an absolutely-positioned pseudo-element layered over a `bg-background` base. The linter confirmed it was unused infrastructure (no content, no visible effect in base). Once removed, the variant `::after` blocks became dead (no `content`/`position`), so hover tints collapsed. Resolved by applying `bg-background` directly on the button hover, folding the tint into a single-class approach like `primary` already did. Dev playground section added to expose all variants (primary/text-only/destructive × normal/small/icon-only × with-icon/disabled).
+**Brainstorming:** The `::after` overlay was the original hover-tint mechanism — an absolutely-positioned pseudo-element over `bg-background`. Once the linter removed the base infrastructure (`content`/`position`/`inset`), variant `::after` blocks became dead and hover collapsed. Resolved by applying `bg-background` directly, then discovered `bg-background` is the darkest page color and invisible on dark surfaces — corrected to `bg-surface-hover`, the semantic token designed for this. Outline variant: "text with border same color" maps to `border border-current` — `currentColor` keeps border in sync with text across all states without repeating color tokens.
 
-**Prompt:** Clean up button styles, investigate thoroughly. ::after does not really apply any styles — remove it. Add some button variations under the dev playground title.
-
-**What changed:**
-- `ui/Button.vue` — removed: base `::after` block, `:deep(*)` z-10, hover/focus `::after { opacity-0 }` block, `.content-wrapper` dead reference, `primary::after { hidden }`, duplicate `::after` blocks in `text-only`/`destructive`, redundant `-z-[1]` overrides, commented-out old primary variant; hover for `text-only`/`destructive` simplified to `bg-background` direct on the button element
-- `dashboard/components/DevTablePlayground.vue` — added `Button`/`SparklesIcon`/`DownloadIcon`/`CloseIcon` imports; added "Buttons" playground section with 7 rows covering all variant × size × state combinations; added `.playground-row` (flex, gap-3) + `.row-label` (monospace, w-40) scoped styles
-
-**Key decisions & why:**
-- `bg-background` for hover instead of a tinted color: the old effect was `bg-background` + `::after bg-primary-light/25` overlay; without layering, `bg-primary-light/25` over a transparent button was invisible; `bg-background` restores a visible hover surface with the color change carrying the variant meaning
-- `relative` and `overflow-hidden` kept on base `.btn` — still needed for rounded-corner clipping and potential future overlay patterns
-
-
-## [#436] Add outline button variant
-**Type:** update
-
-**Summary:** Added `.btn.outline` variant to Button.vue — transparent background with a border that always matches the text color — and added it to the dev playground.
-
-**Brainstorming:** "text with border same color" maps cleanly to `border border-current`: `currentColor` tracks the text color automatically, so border/text stay in sync across all states without duplicating color declarations. Hover and focus-visible reuse the same `bg-background` pattern as `text-only`.
-
-**Prompt:** Add button outline variation — in normal state like text with border same color. Add all states too.
+**Prompt:** Clean up button styles, investigate thoroughly, ::after does not really apply any styles — remove it. Add button outline variation — in normal state like text with border same color, add all states too. Backgrounds from destructive and text buttons are gone again — hover and focus states.
 
 **What changed:**
-- `ui/Button.vue` — added `.btn.outline`: normal state `text-primary-lighter/95 border border-current`; hover/focus `bg-background text-primary-lighter`; focus-visible ring; active `text-primary-light`
-- `dashboard/components/DevTablePlayground.vue` — added three outline rows (normal, small, icon-only) with text/icon/disabled examples
-- `CLAUDE.md` — Button.vue description rewritten to reflect cleaned-up variants (no ::after, outline added)
+- `ui/Button.vue` — removed: base `::after` block, `:deep(*)` z-10, hover/focus `::after { opacity-0 }` block, `.content-wrapper` dead reference, `primary::after { hidden }`, duplicate `::after` blocks in `text-only`/`destructive`, redundant `-z-[1]` overrides, commented-out old primary variant; added `.btn.outline` (transparent bg, `border border-current`, `bg-surface-hover` on hover/focus, focus ring, active state); changed hover for `text-only`/`destructive` to `bg-surface-hover`
+- `CLAUDE.md` — Button.vue description rewritten to reflect cleaned-up variants (no `::after`, outline added)
 
 **Key decisions & why:**
-- `border-current` used instead of a named color: border always matches text color precisely across all states without repeating color tokens
+- `bg-surface-hover` over `bg-background`: `bg-background` is the darkest page color — invisible over any dark surface; `bg-surface-hover` is the semantic token specifically for hover lift
+- `border-current` on outline: border always matches text color automatically across all states without duplicating color declarations
 
 
-## [#437] Fix hover background on text-only, outline, destructive buttons
-**Type:** fix
-
-**Summary:** Replaced `bg-background` with `bg-surface-hover` on hover/focus for `text-only`, `outline`, and `destructive` button variants — `bg-background` is the darkest page color and was invisible against dark surfaces.
-
-**Brainstorming:** The old `::after` approach layered a tinted pseudo-element over `bg-background`, so the tint was what created the visible hover effect. Without the `::after` layer, `bg-background` alone is effectively transparent on dark backgrounds. `bg-surface-hover` is the semantic token designed specifically for hover surfaces — it's a step above background and provides a visible lift.
-
-**Prompt:** Backgrounds from destructive and text buttons are gone again — hover and focus states.
-
-**What changed:**
-- `ui/Button.vue` — `bg-background` → `bg-surface-hover` in `text-only`, `outline`, and `destructive` hover/focus-visible rules
-
-**Key decisions & why:**
-- `bg-surface-hover` over an arbitrary tint: it's the right semantic token for this exact purpose; keeps the design system internally consistent
-
-
-## [#438] Replace secondary button usages with Button component
+## [#435] Replace secondary button usages with Button component
 **Type:** refactor
 
 **Summary:** Replaced all raw `<button class="btn-secondary-outline">` and `<button class="btn-primary">` elements with the `<Button>` component across the app; channel filter buttons skipped (custom pill styling incompatible with `.btn` base).
@@ -8789,3 +8739,35 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - All non-Button extra classes (min-w-*, xs:order-*, xs:mr-auto, :disabled binding) preserved — they pass through via `v-bind="$attrs"` on the underlying `<button>`
 - ChannelFilter left as native `<button>` — its scoped `.filter-btn` styles override `.btn` base in ways that would break the pill appearance
+
+
+## [#436] Modal refactor — folder, renamed components, ModalBody/ModalFooter
+**Type:** refactor
+
+**Summary:** Renamed `BaseModal` → `Modal` and `DisplayUploadErrorsStep` → `UploadErrorsStep`, created a `ui/modal/` module with `ModalBody` and `ModalFooter` wrapper components, and removed the global `_modal.scss` partial whose styles are now scoped inside those components.
+
+**Brainstorming:** `BaseModal` is an implementation-detail name; `Modal` is the public API name that makes sense from a consumer's perspective. `DisplayUploadErrorsStep` was redundant — "Display" and "Step" are both noise; `UploadErrorsStep` is the minimal unambiguous name. Splitting body and footer into dedicated components eliminates the global `.modal-body` / `.modal-footer` class dependency: consumers no longer need to know CSS class names, and the styles travel with the component. The `modal/` folder mirrors the existing `card/`, `toast/` pattern in `ui/`.
+
+**Prompt:** Rename DisplayUploadErrorsStep to UploadErrorsStep. Rename BaseModal to Modal. Create a modal folder in ui and move modal there. Create modal body and modal footer components. Move global modal styles in these components and remove scss modal file.
+
+**What changed:**
+- `ui/modal/Modal.vue` — new file; content from `BaseModal.vue` with relative imports updated (`../icons/`, `../SheetHeader.vue`, `../Button.vue`)
+- `ui/modal/ModalBody.vue` — new file; `<div class="modal-body">` wrapper with scoped `.modal-body` styles (was global)
+- `ui/modal/ModalFooter.vue` — new file; `<div class="modal-footer">` wrapper with scoped `.modal-footer` styles (was global)
+- `ui/modal/index.ts` — new barrel; exports Modal, ModalBody, ModalFooter
+- `ui/index.ts` — replaced `BaseModal` named export with `export * from './modal'`
+- `ui/BaseModal.vue` — deleted
+- `data-transfer/components/UploadErrorsStep.vue` — new file; renamed from `DisplayUploadErrorsStep.vue`; footer changed from `<div class="modal-footer">` to `<ModalFooter>`
+- `data-transfer/components/DisplayUploadErrorsStep.vue` — deleted
+- `data-transfer/components/UploadModal.vue` — imports updated: `BaseModal` → `Modal`, `DisplayUploadErrorsStep` → `UploadErrorsStep`; template updated accordingly
+- `data-transfer/components/ReplaceDataModal.vue` — imports updated: `BaseModal` → `Modal`, added `ModalBody`/`ModalFooter`; `<div class="modal-body/footer">` → `<ModalBody>`/`<ModalFooter>`
+- `data-transfer/components/UploadCampainData.vue` — added `ModalFooter` import; `<div class="modal-footer">` → `<ModalFooter>`
+- `data-transfer/components/ResolveDuplicationsStep.vue` — added `ModalFooter` import; `<div class="modal-footer">` → `<ModalFooter>`
+- `styles/components/_modal.scss` — deleted
+- `styles/components/index.scss` — removed `@use './modal'`
+- `CLAUDE.md` — architecture updated: modal folder added, BaseModal removed, DisplayUploadErrorsStep renamed, _modal.scss removed, component descriptions updated
+
+**Key decisions & why:**
+- `ModalBody` and `ModalFooter` as separate components rather than named slots on `Modal`: the multi-root pattern (body + footer as sibling roots in the slot) continues to work; component wrappers give consumers a semantic API without requiring knowledge of CSS class names
+- Global `_modal.scss` fully deleted: both class names are now exclusively owned by the components — no risk of stale global usage
+

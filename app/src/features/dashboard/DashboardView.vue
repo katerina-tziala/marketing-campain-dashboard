@@ -8,7 +8,6 @@ import RoiCpaScatter from './components/RoiCpaScatter.vue'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
-import DevTablePlayground from './components/DevTablePlayground.vue'
 
 const store = useCampaignStore()
 
@@ -48,9 +47,6 @@ const openAiPanel = inject<() => void>('openAiPanel')
           :campaigns="store.filteredCampaigns"
           class="mx-auto max-w-7xl w-full"
         /> -->
-        <!-- DEV: Table UI playground -->
-        <DevTablePlayground />
-
         <!-- Campaign Table -->
         <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
           <h3 class="card-title table-card-title">Campaign Details</h3>

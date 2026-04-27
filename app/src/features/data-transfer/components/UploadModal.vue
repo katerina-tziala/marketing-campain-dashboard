@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { BaseModal } from '@/ui'
+import { Modal } from '@/ui'
 import { parseCsv } from '@/features/data-transfer/utils/parse-csv'
 import { getValidationErrorMessage } from '@/features/data-transfer/utils/error-messages'
 import { usePortfolioDataStore } from '@/stores/portfolioData.store'
@@ -8,7 +8,7 @@ import { useDownloadTemplate } from '@/features/data-transfer/composables/useDow
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup, CampainDataRowError } from '@/features/data-transfer/types'
 import UploadCampainData from './UploadCampainData.vue'
-import DisplayUploadErrorsStep from './DisplayUploadErrorsStep.vue'
+import UploadErrorsStep from './UploadErrorsStep.vue'
 import ResolveDuplicationsStep from './ResolveDuplicationsStep.vue'
 
 const portfolioData = usePortfolioDataStore()
@@ -120,7 +120,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
 </script>
 
 <template>
-  <BaseModal v-if="isOpen" title="Upload Campaign Data" @close="close">
+  <Modal v-if="isOpen" title="Upload Campaign Data" @close="close">
     <UploadCampainData
       v-if="view === 'form'"
       v-model:title="title"
@@ -131,7 +131,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
       @close="close"
       @download-template="downloadTemplate"
     />
-    <DisplayUploadErrorsStep
+    <UploadErrorsStep
       v-else-if="view === 'row-errors'"
       :row-errors="rowErrors"
       :valid-campaigns="validCampaigns"
@@ -148,5 +148,5 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
       @proceed="handleProceedFromDuplicates"
       @close="close"
     />
-  </BaseModal>
+  </Modal>
 </template>

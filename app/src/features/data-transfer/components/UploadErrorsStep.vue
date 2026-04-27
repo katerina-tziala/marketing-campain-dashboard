@@ -6,7 +6,7 @@ import { getRowErrorSummaryWords } from '@/features/data-transfer/utils/error-me
 import DataErrorsTable from './validation/DataErrorsTable.vue'
 import DataErrorSummary from './validation/DataErrorSummary.vue'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
-import { Badge, Button } from '@/ui'
+import { Badge, Button, ModalFooter } from '@/ui'
 
 const props = defineProps<{
   rowErrors: CampainDataRowError[]
@@ -61,11 +61,11 @@ const proceedLabel = computed(() =>
     </div>
     <DataErrorsTable :errors="rowErrors" />
   </div>
-  <div class="modal-footer">
+  <ModalFooter>
     <Button class="primary min-w-24 xs:order-1" @click="emit('back')">Back</Button>
     <Button v-if="showProceed" class="outline xs:order-3 xs:mr-auto" @click="emit('proceed')">{{ proceedLabel }}</Button>
     <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
-  </div>
+  </ModalFooter>
 </template>
 
 <style lang="scss" scoped>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Button } from '@/ui'
+import { Button, ModalFooter } from '@/ui'
 import type { Campaign } from '@/shared/types/campaign'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
 import DuplicateSummary from './validation/DuplicateSummary.vue'
@@ -51,12 +51,11 @@ function handleProceed(): void {
       @change="onSelectionChange"
     />
   </div>
-  <!-- Footer -->
-  <div class="modal-footer">
+  <ModalFooter>
     <Button class="primary min-w-24 xs:order-1" @click="emit('back')">Back</Button>
     <Button class="outline xs:order-3 xs:mr-auto" :disabled="!canProceed" @click="handleProceed">Proceed with selection</Button>
     <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
-  </div>
+  </ModalFooter>
 </template>
 
 <style lang="scss" scoped>
