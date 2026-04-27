@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { Spinner, PasswordInput, RadioToggle } from '@/ui'
+import { Spinner, PasswordInput, RadioToggle, Disclosure } from '@/ui'
 import type { AiProviderType } from '@/features/ai-tools/types'
 import { PROVIDER_OPTIONS, PROVIDER_HELP } from '@/features/ai-tools/providers/utils/providers-meta'
 import { ERROR_MESSAGES, ERROR_HINTS } from '@/features/ai-tools/ai-connection/utils/error-handling'
+import AiConnectionInstructions from './AiConnectionInstructions.vue'
 
 const store = useAiConnectionStore()
 
 const selectedProvider = ref<AiProviderType>('groq')
 const apiKey = ref('')
-const showHelp = ref(false)
 
 watch(selectedProvider, () => {
   store.connectionError = null
@@ -38,7 +38,7 @@ async function handleConnect(): Promise<void> {
 <template>
   <div class="conn-form">
     <p class="conn-intro">
-      Connect your AI API key to enable Executive Summary and Budget Optimizer features.
+      Connect your AI API key to enable Executive Summary and Budget Optimizer features
     </p>
     <form class="form" @submit.prevent="handleConnect">
       <!-- Provider -->
@@ -48,33 +48,7 @@ async function handleConnect(): Promise<void> {
       </fieldset>
       <!-- API Key -->
       <div class="field">
-        <div class="flex items-center justify-between">
-          <label class="field-label" for="ai-key">API Key</label>
-          <button type="button" class="btn-icon-secondary btn-small" @click="showHelp = !showHelp">
-            {{ showHelp ? 'Hide instructions' : 'How to get your key?' }}
-          </button>
-        </div>
-        <Transition name="help">
-          <div v-if="showHelp" class="help-collapse">
-            <div class="card-secondary bg-surface-secondary/50">
-              <h5 class="card-title text-primary-lighter">
-                {{ providerHelp.title }}
-              </h5>
-              <ol class="help-steps">
-                <li
-                  v-for="step in providerHelp.steps"
-                  :key="step"
-                >
-                  {{ step }}
-                </li>
-              </ol>
-              <p v-if="providerHelp.note" class="help-note">
-                {{ providerHelp.note }}
-              </p>
-              <p class="help-note">Keep your API key private and never share it publicly.</p>
-            </div>
-          </div>
-        </Transition>
+        <label class="field-label" for="ai-key">API Key</label>
         <PasswordInput id="ai-key" v-model="apiKey" placeholder="Paste your API key" :disabled="store.isConnecting">
           <template v-if="store.connectionError" #error>
             <p class="field-error" role="alert">{{ errorMessage }}</p>
@@ -82,10 +56,26 @@ async function handleConnect(): Promise<void> {
           </template>
         </PasswordInput>
       </div>
+      <!-- Connect -->
       <button class="btn-primary" type="submit" :disabled="!apiKey.trim() || store.isConnecting">
         <Spinner v-if="store.isConnecting" class="w-3.5 h-3.5" />
         {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
       </button>
+      <!-- Instructions -->
+      <Disclosure>
+        <template #trigger="{ open, toggle, contentId }">
+          <button
+            type="button"
+            class="btn-icon-secondary btn-small self-start"
+            :aria-expanded="open"
+            :aria-controls="contentId"
+            @click="toggle"
+          >
+            {{ open ? 'Hide instructions' : 'How to get your key?' }}
+          </button>
+        </template>
+        <AiConnectionInstructions :instructions="providerHelp" />
+      </Disclosure>
     </form>
   </div>
 </template>
@@ -96,33 +86,10 @@ async function handleConnect(): Promise<void> {
 }
 
 .conn-intro {
-  @apply text-sm text-typography leading-6;
+  @apply text-sm text-typography-soft leading-5;
 }
 
 .conn-fieldset {
   @apply pt-3.5;
-}
-
-.help-steps {
-  @apply text-sm text-typography list-inside list-decimal leading-6;
-}
-
-.help-note {
-  @apply text-sm text-typography leading-5;
-}
-
-.help-enter-active,
-.help-leave-active {
-  @apply transition-all duration-300 ease-in-out overflow-hidden;
-}
-
-.help-enter-from,
-.help-leave-to {
-  @apply opacity-0 max-h-0;
-}
-
-.help-enter-to,
-.help-leave-from {
-  @apply opacity-100 max-h-96;
 }
 </style>

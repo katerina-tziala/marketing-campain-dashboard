@@ -46,7 +46,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 <template>
   <AnalysisSection title="Insights">
-    <Card v-for="(insight, i) in sortedInsights" :key="i" class="card-secondary">
+    <Card v-for="(insight, i) in sortedInsights" :key="i" class="secondary">
       <p>
         <Badge
           class="float-right ml-2 mb-1"

@@ -9,20 +9,20 @@ import { Button, SheetHeader } from '@/ui'
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK A — Analysis cycle: auto-connects, cycles mock responses + error codes on Analyze.
-import { onMounted, onUnmounted } from 'vue'
-import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
-const { activate, deactivate } = useDevAnalysisCycle()
-onMounted(activate)
-onUnmounted(deactivate)
+// import { onMounted, onUnmounted } from 'vue'
+// import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
+// const { activate, deactivate } = useDevAnalysisCycle()
+// onMounted(activate)
+// onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK B — Connection cycle: each Connect click cycles through success + all
 //           connection error codes (spinner always shows for ~1.5 s; success
 //           auto-disconnects after 1.5 s so the next click continues the cycle).
-// import { onMounted, onUnmounted } from 'vue'
-// import { useDevConnectionCycle } from '@/features/ai-tools/dev/dev-connection-cycle'
-// const { activate, deactivate } = useDevConnectionCycle()
-// onMounted(activate)
-// onUnmounted(deactivate)
+import { onMounted, onUnmounted } from 'vue'
+import { useDevConnectionCycle } from '@/features/ai-tools/dev/dev-connection-cycle'
+const { activate, deactivate } = useDevConnectionCycle()
+onMounted(activate)
+onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const store = useAiConnectionStore()

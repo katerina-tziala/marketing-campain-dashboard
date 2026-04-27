@@ -7964,3 +7964,84 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Gradient on `:slotted()` not on wrapper — `background-clip: text` only clips to the element's own text, not block descendants; the heading must own the gradient for it to render
 - `w-fit` on slotted headings — ensures the background width matches the text content width so clipping works correctly; without it the full-width block background would not clip to the letter shapes
 - Icon + title co-wrapped in grow div — keeps them visually grouped and aligned together against the action button
+
+
+## [#394] Add Disclosure component; use in AiConnectionForm instructions section
+**Type:** feature
+
+**Summary:** Extracted the help-section toggle in AiConnectionForm into a generic ARIA-compliant `Disclosure` UI component with smooth height animation via Vue JS transition hooks, and moved the instructions after the Connect button.
+
+**Brainstorming:** The existing implementation used a `max-h` CSS hack (`max-h-0 → max-h-96`) which produces a non-linear, jumpy animation because the browser interpolates between 0 and 384px regardless of actual content height. Vue JS transition hooks (`@enter`/`@leave` with `:css="false"`) allow reading `scrollHeight` at runtime and animating to the exact target, giving a smooth natural collapse. The component uses a `#trigger` scoped slot (exposing `{ open, toggle, contentId }`) so callers own the button element and its styling — this keeps the pattern truly generic and avoids prop-drilling for every visual variant. The `aria-expanded` / `aria-controls` binding lives on the caller's button, satisfying the ARIA disclosure spec. The instructions section was moved after the Connect button so the primary action is never buried below optional help text.
+
+**Prompt:** Create a Disclosure component implementing the ARIA disclosure pattern, use it in AiConnectionForm for the instructions section, move the instructions after the Connect button, and improve transitions using Vue JS hooks.
+
+**What was built:**
+- `app/src/ui/Disclosure.vue` — new generic disclosure component; #trigger scoped slot + default content slot; :css="false" Transition with @enter/@leave JS hooks; height animated 0↔scrollHeight via transitionend + done callback
+- `app/src/ui/index.ts` — exports Disclosure
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — removed showHelp ref and inline toggle button; removed max-h CSS transition; added <Disclosure> after Connect button with #trigger scoped slot and help card in default slot; dropped all .help-enter-*/leave-* styles
+
+**Key decisions & why:**
+- `:css="false"` on Transition — disables Vue's automatic CSS class injection so JS hooks have full control; mixing both causes conflicts
+- `el.offsetHeight` read before setting transition — forces a browser reflow so the starting height is committed before the animation begins; without it the browser may batch the style changes and skip the animation
+- `{ once: true }` on transitionend listener — prevents duplicate calls if the element is quickly toggled; the listener self-removes after first fire
+- `#trigger` scoped slot instead of props — callers own the button element, so `type="button"`, class, and label logic stay in the consuming component; no need for a `triggerClass` prop or :deep() overrides
+- `aria-expanded` / `aria-controls` on the caller's button, `id` on the content div — correct ARIA disclosure spec; screen readers announce the relationship between trigger and panel
+- Instructions moved after Connect button — help text is secondary; the primary CTA should never be pushed down by optional content
+
+
+## [#395] Extract AiConnectionInstructions component from AiConnectionForm
+**Type:** refactor
+
+**Summary:** Moved the provider instructions card out of AiConnectionForm into a dedicated AiConnectionInstructions component to separate layout concerns from content rendering.
+
+**Brainstorming:** The instructions card (title, steps list, optional note, privacy warning) had no reason to live inline in AiConnectionForm alongside form logic. Extracting it makes AiConnectionForm purely about connection state and actions, and gives the instructions card its own scoped styles. The prop shape mirrors the existing PROVIDER_HELP record value type — no new types needed.
+
+**Prompt:** Create a connection instructions component and move the relative part of the connection form there.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — new component; props: `instructions: { title, steps, note? }`; renders card-secondary with steps list and privacy note; owns .help-steps / .help-note scoped styles
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — replaced inline card markup with `<AiConnectionInstructions :instructions="providerHelp" />`; removed .help-steps / .help-note styles
+
+**Key decisions & why:**
+- Single `instructions` prop (object) rather than three flat props — mirrors the PROVIDER_HELP value shape exactly; no destructuring needed at call site
+- Styles moved to AiConnectionInstructions — they belong to the card content, not to the form layout
+
+
+## [#396] Use Card component in AiConnectionInstructions
+**Type:** refactor
+
+**Summary:** Replaced the raw div.card-secondary in AiConnectionInstructions with the Card component, adding a variant prop to Card to support both visual styles.
+
+**Brainstorming:** Card.vue previously had no props and always rendered class="card". To support card-secondary through the component, a variant prop ('default'|'secondary') was added — the root article element binds the appropriate class. Class fallthrough handles any additional utility classes (bg-surface-secondary/50, mt-2) passed from the consumer.
+
+**Prompt:** Use the Card component in AiConnectionInstructions.
+
+**What changed:**
+- `app/src/ui/card/Card.vue` — added variant prop ('default'|'secondary', defaults to 'default'); root article binds 'card' or 'card-secondary' via :class
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — replaced div.card-secondary with Card variant="secondary"; imports Card from @/ui
+
+**Key decisions & why:**
+- variant prop on Card rather than a separate CardSecondary component — same root element, same slot, only the class differs; a second component would be unnecessary duplication
+- class fallthrough for bg-surface-secondary/50 and mt-2 — these are contextual overrides that belong at the call site, not baked into the component
+
+
+## [#397] Remove Card variant prop; migrate all card-secondary usages to class-name pattern
+**Type:** refactor
+
+**Summary:** Removed the variant prop added to Card.vue and migrated all secondary-card usages to the Badge-style class-name pattern — caller passes class="secondary" which Vue merges onto the root article.card element, targeting the .card.secondary compound CSS selector.
+
+**Brainstorming:** Card should follow the same no-props, class-name-only convention as Badge. The CSS was already updated to .card.secondary (compound selector). Removing the variant prop keeps the component API minimal and consistent — all visual variants are expressed through modifier classes at the call site, not through component props.
+
+**Prompt:** Card should not have variant props. Handle everything like badges — class names only.
+
+**What changed:**
+- `app/src/ui/card/Card.vue` — removed variant prop; reverted to plain <article class="card">
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — class="secondary bg-surface-secondary/50 mt-2" (was variant="secondary")
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue` — class="secondary" (was class="card-secondary")
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue` — class="secondary" (was class="card-secondary")
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Correlations.vue` — class="secondary" (was class="card-secondary")
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — class="secondary rec-card" (was class="card-secondary rec-card")
+
+**Key decisions & why:**
+- No variant prop, class fallthrough only — matches Badge.vue convention; keeps the component API at zero props and lets CSS handle all visual variants
+- .card.secondary compound selector (not .card-secondary) — requires the card base class to be present; prevents the secondary styles from being accidentally applied to non-Card elements

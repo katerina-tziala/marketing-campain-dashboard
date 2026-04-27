@@ -71,7 +71,7 @@ const sortedRecommendations = computed(() =>
     <Card
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
-      class="card-secondary rec-card"
+      class="secondary rec-card"
     >
       <h5 class="card-title rec-route">
         <div class="shrink flex flex-wrap gap-x-8 gap-y-2 justify-between">

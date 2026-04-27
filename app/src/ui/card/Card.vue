@@ -21,7 +21,7 @@
     border-subtle;
 }
 
-.card-secondary {
+.card.secondary {
   @apply rounded-md
     shadow-sm
     border
@@ -35,9 +35,9 @@
     text-typography-muted
     bg-surface;
 
-    h5 {
+    :slotted(h5) {
       @apply font-medium text-typography-primary-light leading-5; 
-    }    
+    }
 }
  
 </style>

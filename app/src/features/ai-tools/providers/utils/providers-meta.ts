@@ -9,20 +9,20 @@ export const PROVIDER_HELP: Record<AiProviderType, { title: string; steps: strin
   groq: {
     title: 'How to get your Groq API key',
     steps: [
-      'Go to the Groq Console and sign in with your account.',
-      'Open API Keys from the left sidebar.',
-      'Click Create API Key.',
-      'Copy the key and paste it into the field below.',
+      'Go to the Groq Console and sign in with your account',
+      'Open API Keys from the left sidebar',
+      'Click Create API Key',
+      'Copy the key and paste it into the API key field above',
     ],
-    note: 'Some models may require your organization admin to accept additional terms before use.',
+    note: 'Some models may require your organization admin to accept additional terms before use',
   },
   gemini: {
     title: 'How to get your Gemini API key',
     steps: [
-      'Go to Google AI Studio and sign in with your account.',
-      'Open API Keys from the left sidebar.',
-      'Click Create API key.',
-      'Copy the key and paste it into the field below.',
+      'Go to Google AI Studio and sign in with your account',
+      'Open API Keys from the left sidebar',
+      'Click Create API key',
+      'Copy the key and paste it into the API key field above',
     ],
   },
 }
