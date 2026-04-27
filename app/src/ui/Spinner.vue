@@ -1,7 +1,22 @@
 <template>
   <svg class="spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <circle cx="12" cy="12" r="9.5" stroke-width="2" stroke="currentColor" class="spinner-track" />
-    <circle cx="12" cy="12" r="9.5" stroke-width="2" stroke="currentColor" stroke-linecap="round" class="spinner-arc" />
+    <circle
+      cx="12"
+      cy="12"
+      r="9.5"
+      stroke-width="2"
+      stroke="currentColor"
+      class="spinner-track"
+    />
+    <circle
+      cx="12"
+      cy="12"
+      r="9.5"
+      stroke-width="2"
+      stroke="currentColor"
+      stroke-linecap="round"
+      class="spinner-arc"
+    />
   </svg>
 </template>
 
@@ -22,8 +37,24 @@
   }
 }
 
+.spinner.sm {
+  @apply w-5 h-5;
+}
+
+.spinner.inverse {
+  .spinner-track {
+    @apply  text-typography-strong/30;
+  }
+
+  .spinner-arc {
+    @apply text-typography-inverse;
+  }
+}
+
 @keyframes spinner-rotate {
-  100% { transform: rotate(360deg); }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes spinner-dash {
@@ -40,6 +71,4 @@
     stroke-dashoffset: -62;
   }
 }
-
-
 </style>

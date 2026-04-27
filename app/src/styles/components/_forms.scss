@@ -1,5 +1,4 @@
- @layer components {
-
+@layer components {
   .form {
     @apply flex flex-col gap-6;
   }
@@ -13,39 +12,37 @@
   }
 
   .form-control {
-     @apply text-sm
+    @apply text-sm
       rounded-md
       w-full
       block
       border
-      border
+      border-primary-dark
       outline-none
       transition-colors
       duration-150
       ease-in-out
       tracking-wider
       text-primary-light
-      // bg-surface-secondary
-      px-3
-      py-2.5;
-
+      bg-surface
+      px-3 
+      h-9;
 
     &::placeholder {
       @apply text-typography-subtle;
     }
 
     &:not(:disabled) {
-        &:focus,
-        &:focus-within,
-        &:hover {
-          @apply border-primary;
-        }
+      &:focus,
+      &:focus-within,
+      &:hover {
+        @apply border-primary;
+      }
     }
 
     &:disabled {
       @apply opacity-80 cursor-not-allowed;
     }
-
   }
 
   .input-error {
@@ -61,6 +58,6 @@
   }
 
   .field-error-hint {
-     @apply text-sm text-typography-subtle;
+    @apply text-sm text-typography-subtle;
   }
 }

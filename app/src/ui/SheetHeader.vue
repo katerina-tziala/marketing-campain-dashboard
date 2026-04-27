@@ -20,7 +20,7 @@
 }
 
 .sheet-header-icon {
-  @apply text-primary-lighter shrink-0 p-0;
+  @apply text-primary-lighter shrink-0 p-0 text-lg leading-5;
 }
 
 .sheet-header-title {
@@ -34,9 +34,9 @@
   :slotted(h6) {
     @apply m-0
       bg-gradient-to-r
-      from-accent-light from-5%
-      via-info-lighter via-info-light via-primary-light via-primary-lighter
-      to-secondary-light
+      from-accent-lighter from-5%
+      via-info-lighter via-info-lighter via-primary-light via-primary-lighter
+      to-secondary-lighter
       bg-clip-text
       text-transparent
       w-fit;

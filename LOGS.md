@@ -8063,3 +8063,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `text-only small` on the instructions toggle — matches the visual intent of the old `btn-icon-secondary btn-small`; keeps it lightweight and non-primary
 - Disclosure ownership moved to AiConnectionInstructions — the parent no longer needs to know the card is collapsible; encapsulation is cleaner
+
+
+## [#399] Fix dev connection cycle not iterating through all error cases
+**Type:** fix
+
+**Summary:** The dev connection cycle got stuck after the `success` step because `AiConnectionForm` unmounts when `isConnected = true`; on auto-disconnect the form remounts with an empty `apiKey`, disabling the Connect button and preventing further iteration.
+
+**Brainstorming:** The root cause is the interaction between the `success` outcome in the sequence and the `v-if="!store.isConnected"` on `AiConnectionForm`. When success fires, the form component is destroyed (losing the local `apiKey` ref). After the 4 s auto-disconnect, the form remounts with `apiKey = ''` and the button disabled — the cycle is effectively broken until the developer re-enters a key. The cleanest fix is to remove `success` from the sequence entirely. Success state is already testable with a real API key or via BLOCK A (analysis cycle). Without a success step, the form never unmounts mid-cycle, the `apiKey` ref persists, and all 8 error codes fire on consecutive clicks.
+
+**Prompt:** dev connection cycle does not iterate through all error cases fix it
+
+**What changed:**
+- `app/src/features/ai-tools/dev/dev-connection-cycle.ts` — removed `SuccessOutcome`/`ErrorOutcome` types, `DEV_MODEL` constant, `scheduleAutoDisconnect` helper, and the `success` entry from the sequence; `CONNECTION_SEQUENCE` is now `AiErrorCode[]` with all 8 connection-phase error codes; `runDevConnect` always throws; `useAiConnectionStore` import removed
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — updated BLOCK B comment to accurately describe the new cycle behaviour (type key once, click through 8 errors)
+
+**Key decisions & why:**
+- Remove success from cycle, not from the codebase — success is tested via the real form or BLOCK A; BLOCK B is specifically for error states
+- No change to production code (`AiToolsContent.vue` `v-if` stays as-is) — the fix is entirely in the dev file
+- `AiModel` import retained — still needed for `runDevConnect`'s return type annotation to satisfy the `DevConnectFn` type expected by `setDevConnectOverride`

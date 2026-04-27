@@ -18,7 +18,8 @@
     transition ease-in-out duration-150
     rounded-md
     opacity-85
-    text-sm font-medium leading-none text-center tracking-wide
+    text-sm font-medium leading-none text-center 
+    tracking-wide
     gap-2 px-2.5 py-3;
 
   &:deep(svg) {
@@ -41,7 +42,7 @@
   }
 
   &:disabled {
-    @apply cursor-not-allowed opacity-60;
+    @apply cursor-not-allowed opacity-50;
 
     &::after {
       @apply hidden;
@@ -73,33 +74,51 @@
   @apply text-xs px-2 py-1 leading-4;
 }
 
-/* variant primary */
+// /* variant primary */
+// .btn.primary {
+//   @apply bg-primary-dark text-typography-strong;
+
+//   &:not(:disabled) {
+//     @apply bg-gradient-to-br
+//         from-primary-dark from-5%
+//         via-primary
+//         to-secondary;
+
+//     &::after {
+//       @apply bg-gradient-to-br from-accent via-info-dark to-primary;
+//     }
+
+//     &:focus-visible {
+//       @apply ring-2 ring-primary ring-offset-1 ring-offset-background;
+//     }
+
+//     &:active {
+//       @apply text-typography-strong/80;
+//       &::after {
+//         @apply opacity-90;
+//       }
+//     }
+//   }
+// }
+
 .btn.primary {
-  @apply bg-primary-dark text-typography;
+  @apply bg-primary-dark text-typography-strong;
+  &::after {
+    @apply hidden;
+  }
 
   &:not(:disabled) {
-    @apply bg-gradient-to-br
-        from-primary-dark from-5%
-        via-primary
-        to-secondary;
-
-    &::after {
-      @apply bg-gradient-to-br from-accent from-10% via-info-light via-primary to-primary-dark;
-    }
-
+ 
     &:hover {
-      @apply text-typography-strong;
+      @apply bg-primary-light text-primary-ink;
     }
 
     &:focus-visible {
-      @apply ring-2 ring-primary ring-offset-1 ring-offset-background text-typography-strong;
+      @apply bg-primary-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
     }
 
     &:active {
-      @apply text-typography/80;
-      &::after {
-        @apply opacity-90;
-      }
+      @apply opacity-90;
     }
   }
 }
@@ -167,10 +186,7 @@
     }
   }
 }
- 
 
-
- 
 //  @layer components {
 
 //   .btn {

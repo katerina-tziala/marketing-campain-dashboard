@@ -15,9 +15,9 @@ import { Button, SheetHeader } from '@/ui'
 // onMounted(activate)
 // onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
-// BLOCK B — Connection cycle: each Connect click cycles through success + all
-//           connection error codes (spinner always shows for ~1.5 s; success
-//           auto-disconnects after 1.5 s so the next click continues the cycle).
+// BLOCK B — Connection cycle: type any API key once, then each Connect click
+//           advances through all 8 connection error codes (spinner ~1.5 s each).
+//           No success step — the form stays mounted so the key persists.
 import { onMounted, onUnmounted } from 'vue'
 import { useDevConnectionCycle } from '@/features/ai-tools/dev/dev-connection-cycle'
 const { activate, deactivate } = useDevConnectionCycle()

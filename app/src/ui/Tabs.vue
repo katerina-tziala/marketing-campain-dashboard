@@ -64,7 +64,8 @@ onMounted(() => {
       -mb-[1px]
       transition-colors
       duration-150
-      ease-in-out;
+      ease-in-out
+      outline-none;
 
   &.tab-active {
     @apply text-primary-light border-primary;
@@ -74,7 +75,8 @@ onMounted(() => {
     @apply shrink-0 text-lg;
   }
 
-  &:hover:not(.tab-active) {
+  &:hover,
+  &:focus-visible {
     @apply bg-primary/20 text-primary-lighter;
   }
 }

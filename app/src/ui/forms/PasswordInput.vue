@@ -1,31 +1,37 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, Comment } from 'vue'
-import EyeIcon from '@/ui/icons/EyeIcon.vue'
-import EyeOffIcon from '@/ui/icons/EyeOffIcon.vue'
+import { ref, computed, useSlots, Comment } from "vue";
+import EyeIcon from "@/ui/icons/EyeIcon.vue";
+import EyeOffIcon from "@/ui/icons/EyeOffIcon.vue";
 
-const props = withDefaults(defineProps<{
-  modelValue: string
-  id?: string
-  placeholder?: string
-  disabled?: boolean
-  autocomplete?: string
-}>(), {
-  autocomplete: 'off',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: string;
+    id?: string;
+    placeholder?: string;
+    disabled?: boolean;
+    autocomplete?: string;
+  }>(),
+  {
+    autocomplete: "off",
+  },
+);
 
-defineEmits<{ 'update:modelValue': [value: string] }>()
+defineEmits<{ "update:modelValue": [value: string] }>();
 
-const slots = useSlots()
-const visible = ref(false)
+const slots = useSlots();
+const visible = ref(false);
 
 const hasError = computed(() => {
-  if (!slots.error) return false
-  return slots.error().some(vnode => vnode.type !== Comment)
-})
+  if (!slots.error) return false;
+  return slots.error().some((vnode) => vnode.type !== Comment);
+});
 </script>
 
 <template>
-  <div class="password-input" :class="{ 'password-input-error': hasError, 'disabled': disabled }">
+  <div
+    class="password-input"
+    :class="{ 'password-input-error': hasError, disabled: disabled }"
+  >
     <input
       :id="id"
       :value="modelValue"
@@ -36,11 +42,13 @@ const hasError = computed(() => {
       :autocomplete="autocomplete"
       :disabled="disabled"
       spellcheck="false"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      @input="
+        $emit('update:modelValue', ($event.target as HTMLInputElement).value)
+      "
     />
     <button
       type="button"
-      class="btn-icon-secondary btn-small toggle-btn"
+      class="toggle-btn"
       :aria-label="visible ? 'Hide' : 'Show'"
       :disabled="disabled"
       @click="visible = !visible"
@@ -68,14 +76,25 @@ const hasError = computed(() => {
   @apply pr-12;
 }
 
-.toggle-btn {
-  @apply absolute right-0 w-10 h-[2.625rem] border border-transparent flex items-center justify-center text-base rounded-l-none rounded-r-sm;
+// .toggle-btn {
+//   @apply absolute
+//     right-0 w-10
+//     h-[2.25rem]
+//     border
+//     border-transparent
+//     flex
+//     items-center
+//     justify-center
+//     text-base
+//     rounded-l-none
+//     rounded-r-sm
+//     outline-none;
 
-  &:not(:disabled) {
-    &:focus,
-    &:focus-visible {
-      @apply border-primary/20 text-primary-light bg-primary/20;
-    }
-  }
-}
+//   &:not(:disabled) {
+//     &:focus,
+//     &:focus-visible {
+//       @apply border-primary/20 text-primary-light bg-primary/20;
+//     }
+//   }
+// }
 </style>
