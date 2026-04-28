@@ -9372,3 +9372,113 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Removing median ticks entirely: the values are now surfaced in the legend, so there is no need for a special tick on either axis — regular ticks stay clean and uncoloured
 - Muted separator dot between the two legend items: visual rhythm without adding a border or extra container
+
+
+## [#468] Remove RoiCpaScatter
+**Type:** update
+
+**Summary:** Deleted RoiCpaScatter.vue and removed its import and commented-out template block from DashboardView.
+
+**What changed:**
+- `RoiCpaScatter.vue` — deleted
+- `DashboardView.vue` — removed import; removed commented-out `<RoiCpaScatter>` block
+
+**Key decisions & why:**
+- File was already commented out in the template; removing it entirely cleans up the dead import and stale code
+
+
+## [#469] Extract FloatingDropdown into UI library
+**Type:** refactor
+
+**Summary:** Extracted the floating dropdown shell (backdrop, scroll lock, boundary-aware positioning, escape/resize close) from `ChannelFilters.vue` into a reusable `FloatingDropdown.vue` component in the UI library.
+
+**Brainstorming:** The backdrop + teleport + body scroll lock + boundary-aware positioning pattern in `ChannelFilters.vue` is generic infrastructure with no knowledge of channels. Extracting it into a UI component makes it reusable anywhere a floating panel is needed, and slims `ChannelFilters.vue` down to only chip/filter logic. The component accepts `v-model:open` and an `anchor` HTMLElement prop — the caller keeps its trigger button, the component handles everything else.
+
+**Prompt:** Extract the floating dropdown shell from ChannelFilters.vue into a reusable FloatingDropdown component in the UI library. The component should handle backdrop, body scroll lock, boundary-aware positioning, escape key, and window resize close. ChannelFilters.vue should use the new component. ChannelFiltersDropdown.vue stays unchanged.
+
+**What changed:**
+- `src/ui/FloatingDropdown.vue` — new component; props: open (v-model:open), anchor, minWidth?, maxHeight?, gap?, edgeMargin?; teleports backdrop + floating anchor to body; locks body scroll; closes on backdrop click, Escape, window resize
+- `src/ui/index.ts` — added FloatingDropdown export
+- `src/features/dashboard/components/channel-filters/ChannelFilters.vue` — removed dropdownStyle computed, watch(dropdownOpen) scroll lock, onWindowResize, and window resize listener; replaced two Teleport blocks with `<FloatingDropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef">`; removed orphaned .dropdown-backdrop + .floating-anchor scoped styles
+
+**Key decisions & why:**
+- `anchor` prop (HTMLElement) rather than a trigger slot — caller already owns the trigger button, component only needs the rect for positioning
+- `maxHeight` prop is used only for positioning math (flip above/below), not as a CSS constraint — content component owns its own max-height
+- `onMounted`/`onUnmounted` in `FloatingDropdown` manage the resize listener, mirroring the pattern from `ChannelFilters.vue`
+
+
+## [#470] Rename FloatingDropdown to Dropdown, add accessibility
+**Type:** refactor
+
+**Summary:** Renamed `FloatingDropdown.vue` to `Dropdown.vue` and added focus management: focuses first focusable element on open, returns focus to anchor on close; backdrop marked `aria-hidden="true"`.
+
+**Brainstorming:** The name `FloatingDropdown` is redundant — a dropdown is by definition floating. `Dropdown` is cleaner and more consistent with other UI component names. Accessibility additions: focus moving into the panel on open and back to the trigger on close are the two essential keyboard navigation requirements for any floating panel. The backdrop is a visual-only click target and should be hidden from assistive technology.
+
+**Prompt:** Rename FloatingDropdown.vue to Dropdown.vue and add proper accessibility: focus first focusable element on open, return focus to anchor on close, aria-hidden on backdrop.
+
+**What changed:**
+- `src/ui/FloatingDropdown.vue` — deleted
+- `src/ui/Dropdown.vue` — new file; adds `ref panelRef` on the panel, `focusFirstInPanel()` helper, `watch(open)` now also handles focus on open/close; backdrop has `aria-hidden="true"`; imports `ref` + `nextTick`
+- `src/ui/index.ts` — export updated from `FloatingDropdown` to `Dropdown`
+- `src/features/dashboard/components/channel-filters/ChannelFilters.vue` — import and template tag updated from `FloatingDropdown` to `Dropdown`
+
+**Key decisions & why:**
+- Focus goes to the first focusable element (not the panel wrapper itself) — panel wrapper has no role and would receive no visible focus indicator
+- Disabled elements excluded from the focusable selector so focus never lands on an inert button
+- `anchor?.focus()` on close is safe even when close is triggered by clicking a chip inside the panel, as the anchor.focus() runs after the click event settles
+
+
+## [#471] Styling rule: new components use Tailwind directly in template
+**Type:** refactor
+
+**Summary:** Replaced the `<style>` block in `Dropdown.vue` with inline Tailwind classes and updated CLAUDE.md to document that new components use Tailwind utilities in the template, not `@apply` in SCSS.
+
+**Brainstorming:** The `<style>` block in `Dropdown.vue` contained two trivial positioning rules that map directly to Tailwind classes. Keeping a style block for that is unnecessary overhead. The rule going forward is: new components write Tailwind directly in the template; SCSS is only justified for things Tailwind cannot express (pseudo-elements, container-query mixins, complex selectors). Existing components keep their `@apply` patterns — no mass refactor implied.
+
+**Prompt:** Use Tailwind in new components instead of a scoped style block. Update CLAUDE.md to document this as the pattern going forward.
+
+**What changed:**
+- `src/ui/Dropdown.vue` — removed `<style lang="scss" scoped>` block; backdrop div now has `class="fixed inset-0 z-[49]"`, anchor div has `class="fixed z-50"`
+- `CLAUDE.md` — Styling section updated: new components use Tailwind in template; SCSS only for pseudo-elements/container-query mixins/complex selectors; existing `@apply` components left as-is
+
+**Key decisions & why:**
+- `z-[49]` arbitrary value for the backdrop — Tailwind's scale jumps from z-40 to z-50, so 49 requires JIT arbitrary syntax
+- Existing components are not touched — the rule is forward-looking only, avoiding unnecessary churn
+
+
+## [#472] Constants pattern: named consts above defineProps for defaults
+**Type:** refactor
+
+**Summary:** Moved `??` default values in `Dropdown.vue` to named `SCREAMING_SNAKE_CASE` constants above `defineProps`, and updated CLAUDE.md to document this as the required pattern going forward.
+
+**Brainstorming:** Inline `props.x ?? 6` buries the default value inside logic where it is easy to miss and hard to update. Named constants make defaults self-documenting and centrally located. Scoping them with a component prefix (e.g. `DROPDOWN_`) avoids collisions when multiple components are in scope.
+
+**Prompt:** Move default values from inline ?? expressions to named constants above defineProps. Follow the pattern const MIN_WIDTH = 300. Update CLAUDE.md.
+
+**What changed:**
+- `src/ui/Dropdown.vue` — added `DROPDOWN_GAP`, `DROPDOWN_MIN_WIDTH`, `DROPDOWN_MAX_HEIGHT`, `DROPDOWN_EDGE_MARGIN` constants above `defineProps`; `dropdownStyle` computed uses them via `props.x ?? CONSTANT`
+- `CLAUDE.md` — new "Constants and default values" section added to Workflow Rules: named consts above defineProps, SCREAMING_SNAKE_CASE
+
+**Key decisions & why:**
+- Constants prefixed with `DROPDOWN_` rather than generic names (`GAP`, `MIN_WIDTH`) to be unambiguous if the file grows or is read in isolation
+
+
+## [#473] Refactor: Dropdown module folder + DropdownPanel component
+**Type:** refactor
+
+**Summary:** Moved `Dropdown.vue` into a new `ui/dropdown/` folder, added a `DropdownPanel.vue` component for the visual container shell, and updated `ChannelFiltersDropdown` to use it.
+
+**Brainstorming:** Every dropdown content component was duplicating the same container styles (bg-surface-elevated, border, rounded-xl, shadow-lg) on its own outer wrapper. The cleanest fix was to create a dedicated `DropdownPanel` component that owns those styles and the `role="dialog"` attribute, while keeping `Dropdown` as a pure positioning/teleport shell. No scroll is added to the panel by default — inner areas that need to scroll add their own overflow wrapper, giving callers full control over which part of the content is scrollable.
+
+**Prompt:** Create a dropdown folder in ui/, move Dropdown.vue into it, create a DropdownPanel component that renders the outer container div with role="dialog" — visual shell only, no scroll by default. Update ChannelFiltersDropdown to use it.
+
+**What was built:**
+- `app/src/ui/dropdown/Dropdown.vue` — moved from `app/src/ui/Dropdown.vue`; no changes to logic
+- `app/src/ui/dropdown/DropdownPanel.vue` — new; props: ariaLabel?; role="dialog"; Tailwind-only styles (bg-surface-elevated border rounded-xl shadow-lg); default slot; no scroll
+- `app/src/ui/dropdown/index.ts` — barrel exporting both Dropdown and DropdownPanel
+- `app/src/ui/index.ts` — swapped single `Dropdown.vue` line for `export * from './dropdown'`
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — outer div replaced with `<DropdownPanel aria-label="Channel filters" class="min-w-[260px] max-w-[340px]">`; scroll moved to inner `<div class="max-h-[300px] overflow-y-auto scrollbar-stable scrollbar-on-surface">` wrapping header + chips; removed `.filter-dropdown` scoped style block
+
+**Key decisions & why:**
+- No scroll on DropdownPanel by default — some dropdowns may only need part of their content scrollable; forcing overflow on the outer shell would prevent inner sticky headers or mixed-scroll layouts
+- `role="dialog"` moved from ChannelFiltersDropdown to DropdownPanel — it belongs to the container that represents the floating panel boundary, not the content inside

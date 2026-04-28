@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import type { Channel } from '@/shared/types/channel'
 import { useCampaignStore } from '@/stores/campaign.store'
-import { SlidersIcon } from '@/ui'
+import { SlidersIcon, Dropdown } from '@/ui'
 import ChannelFiltersDropdown from './ChannelFiltersDropdown.vue'
 
 const props = defineProps<{
@@ -18,26 +18,6 @@ const triggerButtonRef = ref<HTMLButtonElement>()
 const hasOverflow = ref(false)
 const hiddenSelectedIds = ref<string[]>([])
 const dropdownOpen = ref(false)
-
-// ── Dropdown positioning (boundary-aware) ─────────────────────────────────
-
-const dropdownStyle = computed(() => {
-  if (!triggerButtonRef.value) return {}
-  const rect = triggerButtonRef.value.getBoundingClientRect()
-
-  const GAP = 6
-  const MIN_WIDTH = 260
-  const MAX_HEIGHT = 300
-  const EDGE_MARGIN = 8
-
-  const left = Math.min(rect.left, window.innerWidth - MIN_WIDTH - EDGE_MARGIN)
-  const fitsBelow = rect.bottom + GAP + MAX_HEIGHT <= window.innerHeight
-
-  if (fitsBelow) {
-    return { top: `${rect.bottom + GAP}px`, left: `${left}px` }
-  }
-  return { bottom: `${window.innerHeight - rect.top + GAP}px`, left: `${left}px` }
-})
 
 // ── Chip display ───────────────────────────────────────────────────────────
 
@@ -108,19 +88,10 @@ function measure(): void {
 
 watch(() => store.selectedChannelsIds, () => nextTick(measureHidden))
 watch(() => props.channels, () => nextTick(measure))
-watch(dropdownOpen, open => {
-  document.body.style.overflow = open ? 'hidden' : ''
-})
-
 let resizeObserver: ResizeObserver | null = null
-
-function onWindowResize(): void {
-  dropdownOpen.value = false
-}
 
 onMounted(() => {
   nextTick(measure)
-  window.addEventListener('resize', onWindowResize)
 
   if (measureRef.value) {
     resizeObserver = new ResizeObserver(() => nextTick(measure))
@@ -129,8 +100,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
-  window.removeEventListener('resize', onWindowResize)
   resizeObserver?.disconnect()
 })
 
@@ -221,32 +190,15 @@ function toggleDropdown(): void {
       </button>
     </div>
 
-    <!-- Backdrop — closes dropdown on outside click; scroll is locked via body.style.overflow -->
-    <Teleport to="body">
-      <div
-        v-if="dropdownOpen"
-        class="dropdown-backdrop"
-        @click="dropdownOpen = false"
+    <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef" :gap="0">
+      <ChannelFiltersDropdown
+        :channels="channels"
+        :selected-ids="store.selectedChannelsIds"
+        @toggle="toggle"
+        @clear="clear"
+        @close="dropdownOpen = false"
       />
-    </Teleport>
-
-    <!-- Dropdown — teleported to body, above backdrop -->
-    <Teleport to="body">
-      <div
-        v-if="dropdownOpen"
-        class="floating-anchor"
-        :style="dropdownStyle"
-        @keydown.escape="dropdownOpen = false"
-      >
-        <ChannelFiltersDropdown
-          :channels="channels"
-          :selected-ids="store.selectedChannelsIds"
-          @toggle="toggle"
-          @clear="clear"
-          @close="dropdownOpen = false"
-        />
-      </div>
-    </Teleport>
+    </Dropdown>
 
   </div>
 </template>
@@ -340,14 +292,4 @@ function toggleDropdown(): void {
     text-xs font-normal bg-on-primary/10;
 }
 
-.dropdown-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 49;
-}
-
-.floating-anchor {
-  position: fixed;
-  z-index: 50;
-}
 </style>

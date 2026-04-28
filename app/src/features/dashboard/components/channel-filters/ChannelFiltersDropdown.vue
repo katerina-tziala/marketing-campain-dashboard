@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Channel } from "@/shared/types/channel";
+import { DropdownPanel } from "@/ui";
 
 const props = defineProps<{
   channels: Channel[];
@@ -17,45 +18,33 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
 </script>
 
 <template>
-  <div
-    class="filter-dropdown scrollbar-stable scrollbar-on-surface;"
-    role="dialog"
-    aria-label="Channel filters"
-  >
-    <div class="dropdown-header">
-      <span class="dropdown-title">Channels</span>
-      <button v-if="hasSelection" class="clear-btn" @click="emit('clear')">
-        Clear all
-      </button>
-    </div>
+  <DropdownPanel aria-label="Channel filters" class="min-w-[260px] max-w-[300px]">
+    <div class="max-h-[300px] overflow-y-auto scrollbar-stable scrollbar-on-surface">
+      <div class="dropdown-header">
+        <span class="dropdown-title">Channels</span>
+        <button v-if="hasSelection" class="clear-btn" @click="emit('clear')">
+          Clear all
+        </button>
+      </div>
 
-    <div class="dropdown-chips">
-      <button
-        v-for="channel in channels"
-        :key="channel.id"
-        class="filter-chip"
-        :class="selectedIds.includes(channel.id) ? 'active' : 'inactive'"
-        :aria-pressed="selectedIds.includes(channel.id)"
-        @click="emit('toggle', channel.id)"
-      >
-        {{ channel.name }}
-        <span class="chip-count">{{ channel.campaigns.length }}</span>
-      </button>
+      <div class="dropdown-chips">
+        <button
+          v-for="channel in channels"
+          :key="channel.id"
+          class="filter-chip"
+          :class="selectedIds.includes(channel.id) ? 'active' : 'inactive'"
+          :aria-pressed="selectedIds.includes(channel.id)"
+          @click="emit('toggle', channel.id)"
+        >
+          {{ channel.name }}
+          <span class="chip-count">{{ channel.campaigns.length }}</span>
+        </button>
+      </div>
     </div>
-  </div>
+  </DropdownPanel>
 </template>
 
 <style lang="scss" scoped>
-.filter-dropdown {
-  @apply bg-surface-elevated
-    border
-    rounded-xl
-    shadow-lg
-    min-w-[260px] max-w-[340px]
-    max-h-[300px]
-    overflow-y-auto;
-}
-
 .dropdown-header {
   @apply sticky top-0
     flex items-center justify-between
