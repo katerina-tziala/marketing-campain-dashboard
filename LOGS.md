@@ -9200,3 +9200,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `showAbsoluteCurrency` only on CPA: euro amount shown before "vs portfolio", sign injected after `€` symbol via string-slice
 - `formattedBenchmark` derived from `unit` prop: pp→formatPercentage (decimal ratio), pct→formatCompactCurrency (euros); displayed in parens at end of line
 - Single `delta-muted` class for both the absolute amount and "vs portfolio" label — same muted style, no reason to split
+
+
+## [#458] Dark palette: separate raw border scale from semantic border tokens
+**Type:** refactor
+
+**Summary:** Refined the dark theme palette split by moving raw border RGB values into `dark-palette.scss` as a dedicated surface border scale, while keeping `dark.scss` as the semantic token layer consumed by Tailwind and components.
+
+**Brainstorming:** The border variables in `dark.scss` were semantically correct (`--color-border-faint`, `--color-border-subtle`, `--color-border`, `--color-border-strong`, `--color-border-darker`) because they describe UI roles. The confusing part was that they contained literal RGB values, making the theme file feel like it mixed palette primitives with semantic decisions. The cleaner model is: `dark-palette.scss` owns raw ingredients, and `dark.scss` maps those ingredients to UI meaning. Since components already consume Tailwind border utilities backed by `--color-border-*`, the public semantic API could stay stable while the raw values moved underneath it. Experimental commented border values were preserved and moved with the palette scale so palette iteration remains easy.
+
+**Prompt:** Refine the dark theme palette structure: keep semantic border roles such as `--color-border-faint` and `--color-border-strong` in `dark.scss`, but move their raw RGB values into `dark-palette.scss` so the palette file owns primitives and the theme file owns UI meaning. Preserve existing component/Tailwind usage and keep experimental commented values for ongoing palette exploration.
+
+**What was built:**
+- `app/src/styles/themes/dark-palette.scss` — added a `Surface border scale` section with `--surface-border-0` through `--surface-border-4`; preserved the previous experimental border values as commented alternatives
+- `app/src/styles/themes/dark.scss` — changed `--color-border-faint`, `--color-border-subtle`, `--color-border`, `--color-border-strong`, and `--color-border-darker` to reference the new `--surface-border-*` palette primitives
+- `app/src/styles/themes/dark.scss` — updated the palette import to `dark-palette.scss` after the file rename from the misspelled `dark-pallette.scss`
+
+**Key decisions & why:**
+- Keep `--color-border-*` in `dark.scss`: these names describe UI purpose and are the semantic layer Tailwind/components should depend on
+- Add `--surface-border-*` to `dark-palette.scss`: these names represent raw dark-surface border steps, so literal RGB values now live with the palette primitives
+- Preserve existing component and Tailwind contracts: no component rewrites were needed because `border-faint`, `border-subtle`, `border-strong`, and `border-darker` still resolve through the same semantic CSS variables
+- Keep commented experiments: the commented border candidates are active design notes, not dead code, and belong beside the raw border scale where palette experiments happen
+- Use a `0–4` border scale: `0` covers the darker border/base edge case, while `1–4` map cleanly to faint → subtle → default → strong
