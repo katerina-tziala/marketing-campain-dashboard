@@ -8,6 +8,7 @@ import RoiCpaScatter from './components/RoiCpaScatter.vue'
 import EmptyState from './components/EmptyState.vue'
 import CampaignTable from './components/CampaignTable.vue'
 import ChannelFilter from './components/ChannelFilter.vue'
+import { ChannelFilters } from './components/channel-filters'
 
 const store = useCampaignStore()
 
@@ -25,7 +26,8 @@ const openAiPanel = inject<() => void>('openAiPanel')
     <section class="dashboard-header">
       <div class="dashboard-header-container">
         <DashboardHeader @ai-click="openAiPanel?.()" />
-        <ChannelFilter :channels="[...store.portfolioChannels.values()]" />
+        <ChannelFilters :channels="[...store.portfolioChannels.values()]" />
+        <!-- <ChannelFilter :channels="[...store.portfolioChannels.values()]" /> -->
       </div>
     </section>
     <!-- Channel Filter -->
@@ -38,18 +40,18 @@ const openAiPanel = inject<() => void>('openAiPanel')
           :kpis="store.portfolioAnalysis.portfolio"
           :portfolio-kpis="store.selectedChannelsIds.length > 0 ? store.fullPortfolioKpis : undefined"
         />
-        <!-- Charts
+        <!-- Charts -->
         <DashboardCharts
           :campaigns="store.filteredCampaigns"
           :channels="store.selectedChannels"
           :kpis="store.portfolioAnalysis.portfolio"
         />
-        ROI vs CPA Scatter
-        <RoiCpaScatter
+        <!-- ROI vs CPA Scatter -->
+        <!-- <RoiCpaScatter
           :all-campaigns="store.campaigns"
           :campaigns="store.filteredCampaigns"
           class="mx-auto max-w-7xl w-full"
-        /> -->
+        />  -->
         <!-- Campaign Table -->
         <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
           <h3 class="card-title table-card-title">Campaign Details</h3>

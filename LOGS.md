@@ -8830,3 +8830,215 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `UploadDataForm` stays in the root `components/` (not in `data-validation/`): it is the upload form step, not a validation concern — placing it beside the modal orchestrator it feeds is semantically accurate
 - Tables live beside their sole consumer, not in `shared/`: `DataErrorsTable` is only used by `ReviewErrorsComponent`; `CampainDuplicationsTable`/`DuplicationGroupHeader` only by `ReviewDuplicatedCampaigns` — `shared/` stays lean with only the two truly cross-used components
 - Named imports from barrels in `UploadDataModal.vue` (not default): the barrel uses `export { default as X }` which produces named exports; default imports from a barrel resolve to `undefined` at runtime
+
+
+## [#439] ChannelFilter2 — overflow-aware chip filter with dropdown
+**Type:** feature
+
+**Summary:** Created `channel-filter/` folder with a v2 channel filter component that switches between a plain chip strip (all chips fit in 2 rows) and an overflow mode (SlidersIcon trigger + clipped strip + floating +N badge showing hidden selected count with tooltip).
+
+**Brainstorming:** The original ChannelFilter uses horizontal scroll/wrap with no overflow handling. The new design needed two distinct states: one where all chips are visible and no chrome is added, and one where chips exceed the allowed height and a filter icon + badge surface the hidden selection. Key question was how to measure overflow without reading CSS `max-height` — solution is comparing each chip`s `getBoundingClientRect().bottom` against the container`s bottom edge, which works regardless of how the height is set. The +N badge counts only hidden *selected* chips (not all hidden) so it conveys actionable information. Filter icon doubles as the dropdown trigger to avoid duplicate affordances. Dropdown is kept minimal: all channels as chips + sticky header + Clear all.
+
+**Prompt:** Create a channel-filter/ folder under dashboard/components with ChannelFilter2.vue and ChannelFilterDropdown.vue. Two states: State A (no overflow) = chips only; State B (overflow) = SlidersIcon button + clipped chip strip + +N badge for hidden selected chips with hover tooltip. ResizeObserver on chip container. Dropdown opens from filter icon. Max height via CSS variable. index.ts barrel.
+
+**What was built:**
+- `channel-filter/ChannelFilter2.vue` — main component; ResizeObserver on `.chips-container`; `measure()` reads `getBoundingClientRect().bottom` per chip; `hasOverflow` and `hiddenSelectedIds` drive State A/B; `--channel-filter-max-height` CSS variable (default 4.5rem); click-outside closes dropdown; tooltip shows hidden selected channel names on hover/focus of badge
+- `channel-filter/ChannelFilterDropdown.vue` — props-only floating panel; absolute `top-full left-0` of `.filter-trigger`; sticky header with "Clear all"; all channels as toggle chips; scrollable
+- `channel-filter/index.ts` — barrel exporting both components
+- `CLAUDE.md` — architecture section updated with new folder and component descriptions
+
+**Key decisions & why:**
+- `getBoundingClientRect()` over `offsetTop` comparison: works with any `max-height` value and accounts for border/padding on the container without extra computation
+- CSS variable `--channel-filter-max-height` rather than a prop: allows parent to override via CSS cascade without changing the component interface; default 4.5rem = 2 chip rows + gap
+- `hiddenSelectedIds` counts only hidden *selected* chips: showing "+5" when none of those 5 are selected is noise; the badge only appears when the hidden state is actionable
+- Separate `ChannelFilterDropdown.vue` file: the panel has its own scoped styles and distinct responsibility; keeping it separate avoids a bloated single-file component
+- Same `toggle()`/`clear()` store interface as the original `ChannelFilter.vue`: drop-in comparable behaviour, makes A/B testing straightforward
+
+
+## [#440] Add ChannelFilter2 above existing filter in DashboardView
+**Type:** update
+
+**Summary:** Mounted ChannelFilter2 directly above ChannelFilter in DashboardView for side-by-side behaviour comparison.
+
+**Brainstorming:** Straightforward placement — both components receive the same `:channels` prop from the store so they share identical input data and interact with the same store state.
+
+**Prompt:** Add ChannelFilter2 above ChannelFilter in DashboardView.vue.
+
+**What changed:**
+- `DashboardView.vue` — import added for `ChannelFilter2`; `<ChannelFilter2>` rendered above `<ChannelFilter>` with identical `:channels` prop
+
+**Key decisions & why:**
+- Same prop expression as ChannelFilter so both components operate on identical data — comparison is apples-to-apples
+
+
+## [#441] Fix dropdown clipping and close-on-hover in ChannelFilter2
+**Type:** fix
+
+**Summary:** Teleported the dropdown to `<body>` with `position: fixed` anchored to the trigger button rect, escaping all `overflow: hidden` ancestors; updated click-outside to check both the root and the teleported element.
+
+**Brainstorming:** The dropdown was rendered inside `.filter-trigger` which sat inside ancestors with `overflow: hidden`, clipping it visually. Moving the mouse onto the clipped (invisible) dropdown area triggered click-outside and closed it immediately. Fix: Teleport to body + `position: fixed` + coords from `getBoundingClientRect()` on the trigger button. Click-outside now checks `rootRef` AND `dropdownRef` so clicks inside the teleported panel do not close it.
+
+**Prompt:** Fix ChannelFilter2 dropdown: teleport to body with fixed positioning anchored to trigger button rect; update click-outside to include teleported element; remove absolute positioning from ChannelFilterDropdown.
+
+**What changed:**
+- `ChannelFilter2.vue` — added `triggerButtonRef` + `dropdownRef`; added `dropdownStyle` computed (reads `triggerButtonRef.getBoundingClientRect()`, returns `top`/`left` as fixed coords); moved dropdown into `<Teleport to="body">` wrapper div with `ref="dropdownRef"` + `:style="dropdownStyle"`; added `.dropdown-anchor { position: fixed; z-index: 50 }` scoped style; updated `handleClickOutside` to guard on both `rootRef` and `dropdownRef`
+- `ChannelFilterDropdown.vue` — removed `absolute top-full left-0 mt-1.5 z-50` from `.filter-dropdown`; positioning is now entirely owned by the parent teleport wrapper
+
+**Key decisions & why:**
+- Teleport to body rather than a portal container: simplest escape from the overflow chain; no extra DOM setup needed
+- `position: fixed` + `getBoundingClientRect()`: coords are viewport-relative so they work regardless of scroll position of the header container
+- `dropdownRef` on the wrapper div, not on `ChannelFilterDropdown` directly: Vue component refs return the component instance, not the DOM element; a plain wrapper div gives a reliable `HTMLElement` ref for the contains() check
+
+
+## [#442] Constrain ChannelFilter2 dropdown to viewport bounds
+**Type:** fix
+
+**Summary:** `dropdownStyle` now clamps `left` to prevent right-edge overflow and flips the dropdown upward (anchors by `bottom`) when it would go below the viewport.
+
+**Brainstorming:** The fixed-position dropdown used raw `rect.left` and `rect.bottom + gap` with no boundary checks, allowing it to overflow the right or bottom of the viewport. Two axes need guarding: horizontal (clamp left so right edge stays within viewport minus a margin) and vertical (flip to open upward when `rect.bottom + gap + maxHeight > window.innerHeight`, anchoring by CSS `bottom` instead of `top`). Constants match the CSS constraints already defined on `ChannelFilterDropdown.vue` so no layout changes needed.
+
+**Prompt:** Make ChannelFilter2 dropdown always fit on screen: clamp left to prevent right-overflow; flip upward when it would overflow the bottom.
+
+**What changed:**
+- `ChannelFilter2.vue` — `dropdownStyle` computed extended with `GAP/MIN_WIDTH/MAX_HEIGHT/EDGE_MARGIN` constants; `left` clamped to `min(rect.left, window.innerWidth - MIN_WIDTH - EDGE_MARGIN)`; vertical flip: returns `{ bottom, left }` when dropdown does not fit below, `{ top, left }` otherwise
+
+**Key decisions & why:**
+- `MIN_WIDTH = 260` / `MAX_HEIGHT = 300` mirror the CSS on `ChannelFilterDropdown.vue` — worst-case dimensions used for boundary math without needing to read the rendered DOM
+- CSS `bottom` property (not `top`) for upward flip: lets the browser grow the dropdown upward naturally without computing its actual height
+- `EDGE_MARGIN = 8`: prevents the dropdown from touching the viewport edge on narrow screens
+
+
+## [#443] Replace +N inline tooltip with accessible hover-card panel
+**Type:** feature
+
+**Summary:** Replaced the non-interactive inline tooltip on the +N badge with a proper WCAG 1.4.13-compliant hover card (`SelectedChipsPanel`) that the user can enter, scroll, and dismiss with Escape.
+
+**Brainstorming:** `role="tooltip"` is explicitly non-interactive per ARIA spec — a scrollable, hoverable panel cannot use it. The correct pattern is a `role="region"` panel with `tabindex="0"` (keyboard-scrollable) and hover/focus lifecycle managed via a 100ms close debounce (so the cursor can cross the gap between badge and panel without closing it). The panel is Teleported to body with `position: fixed` right-anchored to the badge rect to escape overflow clipping ancestors. Panel always opens below the badge per design direction.
+
+**Prompt:** Replace the inline +N tooltip in ChannelFilter2 with an accessible hover card: Teleport to body, fixed below badge, role=region, scrollable, enter-able by mouse, dismissible by Escape, triggered on both hover and focus. Extract as SelectedChipsPanel.vue.
+
+**What was built:**
+- `channel-filter/SelectedChipsPanel.vue` — new component; `role="region"` aria-label; `tabindex="0"` for keyboard scroll; sticky "Also selected" title; flex-wrap chip list; `max-h-[200px]` scrollable; `@keydown.escape.stop` emits escape; props-only
+- `ChannelFilter2.vue` — removed `tooltipVisible` + inline tooltip + related CSS; added `badgeRef`/`panelRef`/`panelOpen`; added `panelStyle` computed (right-anchored to badge rect, always `top: rect.bottom + GAP`); added `closeTimer` + `openPanel`/`scheduleClose`/`cancelClose`/`closePanel`; badge changed from `<div>` to `<button>` with `aria-expanded`/`aria-label`; hover card Teleport added with `@mouseenter=cancelClose @mouseleave=scheduleClose @focusin=cancelClose @focusout=scheduleClose`; `handleClickOutside` extended to guard `panelRef`; `floating-anchor` class replaces `dropdown-anchor` (shared by both Teleports)
+- `channel-filter/index.ts` — exports `SelectedChipsPanel`
+- `CLAUDE.md` — architecture updated
+
+**Key decisions & why:**
+- 100ms debounce before close: covers the physical gap between badge and panel when moving the mouse — without it the panel flickers on every cursor crossing
+- `role="region"` not `role="tooltip"`: ARIA tooltips are non-interactive; a scrollable, focusable panel is a landmark region
+- Right-anchor (`right: window.innerWidth - rect.right`): badge is always at top-right of the container so right-aligning the panel is visually coherent
+- Always below, no flip: per user direction; the header is fixed so there is always viewport space below
+- Badge changed to `<button>`: `<div tabindex="0">` with click handler is an ARIA anti-pattern; `<button>` is the correct element for an interactive control
+
+
+## [#444] Simplify overflow UI: notification badge on filter button + scroll-lock backdrop
+**Type:** refactor
+
+**Summary:** Removed the separate +N badge and SelectedChipsPanel hover card; count of hidden selected chips now appears as a notification badge on the filter button itself. Added a fixed backdrop that blocks scroll and handles click-outside when the dropdown is open.
+
+**Brainstorming:** Having both a filter button and a separate +N hover-card button was redundant — the dropdown already shows all channels with selected ones highlighted. Merging the count into the filter button as a notification badge (like a mobile unread count) gives the same information with half the affordances. The scroll-lock problem: the dropdown is position:fixed computed from getBoundingClientRect() at open time; if the user scrolls, the trigger moves but the dropdown stays, causing visual detachment. A transparent fixed backdrop (inset:0, z-49) below the dropdown (z-50) blocks wheel and touchmove events and closes on click, eliminating the need for a document click-outside listener entirely. The filter trigger gets z-50 so it stays clickable above the backdrop.
+
+**Prompt:** Remove SelectedChipsPanel and the separate +N badge. Merge the hidden-selected count as a notification badge on the filter button. Add a transparent fixed backdrop that blocks scroll and closes dropdown on click.
+
+**What changed:**
+- `ChannelFilter2.vue` — removed rootRef, hiddenSelectedNames, badgeGroupRef, panelOpen, badgeGroupStyle, handleBadgeGroupFocusOut, document click listener; added .filter-count-badge (span, absolute -top-1.5 -right-1.5, aria-hidden); added dropdown-backdrop Teleport (fixed inset-0 z-49, @wheel.prevent @touchmove.prevent, @click closes); filter-trigger gets z-50; Escape on trigger button + dropdown anchor closes; chips-container pr-9 kept to avoid badge overlap
+- `SelectedChipsPanel.vue` — deleted
+- `channel-filter/index.ts` — removed SelectedChipsPanel export
+- `CLAUDE.md` — architecture updated
+
+**Key decisions & why:**
+- Notification badge as span not button: the count is informational, action is the filter button itself — two click targets on the same control is confusing
+- aria-hidden on badge span: count is already encoded in the trigger button aria-label ("X selected not visible") so the visual badge is redundant for screen readers
+- Backdrop replaces document click-outside listener: cleaner, handles the scroll-lock requirement simultaneously, and is the standard pattern for floating menus
+- filter-trigger z-50 (same as dropdown): keeps the toggle button clickable while backdrop is active so the user can close the dropdown by clicking the trigger again
+
+
+## [#445] ChannelFilters: body scroll lock + single-row chip strip in overflow mode
+**Type:** fix
+
+**Summary:** Blocked page scroll when the channel filter dropdown is open, and collapsed the chip strip to one row when the filter button is visible.
+
+**Brainstorming:** Two separate issues. Scroll leak: `@wheel.prevent` and `@touchmove.prevent` on the backdrop div only intercept pointer/touch events — keyboard scroll, arrow keys, and programmatic scroll pass through. Reliable fix is `document.body.style.overflow = 'hidden'` via a `watch(dropdownOpen)` watcher, restored on close and in `onUnmounted`. Single-row strip: in overflow mode the chip strip was still 4.5rem (≈ 2 rows) while the filter button was shown; the spec requires one row in that state. Added `.single-row` SCSS modifier (max-height: 2.25rem) applied when `hasOverflow` is true, plus `watch(hasOverflow, () => nextTick(measure))` to recount hidden selected chips after the height change clips more chips.
+
+**Prompt:** "when dropdown is open i can still scroll the view / this should not happen / when filters button is displayed lets keep one line"
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — added `watch(dropdownOpen)` to set/clear `document.body.style.overflow`; added `document.body.style.overflow = ''` in `onUnmounted`; added `watch(hasOverflow, () => nextTick(measure))` to re-measure after height change; added `.single-row` class binding on `.chips-container` when `hasOverflow` is true; added `.single-row { max-height: 2.25rem }` SCSS modifier; removed now-redundant `@wheel.prevent @touchmove.prevent` from backdrop div
+
+**Key decisions & why:**
+- `document.body.style.overflow = 'hidden'` over event suppression: catches all scroll vectors including keyboard and programmatic — the only reliable cross-browser approach
+- `onUnmounted` cleanup: guards against the dropdown being open when the component is destroyed (e.g. navigating away), leaving the body locked permanently
+- `2.25rem` single-row max-height: chip height at `text-sm py-1 border` is ≈ 1.72rem; 2.25rem gives a safe buffer without bleeding into a second row
+- Re-measure on `hasOverflow` change: switching from 2-row to 1-row height clips more chips; the measure pass after the DOM settles keeps `hiddenSelectedIds` count accurate
+
+
+## [#446] ChannelFilters: use offsetTop for overflow detection
+**Type:** fix
+
+**Summary:** Replaced getBoundingClientRect-based overflow detection with offsetTop comparison to fix stuck overflow state on screen resize.
+
+**Brainstorming:** The previous measure() checked chip bottom edges against the container's bottom edge. When hasOverflow was true the container was restricted to 2.25rem (single-row), so chips in row 2 always appeared clipped — even after the screen grew wide enough that they would fit within the 4.5rem two-row default. The component got stuck in overflow mode. Fix: compare each chip's offsetTop against the first chip's offsetTop. offsetTop reflects the chip's position in the flex layout regardless of max-height or overflow:hidden, so the measurement is independent of any height restriction. The watch(hasOverflow) re-measure watcher is no longer needed and was removed.
+
+**Prompt:** "resizing the screen does not update the view properly"
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — replaced getBoundingClientRect overflow check with offsetTop row-detection; removed watch(hasOverflow) watcher
+
+**Key decisions & why:**
+- offsetTop over getBoundingClientRect: offsetTop is layout-relative and unaffected by max-height clipping — chips in row 2 always have a higher offsetTop than row 1 chips, regardless of whether the container visually clips them
+- Removed watch(hasOverflow): measurement no longer depends on the rendered height so no re-measure is needed when the overflow state changes
+
+
+## [#447] ChannelFilters: close dropdown on window resize
+**Type:** fix
+
+**Summary:** Added a window resize listener that closes the dropdown, preventing stale fixed positioning after viewport size changes.
+
+**Brainstorming:** When the viewport resizes, the filter button moves but the Teleported dropdown stays at its old fixed coordinates. Closing on resize is the clean solution — the user can reopen it in the new layout. The existing dropdownOpen watcher already handles restoring body scroll on close, so no extra cleanup needed.
+
+**Prompt:** On resize fire close dropdown.
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — added onWindowResize() that sets dropdownOpen to false; registered in onMounted, removed in onUnmounted
+
+**Key decisions & why:**
+- Named function (not inline arrow): required to pass the same reference to both addEventListener and removeEventListener
+- No debounce: close should be immediate — a delayed close would leave the dropdown visually detached mid-resize
+
+
+## [#448] ChannelFilters: scrollHeight-based overflow detection
+**Type:** fix
+
+**Summary:** Replaced offsetTop-based overflow detection with scrollHeight comparison against the full 4.5rem threshold, fixing the regression where 2-row chip layouts incorrectly triggered overflow mode.
+
+**Brainstorming:** The offsetTop approach from #446 treated "chips on multiple rows" as overflow. The correct definition is "chips don't fit within the full 4.5rem max-height". Two rows of chips (~65px) fit within 4.5rem (72px) — that is State A (no filter button). Three or more rows (~102px) exceed 4.5rem — that is State B. scrollHeight = total content height regardless of max-height or overflow:hidden, so it is unaffected by the .single-row restriction and always reflects the true content size. offsetTop is still used to identify which chips are in row 2+ for the hiddenSelectedIds badge count, which is correct since overflow:hidden does not affect flex layout positions.
+
+**Prompt:** "now on desktop we do not have 2 rows of chips and no filter button"
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — replaced offsetTop-only logic with scrollHeight > 4.5rem threshold for hasOverflow; kept offsetTop for hiddenSelectedIds identification when in overflow mode
+
+**Key decisions & why:**
+- scrollHeight for overflow gate: unaffected by max-height clipping — always reflects total content height, making the overflow determination independent of which visual mode is currently active
+- offsetTop still used for hiddenSelectedIds: correctly identifies row 2+ chips (those visually clipped in single-row mode) without needing any DOM manipulation
+- 4.5 hardcoded: matches the --channel-filter-max-height default; no consumer is setting a custom value so dynamic CSS var parsing is unnecessary overhead
+
+
+## [#449] ChannelFilters: All chip + filtered strip UX
+**Type:** update
+
+**Summary:** Added an "All" chip and redesigned the strip to show the user's active filter state at all times — read-only selected chips in overflow mode, interactive all-channels list when everything fits.
+
+**Brainstorming:** The strip needed three distinct behaviors: State A (no overflow) — All chip first then all channels, all interactive; State B with no selection — single read-only All chip communicating no filter is active; State B with selection — selected chips only, sorted by name, interactive (click deselects). The core problem with measuring overflow from the visible strip content was a feedback loop: selecting 2 channels would drop scrollHeight below the 4.5rem threshold, falsely clearing overflow and switching back to State A with all chips, which would then overflow again — infinite loop. Fix: add a hidden measurement container (measureRef, absolutely positioned left:0 right:0, always holds All + all channel chips). hasOverflow is derived exclusively from measureRef.scrollHeight — selection changes never affect the overflow gate. hiddenSelectedIds is measured from chipsRef (visible strip) using offsetTop. The two concerns are split into measureOverflow() and measureHidden() with separate triggers: resize/channel-data change both; selectedChannelsIds only triggers measureHidden().
+
+**Prompt:** "lets brainstorm my concerns / if we switch to filtered view i think it would be better that the chips next to the filter button are only the selected ones sorted by name, just chips no interaction / the filter button badge should show + how many are not visible / brainstorm to improve ux" → brainstorm → "i like this, when all visible we should show as a first button/chip all" → confirmed plan → "yes"
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — added measureRef hidden strip (absolute, left:0 right:0, always All + all chips); split measure() into measureOverflow() (reads measureRef.scrollHeight) and measureHidden() (reads chipsRef offsetTop); added isAllActive / showAllChip / allChipReadOnly / totalCampaigns / displayedChips computeds; updated template with All chip + conditional channel chips via displayedChips; added .chips-measure and .filter-chip.read-only SCSS; ResizeObserver moved to measureRef; selectedChannelsIds watcher calls only measureHidden()
+
+**Key decisions & why:**
+- Separate hidden measurement container: decouples overflow detection from display content — selection changes no longer risk infinite loops where fewer chips appear to "fit" after filtering
+- measureRef absolutely positioned left:0 right:0: always spans full container width so overflow is measured at the widest possible strip without filter trigger competing for space — the correct baseline
+- displayedChips sorted by name in filtered mode: selected chips appear in stable alphabetical order regardless of original channel order — predictable and scannable
+- allChipReadOnly in State B no-selection: the strip communicates current state ("All channels active") without offering a redundant clear action when nothing is selected
+- ResizeObserver on measureRef not chipsRef: chipsRef width changes when filter trigger appears/disappears (hasOverflow flip) which would cause spurious re-measures; measureRef width only changes with the actual container width
