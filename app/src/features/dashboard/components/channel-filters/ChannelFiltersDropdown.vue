@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Channel } from "@/shared/types/channel";
-import { DropdownPanel } from "@/ui";
+import { Chip, DropdownPanel } from "@/ui";
 
 const props = defineProps<{
   channels: Channel[];
@@ -28,17 +28,15 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
       </div>
 
       <div class="dropdown-chips">
-        <button
+        <Chip
           v-for="channel in channels"
           :key="channel.id"
-          class="filter-chip"
-          :class="selectedIds.includes(channel.id) ? 'active' : 'inactive'"
-          :aria-pressed="selectedIds.includes(channel.id)"
+          :active="selectedIds.includes(channel.id)"
           @click="emit('toggle', channel.id)"
         >
           {{ channel.name }}
           <span class="chip-count">{{ channel.campaigns.length }}</span>
-        </button>
+        </Chip>
       </div>
     </div>
   </DropdownPanel>
@@ -67,27 +65,6 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
 
 .dropdown-chips {
   @apply flex flex-wrap gap-2 p-3;
-}
-
-.filter-chip {
-  @apply flex items-center gap-1
-    rounded-full
-    border
-    pr-1 pl-2 py-1
-    text-sm font-medium
-    transition-colors
-    outline-none
-    shrink-0;
-
-  &.active {
-    @apply border-primary bg-primary text-on-primary;
-  }
-
-  &.inactive {
-    @apply border bg-surface text-typography-subtle
-      hover:border-primary-light
-      focus-visible:border-primary-light;
-  }
 }
 
 .chip-count {

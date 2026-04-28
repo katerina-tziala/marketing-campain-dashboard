@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import type { Channel } from '@/shared/types/channel'
 import { useCampaignStore } from '@/stores/campaign.store'
-import { SlidersIcon, Dropdown } from '@/ui'
+import { Chip, SlidersIcon, Dropdown } from '@/ui'
 import ChannelFiltersDropdown from './ChannelFiltersDropdown.vue'
 
 const props = defineProps<{
@@ -161,33 +161,30 @@ function toggleDropdown(): void {
            State A → interactive, active when no filter, click clears
            State B no selection → read-only display, always active
            State B with selection → not shown -->
-      <button
+      <Chip
         v-if="showAllChip"
-        class="filter-chip"
-        :class="[isAllActive ? 'active' : 'inactive', { 'read-only': allChipReadOnly }]"
-        :aria-pressed="isAllActive"
+        :active="isAllActive"
+        :readonly="allChipReadOnly"
         @click="!allChipReadOnly && clear()"
       >
         All
         <span class="chip-count">{{ totalCampaigns }}</span>
-      </button>
+      </Chip>
 
       <!-- Channel chips:
            State A → all channels, interactive
            State B no selection → none (only All chip)
            State B with selection → selected channels sorted by name, interactive (click deselects) -->
-      <button
+      <Chip
         v-for="channel in displayedChips"
         :key="channel.id"
         :data-channel-id="channel.id"
-        class="filter-chip"
-        :class="isSelected(channel.id) ? 'active' : 'inactive'"
-        :aria-pressed="isSelected(channel.id)"
+        :active="isSelected(channel.id)"
         @click="toggle(channel.id)"
       >
         {{ channel.name }}
         <span class="chip-count">{{ channel.campaigns.length }}</span>
-      </button>
+      </Chip>
     </div>
 
     <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef" :gap="0">
@@ -214,10 +211,10 @@ function toggleDropdown(): void {
   left: 0;
   right: 0;
   @apply flex flex-wrap gap-2.5 overflow-hidden pr-9;
-  max-height: var(--channel-filter-max-height, 4.5rem);
+  max-height: var(--channel-filter-max-height, 4.8rem);
   visibility: hidden;
   pointer-events: none;
-  user-select: none;
+  user-select: none; 
 }
 
 .filter-trigger {
@@ -253,38 +250,14 @@ function toggleDropdown(): void {
 }
 
 .chips-container {
-  @apply flex flex-wrap gap-2.5 flex-1 overflow-hidden pr-9;
-  max-height: var(--channel-filter-max-height, 4.5rem);
+  @apply flex flex-wrap gap-2.5 flex-1 overflow-hidden p-1;
+  max-height: var(--channel-filter-max-height, 4.8rem);
 
   &.single-row {
     max-height: 2.25rem;
   }
 }
 
-.filter-chip {
-  @apply flex items-center gap-1
-    rounded-full
-    border
-    pr-1 pl-2 py-1
-    text-sm font-medium
-    transition-colors
-    outline-none
-    shrink-0;
-
-  &.active {
-    @apply border-primary bg-primary text-on-primary;
-  }
-
-  &.inactive {
-    @apply border bg-surface text-typography-subtle
-      hover:border-primary-light
-      focus-visible:border-primary-light;
-  }
-
-  &.read-only {
-    @apply cursor-default pointer-events-none;
-  }
-}
 
 .chip-count {
   @apply inline-flex items-center justify-center

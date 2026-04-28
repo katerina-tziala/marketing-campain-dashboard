@@ -9482,3 +9482,41 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - No scroll on DropdownPanel by default — some dropdowns may only need part of their content scrollable; forcing overflow on the outer shell would prevent inner sticky headers or mixed-scroll layouts
 - `role="dialog"` moved from ChannelFiltersDropdown to DropdownPanel — it belongs to the container that represents the floating panel boundary, not the content inside
+
+
+## [#474] feat: Chip button component
+**Type:** feature
+
+**Summary:** Created a reusable `Chip.vue` button component with slot-projected content, replacing duplicated chip button patterns in ChannelFilters and ChannelFiltersDropdown.
+
+**Brainstorming:** The chip button pattern (rounded-full, active/inactive states, aria-pressed) was copied verbatim in both ChannelFilters.vue and ChannelFiltersDropdown.vue via scoped `.filter-chip` + `.active`/`.inactive` classes. Extracting it to a `Chip.vue` component removes the duplication and makes the component reusable. Content is projected via a default slot so callers can place anything inside (text, count badges, icons). Props drive state rather than classes: `active` controls both visual state and aria-pressed, `readonly` adds pointer-events-none for display-only chips.
+
+**Prompt:** Create a chip button component. We should be able to project content.
+
+**What was built:**
+- `app/src/ui/Chip.vue` — new; props: active?, readonly?; default slot; Tailwind-only styles; aria-pressed bound to active
+- `app/src/ui/index.ts` — added Chip export
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — imported Chip; replaced `.filter-chip` buttons with `<Chip :active="...">` ; removed `.filter-chip` scoped style block
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — imported Chip; replaced both interactive chip buttons with `<Chip :active="..." :readonly="...">` ; removed `.filter-chip` scoped style block (including `.read-only` modifier); `.chip-count` scoped styles retained in both callers since the span is slot content owned by the parent
+
+**Key decisions & why:**
+- Default slot (not a `label` prop) — callers project arbitrary content including count badges and icons, not just text
+- `readonly` prop instead of `disabled` — the "All" chip in overflow mode must appear active and visible but not respond to clicks; native `disabled` would change its appearance and remove it from the accessibility tree
+- `.chip-count` styles stay in each caller's scoped block — the span is defined in the parent template, so parent scoped styles apply to it directly without needing `:slotted()`
+
+
+## [#475] fix: Chip styles moved to scoped SCSS
+**Type:** fix
+
+**Summary:** Moved active/inactive/readonly styles from inline `:class` bindings into the scoped SCSS block; active state now driven by `[aria-pressed="true"]` attribute selector; readonly uses a single `.readonly` scoped class.
+
+**Brainstorming:** Inline `:class` with Tailwind strings mixes presentation into the template and duplicates the pattern the scoped block is meant to own. Using `[aria-pressed="true"]` as the CSS hook for active styles ties the visual state directly to the accessibility attribute — no separate class needed. Hover/focus-visible become plain SCSS pseudo-class rules instead of Tailwind variants on a string.
+
+**Prompt:** Update chip classes — move styles to scoped and apply only one class for readonly case. Active styles must be applied by attribute aria-pressed.
+
+**What changed:**
+- `app/src/ui/Chip.vue` — template `:class` reduced to `{ readonly }`; scoped `.chip` gains `bg-surface text-typography-subtle` base + `&:hover` + `&:focus-visible` + `&[aria-pressed="true"]` + `&.readonly` blocks
+
+**Key decisions & why:**
+- `&[aria-pressed="true"]` selector — ties active visual state to the accessibility attribute, so the two can never diverge
+- Single `.readonly` class — replaces two utility strings (`cursor-default pointer-events-none`) with one scoped modifier, keeping the template clean
