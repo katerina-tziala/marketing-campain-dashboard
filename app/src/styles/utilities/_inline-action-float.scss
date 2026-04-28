@@ -1,0 +1,6 @@
+@layer utilities {
+  // Render the button/action before the text it should wrap around.
+  .inline-action-float {
+    @apply float-right ml-2 mb-1;
+  }
+}

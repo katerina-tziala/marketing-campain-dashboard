@@ -42,7 +42,7 @@ function onCloseAiPanel(): void {
       </h1>
       <Button
         v-if="hasCampaigns"
-        class="outline shrink-0 float-right ml-2 mb-1"
+        class="outline shrink-0 inline-action-float"
         @click="requestUpload"
       >
         <UploadIcon />

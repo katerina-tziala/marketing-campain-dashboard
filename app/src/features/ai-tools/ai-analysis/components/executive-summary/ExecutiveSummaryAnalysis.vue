@@ -70,7 +70,7 @@ function handleSummarize(): void {
       />
       <p class="-mb-4">
         <HealthStatus
-          class="float-right ml-2 mb-1"
+          class="inline-action-float"
           :health-score="response.healthScore"
         />
         {{ response.healthScore.reasoning }}

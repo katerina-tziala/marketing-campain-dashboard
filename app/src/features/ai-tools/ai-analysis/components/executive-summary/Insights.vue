@@ -49,7 +49,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
     <Card v-for="(insight, i) in sortedInsights" :key="i" class="secondary">
       <p>
         <Badge
-          class="float-right ml-2 mb-1"
+          class="inline-action-float"
           :class="insightTypeVariant(insight.type)"
           >{{ INSIGHT_TYPE_LABEL_MAP[insight.type] }}</Badge
         >{{ insight.text }}

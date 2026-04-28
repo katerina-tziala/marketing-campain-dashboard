@@ -9674,3 +9674,30 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `selectedIds` as a plain prop: the filter component only needs selected channel IDs to decide active chips and hidden selected counts, not the full campaign store
 - Emit intent instead of computed next state: `toggle` and `clear` keep the child reusable while allowing the parent to preserve the all-channels rule when all channel IDs are selected
 - Preserve existing filter behavior: selecting every channel still collapses back to an empty selected ID list, which represents the unfiltered all-channels state
+
+
+## [#483] refactor: extract inline action float utility
+**Type:** refactor
+
+**Summary:** Extracted the repeated `float-right ml-2 mb-1` action placement into a shared `inline-action-float` utility so badges, buttons, and status controls can consistently float before text and let the surrounding copy wrap around them.
+
+**Brainstorming:** The repeated classes were not just spacing noise; they encoded a deliberate text-flow behavior. These controls need to be rendered before the text and floated right so headings and paragraphs wrap around them naturally. A Vue layout component would be too rigid because the floated element varies between buttons, badges, status components, and slot wrappers. A shared utility keeps the float behavior explicit, reusable, and lightweight without hiding the DOM ordering requirement.
+
+**Prompt:** Extract the repeated `float-right ml-2 mb-1` pattern, keep it as float because the text should wrap around the action, and add a comment that the button/action must be rendered before the text.
+
+**What was built:**
+- `app/src/styles/utilities/_inline-action-float.scss` — new shared utility; defines `.inline-action-float` with `float-right ml-2 mb-1` and documents that the action must render before the text it wraps
+- `app/src/styles/utilities/index.scss` — imports the new inline action float utility
+- `app/src/features/dashboard/components/DashboardHeader.vue` — replaced the local floated AI action utility classes with `inline-action-float` and added a template comment before the action wrapper
+- `app/src/shell/AppShell.vue` — replaced the upload button's repeated float utilities with `inline-action-float`
+- `app/src/features/data-transfer/components/data-validation/shared/DataErrorSummary.vue` — replaced the floated badge wrapper utilities with `inline-action-float`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — replaced the floated health status utilities with `inline-action-float`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue` — replaced the floated insight type badge utilities with `inline-action-float`
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue` — replaced the floated urgency badge utilities with `inline-action-float`
+
+**Key decisions & why:**
+- Utility class instead of layout component: the shared behavior is CSS text flow, not a fixed component structure
+- Keep `float-right`: the intended behavior is for prose and headings to wrap around the action, which flex and grid would not provide
+- Name by intent: `inline-action-float` describes an action placed inside text flow rather than exposing only the raw direction and spacing
+- Keep call sites flexible: the floated element can still be a `Button`, `Badge`, status component, or wrapper around a slot
+- Document render order: floated actions must appear before the text they wrap, so the utility includes a CSS comment and `DashboardHeader` includes a local template comment where the ordering matters most visibly

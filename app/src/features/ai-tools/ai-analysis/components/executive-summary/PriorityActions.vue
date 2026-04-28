@@ -50,7 +50,7 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
         >
         <h5 class="card-title">
           <Badge
-            class="float-right ml-2 mb-1"
+            class="inline-action-float"
             :class="urgencyVariant(action.urgency)"
             >{{ URGENCY_LABEL_MAP[action.urgency] }}</Badge
           >

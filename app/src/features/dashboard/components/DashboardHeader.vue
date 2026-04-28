@@ -16,7 +16,8 @@ const emit = defineEmits<{ aiClick: [] }>();
 
 <template>
   <h2 class="grow pt-1 h-9">
-    <div class="ai-btn-wrapper">
+    <!-- Render this action before the text so the heading wraps around it. -->
+    <div class="relative shrink-0 inline-action-float">
       <Button
         v-if="showAiButton"
         class="primary medium"
@@ -47,10 +48,6 @@ const emit = defineEmits<{ aiClick: [] }>();
 <style lang="scss" scoped>
 .dashboard-title-row {
   @apply flex items-start justify-center gap-x-4 gap-y-2;
-}
-
-.ai-btn-wrapper {
-  @apply relative shrink-0 float-right ml-2 mb-1;
 }
 
 .connected-status {
