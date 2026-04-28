@@ -31,11 +31,11 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
         <Chip
           v-for="channel in channels"
           :key="channel.id"
+          :count="channel.campaigns.length"
           :active="selectedIds.includes(channel.id)"
           @click="emit('toggle', channel.id)"
         >
           {{ channel.name }}
-          <span class="chip-count">{{ channel.campaigns.length }}</span>
         </Chip>
       </div>
     </div>
@@ -65,11 +65,5 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
 
 .dropdown-chips {
   @apply flex flex-wrap gap-2 p-3;
-}
-
-.chip-count {
-  @apply inline-flex items-center justify-center
-    rounded-full px-1.5 min-w-[1.25rem] h-5
-    text-xs font-normal bg-on-primary/10;
 }
 </style>

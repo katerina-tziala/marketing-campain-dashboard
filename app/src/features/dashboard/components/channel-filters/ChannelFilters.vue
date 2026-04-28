@@ -115,19 +115,14 @@ function toggleDropdown(): void {
          Absolutely positioned so it doesn't affect layout but spans the full container
          width for accurate scrollHeight readings. -->
     <div ref="measureRef" class="chips-measure" aria-hidden="true">
-      <button class="filter-chip inactive" tabindex="-1" disabled>
-        All <span class="chip-count">{{ totalCampaigns }}</span>
-      </button>
-      <button
+      <Chip :count="totalCampaigns" tabindex="-1" disabled>All</Chip>
+      <Chip
         v-for="channel in channels"
         :key="channel.id"
-        class="filter-chip inactive"
+        :count="channel.campaigns.length"
         tabindex="-1"
         disabled
-      >
-        {{ channel.name }}
-        <span class="chip-count">{{ channel.campaigns.length }}</span>
-      </button>
+      >{{ channel.name }}</Chip>
     </div>
 
     <!-- Filter trigger — visible only in overflow mode; z-50 keeps it above the backdrop -->
@@ -163,13 +158,11 @@ function toggleDropdown(): void {
            State B with selection → not shown -->
       <Chip
         v-if="showAllChip"
+        :count="totalCampaigns"
         :active="isAllActive"
         :readonly="allChipReadOnly"
         @click="!allChipReadOnly && clear()"
-      >
-        All
-        <span class="chip-count">{{ totalCampaigns }}</span>
-      </Chip>
+      >All</Chip>
 
       <!-- Channel chips:
            State A → all channels, interactive
@@ -179,12 +172,10 @@ function toggleDropdown(): void {
         v-for="channel in displayedChips"
         :key="channel.id"
         :data-channel-id="channel.id"
+        :count="channel.campaigns.length"
         :active="isSelected(channel.id)"
         @click="toggle(channel.id)"
-      >
-        {{ channel.name }}
-        <span class="chip-count">{{ channel.campaigns.length }}</span>
-      </Chip>
+      >{{ channel.name }}</Chip>
     </div>
 
     <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef" :gap="0">
@@ -258,11 +249,5 @@ function toggleDropdown(): void {
   }
 }
 
-
-.chip-count {
-  @apply inline-flex items-center justify-center
-    rounded-full px-1.5 min-w-[1.25rem] h-5
-    text-xs font-normal bg-on-primary/10;
-}
 
 </style>

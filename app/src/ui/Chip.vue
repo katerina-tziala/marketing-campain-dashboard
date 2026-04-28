@@ -2,6 +2,7 @@
 defineProps<{
   active?: boolean;
   readonly?: boolean;
+  count?: number;
 }>();
 </script>
 
@@ -14,25 +15,32 @@ defineProps<{
   >
     <span class="chip-content">
       <slot />
+      <span v-if="count !== undefined" class="chip-count">{{ count }}</span>
     </span>
   </button>
 </template>
 
 <style lang="scss" scoped>
 .chip {
-  @apply inline-block 
+  @apply inline-block
     text-sm
     font-medium
     transition-colors
     outline-none
     shrink-0
     rounded-full
-    border 
+    border
     bg-surface
     text-typography-subtle;
 
   .chip-content {
-    @apply inline-flex gap-1.5 rounded-full px-2 py-1;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1;
+  }
+
+  .chip-count {
+    @apply inline-flex items-center justify-center
+      rounded-full px-1.5 min-w-[1.25rem] h-5
+      text-xs font-medium bg-on-primary/10;
   }
 
   &[aria-pressed="true"] {

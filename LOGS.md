@@ -9520,3 +9520,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `&[aria-pressed="true"]` selector — ties active visual state to the accessibility attribute, so the two can never diverge
 - Single `.readonly` class — replaces two utility strings (`cursor-default pointer-events-none`) with one scoped modifier, keeping the template clean
+
+
+## [#476] feat: ChannelChip component
+**Type:** feature
+
+**Summary:** Extracted a `ChannelChip` component that wraps `Chip` with name + count badge, replacing duplicated chip content in both ChannelFilters and ChannelFiltersDropdown, and fixed the broken measurement strip.
+
+**Brainstorming:** Both callers projected the same slot content into `<Chip>`: a text label and a `.chip-count` badge span. Extracting `ChannelChip` consolidates that pattern and moves the `.chip-count` scoped style into one place. The measurement strip in ChannelFilters.vue was also broken — it still referenced `.filter-chip.inactive` which was removed in #474 — converting it to `<ChannelChip disabled tabindex="-1">` fixes the measurement sizing via attr fallthrough.
+
+**Prompt:** Extract channelChip component.
+
+**What was built:**
+- `app/src/features/dashboard/components/channel-filters/ChannelChip.vue` — new; props: name, count, active?, readonly?; wraps Chip; owns .chip-count scoped style; attrs (data-channel-id, disabled, tabindex) fall through to Chip's root button
+- `app/src/features/dashboard/components/channel-filters/index.ts` — added ChannelChip export
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — replaced Chip + inline slot content with ChannelChip; removed chip-count scoped style and Chip import
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — replaced all three Chip usages (measurement All, measurement channels, visible All, visible channels) with ChannelChip; removed Chip import and chip-count scoped style; measurement strip now uses ChannelChip with disabled + tabindex="-1"
+
+**Key decisions & why:**
+- `disabled` + `tabindex="-1"` passed as attrs to ChannelChip in the measurement strip — they fall through two component levels (ChannelChip → Chip → button) giving the hidden buttons correct sizing without a disabled prop on the component
+- `.chip-count` scoped style lives in ChannelChip only — it styles the span defined in ChannelChip's own template, so no :slotted() needed
+
+
+## [#477] refactor: remove ChannelChip, fold count into Chip
+**Type:** refactor
+
+**Summary:** Deleted the over-engineered `ChannelChip` wrapper by adding a `count` prop directly to `Chip`; both callers now use `<Chip>` with slot text and `:count`.
+
+**Brainstorming:** ChannelChip was a thin wrapper that added only a count badge — not enough justification for a separate component. Adding `count?: number` to Chip keeps the API self-contained: when provided, the badge renders inside `.chip-content`; when absent, the slot renders as-is. No intermediate component needed.
+
+**Prompt:** We over-engineered — make chip accept count too and remove channel chip.
+
+**What changed:**
+- `app/src/ui/Chip.vue` — added count? prop; badge span rendered inside .chip-content when count is defined; .chip-count scoped style added
+- `app/src/features/dashboard/components/channel-filters/ChannelChip.vue` — deleted
+- `app/src/features/dashboard/components/channel-filters/index.ts` — removed ChannelChip export
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — reverted to Chip import; all usages now `<Chip :count="...">label</Chip>`
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — reverted to Chip import; same pattern
+
+**Key decisions & why:**
+- `count !== undefined` guard (not `count`) — allows passing count=0 and still rendering the badge
