@@ -8,54 +8,62 @@ defineProps<{
   kpis: PortfolioKPIs
   portfolioKpis?: PortfolioKPIs | null
 }>()
+
+function formatShare(value: number, total: number): string {
+  if (total === 0) return '0%'
+  return `${((value / total) * 100).toFixed(1)}%`
+}
 </script>
 
 <template>
-    <section class="kpi-grid">
-      <KpiCard
-        label="Budget"
-        :value="formatCompactCurrency(kpis.totalBudget)"
-        :portfolio-value="portfolioKpis ? formatCompactCurrency(portfolioKpis.totalBudget) : undefined"
-      />
-      <KpiCard
-        label="Revenue"
-        :value="formatCompactCurrency(kpis.totalRevenue)"
-        :portfolio-value="portfolioKpis ? formatCompactCurrency(portfolioKpis.totalRevenue) : undefined"
-      >
-        <template #secondary>
-          <span>ROI</span>
-          <RoiIndicator :value="kpis.aggregatedROI" />
-          <template v-if="portfolioKpis">
-            <span class="sep">/</span>
-            <RoiIndicator :value="portfolioKpis.aggregatedROI" />
-          </template>
-        </template>
-      </KpiCard>
-      <KpiCard
-        label="Conversions"
-        :value="formatCompactNumber(kpis.totalConversions)"
-        :portfolio-value="portfolioKpis ? formatCompactNumber(portfolioKpis.totalConversions) : undefined"
-      >
-        <template #secondary>
-          <span>CVR</span>
-          <RoiIndicator :value="kpis.aggregatedCVR" />
-          <template v-if="portfolioKpis">
-            <span class="sep">/</span>
-            <RoiIndicator :value="portfolioKpis.aggregatedCVR" />
-          </template>
-        </template>
-      </KpiCard>
-      <KpiCard
-        label="CTR"
-        :value="formatPercentage(kpis.aggregatedCTR)"
-        :portfolio-value="portfolioKpis ? formatPercentage(portfolioKpis.aggregatedCTR) : undefined"
-      />
-      <KpiCard
-        label="CPA"
-        :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
-        :portfolio-value="portfolioKpis ? (portfolioKpis.aggregatedCPA !== null ? formatCompactCurrency(portfolioKpis.aggregatedCPA) : 'N/A') : undefined"
-      />
-    </section>
+  <section class="kpi-grid">
+    <KpiCard
+      label="Budget"
+      :value="formatCompactCurrency(kpis.totalBudget)"
+    >
+      <template v-if="portfolioKpis" #secondary>
+        <span>{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of total</span>
+      </template>
+    </KpiCard>
+
+    <KpiCard
+      label="Revenue"
+      :value="formatCompactCurrency(kpis.totalRevenue)"
+    >
+      <template #secondary>
+        <span v-if="portfolioKpis">{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of total</span>
+        <span>ROI: <RoiIndicator :value="kpis.aggregatedROI" /></span>
+      </template>
+    </KpiCard>
+
+    <KpiCard
+      label="Conversions"
+      :value="formatCompactNumber(kpis.totalConversions)"
+    >
+      <template #secondary>
+        <span v-if="portfolioKpis">{{ formatShare(kpis.totalConversions, portfolioKpis.totalConversions) }} of total</span>
+        <span>CVR: <RoiIndicator :value="kpis.aggregatedCVR" /></span>
+      </template>
+    </KpiCard>
+
+    <KpiCard
+      label="CTR"
+      :value="formatPercentage(kpis.aggregatedCTR)"
+    >
+      <template v-if="portfolioKpis" #secondary>
+        <span>vs avg {{ formatPercentage(portfolioKpis.aggregatedCTR) }}</span>
+      </template>
+    </KpiCard>
+
+    <KpiCard
+      label="CPA"
+      :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
+    >
+      <template v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null" #secondary>
+        <span>vs avg {{ formatCompactCurrency(portfolioKpis.aggregatedCPA) }}</span>
+      </template>
+    </KpiCard>
+  </section>
 </template>
 
 <style lang="scss" scoped>

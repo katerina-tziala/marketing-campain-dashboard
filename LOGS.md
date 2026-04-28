@@ -9175,3 +9175,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - `v-if` instead of `:disabled`: button is infrastructure for opening the panel — once the panel is open it has no purpose, so hiding it is cleaner than a disabled state that implies "you could click this later"
 - No wrapper or layout changes: `.ai-btn-wrapper` keeps its `relative shrink-0` so the connected dot position is unaffected when the button is hidden
+
+
+## [#457] KpiCards: redesign secondary info format
+**Type:** update
+
+**Summary:** Updated KPI card secondary lines to show contextual comparisons — "X% of total" for Budget/Revenue/Conversions, "vs avg" for CTR/CPA, with ROI and CVR always visible on Revenue and Conversions.
+
+**Brainstorming:** The previous design used a header-row portfolioValue and a bottom-right-aligned secondary slot with separate label spans. The new format is a clean stacked layout: label → large value → small secondary line. The "% of total" and "vs avg" comparisons only appear when a filter is active (portfolioKpis provided), since comparing a full portfolio to itself (100%) is meaningless. ROI and CVR are always shown on Revenue and Conversions because they are primary performance indicators regardless of filtering.
+
+**Prompt:** Update KPI cards with the following format: Budget shows main value + "X% of total" when filtered; Revenue shows main value + "X% of total" (filtered) + "ROI: XXX%"; Conversions shows main value + "X% of total" (filtered) + "CVR: X.X%"; CPA shows main value + "vs avg €XX.X" when filtered; CTR shows main value + "vs avg X.X%" when filtered.
+
+**What changed:**
+- `app/src/features/dashboard/components/KpiCard.vue` — removed `portfolioValue` prop and `.kpi-header` wrapper; simplified to `kpi-label → kpi-value → kpi-secondary` stack; removed all `:deep()` secondary slot overrides; secondary now flex baseline row with gap
+- `app/src/features/dashboard/components/DashboardKpis.vue` — removed `portfolioValue` bindings; added local `formatShare(value, total)` helper (1 decimal percent); rebuilt all five secondary slots with new contextual info
+
+**Key decisions & why:**
+- `formatShare` local to DashboardKpis rather than shared formatter: the one-decimal "X% of total" is specific to this context and not reused elsewhere
+- `items-baseline` on `.kpi-secondary`: aligns the plain text span and the RoiIndicator span correctly when they have different font-weight
+- ROI/CVR always rendered (no `v-if="portfolioKpis"`): these are primary performance indicators and should always be visible
