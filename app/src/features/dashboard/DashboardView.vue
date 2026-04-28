@@ -66,6 +66,7 @@ function clearChannelFilters(): void {
           @ai-click="openAiPanel?.()"
         />
         <ChannelFilters
+          class="mt-2.5"
           :channels="[...store.portfolioChannels.values()]"
           :selected-ids="store.selectedChannelsIds"
           @toggle="toggleChannelFilter"
@@ -122,10 +123,10 @@ function clearChannelFilters(): void {
 }
 
 .dashboard-header {
-  @apply w-full px-7;
+  @apply w-full px-4;
 
   .dashboard-header-container {
-    @apply w-full mx-auto max-w-7xl flex flex-col gap-3;
+    @apply w-full mx-auto max-w-7xl flex flex-col gap-1.5;
   }
 }
 
@@ -137,12 +138,4 @@ function clearChannelFilters(): void {
     pb-6;
   container-type: inline-size;
 }
-
-// // .card.table-card {
-// //   @apply p-4;
-// // }
-
-// .card-title.table-card-title {
-//   @apply text-base shrink-0 font-normal text-primary-lighter;
-// }
 </style>

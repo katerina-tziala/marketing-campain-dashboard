@@ -119,6 +119,6 @@ function toggleDropdown(): void {
 }
 
 .dropdown-content {
-  @apply max-h-[300px] overflow-y-auto;
+  @apply max-h-[320px] overflow-y-auto;
 }
 </style>
