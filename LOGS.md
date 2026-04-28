@@ -9631,3 +9631,46 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Badge hidden while open: the count is useful as a closed-state summary, but redundant once the dropdown is expanded
 - "Select all" uses `Button ghost small`: the action is part of the shared button system and its label describes the resulting all-channels state better than "Clear all"
 - Scroll only the dropdown content: the header remains fixed in the panel while long channel lists scroll inside `dropdown-content`
+
+
+## [#481] refactor: make DashboardHeader input-only
+**Type:** refactor
+
+**Summary:** Refactored `DashboardHeader` into a dumb presentational component that receives all display state through props and emits only the existing `aiClick` interaction; `DashboardView` now owns the campaign and AI store reads needed to populate the header.
+
+**Brainstorming:** `DashboardHeader` was visually a small title/meta/action component, but it reached into both the campaign store and AI connection store. That made it harder to reuse, test, or reason about because a header render implicitly depended on global application state. The cleaner boundary is for the dashboard view to collect store-backed state and pass simple inputs down. The header can then focus only on rendering the title, channel count, campaign count, AI button visibility, and connection dot state.
+
+**Prompt:** Refactor DashboardHeader to only accept inputs. It should be a dumb component.
+
+**What was built:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — removed campaign and AI store imports; replaced internal computed store reads with typed props for title, channel counts, campaign counts, AI button visibility, and connected-dot visibility; kept `aiClick` as the only emitted interaction
+- `app/src/features/dashboard/DashboardView.vue` — imported the AI connection store and moved `selectedChannelCount`, `showAiButton`, and `showConnectedDot` computed values into the parent; passed all header display data into `DashboardHeader`
+- `app/src/shell/AppShell.vue` — removed an unused `SheetHeader` import that blocked the TypeScript build during verification
+
+**Key decisions & why:**
+- Parent owns store access: `DashboardView` already coordinates dashboard data and interactions, so it is the right place to translate store state into header inputs
+- `DashboardHeader` keeps one output event: the AI button is still an interaction surface, but the parent remains responsible for deciding what opening the panel means
+- Pass primitive display values instead of stores: simple props make the component easier to inspect, reuse, and test without requiring Pinia state
+- Keep the existing UI behavior: the AI button still hides while the AI panel is open, and the connected dot still appears only when AI is connected and the panel is closed
+- Remove the dead `SheetHeader` import: the refactor itself was valid, but the project build surfaced an unrelated unused import; cleaning it kept verification green without changing behavior
+
+
+## [#482] refactor: make ChannelFilters input-only
+**Type:** refactor
+
+**Summary:** Refactored `ChannelFilters` into a dumb component that receives the selected channel IDs as an input and emits filter intent through `toggle` and `clear`; `DashboardView` now owns the store-specific channel filter updates.
+
+**Brainstorming:** `ChannelFilters` still had one smart-component responsibility left: it imported the campaign store, read `selectedChannelsIds`, and called `setChannelFilter` directly. Its real local responsibility is presentation-heavy: measuring chip overflow, deciding which selected chips are visible, calculating the hidden selected count, and rendering the dialog/strip layout. Moving the store mutation up to `DashboardView` keeps that layout behavior inside the filter component while making the data flow explicit and parent-owned.
+
+**Prompt:** ChannelFilters should also be dumb. Refactor.
+
+**What was built:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — removed `useCampaignStore`; added `selectedIds` prop; replaced direct store reads with prop reads; replaced direct `setChannelFilter` calls with `toggle` and `clear` emits; kept overflow measurement, displayed chip calculation, hidden selected count, and dialog rendering local
+- `app/src/features/dashboard/DashboardView.vue` — passes `store.selectedChannelsIds` into `ChannelFilters`; added `toggleChannelFilter()` to compute the next selected ID list and reset to all-channels state when every channel is selected; added `clearChannelFilters()` to clear the store filter
+
+**Key decisions & why:**
+- `ChannelFilters` stays responsible for measurement: overflow and hidden chip counting depend on DOM layout, so they belong with the component that owns the chip strip
+- Store mutation moves to `DashboardView`: the dashboard view already owns campaign store coordination, so it is the right boundary for translating emitted filter intent into `setChannelFilter`
+- Use `selectedIds` as a plain prop: the filter component only needs selected channel IDs to decide active chips and hidden selected counts, not the full campaign store
+- Emit intent instead of computed next state: `toggle` and `clear` keep the child reusable while allowing the parent to preserve the all-channels rule when all channel IDs are selected
+- Preserve existing filter behavior: selecting every channel still collapses back to an empty selected ID list, which represents the unfiltered all-channels state

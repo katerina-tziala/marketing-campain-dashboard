@@ -10,7 +10,6 @@ import {
   ReplaceDataModal,
 } from "@/features/data-transfer";
 import AiToolsDrawer from "./AiToolsDrawer.vue";
-import SheetHeader from "@/ui/SheetHeader.vue";
 
 const aiStore = useAiConnectionStore();
 const analysisStore = useAiAnalysisStore();

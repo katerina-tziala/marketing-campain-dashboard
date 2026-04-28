@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import type { Channel } from "@/shared/types/channel";
-import { useCampaignStore } from "@/stores/campaign.store";
 import ChannelFilterChips from "./ChannelFilterChips.vue";
 import ChannelFiltersDialog from "./ChannelFiltersDialog.vue";
 
 const props = defineProps<{
   channels: Channel[];
+  selectedIds: string[];
 }>();
 
-const store = useCampaignStore();
+const emit = defineEmits<{
+  toggle: [id: string];
+  clear: [];
+}>();
 
 const measureRef = ref<InstanceType<typeof ChannelFilterChips>>();
 const chipsRef = ref<InstanceType<typeof ChannelFilterChips>>();
@@ -19,7 +22,7 @@ const hiddenSelectedIds = ref<string[]>([]);
 
 // ── Chip display ───────────────────────────────────────────────────────────
 
-const isAllActive = computed(() => store.selectedChannelsIds.length === 0);
+const isAllActive = computed(() => props.selectedIds.length === 0);
 const showAllChip = computed(() => !hasOverflow.value || isAllActive.value);
 const allChipReadOnly = computed(() => hasOverflow.value && isAllActive.value);
 const totalCampaigns = computed(() =>
@@ -30,22 +33,18 @@ const displayedChips = computed((): Channel[] => {
   if (!hasOverflow.value) return props.channels;
   if (isAllActive.value) return [];
   return [...props.channels]
-    .filter((c) => store.selectedChannelsIds.includes(c.id))
+    .filter((c) => props.selectedIds.includes(c.id))
     .sort((a, b) => a.name.localeCompare(b.name));
 });
 
 // ── Filter chip helpers ────────────────────────────────────────────────────
 
 function toggle(id: string): void {
-  const current = store.selectedChannelsIds;
-  const next = current.includes(id)
-    ? current.filter((i) => i !== id)
-    : [...current, id];
-  store.setChannelFilter(next.length === props.channels.length ? [] : next);
+  emit("toggle", id);
 }
 
 function clear(): void {
-  store.setChannelFilter([]);
+  emit("clear");
 }
 
 // ── Overflow measurement ───────────────────────────────────────────────────
@@ -75,7 +74,7 @@ function measureHidden(): void {
   hiddenSelectedIds.value = chips
     .filter((c) => c.offsetTop !== firstRowTop)
     .map((c) => c.dataset.channelId!)
-    .filter((id) => store.selectedChannelsIds.includes(id));
+    .filter((id) => props.selectedIds.includes(id));
 }
 
 function measure(): void {
@@ -84,7 +83,7 @@ function measure(): void {
 }
 
 watch(
-  () => store.selectedChannelsIds,
+  () => props.selectedIds,
   () => nextTick(measureHidden),
 );
 watch(
@@ -117,17 +116,16 @@ onUnmounted(() => {
     <ChannelFiltersDialog
       v-if="hasOverflow"
       :channels="channels"
-      :selected-ids="store.selectedChannelsIds"
+      :selected-ids="selectedIds"
       :hidden-count="hiddenSelectedIds.length"
       @toggle="toggle"
       @clear="clear"
     />
-
     <ChannelFilterChips
       ref="chipsRef"
       :channels="displayedChips"
       :total-campaigns="totalCampaigns"
-      :selected-ids="store.selectedChannelsIds"
+      :selected-ids="selectedIds"
       :show-all="showAllChip"
       :all-active="isAllActive"
       :all-readonly="allChipReadOnly"

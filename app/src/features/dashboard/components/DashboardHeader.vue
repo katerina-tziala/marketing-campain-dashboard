@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import { SparklesIcon, MetaRow, MetaItem, Button } from "@/ui";
-import { useCampaignStore } from "@/stores/campaign.store";
-import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 
-// inputs ?
-const store = useCampaignStore();
-const aiStore = useAiConnectionStore();
+defineProps<{
+  title: string;
+  selectedChannelCount: number;
+  totalChannelCount: number;
+  filteredCampaignCount: number;
+  totalCampaignCount: number;
+  showAiButton: boolean;
+  showConnectedDot: boolean;
+}>();
 
 const emit = defineEmits<{ aiClick: [] }>();
-
-const selectedChannelCount = computed(() =>
-  store.selectedChannelsIds.length === 0
-    ? store.portfolioChannels.size
-    : store.selectedChannelsIds.length,
-);
-
-const showConnectedDot = computed(
-  () => aiStore.isConnected && !aiStore.aiPanelOpen,
-);
 </script>
 
 <template>
@@ -26,7 +19,7 @@ const showConnectedDot = computed(
     <h2 class="grow pt-1">Campaign Performance</h2>
     <div class="ai-btn-wrapper">
       <Button
-        v-if="!aiStore.aiPanelOpen"
+        v-if="showAiButton"
         class="primary medium"
         @click="emit('aiClick')"
       >
@@ -40,14 +33,14 @@ const showConnectedDot = computed(
     </div>
   </div>
   <MetaRow class="bullet text-typography-subtle">
-    <MetaItem>{{ store.title }}</MetaItem>
+    <MetaItem>{{ title }}</MetaItem>
     <MetaItem
       >{{ selectedChannelCount }} of
-      {{ store.portfolioChannels.size }} channels</MetaItem
+      {{ totalChannelCount }} channels</MetaItem
     >
     <MetaItem
-      >{{ store.filteredCampaigns.length }} of
-      {{ store.campaigns.length }} campaigns</MetaItem
+      >{{ filteredCampaignCount }} of
+      {{ totalCampaignCount }} campaigns</MetaItem
     >
   </MetaRow>
 </template>

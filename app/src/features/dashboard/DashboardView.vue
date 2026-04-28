@@ -1,18 +1,46 @@
 <script setup lang="ts">
-import { inject } from "vue";
+import { computed, inject } from "vue";
 import { useCampaignStore } from "@/stores/campaign.store";
-import DashboardHeader from "./components/DashboardHeader.vue";
+import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import DashboardKpis from "./components/DashboardKpis.vue";
 import DashboardCharts from "./components/DashboardCharts.vue";
 import RoiBudgetScatter from "./components/RoiBudgetScatter.vue";
 import EmptyState from "./components/EmptyState.vue";
 import CampaignTable from "./components/CampaignTable.vue";
-import { ChannelFilters } from "./components/channel-filters";
+//
+import { DashboardHeader, ChannelFilters } from "./components";
 
 const store = useCampaignStore();
+const aiStore = useAiConnectionStore();
 
 const openUploadModal = inject<() => void>("openUploadModal");
 const openAiPanel = inject<() => void>("openAiPanel");
+
+const selectedChannelCount = computed(() =>
+  store.selectedChannelsIds.length === 0
+    ? store.portfolioChannels.size
+    : store.selectedChannelsIds.length,
+);
+
+const showAiButton = computed(() => !aiStore.aiPanelOpen);
+const showConnectedDot = computed(
+  () => aiStore.isConnected && !aiStore.aiPanelOpen,
+);
+
+function toggleChannelFilter(id: string): void {
+  const current = store.selectedChannelsIds;
+  const next = current.includes(id)
+    ? current.filter((selectedId) => selectedId !== id)
+    : [...current, id];
+
+  store.setChannelFilter(
+    next.length === store.portfolioChannels.size ? [] : next,
+  );
+}
+
+function clearChannelFilters(): void {
+  store.setChannelFilter([]);
+}
 </script>
 
 <template>
@@ -27,8 +55,22 @@ const openAiPanel = inject<() => void>("openAiPanel");
     <!-- Header -->
     <section class="dashboard-header">
       <div class="dashboard-header-container">
-        <DashboardHeader @ai-click="openAiPanel?.()" />
-        <ChannelFilters :channels="[...store.portfolioChannels.values()]" />
+        <DashboardHeader
+          :title="store.title"
+          :selected-channel-count="selectedChannelCount"
+          :total-channel-count="store.portfolioChannels.size"
+          :filtered-campaign-count="store.filteredCampaigns.length"
+          :total-campaign-count="store.campaigns.length"
+          :show-ai-button="showAiButton"
+          :show-connected-dot="showConnectedDot"
+          @ai-click="openAiPanel?.()"
+        />
+        <ChannelFilters
+          :channels="[...store.portfolioChannels.values()]"
+          :selected-ids="store.selectedChannelsIds"
+          @toggle="toggleChannelFilter"
+          @clear="clearChannelFilters"
+        />
         <!-- <ChannelFilter :channels="[...store.portfolioChannels.values()]" /> -->
       </div>
     </section>
