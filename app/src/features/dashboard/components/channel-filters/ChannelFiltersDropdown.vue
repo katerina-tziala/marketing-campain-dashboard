@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Channel } from "@/shared/types/channel";
-import { Chip, DropdownPanel } from "@/ui";
+import { DropdownPanel } from "@/ui";
+import ChannelFilterChips from "./ChannelFilterChips.vue";
 
 const props = defineProps<{
   channels: Channel[];
@@ -19,7 +20,7 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
 
 <template>
   <DropdownPanel aria-label="Channel filters" class="min-w-[260px] max-w-[300px]">
-    <div class="max-h-[300px] overflow-y-auto scrollbar-stable scrollbar-on-surface">
+    <div>
       <div class="dropdown-header">
         <span class="dropdown-title">Channels</span>
         <button v-if="hasSelection" class="clear-btn" @click="emit('clear')">
@@ -27,17 +28,14 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
         </button>
       </div>
 
-      <div class="dropdown-chips">
-        <Chip
-          v-for="channel in channels"
-          :key="channel.id"
-          :count="channel.campaigns.length"
-          :active="selectedIds.includes(channel.id)"
-          @click="emit('toggle', channel.id)"
-        >
-          {{ channel.name }}
-        </Chip>
-      </div>
+      <ChannelFilterChips
+        layout="plain"
+        :channels="channels"
+        :total-campaigns="0"
+        :selected-ids="selectedIds"
+        :show-all="false"
+        @toggle="emit('toggle', $event)"
+      />
     </div>
   </DropdownPanel>
 </template>
@@ -63,7 +61,4 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
     focus-visible:text-danger;
 }
 
-.dropdown-chips {
-  @apply flex flex-wrap gap-2 p-3;
-}
 </style>

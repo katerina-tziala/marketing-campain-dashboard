@@ -2,8 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import type { Channel } from '@/shared/types/channel'
 import { useCampaignStore } from '@/stores/campaign.store'
-import { SlidersIcon, Dropdown } from '@/ui'
-import ChannelFilterChips from './ChannelFilterChips.vue'
+import { Chip, SlidersIcon, Dropdown } from '@/ui'
 import ChannelFiltersDropdown from './ChannelFiltersDropdown.vue'
 
 const props = defineProps<{
@@ -12,8 +11,8 @@ const props = defineProps<{
 
 const store = useCampaignStore()
 
-const measureRef = ref<InstanceType<typeof ChannelFilterChips>>()
-const chipsRef = ref<InstanceType<typeof ChannelFilterChips>>()
+const measureRef = ref<HTMLElement>()
+const chipsRef = ref<HTMLElement>()
 const triggerButtonRef = ref<HTMLButtonElement>()
 
 const hasOverflow = ref(false)
@@ -37,6 +36,10 @@ const displayedChips = computed((): Channel[] => {
 
 // ── Filter chip helpers ────────────────────────────────────────────────────
 
+function isSelected(id: string): boolean {
+  return store.selectedChannelsIds.includes(id)
+}
+
 function toggle(id: string): void {
   const current = store.selectedChannelsIds
   const next = current.includes(id)
@@ -59,7 +62,9 @@ function clear(): void {
 // offsetTop, which reflects natural flex layout regardless of max-height.
 
 function measureOverflow(): void {
-  hasOverflow.value = measureRef.value?.hasOverflow() ?? false
+  if (!measureRef.value) return
+  const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize)
+  hasOverflow.value = measureRef.value.scrollHeight > 4.5 * rootFontSize + 1
 }
 
 function measureHidden(): void {
@@ -67,7 +72,7 @@ function measureHidden(): void {
     hiddenSelectedIds.value = []
     return
   }
-  const chips = chipsRef.value.getChannelChipEls()
+  const chips = Array.from(chipsRef.value.querySelectorAll<HTMLElement>('[data-channel-id]'))
   if (!chips.length) { hiddenSelectedIds.value = []; return }
   const firstRowTop = chips[0].offsetTop
   hiddenSelectedIds.value = chips
@@ -88,9 +93,10 @@ let resizeObserver: ResizeObserver | null = null
 onMounted(() => {
   nextTick(measure)
 
-  resizeObserver = new ResizeObserver(() => nextTick(measure))
-  const measureEl = measureRef.value?.getRootEl()
-  if (measureEl) resizeObserver.observe(measureEl)
+  if (measureRef.value) {
+    resizeObserver = new ResizeObserver(() => nextTick(measure))
+    resizeObserver.observe(measureRef.value)
+  }
 })
 
 onUnmounted(() => {
@@ -104,12 +110,20 @@ function toggleDropdown(): void {
 
 <template>
   <div class="channel-filters" role="group" aria-label="Filter by channel">
-    <ChannelFilterChips
-      ref="measureRef"
-      variant="probe"
-      :channels="channels"
-      :total-campaigns="totalCampaigns"
-    />
+
+    <!-- Hidden measurement strip — always has All + all channel chips, never interactive.
+         Absolutely positioned so it doesn't affect layout but spans the full container
+         width for accurate scrollHeight readings. -->
+    <div ref="measureRef" class="chips-measure" aria-hidden="true">
+      <Chip :count="totalCampaigns" tabindex="-1" disabled>All</Chip>
+      <Chip
+        v-for="channel in channels"
+        :key="channel.id"
+        :count="channel.campaigns.length"
+        tabindex="-1"
+        disabled
+      >{{ channel.name }}</Chip>
+    </div>
 
     <!-- Filter trigger — visible only in overflow mode; z-50 keeps it above the backdrop -->
     <div v-if="hasOverflow" class="filter-trigger">
@@ -135,18 +149,34 @@ function toggleDropdown(): void {
       </span>
     </div>
 
-    <ChannelFilterChips
-      ref="chipsRef"
-      :channels="displayedChips"
-      :total-campaigns="totalCampaigns"
-      :selected-ids="store.selectedChannelsIds"
-      :show-all="showAllChip"
-      :all-active="isAllActive"
-      :all-readonly="allChipReadOnly"
-      :single-row="hasOverflow"
-      @clear="clear"
-      @toggle="toggle"
-    />
+    <!-- Visible chip strip -->
+    <div ref="chipsRef" class="chips-container" :class="{ 'single-row': hasOverflow }">
+
+      <!-- All chip:
+           State A → interactive, active when no filter, click clears
+           State B no selection → read-only display, always active
+           State B with selection → not shown -->
+      <Chip
+        v-if="showAllChip"
+        :count="totalCampaigns"
+        :active="isAllActive"
+        :readonly="allChipReadOnly"
+        @click="!allChipReadOnly && clear()"
+      >All</Chip>
+
+      <!-- Channel chips:
+           State A → all channels, interactive
+           State B no selection → none (only All chip)
+           State B with selection → selected channels sorted by name, interactive (click deselects) -->
+      <Chip
+        v-for="channel in displayedChips"
+        :key="channel.id"
+        :data-channel-id="channel.id"
+        :count="channel.campaigns.length"
+        :active="isSelected(channel.id)"
+        @click="toggle(channel.id)"
+      >{{ channel.name }}</Chip>
+    </div>
 
     <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef" :gap="0">
       <ChannelFiltersDropdown
@@ -164,6 +194,18 @@ function toggleDropdown(): void {
 <style lang="scss" scoped>
 .channel-filters {
   @apply relative flex items-start gap-2;
+}
+
+.chips-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  @apply flex flex-wrap gap-2.5 overflow-hidden pr-9;
+  max-height: var(--channel-filter-max-height, 4.8rem);
+  visibility: hidden;
+  pointer-events: none;
+  user-select: none; 
 }
 
 .filter-trigger {
@@ -197,5 +239,15 @@ function toggleDropdown(): void {
     bg-primary text-on-primary
     pointer-events-none select-none;
 }
+
+.chips-container {
+  @apply flex flex-wrap gap-2.5 flex-1 overflow-hidden p-1;
+  max-height: var(--channel-filter-max-height, 4.8rem);
+
+  &.single-row {
+    max-height: 2.25rem;
+  }
+}
+
 
 </style>

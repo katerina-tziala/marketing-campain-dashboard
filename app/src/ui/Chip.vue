@@ -48,6 +48,9 @@ defineProps<{
     > .chip-content {
       @apply bg-info/15 text-info-light;
     }
+    .chip-count {
+      @apply bg-background/80;
+    }
   }
 
   &.readonly {

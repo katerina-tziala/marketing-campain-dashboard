@@ -9560,3 +9560,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `count !== undefined` guard (not `count`) — allows passing count=0 and still rendering the badge
+
+
+## [#478] refactor: extract ChannelFilterChips shared renderer
+**Type:** refactor
+
+**Summary:** Extracted the repeated channel chip rendering into `ChannelFilterChips.vue`, then reused it for the visible filter strip, the hidden overflow measurement strip, and the dropdown chip list.
+
+**Brainstorming:** The original `ChannelFilters.vue` duplicated chip rendering: one hidden `chips-measure` block rendered All + every channel for accurate browser layout measurement, while the visible strip rendered only the current display state. Replacing the hidden measurement DOM with manual width calculations was possible but less correct, because chip widths depend on real CSS, font rendering, padding, badges, and future styling changes. The better compromise was to keep the browser-measured approach but extract the chip strip into a focused component. That makes the hidden measurement instance an intentional `probe` variant rather than an awkward duplicate block, while keeping the visible strip and measurement strip structurally aligned. The same renderer could also replace the dropdown's manual chip loop, but without inheriting overflow-strip behavior; `layout="plain"` handles dropdown rendering with no max-height limitation.
+
+**Prompt:** Extract the current chip measurement/rendering approach into a reusable `ChannelFilterChips` component, use it for both the hidden measurement strip and the visible filters, follow the local class style with `.channel-filter-chips.probe`, and reuse it in `ChannelFiltersDropdown` as plain chip rendering without height limits.
+
+**What changed:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFilterChips.vue` — new shared renderer; renders optional All chip plus channel chips using `Chip :count`; supports `variant="probe"` for hidden measurement, `layout="plain"` for dropdown rendering, `singleRow` for collapsed visible strips, and exposes `getRootEl`, `getChannelChipEls`, and `hasOverflow`
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — replaced the inline hidden `chips-measure` block and visible `chips-container` block with two `ChannelFilterChips` instances; parent now keeps overflow policy while delegating chip DOM and exposed measurements to the child
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — replaced the manual `Chip` loop with `ChannelFilterChips layout="plain"`; removed the dropdown chip wrapper styles and removed the parent `max-h-[300px] overflow-y-auto` limitation
+
+**Key decisions & why:**
+- Keep the hidden measurement approach: it remains the most accurate option because the browser measures the real chips with real CSS instead of relying on approximate width calculations
+- Extract the shared renderer instead of only extracting the measurement block: visible, measurement, and dropdown chip rendering now stay consistent without repeating the same loop
+- `probe` as a plain modifier class: matches the local styling style (`.channel-filter-chips.probe`) and keeps hidden-measurement behavior as a CSS modifier rather than a BEM-style suffix
+- `layout="plain"` for dropdown usage: dropdown chips reuse rendering only, without `flex-1`, `overflow-hidden`, or strip max-height behavior
+- `max-h-none` on plain layout and no dropdown scroll wrapper: the dropdown chip parent should not impose a height limit; it renders the available channel chips naturally
+- Exposed methods from `ChannelFilterChips`: keeps DOM querying inside the component that owns the chip DOM, while `ChannelFilters.vue` remains responsible for filter state, dropdown state, and overflow policy
