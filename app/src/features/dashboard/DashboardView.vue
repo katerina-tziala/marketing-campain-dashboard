@@ -66,19 +66,15 @@ function clearChannelFilters(): void {
           @ai-click="openAiPanel?.()"
         />
         <ChannelFilters
-          class="mt-2.5"
+          class="mt-1.5"
           :channels="[...store.portfolioChannels.values()]"
           :selected-ids="store.selectedChannelsIds"
           @toggle="toggleChannelFilter"
           @clear="clearChannelFilters"
         />
-        <!-- <ChannelFilter :channels="[...store.portfolioChannels.values()]" /> -->
       </div>
     </section>
-    <!-- Channel Filter -->
-    <!-- <section class="dashboard-section">
-     
-    </section> -->
+    <!-- Dashboard Visuals -->
     <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
       <!-- KPI Cards -->
       <DashboardKpis
@@ -113,20 +109,20 @@ function clearChannelFilters(): void {
 <style lang="scss" scoped>
 .dashboard {
   @apply w-full
-  h-full
-  overflow-hidden
-  grid
-  grid-cols-1
-  grid-rows-[min-content_1fr]
-  pt-5
-  gap-y-5;
+    h-full
+    overflow-hidden
+    grid
+    grid-cols-1
+    grid-rows-[min-content_1fr]
+    pt-4
+    gap-y-4;
 }
 
 .dashboard-header {
   @apply w-full px-4;
 
   .dashboard-header-container {
-    @apply w-full mx-auto max-w-7xl flex flex-col gap-1.5;
+    @apply w-full mx-auto max-w-7xl flex flex-col gap-2;
   }
 }
 
@@ -136,6 +132,7 @@ function clearChannelFilters(): void {
     gap-5
     px-4
     pb-6;
+  // @include cq-container("dashboard-visuals");
   container-type: inline-size;
 }
 </style>

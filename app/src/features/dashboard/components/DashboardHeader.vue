@@ -15,8 +15,7 @@ const emit = defineEmits<{ aiClick: [] }>();
 </script>
 
 <template>
-  <div class="dashboard-title-row min-h-9">
-    <h2 class="grow pt-1">Campaign Performance</h2>
+  <h2 class="grow pt-1 h-9">
     <div class="ai-btn-wrapper">
       <Button
         v-if="showAiButton"
@@ -31,12 +30,12 @@ const emit = defineEmits<{ aiClick: [] }>();
         aria-hidden="true"
       />
     </div>
-  </div>
+    Campaign Performance
+  </h2>
   <MetaRow class="bullet text-typography-subtle">
     <MetaItem>{{ title }}</MetaItem>
     <MetaItem
-      >{{ selectedChannelCount }} of
-      {{ totalChannelCount }} channels</MetaItem
+      >{{ selectedChannelCount }} of {{ totalChannelCount }} channels</MetaItem
     >
     <MetaItem
       >{{ filteredCampaignCount }} of
@@ -51,7 +50,7 @@ const emit = defineEmits<{ aiClick: [] }>();
 }
 
 .ai-btn-wrapper {
-  @apply relative shrink-0;
+  @apply relative shrink-0 float-right ml-2 mb-1;
 }
 
 .connected-status {
