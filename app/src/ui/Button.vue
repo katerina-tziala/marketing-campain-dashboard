@@ -1,5 +1,19 @@
+<script setup lang="ts">
+import { ref } from "vue";
+
+const buttonRef = ref<HTMLButtonElement>();
+
+function getRootEl(): HTMLButtonElement | undefined {
+  return buttonRef.value;
+}
+
+defineExpose({
+  getRootEl,
+});
+</script>
+
 <template>
-  <button v-bind="$attrs" class="btn">
+  <button ref="buttonRef" v-bind="$attrs" class="btn">
     <slot />
   </button>
 </template>
@@ -9,7 +23,6 @@
   @apply cursor-pointer
     outline-none
     border-2
-    border-transparent
     relative
     overflow-hidden
     inline-flex
@@ -50,11 +63,11 @@
 
 /* variant primary */
 .btn.primary {
-  @apply bg-primary-dark text-typography-strong;
+  @apply bg-primary-dark border-primary-dark text-typography-strong;
 
   &:not(:disabled) {
     &:hover {
-      @apply bg-primary-light text-primary-ink;
+      @apply border-primary-light bg-primary-light text-primary-ink;
     }
 
     &:focus-visible {
@@ -69,7 +82,7 @@
 
 /* variant text-only */
 .btn.text-only {
-  @apply text-primary-lighter/95;
+  @apply border-transparent text-primary-lighter/95;
 
   &:not(:disabled) {
     &:hover,
@@ -107,9 +120,29 @@
   }
 }
 
+/* variant info outline */
+.btn.info-outline {
+  @apply text-typography-subtle
+    border
+    bg-surface
+    opacity-100
+    tracking-normal;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-surface border-info/65 text-info-light;
+    }
+
+    &:focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-info-dark;
+    }
+  }
+}
+
 /* variant ghost */
 .btn.ghost {
-  @apply text-typography-soft;
+  @apply border-transparent text-typography-soft;
 
   &:not(:disabled) {
     &:hover,
@@ -129,7 +162,7 @@
 
 /* variant destructive */
 .btn.destructive {
-  @apply text-typography-soft;
+  @apply border-transparent text-typography-soft;
 
   &:not(:disabled) {
     &:hover,
@@ -145,5 +178,9 @@
       @apply text-danger/80;
     }
   }
+}
+
+.btn.paddingless {
+  @apply p-0;
 }
 </style>

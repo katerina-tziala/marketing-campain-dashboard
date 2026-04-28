@@ -1,52 +1,51 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import type { Channel } from '@/shared/types/channel'
-import { useCampaignStore } from '@/stores/campaign.store'
-import { SlidersIcon, Dropdown } from '@/ui'
-import ChannelFilterChips from './ChannelFilterChips.vue'
-import ChannelFiltersDropdown from './ChannelFiltersDropdown.vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import type { Channel } from "@/shared/types/channel";
+import { useCampaignStore } from "@/stores/campaign.store";
+import ChannelFilterChips from "./ChannelFilterChips.vue";
+import ChannelFiltersDialog from "./ChannelFiltersDialog.vue";
 
 const props = defineProps<{
-  channels: Channel[]
-}>()
+  channels: Channel[];
+}>();
 
-const store = useCampaignStore()
+const store = useCampaignStore();
 
-const measureRef = ref<InstanceType<typeof ChannelFilterChips>>()
-const chipsRef = ref<InstanceType<typeof ChannelFilterChips>>()
-const triggerButtonRef = ref<HTMLButtonElement>()
+const measureRef = ref<InstanceType<typeof ChannelFilterChips>>();
+const chipsRef = ref<InstanceType<typeof ChannelFilterChips>>();
 
-const hasOverflow = ref(false)
-const hiddenSelectedIds = ref<string[]>([])
-const dropdownOpen = ref(false)
+const hasOverflow = ref(false);
+const hiddenSelectedIds = ref<string[]>([]);
 
 // ── Chip display ───────────────────────────────────────────────────────────
 
-const isAllActive = computed(() => store.selectedChannelsIds.length === 0)
-const showAllChip = computed(() => !hasOverflow.value || isAllActive.value)
-const allChipReadOnly = computed(() => hasOverflow.value && isAllActive.value)
-const totalCampaigns = computed(() => props.channels.reduce((s, c) => s + c.campaigns.length, 0))
+const isAllActive = computed(() => store.selectedChannelsIds.length === 0);
+const showAllChip = computed(() => !hasOverflow.value || isAllActive.value);
+const allChipReadOnly = computed(() => hasOverflow.value && isAllActive.value);
+const totalCampaigns = computed(() =>
+  props.channels.reduce((s, c) => s + c.campaigns.length, 0),
+);
 
 const displayedChips = computed((): Channel[] => {
-  if (!hasOverflow.value) return props.channels
-  if (isAllActive.value) return []
+  if (!hasOverflow.value) return props.channels;
+  if (isAllActive.value) return [];
   return [...props.channels]
-    .filter(c => store.selectedChannelsIds.includes(c.id))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
+    .filter((c) => store.selectedChannelsIds.includes(c.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
 
 // ── Filter chip helpers ────────────────────────────────────────────────────
 
 function toggle(id: string): void {
-  const current = store.selectedChannelsIds
+  const current = store.selectedChannelsIds;
   const next = current.includes(id)
-    ? current.filter(i => i !== id)
-    : [...current, id]
-  store.setChannelFilter(next.length === props.channels.length ? [] : next)
+    ? current.filter((i) => i !== id)
+    : [...current, id];
+  store.setChannelFilter(next.length === props.channels.length ? [] : next);
 }
 
 function clear(): void {
-  store.setChannelFilter([])
+  store.setChannelFilter([]);
 }
 
 // ── Overflow measurement ───────────────────────────────────────────────────
@@ -59,47 +58,52 @@ function clear(): void {
 // offsetTop, which reflects natural flex layout regardless of max-height.
 
 function measureOverflow(): void {
-  hasOverflow.value = measureRef.value?.hasOverflow() ?? false
+  hasOverflow.value = measureRef.value?.hasOverflow() ?? false;
 }
 
 function measureHidden(): void {
   if (!chipsRef.value || !hasOverflow.value || isAllActive.value) {
-    hiddenSelectedIds.value = []
-    return
+    hiddenSelectedIds.value = [];
+    return;
   }
-  const chips = chipsRef.value.getChannelChipEls()
-  if (!chips.length) { hiddenSelectedIds.value = []; return }
-  const firstRowTop = chips[0].offsetTop
+  const chips = chipsRef.value.getChannelChipEls();
+  if (!chips.length) {
+    hiddenSelectedIds.value = [];
+    return;
+  }
+  const firstRowTop = chips[0].offsetTop;
   hiddenSelectedIds.value = chips
-    .filter(c => c.offsetTop !== firstRowTop)
-    .map(c => c.dataset.channelId!)
-    .filter(id => store.selectedChannelsIds.includes(id))
+    .filter((c) => c.offsetTop !== firstRowTop)
+    .map((c) => c.dataset.channelId!)
+    .filter((id) => store.selectedChannelsIds.includes(id));
 }
 
 function measure(): void {
-  measureOverflow()
-  nextTick(measureHidden)
+  measureOverflow();
+  nextTick(measureHidden);
 }
 
-watch(() => store.selectedChannelsIds, () => nextTick(measureHidden))
-watch(() => props.channels, () => nextTick(measure))
-let resizeObserver: ResizeObserver | null = null
+watch(
+  () => store.selectedChannelsIds,
+  () => nextTick(measureHidden),
+);
+watch(
+  () => props.channels,
+  () => nextTick(measure),
+);
+let resizeObserver: ResizeObserver | null = null;
 
 onMounted(() => {
-  nextTick(measure)
+  nextTick(measure);
 
-  resizeObserver = new ResizeObserver(() => nextTick(measure))
-  const measureEl = measureRef.value?.getRootEl()
-  if (measureEl) resizeObserver.observe(measureEl)
-})
+  resizeObserver = new ResizeObserver(() => nextTick(measure));
+  const measureEl = measureRef.value?.getRootEl();
+  if (measureEl) resizeObserver.observe(measureEl);
+});
 
 onUnmounted(() => {
-  resizeObserver?.disconnect()
-})
-
-function toggleDropdown(): void {
-  dropdownOpen.value = !dropdownOpen.value
-}
+  resizeObserver?.disconnect();
+});
 </script>
 
 <template>
@@ -110,30 +114,14 @@ function toggleDropdown(): void {
       :channels="channels"
       :total-campaigns="totalCampaigns"
     />
-
-    <!-- Filter trigger — visible only in overflow mode; z-50 keeps it above the backdrop -->
-    <div v-if="hasOverflow" class="filter-trigger">
-      <button
-        ref="triggerButtonRef"
-        class="filter-icon-btn"
-        :class="{ active: dropdownOpen }"
-        :aria-expanded="dropdownOpen"
-        :aria-pressed="store.selectedChannelsIds.length > 0"
-        :aria-label="`Open channel filter${hiddenSelectedIds.length > 0 ? `, ${hiddenSelectedIds.length} selected not visible` : ''}`"
-        @click="toggleDropdown"
-        @keydown.escape.prevent="dropdownOpen = false"
-      >
-        <SlidersIcon class="w-4 h-4" />
-      </button>
-
-      <span
-        v-if="hiddenSelectedIds.length > 0"
-        class="filter-count-badge"
-        aria-hidden="true"
-      >
-        {{ hiddenSelectedIds.length }}
-      </span>
-    </div>
+    <ChannelFiltersDialog
+      v-if="hasOverflow"
+      :channels="channels"
+      :selected-ids="store.selectedChannelsIds"
+      :hidden-count="hiddenSelectedIds.length"
+      @toggle="toggle"
+      @clear="clear"
+    />
 
     <ChannelFilterChips
       ref="chipsRef"
@@ -147,17 +135,6 @@ function toggleDropdown(): void {
       @clear="clear"
       @toggle="toggle"
     />
-
-    <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonRef" :gap="0">
-      <ChannelFiltersDropdown
-        :channels="channels"
-        :selected-ids="store.selectedChannelsIds"
-        @toggle="toggle"
-        @clear="clear"
-        @close="dropdownOpen = false"
-      />
-    </Dropdown>
-
   </div>
 </template>
 
@@ -165,37 +142,4 @@ function toggleDropdown(): void {
 .channel-filters {
   @apply relative flex items-start gap-2;
 }
-
-.filter-trigger {
-  @apply relative shrink-0;
-  z-index: 50;
-}
-
-.filter-icon-btn {
-  @apply flex items-center justify-center
-    w-8 h-8
-    rounded-lg
-    border
-    bg-surface
-    text-typography-subtle
-    transition-colors
-    outline-none
-    hover:border-primary-light hover:text-primary-light
-    focus-visible:ring-2 focus-visible:ring-primary/40;
-
-  &.active {
-    @apply border-primary text-primary bg-primary/10;
-  }
-}
-
-.filter-count-badge {
-  @apply absolute -top-1.5 -right-1.5
-    flex items-center justify-center
-    min-w-[1.125rem] h-[1.125rem] px-1
-    rounded-full
-    text-[10px] font-bold leading-none
-    bg-primary text-on-primary
-    pointer-events-none select-none;
-}
-
 </style>

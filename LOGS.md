@@ -9583,3 +9583,51 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `layout="plain"` for dropdown usage: dropdown chips reuse rendering only, without `flex-1`, `overflow-hidden`, or strip max-height behavior
 - `max-h-none` on plain layout and no dropdown scroll wrapper: the dropdown chip parent should not impose a height limit; it renders the available channel chips naturally
 - Exposed methods from `ChannelFilterChips`: keeps DOM querying inside the component that owns the chip DOM, while `ChannelFilters.vue` remains responsible for filter state, dropdown state, and overflow policy
+
+
+## [#479] feat: add FunnelIcon and use as channel filter trigger
+**Type:** update
+
+**Summary:** Created a filled `FunnelIcon` SVG component and replaced `SlidersIcon` with it in the `ChannelFilters` overflow trigger button; `SlidersIcon` is kept for the Optimizer tab.
+
+**Brainstorming:** The filter trigger button needed an icon that reads clearly as a filter action. The funnel shape is the conventional symbol for filtering — more immediately recognisable than horizontal sliders in a compact 8×8 button. `SlidersIcon` stays in the codebase because it is still used by the AI Optimizer tab.
+
+**Prompt:** Create a funnel icon and use it for the filter chips trigger button. Do not remove the current SlidersIcon. Make the icon filled.
+
+**What was built:**
+- `app/src/ui/icons/FunnelIcon.vue` — new filled SVG icon; 24×24 viewBox; single polygon (3,4 → 21,4 → 14,12 → 14,19 → 10,19 → 10,12) producing a wide-top funnel narrowing to a small rectangular stem; `fill="currentColor"`, no stroke
+- `app/src/ui/icons/index.ts` — added `FunnelIcon` export
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — replaced `SlidersIcon` import and template usage with `FunnelIcon`
+
+**Key decisions & why:**
+- Filled rather than stroked: a filled funnel reads better at small sizes (w-4 h-4) where thin strokes can look fragile; the polygon shape has clear interior area that communicates "filter" without needing stroke weight
+- Polygon instead of path: simpler SVG source, easier to read and adjust; the funnel shape maps naturally to a single convex polygon
+- Keep `SlidersIcon` untouched: it remains the icon for the AI Optimizer tab
+
+
+## [#480] refactor: consolidate channel filter dialog
+**Type:** refactor
+
+**Summary:** Consolidated the overflow filter trigger, badge, dropdown anchor, dropdown panel, and channel chip list into a new `ChannelFiltersDialog` component; `ChannelFilters` now owns only chip measurement and visible strip state.
+
+**Brainstorming:** The filter trigger and dropdown content were tightly connected: the trigger owns the anchor element, the open state controls both the pressed styling and badge visibility, and the dropdown panel renders the same channel selection actions. Keeping the trigger in `ChannelFilters` while the panel lived in `ChannelFiltersDropdown` split one interaction across multiple places. The cleaner shape is a dialog component that owns all dropdown-related UI and behavior, while `ChannelFilters` remains the controller for overflow measurement, selected/hidden chip calculation, and store updates. After moving the panel content into the dialog, the separate dropdown component became unnecessary. The header action was renamed from "Clear all" to "Select all" because clearing the selected channel IDs returns the filter to the all-channels state.
+
+**Prompt:** Move the filter trigger and dropdown-connected pieces into `ChannelFiltersDialog`, then move the `ChannelFiltersDropdown` content into the dialog. Use the shared Button for the header action, rename it to "Select all", use the ghost variant, and make only the dropdown content area scrollable.
+
+**What was built:**
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDialog.vue` — new consolidated dialog component; owns `dropdownOpen`, trigger button ref, dropdown anchor, hidden-count badge, `<Dropdown>`, `<DropdownPanel>`, header, "Select all" action, and the plain `ChannelFilterChips` dropdown list
+- `app/src/features/dashboard/components/channel-filters/ChannelFilters.vue` — removed trigger/dropdown state and template markup; now renders `ChannelFiltersDialog` only when overflow exists, passing channels, selected IDs, hidden count, and toggle/clear handlers
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDropdown.vue` — deleted after its panel content was folded into `ChannelFiltersDialog`
+- `app/src/features/dashboard/components/channel-filters/index.ts` — removed the stale `ChannelFiltersDropdown` export
+- `app/src/ui/Button.vue` — exposed `getRootEl()` for dropdown anchoring through the shared Button component; added `info-outline` for chip-aligned filter trigger styling; added `paddingless`; moved transparent borders onto text/ghost/destructive variants so outlined variants keep visible borders
+- `app/src/ui/Badge.vue` — added reusable `small` and `bold` modifiers used by the selected-hidden-count badge
+- `app/src/ui/dropdown/DropdownPanel.vue` — kept the panel as the visual shell with `overflow-hidden` and bottom padding while the dialog owns the inner scroll area
+
+**Key decisions & why:**
+- `ChannelFiltersDialog` owns trigger + panel together: the open state, anchor ref, badge visibility, and dropdown content are one interaction and are easier to reason about in one component
+- `ChannelFilters` keeps measurement logic: overflow and hidden chip calculation depend on the visible/probe chip strips, not on the dropdown content itself
+- `Button.getRootEl()` exposes the native button: Vue refs on components point to component instances, so the dropdown needs an explicit way to anchor to the underlying DOM element
+- `info-outline` matches the chip language: the filter button now uses the same surface/info visual family as the chips instead of a separate purple treatment
+- Badge hidden while open: the count is useful as a closed-state summary, but redundant once the dropdown is expanded
+- "Select all" uses `Button ghost small`: the action is part of the shared button system and its label describes the resulting all-channels state better than "Clear all"
+- Scroll only the dropdown content: the header remains fixed in the panel while long channel lists scroll inside `dropdown-content`

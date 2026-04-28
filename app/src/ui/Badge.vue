@@ -11,7 +11,7 @@
   @apply rounded-full inline-flex bg-primary-ink;
 
   .badge-body {
-    @apply w-full border inline-flex items-center justify-center text-center capitalize gap-1
+    @apply w-full border flex items-center justify-center text-center capitalize gap-1
       py-1 px-2 text-xs font-semibold leading-4 rounded-full
       text-primary-lighter bg-primary/10 border-primary-lighter/25;
   }
@@ -71,6 +71,14 @@
     &.opportunity .badge-body {
       @apply bg-primary-light/10 border-primary-light/25 text-primary-light/90;
     }
+  }
+
+  &.small>.badge-body  {
+    @apply py-0.5 px-1 text-xs;
+  }
+
+  &.bold>.badge-body  {
+    @apply font-bold;
   }
 }
 </style>

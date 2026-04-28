@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { inject } from 'vue'
-import { useCampaignStore } from '@/stores/campaign.store'
-import DashboardHeader from './components/DashboardHeader.vue'
-import DashboardKpis from './components/DashboardKpis.vue'
-import DashboardCharts from './components/DashboardCharts.vue'
-import RoiBudgetScatter from './components/RoiBudgetScatter.vue'
-import EmptyState from './components/EmptyState.vue'
-import CampaignTable from './components/CampaignTable.vue'
-import ChannelFilter from './components/ChannelFilter.vue'
-import { ChannelFilters } from './components/channel-filters'
+import { inject } from "vue";
+import { useCampaignStore } from "@/stores/campaign.store";
+import DashboardHeader from "./components/DashboardHeader.vue";
+import DashboardKpis from "./components/DashboardKpis.vue";
+import DashboardCharts from "./components/DashboardCharts.vue";
+import RoiBudgetScatter from "./components/RoiBudgetScatter.vue";
+import EmptyState from "./components/EmptyState.vue";
+import CampaignTable from "./components/CampaignTable.vue";
+import { ChannelFilters } from "./components/channel-filters";
 
-const store = useCampaignStore()
+const store = useCampaignStore();
 
-const openUploadModal = inject<() => void>('openUploadModal')
-const openAiPanel = inject<() => void>('openAiPanel')
+const openUploadModal = inject<() => void>("openUploadModal");
+const openAiPanel = inject<() => void>("openAiPanel");
 </script>
 
 <template>
   <!-- Empty state -->
-  <EmptyState v-if="store.campaigns.length === 0" @upload="openUploadModal?.()" />
+  <EmptyState
+    v-if="store.campaigns.length === 0"
+    @upload="openUploadModal?.()"
+  />
 
   <!-- Dashboard -->
   <div v-else class="dashboard">
@@ -35,28 +37,32 @@ const openAiPanel = inject<() => void>('openAiPanel')
      
     </section> -->
     <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
-        <!-- KPI Cards -->
-        <DashboardKpis
-          :kpis="store.portfolioAnalysis.portfolio"
-          :portfolio-kpis="store.selectedChannelsIds.length > 0 ? store.fullPortfolioKpis : undefined"
-        />
-        <!-- Charts -->
-        <DashboardCharts
-          :campaigns="store.filteredCampaigns"
-          :channels="store.selectedChannels"
-          :kpis="store.portfolioAnalysis.portfolio"
-        />
-        <!-- ROI vs Budget Scatter -->
-        <RoiBudgetScatter
-          :campaigns="store.filteredCampaigns"
-          :is-filtered="store.selectedChannelsIds.length > 0"
-          class="mx-auto max-w-7xl w-full"
-        />
-        <!-- Campaign Table -->
-        <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
-          <h3 class="card-title table-card-title">Campaign Details</h3>
-          <CampaignTable :campaigns="store.filteredCampaigns" />
-        </div>
+      <!-- KPI Cards -->
+      <DashboardKpis
+        :kpis="store.portfolioAnalysis.portfolio"
+        :portfolio-kpis="
+          store.selectedChannelsIds.length > 0
+            ? store.fullPortfolioKpis
+            : undefined
+        "
+      />
+      <!-- Charts -->
+      <DashboardCharts
+        :campaigns="store.filteredCampaigns"
+        :channels="store.selectedChannels"
+        :kpis="store.portfolioAnalysis.portfolio"
+      />
+      <!-- ROI vs Budget Scatter -->
+      <RoiBudgetScatter
+        :campaigns="store.filteredCampaigns"
+        :is-filtered="store.selectedChannelsIds.length > 0"
+        class="mx-auto max-w-7xl w-full"
+      />
+      <!-- Campaign Table -->
+      <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
+        <h3 class="card-title table-card-title">Campaign Details</h3>
+        <CampaignTable :campaigns="store.filteredCampaigns" />
+      </div>
     </div>
   </div>
 </template>
@@ -71,14 +77,13 @@ const openAiPanel = inject<() => void>('openAiPanel')
   grid-rows-[min-content_1fr]
   pt-5
   gap-y-5;
- 
 }
 
 .dashboard-header {
   @apply w-full px-7;
 
   .dashboard-header-container {
-    @apply w-full mx-auto max-w-7xl flex flex-col gap-3; 
+    @apply w-full mx-auto max-w-7xl flex flex-col gap-3;
   }
 }
 
@@ -88,7 +93,7 @@ const openAiPanel = inject<() => void>('openAiPanel')
     gap-5
     px-4
     pb-6;
-    container-type: inline-size;
+  container-type: inline-size;
 }
 
 // // .card.table-card {

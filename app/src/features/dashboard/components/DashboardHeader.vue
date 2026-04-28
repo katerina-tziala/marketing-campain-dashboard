@@ -27,7 +27,7 @@ const showConnectedDot = computed(
     <div class="ai-btn-wrapper">
       <Button
         v-if="!aiStore.aiPanelOpen"
-        class="primary medium "
+        class="primary medium"
         @click="emit('aiClick')"
       >
         <SparklesIcon />AI
@@ -55,10 +55,6 @@ const showConnectedDot = computed(
 <style lang="scss" scoped>
 .dashboard-title-row {
   @apply flex items-start justify-center gap-x-4 gap-y-2;
-
-  // .dashboard-title {
-  //   @apply grow text-lg font-semibold tracking-wider text-primary-light pt-1;
-  // }
 }
 
 .ai-btn-wrapper {

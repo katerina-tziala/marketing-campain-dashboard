@@ -6,7 +6,7 @@ defineProps<{
 
 <template>
   <div
-    class="bg-surface-raised border rounded-md shadow-lg overflow-hidden"
+    class="bg-surface-raised border rounded-md shadow-lg overflow-hidden pb-2"
     role="dialog"
     :aria-label="ariaLabel"
   >
