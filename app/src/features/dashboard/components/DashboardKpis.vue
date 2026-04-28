@@ -3,7 +3,7 @@ import type { PortfolioKPIs } from '@/shared/types/campaign'
 import { formatCompactCurrency, formatCompactNumber, formatPercentage } from '@/shared/utils/formatters'
 import KpiCard from './KpiCard.vue'
 import KpiBenchmarkDelta from './KpiBenchmarkDelta.vue'
-import RoiIndicator from './RoiIndicator.vue'
+import PerformanceIndicator from './PerformanceIndicator.vue'
 
 defineProps<{
   kpis: PortfolioKPIs
@@ -33,7 +33,7 @@ function formatShare(value: number, total: number): string {
     >
       <template #secondary>
         <span v-if="portfolioKpis">{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of total</span>
-        <span>ROI: <RoiIndicator :value="kpis.aggregatedROI" /></span>
+        <span>ROI: <PerformanceIndicator :value="kpis.aggregatedROI" /></span>
       </template>
     </KpiCard>
 
@@ -43,7 +43,7 @@ function formatShare(value: number, total: number): string {
     >
       <template #secondary>
         <span v-if="portfolioKpis">{{ formatShare(kpis.totalConversions, portfolioKpis.totalConversions) }} of total</span>
-        <span>CVR: <RoiIndicator :value="kpis.aggregatedCVR" /></span>
+        <span>CVR: <PerformanceIndicator :value="kpis.aggregatedCVR" /></span>
       </template>
     </KpiCard>
 

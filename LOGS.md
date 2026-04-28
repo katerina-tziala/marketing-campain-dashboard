@@ -9222,3 +9222,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve existing component and Tailwind contracts: no component rewrites were needed because `border-faint`, `border-subtle`, `border-strong`, and `border-darker` still resolve through the same semantic CSS variables
 - Keep commented experiments: the commented border candidates are active design notes, not dead code, and belong beside the raw border scale where palette experiments happen
 - Use a `0–4` border scale: `0` covers the darker border/base edge case, while `1–4` map cleanly to faint → subtle → default → strong
+
+
+## [#459] Rename RoiIndicator to PerformanceIndicator with slot-based display
+**Type:** refactor
+
+**Summary:** Renamed `RoiIndicator` to `PerformanceIndicator`, added default slot support so callers can project custom display content while the `value` prop still drives color, and applied it to the CVR and Revenue columns in `CampaignTable`.
+
+**Brainstorming:** The component was named after one metric (ROI) but was already being reused for CVR in KPI cards, making the name misleading. Renaming to `PerformanceIndicator` reflects its generic role: color-coding any rate or performance value. Adding a default slot with a percentage fallback keeps all existing usages unchanged while enabling new ones — like Revenue showing euros colored by ROI — without a separate prop or variant.
+
+**Prompt:** Rename RoiIndicator to PerformanceIndicator. Extend it with a default slot so callers can project custom display content; if no slot is provided, fall back to formatPercentage(value). Add it to the CVR column in CampaignTable (colored percentage). For the Revenue column, use roi as the color value but project formatCurrency(revenue) as the display.
+
+**What changed:**
+- `PerformanceIndicator.vue` (new, replaces `RoiIndicator.vue`) — same color logic, scoped class renamed to `performance-indicator`, default slot with `formatPercentage` fallback; `useSlots` import retained for future extensibility
+- `RoiIndicator.vue` — deleted
+- `DashboardKpis.vue` — import and template references updated to `PerformanceIndicator`
+- `CampaignTable.vue` — import updated; CVR cell now `<PerformanceIndicator :value="c.cvr" />`; Revenue cell now `<PerformanceIndicator :value="c.roi">{{ formatCurrency(c.revenue) }}</PerformanceIndicator>`
+
+**Key decisions & why:**
+- Default slot over a separate `display` prop: slot is more idiomatic Vue and lets the caller format freely without the component needing to know about formatters
+- `value` always drives color, never the slot: keeps the component's contract simple — one source of truth for color, one for display
+- Revenue uses `c.roi` as color signal: ROI is the meaningful performance dimension for a revenue figure; raw revenue in euros has no intrinsic color semantics without context
+
+
+## [#460] PerformanceIndicator: add dimmed modifier, apply to CVR column
+**Type:** update
+
+**Summary:** Added a `dimmed` style modifier to `PerformanceIndicator` that reduces color intensity and font weight, and applied it to the CVR column in `CampaignTable` to visually distinguish it as a secondary metric.
+
+**Brainstorming:** CVR is contextually secondary to ROI and Revenue in the table — it deserves color coding for quick scanning but shouldn't compete visually with primary metrics. A `dimmed` class modifier (matching the Badge convention) achieves this without a prop or variant system: reduced opacity colors and `font-normal` instead of `font-semibold`.
+
+**Prompt:** Extend PerformanceIndicator with a dimmed style class that uses muted/reduced-opacity versions of the same colors. Use it for the CVR column in CampaignTable.
+
+**What changed:**
+- `PerformanceIndicator.vue` — added `&.dimmed` block: `font-normal` base, `text-success/75` / `text-warning-dark/75` / `text-danger-light/75` per state, consistent with Badge.dimmed opacity pattern
+- `CampaignTable.vue` — CVR cell updated to `<PerformanceIndicator :value="c.cvr" class="dimmed" />`
+
+**Key decisions & why:**
+- Class-based modifier over a prop: matches how Badge handles variants — caller applies `dimmed` as a class, no component API change needed
+- `font-normal` in dimmed: reinforces secondary status visually alongside color reduction; semibold at reduced opacity would still draw too much attention
+- Color choices mirror Badge.dimmed: success→/75, warning-dark→/75, danger-light→/75 — keeps the palette consistent across components

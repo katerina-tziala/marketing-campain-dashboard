@@ -1,6 +1,12 @@
+/*
+  Dark palette primitives.
 
+  Keep this file as raw color scales only. Components should consume semantic
+  tokens from dark.scss through Tailwind utilities, not these primitive values.
+*/
 :root,
 [data-theme="dark"] {
+  /* Brand */
   --primary-50: 238 242 255;
   --primary-100: 224 231 255;
   --primary-200: 199 210 254;
@@ -14,6 +20,7 @@
   --primary-950: 30 27 75;
   --primary-1000: 15 14 37;
 
+  /* Supporting hues */
   --secondary-300: 255 128 214;
   --secondary-400: 255 102 207;
   --secondary-500: 255 51 187;
@@ -38,11 +45,11 @@
   --warning-600: 217 119 6;
   --warning-700: 180 83 9;
 
-  --danger-300: 253 164 175;  /* soft pink */
-  --danger-400: 251 113 133;  /* lighter red */
-  --danger-500: 244 63 94;    /* #F43F5E (your base) */
-  --danger-600: 220 38 72;    /* deeper red */
-  --danger-700: 190 18 60;    /* strong, grounded red */
+  --danger-300: 253 164 175;
+  --danger-400: 251 113 133;
+  --danger-500: 244 63 94;
+  --danger-600: 220 38 72;
+  --danger-700: 190 18 60;
 
   --info-300: 125 211 252;
   --info-400: 56 189 248;
@@ -50,6 +57,19 @@
   --info-600: 2 132 199;
   --info-700: 3 105 161;
 
+  /* Surface border scale */
+  // --surface-border-1: 16 26 58;
+  // --surface-border-2: 20 34 74;
+  // --surface-border-3: 32 50 96;
+  // --surface-border-4: 45 65 115;
+
+  --surface-border-0: 14 16 34;
+  --surface-border-1: 20 30 58;
+  --surface-border-2: 26 38 68;
+  --surface-border-3: 30 42 74;
+  --surface-border-4: 38 52 92;
+
+  /* Neutral scale */
   --neutral-0: 255 255 255;
   --neutral-50: 241 245 249;
   --neutral-100: 221 228 238;

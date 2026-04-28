@@ -11,7 +11,7 @@ import {
   formatPercentage,
 } from "@/shared/utils/formatters";
 import { sortWithNullsLast } from "@/shared/utils/sorting";
-import RoiIndicator from "./RoiIndicator.vue";
+import PerformanceIndicator from "./PerformanceIndicator.vue";
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();
 
@@ -88,10 +88,14 @@ const COLUMNS: DataTableColumn[] = [
         <td>{{ formatCompactNumber(c.impressions) }}</td>
         <td>{{ formatPercentage(c.ctr) }}</td>
         <td>{{ formatNumber(c.conversions) }}</td>
-        <td>{{ formatPercentage(c.cvr) }}</td>
-        <td>{{ formatCurrency(c.revenue) }}</td>
+        <td><PerformanceIndicator :value="c.cvr" class="dimmed" /></td>
+        <td>
+          <PerformanceIndicator :value="c.roi">{{
+            formatCurrency(c.revenue)
+          }}</PerformanceIndicator>
+        </td>
         <td>{{ formatCurrency(c.cpa, 2) }}</td>
-        <td><RoiIndicator :value="c.roi" /></td>
+        <td><PerformanceIndicator :value="c.roi" /></td>
       </tr>
     </tbody>
   </Table>

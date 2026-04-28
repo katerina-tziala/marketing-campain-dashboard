@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import { provide, ref } from 'vue'
-import { Button, UploadIcon } from '@/ui'
-import { ToastContainer } from '@/ui/toast'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
-import { useUploadModal, UploadDataModal, ReplaceDataModal } from '@/features/data-transfer'
-import AiToolsDrawer from './AiToolsDrawer.vue'
+import { provide, ref } from "vue";
+import { Button, UploadIcon } from "@/ui";
+import { ToastContainer } from "@/ui/toast";
+import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
+import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import {
+  useUploadModal,
+  UploadDataModal,
+  ReplaceDataModal,
+} from "@/features/data-transfer";
+import AiToolsDrawer from "./AiToolsDrawer.vue";
+import SheetHeader from "@/ui/SheetHeader.vue";
 
-const aiStore = useAiConnectionStore()
-const analysisStore = useAiAnalysisStore()
-const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null)
-const { hasCampaigns, showReplaceConfirm, requestUpload, onReplaceConfirm, closeReplaceConfirm } = useUploadModal(uploadModal)
+const aiStore = useAiConnectionStore();
+const analysisStore = useAiAnalysisStore();
+const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
+const {
+  hasCampaigns,
+  showReplaceConfirm,
+  requestUpload,
+  onReplaceConfirm,
+  closeReplaceConfirm,
+} = useUploadModal(uploadModal);
 
-provide('openAiPanel', () => { aiStore.openPanel(); analysisStore.onPanelOpen() })
+provide("openAiPanel", () => {
+  aiStore.openPanel();
+  analysisStore.onPanelOpen();
+});
 
 function onCloseAiPanel(): void {
-  aiStore.closePanel()
-  analysisStore.onPanelClose()
+  aiStore.closePanel();
+  analysisStore.onPanelClose();
 }
 </script>
 
@@ -24,8 +38,14 @@ function onCloseAiPanel(): void {
   <div class="app-shell">
     <!-- Header — full width, never compressed by drawer -->
     <header class="shell-header">
-      <h1 class="shell-title">Marketing Campaign Dashboard</h1>
-      <Button v-if="hasCampaigns" class="outline" @click="requestUpload">
+      <h1 class="shell-title">
+        <span class="title-wrapper">Marketing Campaign Dashboard</span>
+      </h1>
+      <Button
+        v-if="hasCampaigns"
+        class="outline shrink-0 float-right ml-2 mb-1"
+        @click="requestUpload"
+      >
         <UploadIcon />
         Upload CSV
       </Button>
@@ -70,15 +90,25 @@ function onCloseAiPanel(): void {
 }
 
 .shell-title {
-  @apply text-2xl
-    font-extrabold
-    m-0
-    leading-9
-    bg-gradient-to-r
-    from-accent via-info via-primary-light to-secondary
+  @apply font-extrabold
+    m-0;
+
+  .title-wrapper {
+    @apply bg-gradient-to-r
+
+    from-accent 
+    via-info 
+    via-info-light 
+    via-primary 
+    via-primary-light 
+    to-secondary
+
     bg-clip-text
-    text-transparent;
-    
+    text-transparent
+    text-lg
+    leading-6
+    xs:text-2xl;
+  }
 }
 
 .shell-body {
