@@ -9158,3 +9158,20 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Consistent ring on all variants: accessibility best practice — keyboard users always get visible focus feedback regardless of button context
 - `PasswordInput.vue` untouched: file was outside scope; its `no-ring` usage on the show/hide toggle is a separate decision for the user
+
+
+## [#456] DashboardHeader: use Button component for AI button; hide when panel open
+**Type:** update
+
+**Summary:** Replaced the raw `<button class="btn-primary">` with the `Button` component and changed panel-open behaviour from disabled to hidden via `v-if`.
+
+**Brainstorming:** The raw button with a global class string was inconsistent with the rest of the codebase which uses the Button component with modifier class fallthrough. Hidden (`v-if`) is cleaner than disabled — there is no reason to show a greyed-out AI button when the panel is already open; removing it entirely avoids confusion and cleans up the header.
+
+**Prompt:** "DashboardHeader — use button component for ai indicator — when panel open button must not be visible"
+
+**What changed:**
+- `app/src/features/dashboard/components/DashboardHeader.vue` — imported `Button` from `@/ui`; replaced raw `<button class="btn-primary" :disabled="aiStore.aiPanelOpen">` with `<Button class="primary" v-if="!aiStore.aiPanelOpen">`
+
+**Key decisions & why:**
+- `v-if` instead of `:disabled`: button is infrastructure for opening the panel — once the panel is open it has no purpose, so hiding it is cleaner than a disabled state that implies "you could click this later"
+- No wrapper or layout changes: `.ai-btn-wrapper` keeps its `relative shrink-0` so the connected dot position is unaffected when the button is hidden

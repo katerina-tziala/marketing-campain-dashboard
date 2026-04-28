@@ -21,7 +21,7 @@
     opacity-85
     text-sm font-medium leading-none text-center
     tracking-wide
-    gap-2 px-2.5 py-3
+    gap-1.5 px-2.5 py-3
     max-h-9;
 
   &:deep(svg) {
@@ -41,6 +41,11 @@
 /* variant small */
 .btn.small {
   @apply text-xs px-2 py-1 leading-4;
+}
+
+/* variant medium */
+.btn.medium {
+  @apply px-2 py-1.5;
 }
 
 /* variant primary */

@@ -1,42 +1,54 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { SparklesIcon, MetaRow, MetaItem } from '@/ui'
-import { useCampaignStore } from '@/stores/campaign.store'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
- 
-// inputs ?
-const store = useCampaignStore()
-const aiStore = useAiConnectionStore()
+import { computed } from "vue";
+import { SparklesIcon, MetaRow, MetaItem, Button } from "@/ui";
+import { useCampaignStore } from "@/stores/campaign.store";
+import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 
-const emit = defineEmits<{ 'aiClick': [] }>()
+// inputs ?
+const store = useCampaignStore();
+const aiStore = useAiConnectionStore();
+
+const emit = defineEmits<{ aiClick: [] }>();
 
 const selectedChannelCount = computed(() =>
   store.selectedChannelsIds.length === 0
     ? store.portfolioChannels.size
     : store.selectedChannelsIds.length,
-)
+);
 
-const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelOpen)
+const showConnectedDot = computed(
+  () => aiStore.isConnected && !aiStore.aiPanelOpen,
+);
 </script>
 
 <template>
-  <div class="dashboard-title-row">
+  <div class="dashboard-title-row h-9">
     <h2 class="grow pt-1">Campaign Performance</h2>
     <div class="ai-btn-wrapper">
-      <button
-        class="btn-primary"
-        :disabled="aiStore.aiPanelOpen"
+      <Button
+        v-if="!aiStore.aiPanelOpen"
+        class="primary medium"
         @click="emit('aiClick')"
       >
         <SparklesIcon />AI
-      </button>
-      <span v-if="showConnectedDot" class="connected-dot connected-status" aria-hidden="true" />
+      </Button>
+      <span
+        v-if="showConnectedDot"
+        class="connected-dot connected-status"
+        aria-hidden="true"
+      />
     </div>
   </div>
   <MetaRow class="bullet text-typography-subtle">
     <MetaItem>{{ store.title }}</MetaItem>
-    <MetaItem>{{ selectedChannelCount }} of {{ store.portfolioChannels.size }} channels</MetaItem>
-    <MetaItem>{{ store.filteredCampaigns.length }} of {{ store.campaigns.length }} campaigns</MetaItem>
+    <MetaItem
+      >{{ selectedChannelCount }} of
+      {{ store.portfolioChannels.size }} channels</MetaItem
+    >
+    <MetaItem
+      >{{ store.filteredCampaigns.length }} of
+      {{ store.campaigns.length }} campaigns</MetaItem
+    >
   </MetaRow>
 </template>
 
@@ -48,14 +60,13 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
   //   @apply grow text-lg font-semibold tracking-wider text-primary-light pt-1;
   // }
 }
- 
+
 .ai-btn-wrapper {
   @apply relative shrink-0;
 }
 
 .connected-status {
-  @apply
-  absolute
+  @apply absolute
   -top-1
   -right-1
   w-3
@@ -70,7 +81,13 @@ const showConnectedDot = computed(() => aiStore.isConnected && !aiStore.aiPanelO
 }
 
 @keyframes dot-pop {
-  from { transform: scale(0); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
