@@ -47,4 +47,20 @@
 .meta-row.info.divider :slotted(*:not(:first-child)) {
   @apply border-info;
 }
+
+.meta-row.info-lighter.bullet :slotted(*:not(:first-child))::before {
+  @apply bg-info-lighter;
+}
+
+.meta-row.info-lighter.divider :slotted(*:not(:first-child)) {
+  @apply border-info-lighter;
+}
+
+.meta-row.primary-lighter.bullet :slotted(*:not(:first-child))::before {
+  @apply bg-primary-lighter;
+}
+
+.meta-row.primary-lighter.divider :slotted(*:not(:first-child)) {
+  @apply border-primary-lighter;
+}
 </style>

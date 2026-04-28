@@ -1,39 +1,49 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from '@/shared/types/campaign'
-import { formatCompactCurrency, formatCompactNumber, formatPercentage } from '@/shared/utils/formatters'
-import KpiCard from './KpiCard.vue'
-import KpiBenchmarkDelta from './KpiBenchmarkDelta.vue'
-import PerformanceIndicator from './PerformanceIndicator.vue'
+import type { PortfolioKPIs } from "@/shared/types/campaign";
+import {
+  formatCompactCurrency,
+  formatCompactNumber,
+  formatPercentage,
+} from "@/shared/utils/formatters";
+import KpiCard from "./KpiCard.vue";
+import KpiBenchmarkDelta from "./KpiBenchmarkDelta.vue";
+import PerformanceIndicator from "./PerformanceIndicator.vue";
+import MetaRow from "@/ui/meta/MetaRow.vue";
+import MetaItem from "@/ui/meta/MetaItem.vue";
 
 defineProps<{
-  kpis: PortfolioKPIs
-  portfolioKpis?: PortfolioKPIs | null
-}>()
+  kpis: PortfolioKPIs;
+  portfolioKpis?: PortfolioKPIs | null;
+}>();
 
 function formatShare(value: number, total: number): string {
-  if (total === 0) return '0%'
-  return `${((value / total) * 100).toFixed(1)}%`
+  if (total === 0) return "0%";
+  return formatPercentage(value / total, "0%", 1);
 }
 </script>
 
 <template>
-  <section class="kpi-grid">
-    <KpiCard
-      label="Budget"
-      :value="formatCompactCurrency(kpis.totalBudget)"
-    >
+  <section class="kpi-grid" role="region" aria-label="KPIs">
+    <KpiCard label="Budget" :value="formatCompactCurrency(kpis.totalBudget)">
       <template v-if="portfolioKpis" #secondary>
-        <span>{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of total</span>
+        <span
+          >{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of
+          portfolio</span
+        >
       </template>
     </KpiCard>
 
-    <KpiCard
-      label="Revenue"
-      :value="formatCompactCurrency(kpis.totalRevenue)"
-    >
+    <KpiCard label="Revenue" :value="formatCompactCurrency(kpis.totalRevenue)">
       <template #secondary>
-        <span v-if="portfolioKpis">{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of total</span>
-        <span>ROI: <PerformanceIndicator :value="kpis.aggregatedROI" /></span>
+        <MetaRow class="divider primary-lighter">
+          <MetaItem v-if="portfolioKpis"
+            >{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of
+            portfolio</MetaItem
+          >
+          <MetaItem
+            >ROI: <PerformanceIndicator :value="kpis.aggregatedROI"
+          /></MetaItem>
+        </MetaRow>
       </template>
     </KpiCard>
 
@@ -42,15 +52,21 @@ function formatShare(value: number, total: number): string {
       :value="formatCompactNumber(kpis.totalConversions)"
     >
       <template #secondary>
-        <span v-if="portfolioKpis">{{ formatShare(kpis.totalConversions, portfolioKpis.totalConversions) }} of total</span>
-        <span>CVR: <PerformanceIndicator :value="kpis.aggregatedCVR" /></span>
+        <MetaRow class="divider primary-lighter">
+          <MetaItem v-if="portfolioKpis"
+            >{{
+              formatShare(kpis.totalConversions, portfolioKpis.totalConversions)
+            }}
+            of portfolio</MetaItem
+          >
+          <MetaItem
+            >CVR: <PerformanceIndicator :value="kpis.aggregatedCVR"
+          /></MetaItem>
+        </MetaRow>
       </template>
     </KpiCard>
 
-    <KpiCard
-      label="CTR"
-      :value="formatPercentage(kpis.aggregatedCTR)"
-    >
+    <KpiCard label="CTR" :value="formatPercentage(kpis.aggregatedCTR)">
       <template v-if="portfolioKpis" #secondary>
         <KpiBenchmarkDelta
           :current="kpis.aggregatedCTR"
@@ -62,9 +78,16 @@ function formatShare(value: number, total: number): string {
 
     <KpiCard
       label="CPA"
-      :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
+      :value="
+        kpis.aggregatedCPA !== null
+          ? formatCompactCurrency(kpis.aggregatedCPA)
+          : null
+      "
     >
-      <template v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null" #secondary>
+      <template
+        v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null"
+        #secondary
+      >
         <KpiBenchmarkDelta
           :current="kpis.aggregatedCPA"
           :benchmark="portfolioKpis.aggregatedCPA"

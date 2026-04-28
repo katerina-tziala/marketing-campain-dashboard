@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatCompactNumber, formatPercentage } from '@/shared/utils/formatters'
 
 const props = defineProps<{
   labels: string[]
@@ -8,12 +9,6 @@ const props = defineProps<{
 
 // Vivid, WCAG AA contrast with on-primary labels (≥4.5:1): ~6:1, ~5.1:1, ~4.9:1
 const FUNNEL_COLORS = ['#4f46e5', '#9333ea', '#c2410c']
-
-function formatValue(val: number) {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`
-  return val.toLocaleString('en')
-}
 
 const maxValue = computed(() => Math.max(...props.values))
 
@@ -28,15 +23,15 @@ const rows = computed(() =>
   props.labels.map((label, i) => {
     const value = props.values[i]
     const prev = i > 0 ? props.values[i - 1] : null
-    const rate = prev != null && prev > 0 ? ((value / prev) * 100).toFixed(1) : null
+    const rate = prev != null && prev > 0 ? formatPercentage(value / prev, '0%', 1) : null
     const rateLabel =
-      i === 1 ? `CTR ${rate}%` : i === 2 ? `CVR ${rate}%` : null
+      i === 1 ? `CTR ${rate}` : i === 2 ? `CVR ${rate}` : null
     return {
       label,
       value,
       color: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
       width: scaledWidth(value),
-      formatted: formatValue(value),
+      formatted: formatCompactNumber(value),
       rateLabel,
     }
   }),

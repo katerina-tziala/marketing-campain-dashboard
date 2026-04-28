@@ -16,7 +16,6 @@ const emit = defineEmits<{ aiClick: [] }>();
 
 <template>
   <h2 class="grow pt-1 h-9">
-    <!-- Render this action before the text so the heading wraps around it. -->
     <div class="relative shrink-0 inline-action-float">
       <Button
         v-if="showAiButton"

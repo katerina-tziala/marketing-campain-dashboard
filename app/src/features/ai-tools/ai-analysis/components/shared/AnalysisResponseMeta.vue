@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { AiAnalysisNotice } from "@/features/ai-tools/types";
+import { APP_LOCALE } from "@/shared/utils/formatters";
 import { MetaRow, MetaItem } from "@/ui";
 
 const props = defineProps<{
@@ -11,7 +12,7 @@ const props = defineProps<{
 
 const formattedTime = computed(() => {
   if (!props.timestamp) return null;
-  return new Date(props.timestamp).toLocaleString("en-IE", {
+  return new Date(props.timestamp).toLocaleString(APP_LOCALE, {
     day: "2-digit",
     month: "short",
     year: "numeric",

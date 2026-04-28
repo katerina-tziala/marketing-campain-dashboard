@@ -9701,3 +9701,28 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Name by intent: `inline-action-float` describes an action placed inside text flow rather than exposing only the raw direction and spacing
 - Keep call sites flexible: the floated element can still be a `Button`, `Badge`, status component, or wrapper around a slot
 - Document render order: floated actions must appear before the text they wrap, so the utility includes a CSS comment and `DashboardHeader` includes a local template comment where the ordering matters most visibly
+
+
+## [#484] refactor: centralize app formatting locale
+**Type:** refactor
+
+**Summary:** Centralized number, currency, percentage, compact value, and timestamp formatting around shared app locale constants so the dashboard is ready for future locale support without changing each formatter call site.
+
+**Brainstorming:** The app targets a European context, but formatting was split between hardcoded `en`, `en-IE`, raw `Intl.NumberFormat` calls, `toLocaleString()`, and `.toFixed()` string construction. Changing separators or currency presentation later would require hunting through charts, KPI cards, benchmark deltas, and AI metadata. A small central formatter layer keeps the current English-style output stable while making the locale and currency explicit one-place configuration.
+
+**Prompt:** Make sure all formatters use the same locale for formatting so the app is ready for future locale support.
+
+**What was built:**
+- `app/src/shared/utils/formatters.ts` — added `APP_LOCALE` and `APP_CURRENCY`; routed number, decimal, percentage, currency, compact currency, and compact number formatting through `Intl.NumberFormat` using the shared locale
+- `app/src/features/dashboard/components/KpiBenchmarkDelta.vue` — replaced local `.toFixed()` delta formatting with `formatDecimal`; restored locale-aware absolute currency delta formatting; kept benchmark values using the shared percentage/currency helpers
+- `app/src/features/dashboard/components/DashboardKpis.vue` — replaced manual share percentage formatting with `formatPercentage`
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — replaced chart tooltip and axis `.toFixed()` formatting with `formatDecimal`
+- `app/src/ui/charts/FunnelChart.vue` — replaced custom compact number and rate formatting with `formatCompactNumber` and `formatPercentage`
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue` — replaced the hardcoded timestamp locale with `APP_LOCALE`
+
+**Key decisions & why:**
+- Keep `APP_LOCALE` as `en-IE` for now: it preserves English-style dashboard output while matching the existing timestamp locale and EUR context
+- Centralize currency as `APP_CURRENCY`: EUR remains the app currency, but it no longer has to be repeated in every formatter
+- Use `Intl.NumberFormat` for percentages: this avoids hardcoded decimal separators from `.toFixed()` and lets the locale decide presentation
+- Add `formatDecimal`: chart labels and percentage-point deltas need locale-aware fixed-decimal numbers without implying currency or percent semantics
+- Refactor user-facing formatting only: display strings now share the central locale, while unrelated calculation logic remains unchanged

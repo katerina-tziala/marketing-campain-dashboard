@@ -6,7 +6,7 @@ import type { PortfolioKPIs } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
 import { RadioToggle } from '@/ui'
 import { useChartTheme } from '@/ui/charts/useChartTheme'
-import { formatCurrency } from '@/shared/utils/formatters'
+import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
 
 type ChartView = 'budgetVsRevenue' | 'efficiencyGap'
 
@@ -104,7 +104,7 @@ const gapOptions = computed<ChartOptions<'bar'>>(() => ({
       ...basePlugins.tooltip,
       callbacks: {
         label: (ctx) => {
-          const value = typeof ctx.raw === 'number' ? ctx.raw.toFixed(2) : '0.00'
+          const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
           return ` ${value}%`
         },
         afterLabel: (ctx) => {
@@ -123,7 +123,7 @@ const gapOptions = computed<ChartOptions<'bar'>>(() => ({
       title: { display: true, text: 'Gap (%)', color: baseScales.y.ticks.color, font: { size: 11 } },
       ticks: {
         ...baseScales.y.ticks,
-        callback: (value) => `${Number(value).toFixed(1)}%`,
+        callback: (value) => `${formatDecimal(Number(value), 1)}%`,
       },
     },
   },
