@@ -99,6 +99,7 @@ export default {
       },
       zIndex: {
         1000: "1000",
+        1100: "1100",
       },
       boxShadow: {
         connection: "0 0 4px rgb(var(--color-success) / 0.6)",

@@ -17,7 +17,11 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
 </script>
 
 <template>
-  <div class="filter-dropdown" role="dialog" aria-label="Channel filters">
+  <div
+    class="filter-dropdown scrollbar-stable scrollbar-on-surface;"
+    role="dialog"
+    aria-label="Channel filters"
+  >
     <div class="dropdown-header">
       <span class="dropdown-title">Channels</span>
       <button v-if="hasSelection" class="clear-btn" @click="emit('clear')">
@@ -49,8 +53,7 @@ const hasSelection = computed(() => props.selectedIds.length > 0);
     shadow-lg
     min-w-[260px] max-w-[340px]
     max-h-[300px]
-    overflow-y-auto
-    scrollbar-stable scrollbar-on-surface;
+    overflow-y-auto;
 }
 
 .dropdown-header {

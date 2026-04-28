@@ -44,8 +44,11 @@
     @apply rounded-sm;
   }
 
-  &.text-only .badge-body {
+  &.text-only {
     @apply bg-transparent border-none;
+    .badge-body {
+      @apply bg-transparent border-none;
+    }
   }
 
   &.dimmed {

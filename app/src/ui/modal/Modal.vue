@@ -66,8 +66,8 @@ onUnmounted(() => {
     p-4
     box-border
     overflow-hidden
-    z-1000
     inset-0
+    z-1000
     bg-surface-backdrop/60;
 }
 

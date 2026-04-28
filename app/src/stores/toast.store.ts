@@ -4,7 +4,8 @@ import type { NotificationVariant } from '@/ui/types/notification-variant'
 
 interface Toast {
   id: number
-  message: string
+  title: string
+  message?: string
   type: NotificationVariant
 }
 
@@ -12,9 +13,9 @@ export const useToastStore = defineStore('toast', () => {
   const toasts = ref<Toast[]>([])
   let nextId = 0
 
-  function addToast(message: string, type: NotificationVariant = 'error'): void {
+  function addToast(title: string, type: NotificationVariant = 'error', message?: string): void {
     const id = nextId++
-    toasts.value.push({ id, message, type })
+    toasts.value.push({ id, title, message, type })
     setTimeout(() => removeToast(id), 5000)
   }
 
@@ -22,24 +23,24 @@ export const useToastStore = defineStore('toast', () => {
     toasts.value = toasts.value.filter((t) => t.id !== id)
   }
 
-  function showSuccessToast(message: string): void {
-    addToast(message, 'success')
+  function showSuccessToast(title: string, message?: string): void {
+    addToast(title, 'success', message)
   }
 
-  function showErrorToast(message: string): void {
-    addToast(message, 'error')
+  function showErrorToast(title: string, message?: string): void {
+    addToast(title, 'error', message)
   }
 
-  function showWarningToast(message: string): void {
-    addToast(message, 'warning')
+  function showWarningToast(title: string, message?: string): void {
+    addToast(title, 'warning', message)
   }
 
-  function showInfoToast(message: string): void {
-    addToast(message, 'info')
+  function showInfoToast(title: string, message?: string): void {
+    addToast(title, 'info', message)
   }
 
-  return { 
-    toasts, 
+  return {
+    toasts,
     // actions
     addToast,
     removeToast,

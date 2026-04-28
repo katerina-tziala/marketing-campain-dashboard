@@ -72,7 +72,7 @@
       @apply bg-primary-light/15 text-primary-lighter;
     }
 
-    &:not(.no-ring):focus-visible {
+    &:focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
     }
 
@@ -98,6 +98,26 @@
 
     &:active {
       @apply text-primary-light;
+    }
+  }
+}
+
+/* variant ghost */
+.btn.ghost {
+  @apply text-typography-soft;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-typography/10 text-typography;
+    }
+
+    &:focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
+    }
+
+    &:active {
+      @apply opacity-70;
     }
   }
 }

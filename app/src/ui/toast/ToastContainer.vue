@@ -12,6 +12,7 @@ const toastStore = useToastStore();
         <ToastNotification
           v-for="toast in toastStore.toasts"
           :key="toast.id"
+          :title="toast.title"
           :message="toast.message"
           :variant="toast.type"
           @dismiss="toastStore.removeToast(toast.id)"
@@ -23,7 +24,7 @@ const toastStore = useToastStore();
 
 <style lang="scss" scoped>
 .toast-container {
-  @apply fixed bottom-6 left-6 z-[99999] pointer-events-none;
+  @apply fixed bottom-6 left-6 z-1100 pointer-events-none;
 }
 
 .toast-list {

@@ -84,9 +84,10 @@ const ariaLive = computed(() => {
   @apply rounded-md;
 
   .notification-body {
-    @apply p-4 rounded-md border bg-primary/10 border-primary/25;
+    @apply p-3 rounded-md border bg-primary/10 border-primary/25;
 
-    .notification-icon, .notification-title {
+    .notification-icon,
+    .notification-title {
       @apply text-primary-light;
     }
   }
@@ -95,7 +96,8 @@ const ariaLive = computed(() => {
     .notification-body {
       @apply bg-success/10 border-success/25;
 
-      .notification-icon, .notification-title {
+      .notification-icon,
+      .notification-title {
         @apply text-success-light;
       }
     }
@@ -105,7 +107,8 @@ const ariaLive = computed(() => {
     .notification-body {
       @apply bg-danger/10 border-danger/25;
 
-      .notification-icon, .notification-title {
+      .notification-icon,
+      .notification-title {
         @apply text-danger-light;
       }
     }
@@ -115,7 +118,8 @@ const ariaLive = computed(() => {
     .notification-body {
       @apply bg-warning/10 border-warning/25;
 
-      .notification-icon, .notification-title {
+      .notification-icon,
+      .notification-title {
         @apply text-warning-light;
       }
     }
@@ -125,7 +129,8 @@ const ariaLive = computed(() => {
     .notification-body {
       @apply bg-info/10 border-info/25;
 
-      .notification-icon, .notification-title {
+      .notification-icon,
+      .notification-title {
         @apply text-info-light;
       }
     }
@@ -133,22 +138,27 @@ const ariaLive = computed(() => {
 }
 
 .notification-body {
-  @apply flex-1 flex flex-col gap-1;
+  @apply flex-1 flex flex-col gap-0.5;
 }
- 
+
 .notification-icon {
-  @apply leading-none shrink-0 text-2xl text-typography-subtle;
+  @apply leading-none shrink-0 text-lg text-typography-subtle;
 }
- 
+
 .notification-head {
   @apply flex items-center justify-between gap-2;
 }
 
 .notification-title {
-  @apply leading-none tracking-wide text-base;
+  @apply leading-5 tracking-wide text-base font-medium;
 }
 
 .notification-action {
   @apply shrink-0;
+}
+
+/* variant darket bg */
+.notification.dense-bg {
+  @apply bg-surface-backdrop;
 }
 </style>

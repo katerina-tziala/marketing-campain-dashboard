@@ -44,7 +44,7 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
       const code = getErrorCode(error)
       connectionError.value = { code, provider: providerType }
       if (!aiPanelOpen.value) {
-        toastStore.showErrorToast(`Connection to ${PROVIDER_LABELS[providerType]} failed. Reopen the panel for details.`)
+        toastStore.showErrorToast(`Connection to ${PROVIDER_LABELS[providerType]} failed`, 'Reopen the panel for details')
       }
     } finally {
       isConnecting.value = false

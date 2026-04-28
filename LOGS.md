@@ -9042,3 +9042,119 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - displayedChips sorted by name in filtered mode: selected chips appear in stable alphabetical order regardless of original channel order — predictable and scannable
 - allChipReadOnly in State B no-selection: the strip communicates current state ("All channels active") without offering a redundant clear action when nothing is selected
 - ResizeObserver on measureRef not chipsRef: chipsRef width changes when filter trigger appears/disappears (hasOverflow flip) which would cause spurious re-measures; measureRef width only changes with the actual container width
+
+
+## [#450] Dev analysis cycle: fix error entries not showing error notifications
+**Type:** fix
+
+**Summary:** Error entries in the dev analysis cycle were silently replaced by cached mock results, so the error notification UI never rendered; fixed by writing the error state directly via `$patch` and returning null instead of throwing.
+
+**Brainstorming:** The root cause: `handleRequestError` always checks the tab's cache first and, when a prior mock has been cached, shows the cached result with a `stale-result` notice (status `'done'`) rather than the intended `status: 'error'`. So every error code in the cycle produced a stale-result notice instead of the red error Notification. The fix needed to bypass the cache path entirely. Modifying `aiAnalysis.store.ts` was ruled out by the user. Alternative: use Pinia's `$patch(stateMutator)` API to write the error display directly from the dev override before returning null — `executeAnalysis` exits cleanly on null and the display is already set correctly.
+
+**Prompt:** "fix dev analysis cycle. it does not throw any messages now"
+
+**What changed:**
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — added `useAiAnalysisStore` import; rewrote error-entry path in `runDevCycle` to call `$patch(state => ...)` and return null instead of throwing; removed now-unused `resetTokenLimit` helper and `cycleWrapped` counter logic
+
+**Key decisions & why:**
+- `$patch` mutator form instead of throwing: throwing causes `handleRequestError` which always falls back to cached result when cache exists; `$patch` writes error state directly, bypassing the cache check entirely
+- Return null after `$patch`: `executeAnalysis` exits at `if (!result) return` with the display already showing the error — no dangling loading state, no store changes needed
+- No store changes: `$patch` is Pinia's public API; the fix lives entirely in the dev-only file
+
+
+## [#451] Toast: add title + optional message structure
+**Type:** update
+
+**Summary:** Updated the toast system so every toast has a required `title` and an optional `message`, with the second sentence of existing two-sentence toasts becoming the `message`.
+
+**Brainstorming:** The `Toast` interface previously had a single `message: string` field, and callers packed both a headline and a follow-up sentence into one string. Splitting into `title` (required) and `message` (optional) lets the UI render them at different visual weights. `ToastNotification` already declared a `title` prop but never used it — this update wires it up. All four helper functions (`showSuccessToast`, etc.) now accept `(title, message?)`. The connection store's error toast had one natural split point: "Connection to X failed." as title, "Reopen the panel for details." as message.
+
+**Prompt:** "update toast messages — they should accept a title (required) and a message — work on top of my current changes — second sentence of current toast messages should become the message"
+
+**What changed:**
+- `app/src/stores/toast.store.ts` — `Toast` interface gains `title: string`, `message?: string`; `addToast` signature changed to `(title, type, message?)`; all four public helpers accept `(title, message?)`
+- `app/src/ui/toast/ToastNotification.vue` — `message` prop made optional; `title` rendered in `#title` slot; `message` rendered in default slot via `v-if`
+- `app/src/ui/toast/ToastContainer.vue` — passes `:title="toast.title"` alongside `:message="toast.message"`
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — error toast split: title `"Connection to X failed."`, message `"Reopen the panel for details."`
+- `app/src/features/data-transfer/composables/useDownloadTemplate.ts` — dev test calls updated to new two-param API
+
+**Key decisions & why:**
+- `message` optional not required: success toasts are naturally single-line; forcing a message on every toast would require empty strings at every call site
+- `addToast(title, type, message?)` param order: keeps `type` as the second positional arg (same as before) so any direct `addToast` call is a trivial update
+- No change to `Notification.vue` or styles: the visual hierarchy (title bold, body smaller) is already handled by the existing `#title` slot styling in `Notification.vue`
+
+
+## [#452] Toast: add close button
+**Type:** update
+
+**Summary:** Added a dismiss button to toast notifications using `Notification.vue`'s existing `#action` slot, wired to the already-connected `@dismiss` emit.
+
+**Brainstorming:** `Notification.vue` already has a `#action` slot in `.notification-head` (a flex row with icon + title + action, `justify-between`). Dropping a close button there requires no changes to `Notification.vue`. The container has `pointer-events-none` so the wrapper needs `pointer-events-auto`. The `dismiss` emit and `removeToast` wiring in `ToastContainer.vue` were already in place — only the button UI was missing. Cleaned up unused `ICON_MAP`/`iconComponent`/icon imports that were never reached in the template.
+
+**Prompt:** "implement close button for toast notifications"
+
+**What changed:**
+- `app/src/ui/toast/ToastNotification.vue` — added `Button` + close button in `#action` slot; replaced unused wrapper class with `.toast-wrap` (`pointer-events-auto shadow-md`); removed dead `computed`, `Component`, `ICON_MAP`, `iconComponent`, and unused icon imports
+
+**Key decisions & why:**
+- `#action` slot on `Notification`: already right-aligned in `.notification-head` via `justify-between` — no layout work needed
+- `no-ring` modifier on the button: suppresses the focus ring since the toast is a transient element and the ring would look cluttered at small icon-only size
+- `pointer-events-auto` on `.toast-wrap`: the container is `pointer-events-none` so the toast itself must opt back in for click events to reach the button
+
+
+## [#453] Toast: fix stacking above modals and overlays
+**Type:** fix
+
+**Summary:** Toast notifications now reliably appear above all overlays (modal, AI overlay) and remain clickable when a modal is open — fixed via a declared z-index scale and restoring pointer-events on the notification element.
+
+**Brainstorming:** Two bugs were combined: (1) The modal backdrop had no z-index, so DOM order determined stacking — a modal opened after the toast container was appended to body would sit on top. The existing `z-[99999]` arbitrary value in an `@apply` block may also not generate reliably from Tailwind's content scanner. (2) The toast container is `pointer-events-none` but the notification component had no `pointer-events-auto`, so even if the toast was visually on top, clicks passed through to the modal backdrop. Fix: declare an explicit z-index scale (`modal: 1010`, `toast: 1100`) so values are guaranteed in the generated CSS, give the modal backdrop `z-modal`, switch the toast container to `z-toast`, and add `pointer-events-auto` to the notification via class fallthrough.
+
+**Prompt:** "Toast notifications should appear on top of everything — for example when modal open I should still be able to close the notification"
+
+**What changed:**
+- `app/tailwind.config.js` — added `modal: "1010"` and `toast: "1100"` to `extend.zIndex`
+- `app/src/ui/modal/Modal.vue` — added `z-modal` to `.modal-backdrop`
+- `app/src/ui/toast/ToastContainer.vue` — replaced unreliable `z-[99999]` with named `z-toast`
+- `app/src/ui/toast/ToastNotification.vue` — added `pointer-events-auto` to the Notification class so the close button is clickable through the `pointer-events-none` container
+
+**Key decisions & why:**
+- Named z-index values in config (`modal`, `toast`) rather than arbitrary values: arbitrary values in `@apply` blocks are not guaranteed to be picked up by Tailwind's class scanner; named values in `extend.zIndex` are always generated
+- z-index ladder (overlay: 1000 → modal: 1010 → toast: 1100): each level is above the previous, toast always wins regardless of DOM order
+- `pointer-events-auto` via class fallthrough on Notification: avoids adding a wrapper element — Vue applies extra classes to the root element of the component
+
+
+## [#454] Button: add ghost variant; use it in ToastNotification dismiss button
+**Type:** update
+
+**Summary:** Added a neutral `ghost` button variant for close/dismiss chrome buttons, and switched the toast dismiss button from `text-only` to `ghost` so the X no longer carries primary-blue tinting inside a notification.
+
+**Brainstorming:** `text-only` was designed for icon buttons in primary-colored contexts — it's `text-primary-lighter` with a primary-tinted hover bg. Inside a toast notification that already has its own semantic accent color (success/error/warning/info), a primary-blue X is a competing hue that doesn't belong. The close button is UI chrome, not content. It should be neutral and unobtrusive. Named `ghost` following industry convention (shadcn, Chakra, Mantine, Radix). Base color is `text-typography-soft`; hover background is `bg-typography/10` — fully opacity-based so it adapts to any surface. Hover text steps up to `text-typography` for clear feedback. Focus ring uses `ring-typography-soft`. Scope intentionally limited to Button.vue + ToastNotification.vue only.
+
+**Prompt:** "create a button variation for notification in the more neutral side — the x be like the text, on hover focus have darker bg (opacity based on background color) and more intense text — only touch button and toast messages"
+
+**What changed:**
+- `app/src/ui/Button.vue` — added `.btn.ghost` variant block (text-typography-soft base, bg-typography/10 + text-typography on hover/focus, ring-typography-soft focus ring, opacity-70 active)
+- `app/src/ui/toast/ToastNotification.vue` — dismiss button class changed from `icon-only text-only` to `icon-only ghost`
+
+**Key decisions & why:**
+- `ghost` as the variant name: behavior-descriptive (transparent base, subtle hover bg), matches industry standard naming — any reader immediately understands intent
+- `bg-typography/10` for hover background: opacity-based on the text token means it produces a correct darkening layer on any surface color without needing per-context overrides
+- Neutral base color (`text-typography-soft`): the dismiss button is infrastructure, not a semantic element of the notification — keeping it off the primary/accent color palette avoids competing with the notification's own visual language
+- No change to Modal or other close buttons: user explicitly scoped this to toast only
+
+
+## [#455] Button: remove no-ring — all button variants always show focus ring
+**Type:** update
+
+**Summary:** Removed the `.no-ring` conditional from `text-only` and `ghost` focus-visible rules so all button variants consistently show a focus ring on keyboard navigation.
+
+**Brainstorming:** The `.no-ring` modifier was added to suppress the focus ring on icon-only buttons in transient contexts (e.g. the toast dismiss). The new policy is that all buttons always show a focus ring — this is the correct accessibility default and removes a fragile per-usage decision. `PasswordInput.vue` still references `no-ring` on its toggle button but was left untouched as it was outside the user's stated scope.
+
+**Prompt:** "remove no ring from button — all our buttons shall have a ring"
+
+**What changed:**
+- `app/src/ui/Button.vue` — replaced `:not(.no-ring):focus-visible` with plain `&:focus-visible` in both `text-only` and `ghost` variants
+
+**Key decisions & why:**
+- Consistent ring on all variants: accessibility best practice — keyboard users always get visible focus feedback regardless of button context
+- `PasswordInput.vue` untouched: file was outside scope; its `no-ring` usage on the show/hide toggle is a separate decision for the user
