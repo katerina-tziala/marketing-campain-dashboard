@@ -22,12 +22,12 @@ const showConnectedDot = computed(
 </script>
 
 <template>
-  <div class="dashboard-title-row h-9">
+  <div class="dashboard-title-row min-h-9">
     <h2 class="grow pt-1">Campaign Performance</h2>
     <div class="ai-btn-wrapper">
       <Button
         v-if="!aiStore.aiPanelOpen"
-        class="primary medium"
+        class="primary medium "
         @click="emit('aiClick')"
       >
         <SparklesIcon />AI

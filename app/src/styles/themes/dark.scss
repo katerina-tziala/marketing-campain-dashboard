@@ -1,8 +1,16 @@
-@use "./dark-pallette.scss";
+@use "./dark-palette.scss";
 
 :root,
 [data-theme="dark"] {
-  /* ─── Background & surfaces ───────────────────────── */
+  /*
+    Dark theme semantics.
+
+    Use this file to assign palette primitives to UI roles. If a color answers
+    "what is it?" it belongs in dark-palette.scss. If it answers "where is it
+    used?" it belongs here.
+  */
+
+  /* Background and surfaces */
   --color-background: var(--neutral-900);
 
   // --color-surface-0: 14 16 34; /* darkest, slight indigo bias */
@@ -11,32 +19,25 @@
   // --color-surface-2: 13 26 58;
   // --color-surface-3: 16 30 65;
 
-  --color-surface-0: 14 16 34; /* absolute base (secondary) */
-  --color-surface-0h: 10 16 38; /* deep base / app background */
-
-  --color-surface-1: 13 20 42; /* main surfaces (panels) */
-  --color-surface-2: 16 24 52; /* elevated (cards, inputs) */
-  --color-surface-3: 20 28 60; /* higher elevation */
+  --color-surface-0: 14 16 34;
+  --color-surface-0h: 10 16 38;
+  --color-surface-1: 13 20 42;
+  --color-surface-2: 16 24 52;
+  --color-surface-3: 20 28 60;
   // --color-surface-4: 24 34 72; /* hover / active / highlight */
 
   --color-surface-hover: var(--color-surface-2);
   --color-surface-active: var(--color-surface-3);
-
   --color-backdrop: 0 0 0;
 
-  /* ─── Borders & dividers ───────────────────────── */
-  // --color-border-faint: 16 26 58;
-  // --color-border-subtle: 20 34 74;
-  // --color-border: 32 50 96;
-  // --color-border-strong: 45 65 115;
+  /* Borders and dividers */
+  --color-border-faint: var(--surface-border-1);
+  --color-border-subtle: var(--surface-border-2);
+  --color-border: var(--surface-border-3);
+  --color-border-strong: var(--surface-border-4);
+  --color-border-darker: var(--surface-border-0);
 
-  --color-border-faint: 20 30 58; /* barely visible, separators */
-  --color-border-subtle: 26 38 68; /* cards / inputs */
-  --color-border: 30 42 74; /* DEFAULT (#1e2a4a) */
-  --color-border-strong: 38 52 92; /* focus / emphasis */
-  --color-border-darker: 14 16 34;
-
-  /* ─── Base text ───────────────────────── */
+  /* Text */
   --color-text: var(--neutral-100);
   --color-text-soft: var(--neutral-300);
   --color-text-muted: var(--neutral-300);
@@ -44,14 +45,13 @@
   --color-text-inverse: var(--neutral-50);
   --color-text-strong: var(--neutral-0);
 
-  /* ─── Primary text roles ───────────────────────── */
+  /* Brand text */
   --color-text-primary: var(--primary-400);
   --color-text-primary-strong: var(--primary-500);
   --color-text-primary-subtle: var(--primary-300);
   --color-text-primary-light: var(--primary-200);
 
-  /* ─── Primary ───────────────────────── */
-  --color-on-primary: var(--neutral-50);
+  /* Brand actions */
   --color-primary: var(--primary-500);
   --color-primary-light: var(--primary-400);
   --color-primary-lighter: var(--primary-300);
@@ -63,7 +63,7 @@
   --color-primary-muted: var(--primary-950);
   --color-primary-ink: var(--primary-1000);
 
-  /* ─── Secondary ───────────────────────── */
+  /* Supporting accents */
   --color-secondary: var(--secondary-500);
   --color-secondary-lighter: var(--secondary-300);
   --color-secondary-light: var(--secondary-400);
@@ -71,7 +71,6 @@
   --color-secondary-darker: var(--secondary-700);
   // --color-on-secondary: var(--neutral-50);
 
-  /* ─── Accent ───────────────────────── */
   --color-accent: var(--accent-500);
   --color-accent-light: var(--accent-400);
   --color-accent-lighter: var(--accent-300);
@@ -79,7 +78,7 @@
   --color-accent-darker: var(--accent-700);
   // --color-on-accent: var(--neutral-900);
 
-  /* ─── Success ───────────────────────── */
+  /* Feedback */
   --color-success: var(--success-500);
   --color-success-light: var(--success-400);
   --color-success-lighter: var(--success-300);
@@ -87,7 +86,6 @@
   --color-success-darker: var(--success-700);
   // --color-on-success: var(--neutral-50);
 
-  /* ─── Warning ───────────────────────── */
   --color-warning: var(--warning-500);
   --color-warning-light: var(--warning-400);
   --color-warning-lighter: var(--warning-300);
@@ -95,7 +93,6 @@
   --color-warning-darker: var(--warning-700);
   // --color-on-warning: var(--neutral-900);
 
-  /* ─── Danger ───────────────────────── */
   --color-danger: var(--danger-500);
   --color-danger-light: var(--danger-400);
   --color-danger-lighter: var(--danger-300);
@@ -103,7 +100,6 @@
   --color-danger-darker: var(--danger-700);
   // --color-on-danger: var(--neutral-50);
 
-  /* ─── Info ───────────────────────── */
   --color-info: var(--info-500);
   --color-info-light: var(--info-400);
   --color-info-lighter: var(--info-300);
@@ -111,7 +107,16 @@
   --color-info-darker: var(--info-700);
   // --color-on-info: var(--neutral-900);
 
-  /* ─── Elevation ───────────────────────── */
+  /* Text on filled semantic colors */
+  --color-on-primary: var(--neutral-50);
+  --color-on-secondary: var(--neutral-50);
+  --color-on-accent: var(--neutral-900);
+  --color-on-success: var(--neutral-50);
+  --color-on-warning: var(--neutral-900);
+  --color-on-danger: var(--neutral-50);
+  --color-on-info: var(--neutral-900);
+
+  /* Elevation */
   // --shadow-surface: 0 1px 2px rgb(0 0 0 / 0.28);
   // --shadow-elevated: 0 8px 24px rgb(0 0 0 / 0.38);
   // --shadow-overlay: 0 18px 48px rgb(0 0 0 / 0.48);

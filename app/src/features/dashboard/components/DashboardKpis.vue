@@ -2,6 +2,7 @@
 import type { PortfolioKPIs } from '@/shared/types/campaign'
 import { formatCompactCurrency, formatCompactNumber, formatPercentage } from '@/shared/utils/formatters'
 import KpiCard from './KpiCard.vue'
+import KpiBenchmarkDelta from './KpiBenchmarkDelta.vue'
 import RoiIndicator from './RoiIndicator.vue'
 
 defineProps<{
@@ -51,7 +52,11 @@ function formatShare(value: number, total: number): string {
       :value="formatPercentage(kpis.aggregatedCTR)"
     >
       <template v-if="portfolioKpis" #secondary>
-        <span>vs avg {{ formatPercentage(portfolioKpis.aggregatedCTR) }}</span>
+        <KpiBenchmarkDelta
+          :current="kpis.aggregatedCTR"
+          :benchmark="portfolioKpis.aggregatedCTR"
+          unit="pp"
+        />
       </template>
     </KpiCard>
 
@@ -60,7 +65,13 @@ function formatShare(value: number, total: number): string {
       :value="kpis.aggregatedCPA !== null ? formatCompactCurrency(kpis.aggregatedCPA) : null"
     >
       <template v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null" #secondary>
-        <span>vs avg {{ formatCompactCurrency(portfolioKpis.aggregatedCPA) }}</span>
+        <KpiBenchmarkDelta
+          :current="kpis.aggregatedCPA"
+          :benchmark="portfolioKpis.aggregatedCPA"
+          unit="pct"
+          :lower-is-better="true"
+          :show-absolute-currency="true"
+        />
       </template>
     </KpiCard>
   </section>

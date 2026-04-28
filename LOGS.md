@@ -9177,20 +9177,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No wrapper or layout changes: `.ai-btn-wrapper` keeps its `relative shrink-0` so the connected dot position is unaffected when the button is hidden
 
 
-## [#457] KpiCards: redesign secondary info format
-**Type:** update
+## [#457] KpiCards: redesign secondary info with benchmark delta indicators
+**Type:** feature
 
-**Summary:** Updated KPI card secondary lines to show contextual comparisons — "X% of total" for Budget/Revenue/Conversions, "vs avg" for CTR/CPA, with ROI and CVR always visible on Revenue and Conversions.
+**Summary:** Redesigned KPI card secondary lines to show contextual comparisons — "X% of total" for Budget/Revenue/Conversions, ROI/CVR always visible, and directional delta indicators (↑/↓ colored green/red) on CTR and CPA via a new KpiBenchmarkDelta component; CTR uses pp delta, CPA uses % delta with the benchmark value shown in parens at the end.
 
-**Brainstorming:** The previous design used a header-row portfolioValue and a bottom-right-aligned secondary slot with separate label spans. The new format is a clean stacked layout: label → large value → small secondary line. The "% of total" and "vs avg" comparisons only appear when a filter is active (portfolioKpis provided), since comparing a full portfolio to itself (100%) is meaningless. ROI and CVR are always shown on Revenue and Conversions because they are primary performance indicators regardless of filtering.
+**Brainstorming:** The previous design used a header-row portfolioValue and a bottom-right-aligned secondary slot. The new format is a clean stacked layout: label → large value → small secondary line. "% of total" comparisons only appear when a filter is active (portfolioKpis provided), since comparing a full portfolio to itself is meaningless. ROI and CVR are always shown because they are primary performance indicators. For CTR the percentage-point delta is the natural form — subtracting two decimal ratios × 100 gives "0.44 pp". For CPA the relative % delta is clearer than a raw euro difference; the euro amount is shown as a supplementary note before the reference anchor. The benchmark value itself is surfaced in parens at the end so the direction, size, and baseline are all readable on one line. "avg" and "portfolio avg" were replaced everywhere with "benchmark" to accurately reflect that the reference values are aggregated portfolio figures. Color is inverted for CPA (lowerIsBetter) since higher CPA is worse. Arrow and sign are both shown — arrow for visual scanning, sign for precise direction.
 
-**Prompt:** Update KPI cards with the following format: Budget shows main value + "X% of total" when filtered; Revenue shows main value + "X% of total" (filtered) + "ROI: XXX%"; Conversions shows main value + "X% of total" (filtered) + "CVR: X.X%"; CPA shows main value + "vs avg €XX.X" when filtered; CTR shows main value + "vs avg X.X%" when filtered.
+**Prompt:** Update KPI cards with a new secondary format: Budget/Revenue/Conversions show "X% of total" when filtered; Revenue adds "ROI: XXX%"; Conversions adds "CVR: X.X%"; CTR shows "↑ +0.44 pp vs portfolio (3.90%)" in green/red; CPA shows "↑ +11% (€+2.03) vs portfolio (€18.09)" with inverted color. Replace all "avg" labels with "benchmark". Rates use pp delta, costs use % delta.
 
-**What changed:**
-- `app/src/features/dashboard/components/KpiCard.vue` — removed `portfolioValue` prop and `.kpi-header` wrapper; simplified to `kpi-label → kpi-value → kpi-secondary` stack; removed all `:deep()` secondary slot overrides; secondary now flex baseline row with gap
-- `app/src/features/dashboard/components/DashboardKpis.vue` — removed `portfolioValue` bindings; added local `formatShare(value, total)` helper (1 decimal percent); rebuilt all five secondary slots with new contextual info
+**What was built:**
+- `app/src/features/dashboard/components/KpiCard.vue` — removed `portfolioValue` prop and `.kpi-header` wrapper; simplified to `kpi-label → kpi-value → kpi-secondary` stack; secondary now flex baseline row with gap
+- `app/src/features/dashboard/components/KpiBenchmarkDelta.vue` — new component; props: current/benchmark (number|null), unit ('pp'|'pct'), lowerIsBetter?, showAbsoluteCurrency?; computes rawDelta, colorClass, arrow, formattedDelta, formattedAbsolute, formattedBenchmark; sign injected after € symbol for absolute delta; scoped delta-positive/delta-negative/delta-neutral/delta-muted styles
+- `app/src/features/dashboard/components/DashboardKpis.vue` — removed portfolioValue bindings; added local `formatShare` helper; rebuilt all five secondary slots; CTR and CPA replaced with KpiBenchmarkDelta
 
 **Key decisions & why:**
-- `formatShare` local to DashboardKpis rather than shared formatter: the one-decimal "X% of total" is specific to this context and not reused elsewhere
-- `items-baseline` on `.kpi-secondary`: aligns the plain text span and the RoiIndicator span correctly when they have different font-weight
-- ROI/CVR always rendered (no `v-if="portfolioKpis"`): these are primary performance indicators and should always be visible
+- `formatShare` kept local to DashboardKpis: the one-decimal "X% of total" is specific to this context and not reused elsewhere
+- `items-baseline` on `.kpi-secondary`: aligns plain text spans and RoiIndicator correctly across different font weights
+- ROI/CVR always rendered (no `v-if="portfolioKpis"`): primary indicators that should always be visible
+- `unit: 'pp'` multiplies the decimal-ratio difference by 100 (CTR stored as 0.0434, not 4.34); space between number and unit: `+0.44 pp`
+- `lowerIsBetter: true` on CPA inverts color: positive delta = red (bad), negative = green (good)
+- `showAbsoluteCurrency` only on CPA: euro amount shown before "vs portfolio", sign injected after `€` symbol via string-slice
+- `formattedBenchmark` derived from `unit` prop: pp→formatPercentage (decimal ratio), pct→formatCompactCurrency (euros); displayed in parens at end of line
+- Single `delta-muted` class for both the absolute amount and "vs portfolio" label — same muted style, no reason to split
