@@ -9262,3 +9262,113 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Class-based modifier over a prop: matches how Badge handles variants — caller applies `dimmed` as a class, no component API change needed
 - `font-normal` in dimmed: reinforces secondary status visually alongside color reduction; semibold at reduced opacity would still draw too much attention
 - Color choices mirror Badge.dimmed: success→/75, warning-dark→/75, danger-light→/75 — keeps the palette consistent across components
+
+
+## [#461] RoiBudgetScatter — ROI vs Budget quadrant scatter chart
+**Type:** feature
+
+**Summary:** Added `RoiBudgetScatter.vue`, a bubble chart plotting campaigns by budget (X) vs ROI (Y) across four actionable quadrants, and wired it into `DashboardView` above the campaign table.
+
+**Brainstorming:** ROI vs CPA identifies efficiency vs cost-per-conversion; ROI vs Budget addresses a complementary question — where is spend concentrated relative to returns? The four quadrants (Scale Up / Champions / Underperforming / Overspend) directly inform budget reallocation decisions. Modelled on `RoiCpaScatter` for consistency: same Bubble chart, log-scale Y for ROI, ghost layer on filter, top-2 labels per quadrant by revenue, pink median reference lines.
+
+**Prompt:** Create a ROI vs Budget scatter plot. X axis: budget (€, linear). Y axis: ROI (log scale, same transform as RoiCpaScatter). Quadrants split at median budget × median ROI: Scale Up (green), Champions (amber), Underperforming (indigo), Overspend (red). Ghost layer when filtered. Labels capped at 2 per quadrant. Ensure logRoi clamps negative ROI safely.
+
+**What was built:**
+- `RoiBudgetScatter.vue` — full bubble chart component; `logRoi` clamps to `Math.max(roi, -0.999)` before `Math.log1p` so -100% ROI never produces -Infinity; quadrant plugin id `roiBudgetQuadrantPlugin` (avoids collision with existing plugin); medians computed from `allCampaigns` so reference lines stay stable under filter; `validCampaigns` only requires `roi !== null` (budget is always present); ghost layer skips `cpa !== null` guard (not needed here)
+- `DashboardView.vue` — imports `RoiBudgetScatter`, renders it between `DashboardCharts` and the campaign table
+
+**Key decisions & why:**
+- Linear X axis for budget: budget values are always positive and intuitively read on a linear scale; log budget would obscure the "spend concentration" story the chart is meant to tell
+- Medians from `allCampaigns`: same as `RoiCpaScatter` — keeps reference lines as portfolio benchmarks even when filter is active, so the quadrant meaning doesn't shift
+- Plugin id namespaced `roiBudgetQuadrantPlugin`: Chart.js plugins are global; a unique id prevents the two scatter charts from conflicting if both are mounted simultaneously
+
+
+## [#462] RoiBudgetScatter: filtered medians, selected campaigns only
+**Type:** update
+
+**Summary:** Switched medians and rendering to the filtered set only — quadrant splits reflect the current selection, no ghost layer.
+
+**What changed:**
+- `RoiBudgetScatter.vue` — removed `allCampaigns` prop; `medians` now computed from `validCampaigns` (filtered); ghost layer and `isFiltered`/`subtitle` removed entirely; `bubbleData` simplified to a direct `QUADRANTS.map` with no conditional ghost dataset; `BubblePoint` type drops `isGhost`; label plugin drops ghost guard
+- `DashboardView.vue` — removed `:all-campaigns` binding
+
+**Key decisions & why:**
+- Medians from filtered set: quadrants answer "relative to this selection" not "relative to full portfolio" — consistent with the user's intent
+- No ghost layer: rendering only selected campaigns is cleaner and avoids confusion when medians also shift
+
+
+## [#463] RoiBudgetScatter: filter label and low-campaign guard
+**Type:** update
+
+**Summary:** Added a "Based on selected channels" subtitle when filters are active, and a minimum-campaign guard (< 5) that replaces the chart with a clear message.
+
+**Brainstorming:** Two independent concerns handled together since both touch the same component. The filter label needed only an `isFiltered` boolean prop from the parent — no store access inside the chart component. The low-campaign guard needed a `MIN_CAMPAIGNS` constant and a `hasEnoughCampaigns` computed; the threshold of 5 was the user's suggested value (unstable medians below that). The empty state is rendered in place of the chart div using `v-if`/`v-else` so the card shell and title remain visible.
+
+**Prompt:** Add a subtle "Based on selected channels" label to RoiBudgetScatter when filter is active, and guard against < 5 campaigns (medians become unstable): hide the chart and show "Not enough campaigns to show meaningful insights. Adjust your filters to continue."
+
+**What changed:**
+- `RoiBudgetScatter.vue` — added `isFiltered?: boolean` prop; `MIN_CAMPAIGNS = 5` constant; `hasEnoughCampaigns` computed; template split into `.scatter-header` (title + conditional subtitle) and `v-if hasEnoughCampaigns` chart vs `v-else` empty state; new scoped styles: `.scatter-header`, `.scatter-subtitle`, `.scatter-empty`, `.scatter-empty-message`, `.scatter-empty-hint`
+- `DashboardView.vue` — passes `:is-filtered="store.selectedChannelsIds.length > 0"` to `RoiBudgetScatter`
+
+**Key decisions & why:**
+- `isFiltered` as a prop rather than store access: keeps the chart component decoupled from the store; the parent already has `store.selectedChannelsIds` in scope
+- `hasEnoughCampaigns` gates both the chart and the subtitle: subtitle is only meaningful when the chart is shown — no point displaying "Based on selected channels" next to a "not enough data" message
+- Empty state inside the card shell (not replacing it): card dimensions stay stable, title remains readable — user can still see what the chart would show
+
+
+## [#464] RoiBudgetScatter: axis label polish and area visibility
+**Type:** update
+
+**Summary:** Improved quadrant area visibility, median reference lines color, and tick label presentation on both axes.
+
+**Brainstorming:** Five visual complaints addressed together: (1) quadrant bg opacity too low to read — doubled from 0.06 to 0.12; (2) dashed reference lines were grey/neutral, not visually linked to the pink median labels — changed stroke to rgba(236,72,153,0.5); (3) X-axis median tick had no word "median" — tick callback now returns a two-line array [formatted value, "median"]; (4) Y-axis same treatment; (5) Y-axis tick labels too close to axis — added ticks.padding: 10 on both axes for breathing room.
+
+**Prompt:** X-axis median tick labels should be drawn further (add padding) and show the word "median". Y-axis same. Dashed reference lines should match the pink median label color. Quadrant background areas should be more visible (lighter/more opaque). Push Y-axis tick labels a bit to the left.
+
+**What changed:**
+- `RoiBudgetScatter.vue` — QUADRANTS bg opacity 0.06 → 0.12; beforeDraw strokeStyle rgba(148,163,184,0.35) → rgba(236,72,153,0.5); X and Y ticks.callback now return [formattedValue, 'median'] array for median tick (multi-line, horizontal); ticks.padding: 10 added to both X and Y axes
+
+**Key decisions & why:**
+- Multi-line tick array for "median" label: Chart.js renders each string in the array as a separate line — keeps the value readable on the first line and "median" as a subordinate label on the second; no custom canvas drawing needed
+- Same padding on both axes: symmetry; the median label is now two lines tall so X needs extra height, and Y needs extra width to avoid overlap with the axis line
+- rgba stroke for reference lines (not solid): 50% opacity keeps the line readable without overpowering the data points in the foreground
+
+
+## [#465] RoiBudgetScatter: fix median label overlap on both axes
+**Type:** fix
+
+**Summary:** Increased tick padding to 18 on both axes and moved Y-axis "median" label to a vertical canvas-drawn annotation so it no longer overlaps the reference lines.
+
+**What changed:**
+- `RoiBudgetScatter.vue` — X and Y `ticks.padding` raised from 10 → 18; Y-axis tick callback simplified back to single-value `formatPercentage(...)` (no array); plugin gains `afterDraw` hook that measures the widest Y-axis tick label, centres the translated origin over that column, rotates -90°, and draws "median" in pink — matching the axis title orientation
+
+**Key decisions & why:**
+- Canvas `afterDraw` for vertical "median" on Y: Chart.js tick callbacks only produce horizontal text; rotation requires direct canvas API usage
+- `maxLabelWidth` computed from actual ticks at draw time: avoids hardcoding a pixel offset that would break if the ROI range or number formatting changes
+- 18px padding chosen to match the manual offset constant so both calculations stay in sync
+
+
+## [#466] RoiBudgetScatter: replace axis median labels with bottom legend
+**Type:** fix
+
+**Summary:** Removed "median" text from both axis tick callbacks and the canvas afterDraw hook; added a small bottom legend (dashed pink line + "Median" label) below the chart instead.
+
+**What changed:**
+- `RoiBudgetScatter.vue` — removed `afterDraw` plugin hook; removed `padding: 18` overrides from both axes ticks; X-axis callback simplified to `formatCurrency(Number(value), 0)`; chart `div` wrapped in `<template v-if>` to allow sibling legend `div`; legend renders a CSS dashed pink line + "Median" text; new `.scatter-legend`, `.scatter-legend-dash`, `.scatter-legend-label` scoped styles
+
+**Key decisions & why:**
+- Legend over axis labels: eliminates all overlap problems entirely — no text competes with tick labels or reference lines; context is still clear from the legend at the bottom
+- `<template v-if>` wrapper: avoids extra DOM element while allowing two sibling nodes (chart + legend) under the same conditional
+
+
+## [#467] RoiBudgetScatter: remove median axis ticks, show values in legend
+**Type:** update
+
+**Summary:** Stripped the injected median tick mark and its pink colour from both axes; legend now shows "ROI median: X%" and "Budget median: €X" separated by a muted dot.
+
+**What changed:**
+- `RoiBudgetScatter.vue` — X-axis: removed `afterBuildTicks` and pink `color` callback; Y-axis: `afterBuildTicks` now uses only `ROI_TICKS` (no median tick injection), pink `color` callback removed; legend updated to two labelled items (`ROI median: …` · `Budget median: …`) with a `.scatter-legend-sep` muted dot between them
+
+**Key decisions & why:**
+- Removing median ticks entirely: the values are now surfaced in the legend, so there is no need for a special tick on either axis — regular ticks stay clean and uncoloured
+- Muted separator dot between the two legend items: visual rhythm without adding a border or extra container
