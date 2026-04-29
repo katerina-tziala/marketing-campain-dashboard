@@ -40,7 +40,7 @@ const options = computed<BarChartOptions>(() => ({
 </script>
 
 <template>
-  <div :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? yLabel ?? 'Grouped bar chart'">
+  <div class="w-full" :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? yLabel ?? 'Grouped bar chart'">
     <Bar :data="chartData" :options="options" />
   </div>
 </template>

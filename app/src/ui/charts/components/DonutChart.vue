@@ -79,7 +79,7 @@ const options: DonutChartOptions = {
 </script>
 
 <template>
-  <div :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? 'Donut chart'">
+  <div class="w-full" :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? 'Donut chart'">
     <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
   </div>
 </template>

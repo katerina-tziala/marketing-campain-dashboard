@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type {
   CampaignPerformance,
   PortfolioKPIs,
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
-import { useChartTheme } from "@/ui";
+import { RadioToggle, useChartTheme } from "@/ui";
 import {
   BudgetShareDonutChart,
   ConversionFunnelChart,
+  EfficiencyGapBars,
   RoiBarChart,
+  RevenueVsBudgetBars,
   useCampaignBudgetShareDonutItems,
   useCampaignRoiChartItems,
   useChannelRoiChartItems,
@@ -17,16 +19,30 @@ import {
 import {
   sortCampaignsByBudgetDesc,
   sortCampaignsByRoiDesc,
+  sortChannelsByEfficiencyGapImpactDesc,
   sortChannelsByRoiDesc,
 } from "../utils/dashboard-sorting";
-import RevVsBudgetChart from "./RevVsBudgetChart.vue";
 import Card from "@/ui/card/Card.vue";
+
+type RevenueBudgetView = "budgetVsRevenue" | "efficiencyGap";
+
+const REVENUE_BUDGET_TOGGLE_OPTIONS = [
+  { value: "budgetVsRevenue" as RevenueBudgetView, label: "Budget vs Revenue" },
+  {
+    value: "efficiencyGap" as RevenueBudgetView,
+    label: "Efficiency (Over / Under)",
+  },
+];
+
+const REVENUE_BUDGET_CHART_HEIGHT = 390;
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
   channels: Channel[];
   kpis: PortfolioKPIs;
 }>();
+
+const revenueBudgetView = ref<RevenueBudgetView>("budgetVsRevenue");
 
 const chartTheme = useChartTheme();
 const chartColors = chartTheme.colors;
@@ -45,6 +61,9 @@ const campaignsByBudget = computed(() =>
   sortCampaignsByBudgetDesc(props.campaigns),
 );
 const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
+const channelsByGapImpact = computed(() =>
+  sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
+);
 
 const roiCampaignItems = useCampaignRoiChartItems(
   campaignsByRoi,
@@ -75,7 +94,25 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 
     <Card>
       <h3>Revenue vs Budget by Channel</h3>
-      <RevVsBudgetChart :channels="channels" :kpis="kpis" class="w-full" />
+
+      <RadioToggle
+        v-model="revenueBudgetView"
+        :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
+        name="revenue-budget-view"
+      />
+      <RevenueVsBudgetBars
+        v-if="revenueBudgetView === 'budgetVsRevenue'"
+        :channels="channelsByGapImpact"
+        :height="REVENUE_BUDGET_CHART_HEIGHT"
+        aria-label="Revenue vs budget by channel bar chart"
+      />
+      <EfficiencyGapBars
+        v-else
+        :channels="channelsByGapImpact"
+        :kpis="kpis"
+        :height="REVENUE_BUDGET_CHART_HEIGHT"
+        aria-label="Efficiency gap by channel bar chart"
+      />
     </Card>
 
     <Card>
@@ -114,5 +151,9 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   // @container (min-width: 60rem) {
   //   @apply grid-cols-2;
   // }
+}
+
+.chart-card-header {
+  @apply flex items-start justify-between gap-4;
 }
 </style>

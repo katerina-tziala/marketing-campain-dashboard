@@ -10352,3 +10352,31 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep dashboard components focused on composition — KPI sections, tables, headers, and chart grids remain in `dashboard/components`.
 - Keep dashboard charts focused on chart rendering — chart components can depend on `dashboard/ui` without creating a sideways dependency on dashboard containers.
 - Use a barrel export — consumers import from `@/features/dashboard/ui`, which gives the new layer a clear public surface.
+
+
+## [#508] Absorb Revenue/Budget Toggle Into Dashboard Charts
+**Type:** refactor
+
+**Summary:** Removed the extra `RevVsBudgetChart` container by moving its toggle state and chart switching into `DashboardCharts`, while keeping the actual revenue/budget and efficiency-gap renderers in the dashboard chart module.
+
+**Brainstorming:** The revenue-vs-budget card had composition split across two containers: `DashboardCharts` owned the card and title, while `RevVsBudgetChart` owned the toggle and renderer switch. That made the toggle feel disconnected from the card header and made the architecture harder to follow. Since `DashboardCharts` is already the chart composition layer, it should own card-level state such as which chart view is active. The chart-specific components should stay focused on rendering only. After removing the wrapper, the shared chart canvases also needed full-width wrapper roots because the card layout uses `items-start`, so direct chart children no longer stretched automatically.
+
+**Prompt:** Move the logic from `RevVsBudgetChart` into `DashboardCharts`, remove the extra component, and fix the chart canvas width after the wrapper removal.
+
+**What was built:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added revenue/budget view state with `revenueBudgetView`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — moved the revenue/budget toggle options and chart height constant into the chart composition component.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `channelsByGapImpact` sorting using `sortChannelsByEfficiencyGapImpactDesc`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — renders `RadioToggle`, `RevenueVsBudgetBars`, and `EfficiencyGapBars` directly inside the Revenue vs Budget card.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — removed the extra container component after its responsibilities were absorbed by `DashboardCharts`.
+- `app/src/ui/charts/components/BarChart.vue` — added `w-full` to the chart wrapper root so bar canvases stretch inside flex-start cards.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — added `w-full` to the chart wrapper root so grouped bar canvases stretch inside flex-start cards.
+- `app/src/ui/charts/components/DonutChart.vue` — added `w-full` to the chart wrapper root for consistent shared chart wrapper behavior.
+
+**Key decisions & why:**
+- Keep card-level view state in `DashboardCharts` — the active revenue/budget mode controls card composition, not the lower-level chart renderer.
+- Remove the middle container — deleting `RevVsBudgetChart` reduces one layer of indirection and makes the chart grid easier to reason about.
+- Keep renderers in `dashboard/charts/components` — `RevenueVsBudgetBars` and `EfficiencyGapBars` still own only chart data, tooltip callbacks, and renderer-specific props.
+- Preserve shared sorting behavior — the gap-impact channel order moved up with the card state so both revenue/budget and efficiency-gap views keep the same ordering.
+- Fix width at the shared wrapper layer — all reusable chart wrappers now stretch by default, which prevents the same card-layout issue from recurring in other charts.
+- Leave header layout iteration separate — the toggle was kept as a direct card child for now, while the full-width canvas issue was fixed independently.
