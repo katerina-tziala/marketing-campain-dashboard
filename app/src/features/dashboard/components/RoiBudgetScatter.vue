@@ -5,7 +5,12 @@ import { Bubble } from "vue-chartjs";
 import type { CampaignPerformance } from "@/shared/types/campaign";
 import { useChartTooltip } from "@/ui/charts/composables/useChartTooltip";
 import { useChartTheme } from "@/ui/charts/useChartTheme";
-import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
+import {
+  formatCompactNumber,
+  formatCurrency,
+  formatDecimal,
+  formatPercentage,
+} from "@/shared/utils/formatters";
 
 type BubblePoint = {
   x: number;
@@ -62,7 +67,7 @@ const props = defineProps<{
   isFiltered?: boolean;
 }>();
 
-const { baseScales, basePlugins } = useChartTheme<"bubble">();
+const { baseOptions, basePlugins, createScale } = useChartTheme<"bubble">();
 const scatterTooltip = useChartTooltip<"bubble">(
   {
     title: (items) => {
@@ -258,49 +263,34 @@ const quadrantPlugin: Plugin<"bubble"> = {
 };
 
 const chartOptions = computed<ChartOptions<"bubble">>(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
+  ...baseOptions,
   layout: { padding: { top: 24 } },
   plugins: {
     ...basePlugins,
     tooltip: scatterTooltip,
   },
   scales: {
-    x: {
-      ...baseScales.x,
+    x: createScale({
       min: axisBounds.value.xMin,
       max: axisBounds.value.xMax,
-      title: {
-        display: true,
-        text: "Budget (€)",
-        color: baseScales.x.ticks.color,
-        font: { size: 11 },
-      },
+      title: "Budget (€)",
       ticks: {
-        ...baseScales.x.ticks,
-        callback: (value) => formatCurrency(Number(value), 0),
+        callback: (value: string | number) => formatCompactNumber(Number(value)),
       },
-    },
-    y: {
-      ...baseScales.y,
+    }),
+    y: createScale({
       min: axisBounds.value.yMin,
       max: axisBounds.value.yMax,
-      title: {
-        display: true,
-        text: "ROI (log scale)",
-        color: baseScales.y.ticks.color,
-        font: { size: 11 },
-      },
-      afterBuildTicks: (axis) => {
+      title: "ROI (%)",
+      afterBuildTicks: (axis: { ticks: { value: number }[]; min: unknown }) => {
         axis.ticks = ROI_TICKS
           .filter((v) => v > (axis.min as number) + 0.15)
           .map((v) => ({ value: v }));
       },
       ticks: {
-        ...baseScales.y.ticks,
-        callback: (value) => formatPercentage(Math.expm1(Number(value))),
+        callback: (value: string | number) => formatDecimal(Math.expm1(Number(value)) * 100, 0),
       },
-    },
+    }),
   },
 }));
 </script>

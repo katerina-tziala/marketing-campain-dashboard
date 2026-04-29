@@ -13,36 +13,16 @@ const props = withDefaults(
   { height: 320 },
 )
 
-const { baseScales, basePlugins } = useChartTheme<'bar'>()
+const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
 
 const options = computed<ChartOptions<'bar'>>(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
+  ...baseOptions,
   plugins: {
     ...basePlugins,
   },
   scales: {
-    x: {
-      ...baseScales.x,
-      ticks: {
-        ...baseScales.x.ticks,
-        maxRotation: 45,
-        minRotation: 45,
-      },
-    },
-    y: {
-      ...baseScales.y,
-      ...(props.yLabel
-        ? {
-            title: {
-              display: true,
-              text: props.yLabel,
-              color: baseScales.y.ticks.color,
-              font: { size: 11 },
-            },
-          }
-        : {}),
-    },
+    x: createScale({ adaptiveTickRotation: true }),
+    y: createScale({ title: props.yLabel }),
   },
 }))
 </script>

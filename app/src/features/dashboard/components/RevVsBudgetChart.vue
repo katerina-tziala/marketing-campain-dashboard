@@ -25,9 +25,7 @@ const props = defineProps<{
 
 const view = ref<ChartView>('budgetVsRevenue')
 
-const { baseScales, basePlugins } = useChartTheme<'bar'>()
-
-const baseXTicks = { ...baseScales.x.ticks, maxRotation: 45, minRotation: 45 }
+const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
 const efficiencyGapTooltip = useChartTooltip<'bar'>({
   label: (ctx) => {
     const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
@@ -64,15 +62,11 @@ const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
 }))
 
 const revVsBudgetOptions = computed<ChartOptions<'bar'>>(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
+  ...baseOptions,
   plugins: { ...basePlugins },
   scales: {
-    x: { ...baseScales.x, ticks: baseXTicks },
-    y: {
-      ...baseScales.y,
-      title: { display: true, text: 'Amount (€)', color: baseScales.y.ticks.color, font: { size: 11 } },
-    },
+    x: createScale({ adaptiveTickRotation: true }),
+    y: createScale({ title: 'Amount (€)' }),
   },
 }))
 
@@ -108,23 +102,20 @@ const efficiencyGapData = computed<ChartData<'bar'>>(() => {
 })
 
 const gapOptions = computed<ChartOptions<'bar'>>(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
+  ...baseOptions,
   plugins: {
     ...basePlugins,
     legend: { display: false },
     tooltip: efficiencyGapTooltip,
   },
   scales: {
-    x: { ...baseScales.x, ticks: baseXTicks },
-    y: {
-      ...baseScales.y,
-      title: { display: true, text: 'Gap (%)', color: baseScales.y.ticks.color, font: { size: 11 } },
+    x: createScale({ adaptiveTickRotation: true }),
+    y: createScale({
+      title: 'Gap (%)',
       ticks: {
-        ...baseScales.y.ticks,
-        callback: (value) => `${formatDecimal(Number(value), 1)}%`,
+        callback: (value: string | number) => formatDecimal(Number(value), 1),
       },
-    },
+    }),
   },
 }))
 </script>

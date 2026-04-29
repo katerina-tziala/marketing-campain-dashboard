@@ -1,56 +1,32 @@
 import type { ChartType } from 'chart.js'
+import { CHART_THEME } from './config/chart-theme.config'
+import { useChartScales } from './composables/useChartScales'
 import { useChartTooltip } from './composables/useChartTooltip'
 
-export const CHART_COLORS = [
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-  '#f97316', // orange
-  '#10b981', // emerald
-  '#06b6d4', // cyan
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#14b8a6', // teal
-  '#a855f7', // purple
-  '#84cc16', // lime
-  '#3b82f6', // blue
-]
-
-export const TEXT_COLOR = '#cbd5e1'
-const GRID_COLOR = 'rgba(255,255,255,0.07)'
+export const CHART_COLORS = CHART_THEME.colors
+export const TEXT_COLOR = CHART_THEME.textColor
 
 export function useChartTheme<TType extends ChartType = ChartType>() {
+  const { baseScales, createScale } = useChartScales()
   const tooltip = useChartTooltip<TType>()
-
-  const baseScales = {
-    x: {
-      ticks: { color: TEXT_COLOR, font: { size: 11 } },
-      grid: { color: GRID_COLOR },
-      border: { color: GRID_COLOR },
-    },
-    y: {
-      ticks: { color: TEXT_COLOR, font: { size: 11 } },
-      grid: { color: GRID_COLOR },
-      border: { color: GRID_COLOR },
-    },
-  }
+  const baseOptions = CHART_THEME.baseOptions
 
   const basePlugins = {
     legend: {
       onClick: () => {},
       onHover: () => {},
       labels: {
-        color: TEXT_COLOR,
-        padding: 16,
-        font: { size: 12 },
+        color: CHART_THEME.legend.labelColor,
+        padding: CHART_THEME.legend.labelPadding,
+        font: { size: CHART_THEME.legend.labelFontSize },
         usePointStyle: false,
-        borderRadius: 4,
-        boxWidth: 12,
-        boxHeight: 12,
+        borderRadius: CHART_THEME.legend.borderRadius,
+        boxWidth: CHART_THEME.legend.boxWidth,
+        boxHeight: CHART_THEME.legend.boxHeight,
       },
     },
     tooltip,
   }
 
-  return { baseScales, basePlugins }
+  return { baseOptions, baseScales, basePlugins, createScale }
 }

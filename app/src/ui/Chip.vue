@@ -49,7 +49,7 @@ defineProps<{
       @apply bg-info/15 text-info-light;
     }
     .chip-count {
-      @apply bg-background/80;
+      @apply bg-background/65;
     }
   }
 

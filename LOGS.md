@@ -9913,3 +9913,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Scatter uses a circle marker: bubble/scatter points read more naturally with round tooltip indicators while still using the same panel, spacing, title, and body styling as the other charts
 - Scatter campaign name moved to title: the scatter tooltip now matches the shared tooltip hierarchy instead of putting the campaign name in the body label list
 - `useChartTheme` is chart-type aware: passing the chart type keeps shared plugin options compatible with Chart.js' strict per-chart tooltip typings
+
+
+## [#492] Centralize chart scale options
+**Type:** refactor
+
+**Summary:** Moved shared Chart.js base options, palette, legend values, and scale styling into the chart theme config; added a reusable scale helper for axis titles, adaptive tick rotation, and chart-specific tick behavior.
+
+**Brainstorming:** After centralizing tooltip styling, scale styling was the remaining repeated Chart.js option surface. Bar, grouped bar, scatter, and dashboard-specific charts all rebuilt the same tick color, grid color, border color, axis title style, and responsive options. They also forced `45` degree x-axis labels even when Chart.js could keep labels horizontal. The cleaner split is for the chart library to own base option and axis presentation defaults, while individual charts only describe their data-specific axis behavior: titles, bounds, callbacks, and whether a category x-axis should allow adaptive rotation.
+
+**Prompt:** Extract chart scale color/config values into the chart theme config, create a reusable scale composable/helper, use adaptive tick rotation where category x-axis labels need it, centralize repeated `responsive` / `maintainAspectRatio` options, and keep axis units in titles while avoiding repeated units on ticks.
+
+**What was built:**
+- `app/src/ui/charts/config/chart-theme.config.ts` — expanded the chart theme config with `baseOptions`, chart palette colors, shared chart text color, scale colors/font sizes, `maxTickRotation`, and legend label sizing/color values
+- `app/src/ui/charts/composables/useChartScales.ts` — new chart scale composable; exposes `baseScales` and a pure `createChartScale()` helper returned as `createScale`
+- `app/src/ui/charts/useChartTheme.ts` — now composes `useChartScales()`, exposes `baseOptions` and `createScale`, and reads palette/text/legend values from `CHART_THEME`
+- `app/src/ui/charts/index.ts` — exports `useChartScales` from the chart barrel
+- `app/src/ui/charts/BarChart.vue` — uses `baseOptions` and `createScale`; derives horizontal vs vertical scale options once; enables adaptive x-axis tick rotation only for vertical/category bar charts
+- `app/src/ui/charts/GroupedBarChart.vue` — uses `baseOptions` and `createScale`; enables adaptive x-axis tick rotation for grouped category labels
+- `app/src/ui/charts/DonutChart.vue` — uses shared `baseOptions` instead of repeating responsive/aspect settings
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — uses `baseOptions` and `createScale`; keeps units in axis titles (`Amount (€)`, `Gap (%)`) while formatting gap ticks without repeating `%`
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — uses `baseOptions` and `createScale`; keeps units in axis titles (`Budget (€)`, `ROI (%)`) while formatting budget and ROI ticks without repeating `€` or `%`
+
+**Key decisions & why:**
+- Chart config owns shared values: palette colors, text color, scale styling, legend styling, tooltip colors, and base Chart.js options now live behind one chart theme boundary
+- `createChartScale` is pure: scale creation does not need Vue reactivity today, so the helper lives outside the composable and is easier to read and reuse
+- `useChartScales` remains the Vue-facing API: components can keep the ergonomic `createScale` name without coupling directly to the pure helper name
+- Adaptive rotation replaces forced rotation: category x-axes can stay horizontal when labels fit and rotate up to the configured maximum only when Chart.js needs the space
+- Numeric axes stay unrotated: scatter axes and horizontal bar x-axes show numeric values, so rotating those ticks would add visual noise without improving readability
+- Units stay in axis titles: labels like `ROI (%)` and `Budget (€)` provide measurement context once, while tick values remain compact and easier to scan
+- Charts still own behavior: min/max bounds, tick callbacks, custom tick building, and domain-specific labels remain in the chart components instead of leaking into the generic scale helper

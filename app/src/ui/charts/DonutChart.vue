@@ -11,11 +11,10 @@ withDefaults(
   { height: 320 },
 )
 
-const { basePlugins } = useChartTheme<'doughnut'>()
+const { baseOptions, basePlugins } = useChartTheme<'doughnut'>()
 
 const options: ChartOptions<'doughnut'> = {
-  responsive: true,
-  maintainAspectRatio: false,
+  ...baseOptions,
   cutout: '62%',
   plugins: {
     ...basePlugins,
