@@ -10007,3 +10007,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use the `tooltipCallbacks` prop from #494 — avoids hardcoding dashboard-specific tooltip behavior into the shared chart component.
 - Keep built-in Chart.js tooltips — per-line text coloring was rejected for now because it would require a custom external tooltip and mouse/caret tracking.
 - Format percentages with up to 2 decimals globally — keeps percentage output precise when needed but avoids noisy fixed decimals.
+
+
+## [#496] Add Budget Tooltip Customization to DonutChart
+**Type:** update
+
+**Summary:** Extended DonutChart with optional tooltip callback support and added budget-specific tooltip content for the Budget Allocation by Campaign chart.
+
+**Brainstorming:** Budget Allocation by Campaign uses DonutChart, so the tooltip callback support added to BarChart in #494 could not be reused directly. We considered hardcoding budget tooltip behavior inside DonutChart, but that would make the shared chart component assume all doughnut charts represent budget data. The cleaner approach was to mirror the BarChart pattern: keep DonutChart generic, add optional tooltip callbacks, and let DashboardCharts provide the budget-specific labels because it owns the campaign budget data and total portfolio budget.
+
+**Prompt:** For DonutChart and budgetCampaignData, add the same callback handling as BarChart. Show the tooltip as Budget and Budget Share.
+
+**What was built:**
+- `app/src/ui/charts/DonutChart.vue` — added `tooltipCallbacks?: Partial<TooltipCallbacks<'doughnut'>>` prop; imported `useChartTooltip` and `formatCompactNumber`; added default tooltip callbacks where the title shows the segment label and the body shows the compact segment value; passed either custom callbacks or defaults into `useChartTooltip<'doughnut'>()`; registered the tooltip in chart plugin options.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added `budgetCampaignTooltipCallbacks` for the Budget Allocation by Campaign donut chart; tooltip title uses the hovered campaign label; tooltip body now shows `Budget` and `Budget Share`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — wired `budgetCampaignTooltipCallbacks` into the `DonutChart` instance used by `budgetCampaignData`.
+
+**Key decisions & why:**
+- Keep DonutChart generic — budget-specific tooltip content belongs in DashboardCharts because only the dashboard knows the values represent campaign budgets.
+- Mirror the BarChart tooltip API — keeps chart wrapper behavior consistent across chart components.
+- Use existing `useChartTooltip()` — preserves shared tooltip styling and avoids duplicating Chart.js tooltip theme configuration.
+- Use `Budget` and `Budget Share` labels — matches the chart’s allocation language better than `Spend` and `Share of Budget`.

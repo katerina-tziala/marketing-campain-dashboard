@@ -52,13 +52,17 @@ function formatRoiTooltipLabel(
   return [
     `ROI: ${formatPercentage(item.roi)}`,
     `Revenue: ${formatCurrency(item.revenue)}`,
-    `Spend: ${formatCurrency(item.budget)}`,
-    `Spend Share: ${formatPercentage(getShare(item.budget, props.kpis.totalBudget))}`,
+    `Budget: ${formatCurrency(item.budget)}`,
+    `Budget Share: ${formatPercentage(getShare(item.budget, props.kpis.totalBudget))}`,
     `Revenue Share: ${formatPercentage(getShare(item.revenue, props.kpis.totalRevenue))}`,
   ];
 }
 
 function getTooltipDataIndex(ctx: TooltipItem<"bar">): number {
+  return ctx.dataIndex;
+}
+
+function getDoughnutTooltipDataIndex(ctx: TooltipItem<"doughnut">): number {
   return ctx.dataIndex;
 }
 
@@ -72,6 +76,21 @@ const roiChannelTooltipCallbacks: Partial<TooltipCallbacks<"bar">> = {
   title: (items) => items[0]?.label ?? "",
   label: (ctx) =>
     formatRoiTooltipLabel(channelsByRoi.value[getTooltipDataIndex(ctx)]),
+};
+
+const budgetCampaignTooltipCallbacks: Partial<TooltipCallbacks<"doughnut">> = {
+  title: (items) => items[0]?.label ?? "",
+  label: (ctx) => {
+    const campaign =
+      campaignsByBudget.value[getDoughnutTooltipDataIndex(ctx)];
+
+    if (!campaign) return [];
+
+    return [
+      `Budget: ${formatCurrency(campaign.budget)}`,
+      `Budget Share: ${formatPercentage(getShare(campaign.budget, props.kpis.totalBudget))}`,
+    ];
+  },
 };
 
 const roiChartData = computed<ChartData<"bar">>(() => ({
@@ -167,6 +186,7 @@ const funnelValues = computed(() => [
       <h3 class="card-title chart-card-title">Budget Allocation by Campaign</h3>
       <DonutChart
         :chart-data="budgetCampaignData"
+        :tooltip-callbacks="budgetCampaignTooltipCallbacks"
         :height="420"
         class="w-full"
       />
