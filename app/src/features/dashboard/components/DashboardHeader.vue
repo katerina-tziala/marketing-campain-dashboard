@@ -15,7 +15,7 @@ const emit = defineEmits<{ aiClick: [] }>();
 </script>
 
 <template>
-  <h2 class="grow pt-1 h-9">
+  <h2 class="grow pt-1 min-h-9">
     <div class="relative shrink-0 inline-action-float">
       <Button
         v-if="showAiButton"

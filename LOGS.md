@@ -9484,7 +9484,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `role="dialog"` moved from ChannelFiltersDropdown to DropdownPanel — it belongs to the container that represents the floating panel boundary, not the content inside
 
 
-## [#474] feat: Chip button component
+## [#474] Chip button component
 **Type:** feature
 
 **Summary:** Created a reusable `Chip.vue` button component with slot-projected content, replacing duplicated chip button patterns in ChannelFilters and ChannelFiltersDropdown.
@@ -9505,7 +9505,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `.chip-count` styles stay in each caller's scoped block — the span is defined in the parent template, so parent scoped styles apply to it directly without needing `:slotted()`
 
 
-## [#475] fix: Chip styles moved to scoped SCSS
+## [#475] Chip styles moved to scoped SCSS
 **Type:** fix
 
 **Summary:** Moved active/inactive/readonly styles from inline `:class` bindings into the scoped SCSS block; active state now driven by `[aria-pressed="true"]` attribute selector; readonly uses a single `.readonly` scoped class.
@@ -9522,7 +9522,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Single `.readonly` class — replaces two utility strings (`cursor-default pointer-events-none`) with one scoped modifier, keeping the template clean
 
 
-## [#476] feat: ChannelChip component
+## [#476] ChannelChip component
 **Type:** feature
 
 **Summary:** Extracted a `ChannelChip` component that wraps `Chip` with name + count badge, replacing duplicated chip content in both ChannelFilters and ChannelFiltersDropdown, and fixed the broken measurement strip.
@@ -9542,7 +9542,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `.chip-count` scoped style lives in ChannelChip only — it styles the span defined in ChannelChip's own template, so no :slotted() needed
 
 
-## [#477] refactor: remove ChannelChip, fold count into Chip
+## [#477] Remove ChannelChip, fold count into Chip
 **Type:** refactor
 
 **Summary:** Deleted the over-engineered `ChannelChip` wrapper by adding a `count` prop directly to `Chip`; both callers now use `<Chip>` with slot text and `:count`.
@@ -9562,7 +9562,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `count !== undefined` guard (not `count`) — allows passing count=0 and still rendering the badge
 
 
-## [#478] refactor: extract ChannelFilterChips shared renderer
+## [#478] Extract ChannelFilterChips shared renderer
 **Type:** refactor
 
 **Summary:** Extracted the repeated channel chip rendering into `ChannelFilterChips.vue`, then reused it for the visible filter strip, the hidden overflow measurement strip, and the dropdown chip list.
@@ -9585,7 +9585,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Exposed methods from `ChannelFilterChips`: keeps DOM querying inside the component that owns the chip DOM, while `ChannelFilters.vue` remains responsible for filter state, dropdown state, and overflow policy
 
 
-## [#479] feat: add FunnelIcon and use as channel filter trigger
+## [#479] Add FunnelIcon and use as channel filter trigger
 **Type:** update
 
 **Summary:** Created a filled `FunnelIcon` SVG component and replaced `SlidersIcon` with it in the `ChannelFilters` overflow trigger button; `SlidersIcon` is kept for the Optimizer tab.
@@ -9605,7 +9605,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep `SlidersIcon` untouched: it remains the icon for the AI Optimizer tab
 
 
-## [#480] refactor: consolidate channel filter dialog
+## [#480] refactor: Consolidate channel filter dialog
 **Type:** refactor
 
 **Summary:** Consolidated the overflow filter trigger, badge, dropdown anchor, dropdown panel, and channel chip list into a new `ChannelFiltersDialog` component; `ChannelFilters` now owns only chip measurement and visible strip state.
@@ -9633,7 +9633,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Scroll only the dropdown content: the header remains fixed in the panel while long channel lists scroll inside `dropdown-content`
 
 
-## [#481] refactor: make DashboardHeader input-only
+## [#481] Make DashboardHeader input-only
 **Type:** refactor
 
 **Summary:** Refactored `DashboardHeader` into a dumb presentational component that receives all display state through props and emits only the existing `aiClick` interaction; `DashboardView` now owns the campaign and AI store reads needed to populate the header.
@@ -9655,7 +9655,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove the dead `SheetHeader` import: the refactor itself was valid, but the project build surfaced an unrelated unused import; cleaning it kept verification green without changing behavior
 
 
-## [#482] refactor: make ChannelFilters input-only
+## [#482] Make ChannelFilters input-only
 **Type:** refactor
 
 **Summary:** Refactored `ChannelFilters` into a dumb component that receives the selected channel IDs as an input and emits filter intent through `toggle` and `clear`; `DashboardView` now owns the store-specific channel filter updates.
@@ -9676,7 +9676,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve existing filter behavior: selecting every channel still collapses back to an empty selected ID list, which represents the unfiltered all-channels state
 
 
-## [#483] refactor: extract inline action float utility
+## [#483] Extract inline action float utility
 **Type:** refactor
 
 **Summary:** Extracted the repeated `float-right ml-2 mb-1` action placement into a shared `inline-action-float` utility so badges, buttons, and status controls can consistently float before text and let the surrounding copy wrap around them.
@@ -9703,7 +9703,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Document render order: floated actions must appear before the text they wrap, so the utility includes a CSS comment and `DashboardHeader` includes a local template comment where the ordering matters most visibly
 
 
-## [#484] refactor: centralize app formatting locale
+## [#484] Centralize app formatting locale
 **Type:** refactor
 
 **Summary:** Centralized number, currency, percentage, compact value, and timestamp formatting around shared app locale constants so the dashboard is ready for future locale support without changing each formatter call site.
@@ -9726,3 +9726,49 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `Intl.NumberFormat` for percentages: this avoids hardcoded decimal separators from `.toFixed()` and lets the locale decide presentation
 - Add `formatDecimal`: chart labels and percentage-point deltas need locale-aware fixed-decimal numbers without implying currency or percent semantics
 - Refactor user-facing formatting only: display strings now share the central locale, while unrelated calculation logic remains unchanged
+
+
+## [#485] Simplify KPI meta rendering and delta logic
+**Type:** refactor
+
+**Summary:** Moved KPI meta row layout into `KpiCard` so callers project `MetaItem`s directly, and extracted KPI benchmark delta calculation/formatting into a pure dashboard utility.
+
+**Brainstorming:** KPI cards all used the same secondary metric pattern: a divider-style `MetaRow` containing one or more `MetaItem`s. Repeating that row in `DashboardKpis` made the parent responsible for card internals and created awkward nested rows once `KpiBenchmarkDelta` also rendered its own `MetaRow`. At the same time, `KpiBenchmarkDelta` was doing too much for a tiny display component: delta math, lower-is-better interpretation, currency/percentage formatting, arrow selection, tone selection, and rendering. The cleaner split is for `KpiCard` to own the row chrome, for `DashboardKpis` to project only meta items, and for benchmark delta logic to live in a pure TypeScript utility.
+
+**Prompt:** Make `MetaRow` part of `KpiCard` and project `MetaItem`s directly, then extract the `KpiBenchmarkDelta` logic into a kebab-case pure TypeScript file in the dashboard feature utils folder.
+
+**What was built:**
+- `app/src/features/dashboard/components/KpiCard.vue` — imports `MetaRow`; wraps the default slot in `<MetaRow class="kpi-meta divider primary-lighter">`; keeps KPI-specific label/value styling inside the card
+- `app/src/features/dashboard/components/DashboardKpis.vue` — removed repeated `MetaRow` wrappers; now passes `MetaItem`s directly into each `KpiCard`; keeps the KPI grid region semantics on the parent section
+- `app/src/features/dashboard/components/KpiBenchmarkDelta.vue` — slimmed down to a renderer; computes a benchmark delta view model and projects `MetaItem`s as a fragment instead of owning a `MetaRow`
+- `app/src/features/dashboard/utils/kpi-benchmark-delta.ts` — new pure utility; calculates raw deltas, lower-is-better tone, arrows, formatted delta labels, optional absolute currency deltas, and benchmark labels
+
+**Key decisions & why:**
+- `KpiCard` owns meta layout: all KPI cards use the same secondary metric row treatment, so the card should own that visual contract
+- Callers project `MetaItem`s only: `DashboardKpis` now describes content rather than repeating card layout details
+- `KpiBenchmarkDelta` renders a fragment: it contributes one or more `MetaItem`s to the surrounding card-owned `MetaRow`, avoiding nested meta rows
+- Pure utility returns a view model: the benchmark comparison is presentation-oriented, so returning formatted labels and tone keeps the Vue component simple while still making the logic testable
+- Kebab-case utility filename: `kpi-benchmark-delta.ts` matches the preferred file naming style and keeps dashboard-specific logic under `features/dashboard/utils`
+
+
+## [#486] Refine KPI benchmark delta display
+**Type:** refactor
+
+**Summary:** Simplified KPI benchmark delta handling by removing the absolute currency label, reducing the utility to raw delta calculation only, and moving display decisions back into `KpiBenchmarkDelta` with an icon-based arrow.
+
+**Brainstorming:** After extracting the benchmark delta helper, the utility was still returning a full view model with labels, tone, and arrow strings. That made the helper presentation-heavy again and made the component less explicit about the UI it renders. The better split is narrower: keep the reusable math in pure TypeScript, but let the Vue component own formatting, tone classes, and icon rendering. The optional absolute currency label also added noise to the KPI meta row, so it was removed from the display contract.
+
+**Prompt:** Remove `absoluteLabel` from delta, keep only raw delta calculation in the benchmark delta utility, move the rest back to the component, and use `ArrowUpIcon` with a rotate class for downward deltas.
+
+**What was built:**
+- `app/src/features/dashboard/utils/kpi-benchmark-delta.ts` — reduced to `getKpiBenchmarkRawDelta()` plus the shared `KpiBenchmarkDeltaUnit` type; removed view model, formatted labels, tone logic, arrow strings, absolute label handling, and benchmark label formatting
+- `app/src/features/dashboard/components/KpiBenchmarkDelta.vue` — now computes raw delta from the utility; owns tone selection, delta label formatting, benchmark label formatting, class selection, and rendering
+- `app/src/features/dashboard/components/KpiBenchmarkDelta.vue` — replaced text arrow characters with `ArrowUpIcon`; applies `.down` / `rotate-180` when the raw delta is negative
+- `app/src/features/dashboard/components/DashboardKpis.vue` — removed the now-unused `showAbsoluteCurrency` prop from the CPA benchmark delta usage
+
+**Key decisions & why:**
+- Keep utility scope narrow: raw delta calculation is reusable business logic, while labels, icons, and classes are component presentation
+- Remove `absoluteLabel`: the KPI meta row is easier to scan with only delta and benchmark context
+- Use `formatPercentage` for percentage deltas: percentage formatting stays aligned with the shared locale-aware formatter
+- Use one arrow icon with rotation: `ArrowUpIcon` keeps the visual language consistent and avoids separate up/down glyph logic
+- Rotate via class: direction becomes a styling concern, so the template stays simple and the icon remains reusable

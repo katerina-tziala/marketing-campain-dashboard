@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Card } from "@/ui";
+import { Card, MetaRow } from "@/ui";
 
 defineProps<{
   label: string;
@@ -11,9 +11,9 @@ defineProps<{
   <Card class="kpi-card">
     <h3 class="kpi-label">{{ label }}</h3>
     <p class="kpi-value">{{ value ?? "N/A" }}</p>
-    <div v-if="$slots.secondary" class="kpi-secondary">
-      <slot name="secondary" />
-    </div>
+    <MetaRow v-if="$slots.default" class="kpi-meta divider primary-lighter">
+      <slot />
+    </MetaRow>
   </Card>
 </template>
 
@@ -35,7 +35,7 @@ defineProps<{
   // }
 }
 
-.kpi-secondary {
-  @apply text-xs text-typography-soft flex flex-wrap items-baseline gap-x-1.5;
+.kpi-meta {
+  @apply text-xs text-typography-soft;
 }
 </style>

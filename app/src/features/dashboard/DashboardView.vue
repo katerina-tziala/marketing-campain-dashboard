@@ -115,7 +115,7 @@ function clearChannelFilters(): void {
     grid-cols-1
     grid-rows-[min-content_1fr]
     pt-4
-    gap-y-4;
+    gap-y-5;
 }
 
 .dashboard-header {

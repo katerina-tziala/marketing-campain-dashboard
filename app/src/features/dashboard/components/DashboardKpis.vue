@@ -8,8 +8,7 @@ import {
 import KpiCard from "./KpiCard.vue";
 import KpiBenchmarkDelta from "./KpiBenchmarkDelta.vue";
 import PerformanceIndicator from "./PerformanceIndicator.vue";
-import MetaRow from "@/ui/meta/MetaRow.vue";
-import MetaItem from "@/ui/meta/MetaItem.vue";
+import { MetaItem } from "@/ui";
 
 defineProps<{
   kpis: PortfolioKPIs;
@@ -25,55 +24,38 @@ function formatShare(value: number, total: number): string {
 <template>
   <section class="kpi-grid" role="region" aria-label="KPIs">
     <KpiCard label="Budget" :value="formatCompactCurrency(kpis.totalBudget)">
-      <template v-if="portfolioKpis" #secondary>
-        <span
-          >{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of
-          portfolio</span
-        >
-      </template>
+      <MetaItem v-if="portfolioKpis"
+        >{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of
+        portfolio</MetaItem
+      >
     </KpiCard>
 
     <KpiCard label="Revenue" :value="formatCompactCurrency(kpis.totalRevenue)">
-      <template #secondary>
-        <MetaRow class="divider primary-lighter">
-          <MetaItem v-if="portfolioKpis"
-            >{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of
-            portfolio</MetaItem
-          >
-          <MetaItem
-            >ROI: <PerformanceIndicator :value="kpis.aggregatedROI"
-          /></MetaItem>
-        </MetaRow>
-      </template>
+      <MetaItem v-if="portfolioKpis"
+        >{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of
+        portfolio</MetaItem
+      >
+      <MetaItem>ROI: <PerformanceIndicator :value="kpis.aggregatedROI" /></MetaItem>
     </KpiCard>
 
     <KpiCard
       label="Conversions"
       :value="formatCompactNumber(kpis.totalConversions)"
     >
-      <template #secondary>
-        <MetaRow class="divider primary-lighter">
-          <MetaItem v-if="portfolioKpis"
-            >{{
-              formatShare(kpis.totalConversions, portfolioKpis.totalConversions)
-            }}
-            of portfolio</MetaItem
-          >
-          <MetaItem
-            >CVR: <PerformanceIndicator :value="kpis.aggregatedCVR"
-          /></MetaItem>
-        </MetaRow>
-      </template>
+      <MetaItem v-if="portfolioKpis"
+        >{{ formatShare(kpis.totalConversions, portfolioKpis.totalConversions) }}
+        of portfolio</MetaItem
+      >
+      <MetaItem>CVR: <PerformanceIndicator :value="kpis.aggregatedCVR" /></MetaItem>
     </KpiCard>
 
     <KpiCard label="CTR" :value="formatPercentage(kpis.aggregatedCTR)">
-      <template v-if="portfolioKpis" #secondary>
-        <KpiBenchmarkDelta
-          :current="kpis.aggregatedCTR"
-          :benchmark="portfolioKpis.aggregatedCTR"
-          unit="pp"
-        />
-      </template>
+      <KpiBenchmarkDelta
+        v-if="portfolioKpis"
+        :current="kpis.aggregatedCTR"
+        :benchmark="portfolioKpis.aggregatedCTR"
+        unit="pp"
+      />
     </KpiCard>
 
     <KpiCard
@@ -84,18 +66,13 @@ function formatShare(value: number, total: number): string {
           : null
       "
     >
-      <template
+      <KpiBenchmarkDelta
         v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null"
-        #secondary
-      >
-        <KpiBenchmarkDelta
-          :current="kpis.aggregatedCPA"
-          :benchmark="portfolioKpis.aggregatedCPA"
-          unit="pct"
-          :lower-is-better="true"
-          :show-absolute-currency="true"
-        />
-      </template>
+        :current="kpis.aggregatedCPA"
+        :benchmark="portfolioKpis.aggregatedCPA"
+        unit="pct"
+        :lower-is-better="true"
+      />
     </KpiCard>
   </section>
 </template>
@@ -104,7 +81,7 @@ function formatShare(value: number, total: number): string {
 .kpi-grid {
   @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl;
 
-  @container (min-width: 22.5rem) {
+  @container (min-width: 33.75rem) {
     @apply grid-cols-2;
   }
 
