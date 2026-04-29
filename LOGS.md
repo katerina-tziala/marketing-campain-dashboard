@@ -10072,3 +10072,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep the component in dashboard components — it is only used by DashboardCharts and currently represents the dashboard conversion funnel.
 - Remove the UI export — prevents new consumers from treating FunnelChart as a shared chart primitive before it is proven reusable.
 - Defer renaming/specialization — a future iteration can rename it to ConversionFunnelChart or change its API once the dashboard chart structure is clearer.
+
+
+## [#499] Fix Efficiency Gap Tooltip Sign
+**Type:** fix
+
+**Summary:** Fixed the Efficiency Gap tooltip so negative efficiency gaps no longer display with a positive sign.
+
+**Brainstorming:** The Efficiency Gap chart plots `revenueShare - budgetShare`, so the sign of the bar represents whether a channel over- or under-delivers revenue relative to its budget share. The tooltip, however, was calculating the euro gap as `revenue - budget` and adding `+` when that raw amount was positive. Those two signals can disagree: a channel may generate more revenue than budget in absolute euros while still underperforming relative to its allocation share. The fix was to make the tooltip sign follow the same efficiency gap calculation used by the bar value and color.
+
+**Prompt:** Efficiency gap shows `+` for negative efficiency. Fix it.
+
+**What was built:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — added a shared `getEfficiencyGapPercent()` helper that calculates `(revenueShare - budgetShare) * 100`.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — updated the Efficiency Gap chart data to use the shared helper.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — updated bar background and border color logic to use the shared helper.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — updated the tooltip `Gap` line so its sign follows the efficiency gap direction instead of raw `revenue - budget`.
+
+**Key decisions & why:**
+- Use one helper for gap calculation — keeps the bar value, bar color, and tooltip sign aligned.
+- Keep the existing tooltip structure — fixes the sign bug without redesigning the chart or changing the user-facing interaction.
+- Preserve the euro amount in the tooltip — still gives users a concrete magnitude, but now with a sign that matches the efficiency signal.
+- Use efficiency gap direction as the source of truth — the chart is specifically about allocation efficiency, not raw profit/loss.

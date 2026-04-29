@@ -129,7 +129,7 @@ const budgetCampaignData = computed<DonutChartData>(() => ({
       backgroundColor: campaignsByBudget.value.map(
         (c) => campaignColorMap.value[c.campaign],
       ),
-      borderColor: "#151b2e",
+      // borderColor: "#151b2e",
       borderWidth: 2,
     },
   ],

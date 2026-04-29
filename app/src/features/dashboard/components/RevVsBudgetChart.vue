@@ -29,6 +29,15 @@ const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
 const channelsByGapImpact = computed(() =>
   sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
 )
+
+function getEfficiencyGapPercent(channel: Channel): number {
+  const totalBudget = props.kpis.totalBudget
+  const totalRevenue = props.kpis.totalRevenue
+  const budgetShare = totalBudget ? channel.budget / totalBudget : 0
+  const revenueShare = totalRevenue ? channel.revenue / totalRevenue : 0
+  return (revenueShare - budgetShare) * 100
+}
+
 const efficiencyGapTooltip = useChartTooltip<'bar'>({
   label: (ctx) => {
     const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
@@ -37,8 +46,9 @@ const efficiencyGapTooltip = useChartTooltip<'bar'>({
   afterLabel: (ctx) => {
     const ch = channelsByGapImpact.value[ctx.dataIndex]
     if (!ch) return ''
-    const gap = ch.revenue - ch.budget
-    return `Gap: ${gap >= 0 ? '+' : ''}${formatCurrency(gap)}`
+    const gap = getEfficiencyGapPercent(ch)
+    const signedAmount = Math.abs(ch.revenue - ch.budget) * Math.sign(gap)
+    return `Gap: ${gap > 0 ? '+' : ''}${formatCurrency(signedAmount)}`
   },
 })
 
@@ -74,28 +84,17 @@ const revVsBudgetOptions = computed<BarChartOptions>(() => ({
 }))
 
 const efficiencyGapData = computed<BarChartData>(() => {
-  const totalBudget = props.kpis.totalBudget
-  const totalRevenue = props.kpis.totalRevenue
-
   return {
     labels: channelsByGapImpact.value.map((ch) => ch.name),
     datasets: [
       {
         label: 'Efficiency Gap',
-        data: channelsByGapImpact.value.map((ch) => {
-          const budgetShare = totalBudget ? ch.budget / totalBudget : 0
-          const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
-          return (revenueShare - budgetShare) * 100
-        }),
+        data: channelsByGapImpact.value.map((ch) => getEfficiencyGapPercent(ch)),
         backgroundColor: channelsByGapImpact.value.map((ch) => {
-          const budgetShare = totalBudget ? ch.budget / totalBudget : 0
-          const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
-          return revenueShare - budgetShare >= 0 ? 'rgba(16,185,129,0.75)' : 'rgba(249,112,102,0.75)'
+          return getEfficiencyGapPercent(ch) >= 0 ? 'rgba(16,185,129,0.75)' : 'rgba(249,112,102,0.75)'
         }),
         borderColor: channelsByGapImpact.value.map((ch) => {
-          const budgetShare = totalBudget ? ch.budget / totalBudget : 0
-          const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
-          return revenueShare - budgetShare >= 0 ? '#10b981' : '#f97066'
+          return getEfficiencyGapPercent(ch) >= 0 ? '#10b981' : '#f97066'
         }),
         borderWidth: 1,
         borderRadius: 2,
