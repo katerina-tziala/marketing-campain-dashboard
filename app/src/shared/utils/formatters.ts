@@ -17,7 +17,7 @@ export function formatPercentage(value: number | null, fallback = 'N/A', decimal
   if (value === null) return fallback
   return new Intl.NumberFormat(APP_LOCALE, {
     style: 'percent',
-    minimumFractionDigits: decimals,
+    minimumFractionDigits: 0,
     maximumFractionDigits: decimals,
   }).format(value)
 }

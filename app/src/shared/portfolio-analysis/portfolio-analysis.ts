@@ -65,7 +65,7 @@ export function computePortfolioAnalysis(
           level: 'Low',
           top1RevenueShare: 0,
           top3RevenueShare: 0,
-          reason: 'No data provided.',
+          reason: 'No data provided',
         },
         correlations: [],
       },

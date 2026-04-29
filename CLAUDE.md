@@ -62,10 +62,13 @@ app/                        # Vue 3 + Vite project
 │   │   ├── charts/             # Chart.js wrapper module
 │   │   │   ├── register.ts     # Registers all Chart.js components once (imported in main.ts); includes PointElement (required for Scatter charts)
 │   │   │   ├── useChartTheme.ts# Chart colors, grid, tooltip constants for dark theme
-│   │   │   ├── BarChart.vue    # Bar chart wrapper (supports horizontal mode)
+│   │   │   ├── BarChart.vue    # Bar chart wrapper (supports horizontal mode); props: chartData, yLabel?, height?, horizontal?, tooltipCallbacks?; uses useChartTooltip with default callbacks (label shows compact number formatting); optional tooltipCallbacks prop allows override for custom tooltip formatting
 │   │   │   ├── DonutChart.vue  # Doughnut chart wrapper
 │   │   │   ├── GroupedBarChart.vue # Grouped bar chart wrapper
 │   │   │   ├── FunnelChart.vue # Custom HTML/SCSS funnel chart
+│   │   │   ├── composables/
+│   │   │   │   ├── useChartScales.ts
+│   │   │   │   └── useChartTooltip.ts # useChartTooltip<TType>(callbacks, options?) → TooltipOptions<TType>; wraps Chart.js tooltip config with styled defaults (dark theme colors, rounded corners, padding); applies callback merging via labelColor + labelPointStyle customization
 │   │   │   └── index.ts        # Barrel export for charts
 │   │   ├── icons/              # Inline SVG icon components
 │   │   │   ├── AlertCircleIcon.vue  # Circle with exclamation — error toast icon

@@ -9967,3 +9967,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Budget allocation sorts by budget descending: the donut chart is about spend share, so the largest spend areas should lead the visual order
 - Revenue vs budget sorts by absolute efficiency gap impact: both positive and negative allocation mismatches are important, so the largest mismatch appears first regardless of direction
 - Tooltip lookup follows sorted order: `RevVsBudgetChart` now reads tooltip channel details from the same sorted array used for labels and datasets, preventing index drift
+
+
+## [#494] Extend BarChart with Tooltip Customization
+**Type:** update
+
+**Summary:** Added default tooltip handling to BarChart component with optional override capability via `tooltipCallbacks` prop, eliminating boilerplate and ensuring consistent formatting across all bar charts.
+
+**Brainstorming:** BarChart previously had no tooltip customization — it fell back to Chart.js defaults (raw values, plain text). RoiBudgetScatter and other advanced charts already use `useChartTooltip()` with custom callbacks for better formatting (currency, percentages, compact numbers). By adding default tooltip handling to BarChart and allowing optional overrides, we get: (1) consistent polished defaults out-of-the-box, (2) flexibility to override when a specific chart needs custom formatting, (3) no boilerplate in DashboardCharts. The implementation follows the pattern already established in RoiBudgetScatter.
+
+**Prompt:** Extend BarChart to use useChartTooltip with default callbacks (compact number formatting) and allow dashboard to pass custom tooltipCallbacks prop for overrides.
+
+**What was built:**
+- `app/src/ui/charts/BarChart.vue` — added `tooltipCallbacks?: Partial<TooltipCallbacks<'bar'>>` prop; imports `useChartTooltip` and `formatCompactNumber`; defines `defaultTooltipCallbacks` (title shows label, label shows compact number); merges user callbacks with defaults via optional coalescing; passes merged callbacks to `useChartTooltip<'bar'>()`; includes tooltip in `chartOptions.plugins`
+
+**Key decisions & why:**
+- Default callbacks format y-axis values as compact numbers (e.g. `1.2k` for `1200`) — matches RoiBudgetScatter pattern and improves readability
+- Optional override via `tooltipCallbacks` prop — allows dashboard charts to customize if needed without modifying BarChart itself
+- Uses existing `useChartTooltip()` composable — consistent styling (dark theme colors, rounded corners, proper spacing) across all charts in the app
+- Merge pattern (`props.tooltipCallbacks ?? defaultTooltipCallbacks`) — provides sensible defaults but respects explicit custom callbacks when passed
+
+
+## [#495] Add ROI Tooltip Context and Flexible Percentage Formatting
+**Type:** update
+
+**Summary:** Added richer tooltip content to the ROI bar charts and updated percentage formatting so values show up to 2 decimals without unnecessary trailing zeroes.
+
+**Brainstorming:** The shared BarChart tooltip customization from #494 made it possible for dashboard charts to pass chart-specific tooltip callbacks. For ROI charts, the bar value alone was not enough context: users also need to see revenue, spend, spend share, and revenue share to understand whether a campaign or channel is efficient relative to its allocation. We also considered coloring individual tooltip text lines, but Chart.js built-in tooltips do not support per-line text colors cleanly; doing that would require an external HTML tooltip and pointer/caret positioning, which is too much complexity for this version of the app.
+
+**Prompt:** For ROI bar charts, use the tooltip title and add Revenue, Spend, Spend Share, and Revenue Share. Percentages should show up to 2 decimals.
+
+**What was built:**
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added ROI-specific tooltip callbacks for both `ROI by Channel` and `ROI by Campaign`; tooltip title uses the hovered channel/campaign label; tooltip body now shows ROI, Revenue, Spend, Spend Share, and Revenue Share.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — added share calculation helper using `kpis.totalBudget` and `kpis.totalRevenue`; zero-total cases return `N/A` through the existing percentage formatter.
+- `app/src/shared/utils/formatters.ts` — updated `formatPercentage()` so percentages use `minimumFractionDigits: 0` and `maximumFractionDigits: decimals`, allowing values like `40%`, `40.5%`, and `40.55%`.
+
+**Key decisions & why:**
+- Keep ROI tooltip logic in `DashboardCharts.vue` — the dashboard owns campaign/channel data and portfolio totals, while `BarChart` remains generic.
+- Use the `tooltipCallbacks` prop from #494 — avoids hardcoding dashboard-specific tooltip behavior into the shared chart component.
+- Keep built-in Chart.js tooltips — per-line text coloring was rejected for now because it would require a custom external tooltip and mouse/caret tracking.
+- Format percentages with up to 2 decimals globally — keeps percentage output precise when needed but avoids noisy fixed decimals.
