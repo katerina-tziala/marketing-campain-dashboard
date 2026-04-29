@@ -18,7 +18,7 @@ const COLUMNS: DataTableColumn[] = [
     label: "Row",
     sortable: true,
     ariaLabel: "row index",
-    class: "max-w-6",
+    class: "max-w-14",
   },
   { key: "column", label: "Column", },
   { key: "issue", label: "Issue", class: "left-alignment" },
@@ -32,10 +32,10 @@ const sortedErrors = computed(() =>
 </script>
 
 <template>
-  <Table class="stripped-even">
+  <Table class="striped-even vertical-separators">
     <TableHeader
       :columns="COLUMNS"
-      class="sticky-header"
+      class="sticky-header vertical-separators"
       sort-key="row"
       :sort-dir="sortDir"
       @sort="toggleSort"

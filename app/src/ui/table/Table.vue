@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="scrollbar-stable scrollbar-on-surface table-container">
+  <div class="scrollbar-stable scrollbar-info-on-surface table-container">
     <table>
       <slot />
     </table>
@@ -14,53 +14,39 @@
 
   > table {
     @apply w-full 
-      text-sm
       border-separate
       border-spacing-0
-      text-typography-soft
-      relative;
+      relative
+      table-auto;
 
     &:deep(td) {
-      @apply p-2.5 text-center;
+      @apply p-2.5 text-center whitespace-normal break-words;
 
       &.left-alignment {
         @apply text-left;
       }
     }
-
-    :deep(th),
-    :deep(td) {
-      @apply whitespace-normal break-words;
-    }
   }
 }
 
+/* default theming */
 .table-container > table {
-  &:deep(th) {
-    @apply border-b border-b-info-darker/50;
-  }
-  &:deep(td) {
-    @apply border-b border-b-info-dark/15;
-  }
-}
+  @apply text-sm text-typography-soft;
 
-.table-container > table {
-  &:deep(tr:last-of-type > td) {
-    @apply border-none;
+  &:deep(tr:not(:last-of-type) > td) {
+    @apply border-b border-b-info-dark/20;
   }
 }
 
-.table-container.stripped-odd > table :deep(tr:nth-child(odd)) {
-  @apply bg-info-dark/5;
+.table-container.striped-odd > table :deep(tr:nth-child(odd)) {
+  @apply bg-info-dark/[7%];
 }
 
-.table-container.stripped-even > table :deep(tr:nth-child(even)) {
-  @apply bg-info-dark/5;
+.table-container.striped-even > table :deep(tr:nth-child(even)) {
+  @apply bg-info-dark/[7%];
 }
 
-.table-container > table {
-  &:deep(tr > th) {
-    @apply bg-surface-elevated shadow-md;
-  }
+.table-container.vertical-separators > table :deep(tr > td:not(:last-of-type)) {
+  @apply border-r border-x-info-dark/10;
 }
 </style>

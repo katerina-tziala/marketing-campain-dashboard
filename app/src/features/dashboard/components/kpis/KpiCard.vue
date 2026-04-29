@@ -19,7 +19,7 @@ defineProps<{
 
 <style lang="scss" scoped>
 .kpi-card {
-  @apply p-3 w-full gap-1;
+  @apply py-3 px-3.5 w-full gap-1;
 }
 
 .kpi-label {

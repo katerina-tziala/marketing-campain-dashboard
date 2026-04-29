@@ -71,7 +71,7 @@ function toggleDropdown(): void {
           </Button>
         </div>
 
-        <div class="dropdown-content scrollbar-stable scrollbar-on-surface">
+        <div class="dropdown-content scrollbar-stable scrollbar-info-on-surface">
           <ChannelFilterChips
             layout="plain"
             :channels="channels"

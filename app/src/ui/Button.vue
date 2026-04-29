@@ -71,7 +71,7 @@ defineExpose({
     }
 
     &:focus-visible {
-      @apply bg-primary-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+      @apply bg-primary-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary;
     }
 
     &:active {
@@ -107,11 +107,11 @@ defineExpose({
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light/15 text-primary-lighter;
+      @apply bg-surface text-primary-light border-primary-light;
     }
 
     &:focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary;
     }
 
     &:active {

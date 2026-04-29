@@ -61,10 +61,10 @@ function sortAriaLabel(col: DataTableColumn): string {
           :aria-label="sortAriaLabel(col)"
           @click="emit('sort', col.key)"
         >
-          {{ col.label }}
-          <span class="sort-icon-slot">
-            <ArrowUpIcon class="sort-icon" :class="sortIconClass(col.key)" />
-          </span>
+          <span class="button-content">
+            {{ col.label }}
+            <ArrowUpIcon class="sort-icon" :class="sortIconClass(col.key)"
+          /></span>
         </button>
         <template v-else>{{ col.label }}</template>
       </th>
@@ -73,79 +73,102 @@ function sortAriaLabel(col: DataTableColumn): string {
 </template>
 
 <style lang="scss" scoped>
-.header-padding {
-  @apply py-4 px-4;
+._header-padding {
+  @apply py-3.5 p-2.5;
 }
 
 th {
-  @apply text-center capitalize font-semibold tracking-wider;
+  @extend ._header-padding;
+  @apply text-center whitespace-normal break-words capitalize font-semibold tracking-wider;
 
   &.left-alignment {
     @apply text-left;
   }
 }
 
-.sticky-header {
-  th {
-    @apply sticky top-0 z-10;
+.table-sortable-header {
+  @apply p-0;
+
+  .sortable-button {
+    @extend ._header-padding;
+    @apply inline-flex
+      items-center
+      justify-center
+      w-full
+      cursor-pointer
+      outline-none
+      transition-transform
+      duration-150
+      border-transparent
+      border-x-[1rem];
   }
-}
 
-.table-header {
-  @extend .header-padding;
-}
-
-.sortable-button {
-  @apply inline-flex
+  .button-content {
+    @apply inline-flex
     items-center
-    justify-center
-    w-full
-    cursor-pointer
-    outline-none
-    font-semibold 
-    text-primary-lighter
-    transition-transform
-    duration-150
-    border-4
-    border-transparent
-    py-3 px-4;
+    justify-between
+    relative
+    w-fit;
 
-  .sort-icon {
-    @apply text-base
+    .sort-icon {
+      @apply inline-block
+      absolute
+      -right-5
+      text-base
       text-transparent
-      inline-block
       transition-transform
       duration-150;
 
-    &.desc {
-      @apply text-primary-lighter rotate-180;
-    }
-
-    &.asc {
-      @apply text-primary-lighter;
+      &.desc {
+        @apply rotate-180;
+      }
     }
   }
+
+  &.left-alignment {
+    .sortable-button {
+      @apply border-x-0;
+    }
+
+    .button-content {
+      @apply w-full text-left pr-5;
+
+      .sort-icon {
+        @apply right-0;
+      }
+    }
+  }
+}
+
+/* sticky header */
+.sticky-header > tr > th {
+  @apply sticky top-0 z-10;
+}
+
+/* default theming */
+th {
+  @apply border-b border-b-info/50 bg-surface-elevated shadow-md text-typography-subtle;
+}
+
+.sortable-button {
+  @apply text-info-light/70;
+
+  .sort-icon.desc,
+  .sort-icon.asc {
+    @apply text-info-light/70;
+  }
+
   &:hover,
   &:focus-visible {
-    @apply bg-primary/15;
+    @apply text-info-light bg-info/[8%];
+
     .sort-icon {
-      @apply text-primary-light;
+      @apply text-info-light;
     }
   }
 }
 
-.sort-icon-slot {
-  @apply inline-flex w-0 h-4 overflow-visible relative;
+.vertical-separators > tr > th:not(:last-of-type) {
+  @apply border-r border-r-info-dark/10;
 }
-
-.sort-icon {
-  @apply absolute left-0.5 text-base text-transparent transition-transform duration-150;
-}
-
-.table-sortable-header {
-  &.left-alignment > .sortable-button {
-    @apply justify-start pl-2.5;
-  }
-}
-
 </style>

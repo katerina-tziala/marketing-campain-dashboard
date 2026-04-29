@@ -4216,9 +4216,9 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Prompt:** Add zebra-striping modifier classes to the global table system. Refactor DataTableHeader to accept a class string on columns instead of an align prop. Add a container-query-driven 2-column charts grid. Restructure dashboard layout with sticky header/filter and scrollable data-visualization zone. Add a decimals param to formatCurrency. Fix ReplaceDataModal button order.
 
 **What changed:**
-- `app/src/styles/components/_table.scss` — added `.table-wrapper` global class (overflow-auto); added `.data-table.stripped-odd` and `.data-table.stripped-even` modifier classes for zebra striping; removed sticky header from global scope (moved to DataTableHeader scoped styles)
+- `app/src/styles/components/_table.scss` — added `.table-wrapper` global class (overflow-auto); added `.data-table.striped-odd` and `.data-table.striped-even` modifier classes for zebra striping; removed sticky header from global scope (moved to DataTableHeader scoped styles)
 - `app/src/ui/DataTableHeader.vue` — replaced `align?: 'left'|'right'` prop with generic `class?: string` on DataTableColumn; `.data-table-sticky-header` moved to scoped styles (wraps `.data-table-header` and `.data-table-sortable-header` with sticky/z-index/bg); sort icon active/inactive color states refined
-- `app/src/features/dashboard/components/CampaignTable.vue` — table now uses `stripped-even` modifier class; scoped `.campaign-table-td` sets padding; table max-height set to 45rem
+- `app/src/features/dashboard/components/CampaignTable.vue` — table now uses `striped-even` modifier class; scoped `.campaign-table-td` sets padding; table max-height set to 45rem
 - `app/src/features/dashboard/components/DashboardCharts.vue` — added `.charts-container` wrapper with `container-type: inline-size`; charts grid switches to 2 columns via `@container (min-width: 60rem)` query
 - `app/src/features/dashboard/DashboardView.vue` — layout restructured into sticky header/filter sections + scrollable `.data-visualization` zone; `.dashboard-visualizations` wraps KPIs + charts + table with max-width 7xl and flex-col gap; table card and title styles scoped inline
 - `app/src/common/utils/formatters.ts` — `formatCurrency` now accepts optional `decimals` param (default 0); locale changed from `'en-US'` to `'en'` for consistency with other formatters
@@ -4226,7 +4226,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `app/src/stores/aiAnalysisStore.ts` — minor update; debug `console.log` calls present in `buildPrompt` and `executeAnalysis`
 
 **Key decisions & why:**
-- `stripped-odd`/`stripped-even` as modifier classes on `.data-table` rather than always-on — different tables need different striping behavior (or none); keeps the base table neutral
+- `striped-odd`/`striped-even` as modifier classes on `.data-table` rather than always-on — different tables need different striping behavior (or none); keeps the base table neutral
 - `class?` string prop instead of `align?: 'left'|'right'` on DataTableColumn — more flexible without adding new special cases; callers pass Tailwind/global classes directly
 - `@container` query for charts grid instead of `@media` — charts grid width is determined by the available container (which shrinks when the AI drawer opens), not the viewport; media queries would not respond to drawer state
 - `data-visualization` as the scroll zone — header and channel filter stay sticky, only the chart/table area scrolls; max-width on the inner wrapper keeps content aligned with the rest of the page
@@ -9799,3 +9799,28 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Rename `DashboardKpis` to `Kpis`: inside the dashboard feature, the shorter name is clear and avoids repeating feature context
 - Numeric container tokens: `cq-400` communicates the threshold directly, unlike `md`, which can mean different things across viewport and container systems
 - Values unchanged: only the map keys changed, preserving existing responsive behavior while making future usage clearer
+
+
+## [#488] Refine table styling and scrollbar utilities
+**Type:** refactor
+
+**Summary:** Refined the shared table surface around info-themed styling, corrected the zebra-striping modifier names, added optional vertical separators, and extracted scrollbar color handling into a reusable SCSS mixin.
+
+**Brainstorming:** The table system was already visually leaning into the info color family through row borders, header states, and zebra striping. The scrollbar still used primary/indigo colors and repeated the same thumb/track values across Firefox and WebKit-specific selectors. At the same time, `stripped-*` read like a typo for the standard table term `striped-*`, and the header sort layout needed a more stable way to reserve room for the active sort icon without forcing awkward text wrapping. The cleaner direction was to keep table behavior scoped to the table components, make the names read like table language, and move repeated scrollbar color wiring into a small utility mixin.
+
+**Prompt:** Review the table styling changes, keep table striping scoped to the table component, align table scrollbars with the info color family, and create a scrollbar mixin that accepts thumb and track colors so the color variables are not repeated.
+
+**What was built:**
+- `app/src/ui/table/Table.vue` — switched the table wrapper to `scrollbar-info-on-surface`; renamed zebra modifiers from `stripped-odd`/`stripped-even` to `striped-odd`/`striped-even`; moved `table-auto` onto the actual `<table>`; kept wrapping behavior on table cells; changed row borders to target only non-final rows; added a `vertical-separators` modifier for body cell dividers
+- `app/src/ui/table/TableHeader.vue` — centralized header padding with a shared local class; moved sticky header and default header theming into clearer sections; reworked sortable header content so labels and sort icons share a stable `.button-content` wrapper; aligned sortable header colors with the info palette; added `vertical-separators` support for header cells
+- `app/src/styles/utilities/_scrollbar.scss` — added a `scrollbar-colors($thumb, $track, $thumb-hover)` mixin that wires `scrollbar-color`, WebKit track color, WebKit thumb color, and WebKit hover color from one source; updated `scrollbar-on-surface` to use theme variables; added `scrollbar-info-on-surface` for table-oriented scroll areas
+- `app/src/features/data-transfer/components/data-validation/review-errors/DataErrorsTable.vue` — updated the table to use `striped-even vertical-separators`; applied the same separator modifier to `TableHeader`; widened the row column from `max-w-6` to `max-w-14`
+- `LOGS.md` — corrected the older table log wording from `stripped-*` to `striped-*` so the documentation matches the renamed modifiers
+
+**Key decisions & why:**
+- Keep table styles scoped: striping, cell borders, and header behavior are part of the shared `Table`/`TableHeader` contract and depend on their internal structure
+- Rename `stripped` to `striped`: "striped rows" is the standard table term and better describes the zebra modifier
+- Use info scrollbars for tables: table borders, hover states, and striping already use the info family, so the scrollbar should not introduce a separate primary accent
+- Keep scrollbar colors in a mixin: Firefox and WebKit need different declarations, and the mixin prevents thumb/track values from drifting between them
+- Add vertical separators as an opt-in modifier: not every table needs column dividers, so `vertical-separators` keeps the base table lighter while allowing dense review tables to improve column scanning
+- Reserve sort icon space inside the sortable button: absolute icon placement inside `.button-content` keeps labels centered while showing active sort direction without shifting header layout
