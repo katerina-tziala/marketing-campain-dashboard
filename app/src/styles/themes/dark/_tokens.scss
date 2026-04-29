@@ -1,4 +1,4 @@
-@use "./dark-palette.scss";
+@use "./palette";
 
 :root,
 [data-theme="dark"] {
@@ -6,7 +6,7 @@
     Dark theme semantics.
 
     Use this file to assign palette primitives to UI roles. If a color answers
-    "what is it?" it belongs in dark-palette.scss. If it answers "where is it
+    "what is it?" it belongs in _palette.scss. If it answers "where is it
     used?" it belongs here.
   */
 

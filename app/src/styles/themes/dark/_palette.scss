@@ -2,7 +2,7 @@
   Dark palette primitives.
 
   Keep this file as raw color scales only. Components should consume semantic
-  tokens from dark.scss through Tailwind utilities, not these primitive values.
+  tokens from _tokens.scss through Tailwind utilities, not these primitive values.
 */
 :root,
 [data-theme="dark"] {

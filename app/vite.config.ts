@@ -14,7 +14,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `
-          @use "@/styles/container-queries" as *;
+          @use "@/styles/mixins/container-queries" as *;
         `,
       },
     },

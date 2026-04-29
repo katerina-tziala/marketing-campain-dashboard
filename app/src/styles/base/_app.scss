@@ -1,0 +1,7 @@
+html {
+  @apply font-sans bg-background text-typography;
+}
+
+#app {
+  @apply w-screen h-screen overflow-hidden;
+}

@@ -16,7 +16,7 @@
 
 <style lang="scss" scoped>
 .sheet-header {
-  @apply flex items-start  gap-2 py-3 px-4 border-b;
+  @apply flex items-start gap-2 py-4 px-4 border-b border-t border-t-transparent;
 }
 
 .sheet-header-icon {

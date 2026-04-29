@@ -9850,3 +9850,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - CSS class instead of radio variant prop: `info` is a visual treatment and does not need to expand the component API
 - Error styles would still win by cascade: radio error styling remains separate from visual color variants, while disabled state only changes cursor and opacity
 - Row hover mirrors radio hover locally: the duplication table owns the relationship between row hover and nested info radio styling, without making all selectable rows assume they contain radios
+
+
+## [#490] Reorganize global styles architecture
+**Type:** refactor
+
+**Summary:** Reorganized the global styles folder into clearer base, theme, mixin, component, and utility layers while keeping the existing CSS behavior intact.
+
+**Brainstorming:** The styles folder had the right ingredients, but the responsibilities were mixed together: global app/reset/heading styles lived in the root `style.scss`, dark theme palette and semantic tokens were sibling files, and container query mixins sat at the styles root even though they are injected as SCSS authoring helpers. The cleaner architecture is to group files by what kind of CSS they are: base document styles, theme token definitions, globally injected mixins, shared component classes, and small utility classes. Scrollbar styling intentionally stayed in utilities because its mixin is private to that utility file and does not need a broader shared mixin API yet.
+
+**Prompt:** Refactor the styles folder structure. Put the dark theme in a subfolder, move global reset/app/typography styles out of `style.scss`, move container query helpers into a mixins folder, and do not split the scrollbar mixin from its utility file.
+
+**What was built:**
+- `app/src/styles/base/_reset.scss` — new base partial for box sizing, default `html`/`body` margin reset, and font smoothing
+- `app/src/styles/base/_app.scss` — new base partial for the app canvas: root font, background/text color, and full-screen `#app` sizing
+- `app/src/styles/base/_typography.scss` — new base partial for global heading styles (`h2`, `h3`, `h5`)
+- `app/src/styles/base/index.scss` — new base barrel that loads reset, app, and typography partials
+- `app/src/styles/themes/dark/_palette.scss` — moved from `styles/themes/dark-palette.scss`; still owns raw dark-theme primitive color scales
+- `app/src/styles/themes/dark/_tokens.scss` — moved from `styles/themes/dark.scss`; still owns semantic dark-theme token assignments and now imports `./palette`
+- `app/src/styles/themes/dark/index.scss` — new dark-theme barrel that loads palette and tokens together
+- `app/src/styles/mixins/container-queries.scss` — moved from `styles/container-queries.scss`; keeps the numeric container size map and `cq-container`, `cq-up`, `cq-down`, and `cq-between` mixins
+- `app/src/styles/index.scss` — now loads `themes/dark`, `base`, `components`, and `utilities` in a clearer order
+- `app/src/style.scss` — reduced to the global stylesheet entry point: loads `styles/index` and Tailwind layers only
+- `app/vite.config.ts` — updated SCSS `additionalData` to globally inject `@use "@/styles/mixins/container-queries" as *;`
+
+**Key decisions & why:**
+- Base styles moved out of `style.scss`: the root file is now an entry point instead of a catch-all for document styling
+- Dark theme grouped as a package: palette primitives and semantic tokens are easier to understand as one theme module with its own `index.scss`
+- Container queries live in `mixins`: the file provides SCSS helpers, not emitted component or utility classes
+- Vite still injects only container query mixins: SFC styles keep convenient access to `cq-*` helpers without globally exposing unrelated mixins
+- Scrollbar mixin stays in utilities: `scrollbar-colors` is private implementation detail for scrollbar utility classes, so splitting it would add structure without real reuse yet
+- Existing behavior preserved: imports and file locations changed, but the reset, app shell, typography, theme tokens, and container query values stayed the same
