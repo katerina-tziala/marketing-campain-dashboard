@@ -5,6 +5,9 @@ export type ChartTheme = {
   }
   colors: readonly string[]
   textColor: string
+  arc: {
+    separatorColor: string
+  }
   scales: {
     tickColor: string
     titleColor: string
@@ -50,6 +53,9 @@ export const DEFAULT_CHART_THEME = {
     '#3b82f6', // blue
   ],
   textColor: '#cbd5e1',
+  arc: {
+    separatorColor: '#151b2e',
+  },
   scales: {
     tickColor: '#cbd5e1',
     titleColor: '#cbd5e1',

@@ -132,7 +132,6 @@ const budgetCampaignData = computed<DonutChartData>(() => ({
       backgroundColor: campaignsByBudget.value.map(
         (c) => campaignColorMap.value[c.campaign],
       ),
-      // borderColor: "#151b2e",
       borderWidth: 2,
     },
   ],
@@ -196,7 +195,7 @@ const funnelValues = computed(() => [
     </div>
 
     <div class="card chart-card">
-      <h3 class="card-title chart-card-title">Budget Allocation by Campaign</h3>
+      <h3 class="card-title chart-card-title">Budget Share by Campaign</h3>
       <DonutChart
         :chart-data="budgetCampaignData"
         :tooltip-callbacks="budgetCampaignTooltipCallbacks"

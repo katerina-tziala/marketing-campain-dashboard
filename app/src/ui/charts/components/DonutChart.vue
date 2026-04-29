@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import { useChartConfig, useChartTheme, useChartTooltip } from '../composables'
 import type { DonutChartData, DonutChartOptions, DonutTooltipCallbacks } from '../types'
@@ -24,6 +25,28 @@ const defaultTooltipCallbacks: DonutTooltipCallbacks = {
 const donutTooltip = useChartTooltip<'doughnut'>(
   props.tooltipCallbacks ?? defaultTooltipCallbacks,
 )
+
+function hasVisibleBorderWidth(borderWidth: unknown): boolean {
+  if (Array.isArray(borderWidth)) {
+    return borderWidth.some((width) => Number(width) > 0)
+  }
+
+  return Number(borderWidth ?? 0) > 0
+}
+
+const chartDataWithDefaultBorders = computed<DonutChartData>(() => ({
+  ...props.chartData,
+  datasets: props.chartData.datasets.map((dataset) => {
+    if (!hasVisibleBorderWidth(dataset.borderWidth) || dataset.borderColor) {
+      return dataset
+    }
+
+    return {
+      ...dataset,
+      borderColor: chartTheme.arc.separatorColor,
+    }
+  }),
+}))
 
 const options: DonutChartOptions = {
   ...baseOptions,
@@ -56,6 +79,6 @@ const options: DonutChartOptions = {
 
 <template>
   <div :style="{ height: `${height}px` }" role="img" aria-label="Donut chart">
-    <Doughnut :data="chartData" :options="options" />
+    <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
   </div>
 </template>

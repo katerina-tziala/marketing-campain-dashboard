@@ -10135,3 +10135,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep domain charts outside `ui/charts` — dashboard-specific charts continue to live in the dashboard feature area.
 - Make registration explicit — `registerCharts()` makes the Chart.js setup step visible in `main.ts` instead of relying on a side-effect import.
 - Use public `@/ui` imports in features — dashboard components consume the UI chart API instead of reaching into chart internals.
+
+
+## [#501] Add Theme-Based Donut Segment Separators
+**Type:** update
+
+**Summary:** Added chart-theme support for donut segment separator color and made DonutChart apply that separator automatically when a dataset uses a positive border width.
+
+**Brainstorming:** The Budget Allocation donut needed visible separation between slices without using a white border. A transparent border removed the white line, but also removed visible separation entirely. We considered adding a boolean prop such as `segmentSeparators`, but chose a border-width based contract instead: if a doughnut dataset sets `borderWidth`, DonutChart treats that as intent to show separators. The separator color itself belongs in chart theme config so it can later be sourced from CSS variables through `useChartTheme()`.
+
+**Prompt:** Add the donut separator color to chart config and use it in the pie/donut chart based on border width.
+
+**What was built:**
+- `app/src/ui/charts/config/chart-theme.config.ts` — added `arc.separatorColor` to `ChartTheme` and `DEFAULT_CHART_THEME`.
+- `app/src/ui/charts/components/DonutChart.vue` — added logic to detect positive dataset `borderWidth`; when a dataset has border width but no explicit `borderColor`, DonutChart applies `chartTheme.arc.separatorColor`.
+- `app/src/ui/charts/components/DonutChart.vue` — added a computed chart data wrapper so separator defaults can be applied without mutating incoming props.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed the temporary `borderColor: "transparent"` override from `budgetCampaignData`, leaving `borderWidth: 2` to opt into themed separators.
+
+**Key decisions & why:**
+- Use `borderWidth` as the separator intent signal — keeps the DonutChart API small and lets chart data control separator thickness directly.
+- Keep separator color in chart theme config — prepares the value for future CSS variable extraction through `useChartTheme()`.
+- Do not mutate incoming chart data — DonutChart derives `chartDataWithDefaultBorders` so props remain untouched.
+- Respect explicit dataset border colors — if a dataset provides `borderColor`, DonutChart does not override it.
