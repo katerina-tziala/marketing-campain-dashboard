@@ -8,7 +8,7 @@ import {
 import { MetaItem } from "@/ui";
 import KpiCard from "./KpiCard.vue";
 import KpiBenchmarkDelta from "./KpiBenchmarkDelta.vue";
-import PerformanceIndicator from "../PerformanceIndicator.vue";
+import { PerformanceIndicator } from "@/features/dashboard/ui";
 
 defineProps<{
   kpis: PortfolioKPIs;

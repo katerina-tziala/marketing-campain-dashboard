@@ -10327,3 +10327,28 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep dashboard semantic colors in dashboard config — `budget`, `revenue`, `positiveGap`, and `negativeGap` are domain concepts, not generic chart-library tokens.
 - Move only the hex-alpha helper to `ui/charts` — composing a color with alpha is a reusable chart utility and does not depend on dashboard business meaning.
 - Leave `RoiBudgetScatter` as the remaining direct Chart.js exception — it still uses the Bubble chart directly and can be handled separately if the chart boundary becomes fully strict.
+
+
+## [#507] Move Performance Indicator to Dashboard UI Layer
+**Type:** refactor
+
+**Summary:** Moved `PerformanceIndicator` out of dashboard components and into a feature-local dashboard UI layer so dashboard containers and dashboard charts can both consume it without depending on each other.
+
+**Brainstorming:** `PerformanceIndicator` is used by KPIs, the campaign table, and the conversion funnel chart. Keeping it in `dashboard/components` made the dependency graph awkward because `dashboard/charts` needed to import from `dashboard/components`, while dashboard components also import chart components. As a principal Vue architecture choice, the cleaner boundary is a neutral feature-local UI layer: `dashboard/ui` contains small reusable dashboard primitives, `dashboard/components` owns page/section composition, and `dashboard/charts` owns dashboard-specific chart rendering.
+
+**Prompt:** Move `PerformanceIndicator` to `ui` in dashboard because it is shared by KPIs, campaign table, and the conversion funnel chart.
+
+**What was built:**
+- `app/src/features/dashboard/ui/PerformanceIndicator.vue` — moved the performance indicator component into a feature-local dashboard UI folder.
+- `app/src/features/dashboard/ui/index.ts` — added a dashboard UI barrel exporting `PerformanceIndicator`.
+- `app/src/features/dashboard/components/kpis/Kpis.vue` — updated the import to use `@/features/dashboard/ui`.
+- `app/src/features/dashboard/components/CampaignTable.vue` — updated the import to use `@/features/dashboard/ui`.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — updated the import to use `@/features/dashboard/ui`.
+- `app/src/features/dashboard/components/PerformanceIndicator.vue` — removed the old component location from the broader dashboard components folder.
+
+**Key decisions & why:**
+- Add a feature-local UI layer — `PerformanceIndicator` is reusable dashboard UI, but it is still dashboard/domain-specific enough to avoid promoting it to app-level `ui`.
+- Avoid chart-to-component coupling — dashboard chart components should not import shared primitives from dashboard page/container components.
+- Keep dashboard components focused on composition — KPI sections, tables, headers, and chart grids remain in `dashboard/components`.
+- Keep dashboard charts focused on chart rendering — chart components can depend on `dashboard/ui` without creating a sideways dependency on dashboard containers.
+- Use a barrel export — consumers import from `@/features/dashboard/ui`, which gives the new layer a clear public surface.

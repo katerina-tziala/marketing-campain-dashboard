@@ -11,7 +11,7 @@ import {
   formatPercentage,
 } from "@/shared/utils/formatters";
 import { sortWithNullsLast } from "@/shared/utils/sorting";
-import PerformanceIndicator from "./PerformanceIndicator.vue";
+import { PerformanceIndicator } from "@/features/dashboard/ui";
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();
 
