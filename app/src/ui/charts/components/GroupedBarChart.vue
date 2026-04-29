@@ -9,6 +9,7 @@ const props = withDefaults(
     chartData: BarChartData
     yLabel?: string
     height?: number
+    ariaLabel?: string
   }>(),
   { height: 320 },
 )
@@ -28,7 +29,7 @@ const options = computed<BarChartOptions>(() => ({
 </script>
 
 <template>
-  <div :style="{ height: `${height}px` }" role="img" :aria-label="yLabel ?? 'Grouped bar chart'">
+  <div :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? yLabel ?? 'Grouped bar chart'">
     <Bar :data="chartData" :options="options" />
   </div>
 </template>

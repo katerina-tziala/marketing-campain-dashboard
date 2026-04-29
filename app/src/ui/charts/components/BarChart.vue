@@ -11,6 +11,7 @@ const props = withDefaults(
     yLabel?: string
     height?: number
     horizontal?: boolean
+    ariaLabel?: string
     tooltipCallbacks?: BarTooltipCallbacks
   }>(),
   { height: 320, horizontal: false },
@@ -60,7 +61,7 @@ const options = computed<BarChartOptions>(() => ({
 </script>
 
 <template>
-  <div :style="{ height: `${height}px` }" role="img" :aria-label="yLabel ?? 'Bar chart'">
+  <div :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'">
     <Bar :data="chartData" :options="options" />
   </div>
 </template>

@@ -8,6 +8,7 @@ import type { Channel } from "@/shared/types/channel";
 import { useChartTheme } from "@/ui";
 import {
   BudgetShareDonutChart,
+  ConversionFunnelChart,
   RoiBarChart,
   useCampaignBudgetShareDonutItems,
   useCampaignRoiChartItems,
@@ -18,8 +19,8 @@ import {
   sortCampaignsByRoiDesc,
   sortChannelsByRoiDesc,
 } from "../utils/dashboard-sorting";
-import FunnelChart from "./FunnelChart.vue";
 import RevVsBudgetChart from "./RevVsBudgetChart.vue";
+import Card from "@/ui/card/Card.vue";
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
@@ -49,53 +50,60 @@ const roiCampaignItems = useCampaignRoiChartItems(
   campaignsByRoi,
   (campaign) => campaignColorMap.value[campaign.campaign],
 );
+
 const roiChannelItems = useChannelRoiChartItems(
   channelsByRoi,
   (_, index) => chartColors[index % chartColors.length],
 );
+
 const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   campaignsByBudget,
   (campaign) => campaignColorMap.value[campaign.campaign],
 );
-
-const funnelLabels = ["Impressions", "Clicks", "Conversions"];
-const funnelValues = computed(() => [
-  props.kpis.totalImpressions,
-  props.kpis.totalClicks,
-  props.kpis.totalConversions,
-]);
 </script>
 
 <template>
   <div class="charts-grid">
-    <div class="card chart-card">
-      <h3 class="card-title chart-card-title">ROI by Channel</h3>
-      <RoiBarChart :items="roiChannelItems" :kpis="kpis" />
-    </div>
+    <Card>
+      <h3>ROI by Channel</h3>
+      <RoiBarChart
+        :items="roiChannelItems"
+        :kpis="kpis"
+        aria-label="ROI by channel bar chart"
+      />
+    </Card>
 
-    <div class="card chart-card">
-      <h3 class="card-title chart-card-title">Revenue vs Budget by Channel</h3>
+    <Card>
+      <h3>Revenue vs Budget by Channel</h3>
       <RevVsBudgetChart :channels="channels" :kpis="kpis" class="w-full" />
-    </div>
+    </Card>
 
-    <div class="card chart-card">
-      <h3 class="card-title chart-card-title">ROI by Campaign</h3>
-      <RoiBarChart :items="roiCampaignItems" :kpis="kpis" />
-    </div>
+    <Card>
+      <h3>ROI by Campaign</h3>
+      <RoiBarChart
+        :items="roiCampaignItems"
+        :kpis="kpis"
+        aria-label="ROI by campaign bar chart"
+      />
+    </Card>
 
-    <div class="card chart-card">
-      <h3 class="card-title chart-card-title">Budget Share by Campaign</h3>
-      <BudgetShareDonutChart :items="budgetCampaignItems" :kpis="kpis" />
-    </div>
+    <Card>
+      <h3>Budget Share by Campaign</h3>
+      <BudgetShareDonutChart
+        :items="budgetCampaignItems"
+        :kpis="kpis"
+        aria-label="Budget share by campaign donut chart"
+      />
+    </Card>
 
-    <div class="card chart-card">
-      <h3 class="card-title chart-card-title">Conversion Funnel</h3>
-      <FunnelChart
-        :labels="funnelLabels"
-        :values="funnelValues"
+    <Card>
+      <h3>Conversion Funnel</h3>
+      <ConversionFunnelChart
+        :kpis="kpis"
+        aria-label="Conversion funnel chart"
         class="w-full"
       />
-    </div>
+    </Card>
   </div>
 </template>
 
@@ -106,13 +114,5 @@ const funnelValues = computed(() => [
   // @container (min-width: 60rem) {
   //   @apply grid-cols-2;
   // }
-}
-
-.card.chart-card {
-  @apply p-4;
-}
-
-.card-title.chart-card-title {
-  @apply text-base shrink-0 font-normal text-primary-lighter;
 }
 </style>

@@ -10257,3 +10257,41 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep card/header in DashboardCharts — dashboard layout and section titles remain centralized in the grid component.
 - Move style constants to config — border width/radius are visual configuration, not formatting utilities.
 - Keep semantic colors in dashboard chart config — budget/revenue/gap colors are dashboard domain semantics, not global chart primitives.
+
+
+## [#505] Refine Dashboard Chart Accessibility and Funnel Ownership
+**Type:** refactor
+
+**Summary:** Added explicit aria-label inputs to reusable chart wrappers and dashboard chart components, moved the custom conversion funnel into the dashboard chart module, removed the experimental Chart.js funnel, and improved revenue-vs-budget currency formatting.
+
+**Brainstorming:** After extracting dashboard-specific chart components, the remaining chart wrappers still had hardcoded or fallback-only accessible labels. Since the parent/dashboard layer knows the actual business meaning of each chart, aria labels should be passed in as inputs instead of inferred from generic chart props. We also tested a Chart.js-based funnel beside the existing custom funnel, but the custom DOM/CSS funnel was a better fit because it already supports visible values, rates, and non-linear width scaling without canvas label plugins. Finally, RevenueVsBudgetBars needed tooltip and axis formatting to match the rest of the dashboard’s currency presentation.
+
+**Prompt:** Make sure all charts use input-driven aria labels. Move the custom funnel chart into the dashboard charts folder, remove the experimental Chart.js funnel, and ensure RevenueVsBudgetBars values are formatted in euros using reusable tooltip formatters where possible.
+
+**What was built:**
+- `app/src/ui/charts/components/BarChart.vue` — added `ariaLabel?: string` prop and used it for the chart wrapper’s accessible label.
+- `app/src/ui/charts/components/DonutChart.vue` — added `ariaLabel?: string` prop and used it for the chart wrapper’s accessible label.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — added `ariaLabel?: string` prop and used it for the chart wrapper’s accessible label.
+- `app/src/features/dashboard/charts/components/RoiBarChart.vue` — added `ariaLabel?: string` prop and passed it through to `BarChart`.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — added `ariaLabel?: string` prop and passed it through to `DonutChart`.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — added `ariaLabel?: string` prop for the direct Chart.js wrapper container.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — added `ariaLabel?: string` prop for the direct Chart.js wrapper container.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — added `ariaLabel?: string` prop for the custom funnel chart container.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — now provides specific accessible labels for ROI by channel, ROI by campaign, budget share by campaign, and conversion funnel charts.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — now provides specific accessible labels for the revenue-vs-budget and efficiency-gap internal charts.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — moved the custom funnel chart into the dashboard chart components module.
+- `app/src/features/dashboard/charts/components/FunnelBarChart.vue` — removed the experimental Chart.js funnel comparison chart.
+- `app/src/features/dashboard/charts/components/index.ts` — exported `ConversionFunnelChart` and removed the experimental funnel chart export.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed the side-by-side funnel comparison markup and renders only the custom conversion funnel chart.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — removed temporary funnel colors that were only used by the experimental Chart.js funnel.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — added tooltip callbacks using `formatBudgetTooltip()` and `formatRevenueTooltip()`.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — formatted y-axis ticks with `formatCompactCurrency()`.
+- `app/src/features/dashboard/charts/utils/index.ts` — exported `formatBudgetTooltip()` and `formatRevenueTooltip()` from the dashboard chart utils barrel.
+
+**Key decisions & why:**
+- Parent components provide aria labels — chart parents know the business meaning better than reusable chart wrappers.
+- Keep wrapper fallbacks — reusable chart components still have safe default labels if a caller does not provide one.
+- Keep the custom funnel — the DOM/CSS funnel handles visible values, CTR/CVR, and non-linear scaling more cleanly than a Chart.js funnel would.
+- Remove experimental code after comparison — avoids keeping unused funnel colors, exports, and components in the dashboard chart module.
+- Reuse existing tooltip formatters — keeps budget/revenue currency labels consistent across dashboard charts.
+- Use compact currency on axes and full currency in tooltips — axes stay scannable while tooltips preserve precise values.

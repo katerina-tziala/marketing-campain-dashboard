@@ -34,12 +34,14 @@ const channelsByGapImpact = computed(() =>
       v-if="view === 'budgetVsRevenue'"
       :channels="channelsByGapImpact"
       :height="CHART_HEIGHT"
+      aria-label="Revenue vs budget by channel bar chart"
     />
     <EfficiencyGapBars
       v-else
       :channels="channelsByGapImpact"
       :kpis="kpis"
       :height="CHART_HEIGHT"
+      aria-label="Efficiency gap by channel bar chart"
     />
   </div>
 </template>

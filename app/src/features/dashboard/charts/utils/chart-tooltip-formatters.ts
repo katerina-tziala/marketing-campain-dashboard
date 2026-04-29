@@ -8,12 +8,24 @@ type RoiAllocationTooltipItem = {
   budget: number
 }
 
+export function formatBudgetTooltip(
+  budget: number,
+): string {
+  return `Budget: ${formatCurrency(budget)}`;
+}
+
+export function formatRevenueTooltip(
+  revenue: number,
+): string {
+  return `Revenue: ${formatCurrency(revenue)}`;
+}
+
 export function formatBudgetTooltipLines(
   budget: number,
   totalBudget: number,
 ): string[] {
   return [
-    `Budget: ${formatCurrency(budget)}`,
+    formatBudgetTooltip(budget),
     `Budget Share: ${formatPercentage(safeDivide(budget, totalBudget))}`,
   ]
 }
@@ -22,10 +34,12 @@ export function formatRoiAllocationTooltipLines(
   item: RoiAllocationTooltipItem,
   kpis: Pick<PortfolioKPIs, 'totalBudget' | 'totalRevenue'>,
 ): string[] {
+  const [budgetLabel, budgetShareLabel] = formatBudgetTooltipLines(item.budget, kpis.totalBudget)
   return [
     `ROI: ${formatPercentage(item.roi)}`,
-    `Revenue: ${formatCurrency(item.revenue)}`,
-    ...formatBudgetTooltipLines(item.budget, kpis.totalBudget),
+    budgetLabel,
+    formatRevenueTooltip(item.revenue),
+    budgetShareLabel,
     `Revenue Share: ${formatPercentage(safeDivide(item.revenue, kpis.totalRevenue))}`,
   ]
 }

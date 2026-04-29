@@ -1,5 +1,7 @@
 export {
+  formatBudgetTooltip,
   formatBudgetTooltipLines,
+  formatRevenueTooltip,
   formatRoiAllocationTooltipLines,
 } from './chart-tooltip-formatters'
 export {

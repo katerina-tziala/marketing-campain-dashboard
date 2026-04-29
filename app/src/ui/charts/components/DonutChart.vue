@@ -9,6 +9,7 @@ const props = withDefaults(
   defineProps<{
     chartData: DonutChartData
     height?: number
+    ariaLabel?: string
     tooltipCallbacks?: DonutTooltipCallbacks
   }>(),
   { height: 320 },
@@ -78,7 +79,7 @@ const options: DonutChartOptions = {
 </script>
 
 <template>
-  <div :style="{ height: `${height}px` }" role="img" aria-label="Donut chart">
+  <div :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? 'Donut chart'">
     <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
   </div>
 </template>

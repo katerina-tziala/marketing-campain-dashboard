@@ -15,6 +15,7 @@ const props = defineProps<{
   items: BudgetShareDonutItem[]
   kpis: PortfolioKPIs
   height?: number
+  ariaLabel?: string
 }>()
 
 function getTooltipDataIndex(ctx: DonutTooltipItem): number {
@@ -47,6 +48,7 @@ const chartData = computed<DonutChartData>(() => ({
   <DonutChart
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
+    :aria-label="ariaLabel ?? 'Budget share by campaign donut chart'"
     :height="height ?? 420"
     class="w-full"
   />
