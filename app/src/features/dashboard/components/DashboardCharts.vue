@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChartData } from "chart.js";
+import type { ChartData, TooltipCallbacks, TooltipItem } from "chart.js";
 import { computed } from "vue";
 import type {
   CampaignPerformance,
@@ -7,6 +7,10 @@ import type {
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
 import { BarChart, CHART_COLORS, DonutChart, FunnelChart } from "@/ui";
+import {
+  formatCurrency,
+  formatPercentage,
+} from "@/shared/utils/formatters";
 import {
   sortCampaignsByBudgetDesc,
   sortCampaignsByRoiDesc,
@@ -34,6 +38,41 @@ const campaignsByBudget = computed(() =>
   sortCampaignsByBudgetDesc(props.campaigns),
 );
 const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
+
+function getShare(value: number, total: number): number | null {
+  if (total === 0) return null;
+  return value / total;
+}
+
+function formatRoiTooltipLabel(
+  item: CampaignPerformance | Channel | undefined,
+): string[] {
+  if (!item) return [];
+
+  return [
+    `ROI: ${formatPercentage(item.roi)}`,
+    `Revenue: ${formatCurrency(item.revenue)}`,
+    `Spend: ${formatCurrency(item.budget)}`,
+    `Spend Share: ${formatPercentage(getShare(item.budget, props.kpis.totalBudget))}`,
+    `Revenue Share: ${formatPercentage(getShare(item.revenue, props.kpis.totalRevenue))}`,
+  ];
+}
+
+function getTooltipDataIndex(ctx: TooltipItem<"bar">): number {
+  return ctx.dataIndex;
+}
+
+const roiCampaignTooltipCallbacks: Partial<TooltipCallbacks<"bar">> = {
+  title: (items) => items[0]?.label ?? "",
+  label: (ctx) =>
+    formatRoiTooltipLabel(campaignsByRoi.value[getTooltipDataIndex(ctx)]),
+};
+
+const roiChannelTooltipCallbacks: Partial<TooltipCallbacks<"bar">> = {
+  title: (items) => items[0]?.label ?? "",
+  label: (ctx) =>
+    formatRoiTooltipLabel(channelsByRoi.value[getTooltipDataIndex(ctx)]),
+};
 
 const roiChartData = computed<ChartData<"bar">>(() => ({
   labels: campaignsByRoi.value.map((c) => c.campaign),
@@ -99,6 +138,7 @@ const funnelValues = computed(() => [
       <h3 class="card-title chart-card-title">ROI by Channel</h3>
       <BarChart
         :chart-data="roiChannelChartData"
+        :tooltip-callbacks="roiChannelTooltipCallbacks"
         y-label="ROI (%)"
         :height="420"
         horizontal
@@ -115,6 +155,7 @@ const funnelValues = computed(() => [
       <h3 class="card-title chart-card-title">ROI by Campaign</h3>
       <BarChart
         :chart-data="roiChartData"
+        :tooltip-callbacks="roiCampaignTooltipCallbacks"
         y-label="ROI (%)"
         :height="420"
         horizontal
