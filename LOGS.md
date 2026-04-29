@@ -10094,3 +10094,44 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep the existing tooltip structure — fixes the sign bug without redesigning the chart or changing the user-facing interaction.
 - Preserve the euro amount in the tooltip — still gives users a concrete magnitude, but now with a sign that matches the efficiency signal.
 - Use efficiency gap direction as the source of truth — the chart is specifically about allocation efficiency, not raw profit/loss.
+
+
+## [#500] Refactor Chart Module Structure and Theme Configuration
+**Type:** refactor
+
+**Summary:** Reorganized the shared chart module into clear subfolders, split chart theme tokens from Chart.js configuration, moved chart types into a dedicated types folder, and changed Chart.js registration from a side-effect import to an explicit setup function.
+
+**Brainstorming:** The chart module had grown from a flat wrapper folder into a mixed area containing components, composables, config, types, and registration side effects. We wanted a cleaner structure before adding a future layer that extracts chart colors from CSS variables. The key decision was to separate responsibilities: `useChartTheme()` should resolve visual chart tokens, while `useChartConfig()` should build Chart.js options, plugins, scales, and defaults from those tokens. We also decided that chart consumers should depend on the public chart API through barrels instead of deep imports, and that Chart.js registration should be explicit rather than hidden behind a side-effect import.
+
+**Prompt:** Fully refactor the chart module: create a components folder, move types into a types folder, add barrel files per folder and at the chart root, remove the old root `useChartTheme`, and make chart registration explicit.
+
+**What was built:**
+- `app/src/ui/charts/components/` — created a dedicated folder for shared chart wrapper components.
+- `app/src/ui/charts/components/BarChart.vue` — moved the BarChart primitive wrapper into the components folder and updated imports to use local chart barrels.
+- `app/src/ui/charts/components/DonutChart.vue` — moved the DonutChart primitive wrapper into the components folder and updated imports to use local chart barrels.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — moved the GroupedBarChart primitive wrapper into the components folder and updated imports to use local chart barrels.
+- `app/src/ui/charts/components/index.ts` — added a component barrel exporting `BarChart`, `DonutChart`, and `GroupedBarChart`.
+- `app/src/ui/charts/types/chart.types.ts` — moved chart wrapper aliases from the old flat `types.ts` file into a dedicated types folder.
+- `app/src/ui/charts/types/index.ts` — added a type barrel for chart data, options, tooltip, and plugin aliases.
+- `app/src/ui/charts/composables/useChartTheme.ts` — added the runtime chart theme resolution boundary; currently returns `DEFAULT_CHART_THEME`, but is prepared for future CSS variable extraction.
+- `app/src/ui/charts/composables/useChartConfig.ts` — added Chart.js configuration composition for base options, plugins, tooltips, and scales.
+- `app/src/ui/charts/composables/index.ts` — added a composables barrel for chart config, scales, theme, tooltip, and tooltip callback types.
+- `app/src/ui/charts/config/chart-theme.config.ts` — renamed the static config concept to `DEFAULT_CHART_THEME`, added a `ChartTheme` type, and kept it as the fallback chart theme source.
+- `app/src/ui/charts/config/index.ts` — added a config barrel for `DEFAULT_CHART_THEME` and `ChartTheme`.
+- `app/src/ui/charts/index.ts` — rebuilt the root chart barrel to export from `components`, `composables`, `config`, `types`, and `register`.
+- `app/src/ui/charts/register.ts` — changed Chart.js registration from top-level side effect to an explicit `registerCharts()` function.
+- `app/src/main.ts` — replaced the side-effect chart registration import with an explicit `registerCharts()` call.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — updated imports to use public `@/ui` chart exports instead of deep chart composable paths.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — updated imports to use public `@/ui` chart exports instead of deep chart composable paths.
+- Removed `app/src/ui/charts/useChartTheme.ts` — deleted the old root re-export file to avoid ambiguity with the real composable path.
+- Removed old flat chart component/type locations — `BarChart.vue`, `DonutChart.vue`, `GroupedBarChart.vue`, and `types.ts` now live under dedicated subfolders.
+
+**Key decisions & why:**
+- Separate theme from config — `useChartTheme()` owns visual tokens, while `useChartConfig()` owns Chart.js option construction.
+- Make `useChartTheme()` the future extraction boundary — when chart colors move to CSS variables, the extraction layer can be implemented inside this composable without changing consumers again.
+- Remove static `CHART_COLORS` / `TEXT_COLOR` exports — consumers now resolve chart colors through `useChartTheme()`, which prevents another cleanup pass when runtime theme extraction arrives.
+- Add folder barrels — each chart subfolder now has a clear public surface, and the root `charts/index.ts` remains the main chart API.
+- Keep primitive chart wrappers in `ui/charts/components` — shared wrappers remain reusable UI infrastructure.
+- Keep domain charts outside `ui/charts` — dashboard-specific charts continue to live in the dashboard feature area.
+- Make registration explicit — `registerCharts()` makes the Chart.js setup step visible in `main.ts` instead of relying on a side-effect import.
+- Use public `@/ui` imports in features — dashboard components consume the UI chart API instead of reaching into chart internals.

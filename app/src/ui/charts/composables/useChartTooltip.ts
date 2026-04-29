@@ -7,7 +7,7 @@ import type {
   TooltipLabelStyle,
   TooltipOptions,
 } from 'chart.js'
-import { CHART_THEME } from '../config/chart-theme.config'
+import { useChartTheme } from './useChartTheme'
 
 type ChartTooltipContentCallbackName =
   | 'beforeTitle'
@@ -48,21 +48,23 @@ const MARKER_POINT_STYLES: Record<ChartTooltipMarker, PointStyle> = {
 function getTooltipItemColor<TType extends ChartType>(
   item: TooltipItem<TType>,
 ): Color {
+  const chartTheme = useChartTheme()
   const options = item.element.options as { backgroundColor?: Color }
-  return options.backgroundColor ?? CHART_THEME.tooltip.bodyColor
+  return options.backgroundColor ?? chartTheme.tooltip.bodyColor
 }
 
 export function useChartTooltip<TType extends ChartType = ChartType>(
   callbacks: ChartTooltipContentCallbacks<TType> = {},
   options: UseChartTooltipOptions = {},
 ): ChartTooltipOptions<TType> {
+  const chartTheme = useChartTheme()
   const marker = options.marker ?? 'square'
 
   return {
-    backgroundColor: CHART_THEME.tooltip.backgroundColor,
-    titleColor: CHART_THEME.tooltip.titleColor,
-    bodyColor: CHART_THEME.tooltip.bodyColor,
-    borderColor: CHART_THEME.tooltip.borderColor,
+    backgroundColor: chartTheme.tooltip.backgroundColor,
+    titleColor: chartTheme.tooltip.titleColor,
+    bodyColor: chartTheme.tooltip.bodyColor,
+    borderColor: chartTheme.tooltip.borderColor,
     borderWidth: 1,
     cornerRadius: 2,
     padding: 10,

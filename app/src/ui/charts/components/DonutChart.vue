@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions, TooltipCallbacks } from 'chart.js'
 import { Doughnut } from 'vue-chartjs'
-import { TEXT_COLOR, useChartTheme } from './useChartTheme'
-import { useChartTooltip } from './composables/useChartTooltip'
+import { useChartConfig, useChartTheme, useChartTooltip } from '../composables'
+import type { DonutChartData, DonutChartOptions, DonutTooltipCallbacks } from '../types'
 import { formatCompactNumber } from '@/shared/utils/formatters'
 
 const props = withDefaults(
   defineProps<{
-    chartData: ChartData<'doughnut'>
+    chartData: DonutChartData
     height?: number
-    tooltipCallbacks?: Partial<TooltipCallbacks<'doughnut'>>
+    tooltipCallbacks?: DonutTooltipCallbacks
   }>(),
   { height: 320 },
 )
 
-const { baseOptions, basePlugins } = useChartTheme<'doughnut'>()
+const chartTheme = useChartTheme()
+const { baseOptions, basePlugins } = useChartConfig<'doughnut'>()
 
-const defaultTooltipCallbacks: Partial<TooltipCallbacks<'doughnut'>> = {
+const defaultTooltipCallbacks: DonutTooltipCallbacks = {
   title: (items) => items[0]?.label ?? '',
   label: (ctx) => formatCompactNumber(Number(ctx.parsed)),
 }
@@ -25,7 +25,7 @@ const donutTooltip = useChartTooltip<'doughnut'>(
   props.tooltipCallbacks ?? defaultTooltipCallbacks,
 )
 
-const options: ChartOptions<'doughnut'> = {
+const options: DonutChartOptions = {
   ...baseOptions,
   cutout: '62%',
   plugins: {
@@ -45,7 +45,7 @@ const options: ChartOptions<'doughnut'> = {
             const bg = datasets[0].backgroundColor
             const segColor = Array.isArray(bg) ? (bg[i] as string) : (bg as string)
             const hidden = !chart.getDataVisibility(i)
-            return { text, fillStyle: segColor, strokeStyle: 'transparent', lineWidth: 0, fontColor: TEXT_COLOR, hidden, index: i }
+            return { text, fillStyle: segColor, strokeStyle: 'transparent', lineWidth: 0, fontColor: chartTheme.textColor, hidden, index: i }
           })
         },
       },

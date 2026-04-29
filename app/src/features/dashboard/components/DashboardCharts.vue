@@ -7,7 +7,6 @@ import type {
 import type { Channel } from "@/shared/types/channel";
 import {
   BarChart,
-  CHART_COLORS,
   DonutChart,
   type BarChartData,
   type BarTooltipCallbacks,
@@ -15,6 +14,7 @@ import {
   type DonutChartData,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
+  useChartTheme,
 } from "@/ui";
 import {
   formatCurrency,
@@ -34,11 +34,14 @@ const props = defineProps<{
   kpis: PortfolioKPIs;
 }>();
 
+const chartTheme = useChartTheme();
+const chartColors = chartTheme.colors;
+
 const campaignColorMap = computed<Record<string, string>>(() =>
   Object.fromEntries(
     props.campaigns.map((c, i) => [
       c.campaign,
-      CHART_COLORS[i % CHART_COLORS.length],
+      chartColors[i % chartColors.length],
     ]),
   ),
 );
@@ -142,10 +145,10 @@ const roiChannelChartData = computed<BarChartData>(() => ({
       label: " ROI (%)",
       data: channelsByRoi.value.map((ch) => (ch.roi ?? 0) * 100),
       backgroundColor: channelsByRoi.value.map(
-        (_, i) => CHART_COLORS[i % CHART_COLORS.length] + "bf",
+        (_, i) => chartColors[i % chartColors.length] + "bf",
       ),
       borderColor: channelsByRoi.value.map(
-        (_, i) => CHART_COLORS[i % CHART_COLORS.length],
+        (_, i) => chartColors[i % chartColors.length],
       ),
       borderWidth: 1,
       borderRadius: 2,

@@ -1,8 +1,10 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from './App.vue'
-import './ui/charts/register'
+import { registerCharts } from './ui/charts/register'
 import { router } from './router'
 import './style.scss'
+
+registerCharts()
 
 createApp(App).use(createPinia()).use(router).mount('#app')

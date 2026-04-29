@@ -1,4 +1,36 @@
-export const CHART_THEME = {
+export type ChartTheme = {
+  baseOptions: {
+    responsive: boolean
+    maintainAspectRatio: boolean
+  }
+  colors: readonly string[]
+  textColor: string
+  scales: {
+    tickColor: string
+    titleColor: string
+    gridColor: string
+    borderColor: string
+    tickFontSize: number
+    titleFontSize: number
+    maxTickRotation: number
+  }
+  legend: {
+    labelColor: string
+    labelFontSize: number
+    labelPadding: number
+    boxWidth: number
+    boxHeight: number
+    borderRadius: number
+  }
+  tooltip: {
+    backgroundColor: string
+    titleColor: string
+    bodyColor: string
+    borderColor: string
+  }
+}
+
+export const DEFAULT_CHART_THEME = {
   baseOptions: {
     responsive: true,
     maintainAspectRatio: false,
@@ -41,4 +73,4 @@ export const CHART_THEME = {
     bodyColor: '#cbd5e1',
     borderColor: 'rgba(255,255,255,0.15)',
   },
-} as const
+} as const satisfies ChartTheme

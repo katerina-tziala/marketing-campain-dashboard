@@ -3,9 +3,13 @@ import { computed, ref } from 'vue'
 import { Bar } from 'vue-chartjs'
 import type { PortfolioKPIs } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
-import { RadioToggle, type BarChartData, type BarChartOptions } from '@/ui'
-import { useChartTooltip } from '@/ui/charts/composables/useChartTooltip'
-import { useChartTheme } from '@/ui/charts/useChartTheme'
+import {
+  RadioToggle,
+  useChartConfig,
+  useChartTooltip,
+  type BarChartData,
+  type BarChartOptions,
+} from '@/ui'
 import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
 import { sortChannelsByEfficiencyGapImpactDesc } from '../utils/dashboard-sorting'
 
@@ -25,7 +29,7 @@ const props = defineProps<{
 
 const view = ref<ChartView>('budgetVsRevenue')
 
-const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
+const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
 const channelsByGapImpact = computed(() =>
   sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
 )

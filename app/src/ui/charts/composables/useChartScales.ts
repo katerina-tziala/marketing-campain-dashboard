@@ -1,4 +1,4 @@
-import { CHART_THEME } from '../config/chart-theme.config'
+import { useChartTheme } from './useChartTheme'
 
 type CreateChartScaleOptions = {
   title?: string
@@ -7,21 +7,16 @@ type CreateChartScaleOptions = {
   [key: string]: unknown
 }
 
-const baseScale = {
-  ticks: {
-    color: CHART_THEME.scales.tickColor,
-    font: { size: CHART_THEME.scales.tickFontSize },
-  },
-  grid: { color: CHART_THEME.scales.gridColor },
-  border: { color: CHART_THEME.scales.borderColor },
-}
-
-const baseScales = {
-  x: baseScale,
-  y: baseScale,
-}
-
 export function createChartScale(options: CreateChartScaleOptions = {}) {
+  const chartTheme = useChartTheme()
+  const baseScale = {
+    ticks: {
+      color: chartTheme.scales.tickColor,
+      font: { size: chartTheme.scales.tickFontSize },
+    },
+    grid: { color: chartTheme.scales.gridColor },
+    border: { color: chartTheme.scales.borderColor },
+  }
   const { title, adaptiveTickRotation = false, ticks, ...scaleOptions } = options
 
   return {
@@ -32,8 +27,8 @@ export function createChartScale(options: CreateChartScaleOptions = {}) {
           title: {
             display: true,
             text: title,
-            color: CHART_THEME.scales.titleColor,
-            font: { size: CHART_THEME.scales.titleFontSize },
+            color: chartTheme.scales.titleColor,
+            font: { size: chartTheme.scales.titleFontSize },
           },
         }
       : {}),
@@ -42,7 +37,7 @@ export function createChartScale(options: CreateChartScaleOptions = {}) {
       ...(adaptiveTickRotation
         ? {
             autoSkip: true,
-            maxRotation: CHART_THEME.scales.maxTickRotation,
+            maxRotation: chartTheme.scales.maxTickRotation,
             minRotation: 0,
           }
         : {}),
@@ -52,5 +47,19 @@ export function createChartScale(options: CreateChartScaleOptions = {}) {
 }
 
 export function useChartScales() {
+  const chartTheme = useChartTheme()
+  const baseScale = {
+    ticks: {
+      color: chartTheme.scales.tickColor,
+      font: { size: chartTheme.scales.tickFontSize },
+    },
+    grid: { color: chartTheme.scales.gridColor },
+    border: { color: chartTheme.scales.borderColor },
+  }
+  const baseScales = {
+    x: baseScale,
+    y: baseScale,
+  }
+
   return { baseScales, createScale: createChartScale }
 }

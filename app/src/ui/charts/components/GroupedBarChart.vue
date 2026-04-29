@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions } from 'chart.js'
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
-import { useChartTheme } from './useChartTheme'
+import { useChartConfig } from '../composables'
+import type { BarChartData, BarChartOptions } from '../types'
 
 const props = withDefaults(
   defineProps<{
-    chartData: ChartData<'bar'>
+    chartData: BarChartData
     yLabel?: string
     height?: number
   }>(),
   { height: 320 },
 )
 
-const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
+const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
 
-const options = computed<ChartOptions<'bar'>>(() => ({
+const options = computed<BarChartOptions>(() => ({
   ...baseOptions,
   plugins: {
     ...basePlugins,

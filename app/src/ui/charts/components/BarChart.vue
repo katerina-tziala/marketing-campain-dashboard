@@ -1,25 +1,24 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions, TooltipCallbacks } from 'chart.js'
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
-import { useChartTheme } from './useChartTheme'
-import { useChartTooltip } from './composables/useChartTooltip'
+import { useChartConfig, useChartTooltip } from '../composables'
+import type { BarChartData, BarChartOptions, BarTooltipCallbacks } from '../types'
 import { formatCompactNumber } from '@/shared/utils/formatters'
 
 const props = withDefaults(
   defineProps<{
-    chartData: ChartData<'bar'>
+    chartData: BarChartData
     yLabel?: string
     height?: number
     horizontal?: boolean
-    tooltipCallbacks?: Partial<TooltipCallbacks<'bar'>>
+    tooltipCallbacks?: BarTooltipCallbacks
   }>(),
   { height: 320, horizontal: false },
 )
 
-const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
+const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
 
-const defaultTooltipCallbacks: Partial<TooltipCallbacks<'bar'>> = {
+const defaultTooltipCallbacks: BarTooltipCallbacks = {
   title: (items) => items[0]?.label ?? '',
   label: (ctx) => {
     const value = Number(ctx.parsed.y);
@@ -45,7 +44,7 @@ const scaleOptions = computed(() => {
   }
 })
 
-const options = computed<ChartOptions<'bar'>>(() => ({
+const options = computed<BarChartOptions>(() => ({
   ...baseOptions,
   indexAxis: props.horizontal ? 'y' : 'x',
   plugins: {

@@ -2,13 +2,13 @@
 import { computed } from "vue";
 import { Bubble } from "vue-chartjs";
 import type { CampaignPerformance } from "@/shared/types/campaign";
-import type {
-  BubbleChartData,
-  BubbleChartOptions,
-  BubbleChartPlugin,
+import {
+  useChartConfig,
+  useChartTooltip,
+  type BubbleChartData,
+  type BubbleChartOptions,
+  type BubbleChartPlugin,
 } from "@/ui";
-import { useChartTooltip } from "@/ui/charts/composables/useChartTooltip";
-import { useChartTheme } from "@/ui/charts/useChartTheme";
 import {
   formatCompactNumber,
   formatCurrency,
@@ -71,7 +71,7 @@ const props = defineProps<{
   isFiltered?: boolean;
 }>();
 
-const { baseOptions, basePlugins, createScale } = useChartTheme<"bubble">();
+const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
 const scatterTooltip = useChartTooltip<"bubble">(
   {
     title: (items) => {
