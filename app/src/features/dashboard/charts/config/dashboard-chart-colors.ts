@@ -1,3 +1,5 @@
+import { withHexAlpha } from '@/ui/charts'
+
 export const DASHBOARD_CHART_COLORS = {
   budget: '#f97066',
   revenue: '#10b981',
@@ -11,5 +13,5 @@ export function getDashboardChartFillColor(
   color: string,
   alpha = DASHBOARD_CHART_FILL_ALPHA,
 ): string {
-  return `${color}${alpha}`
+  return withHexAlpha(color, alpha)
 }

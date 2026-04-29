@@ -10295,3 +10295,35 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove experimental code after comparison — avoids keeping unused funnel colors, exports, and components in the dashboard chart module.
 - Reuse existing tooltip formatters — keeps budget/revenue currency labels consistent across dashboard charts.
 - Use compact currency on axes and full currency in tooltips — axes stay scannable while tooltips preserve precise values.
+
+
+## [#506] Move Dashboard Bar Charts Onto Shared Chart Wrappers
+**Type:** refactor
+
+**Summary:** Refactored dashboard revenue/budget and efficiency-gap bar charts to use shared `ui/charts` wrappers instead of importing Chart.js directly, and moved generic hex-alpha color composition into the shared chart library.
+
+**Brainstorming:** The chart architecture goal is that direct Chart.js usage should stay inside `ui/charts` wherever possible. RevenueVsBudgetBars and EfficiencyGapBars were dashboard-specific components, but they still imported `vue-chartjs` and built Chart.js options directly. Since the shared `BarChart` and `GroupedBarChart` wrappers already own the generic Chart.js integration, the better direction was to expand those wrappers with small reusable inputs for tooltip callbacks and value tick formatting. Dashboard components can then keep only dashboard-specific chart data, labels, colors, and tooltip wording. We also reviewed dashboard chart utilities and found that most belong in dashboard because they encode business meaning, but the hex-alpha fill helper is generic enough to live in `ui/charts`.
+
+**Prompt:** Keep Chart.js usage inside the shared chart library where possible. Check whether dashboard chart utils can move there too, and move only common reusable chart mechanics.
+
+**What was built:**
+- `app/src/ui/charts/components/BarChart.vue` — added `valueTickFormatter` support so consumers can format value-axis ticks without building Chart.js options directly.
+- `app/src/ui/charts/components/BarChart.vue` — added `showLegend` prop so the wrapper can control legend visibility while keeping the default hidden for simple bar charts.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — added `tooltipCallbacks` support using the shared `useChartTooltip()` composable.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — added `valueTickFormatter` support for formatted grouped-bar value-axis ticks.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — replaced direct `vue-chartjs` usage with the shared `GroupedBarChart` wrapper.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — moved tooltip behavior into `BarTooltipCallbacks` and passes compact currency tick formatting through the wrapper.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — replaced direct `vue-chartjs` usage with the shared `BarChart` wrapper.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — moved tooltip behavior into `BarTooltipCallbacks` and passes decimal tick formatting through the wrapper.
+- `app/src/ui/charts/utils/color.ts` — added generic `withHexAlpha()` utility for composing hex colors with alpha values.
+- `app/src/ui/charts/utils/index.ts` — added a chart utils barrel.
+- `app/src/ui/charts/index.ts` — exported shared chart utils from the root chart barrel.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — updated `getDashboardChartFillColor()` to reuse `withHexAlpha()` while keeping dashboard semantic colors in dashboard config.
+
+**Key decisions & why:**
+- Keep Chart.js integration in `ui/charts` — dashboard chart components should compose shared wrappers instead of importing `vue-chartjs` directly when the chart shape is already supported.
+- Extend wrappers with narrow inputs — tooltip callbacks, tick formatting, and legend visibility are generic chart mechanics, so they belong in the reusable chart components.
+- Keep dashboard chart data mapping in dashboard — revenue, budget, efficiency gap, and their labels remain business-specific.
+- Keep dashboard semantic colors in dashboard config — `budget`, `revenue`, `positiveGap`, and `negativeGap` are domain concepts, not generic chart-library tokens.
+- Move only the hex-alpha helper to `ui/charts` — composing a color with alpha is a reusable chart utility and does not depend on dashboard business meaning.
+- Leave `RoiBudgetScatter` as the remaining direct Chart.js exception — it still uses the Bubble chart directly and can be handled separately if the chart boundary becomes fully strict.

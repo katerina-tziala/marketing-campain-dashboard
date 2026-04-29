@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Bar } from "vue-chartjs";
 import type { PortfolioKPIs } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
 import {
-  useChartConfig,
-  useChartTooltip,
+  BarChart,
   type BarChartData,
-  type BarChartOptions,
+  type BarTooltipCallbacks,
 } from "@/ui";
 import { formatCurrency, formatDecimal } from "@/shared/utils/formatters";
 import {
@@ -27,13 +25,11 @@ const props = defineProps<{
   ariaLabel?: string;
 }>();
 
-const { baseOptions, basePlugins, createScale } = useChartConfig<"bar">();
-
 function getGapPercent(channel: Channel): number {
   return getChannelEfficiencyGapPercent(channel, props.kpis);
 }
 
-const tooltip = useChartTooltip<"bar">({
+const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
     const value =
       typeof ctx.raw === "number"
@@ -49,7 +45,7 @@ const tooltip = useChartTooltip<"bar">({
     const signedAmount = getEfficiencyGapSignedAmount(channel, gapPercent);
     return `Gap: ${gapPercent > 0 ? "+" : ""}${formatCurrency(signedAmount)}`;
   },
-});
+};
 
 const chartData = computed<BarChartData>(() => ({
   labels: props.channels.map((ch) => ch.name),
@@ -67,31 +63,18 @@ const chartData = computed<BarChartData>(() => ({
   ],
 }));
 
-const options = computed<BarChartOptions>(() => ({
-  ...baseOptions,
-  plugins: {
-    ...basePlugins,
-    legend: { display: false },
-    tooltip,
-  },
-  scales: {
-    x: createScale({ adaptiveTickRotation: true }),
-    y: createScale({
-      title: "Gap (%)",
-      ticks: {
-        callback: (value: string | number) => formatDecimal(Number(value), 1),
-      },
-    }),
-  },
-}));
+function formatValueTick(value: string | number): string {
+  return formatDecimal(Number(value), 1);
+}
 </script>
 
 <template>
-  <div
-    :style="{ height: `${height}px` }"
-    role="img"
+  <BarChart
+    :chart-data="chartData"
+    :height="height"
     :aria-label="ariaLabel ?? 'Efficiency Gap by Channel'"
-  >
-    <Bar :data="chartData" :options="options" />
-  </div>
+    :tooltip-callbacks="tooltipCallbacks"
+    :value-tick-formatter="formatValueTick"
+    y-label="Gap (%)"
+  />
 </template>

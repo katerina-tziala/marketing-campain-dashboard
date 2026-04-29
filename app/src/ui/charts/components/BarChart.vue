@@ -5,6 +5,8 @@ import { useChartConfig, useChartTooltip } from '../composables'
 import type { BarChartData, BarChartOptions, BarTooltipCallbacks } from '../types'
 import { formatCompactNumber } from '@/shared/utils/formatters'
 
+type ChartTickFormatter = (value: string | number) => string
+
 const props = withDefaults(
   defineProps<{
     chartData: BarChartData
@@ -13,8 +15,10 @@ const props = withDefaults(
     horizontal?: boolean
     ariaLabel?: string
     tooltipCallbacks?: BarTooltipCallbacks
+    valueTickFormatter?: ChartTickFormatter
+    showLegend?: boolean
   }>(),
-  { height: 320, horizontal: false },
+  { height: 320, horizontal: false, showLegend: false },
 )
 
 const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
@@ -32,16 +36,20 @@ const barTooltip = useChartTooltip<'bar'>(
 )
 
 const scaleOptions = computed(() => {
+  const valueTicks = props.valueTickFormatter
+    ? { callback: props.valueTickFormatter }
+    : undefined
+
   if (props.horizontal) {
     return {
-      x: { title: props.yLabel },
+      x: { title: props.yLabel, ticks: valueTicks },
       y: {},
     }
   }
 
   return {
     x: { adaptiveTickRotation: true },
-    y: { title: props.yLabel },
+    y: { title: props.yLabel, ticks: valueTicks },
   }
 })
 
@@ -50,7 +58,7 @@ const options = computed<BarChartOptions>(() => ({
   indexAxis: props.horizontal ? 'y' : 'x',
   plugins: {
     ...basePlugins,
-    legend: { display: false },
+    legend: { display: props.showLegend },
     tooltip: barTooltip,
   },
   scales: {
