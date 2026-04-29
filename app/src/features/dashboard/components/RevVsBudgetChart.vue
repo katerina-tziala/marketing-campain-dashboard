@@ -10,7 +10,13 @@ import {
   type BarChartData,
   type BarChartOptions,
 } from '@/ui'
+import { computeShareEfficiency } from '@/shared/utils/campaign-performance'
 import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
+import {
+  DASHBOARD_BAR_DATASET_STYLE,
+  DASHBOARD_CHART_COLORS,
+  getDashboardChartFillColor,
+} from '../charts'
 import { sortChannelsByEfficiencyGapImpactDesc } from '../utils/dashboard-sorting'
 
 type ChartView = 'budgetVsRevenue' | 'efficiencyGap'
@@ -34,12 +40,19 @@ const channelsByGapImpact = computed(() =>
   sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
 )
 
+function getEfficiencyGapColor(channel: Channel): string {
+  return getEfficiencyGapPercent(channel) >= 0
+    ? DASHBOARD_CHART_COLORS.positiveGap
+    : DASHBOARD_CHART_COLORS.negativeGap
+}
+
 function getEfficiencyGapPercent(channel: Channel): number {
-  const totalBudget = props.kpis.totalBudget
-  const totalRevenue = props.kpis.totalRevenue
-  const budgetShare = totalBudget ? channel.budget / totalBudget : 0
-  const revenueShare = totalRevenue ? channel.revenue / totalRevenue : 0
-  return (revenueShare - budgetShare) * 100
+  const { efficiencyGap } = computeShareEfficiency(
+    channel,
+    props.kpis.totalBudget,
+    props.kpis.totalRevenue,
+  )
+  return -efficiencyGap * 100
 }
 
 const efficiencyGapTooltip = useChartTooltip<'bar'>({
@@ -62,18 +75,16 @@ const revVsBudgetData = computed<BarChartData>(() => ({
     {
       label: 'Budget (€)',
       data: channelsByGapImpact.value.map((ch) => ch.budget),
-      backgroundColor: 'rgba(249,112,102,0.75)',
-      borderColor: '#f97066',
-      borderWidth: 1,
-      borderRadius: 2,
+      backgroundColor: getDashboardChartFillColor(DASHBOARD_CHART_COLORS.budget),
+      borderColor: DASHBOARD_CHART_COLORS.budget,
+      ...DASHBOARD_BAR_DATASET_STYLE,
     },
     {
       label: 'Revenue (€)',
       data: channelsByGapImpact.value.map((ch) => ch.revenue),
-      backgroundColor: 'rgba(16,185,129,0.75)',
-      borderColor: '#10b981',
-      borderWidth: 1,
-      borderRadius: 2,
+      backgroundColor: getDashboardChartFillColor(DASHBOARD_CHART_COLORS.revenue),
+      borderColor: DASHBOARD_CHART_COLORS.revenue,
+      ...DASHBOARD_BAR_DATASET_STYLE,
     },
   ],
 }))
@@ -94,14 +105,13 @@ const efficiencyGapData = computed<BarChartData>(() => {
       {
         label: 'Efficiency Gap',
         data: channelsByGapImpact.value.map((ch) => getEfficiencyGapPercent(ch)),
-        backgroundColor: channelsByGapImpact.value.map((ch) => {
-          return getEfficiencyGapPercent(ch) >= 0 ? 'rgba(16,185,129,0.75)' : 'rgba(249,112,102,0.75)'
-        }),
-        borderColor: channelsByGapImpact.value.map((ch) => {
-          return getEfficiencyGapPercent(ch) >= 0 ? '#10b981' : '#f97066'
-        }),
-        borderWidth: 1,
-        borderRadius: 2,
+        backgroundColor: channelsByGapImpact.value.map((ch) =>
+          getDashboardChartFillColor(getEfficiencyGapColor(ch)),
+        ),
+        borderColor: channelsByGapImpact.value.map((ch) =>
+          getEfficiencyGapColor(ch),
+        ),
+        ...DASHBOARD_BAR_DATASET_STYLE,
       },
     ],
   }

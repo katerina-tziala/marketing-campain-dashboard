@@ -8,7 +8,10 @@ import {
   type BarTooltipItem,
 } from '@/ui'
 import type { RoiBarChartItem } from '../types'
-import { formatRoiAllocationTooltipLines } from '../utils'
+import {
+  DASHBOARD_BAR_DATASET_STYLE,
+  formatRoiAllocationTooltipLines,
+} from '../utils'
 
 const props = defineProps<{
   items: RoiBarChartItem[]
@@ -34,8 +37,7 @@ const chartData = computed<BarChartData>(() => ({
       data: props.items.map((item) => (item.roi ?? 0) * 100),
       backgroundColor: props.items.map((item) => `${item.color}bf`),
       borderColor: props.items.map((item) => item.color),
-      borderWidth: 1,
-      borderRadius: 2,
+      ...DASHBOARD_BAR_DATASET_STYLE,
     },
   ],
 }))

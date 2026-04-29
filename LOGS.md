@@ -10188,3 +10188,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use composables for ROI chart items — inputs are reactive sorted arrays, so computed composables fit the Vue data flow.
 - Add chart tooltip formatter utils — budget tooltip lines are shared by the donut chart and ROI chart tooltip, so formatting now lives in one dashboard chart utility.
 - Keep dashboard chart logic out of `ui/charts` — ROI chart behavior is domain-specific, while `ui/charts` remains the reusable Chart.js wrapper layer.
+
+
+## [#503] Reuse Shared Share Calculators and Dashboard Chart Styling
+**Type:** refactor
+
+**Summary:** Reused shared share-efficiency calculation in the revenue-vs-budget chart and centralized dashboard chart tooltip/style/color helpers.
+
+**Brainstorming:** Several dashboard charts were duplicating small pieces of chart logic: budget share tooltip labels, ROI allocation tooltip labels, bar dataset border styling, and semantic revenue/budget colors. RevVsBudgetChart also calculated budget/revenue shares locally even though shared campaign performance utilities already expose `computeShareEfficiency()`. The cleanup direction was to keep generic chart primitives in `ui/charts`, but create dashboard-specific chart utilities for domain chart semantics such as budget, revenue, positive gap, and negative gap.
+
+**Prompt:** Reuse the shared share calculator in RevVsBudgetChart, extract repeated dashboard chart tooltip labels, centralize repeated bar dataset styling, and move revenue/budget chart colors into a dashboard chart config.
+
+**What was built:**
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — replaced local budget/revenue share math with `computeShareEfficiency()` from shared campaign performance utilities.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — preserved the chart’s existing sign convention by inverting shared `efficiencyGap`, so positive still means revenue share exceeds budget share.
+- `app/src/features/dashboard/charts/utils/chart-tooltip-formatters.ts` — added `formatBudgetTooltipLines()` and `formatRoiAllocationTooltipLines()` for reusable dashboard chart tooltip body lines.
+- `app/src/features/dashboard/charts/utils/chart-style-constants.ts` — added `DASHBOARD_BAR_DATASET_STYLE` for shared bar dataset styling.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — added semantic dashboard chart colors for budget, revenue, positive gap, and negative gap.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — added `DASHBOARD_CHART_FILL_ALPHA` and `getDashboardChartFillColor()` for deriving translucent chart fills from semantic colors.
+- `app/src/features/dashboard/charts/config/index.ts` — added a dashboard chart config barrel.
+- `app/src/features/dashboard/charts/utils/index.ts` — exported tooltip formatters and style constants through the utils barrel.
+- `app/src/features/dashboard/charts/index.ts` — exported dashboard chart config and utils through the root dashboard charts barrel.
+- `app/src/features/dashboard/charts/components/RoiBarChart.vue` — replaced inline ROI tooltip label formatting with `formatRoiAllocationTooltipLines()`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — replaced duplicated donut budget tooltip label formatting with `formatBudgetTooltipLines()`.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — replaced repeated `borderWidth`/`borderRadius` dataset styling with `DASHBOARD_BAR_DATASET_STYLE`.
+- `app/src/features/dashboard/charts/components/RoiBarChart.vue` — replaced repeated `borderWidth`/`borderRadius` dataset styling with `DASHBOARD_BAR_DATASET_STYLE`.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — replaced hardcoded budget/revenue/gap colors with `DASHBOARD_CHART_COLORS` and `getDashboardChartFillColor()`.
+
+**Key decisions & why:**
+- Use shared `computeShareEfficiency()` — keeps allocation share math consistent with the rest of the portfolio analysis code.
+- Invert shared `efficiencyGap` in RevVsBudgetChart — shared efficiency gap is `budgetShare - revenueShare`, while the chart intentionally displays positive values when revenue share outperforms budget share.
+- Keep dashboard semantic colors outside `ui/charts` — budget/revenue/positive-gap/negative-gap are dashboard concepts, not generic chart wrapper concepts.
+- Use `TooltipLines` naming — makes it clear the formatter output is meant for Chart.js tooltip body arrays.
+- Centralize repeated bar dataset style — avoids scattering `borderWidth: 1` and `borderRadius: 2` across dashboard chart datasets.
+- Keep fill alpha helper dashboard-scoped — translucent fills are part of the dashboard chart visual language rather than a global chart primitive for now.
