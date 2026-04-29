@@ -60,7 +60,7 @@ const roiChannelChartData = computed<ChartData<"bar">>(() => ({
   labels: props.channels.map((ch) => ch.name),
   datasets: [
     {
-      label: "ROI (%)",
+      label: " ROI (%)",
       data: props.channels.map((ch) => (ch.roi ?? 0) * 100),
       backgroundColor: props.channels.map(
         (_, i) => CHART_COLORS[i % CHART_COLORS.length] + "bf",
@@ -133,11 +133,11 @@ const funnelValues = computed(() => [
 
 <style lang="scss" scoped>
 .charts-grid {
-  @apply w-full grid grid-cols-1 gap-5 mx-auto max-w-7xl;
+  @apply w-full grid grid-cols-2 gap-5 mx-auto max-w-7xl;
 
-  @container (min-width: 60rem) {
-    @apply grid-cols-2;
-  }
+  // @container (min-width: 60rem) {
+  //   @apply grid-cols-2;
+  // }
 }
 
 .card.chart-card {

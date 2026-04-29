@@ -1,3 +1,6 @@
+import type { ChartType } from 'chart.js'
+import { useChartTooltip } from './composables/useChartTooltip'
+
 export const CHART_COLORS = [
   '#6366f1', // indigo
   '#8b5cf6', // violet
@@ -15,10 +18,10 @@ export const CHART_COLORS = [
 
 export const TEXT_COLOR = '#cbd5e1'
 const GRID_COLOR = 'rgba(255,255,255,0.07)'
-const TOOLTIP_BG = '#1f2937'
-const BORDER_COLOR = '#374151'
 
-export function useChartTheme() {
+export function useChartTheme<TType extends ChartType = ChartType>() {
+  const tooltip = useChartTooltip<TType>()
+
   const baseScales = {
     x: {
       ticks: { color: TEXT_COLOR, font: { size: 11 } },
@@ -46,15 +49,7 @@ export function useChartTheme() {
         boxHeight: 12,
       },
     },
-    tooltip: {
-      backgroundColor: TOOLTIP_BG,
-      titleColor: '#f9fafb',
-      bodyColor: '#d1d5db',
-      borderColor: BORDER_COLOR,
-      borderWidth: 1,
-      cornerRadius: 6,
-      padding: 10,
-    },
+    tooltip,
   }
 
   return { baseScales, basePlugins }

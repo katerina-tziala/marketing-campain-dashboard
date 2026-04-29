@@ -14,7 +14,7 @@ const props = withDefaults(
   { height: 320, horizontal: false },
 )
 
-const { baseScales, basePlugins } = useChartTheme()
+const { baseScales, basePlugins } = useChartTheme<'bar'>()
 
 const options = computed<ChartOptions<'bar'>>(() => ({
   indexAxis: props.horizontal ? 'y' : 'x',

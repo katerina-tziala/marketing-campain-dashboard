@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions } from "chart.js";
-import { Chart as ChartJS } from "chart.js";
+import type { ChartData, ChartOptions, Plugin } from "chart.js";
 import { computed } from "vue";
 import { Bubble } from "vue-chartjs";
 import type { CampaignPerformance } from "@/shared/types/campaign";
+import { useChartTooltip } from "@/ui/charts/composables/useChartTooltip";
 import { useChartTheme } from "@/ui/charts/useChartTheme";
 import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
 
@@ -62,7 +62,25 @@ const props = defineProps<{
   isFiltered?: boolean;
 }>();
 
-const { baseScales, basePlugins } = useChartTheme();
+const { baseScales, basePlugins } = useChartTheme<"bubble">();
+const scatterTooltip = useChartTooltip<"bubble">(
+  {
+    title: (items) => {
+      const p = items[0]?.raw as BubblePoint | undefined;
+      return p?.campaign ?? "";
+    },
+    label: (ctx) => {
+      const p = ctx.raw as BubblePoint;
+      return [
+        `Channel: ${p.channel}`,
+        `ROI: ${formatPercentage(p.roi)}`,
+        `Budget: ${formatCurrency(p.budget)}`,
+        `Revenue: ${formatCurrency(p.revenue)}`,
+      ];
+    },
+  },
+  { marker: "circle" },
+);
 
 function getMedian(values: number[]): number {
   if (!values.length) return 0;
@@ -155,9 +173,9 @@ const bubbleData = computed<ChartData<"bubble", BubblePoint[]>>(() => {
   };
 });
 
-const quadrantPlugin = {
+const quadrantPlugin: Plugin<"bubble"> = {
   id: "roiBudgetQuadrantPlugin",
-  beforeDraw(chart: ChartJS) {
+  beforeDraw(chart) {
     const { roi: medRoi, budget: medBudget } = medians.value;
     const { ctx, chartArea, scales } = chart;
     if (!chartArea) return;
@@ -188,7 +206,7 @@ const quadrantPlugin = {
     ctx.stroke();
     ctx.restore();
   },
-  afterDatasetsDraw(chart: ChartJS) {
+  afterDatasetsDraw(chart) {
     const { ctx, data, chartArea } = chart;
     if (!chartArea) return;
     const { right, top, bottom } = chartArea;
@@ -245,25 +263,7 @@ const chartOptions = computed<ChartOptions<"bubble">>(() => ({
   layout: { padding: { top: 24 } },
   plugins: {
     ...basePlugins,
-    tooltip: {
-      ...basePlugins.tooltip,
-      backgroundColor: "rgba(15,23,42,0.95)",
-      borderColor: "rgba(255,255,255,0.15)",
-      usePointStyle: true,
-      callbacks: {
-        title: () => [],
-        label: (ctx) => {
-          const p = ctx.raw as BubblePoint;
-          return [
-            p.campaign,
-            `Channel: ${p.channel}`,
-            `ROI: ${formatPercentage(p.roi)}`,
-            `Budget: ${formatCurrency(p.budget)}`,
-            `Revenue: ${formatCurrency(p.revenue)}`,
-          ];
-        },
-      },
-    },
+    tooltip: scatterTooltip,
   },
   scales: {
     x: {

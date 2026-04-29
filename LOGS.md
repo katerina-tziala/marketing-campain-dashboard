@@ -9881,3 +9881,35 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Vite still injects only container query mixins: SFC styles keep convenient access to `cq-*` helpers without globally exposing unrelated mixins
 - Scrollbar mixin stays in utilities: `scrollbar-colors` is private implementation detail for scrollbar utility classes, so splitting it would add structure without real reuse yet
 - Existing behavior preserved: imports and file locations changed, but the reset, app shell, typography, theme tokens, and container query values stayed the same
+
+
+## [#491] Centralize chart tooltip styling
+**Type:** refactor
+
+**Summary:** Centralized Chart.js tooltip presentation in a reusable chart composable, added a chart theme config boundary for canvas-safe tooltip colors, and moved dashboard charts to content-only tooltip customization.
+
+**Brainstorming:** The dashboard charts needed a consistent tooltip language: no white marker borders, predictable spacing, shared panel styling, and content customization only where a chart needs custom labels. At the same time, future chart theming is expected to come from CSS variables, but Chart.js renders tooltips on canvas and does not reliably consume unresolved `rgb(var(--...))` color strings. The practical split is to introduce chart-level theme tokens in SCSS as future groundwork, keep current Chart.js colors in a TypeScript config that can later be backed by a resolver, and make `useChartTooltip` the single place that maps app tooltip decisions to Chart.js options.
+
+**Prompt:** Refactor chart tooltips so all charts share the same tooltip styling, allow charts to adjust only tooltip content, create chart tooltip theme groundwork, normalize tooltip marker styling, and update the scatter plot tooltip to match the other chart tooltips.
+
+**What was built:**
+- `app/src/styles/themes/dark/_charts.scss` — new dark-theme chart partial with tooltip CSS variable names for future chart theming
+- `app/src/styles/themes/dark/index.scss` — imports the new chart partial through the dark theme barrel
+- `app/src/ui/charts/config/chart-theme.config.ts` — new Chart.js-safe chart theme config with concrete tooltip colors used until CSS variables are resolved in a later layer
+- `app/src/ui/charts/composables/useChartTooltip.ts` — new reusable tooltip composable; owns tooltip panel color, border, corner radius, padding, marker sizing, marker spacing, marker shape mapping, and normalized marker fill/border behavior
+- `app/src/ui/charts/useChartTheme.ts` — now composes the shared tooltip through `useChartTooltip`; made `useChartTheme` generic by chart type so tooltip options stay correctly typed for bar, doughnut, and bubble charts
+- `app/src/ui/charts/BarChart.vue` — calls `useChartTheme<'bar'>()` so shared bar-chart options are type-specific
+- `app/src/ui/charts/GroupedBarChart.vue` — calls `useChartTheme<'bar'>()` for typed shared grouped-bar options
+- `app/src/ui/charts/DonutChart.vue` — calls `useChartTheme<'doughnut'>()` so the doughnut tooltip receives the shared tooltip behavior with the correct Chart.js type
+- `app/src/ui/charts/index.ts` — exports `useChartTooltip` and its content callback type from the chart barrel
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — moved efficiency-gap tooltip label and `afterLabel` formatting into `useChartTooltip<'bar'>()` so only content differs from the shared tooltip style
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — moved scatter tooltip title/body formatting into `useChartTooltip<'bubble'>()`; uses the campaign name as the tooltip title, body lines for channel/ROI/budget/revenue, and a circle marker; typed the quadrant plugin as `Plugin<'bubble'>`
+
+**Key decisions & why:**
+- `useChartTooltip` owns styling: charts can customize content callbacks, but tooltip colors, borders, padding, radius, marker size, and marker border behavior remain part of the chart library contract
+- Use a TypeScript config for current colors: Chart.js canvas rendering needs concrete color strings today, while the SCSS chart variables remain future-facing tokens for the later resolver layer
+- Normalize marker `labelColor`: tooltip markers now use each active item color for both fill and border, preventing doughnut arc borders or bar border styles from making tooltip indicators look inconsistent
+- Default marker is a plain square: base charts use normal rectangular indicators, while charts can opt into the small controlled marker set when the chart type calls for it
+- Scatter uses a circle marker: bubble/scatter points read more naturally with round tooltip indicators while still using the same panel, spacing, title, and body styling as the other charts
+- Scatter campaign name moved to title: the scatter tooltip now matches the shared tooltip hierarchy instead of putting the campaign name in the body label list
+- `useChartTheme` is chart-type aware: passing the chart type keeps shared plugin options compatible with Chart.js' strict per-chart tooltip typings

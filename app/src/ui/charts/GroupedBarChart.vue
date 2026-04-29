@@ -13,7 +13,7 @@ const props = withDefaults(
   { height: 320 },
 )
 
-const { baseScales, basePlugins } = useChartTheme()
+const { baseScales, basePlugins } = useChartTheme<'bar'>()
 
 const options = computed<ChartOptions<'bar'>>(() => ({
   responsive: true,

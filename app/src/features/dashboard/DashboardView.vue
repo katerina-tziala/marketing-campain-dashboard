@@ -85,18 +85,18 @@ function clearChannelFilters(): void {
             : undefined
         "
       />
-      <!-- Charts
+      <!-- Charts-->
       <DashboardCharts
         :campaigns="store.filteredCampaigns"
         :channels="store.selectedChannels"
         :kpis="store.portfolioAnalysis.portfolio"
       />
-      ROI vs Budget Scatter
+      <!-- ROI vs Budget Scatter -->
       <RoiBudgetScatter
         :campaigns="store.filteredCampaigns"
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"
-      /> -->
+      /> 
       <!-- Campaign Table -->
       <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
         <h3 class="card-title table-card-title">Campaign Details</h3>

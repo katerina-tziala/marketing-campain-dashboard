@@ -1,0 +1,13 @@
+/*
+  Dark chart semantics.
+
+  Chart components should consume these chart-specific tokens rather than
+  reaching directly into the app palette.
+*/
+:root,
+[data-theme="dark"] {
+  --chart-tooltip-bg: var(--neutral-800);
+  --chart-tooltip-title: var(--color-text-strong);
+  --chart-tooltip-body: var(--color-text-soft);
+  --chart-tooltip-border: var(--neutral-700);
+}

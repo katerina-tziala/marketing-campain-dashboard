@@ -5,6 +5,7 @@ import { Bar } from 'vue-chartjs'
 import type { PortfolioKPIs } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
 import { RadioToggle } from '@/ui'
+import { useChartTooltip } from '@/ui/charts/composables/useChartTooltip'
 import { useChartTheme } from '@/ui/charts/useChartTheme'
 import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
 
@@ -24,9 +25,21 @@ const props = defineProps<{
 
 const view = ref<ChartView>('budgetVsRevenue')
 
-const { baseScales, basePlugins } = useChartTheme()
+const { baseScales, basePlugins } = useChartTheme<'bar'>()
 
 const baseXTicks = { ...baseScales.x.ticks, maxRotation: 45, minRotation: 45 }
+const efficiencyGapTooltip = useChartTooltip<'bar'>({
+  label: (ctx) => {
+    const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
+    return ` ${value}%`
+  },
+  afterLabel: (ctx) => {
+    const ch = props.channels[ctx.dataIndex]
+    if (!ch) return ''
+    const gap = ch.revenue - ch.budget
+    return `Gap: ${gap >= 0 ? '+' : ''}${formatCurrency(gap)}`
+  },
+})
 
 const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
   labels: props.channels.map((ch) => ch.name),
@@ -100,21 +113,7 @@ const gapOptions = computed<ChartOptions<'bar'>>(() => ({
   plugins: {
     ...basePlugins,
     legend: { display: false },
-    tooltip: {
-      ...basePlugins.tooltip,
-      callbacks: {
-        label: (ctx) => {
-          const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
-          return ` ${value}%`
-        },
-        afterLabel: (ctx) => {
-          const ch = props.channels[ctx.dataIndex]
-          if (!ch) return ''
-          const gap = ch.revenue - ch.budget
-          return `Gap: ${gap >= 0 ? '+' : ''}${formatCurrency(gap)}`
-        },
-      },
-    },
+    tooltip: efficiencyGapTooltip,
   },
   scales: {
     x: { ...baseScales.x, ticks: baseXTicks },
