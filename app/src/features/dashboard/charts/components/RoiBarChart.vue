@@ -8,8 +8,8 @@ import {
   type BarTooltipItem,
 } from '@/ui'
 import type { RoiBarChartItem } from '../types'
+import { DASHBOARD_BAR_DATASET_STYLE } from '../config'
 import {
-  DASHBOARD_BAR_DATASET_STYLE,
   formatRoiAllocationTooltipLines,
 } from '../utils'
 

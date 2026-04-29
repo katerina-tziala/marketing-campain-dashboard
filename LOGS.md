@@ -10222,3 +10222,38 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `TooltipLines` naming — makes it clear the formatter output is meant for Chart.js tooltip body arrays.
 - Centralize repeated bar dataset style — avoids scattering `borderWidth: 1` and `borderRadius: 2` across dashboard chart datasets.
 - Keep fill alpha helper dashboard-scoped — translucent fills are part of the dashboard chart visual language rather than a global chart primitive for now.
+
+
+## [#504] Extract Revenue/Budget Subcharts and Budget Donut Module
+**Type:** refactor
+
+**Summary:** Split the revenue-vs-budget toggle into focused internal chart components, extracted the budget-share donut chart into the dashboard chart module, and moved dashboard chart styling constants into config.
+
+**Brainstorming:** RevVsBudgetChart had become a toggle shell plus two separate chart implementations: Revenue vs Budget and Efficiency Gap. Those two charts tell different stories and have different data mappings, options, and tooltip needs, so keeping them inline made the component harder to scan. The goal was not to rename or redesign RevVsBudgetChart, but to keep it as the toggle/container and extract only the internal chart renderers. We also applied the same normalized-item pattern from ROI charts to the Budget Share donut so DashboardCharts remains responsible for card layout and chart orchestration, while dashboard chart components own rendering. Finally, style constants such as dataset border width/radius belong in dashboard chart config rather than utils.
+
+**Prompt:** Extract only the internal Revenue vs Budget and Efficiency Gap charts without renaming RevVsBudgetChart. Extract Budget Share by Campaign donut using normalized items. Move repeated chart style constants into dashboard chart config.
+
+**What was built:**
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — added a focused internal chart component for the Budget vs Revenue bar chart.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — added a focused internal chart component for the Efficiency Gap bar chart, including its tooltip and gap-specific chart options.
+- `app/src/features/dashboard/charts/utils/efficiency-gap.ts` — added reusable helpers for `getChannelEfficiencyGapPercent`, `getEfficiencyGapColor`, and `getEfficiencyGapSignedAmount`.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — simplified the component into a toggle/container that sorts channels and switches between `RevenueVsBudgetBars` and `EfficiencyGapBars`.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — added a dashboard-specific budget-share donut chart component that owns DonutChart data and tooltip callbacks.
+- `app/src/features/dashboard/charts/types/budget-share-chart.types.ts` — added `BudgetShareDonutItem` for normalized budget-share donut data.
+- `app/src/features/dashboard/charts/composables/useBudgetShareChartItems.ts` — added `useCampaignBudgetShareDonutItems()` to normalize campaign budget data with assigned colors.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed inline DonutChart data and tooltip logic; now renders `BudgetShareDonutChart` inside the existing dashboard card/header.
+- `app/src/features/dashboard/charts/config/dashboard-chart-styles.ts` — moved dashboard dataset style constants into config and added `DASHBOARD_DONUT_DATASET_STYLE`.
+- `app/src/features/dashboard/charts/utils/chart-style-constants.ts` — removed after moving style constants into config.
+- `app/src/features/dashboard/charts/components/index.ts` — exported the new chart components.
+- `app/src/features/dashboard/charts/composables/index.ts` — exported the budget-share item composable.
+- `app/src/features/dashboard/charts/types/index.ts` — exported the budget-share donut item type.
+- `app/src/features/dashboard/charts/config/index.ts` — exported dashboard chart dataset style constants.
+
+**Key decisions & why:**
+- Keep RevVsBudgetChart as the container — avoids renaming or changing the public component while still reducing internal complexity.
+- Extract only the chart renderers — keeps the toggle state and sorted channel list in one place, while each chart owns its data/options.
+- Reuse efficiency-gap helpers — keeps percentage, color, and signed amount calculations aligned across the gap chart.
+- Use normalized items for BudgetShareDonutChart — matches the ROI chart pattern and keeps campaign/color mapping out of the renderer.
+- Keep card/header in DashboardCharts — dashboard layout and section titles remain centralized in the grid component.
+- Move style constants to config — border width/radius are visual configuration, not formatting utilities.
+- Keep semantic colors in dashboard chart config — budget/revenue/gap colors are dashboard domain semantics, not global chart primitives.

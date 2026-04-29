@@ -5,16 +5,11 @@ import type {
   PortfolioKPIs,
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
+import { useChartTheme } from "@/ui";
 import {
-  DonutChart,
-  type DonutChartData,
-  type DonutTooltipCallbacks,
-  type DonutTooltipItem,
-  useChartTheme,
-} from "@/ui";
-import {
+  BudgetShareDonutChart,
   RoiBarChart,
-  formatBudgetTooltipLines,
+  useCampaignBudgetShareDonutItems,
   useCampaignRoiChartItems,
   useChannelRoiChartItems,
 } from "../charts";
@@ -58,35 +53,10 @@ const roiChannelItems = useChannelRoiChartItems(
   channelsByRoi,
   (_, index) => chartColors[index % chartColors.length],
 );
-
-function getDoughnutTooltipDataIndex(ctx: DonutTooltipItem): number {
-  return ctx.dataIndex;
-}
-
-const budgetCampaignTooltipCallbacks: DonutTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
-  label: (ctx) => {
-    const campaign =
-      campaignsByBudget.value[getDoughnutTooltipDataIndex(ctx)];
-
-    if (!campaign) return [];
-
-    return formatBudgetTooltipLines(campaign.budget, props.kpis.totalBudget);
-  },
-};
-
-const budgetCampaignData = computed<DonutChartData>(() => ({
-  labels: campaignsByBudget.value.map((c) => c.campaign),
-  datasets: [
-    {
-      data: campaignsByBudget.value.map((c) => c.budget),
-      backgroundColor: campaignsByBudget.value.map(
-        (c) => campaignColorMap.value[c.campaign],
-      ),
-      borderWidth: 2,
-    },
-  ],
-}));
+const budgetCampaignItems = useCampaignBudgetShareDonutItems(
+  campaignsByBudget,
+  (campaign) => campaignColorMap.value[campaign.campaign],
+);
 
 const funnelLabels = ["Impressions", "Clicks", "Conversions"];
 const funnelValues = computed(() => [
@@ -115,12 +85,7 @@ const funnelValues = computed(() => [
 
     <div class="card chart-card">
       <h3 class="card-title chart-card-title">Budget Share by Campaign</h3>
-      <DonutChart
-        :chart-data="budgetCampaignData"
-        :tooltip-callbacks="budgetCampaignTooltipCallbacks"
-        :height="420"
-        class="w-full"
-      />
+      <BudgetShareDonutChart :items="budgetCampaignItems" :kpis="kpis" />
     </div>
 
     <div class="card chart-card">
