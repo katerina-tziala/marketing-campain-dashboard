@@ -10051,3 +10051,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep Chart.js imports inside the UI chart layer — the wrapper components and composables can still depend on Chart.js internally, while feature components consume app-facing chart types.
 - Re-export through `@/ui` — gives dashboard components a single public UI import path and keeps the chart wrapper API discoverable.
 - Include bubble chart aliases — RoiBudgetScatter uses a custom bubble chart directly, so adding bubble aliases removes its direct Chart.js type dependency too.
+
+
+## [#498] Move FunnelChart into Dashboard Feature
+**Type:** refactor
+
+**Summary:** Moved FunnelChart out of the shared UI chart library and into the dashboard feature because it is currently only used as the dashboard conversion funnel.
+
+**Brainstorming:** The chart components in `app/src/ui/charts` should represent reusable chart primitives or Chart.js wrappers. FunnelChart is only used by the dashboard and currently supports the conversion funnel story: Impressions, Clicks, and Conversions. We considered keeping it in the UI chart library because it accepts generic labels and values, but in practice it is not reused elsewhere and belongs closer to the dashboard domain. The component was moved as-is so the architecture improves without changing behavior; further iteration can rename or specialize it later if needed.
+
+**Prompt:** Move the conversion funnel chart to the dashboard as-is and iterate further later.
+
+**What was built:**
+- `app/src/features/dashboard/components/FunnelChart.vue` — moved the existing FunnelChart component from the UI chart library into the dashboard feature components folder with its implementation unchanged.
+- `app/src/ui/charts/index.ts` — removed the `FunnelChart` export from the shared chart library.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — changed the FunnelChart import from the shared `@/ui` barrel to a local dashboard component import.
+
+**Key decisions & why:**
+- Move as-is — keeps this refactor focused on ownership and avoids mixing architectural cleanup with behavior changes.
+- Keep the component in dashboard components — it is only used by DashboardCharts and currently represents the dashboard conversion funnel.
+- Remove the UI export — prevents new consumers from treating FunnelChart as a shared chart primitive before it is proven reusable.
+- Defer renaming/specialization — a future iteration can rename it to ConversionFunnelChart or change its API once the dashboard chart structure is clearer.

@@ -9,7 +9,6 @@ import {
   BarChart,
   CHART_COLORS,
   DonutChart,
-  FunnelChart,
   type BarChartData,
   type BarTooltipCallbacks,
   type BarTooltipItem,
@@ -26,6 +25,7 @@ import {
   sortCampaignsByRoiDesc,
   sortChannelsByRoiDesc,
 } from "../utils/dashboard-sorting";
+import FunnelChart from "./FunnelChart.vue";
 import RevVsBudgetChart from "./RevVsBudgetChart.vue";
 
 const props = defineProps<{
