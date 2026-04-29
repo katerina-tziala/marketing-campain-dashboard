@@ -2,7 +2,14 @@
 import { ref, computed } from "vue";
 import type { Campaign } from "@/shared/types/campaign";
 import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
-import { Table, TableHeader, Badge, RadioItem } from "@/ui";
+import {
+  Table,
+  TableHeader,
+  TableGroupHeaderRow,
+  TableSelectableRow,
+  Badge,
+  RadioItem,
+} from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { formatCurrency, formatNumber } from "@/shared/utils/formatters";
 import { useSort } from "@/shared/composables/useSort";
@@ -107,7 +114,7 @@ defineExpose({ reset });
     />
     <tbody>
       <template v-for="group in sortedGroups" :key="group.campaignName">
-        <tr class="group-header">
+        <TableGroupHeaderRow>
           <td colspan="8">
             <DuplicationsHeader
               :campaign-name="group.campaignName"
@@ -117,20 +124,18 @@ defineExpose({ reset });
               @clear="clearGroupSelection(group.campaignName)"
             />
           </td>
-        </tr>
-        <tr
+        </TableGroupHeaderRow>
+        <TableSelectableRow
           v-for="entry in group.rows"
           :key="entry.rowId"
-          class="row-selectable"
-          :class="{
-            'row-selected': isSelected(group.campaignName, entry.rowId),
-          }"
-          @click="selectRow(group.campaignName, entry.rowId)"
+          :selected="isSelected(group.campaignName, entry.rowId)"
+          @select="selectRow(group.campaignName, entry.rowId)"
         >
           <td class="cell-select">
             <RadioItem
               :name="`group-${group.campaignName}`"
               :value="entry.rowId"
+              class="info"
               :checked="isSelected(group.campaignName, entry.rowId)"
               :aria-label="`Select row ${entry.rowId}`"
               @change="selectRow(group.campaignName, entry.rowId)"
@@ -145,41 +150,20 @@ defineExpose({ reset });
           <td>{{ formatNumber(entry.impressions) }}</td>
           <td>{{ formatNumber(entry.conversions) }}</td>
           <td>{{ formatCurrency(entry.revenue) }}</td>
-        </tr>
+        </TableSelectableRow>
       </template>
     </tbody>
   </Table>
 </template>
 
 <style lang="scss" scoped>
-.group-header td {
-  @apply py-3
-    px-4
-    text-sm
-    font-medium
-    tracking-wide
-    text-typography/85
-    bg-background/30
-    border-b;
-}
-
-.cell-select {
-  @apply text-center;
-}
-
-.row-selectable {
-  @apply cursor-pointer;
-
-  &:hover {
-    @apply bg-primary-light/10;
+.table-selectable-row:hover {
+  :deep(.radio-item.info > input[type="radio"]:not(:disabled) + .radio-indicator) {
+    @apply bg-surface-active border-info;
   }
 
-  &.row-selected {
-    @apply bg-surface-raised;
-
-    td {
-      @apply text-typography-inverse font-medium;
-    }
+  :deep(.radio-item.info > input[type="radio"]:checked:not(:disabled) + .radio-indicator::before) {
+    @apply bg-info;
   }
 }
 </style>

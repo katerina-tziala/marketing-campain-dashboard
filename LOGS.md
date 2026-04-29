@@ -9824,3 +9824,29 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep scrollbar colors in a mixin: Firefox and WebKit need different declarations, and the mixin prevents thumb/track values from drifting between them
 - Add vertical separators as an opt-in modifier: not every table needs column dividers, so `vertical-separators` keeps the base table lighter while allowing dense review tables to improve column scanning
 - Reserve sort icon space inside the sortable button: absolute icon placement inside `.button-content` keeps labels centered while showing active sort direction without shifting header layout
+
+
+## [#489] Extract duplication table row primitives
+**Type:** refactor
+
+**Summary:** Extracted reusable table row primitives for group headers and pointer-selectable rows, moved duplication table row styling into those primitives, and aligned duplicate-selection radios with the info table color family through CSS classes.
+
+**Brainstorming:** The duplication review table had two row behaviors embedded locally: a group header row that visually separates duplicate campaign groups, and a selectable data row that lets pointer users click anywhere on the row while the radio remains the real accessible selection control. Those behaviors are table-level presentation patterns, but the group header content, radio name/value, and duplicate-selection state are domain-specific. The cleaner split is for table primitives to render only `<tr>` wrappers and styling, while `CampainDuplicationsTable` continues to project the `<td>` content and own the radio semantics.
+
+**Prompt:** Create a group header row in the table folder that renders only a `<tr>` and projects content from outside, then create a selectable table row component. Keep the radio as the accessible control, add an info style variant through CSS rather than a prop, and make row hover visually hover the nested radio in the duplication table.
+
+**What was built:**
+- `app/src/ui/table/TableGroupHeaderRow.vue` — new row-only table primitive; renders a `<tr>` with a slot and styles projected `td` cells for grouped table section headers
+- `app/src/ui/table/TableSelectableRow.vue` — new row-only selectable primitive; renders a plain `<tr>`, accepts a `selected` prop, emits `select` on pointer click, and owns hover/selected row styling
+- `app/src/ui/table/index.ts` — exports `TableGroupHeaderRow` and `TableSelectableRow` from the table barrel
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampainDuplicationsTable.vue` — replaced the local `.group-header` `<tr>` with `TableGroupHeaderRow`; replaced the local clickable row classes with `TableSelectableRow`; kept the radio cell, row values, group names, and selection state in the domain component
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampainDuplicationsTable.vue` — applies `class="info"` to `RadioItem` and adds scoped row-hover rules so hovering a selectable row also applies the info radio hover colors
+- `app/src/ui/forms/RadioItem.vue` — refactored radio styles so primary remains the default style and `class="info"` applies an info color variant without adding a visual `variant` prop
+
+**Key decisions & why:**
+- Row primitives render only `<tr>`: callers keep control over `td`, `colspan`, radio groups, labels, and domain-specific content
+- Keep the radio outside `TableSelectableRow`: the radio name, checked state, value, and aria label are duplicate-resolution details, not generic table-row behavior
+- Keep the row semantically quiet: `TableSelectableRow` improves pointer ergonomics but does not add button/grid roles, so the `RadioItem` remains the accessible selection control for keyboard and assistive tech users
+- CSS class instead of radio variant prop: `info` is a visual treatment and does not need to expand the component API
+- Error styles would still win by cascade: radio error styling remains separate from visual color variants, while disabled state only changes cursor and opacity
+- Row hover mirrors radio hover locally: the duplication table owns the relationship between row hover and nested info radio styling, without making all selectable rows assume they contain radios

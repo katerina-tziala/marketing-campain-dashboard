@@ -171,7 +171,7 @@ defineExpose({
     }
 
     &:focus-visible {
-      @apply ring-2 ring-danger-dark ring-offset-1 ring-offset-background;
+      @apply ring-2 ring-danger/60 ring-offset-1 ring-offset-background;
     }
 
     &:active {
