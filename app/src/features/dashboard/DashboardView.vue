@@ -2,13 +2,12 @@
 import { computed, inject } from "vue";
 import { useCampaignStore } from "@/stores/campaign.store";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
-import DashboardKpis from "./components/DashboardKpis.vue";
 import DashboardCharts from "./components/DashboardCharts.vue";
 import RoiBudgetScatter from "./components/RoiBudgetScatter.vue";
 import EmptyState from "./components/EmptyState.vue";
 import CampaignTable from "./components/CampaignTable.vue";
 //
-import { DashboardHeader, ChannelFilters } from "./components";
+import { DashboardHeader, ChannelFilters, Kpis } from "./components";
 
 const store = useCampaignStore();
 const aiStore = useAiConnectionStore();
@@ -77,7 +76,8 @@ function clearChannelFilters(): void {
     <!-- Dashboard Visuals -->
     <div class="scrollbar-stable-both scrollbar-on-surface data-visualization">
       <!-- KPI Cards -->
-      <DashboardKpis
+      <Kpis
+        class="mx-auto max-w-7xl"
         :kpis="store.portfolioAnalysis.portfolio"
         :portfolio-kpis="
           store.selectedChannelsIds.length > 0
@@ -133,6 +133,6 @@ function clearChannelFilters(): void {
     px-4
     pb-6;
   // @include cq-container("dashboard-visuals");
-  container-type: inline-size;
+  // container-type: inline-size;
 }
 </style>

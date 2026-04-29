@@ -4,7 +4,7 @@ import { ArrowUpIcon, MetaItem } from "@/ui";
 import {
   getKpiBenchmarkRawDelta,
   type KpiBenchmarkDeltaUnit,
-} from "../utils/kpi-benchmark-delta";
+} from "../../utils/kpi-benchmark-delta";
 import {
   formatCompactCurrency,
   formatDecimal,

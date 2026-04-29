@@ -9772,3 +9772,30 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `formatPercentage` for percentage deltas: percentage formatting stays aligned with the shared locale-aware formatter
 - Use one arrow icon with rotation: `ArrowUpIcon` keeps the visual language consistent and avoids separate up/down glyph logic
 - Rotate via class: direction becomes a styling concern, so the template stays simple and the icon remains reusable
+
+
+## [#487] Refactor KPI module structure and container query tokens
+**Type:** refactor
+
+**Summary:** Grouped KPI-specific dashboard components into a dedicated `kpis` component folder, renamed `DashboardKpis` to `Kpis`, and replaced semantic container query size names with explicit numeric `cq-*` tokens.
+
+**Brainstorming:** The KPI area had grown into a small component cluster: the KPI grid, individual KPI card, and benchmark delta display are tightly related and easier to navigate as one module. `PerformanceIndicator` stayed outside that folder because it is reused by the campaign table. Separately, the container query size map used viewport-like names (`xs`, `md`, `3xl`) that were ambiguous for container widths and had duplicate keys. Numeric names make the actual threshold visible at every call site while preserving the existing values.
+
+**Prompt:** Group KPI card, KPI benchmark, and KPI grid components in a `kpis` folder, rename `DashboardKpis` to `Kpis`, then update the container query map to numeric names without changing the values.
+
+**What was built:**
+- `app/src/features/dashboard/components/kpis/Kpis.vue` — moved from `components/DashboardKpis.vue` and renamed to the shorter module name
+- `app/src/features/dashboard/components/kpis/KpiCard.vue` — moved from the dashboard component root into the KPI module folder
+- `app/src/features/dashboard/components/kpis/KpiBenchmarkDelta.vue` — moved from the dashboard component root into the KPI module folder; updated its utility import path
+- `app/src/features/dashboard/components/kpis/index.ts` — added/restored the KPI module barrel export with `Kpis`
+- `app/src/features/dashboard/components/index.ts` — re-exports `Kpis` from the KPI module
+- `app/src/features/dashboard/DashboardView.vue` — imports and renders `<Kpis />` from the dashboard component barrel
+- `app/src/styles/container-queries.scss` — renamed container size keys to `cq-220`, `cq-280`, `cq-320`, `cq-400`, `cq-480`, `cq-540`, `cq-640`, `cq-768`, `cq-1024`, `cq-1280`, and `cq-1536`
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — updated `cq-up(md, "rec-card")` to `cq-up(cq-400, "rec-card")`
+
+**Key decisions & why:**
+- KPI components live together: the grid, card, and benchmark delta are one dashboard sub-domain and are easier to maintain as a folder
+- `PerformanceIndicator` stays shared: it is used by both KPI cards and `CampaignTable`, so keeping it at the dashboard component root avoids making the KPI folder own a reusable primitive
+- Rename `DashboardKpis` to `Kpis`: inside the dashboard feature, the shorter name is clear and avoids repeating feature context
+- Numeric container tokens: `cq-400` communicates the threshold directly, unlike `md`, which can mean different things across viewport and container systems
+- Values unchanged: only the map keys changed, preserving existing responsive behavior while making future usage clearer

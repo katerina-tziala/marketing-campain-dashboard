@@ -140,7 +140,7 @@ const sortedRecommendations = computed(() =>
 .rec-details {
   @apply grid grid-cols-1 grid-rows-4 gap-y-2 gap-x-8 pt-2 px-1 w-full;
 
-  @include cq-up(md, "rec-card") {
+  @include cq-up(cq-400, "rec-card") {
     @apply grid-cols-2 grid-rows-2;
   }
 }

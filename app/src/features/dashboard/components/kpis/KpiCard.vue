@@ -20,7 +20,6 @@ defineProps<{
 <style lang="scss" scoped>
 .kpi-card {
   @apply p-3 w-full gap-1;
-  // @include cq-container("kpi-card");
 }
 
 .kpi-label {
@@ -29,10 +28,6 @@ defineProps<{
 
 .kpi-value {
   @apply text-3xl font-semibold text-on-primary;
-
-  // @include cq-up(tiny, "kpi-card") {
-  //   @apply text-3xl;
-  // }
 }
 
 .kpi-meta {

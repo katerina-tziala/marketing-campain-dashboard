@@ -5,16 +5,20 @@
 
 /* Container size scale (tweak as needed) */
 $container-sizes: (
-  tiny: 13.75rem, // very small cards: 220px 
-  xs: 17.5rem, // 280px
-  sm: 20rem, // 320px
-  md: 25rem, // 400px
-  lg: 30rem, // 480px
-  xl: 33.75, // 560px
-  // xl: 40rem, // 640px
-  // 2xl: 48rem // 768px
+  cq-220: 13.75rem,
+  cq-280: 17.5rem,
+  cq-320: 20rem,
+  cq-400: 25rem,
+  cq-480: 30rem,
+  cq-540: 33.75rem,
+  cq-640: 40rem,
+  cq-768: 48rem,
+  cq-1024: 64rem,
+  cq-1280: 80rem,
+  cq-1536: 96rem
 );
 
+ 
 /* =========================================
    Mixin: define container
    ========================================= */

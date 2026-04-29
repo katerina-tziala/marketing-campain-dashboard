@@ -58,7 +58,7 @@ function toggleDropdown(): void {
     <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonEl" :gap="2">
       <DropdownPanel
         aria-label="Channel filters"
-        class="min-w-[260px] max-w-[310px]"
+        class="min-w-[260px] max-w-[310px] pb-2.5"
       >
         <div class="dropdown-header">
           <p class="dropdown-title">Channels</p>
