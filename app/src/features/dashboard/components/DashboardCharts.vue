@@ -6,20 +6,18 @@ import type {
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
 import {
-  BarChart,
   DonutChart,
-  type BarChartData,
-  type BarTooltipCallbacks,
-  type BarTooltipItem,
   type DonutChartData,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
   useChartTheme,
 } from "@/ui";
 import {
-  formatCurrency,
-  formatPercentage,
-} from "@/shared/utils/formatters";
+  RoiBarChart,
+  formatBudgetTooltipLines,
+  useCampaignRoiChartItems,
+  useChannelRoiChartItems,
+} from "../charts";
 import {
   sortCampaignsByBudgetDesc,
   sortCampaignsByRoiDesc,
@@ -52,44 +50,18 @@ const campaignsByBudget = computed(() =>
 );
 const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
 
-function getShare(value: number, total: number): number | null {
-  if (total === 0) return null;
-  return value / total;
-}
-
-function formatRoiTooltipLabel(
-  item: CampaignPerformance | Channel | undefined,
-): string[] {
-  if (!item) return [];
-
-  return [
-    `ROI: ${formatPercentage(item.roi)}`,
-    `Revenue: ${formatCurrency(item.revenue)}`,
-    `Budget: ${formatCurrency(item.budget)}`,
-    `Budget Share: ${formatPercentage(getShare(item.budget, props.kpis.totalBudget))}`,
-    `Revenue Share: ${formatPercentage(getShare(item.revenue, props.kpis.totalRevenue))}`,
-  ];
-}
-
-function getTooltipDataIndex(ctx: BarTooltipItem): number {
-  return ctx.dataIndex;
-}
+const roiCampaignItems = useCampaignRoiChartItems(
+  campaignsByRoi,
+  (campaign) => campaignColorMap.value[campaign.campaign],
+);
+const roiChannelItems = useChannelRoiChartItems(
+  channelsByRoi,
+  (_, index) => chartColors[index % chartColors.length],
+);
 
 function getDoughnutTooltipDataIndex(ctx: DonutTooltipItem): number {
   return ctx.dataIndex;
 }
-
-const roiCampaignTooltipCallbacks: BarTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
-  label: (ctx) =>
-    formatRoiTooltipLabel(campaignsByRoi.value[getTooltipDataIndex(ctx)]),
-};
-
-const roiChannelTooltipCallbacks: BarTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
-  label: (ctx) =>
-    formatRoiTooltipLabel(channelsByRoi.value[getTooltipDataIndex(ctx)]),
-};
 
 const budgetCampaignTooltipCallbacks: DonutTooltipCallbacks = {
   title: (items) => items[0]?.label ?? "",
@@ -99,30 +71,9 @@ const budgetCampaignTooltipCallbacks: DonutTooltipCallbacks = {
 
     if (!campaign) return [];
 
-    return [
-      `Budget: ${formatCurrency(campaign.budget)}`,
-      `Budget Share: ${formatPercentage(getShare(campaign.budget, props.kpis.totalBudget))}`,
-    ];
+    return formatBudgetTooltipLines(campaign.budget, props.kpis.totalBudget);
   },
 };
-
-const roiChartData = computed<BarChartData>(() => ({
-  labels: campaignsByRoi.value.map((c) => c.campaign),
-  datasets: [
-    {
-      label: "ROI (%)",
-      data: campaignsByRoi.value.map((c) => (c.roi ?? 0) * 100),
-      backgroundColor: campaignsByRoi.value.map(
-        (c) => campaignColorMap.value[c.campaign] + "bf",
-      ),
-      borderColor: campaignsByRoi.value.map(
-        (c) => campaignColorMap.value[c.campaign],
-      ),
-      borderWidth: 1,
-      borderRadius: 2,
-    },
-  ],
-}));
 
 const budgetCampaignData = computed<DonutChartData>(() => ({
   labels: campaignsByBudget.value.map((c) => c.campaign),
@@ -133,24 +84,6 @@ const budgetCampaignData = computed<DonutChartData>(() => ({
         (c) => campaignColorMap.value[c.campaign],
       ),
       borderWidth: 2,
-    },
-  ],
-}));
-
-const roiChannelChartData = computed<BarChartData>(() => ({
-  labels: channelsByRoi.value.map((ch) => ch.name),
-  datasets: [
-    {
-      label: " ROI (%)",
-      data: channelsByRoi.value.map((ch) => (ch.roi ?? 0) * 100),
-      backgroundColor: channelsByRoi.value.map(
-        (_, i) => chartColors[i % chartColors.length] + "bf",
-      ),
-      borderColor: channelsByRoi.value.map(
-        (_, i) => chartColors[i % chartColors.length],
-      ),
-      borderWidth: 1,
-      borderRadius: 2,
     },
   ],
 }));
@@ -167,14 +100,7 @@ const funnelValues = computed(() => [
   <div class="charts-grid">
     <div class="card chart-card">
       <h3 class="card-title chart-card-title">ROI by Channel</h3>
-      <BarChart
-        :chart-data="roiChannelChartData"
-        :tooltip-callbacks="roiChannelTooltipCallbacks"
-        y-label="ROI (%)"
-        :height="420"
-        horizontal
-        class="w-full"
-      />
+      <RoiBarChart :items="roiChannelItems" :kpis="kpis" />
     </div>
 
     <div class="card chart-card">
@@ -184,14 +110,7 @@ const funnelValues = computed(() => [
 
     <div class="card chart-card">
       <h3 class="card-title chart-card-title">ROI by Campaign</h3>
-      <BarChart
-        :chart-data="roiChartData"
-        :tooltip-callbacks="roiCampaignTooltipCallbacks"
-        y-label="ROI (%)"
-        :height="420"
-        horizontal
-        class="w-full"
-      />
+      <RoiBarChart :items="roiCampaignItems" :kpis="kpis" />
     </div>
 
     <div class="card chart-card">

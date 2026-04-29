@@ -10157,3 +10157,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep separator color in chart theme config — prepares the value for future CSS variable extraction through `useChartTheme()`.
 - Do not mutate incoming chart data — DonutChart derives `chartDataWithDefaultBorders` so props remain untouched.
 - Respect explicit dataset border colors — if a dataset provides `borderColor`, DonutChart does not override it.
+
+
+## [#502] Extract Dashboard ROI Chart Module
+**Type:** refactor
+
+**Summary:** Extracted ROI bar chart rendering, normalized ROI chart data, and dashboard chart tooltip formatting into a dedicated dashboard chart module.
+
+**Brainstorming:** DashboardCharts was handling too many responsibilities: grid orchestration, sorting, color mapping, ROI Chart.js data creation, ROI tooltip callbacks, and budget tooltip formatting. We considered extracting a full card-level ROI chart component, but that moved the card header too far away from the dashboard grid composition. The final shape keeps card wrappers and chart titles in DashboardCharts, while the extracted RoiBarChart owns only the ROI chart rendering and tooltip behavior. We also introduced dashboard chart-specific folders for components, composables, types, and utils so chart data normalization and tooltip label formatting can be reused without bloating DashboardCharts.
+
+**Prompt:** Extract ROI charts into the dashboard charts folder using components, composables, and types. Keep the card/header in DashboardCharts. Reuse shared tooltip label formatting for ROI and donut budget tooltips.
+
+**What was built:**
+- `app/src/features/dashboard/charts/components/RoiBarChart.vue` — added a dashboard-specific ROI bar chart component that renders the shared `BarChart`, builds ROI chart data from normalized items, and owns ROI tooltip callbacks.
+- `app/src/features/dashboard/charts/components/index.ts` — added a component barrel for dashboard chart components.
+- `app/src/features/dashboard/charts/composables/useRoiChartItems.ts` — added composables to normalize campaign and channel data into shared ROI chart item objects.
+- `app/src/features/dashboard/charts/composables/index.ts` — added a composables barrel.
+- `app/src/features/dashboard/charts/types/roi-chart.types.ts` — added `RoiBarChartItem` for normalized ROI chart data.
+- `app/src/features/dashboard/charts/types/index.ts` — added a chart type barrel.
+- `app/src/features/dashboard/charts/utils/chart-tooltip-formatters.ts` — added reusable tooltip line formatters: `formatBudgetTooltipLines` and `formatRoiAllocationTooltipLines`.
+- `app/src/features/dashboard/charts/utils/index.ts` — added a utils barrel.
+- `app/src/features/dashboard/charts/index.ts` — added the root dashboard charts barrel exporting components, composables, utils, and types.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed inline ROI chart data and ROI tooltip callback logic; now creates normalized ROI chart items and renders `RoiBarChart` inside the existing dashboard card/header structure.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — replaced duplicated budget tooltip label construction with `formatBudgetTooltipLines`.
+
+**Key decisions & why:**
+- Keep card wrappers in DashboardCharts — the dashboard grid owns layout and section titles, while RoiBarChart owns only the chart rendering.
+- Normalize campaign/channel data before rendering — RoiBarChart can stay simple and does not need to know whether data came from campaigns or channels.
+- Pass colors as part of normalized items — the parent/composable layer controls palette assignment, while the chart component only renders the provided color.
+- Use composables for ROI chart items — inputs are reactive sorted arrays, so computed composables fit the Vue data flow.
+- Add chart tooltip formatter utils — budget tooltip lines are shared by the donut chart and ROI chart tooltip, so formatting now lives in one dashboard chart utility.
+- Keep dashboard chart logic out of `ui/charts` — ROI chart behavior is domain-specific, while `ui/charts` remains the reusable Chart.js wrapper layer.
