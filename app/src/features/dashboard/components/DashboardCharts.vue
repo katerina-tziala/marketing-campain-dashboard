@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import type { ChartData, TooltipCallbacks, TooltipItem } from "chart.js";
 import { computed } from "vue";
 import type {
   CampaignPerformance,
   PortfolioKPIs,
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
-import { BarChart, CHART_COLORS, DonutChart, FunnelChart } from "@/ui";
+import {
+  BarChart,
+  CHART_COLORS,
+  DonutChart,
+  FunnelChart,
+  type BarChartData,
+  type BarTooltipCallbacks,
+  type BarTooltipItem,
+  type DonutChartData,
+  type DonutTooltipCallbacks,
+  type DonutTooltipItem,
+} from "@/ui";
 import {
   formatCurrency,
   formatPercentage,
@@ -58,27 +68,27 @@ function formatRoiTooltipLabel(
   ];
 }
 
-function getTooltipDataIndex(ctx: TooltipItem<"bar">): number {
+function getTooltipDataIndex(ctx: BarTooltipItem): number {
   return ctx.dataIndex;
 }
 
-function getDoughnutTooltipDataIndex(ctx: TooltipItem<"doughnut">): number {
+function getDoughnutTooltipDataIndex(ctx: DonutTooltipItem): number {
   return ctx.dataIndex;
 }
 
-const roiCampaignTooltipCallbacks: Partial<TooltipCallbacks<"bar">> = {
+const roiCampaignTooltipCallbacks: BarTooltipCallbacks = {
   title: (items) => items[0]?.label ?? "",
   label: (ctx) =>
     formatRoiTooltipLabel(campaignsByRoi.value[getTooltipDataIndex(ctx)]),
 };
 
-const roiChannelTooltipCallbacks: Partial<TooltipCallbacks<"bar">> = {
+const roiChannelTooltipCallbacks: BarTooltipCallbacks = {
   title: (items) => items[0]?.label ?? "",
   label: (ctx) =>
     formatRoiTooltipLabel(channelsByRoi.value[getTooltipDataIndex(ctx)]),
 };
 
-const budgetCampaignTooltipCallbacks: Partial<TooltipCallbacks<"doughnut">> = {
+const budgetCampaignTooltipCallbacks: DonutTooltipCallbacks = {
   title: (items) => items[0]?.label ?? "",
   label: (ctx) => {
     const campaign =
@@ -93,7 +103,7 @@ const budgetCampaignTooltipCallbacks: Partial<TooltipCallbacks<"doughnut">> = {
   },
 };
 
-const roiChartData = computed<ChartData<"bar">>(() => ({
+const roiChartData = computed<BarChartData>(() => ({
   labels: campaignsByRoi.value.map((c) => c.campaign),
   datasets: [
     {
@@ -111,7 +121,7 @@ const roiChartData = computed<ChartData<"bar">>(() => ({
   ],
 }));
 
-const budgetCampaignData = computed<ChartData<"doughnut">>(() => ({
+const budgetCampaignData = computed<DonutChartData>(() => ({
   labels: campaignsByBudget.value.map((c) => c.campaign),
   datasets: [
     {
@@ -125,7 +135,7 @@ const budgetCampaignData = computed<ChartData<"doughnut">>(() => ({
   ],
 }));
 
-const roiChannelChartData = computed<ChartData<"bar">>(() => ({
+const roiChannelChartData = computed<BarChartData>(() => ({
   labels: channelsByRoi.value.map((ch) => ch.name),
   datasets: [
     {

@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions } from 'chart.js'
 import { computed, ref } from 'vue'
 import { Bar } from 'vue-chartjs'
 import type { PortfolioKPIs } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
-import { RadioToggle } from '@/ui'
+import { RadioToggle, type BarChartData, type BarChartOptions } from '@/ui'
 import { useChartTooltip } from '@/ui/charts/composables/useChartTooltip'
 import { useChartTheme } from '@/ui/charts/useChartTheme'
 import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
@@ -43,7 +42,7 @@ const efficiencyGapTooltip = useChartTooltip<'bar'>({
   },
 })
 
-const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
+const revVsBudgetData = computed<BarChartData>(() => ({
   labels: channelsByGapImpact.value.map((ch) => ch.name),
   datasets: [
     {
@@ -65,7 +64,7 @@ const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
   ],
 }))
 
-const revVsBudgetOptions = computed<ChartOptions<'bar'>>(() => ({
+const revVsBudgetOptions = computed<BarChartOptions>(() => ({
   ...baseOptions,
   plugins: { ...basePlugins },
   scales: {
@@ -74,7 +73,7 @@ const revVsBudgetOptions = computed<ChartOptions<'bar'>>(() => ({
   },
 }))
 
-const efficiencyGapData = computed<ChartData<'bar'>>(() => {
+const efficiencyGapData = computed<BarChartData>(() => {
   const totalBudget = props.kpis.totalBudget
   const totalRevenue = props.kpis.totalRevenue
 
@@ -105,7 +104,7 @@ const efficiencyGapData = computed<ChartData<'bar'>>(() => {
   }
 })
 
-const gapOptions = computed<ChartOptions<'bar'>>(() => ({
+const gapOptions = computed<BarChartOptions>(() => ({
   ...baseOptions,
   plugins: {
     ...basePlugins,

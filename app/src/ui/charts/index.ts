@@ -6,3 +6,16 @@ export { CHART_COLORS } from './useChartTheme'
 export { useChartScales } from './composables/useChartScales'
 export { useChartTooltip } from './composables/useChartTooltip'
 export type { ChartTooltipContentCallbacks } from './composables/useChartTooltip'
+export type {
+  BarChartData,
+  BarChartOptions,
+  BarTooltipCallbacks,
+  BarTooltipItem,
+  BubbleChartData,
+  BubbleChartOptions,
+  BubbleChartPlugin,
+  DonutChartData,
+  DonutChartOptions,
+  DonutTooltipCallbacks,
+  DonutTooltipItem,
+} from './types'

@@ -10028,3 +10028,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Mirror the BarChart tooltip API — keeps chart wrapper behavior consistent across chart components.
 - Use existing `useChartTooltip()` — preserves shared tooltip styling and avoids duplicating Chart.js tooltip theme configuration.
 - Use `Budget` and `Budget Share` labels — matches the chart’s allocation language better than `Spend` and `Share of Budget`.
+
+
+## [#497] Export Chart Wrapper Types from UI Layer
+**Type:** refactor
+
+**Summary:** Added UI-owned chart type aliases and updated dashboard feature components to consume chart types from the chart wrapper layer instead of importing Chart.js types directly.
+
+**Brainstorming:** The chart components in `app/src/ui/charts` act as wrappers around Chart.js, but dashboard feature components were still importing Chart.js types such as `ChartData`, `ChartOptions`, `TooltipCallbacks`, `TooltipItem`, and `Plugin` directly. This leaked implementation details from the UI chart wrapper into feature code. We considered building a fully custom app-owned tooltip/data abstraction, but that would be a larger design step. The lower-risk path was to create lightweight alias types inside the UI chart module and export those through `@/ui`, making the dependency boundary clearer while still allowing the existing Chart.js-based implementation to remain unchanged internally.
+
+**Prompt:** Implement the recommendation for exporting chart types so consumers use wrapper types instead of Chart.js types directly.
+
+**What was built:**
+- `app/src/ui/charts/types.ts` — added chart wrapper type aliases for bar, donut, and bubble charts, including `BarChartData`, `BarChartOptions`, `BarTooltipCallbacks`, `BarTooltipItem`, `DonutChartData`, `DonutChartOptions`, `DonutTooltipCallbacks`, `DonutTooltipItem`, `BubbleChartData`, `BubbleChartOptions`, and `BubbleChartPlugin`.
+- `app/src/ui/charts/index.ts` — re-exported the new chart wrapper types so consumers can import them from `@/ui`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — replaced direct Chart.js type imports with UI chart wrapper types.
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — replaced direct Chart.js `ChartData` and `ChartOptions` imports with `BarChartData` and `BarChartOptions`.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — replaced direct Chart.js `ChartData`, `ChartOptions`, and `Plugin` imports with bubble chart wrapper types from `@/ui`.
+
+**Key decisions & why:**
+- Use lightweight type aliases first — reduces coupling immediately without introducing a larger custom chart abstraction before the patterns are stable.
+- Keep Chart.js imports inside the UI chart layer — the wrapper components and composables can still depend on Chart.js internally, while feature components consume app-facing chart types.
+- Re-export through `@/ui` — gives dashboard components a single public UI import path and keeps the chart wrapper API discoverable.
+- Include bubble chart aliases — RoiBudgetScatter uses a custom bubble chart directly, so adding bubble aliases removes its direct Chart.js type dependency too.

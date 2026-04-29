@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import type { ChartData, ChartOptions, Plugin } from "chart.js";
 import { computed } from "vue";
 import { Bubble } from "vue-chartjs";
 import type { CampaignPerformance } from "@/shared/types/campaign";
+import type {
+  BubbleChartData,
+  BubbleChartOptions,
+  BubbleChartPlugin,
+} from "@/ui";
 import { useChartTooltip } from "@/ui/charts/composables/useChartTooltip";
 import { useChartTheme } from "@/ui/charts/useChartTheme";
 import {
@@ -148,7 +152,7 @@ const axisBounds = computed(() => {
   };
 });
 
-const bubbleData = computed<ChartData<"bubble", BubblePoint[]>>(() => {
+const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
   const { roi: medRoi, budget: medBudget } = medians.value;
   const buckets: BubblePoint[][] = [[], [], [], []];
 
@@ -178,7 +182,7 @@ const bubbleData = computed<ChartData<"bubble", BubblePoint[]>>(() => {
   };
 });
 
-const quadrantPlugin: Plugin<"bubble"> = {
+const quadrantPlugin: BubbleChartPlugin = {
   id: "roiBudgetQuadrantPlugin",
   beforeDraw(chart) {
     const { roi: medRoi, budget: medBudget } = medians.value;
@@ -262,7 +266,7 @@ const quadrantPlugin: Plugin<"bubble"> = {
   },
 };
 
-const chartOptions = computed<ChartOptions<"bubble">>(() => ({
+const chartOptions = computed<BubbleChartOptions>(() => ({
   ...baseOptions,
   layout: { padding: { top: 24 } },
   plugins: {
