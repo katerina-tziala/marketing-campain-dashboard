@@ -9943,3 +9943,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Numeric axes stay unrotated: scatter axes and horizontal bar x-axes show numeric values, so rotating those ticks would add visual noise without improving readability
 - Units stay in axis titles: labels like `ROI (%)` and `Budget (€)` provide measurement context once, while tick values remain compact and easier to scan
 - Charts still own behavior: min/max bounds, tick callbacks, custom tick building, and domain-specific labels remain in the chart components instead of leaking into the generic scale helper
+
+
+## [#493] Extract dashboard chart sort helpers
+**Type:** refactor
+
+**Summary:** Extracted dashboard-specific chart sorting into shared utilities so ranking and allocation charts order data by the question they answer while keeping unavailable metric values last.
+
+**Brainstorming:** Several dashboard charts were rendering data in the order it arrived from the filtered campaign/channel lists. That makes charts harder to scan because the visual order carries no analytical meaning. Tables can keep interactive sorting for lookup, but charts should arrange data by the metric that explains the chart: ROI charts by ROI, allocation charts by spend share, and revenue-vs-budget views by allocation mismatch. Since null-sensitive sorting already exists in shared utilities, the dashboard layer only needs named helpers that encode chart intent and reuse the nulls-last comparator.
+
+**Prompt:** Extract dashboard sortings into dashboard utils, make sure null values are always last, and leave comments for each sorting.
+
+**What was built:**
+- `app/src/features/dashboard/utils/dashboard-sorting.ts` — new dashboard sorting utility; adds named helpers for ROI ranking, budget allocation, and revenue-vs-budget gap impact ordering
+- `app/src/features/dashboard/utils/dashboard-sorting.ts` — uses the shared `sortWithNullsLast` comparator so null or unavailable values remain at the end of descending sorts
+- `app/src/features/dashboard/components/DashboardCharts.vue` — sorts ROI by campaign with `sortCampaignsByRoiDesc`; sorts ROI by channel with `sortChannelsByRoiDesc`; sorts budget allocation by campaign with `sortCampaignsByBudgetDesc`
+- `app/src/features/dashboard/components/RevVsBudgetChart.vue` — sorts both revenue-vs-budget modes with `sortChannelsByEfficiencyGapImpactDesc`; uses the same sorted channel order for tooltip lookups
+
+**Key decisions & why:**
+- Sorting lives in dashboard utils: ROI ranking, budget allocation, and efficiency gap impact are dashboard presentation decisions, not generic chart-renderer behavior
+- Reuse shared null handling: `sortWithNullsLast` already defines the app-wide null ordering rule, so dashboard helpers build on it instead of reimplementing comparisons
+- ROI charts sort by ROI descending: these charts answer which campaigns or channels perform best, so the strongest available ROI values should appear first
+- Budget allocation sorts by budget descending: the donut chart is about spend share, so the largest spend areas should lead the visual order
+- Revenue vs budget sorts by absolute efficiency gap impact: both positive and negative allocation mismatches are important, so the largest mismatch appears first regardless of direction
+- Tooltip lookup follows sorted order: `RevVsBudgetChart` now reads tooltip channel details from the same sorted array used for labels and datasets, preventing index drift

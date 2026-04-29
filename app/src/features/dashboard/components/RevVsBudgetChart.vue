@@ -8,6 +8,7 @@ import { RadioToggle } from '@/ui'
 import { useChartTooltip } from '@/ui/charts/composables/useChartTooltip'
 import { useChartTheme } from '@/ui/charts/useChartTheme'
 import { formatCurrency, formatDecimal } from '@/shared/utils/formatters'
+import { sortChannelsByEfficiencyGapImpactDesc } from '../utils/dashboard-sorting'
 
 type ChartView = 'budgetVsRevenue' | 'efficiencyGap'
 
@@ -26,13 +27,16 @@ const props = defineProps<{
 const view = ref<ChartView>('budgetVsRevenue')
 
 const { baseOptions, basePlugins, createScale } = useChartTheme<'bar'>()
+const channelsByGapImpact = computed(() =>
+  sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
+)
 const efficiencyGapTooltip = useChartTooltip<'bar'>({
   label: (ctx) => {
     const value = typeof ctx.raw === 'number' ? formatDecimal(ctx.raw, 2) : formatDecimal(0, 2)
     return ` ${value}%`
   },
   afterLabel: (ctx) => {
-    const ch = props.channels[ctx.dataIndex]
+    const ch = channelsByGapImpact.value[ctx.dataIndex]
     if (!ch) return ''
     const gap = ch.revenue - ch.budget
     return `Gap: ${gap >= 0 ? '+' : ''}${formatCurrency(gap)}`
@@ -40,11 +44,11 @@ const efficiencyGapTooltip = useChartTooltip<'bar'>({
 })
 
 const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
-  labels: props.channels.map((ch) => ch.name),
+  labels: channelsByGapImpact.value.map((ch) => ch.name),
   datasets: [
     {
       label: 'Budget (€)',
-      data: props.channels.map((ch) => ch.budget),
+      data: channelsByGapImpact.value.map((ch) => ch.budget),
       backgroundColor: 'rgba(249,112,102,0.75)',
       borderColor: '#f97066',
       borderWidth: 1,
@@ -52,7 +56,7 @@ const revVsBudgetData = computed<ChartData<'bar'>>(() => ({
     },
     {
       label: 'Revenue (€)',
-      data: props.channels.map((ch) => ch.revenue),
+      data: channelsByGapImpact.value.map((ch) => ch.revenue),
       backgroundColor: 'rgba(16,185,129,0.75)',
       borderColor: '#10b981',
       borderWidth: 1,
@@ -75,21 +79,21 @@ const efficiencyGapData = computed<ChartData<'bar'>>(() => {
   const totalRevenue = props.kpis.totalRevenue
 
   return {
-    labels: props.channels.map((ch) => ch.name),
+    labels: channelsByGapImpact.value.map((ch) => ch.name),
     datasets: [
       {
         label: 'Efficiency Gap',
-        data: props.channels.map((ch) => {
+        data: channelsByGapImpact.value.map((ch) => {
           const budgetShare = totalBudget ? ch.budget / totalBudget : 0
           const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
           return (revenueShare - budgetShare) * 100
         }),
-        backgroundColor: props.channels.map((ch) => {
+        backgroundColor: channelsByGapImpact.value.map((ch) => {
           const budgetShare = totalBudget ? ch.budget / totalBudget : 0
           const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
           return revenueShare - budgetShare >= 0 ? 'rgba(16,185,129,0.75)' : 'rgba(249,112,102,0.75)'
         }),
-        borderColor: props.channels.map((ch) => {
+        borderColor: channelsByGapImpact.value.map((ch) => {
           const budgetShare = totalBudget ? ch.budget / totalBudget : 0
           const revenueShare = totalRevenue ? ch.revenue / totalRevenue : 0
           return revenueShare - budgetShare >= 0 ? '#10b981' : '#f97066'

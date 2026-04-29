@@ -7,6 +7,11 @@ import type {
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
 import { BarChart, CHART_COLORS, DonutChart, FunnelChart } from "@/ui";
+import {
+  sortCampaignsByBudgetDesc,
+  sortCampaignsByRoiDesc,
+  sortChannelsByRoiDesc,
+} from "../utils/dashboard-sorting";
 import RevVsBudgetChart from "./RevVsBudgetChart.vue";
 
 const props = defineProps<{
@@ -24,16 +29,22 @@ const campaignColorMap = computed<Record<string, string>>(() =>
   ),
 );
 
+const campaignsByRoi = computed(() => sortCampaignsByRoiDesc(props.campaigns));
+const campaignsByBudget = computed(() =>
+  sortCampaignsByBudgetDesc(props.campaigns),
+);
+const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
+
 const roiChartData = computed<ChartData<"bar">>(() => ({
-  labels: props.campaigns.map((c) => c.campaign),
+  labels: campaignsByRoi.value.map((c) => c.campaign),
   datasets: [
     {
       label: "ROI (%)",
-      data: props.campaigns.map((c) => (c.roi ?? 0) * 100),
-      backgroundColor: props.campaigns.map(
+      data: campaignsByRoi.value.map((c) => (c.roi ?? 0) * 100),
+      backgroundColor: campaignsByRoi.value.map(
         (c) => campaignColorMap.value[c.campaign] + "bf",
       ),
-      borderColor: props.campaigns.map(
+      borderColor: campaignsByRoi.value.map(
         (c) => campaignColorMap.value[c.campaign],
       ),
       borderWidth: 1,
@@ -43,11 +54,11 @@ const roiChartData = computed<ChartData<"bar">>(() => ({
 }));
 
 const budgetCampaignData = computed<ChartData<"doughnut">>(() => ({
-  labels: props.campaigns.map((c) => c.campaign),
+  labels: campaignsByBudget.value.map((c) => c.campaign),
   datasets: [
     {
-      data: props.campaigns.map((c) => c.budget),
-      backgroundColor: props.campaigns.map(
+      data: campaignsByBudget.value.map((c) => c.budget),
+      backgroundColor: campaignsByBudget.value.map(
         (c) => campaignColorMap.value[c.campaign],
       ),
       borderColor: "#151b2e",
@@ -57,15 +68,15 @@ const budgetCampaignData = computed<ChartData<"doughnut">>(() => ({
 }));
 
 const roiChannelChartData = computed<ChartData<"bar">>(() => ({
-  labels: props.channels.map((ch) => ch.name),
+  labels: channelsByRoi.value.map((ch) => ch.name),
   datasets: [
     {
       label: " ROI (%)",
-      data: props.channels.map((ch) => (ch.roi ?? 0) * 100),
-      backgroundColor: props.channels.map(
+      data: channelsByRoi.value.map((ch) => (ch.roi ?? 0) * 100),
+      backgroundColor: channelsByRoi.value.map(
         (_, i) => CHART_COLORS[i % CHART_COLORS.length] + "bf",
       ),
-      borderColor: props.channels.map(
+      borderColor: channelsByRoi.value.map(
         (_, i) => CHART_COLORS[i % CHART_COLORS.length],
       ),
       borderWidth: 1,
