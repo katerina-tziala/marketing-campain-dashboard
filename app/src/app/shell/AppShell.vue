@@ -3,13 +3,13 @@ import { provide, ref } from "vue";
 import { Button, UploadIcon } from "@/ui";
 import { ToastContainer } from "@/ui/toast";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
-import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
 import { UploadDataModal, ReplaceDataModal } from "@/features/data-transfer";
 import { useUploadModal } from "@/app/composables/useUploadModal";
 import AiToolsDrawer from "./AiToolsDrawer.vue";
 
 const aiStore = useAiConnectionStore();
-const analysisStore = useAiAnalysisStore();
+const dashboard = useDashboardOrchestratorStore();
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
 const {
   hasCampaigns,
@@ -19,15 +19,7 @@ const {
   closeReplaceConfirm,
 } = useUploadModal(uploadModal);
 
-provide("openAiPanel", () => {
-  aiStore.openPanel();
-  analysisStore.onPanelOpen();
-});
-
-function onCloseAiPanel(): void {
-  aiStore.closePanel();
-  analysisStore.onPanelClose();
-}
+provide("openAiPanel", dashboard.openAiPanel);
 </script>
 
 <template>
@@ -53,7 +45,7 @@ function onCloseAiPanel(): void {
         <slot />
       </main>
       <!-- AI drawer — sibling to main only, so header stays full width -->
-      <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="onCloseAiPanel" />
+      <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="dashboard.closeAiPanel" />
     </div>
 
     <UploadDataModal ref="uploadModal" />

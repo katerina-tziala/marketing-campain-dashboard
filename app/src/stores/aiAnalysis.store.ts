@@ -8,10 +8,10 @@ import type {
   ExecutiveSummaryResponse,
 } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'
 import { usePortfolioDataStore } from '@/shared/portfolio-data'
 import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
+import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -70,14 +70,20 @@ export interface PortfolioContext {
   filtersActive: boolean
 }
 
+export interface AiAnalysisContext extends PortfolioContext {
+  portfolioId: string
+  selectedChannelIds: string[]
+  portfolioAnalysis: PortfolioAnalysis
+}
+
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()
-  const campaignStore = useCampaignPerformanceStore()
   const portfolioData = usePortfolioDataStore()
 
   // ── Shared state ──────────────────────────────────────────────────────
   const activeTab = ref<AiAnalysisType>('executiveSummary')
   const analysisActivated = ref(false)
+  const analysisContext = ref<AiAnalysisContext | null>(null)
 
   // ── Per-tab internal state ────────────────────────────────────────────
   const tabs = {
@@ -93,20 +99,15 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const tokenLimitReached = computed(() => aiStore.allModelsLimitReached)
 
   const evaluationDisabled = computed(() =>
-    aiStore.evaluationDisabled || campaignStore.filteredCampaigns.length === 0,
+    aiStore.evaluationDisabled || !analysisContext.value || analysisContext.value.campaignCount === 0,
   )
 
-  const portfolioContext = computed(() => {
-    const filtersActive = campaignStore.selectedChannelsIds.length > 0
-    return {
-      portfolioTitle: campaignStore.title,
-      filtersActive,
-      channelCount: filtersActive
-        ? campaignStore.selectedChannelsIds.length
-        : campaignStore.portfolioChannels.size,
-      campaignCount: campaignStore.filteredCampaigns.length,
-    }
-  })
+  const portfolioContext = computed<PortfolioContext>(() => ({
+    portfolioTitle: analysisContext.value?.portfolioTitle ?? '',
+    filtersActive: analysisContext.value?.filtersActive ?? false,
+    channelCount: analysisContext.value?.channelCount ?? 0,
+    campaignCount: analysisContext.value?.campaignCount ?? 0,
+  }))
 
   const optimizerCanAnalyze = computed(() => {
     if (budgetOptimizer.value.status === 'loading') return false
@@ -142,16 +143,17 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   function getCurrentCacheKey(): string {
-    return getCacheKey(campaignStore.selectedChannelsIds, aiStore.provider!)
+    if (!aiStore.provider) return ''
+    return getCacheKey([...(analysisContext.value?.selectedChannelIds ?? [])], aiStore.provider)
   }
 
   function getCacheEntry(tab: AiAnalysisType, cacheKey: string): CacheEntry | undefined {
-    const portfolioId = campaignStore.activePortfolioId ?? ''
+    const portfolioId = analysisContext.value?.portfolioId ?? ''
     return getTabState(tab).cache.get(portfolioId)?.get(cacheKey)
   }
 
   function setCacheEntry(tab: AiAnalysisType, cacheKey: string, entry: CacheEntry): void {
-    const portfolioId = campaignStore.activePortfolioId ?? ''
+    const portfolioId = analysisContext.value?.portfolioId ?? ''
     const tabState = getTabState(tab)
     let portfolioCache = tabState.cache.get(portfolioId)
     if (!portfolioCache) {
@@ -162,7 +164,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   function isBelowOptimizerMinimum(): boolean {
-    return campaignStore.filteredCampaigns.length < MIN_OPTIMIZER_CAMPAIGNS
+    return (analysisContext.value?.campaignCount ?? 0) < MIN_OPTIMIZER_CAMPAIGNS
   }
 
   function showOptimizerMinimumError(tab: AiAnalysisType): boolean {
@@ -266,6 +268,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   async function executeAnalysis(tab: AiAnalysisType, isAutomatic: boolean): Promise<void> {
     if (evaluationDisabled.value) return
 
+    const context = analysisContext.value
+    if (!context) return
+
     const provider = aiStore.provider!
     const apiKey = aiStore.apiKey
     const selectedModel = aiStore.selectedModel!
@@ -298,7 +303,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     try {
       const result = await runAnalysisPrompt(
         { provider, apiKey, selectedModel },
-        { type: tab, analysis: campaignStore.portfolioAnalysis, isFiltered: campaignStore.selectedChannelsIds.length > 0 },
+        { type: tab, analysis: context.portfolioAnalysis, isFiltered: context.filtersActive },
         controller.signal,
       )
 
@@ -327,6 +332,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     display.value = { ...display.value, notice: null }
     analysisActivated.value = true
     executeAnalysis(tab, false)
+  }
+
+  function setAnalysisContext(context: AiAnalysisContext | null): void {
+    analysisContext.value = context
   }
 
   function evaluateTab(tab: AiAnalysisType): void {
@@ -402,7 +411,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // Watch channel filter changes — debounced auto-call
   watch(
-    () => [...campaignStore.selectedChannelsIds],
+    () => analysisContext.value?.selectedChannelIds ?? [],
     () => {
       const tab = activeTab.value
       const tabState = getTabState(tab)
@@ -445,7 +454,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // Watch portfolio switch — reset display state, preserve cache
   watch(
-    () => campaignStore.activePortfolioId,
+    () => analysisContext.value?.portfolioId,
     () => onPortfolioSwitch(),
   )
 
@@ -465,6 +474,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     activeTab,
     tokenLimitReached,
     analysisActivated,
+    analysisContext,
     // Per-tab reactive display state
     budgetOptimizer,
     executiveSummary,
@@ -474,6 +484,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     summaryCanAnalyze,
     // Actions
     analyze,
+    setAnalysisContext,
     setActiveTab,
     onPanelOpen,
     onPanelClose,

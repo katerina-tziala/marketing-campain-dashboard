@@ -1,34 +1,26 @@
 <script setup lang="ts">
-import { computed, inject } from "vue";
-import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
+import { inject } from "vue";
+import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
 import { CampaignPerformanceView } from "@/features/campaign-performance";
 import EmptyState from "@/features/campaign-performance/components/EmptyState.vue";
-import { useCampaignPerformanceStore } from "@/features/campaign-performance/stores/campaignPerformance.store";
 
-const store = useCampaignPerformanceStore();
-const aiStore = useAiConnectionStore();
+const dashboard = useDashboardOrchestratorStore();
 
 const openUploadModal = inject<() => void>("openUploadModal");
-const openAiPanel = inject<() => void>("openAiPanel");
-
-const showAiButton = computed(() => !aiStore.aiPanelOpen);
-const showConnectedDot = computed(
-  () => aiStore.isConnected && !aiStore.aiPanelOpen,
-);
 </script>
 
 <template>
   <EmptyState
-    v-if="store.campaigns.length === 0"
+    v-if="!dashboard.hasCampaigns"
     @upload="openUploadModal?.()"
   />
 
   <div v-else class="dashboard-page">
     <!-- TODO: Add overview / period comparison switching here when the comparison view is introduced. -->
     <CampaignPerformanceView
-      :show-ai-button="showAiButton"
-      :show-connected-dot="showConnectedDot"
-      @ai-click="openAiPanel?.()"
+      :show-ai-button="dashboard.showAiButton"
+      :show-connected-dot="dashboard.showConnectedDot"
+      @ai-click="dashboard.openAiPanel"
     />
   </div>
 </template>

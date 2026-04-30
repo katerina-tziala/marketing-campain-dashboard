@@ -10794,3 +10794,45 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Move `useUploadModal` to `app/composables` — it coordinates shell-level modal refs, replacement confirmation, and app-wide `openUploadModal` injection, so it is not a feature utility.
 - Preserve behavior during the architecture move — routing, upload entry points, AI drawer opening, campaign filtering, charts, and table rendering should behave the same after the folder/store refactor.
 - Leave period comparison for later — this step clears the boundary without adding placeholder period-comparison files before the feature exists.
+
+
+## [#520] Add Dashboard Orchestrator for AI Context Sync
+**Type:** refactor
+
+**Summary:** Added an app-level dashboard orchestrator store that mediates between campaign performance and AI tools, removing the direct dependency from `aiAnalysis.store` to the campaign-performance feature while preserving AI request, cache, debounce, and panel lifecycle behavior.
+
+**Brainstorming:** After extracting campaign performance into its own feature, one important coupling remained: `aiAnalysis.store` imported `useCampaignPerformanceStore()` directly. That made the AI feature aware of campaign-performance internals such as selected channel filters, active portfolio ID, filtered campaign count, and portfolio analysis. Since the app-level dashboard page is the composition layer, the cleaner boundary is for an app-level orchestrator to read campaign-performance state, map it into a plain AI analysis context, and push that context into the AI analysis store. This keeps campaign performance free of AI concerns, keeps AI analysis free of campaign-performance imports, and still allows AI analysis to own the hard behavior: when to call the API, when to use cache, when to debounce filter changes, how to handle cooldowns, token limits, aborts, and panel open/close events.
+
+**Prompt:** Refactor the dashboard/AI relationship so current functionality is maintained while `aiAnalysis.store` no longer reads from campaign performance directly; use an app-level dashboard orchestrator as the mediator.
+
+**What was built:**
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — added a new app-level Pinia store that composes `useCampaignPerformanceStore()`, `useAiConnectionStore()`, and `useAiAnalysisStore()`.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — added `hasCampaigns`, `showAiButton`, and `showConnectedDot` computed state for dashboard page chrome.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — added `openAiPanel()` and `closeAiPanel()` actions that coordinate both AI connection panel state and AI analysis panel lifecycle hooks.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — added a watcher that maps campaign performance state into a plain AI analysis context containing `portfolioId`, `portfolioTitle`, `selectedChannelIds`, `channelCount`, `campaignCount`, `filtersActive`, and `portfolioAnalysis`.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — clears the AI analysis context when there is no active portfolio.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — added focused comments explaining that the orchestrator is allowed to compose feature stores so features do not import each other.
+- `app/src/stores/aiAnalysis.store.ts` — removed the direct import of `useCampaignPerformanceStore()`.
+- `app/src/stores/aiAnalysis.store.ts` — added the `AiAnalysisContext` type to represent the plain app-provided context needed by AI analysis.
+- `app/src/stores/aiAnalysis.store.ts` — added `analysisContext` state and `setAnalysisContext()` so the app layer can push current dashboard context into AI analysis.
+- `app/src/stores/aiAnalysis.store.ts` — changed `portfolioContext`, `evaluationDisabled`, optimizer minimum checks, cache key generation, cache partitioning, and prompt execution to read from `analysisContext` instead of campaign-performance state.
+- `app/src/stores/aiAnalysis.store.ts` — kept the existing AI analysis API lifecycle logic in place, including per-tab state, cache, debounce, cooldown, abort handling, token-limit fallback, stale-result behavior, and panel open/close hooks.
+- `app/src/stores/aiAnalysis.store.ts` — changed the filter-change watcher to react to `analysisContext.selectedChannelIds` instead of `campaignStore.selectedChannelsIds`.
+- `app/src/stores/aiAnalysis.store.ts` — changed the portfolio-switch watcher to react to `analysisContext.portfolioId` instead of `campaignStore.activePortfolioId`.
+- `app/src/app/pages/DashboardPage.vue` — replaced direct campaign-performance and AI connection store reads with `useDashboardOrchestratorStore()`.
+- `app/src/app/pages/DashboardPage.vue` — now uses `dashboard.hasCampaigns` for empty-state branching and passes orchestrator-derived AI button state into `CampaignPerformanceView`.
+- `app/src/app/pages/DashboardPage.vue` — now opens the AI panel through `dashboard.openAiPanel`.
+- `app/src/app/shell/AppShell.vue` — replaced direct `useAiAnalysisStore()` panel lifecycle calls with `useDashboardOrchestratorStore()`.
+- `app/src/app/shell/AppShell.vue` — now provides `dashboard.openAiPanel` and closes the drawer through `dashboard.closeAiPanel`.
+- `npm run build` — completed successfully after the refactor; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Keep the orchestrator in `app/stores` — it composes concrete app features, so it belongs in the app layer rather than in `shared`, `campaign-performance`, or `ai-tools`.
+- Let the orchestrator know both features — app-level composition is the correct place for cross-feature wiring, while feature stores should avoid importing each other.
+- Keep campaign filters owned by campaign performance — the current filters are part of the campaign-performance experience, and future period comparison may have different filter semantics.
+- Push plain context into AI analysis — `aiAnalysis.store` now receives data through `setAnalysisContext()` and no longer needs to know which feature produced it.
+- Keep API lifecycle logic inside AI analysis — request timing, cache keys, debouncing, cooldowns, token-limit fallback, and tab state are AI behavior, not dashboard orchestration behavior.
+- Keep AI connection and AI analysis connected — both are inside the broader AI tools feature, so `aiAnalysis.store` can still use AI connection state for provider, API key, selected model, and token-limit behavior.
+- Keep panel lifecycle centralized through the orchestrator — opening and closing the drawer now coordinates connection panel state and analysis lifecycle through one app-level API.
+- Preserve existing user behavior — empty state, upload entry point, AI button visibility, connected dot behavior, AI drawer open/close, filter-triggered auto-analysis, portfolio switching, and cache behavior remain aligned with the previous flow.
+- Leave future dashboard modes easier to add — a future period-comparison feature can later provide a different app-level AI analysis context without requiring `aiAnalysis.store` to import that feature directly.
