@@ -1,7 +1,9 @@
 import { computed, provide, ref, type Ref } from 'vue'
-import { usePortfolioDataStore } from '@/stores/portfolioData.store'
+import { usePortfolioDataStore } from '@/shared/portfolio-data'
 import type UploadDataModal from '@/features/data-transfer/components/UploadDataModal.vue'
 
+// TODO: Move this app-level upload orchestration into the app layer once
+// DashboardPage owns the data-transfer/dashboard wiring explicitly.
 export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal> | null>) {
   const portfolioData = usePortfolioDataStore()
   const showReplaceConfirm = ref(false)

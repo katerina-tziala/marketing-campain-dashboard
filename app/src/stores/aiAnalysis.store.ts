@@ -9,7 +9,7 @@ import type {
 } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useCampaignStore } from './campaign.store'
-import { usePortfolioDataStore } from './portfolioData.store'
+import { usePortfolioDataStore } from '@/shared/portfolio-data'
 import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
 

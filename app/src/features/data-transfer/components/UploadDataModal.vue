@@ -3,7 +3,7 @@ import { ref, watch } from "vue";
 import { Modal } from "@/ui";
 import { parseCsv } from "@/features/data-transfer/utils/parse-csv";
 import { getValidationErrorMessage } from "@/features/data-transfer/utils/error-messages";
-import { usePortfolioDataStore } from "@/stores/portfolioData.store";
+import { usePortfolioDataStore } from "@/shared/portfolio-data";
 import { useDownloadTemplate } from "@/features/data-transfer/composables/useDownloadTemplate";
 import type { Campaign } from "@/shared/types/campaign";
 import type {

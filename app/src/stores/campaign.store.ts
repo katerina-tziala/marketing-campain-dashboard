@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import type { CampaignPerformance, PortfolioScope } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
-import { usePortfolioDataStore } from './portfolioData.store'
+import { usePortfolioDataStore } from '@/shared/portfolio-data'
 
 export const useCampaignStore = defineStore('campaigns', () => {
   const portfolioData = usePortfolioDataStore()

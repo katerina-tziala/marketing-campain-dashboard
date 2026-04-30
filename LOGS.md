@@ -10686,3 +10686,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Make the funnel border quieter — the chart still has a visual anchor, but the border no longer pulls as much attention as the bars.
 - Make dimmed donut slices more visible — the donut still distinguishes minor slices, but the slices are easier to perceive while reviewing the chart.
 - Quote the Tailwind height token key — the utility name is meant to be `h-29`, so storing the extension key as `'29'` removes ambiguity in the generated class.
+
+
+## [#517] Move Portfolio Data Store to Shared Domain
+**Type:** refactor
+
+**Summary:** Moved portfolio upload state out of the root stores folder and into a shared portfolio-data domain module, keeping data-transfer, dashboard, and AI behavior unchanged while clarifying ownership boundaries.
+
+**Brainstorming:** The data-transfer feature owns CSV ingestion, parsing, validation, duplicate review, and upload UI. It should not conceptually own the normalized portfolio dataset after upload, because that data is consumed by the dashboard and AI analysis as shared product domain state. The existing `portfolioData.store` was already acting as that cross-feature data source, but its location under `src/stores` made ownership vague. Moving it to `shared/portfolio-data` gives the domain state a clearer home: data-transfer writes uploaded portfolios into it, dashboard derives filters and visuals from it through the campaign store, and AI still reads it for now until the next app-page orchestration step removes the remaining hidden AI/dashboard coupling.
+
+**Prompt:** Add a TODO for `useUploadModal` and carefully structure data-transfer without breaking anything.
+
+**What was built:**
+- `app/src/shared/portfolio-data/portfolioData.store.ts` — moved the portfolio data Pinia store from the root stores folder into a shared portfolio-data domain module.
+- `app/src/shared/portfolio-data/index.ts` — added a barrel export for `usePortfolioDataStore` and the `PortfolioEntry` type.
+- `app/src/stores/portfolioData.store.ts` — removed the old root-store location after the move.
+- `app/src/features/data-transfer/components/UploadDataModal.vue` — updated the portfolio data store import to use `@/shared/portfolio-data`.
+- `app/src/features/data-transfer/composables/useUploadModal.ts` — updated the portfolio data store import to use `@/shared/portfolio-data`.
+- `app/src/features/data-transfer/composables/useUploadModal.ts` — added a TODO noting that the upload modal orchestration should move into the app layer once `DashboardPage` owns the data-transfer/dashboard wiring explicitly.
+- `app/src/stores/campaign.store.ts` — updated the portfolio data store import to use `@/shared/portfolio-data`.
+- `app/src/stores/aiAnalysis.store.ts` — updated the portfolio data store import to use `@/shared/portfolio-data`.
+- `npm run build` — completed successfully after the move; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Treat portfolio data as shared domain state — uploaded portfolios are not only a data-transfer concern once they drive dashboard visuals and AI analysis.
+- Keep data-transfer focused on ingestion — upload forms, CSV parsing, validation, duplicate review, and template download remain inside the data-transfer feature.
+- Avoid changing runtime behavior in this step — the store move only changes ownership and import paths, keeping upload, replacement, dashboard selection, and AI cache behavior intact.
+- Add a barrel for the domain module — consumers import from `@/shared/portfolio-data` instead of reaching into the store file directly.
+- Leave `useUploadModal` in place temporarily — it currently coordinates app shell modal opening, replacement confirmation, and upload entry points, so it should move later as part of app-page orchestration rather than in the same store-location refactor.
+- Keep the remaining AI coupling visible — `aiAnalysis.store` still imports portfolio/campaign state, but the shared portfolio-data location makes the dependency clearer until explicit AI context wiring is introduced.
