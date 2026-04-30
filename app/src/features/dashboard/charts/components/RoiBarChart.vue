@@ -16,7 +16,6 @@ import {
 const props = defineProps<{
   items: RoiBarChartItem[]
   kpis: PortfolioKPIs
-  height?: number
   ariaLabel?: string
 }>()
 
@@ -56,7 +55,6 @@ const tooltipCallbacks: BarTooltipCallbacks = {
     :tooltip-callbacks="tooltipCallbacks"
     :aria-label="ariaLabel ?? 'ROI bar chart'"
     y-label="ROI (%)"
-    :height="height ?? 420"
     horizontal
     class="w-full"
   />

@@ -1,12 +1,12 @@
 import { withHexAlpha } from '@/ui/charts'
 
 export const DASHBOARD_CHART_COLORS = {
-  budget: '#f97066',
-  revenue: '#10b981',
+  budget: '#3b82f6',
+  revenue: '#34d399',
   positiveGap: '#10b981',
-  negativeGap: '#f97066',
+  negativeGap: '#ef4444',
 } as const
-
+ 
 export const DASHBOARD_ROI_BUDGET_SCALING_COLORS = {
   scaleUp: {
     color: 'rgba(16,185,129,0.75)',

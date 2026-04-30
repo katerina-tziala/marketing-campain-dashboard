@@ -6,7 +6,7 @@ import {
   type BarChartData,
   type BarTooltipCallbacks,
 } from "@/ui";
-import { formatCompactCurrency } from "@/shared/utils/formatters";
+import { formatCompactNumber } from "@/shared/utils/formatters";
 import {
   DASHBOARD_BAR_DATASET_STYLE,
   DASHBOARD_CHART_COLORS,
@@ -16,7 +16,6 @@ import { formatBudgetTooltip, formatRevenueTooltip } from "../utils";
 
 const props = defineProps<{
   channels: Channel[];
-  height: number;
   ariaLabel?: string;
 }>();
 
@@ -34,7 +33,7 @@ const chartData = computed<BarChartData>(() => ({
   labels: props.channels.map((ch) => ch.name),
   datasets: [
     {
-      label: "Budget",
+      label: "Budget (€)",
       data: props.channels.map((ch) => ch.budget),
       backgroundColor: getDashboardChartFillColor(
         DASHBOARD_CHART_COLORS.budget,
@@ -43,7 +42,7 @@ const chartData = computed<BarChartData>(() => ({
       ...DASHBOARD_BAR_DATASET_STYLE,
     },
     {
-      label: "Revenue",
+      label: "Revenue (€)",
       data: props.channels.map((ch) => ch.revenue),
       backgroundColor: getDashboardChartFillColor(
         DASHBOARD_CHART_COLORS.revenue,
@@ -55,14 +54,13 @@ const chartData = computed<BarChartData>(() => ({
 }));
 
 function formatValueTick(value: string | number): string {
-  return formatCompactCurrency(Number(value));
+  return formatCompactNumber(Number(value));
 }
 </script>
 
 <template>
   <GroupedBarChart
     :chart-data="chartData"
-    :height="height"
     :aria-label="ariaLabel ?? 'Revenue vs Budget by Channel'"
     :tooltip-callbacks="tooltipCallbacks"
     :value-tick-formatter="formatValueTick"

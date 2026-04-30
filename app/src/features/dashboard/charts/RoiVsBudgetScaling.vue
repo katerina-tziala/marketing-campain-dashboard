@@ -5,26 +5,17 @@ import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
 import { getMedian } from "@/shared/utils/math";
 import { Card, Notification, MetaRow, MetaItem } from "@/ui";
 import { RoiVsBudgetScatterChart } from "./components";
-import {
-  ROI_BUDGET_SCALING_CHART_HEIGHT,
-  ROI_BUDGET_SCALING_MIN_CAMPAIGNS,
-} from "./config";
+import { ROI_BUDGET_SCALING_MIN_CAMPAIGNS } from "./config";
 import type {
   RoiBudgetScalingHighlights,
   RoiBudgetScalingMedians,
 } from "./types";
 
-const props = withDefaults(
-  defineProps<{
-    campaigns: CampaignPerformance[];
-    highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
-    isFiltered?: boolean;
-    height?: number;
-  }>(),
-  {
-    height: ROI_BUDGET_SCALING_CHART_HEIGHT,
-  },
-);
+const props = defineProps<{
+  campaigns: CampaignPerformance[];
+  highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
+  isFiltered?: boolean;
+}>();
 
 const validCampaigns = computed(() =>
   props.campaigns.filter((campaign) => campaign.roi !== null),
@@ -50,23 +41,26 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
 <template>
   <Card>
     <div class="scatter-header">
-      <h3 class="scatter-title">Scaling Opportunities by ROI and Budget</h3>
-      <p v-if="isFiltered && hasEnoughCampaigns" class="scatter-subtitle">
-        Based on selected channels
-      </p>
+      <h3 class="text-base">Scaling Opportunities by ROI and Budget</h3>
+      <p v-if="isFiltered && hasEnoughCampaigns">Based on selected channels</p>
     </div>
     <div class="content-container">
       <template v-if="!hasEnoughCampaigns">
         <Notification variant="info" :show-icon="true">
           <template #title>
-            <span class="message-title">Limited data</span>
+            <span>Limited data</span>
           </template>
           At least 5 campaigns are needed to identify scaling opportunities. Add
           more campaigns or expand your filters to continue
         </Notification>
       </template>
       <template v-else>
-        <MetaRow class="tiny bullet">
+        <RoiVsBudgetScatterChart
+          :campaigns="validCampaigns"
+          :medians="medians"
+          :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
+        />
+        <MetaRow class="tiny bullet mt-1.5">
           <MetaItem>
             <span class="scatter-legend-dash" />
             <span class="scatter-legend-label">Median split</span>
@@ -78,12 +72,6 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
             ><span>Budget:</span>{{ formatCurrency(medians.budget) }}</MetaItem
           >
         </MetaRow>
-        <RoiVsBudgetScatterChart
-          :campaigns="validCampaigns"
-          :medians="medians"
-          :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
-          :height="height"
-        />
       </template>
     </div>
   </Card>

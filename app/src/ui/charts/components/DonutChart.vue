@@ -12,7 +12,7 @@ const props = withDefaults(
     ariaLabel?: string
     tooltipCallbacks?: DonutTooltipCallbacks
   }>(),
-  { height: 320 },
+  {},
 )
 
 const chartTheme = useChartTheme()
@@ -76,10 +76,25 @@ const options: DonutChartOptions = {
     },
   },
 }
+
+const chartStyle = computed(() =>
+  props.height === undefined ? undefined : { height: `${props.height}px` },
+)
 </script>
 
 <template>
-  <div class="w-full" :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? 'Donut chart'">
+  <div
+    class="chart-container"
+    :style="chartStyle"
+    role="img"
+    :aria-label="ariaLabel ?? 'Donut chart'"
+  >
     <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.chart-container {
+  @apply w-full h-full min-h-80;
+}
+</style>

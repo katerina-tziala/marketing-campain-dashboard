@@ -10481,3 +10481,52 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Import chart experiences from `./charts` in `DashboardView` — the dashboard page now consumes the charts module through its public API.
 - Keep height configurable at the public component boundary — callers can override height on `RoiVsBudgetScaling`, while the scatter renderer receives an explicit required height.
 - Keep generic dashboard components separate — `dashboard/components` now stays focused on page sections and broader composition.
+
+
+## [#512] Polish Dashboard Chart Layout and Visual Hierarchy
+**Type:** update
+
+**Summary:** Updated dashboard charts to rely on layout-based sizing instead of fixed height props, improved budget-share donut hierarchy, clarified efficiency-gap semantics, and polished chart/card controls.
+
+**Brainstorming:** Chart height was leaking through dashboard component APIs even though sizing is a layout concern. The shared chart wrappers can still accept an explicit height as an escape hatch, but dashboard chart components should mostly fill their card areas and let CSS define minimum usable space. At the same time, the Budget Share donut needed clearer visual hierarchy for important vs minor slices, and the Efficiency Gap view needed user-facing labels so positive and negative bars are understandable without decoding the sign.
+
+**Prompt:** Move dashboard charts away from passing height values, use layout/classes instead, add donut highlighting/dimming states, label efficiency-gap over/underperformance, remove euro signs from Revenue vs Budget y-axis ticks, and fix related UI polish issues.
+
+**What was built:**
+- `app/src/ui/charts/components/BarChart.vue` — made `height` optional with no fixed default; uses explicit height only when provided.
+- `app/src/ui/charts/components/BarChart.vue` — added a `chart-container` wrapper with `w-full`, `h-full`, and `min-h-80`.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — made `height` optional with no fixed default and added the same responsive chart container behavior.
+- `app/src/ui/charts/components/DonutChart.vue` — made `height` optional with no fixed default and added the same responsive chart container behavior.
+- `app/src/ui/charts/components/BubbleChart.vue` — made `height` optional with no fixed default and added the same responsive chart container behavior.
+- `app/src/features/dashboard/charts/components/RoiBarChart.vue` — removed the dashboard-level `height` prop and stopped passing fixed heights to `BarChart`.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — removed the dashboard-level `height` prop and stopped passing fixed heights to `DonutChart`.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — removed the dashboard-level `height` prop and stopped passing fixed heights to `GroupedBarChart`.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — removed the dashboard-level `height` prop and stopped passing fixed heights to `BarChart`.
+- `app/src/features/dashboard/charts/components/RoiVsBudgetScatterChart.vue` — removed the dashboard-level `height` prop and stopped passing fixed heights to `BubbleChart`.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — removed the public `height` prop and relies on chart/card layout sizing.
+- `app/src/features/dashboard/charts/config/roi-budget-scaling-chart.config.ts` — removed the unused `ROI_BUDGET_SCALING_CHART_HEIGHT` constant.
+- `app/src/features/dashboard/charts/components/RevenueVsBudgetBars.vue` — changed y-axis tick formatting from compact currency to compact numbers while keeping tooltip currency formatting.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — added an overperforming/underperforming legend using dashboard gap colors.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — updated tooltip labels to show `Overperforming` or `Underperforming` based on the signed gap value.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — added three-state donut segment styling for highlighted, secondary, and dimmed budget-share slices.
+- `app/src/features/dashboard/charts/config/dashboard-chart-styles.ts` — added donut hierarchy config: highlight limit, dim threshold, highlight alpha, secondary alpha, and dim alpha.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — adjusted dashboard budget/revenue/gap colors.
+- `app/src/features/dashboard/charts/config/roi-budget-scaling-chart.config.ts` — renamed the underperforming quadrant label to `Monitor`.
+- `app/src/features/dashboard/charts/components/RoiVsBudgetScatterChart.vue` — moved the scaling opportunities chart legend to the top.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed fixed revenue/budget chart height handling.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — moved the revenue/budget toggle into the card header area and shortened toggle labels to `Performance` and `Efficiency`.
+- `app/src/features/dashboard/components/DashboardCharts.vue` and `app/src/features/dashboard/DashboardView.vue` — normalized chart/table headings to `text-base`.
+- `app/src/ui/forms/RadioToggle.vue` — added `small`, `info`, and `secondary` style variants and adjusted focus styling.
+- `app/src/ui/Button.vue` — fixed the malformed destructive focus rule and separated focus ring behavior behind `.no-ring`.
+- `app/src/ui/charts/config/chart-theme.config.ts` — expanded the default chart color palette with more 400/500/600 shade options.
+
+**Key decisions & why:**
+- Treat chart height as layout, not data — dashboard chart components no longer expose height props just to size canvases.
+- Keep `height` in shared chart wrappers as an escape hatch — low-level wrappers can still support explicit pixel sizing where a future caller truly needs it.
+- Use minimum chart container height in shared wrappers — charts can fill parent containers without collapsing when no explicit height is provided.
+- Keep currency in tooltips, not dense y-axis ticks — Revenue vs Budget remains precise on hover while the y-axis is easier to scan.
+- Explain efficiency gap semantically — `Overperforming` and `Underperforming` labels are clearer than expecting users to infer meaning from signed percentages.
+- Use alpha hierarchy for donut slices — top budget-share slices stay strongest, meaningful remaining slices are secondary, and tiny non-top slices are dimmed without hiding data.
+- Keep donut thresholds configurable — highlight count, dim threshold, and alpha values live in dashboard chart style config for easy tuning.
+- Keep visual color choices centralized — dashboard chart colors remain grouped in dashboard chart config.
+- Prefer card-header actions for chart toggles — the Performance/Efficiency toggle belongs with the card title, not as loose chart content.

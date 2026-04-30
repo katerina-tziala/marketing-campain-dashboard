@@ -15,7 +15,7 @@ export const ROI_BUDGET_SCALING_QUADRANTS = [
   },
   {
     key: 'underperforming',
-    label: 'Test',
+    label: 'Monitor',
     ...DASHBOARD_ROI_BUDGET_SCALING_COLORS.underperforming,
   },
   {
@@ -25,7 +25,6 @@ export const ROI_BUDGET_SCALING_QUADRANTS = [
   },
 ] as const satisfies readonly RoiBudgetScalingQuadrantConfig[]
 
-export const ROI_BUDGET_SCALING_CHART_HEIGHT = 420
 export const ROI_BUDGET_SCALING_POINT_RADIUS = 5
 export const ROI_BUDGET_SCALING_HIGHLIGHTED_POINT_RADIUS = 8
 export const ROI_BUDGET_SCALING_MIN_CAMPAIGNS = 5

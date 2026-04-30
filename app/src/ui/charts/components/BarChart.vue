@@ -16,7 +16,7 @@ const props = withDefaults(
     valueTickFormatter?: ChartTickFormatter
     showLegend?: boolean
   }>(),
-  { height: 320, horizontal: false, showLegend: false },
+  { horizontal: false, showLegend: false },
 )
 
 const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
@@ -64,10 +64,25 @@ const options = computed<BarChartOptions>(() => ({
     y: createScale(scaleOptions.value.y),
   },
 }))
+
+const chartStyle = computed(() =>
+  props.height === undefined ? undefined : { height: `${props.height}px` },
+)
 </script>
 
 <template>
-  <div class="w-full" :style="{ height: `${height}px` }" role="img" :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'">
+  <div
+    class="chart-container"
+    :style="chartStyle"
+    role="img"
+    :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'"
+  >
     <Bar :data="chartData" :options="options" />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.chart-container {
+  @apply w-full h-full min-h-80;
+}
+</style>

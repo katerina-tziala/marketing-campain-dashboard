@@ -51,7 +51,6 @@ const props = defineProps<{
   campaigns: CampaignPerformance[];
   medians: RoiBudgetScalingMedians;
   highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
-  height: number;
 }>();
 
 const scatterTooltipCallbacks: BubbleTooltipCallbacks = {
@@ -187,7 +186,6 @@ const quadrantBackgroundPlugin: BubbleChartPlugin =
 <template>
   <BubbleChart
     :chart-data="bubbleData"
-    :height="height"
     :x-min="axisBounds.xMin"
     :x-max="axisBounds.xMax"
     :y-min="axisBounds.yMin"
@@ -199,7 +197,7 @@ const quadrantBackgroundPlugin: BubbleChartPlugin =
     :plugins="[quadrantBackgroundPlugin]"
     x-label="Budget (€)"
     y-label="ROI (%)"
-    legend-position="bottom"
+    legend-position="top"
     aria-label="Scaling opportunities by ROI and budget bubble chart"
   />
 </template>

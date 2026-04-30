@@ -122,7 +122,7 @@ function clearChannelFilters(): void {
       /> 
       <!-- Campaign Table -->
       <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
-        <h3 class="card-title table-card-title">Campaign Details</h3>
+        <h3 class="text-base">Campaign Details</h3>
         <CampaignTable :campaigns="store.filteredCampaigns" />
       </div>
     </div>

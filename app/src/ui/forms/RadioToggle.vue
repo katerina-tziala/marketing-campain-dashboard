@@ -62,6 +62,23 @@ label {
   }
 }
 
+.radio-toggle.small {
+  .option-label {
+    @apply py-1 
+    min-h-1;
+  }
+
+  label {
+    &:first-of-type > .option-label {
+      @apply rounded-l;
+    }
+
+    &:last-of-type > .option-label {
+      @apply rounded-r;
+    }
+  }
+}
+
 input[type="radio"] {
   &:checked + .option-label {
     @apply bg-primary-dark text-typography-strong;
@@ -77,7 +94,51 @@ input[type="radio"] {
     }
 
     &:focus-visible + .option-label {
-      @apply bg-primary-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+      @apply bg-primary text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+    }
+  }
+}
+
+.radio-toggle.info {
+  .option-label {
+    @apply text-info-lighter/85;
+  }
+  input[type="radio"] {
+    &:checked + .option-label {
+      @apply bg-info-dark text-typography-strong;
+    }
+
+    &:not(:disabled) {
+      &:hover + .option-label {
+        @apply bg-info-light text-primary-ink;
+      }
+
+      &:focus-visible + .option-label {
+        @apply bg-info-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-info-dark;
+      }
+    }
+  }
+}
+
+.radio-toggle.secondary {
+  @apply border-primary-light/70;
+  input[type="radio"] {
+    + .option-label {
+      @apply text-primary-lighter/80;
+    }
+
+    &:checked + .option-label {
+      @apply bg-primary-light text-primary-ink;
+    }
+
+    &:not(:disabled) {
+      &:hover + .option-label {
+        @apply bg-primary-dark text-typography-strong;
+      }
+
+      &:focus-visible + .option-label {
+        @apply bg-primary text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+      }
     }
   }
 }

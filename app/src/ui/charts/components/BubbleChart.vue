@@ -31,7 +31,7 @@ const props = withDefaults(
     plugins?: BubbleChartPlugin[]
     legendPosition?: ChartLegendPosition<'bubble'>
   }>(),
-  { height: 320, plugins: () => [], legendPosition: 'top' },
+  { plugins: () => [], legendPosition: 'top' },
 )
 
 const { baseOptions, basePlugins, createScale } = useChartConfig<'bubble'>()
@@ -90,15 +90,25 @@ const options = computed<BubbleChartOptions>(() => ({
     ),
   },
 }))
+
+const chartStyle = computed(() =>
+  props.height === undefined ? undefined : { height: `${props.height}px` },
+)
 </script>
 
 <template>
   <div
-    class="w-full"
-    :style="{ height: `${height}px` }"
+    class="chart-container"
+    :style="chartStyle"
     role="img"
     :aria-label="ariaLabel ?? yLabel ?? xLabel ?? 'Bubble chart'"
   >
     <Bubble :data="chartData" :options="options" :plugins="plugins" />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.chart-container {
+  @apply w-full h-full min-h-80;
+}
+</style>

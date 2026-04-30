@@ -71,7 +71,11 @@ defineExpose({
     }
 
     &:focus-visible {
-      @apply bg-primary-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary;
+      @apply bg-primary-dark text-on-primary ;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary;
     }
 
     &:active {
@@ -90,7 +94,7 @@ defineExpose({
       @apply bg-primary-light/15 text-primary-lighter;
     }
 
-    &:focus-visible {
+    &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
     }
 
@@ -110,7 +114,7 @@ defineExpose({
       @apply bg-surface text-primary-light border-primary-light;
     }
 
-    &:focus-visible {
+    &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-primary;
     }
 
@@ -134,7 +138,7 @@ defineExpose({
       @apply bg-surface border-info/65 text-info-light;
     }
 
-    &:focus-visible {
+    &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-info-dark;
     }
   }
@@ -150,7 +154,7 @@ defineExpose({
       @apply bg-typography/10 text-typography;
     }
 
-    &:focus-visible {
+    &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
     }
 
@@ -170,7 +174,7 @@ defineExpose({
       @apply bg-danger-darker/10 text-danger;
     }
 
-    &:focus-visible {
+    &:not(.no-ring):focus-visible {
       @apply ring-2 ring-danger/60 ring-offset-1 ring-offset-background;
     }
 
