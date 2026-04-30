@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from "vue";
-import Button from "@/ui/primitives/Button.vue";
-import EyeIcon from "@/ui/icons/EyeIcon.vue";
-import EyeOffIcon from "@/ui/icons/EyeOffIcon.vue";
+import Button from "../primitives/Button.vue";
+import EyeIcon from "../icons/EyeIcon.vue";
+import EyeOffIcon from "../icons/EyeOffIcon.vue";
 
 const props = withDefaults(
   defineProps<{

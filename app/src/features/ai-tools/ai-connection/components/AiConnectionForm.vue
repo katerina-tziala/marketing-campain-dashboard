@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
-import { Spinner, PasswordInput, RadioToggle, Button } from "@/ui";
-import { PlugIcon } from "@/ui/icons";
+import { Spinner, PasswordInput, RadioToggle, Button, PlugIcon } from "@/ui"; 
 import type { AiProviderType } from "@/features/ai-tools/types";
 import {
   PROVIDER_OPTIONS,

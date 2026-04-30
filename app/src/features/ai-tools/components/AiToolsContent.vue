@@ -2,9 +2,8 @@
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import AiConnectionForm from "@/features/ai-tools/ai-connection/components/AiConnectionForm.vue";
 import AiConnectedStatus from "@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue";
-import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue";
-import { CloseIcon, SparklesIcon } from "@/ui/icons";
-import { Button, SheetHeader } from "@/ui";
+import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue"; 
+import { Button, SheetHeader, CloseIcon, SparklesIcon } from "@/ui";
 
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────

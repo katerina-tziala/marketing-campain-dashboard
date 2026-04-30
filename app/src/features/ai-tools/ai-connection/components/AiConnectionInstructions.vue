@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Card, Disclosure, Button } from "@/ui";
-import { ChevronIcon } from "@/ui/icons";
+import { Card, Disclosure, Button, ChevronIcon } from "@/ui";
 
 defineProps<{
   instructions: { title: string; steps: string[]; note?: string };

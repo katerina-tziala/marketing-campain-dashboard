@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { NotificationVariant } from "@/ui/feedback";
-import { CloseIcon } from "@/ui/icons";
+import type { NotificationVariant } from "../feedback";
 import Button from "../primitives/Button.vue";
+import CloseIcon from "../icons/CloseIcon.vue";
 import Notification from "../feedback/Notification.vue";
 
 defineProps<{
@@ -16,7 +16,10 @@ defineEmits<{
 </script>
 
 <template>
-  <Notification :variant="variant" class="dense-bg shadow-lg pointer-events-auto">
+  <Notification
+    :variant="variant"
+    class="dense-bg shadow-lg pointer-events-auto"
+  >
     <template #title>
       <span>{{ title }}</span>
     </template>

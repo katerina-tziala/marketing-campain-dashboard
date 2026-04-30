@@ -10918,3 +10918,29 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use folder barrels to keep imports stable — consumers can continue importing UI components and public types from `@/ui`, while internal organization becomes easier to scan.
 - Remove the root `ui/types` folder — it only contained component-owned types, so keeping it made the library look more abstract than it really was.
 - Avoid over-grouping existing folders — the refactor clarifies the loose root layer without disrupting already meaningful UI modules.
+
+
+## [#523] Clean UI Internal Imports
+**Type:** refactor
+
+**Summary:** Cleaned UI-library internal imports so files inside `app/src/ui` use local folder paths instead of importing through the public `@/ui` barrel, while keeping feature and app consumers on the public UI API.
+
+**Brainstorming:** After reorganizing the UI library into `primitives`, `layout`, and `feedback`, feature-level consumers were intentionally grouped under `@/ui`. That is correct for app and feature code because it treats the UI folder as a public library boundary. Inside the UI library itself, however, importing from `@/ui` creates an unnecessary dependency on the public barrel and can make circular imports easier to introduce. The better rule is: app/features import from `@/ui`; UI internals import local siblings or local folder barrels.
+
+**Prompt:** Fix imports inside the UI library so internal UI files do not import through the public `@/ui` barrel.
+
+**What was built:**
+- `app/src/ui/forms/PasswordInput.vue` — replaced the public `@/ui` import with local imports for `Button`, `EyeIcon`, and `EyeOffIcon`.
+- `app/src/ui/forms/FileDropzone.vue` — replaced the `@/ui/icons/UploadIcon.vue` import with a local icons import.
+- `app/src/ui/feedback/Notification.vue` — replaced the public icons-barrel import with a local icons-folder import.
+- `app/src/ui/toast/ToastNotification.vue` — replaced the public `@/ui` import with local imports for `Button`, `CloseIcon`, `Notification`, and `NotificationVariant`.
+- `app/src/features/campaign-performance/charts/PerformanceCharts.vue` — merged the duplicate UI imports into a single public `@/ui` import containing `Card`, `CardHeader`, `RadioToggle`, and `useChartTheme`.
+- `rg "from [\"']@/ui" app/src/ui` — confirmed that UI internals no longer import from the public UI barrel.
+- `npm run build` — completed successfully after the import cleanup; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Keep `@/ui` for app and feature consumers — feature code should not need to know whether a component lives in `primitives`, `layout`, `feedback`, or another UI subfolder.
+- Avoid `@/ui` inside `app/src/ui` — UI internals should not depend on the public barrel that re-exports themselves.
+- Use local paths inside UI modules — local imports make ownership clearer and reduce the chance of circular public-barrel dependencies.
+- Keep grouped imports where they cross the UI boundary — `PerformanceCharts.vue` is feature code, so grouping its UI imports under `@/ui` is the right shape.
+- Keep behavior unchanged — this was an import-boundary cleanup only; no component behavior or styling was intentionally changed.

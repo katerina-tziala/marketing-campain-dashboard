@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { provide, ref } from "vue";
-import { Button, UploadIcon } from "@/ui";
-import { ToastContainer } from "@/ui/toast";
+import { Button, UploadIcon, ToastContainer } from "@/ui"; 
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
 import { UploadDataModal, ReplaceDataModal } from "@/features/data-transfer";

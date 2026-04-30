@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { Button, ModalFooter } from "@/ui";
+import { Button, ModalBody, ModalFooter } from "@/ui";
 import type { Campaign } from "@/shared/types/campaign";
 import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
 import { DuplicateSummary } from "@/features/data-transfer/components/data-validation/shared";
 import CampainDuplicationsTable from "./CampainDuplicationsTable.vue";
-import ModalBody from "@/ui/modal/ModalBody.vue";
 
 const props = defineProps<{
   duplicateGroups: CampainDataDuplicateGroup[];
@@ -46,7 +45,11 @@ function handleProceed(): void {
       :has-valid-campaigns="validCampaigns.length > 0"
     />
     <p class="resolve-indicator" :class="{ resolved: allResolved }">
-      <span>Resolve duplicates ({{ resolvedCount }}/{{ duplicateGroups.length }})</span>
+      <span
+        >Resolve duplicates ({{ resolvedCount }}/{{
+          duplicateGroups.length
+        }})</span
+      >
     </p>
     <CampainDuplicationsTable
       :duplicate-groups="duplicateGroups"

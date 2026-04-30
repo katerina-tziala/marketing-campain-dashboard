@@ -7,7 +7,7 @@ import {
   CheckCircleIcon,
   InfoIcon,
   XPolygonIcon,
-} from "@/ui/icons";
+} from "../icons";
 
 const props = withDefaults(
   defineProps<{

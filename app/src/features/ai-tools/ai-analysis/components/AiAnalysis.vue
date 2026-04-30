@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
 import BudgetOptimizationAnalysis from "./budget-optimization/BudgetOptimizationAnalysis.vue";
-import ExecutiveSummaryAnalysis from "./executive-summary/ExecutiveSummaryAnalysis.vue";
-import { FileTextIcon, SlidersIcon } from "@/ui/icons";
+import ExecutiveSummaryAnalysis from "./executive-summary/ExecutiveSummaryAnalysis.vue"; 
 import type { AiAnalysisType } from "@/features/ai-tools/types";
-import { type Tab, Tabs } from "@/ui";
+import { type Tab, Tabs, FileTextIcon, SlidersIcon } from "@/ui";
 
 const analysisStore = useAiAnalysisStore();
 
