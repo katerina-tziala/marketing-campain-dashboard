@@ -2,10 +2,8 @@
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { useChartConfig, useChartTooltip } from '../composables'
-import type { BarChartData, BarChartOptions, BarTooltipCallbacks } from '../types'
+import type { BarChartData, BarChartOptions, BarTooltipCallbacks, ChartTickFormatter } from '../types'
 import { formatCompactNumber } from '@/shared/utils/formatters'
-
-type ChartTickFormatter = (value: string | number) => string
 
 const props = withDefaults(
   defineProps<{

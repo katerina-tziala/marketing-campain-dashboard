@@ -2,9 +2,7 @@
 import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { useChartConfig, useChartTooltip } from '../composables'
-import type { BarChartData, BarChartOptions, BarTooltipCallbacks } from '../types'
-
-type ChartTickFormatter = (value: string | number) => string
+import type { BarChartData, BarChartOptions, BarTooltipCallbacks, ChartTickFormatter } from '../types'
 
 const props = withDefaults(
   defineProps<{

@@ -3,6 +3,7 @@ import { computed, inject } from "vue";
 import { useCampaignStore } from "@/stores/campaign.store";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import DashboardCharts from "./components/DashboardCharts.vue";
+import type { RoiBudgetScatterHighlights } from "./components/RoiBudgetScatter.vue";
 import RoiBudgetScatter from "./components/RoiBudgetScatter.vue";
 import EmptyState from "./components/EmptyState.vue";
 import CampaignTable from "./components/CampaignTable.vue";
@@ -25,6 +26,21 @@ const showAiButton = computed(() => !aiStore.aiPanelOpen);
 const showConnectedDot = computed(
   () => aiStore.isConnected && !aiStore.aiPanelOpen,
 );
+
+const roiBudgetScatterHighlights = computed<RoiBudgetScatterHighlights>(() => ({
+  scaleUp: store.portfolioAnalysis.derivedSignals.budgetScalingCandidates.map(
+    (candidate) => candidate.campaign,
+  ),
+  champions: store.portfolioAnalysis.campaignGroups.top.map(
+    (campaign) => campaign.campaign,
+  ),
+  underperforming: store.portfolioAnalysis.campaignGroups.watch.map(
+    (campaign) => campaign.campaign,
+  ),
+  overspend: store.portfolioAnalysis.derivedSignals.inefficientCampaigns.map(
+    (campaign) => campaign.campaign,
+  ),
+}));
 
 function toggleChannelFilter(id: string): void {
   const current = store.selectedChannelsIds;
@@ -94,6 +110,7 @@ function clearChannelFilters(): void {
       <!-- ROI vs Budget Scatter -->
       <RoiBudgetScatter
         :campaigns="store.filteredCampaigns"
+        :highlight-campaigns-by-quadrant="roiBudgetScatterHighlights"
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"
       /> 

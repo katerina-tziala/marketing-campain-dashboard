@@ -10380,3 +10380,41 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve shared sorting behavior — the gap-impact channel order moved up with the card state so both revenue/budget and efficiency-gap views keep the same ordering.
 - Fix width at the shared wrapper layer — all reusable chart wrappers now stretch by default, which prevents the same card-layout issue from recurring in other charts.
 - Leave header layout iteration separate — the toggle was kept as a direct card child for now, while the full-width canvas issue was fixed independently.
+
+
+## [#509] Add Shared Bubble Chart Wrapper and Analysis-Driven Scatter Highlights
+**Type:** refactor
+
+**Summary:** Added a reusable `BubbleChart` wrapper to the shared chart library, moved ROI scatter rendering onto that wrapper, and aligned scatter point highlighting with existing portfolio analysis signals.
+
+**Brainstorming:** `RoiBudgetScatter` was the remaining dashboard component importing `vue-chartjs` directly, which broke the boundary that Chart.js integration should live inside `ui/charts`. We wanted a generic wrapper that understands bubble-chart mechanics but not ROI, budget, quadrants, medians, or campaign analysis. At the same time, the scatter’s highlighted labels were previously selected by revenue inside each quadrant, which did not always match the business meaning of the quadrants. Since the store already computes campaign groups and budget scaling candidates, `DashboardView` can adapt those signals into explicit scatter highlight inputs while `RoiBudgetScatter` remains store-free and presentation-driven.
+
+**Prompt:** Create a bubble/scatter chart wrapper in `ui/charts`, extract reusable chart types, use the wrapper in `RoiBudgetScatter`, and drive scatter highlights from the existing store analysis signals.
+
+**What was built:**
+- `app/src/ui/charts/components/BubbleChart.vue` — added a reusable bubble chart wrapper around `vue-chartjs` Bubble.
+- `app/src/ui/charts/components/BubbleChart.vue` — supports chart data, height, aria label, axis labels, axis min/max, tick formatters, explicit tick values, tooltip callbacks, external plugins, and legend position.
+- `app/src/ui/charts/components/index.ts` — exported `BubbleChart` from the shared chart components barrel.
+- `app/src/ui/charts/types/chart.types.ts` — added shared `ChartTickFormatter` and `ChartLegendPosition<TType>` types.
+- `app/src/ui/charts/types/chart.types.ts` — added `BubbleTooltipCallbacks` and `BubbleTooltipItem` types.
+- `app/src/ui/charts/types/index.ts` — exported the new shared chart and bubble tooltip types.
+- `app/src/ui/charts/components/BarChart.vue` — replaced its local tick formatter type with shared `ChartTickFormatter`.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — replaced its local tick formatter type with shared `ChartTickFormatter`.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — replaced direct `vue-chartjs` Bubble usage and local Chart.js option construction with the shared `BubbleChart` wrapper.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — kept ROI-specific logic local: quadrants, medians, log ROI transform, axis bounds, labels, tooltip text, and quadrant plugin.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — added `RoiBudgetScatterHighlights` input so each quadrant can receive campaign names to prioritize for labels/highlights.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — marks highlighted/initially labeled points, makes them slightly larger, and dims non-highlighted points.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — rounds the padded budget x-axis max up to the next thousand for cleaner axis endings.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — softened median guide lines and moved the median explanation into DOM text above the chart.
+- `app/src/features/dashboard/DashboardView.vue` — maps existing `store.portfolioAnalysis` outputs into `roiBudgetScatterHighlights`.
+- `app/src/features/dashboard/DashboardView.vue` — passes quadrant highlights into `RoiBudgetScatter`: budget scaling candidates, top campaigns, watch campaigns, and inefficient campaigns.
+
+**Key decisions & why:**
+- Keep Chart.js inside `ui/charts` — the shared wrapper owns Bubble rendering and Chart.js option construction.
+- Keep ROI scatter semantics in dashboard — quadrants, medians, ROI transforms, campaign labels, and business tooltip copy remain dashboard-specific.
+- Use store analysis as chart input, not a chart dependency — `DashboardView` adapts `portfolioAnalysis` into simple campaign-name arrays, so `RoiBudgetScatter` stays store-free.
+- Prefer analysis-driven highlights over revenue-only labels — green “Scale Up” now aligns with budget scaling candidates instead of merely highest revenue.
+- Keep fallback label ranking — if a quadrant has fewer analysis-selected campaigns, the chart still labels additional high-revenue points.
+- Centralize shared chart API types — tick formatter and legend-position types are wrapper-level concepts reused across chart components.
+- Use DOM for median explanation — the attempted canvas axis labels reduced plot space and introduced overlap, while DOM text remains clearer and easier to control.
+- Preserve custom plugins as caller inputs — quadrant backgrounds, median lines, and campaign labels are passed into `BubbleChart` as plugins rather than built into the generic wrapper.

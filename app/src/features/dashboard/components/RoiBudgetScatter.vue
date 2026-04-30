@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Bubble } from "vue-chartjs";
 import type { CampaignPerformance } from "@/shared/types/campaign";
 import {
-  useChartConfig,
-  useChartTooltip,
+  BubbleChart,
   type BubbleChartData,
-  type BubbleChartOptions,
   type BubbleChartPlugin,
+  type BubbleTooltipCallbacks,
 } from "@/ui";
 import {
   formatCompactNumber,
@@ -25,34 +23,53 @@ type BubblePoint = {
   revenue: number;
   campaign: string;
   channel: string;
+  isInitiallyLabeled: boolean;
 };
+
+type RoiBudgetScatterQuadrantKey =
+  | "scaleUp"
+  | "champions"
+  | "underperforming"
+  | "overspend";
+
+export type RoiBudgetScatterHighlights = Partial<
+  Record<RoiBudgetScatterQuadrantKey, string[]>
+>;
 
 const QUADRANTS = [
   {
+    key: "scaleUp",
     label: "Scale Up — high ROI, low spend",
     color: "rgba(16,185,129,0.75)",
+    dimmedColor: "rgba(16,185,129,0.60)",
     border: "#10b981",
     bg: "rgba(16,185,129,0.12)",
   },
   {
+    key: "champions",
     label: "Champions — high ROI, high spend",
     color: "rgba(234,179,8,0.75)",
+    dimmedColor: "rgba(234,179,8,0.60)",
     border: "#eab308",
     bg: "rgba(234,179,8,0.12)",
   },
   {
+    key: "underperforming",
     label: "Underperforming — low ROI, low spend",
     color: "rgba(99,102,241,0.75)",
+    dimmedColor: "rgba(99,102,241,0.60)",
     border: "#6366f1",
     bg: "rgba(99,102,241,0.12)",
   },
   {
+    key: "overspend",
     label: "Overspend — low ROI, high spend",
     color: "rgba(239,68,68,0.75)",
+    dimmedColor: "rgba(239,68,68,0.60)",
     border: "#ef4444",
     bg: "rgba(239,68,68,0.12)",
   },
-];
+] as const;
 
 // Clamp to -0.999 so log1p never receives -1 (→ -Infinity) or below
 function logRoi(roi: number): number {
@@ -63,33 +80,32 @@ const ROI_TICKS = [-0.5, 0, 0.5, 1, 2, 5, 10].map(logRoi);
 
 const CHART_HEIGHT = 420;
 const POINT_R = 5;
+const HIGHLIGHTED_POINT_R = 6.5;
 const LABELS_PER_QUADRANT = 2;
 const MIN_CAMPAIGNS = 5;
+const BUDGET_AXIS_ROUNDING = 1000;
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
+  highlightCampaignsByQuadrant?: RoiBudgetScatterHighlights;
   isFiltered?: boolean;
 }>();
 
-const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
-const scatterTooltip = useChartTooltip<"bubble">(
-  {
-    title: (items) => {
-      const p = items[0]?.raw as BubblePoint | undefined;
-      return p?.campaign ?? "";
-    },
-    label: (ctx) => {
-      const p = ctx.raw as BubblePoint;
-      return [
-        `Channel: ${p.channel}`,
-        `ROI: ${formatPercentage(p.roi)}`,
-        `Budget: ${formatCurrency(p.budget)}`,
-        `Revenue: ${formatCurrency(p.revenue)}`,
-      ];
-    },
+const scatterTooltipCallbacks: BubbleTooltipCallbacks = {
+  title: (items) => {
+    const p = items[0]?.raw as BubblePoint | undefined;
+    return p?.campaign ?? "";
   },
-  { marker: "circle" },
-);
+  label: (ctx) => {
+    const p = ctx.raw as BubblePoint;
+    return [
+      `Channel: ${p.channel}`,
+      `ROI: ${formatPercentage(p.roi)}`,
+      `Budget: ${formatCurrency(p.budget)}`,
+      `Revenue: ${formatCurrency(p.revenue)}`,
+    ];
+  },
+};
 
 function getMedian(values: number[]): number {
   if (!values.length) return 0;
@@ -112,6 +128,29 @@ function quadrantIndex(
   if (highRoi && !lowBudget) return 1;
   if (!highRoi && lowBudget) return 2;
   return 3;
+}
+
+function getInitialLabelIndexes(
+  bucket: BubblePoint[],
+  quadrantKey: RoiBudgetScatterQuadrantKey,
+): number[] {
+  const highlightedCampaigns =
+    props.highlightCampaignsByQuadrant?.[quadrantKey] ?? [];
+  const indexes = highlightedCampaigns
+    .map((campaign) => bucket.findIndex((point) => point.campaign === campaign))
+    .filter((index) => index >= 0)
+    .slice(0, LABELS_PER_QUADRANT);
+
+  if (indexes.length >= LABELS_PER_QUADRANT) return indexes;
+
+  const fallbackIndexes = bucket
+    .map((point, index) => ({ point, index }))
+    .filter(({ index }) => !indexes.includes(index))
+    .sort((a, b) => b.point.revenue - a.point.revenue)
+    .slice(0, LABELS_PER_QUADRANT - indexes.length)
+    .map(({ index }) => index);
+
+  return [...indexes, ...fallbackIndexes];
 }
 
 const validCampaigns = computed(() =>
@@ -146,11 +185,25 @@ const axisBounds = computed(() => {
 
   return {
     xMin: Math.max(0, xMin - xPad),
-    xMax: xMax + xPad,
+    xMax:
+      Math.ceil((xMax + xPad) / BUDGET_AXIS_ROUNDING) *
+      BUDGET_AXIS_ROUNDING,
     yMin: yMin - yPad,
     yMax: yMax + yPad,
   };
 });
+
+const visibleRoiTicks = computed(() =>
+  ROI_TICKS.filter((value) => value > axisBounds.value.yMin + 0.15),
+);
+
+function formatBudgetTick(value: string | number): string {
+  return formatCompactNumber(Number(value));
+}
+
+function formatRoiTick(value: string | number): string {
+  return formatDecimal(Math.expm1(Number(value)) * 100, 0);
+}
 
 const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
   const { roi: medRoi, budget: medBudget } = medians.value;
@@ -167,15 +220,29 @@ const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
       revenue: c.revenue,
       campaign: c.campaign,
       channel: c.channel,
+      isInitiallyLabeled: false,
     });
   }
+
+  buckets.forEach((bucket, quadrantIndex) => {
+    getInitialLabelIndexes(bucket, QUADRANTS[quadrantIndex].key).forEach(
+      (index) => {
+        bucket[index].isInitiallyLabeled = true;
+        bucket[index].r = HIGHLIGHTED_POINT_R;
+      },
+    );
+  });
 
   return {
     datasets: QUADRANTS.map((q, i) => ({
       label: q.label,
       data: buckets[i],
-      backgroundColor: q.color,
-      borderColor: q.border,
+      backgroundColor: buckets[i].map((point) =>
+        point.isInitiallyLabeled ? q.color : q.dimmedColor,
+      ),
+      borderColor: buckets[i].map((point) =>
+        point.isInitiallyLabeled ? q.border : q.dimmedColor,
+      ),
       borderWidth: 1,
       hoverRadius: 2,
     })),
@@ -202,9 +269,9 @@ const quadrantPlugin: BubbleChartPlugin = {
     });
 
     ctx.save();
-    ctx.strokeStyle = "rgba(236,72,153,0.5)";
+    ctx.strokeStyle = "rgba(203,213,225,0.38)";
     ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
+    ctx.setLineDash([5, 5]);
     ctx.beginPath();
     ctx.moveTo(xMid, top);
     ctx.lineTo(xMid, bottom);
@@ -236,8 +303,7 @@ const quadrantPlugin: BubbleChartPlugin = {
       const points = dataset.data as BubblePoint[];
       const ranked = points
         .map((d, i) => ({ d, i }))
-        .sort((a, b) => b.d.revenue - a.d.revenue)
-        .slice(0, LABELS_PER_QUADRANT);
+        .filter(({ d }) => d.isInitiallyLabeled);
 
       for (const { d: raw, i: index } of ranked) {
         const element = meta.data[index];
@@ -266,37 +332,6 @@ const quadrantPlugin: BubbleChartPlugin = {
   },
 };
 
-const chartOptions = computed<BubbleChartOptions>(() => ({
-  ...baseOptions,
-  layout: { padding: { top: 24 } },
-  plugins: {
-    ...basePlugins,
-    tooltip: scatterTooltip,
-  },
-  scales: {
-    x: createScale({
-      min: axisBounds.value.xMin,
-      max: axisBounds.value.xMax,
-      title: "Budget (€)",
-      ticks: {
-        callback: (value: string | number) => formatCompactNumber(Number(value)),
-      },
-    }),
-    y: createScale({
-      min: axisBounds.value.yMin,
-      max: axisBounds.value.yMax,
-      title: "ROI (%)",
-      afterBuildTicks: (axis: { ticks: { value: number }[]; min: unknown }) => {
-        axis.ticks = ROI_TICKS
-          .filter((v) => v > (axis.min as number) + 0.15)
-          .map((v) => ({ value: v }));
-      },
-      ticks: {
-        callback: (value: string | number) => formatDecimal(Math.expm1(Number(value)) * 100, 0),
-      },
-    }),
-  },
-}));
 </script>
 
 <template>
@@ -308,24 +343,31 @@ const chartOptions = computed<BubbleChartOptions>(() => ({
       </p>
     </div>
     <template v-if="hasEnoughCampaigns">
-      <div
-        class="w-full"
-        :style="{ height: `${CHART_HEIGHT}px` }"
-        role="img"
-        aria-label="ROI vs Budget scaling opportunities scatter chart"
-      >
-        <Bubble
-          :data="bubbleData"
-          :options="chartOptions"
-          :plugins="[quadrantPlugin]"
-        />
-      </div>
       <div class="scatter-legend" aria-hidden="true">
         <span class="scatter-legend-dash" />
-        <span class="scatter-legend-label">ROI median: {{ formatPercentage(medians.roi) }}</span>
+        <span class="scatter-legend-label">Median split</span>
         <span class="scatter-legend-sep">·</span>
-        <span class="scatter-legend-label">Budget median: {{ formatCurrency(medians.budget) }}</span>
+        <span class="scatter-legend-label">ROI: {{ formatPercentage(medians.roi) }}</span>
+        <span class="scatter-legend-sep">·</span>
+        <span class="scatter-legend-label">Budget: {{ formatCurrency(medians.budget) }}</span>
       </div>
+      <BubbleChart
+        :chart-data="bubbleData"
+        :height="CHART_HEIGHT"
+        :x-min="axisBounds.xMin"
+        :x-max="axisBounds.xMax"
+        :y-min="axisBounds.yMin"
+        :y-max="axisBounds.yMax"
+        :y-tick-values="visibleRoiTicks"
+        :x-tick-formatter="formatBudgetTick"
+        :y-tick-formatter="formatRoiTick"
+        :tooltip-callbacks="scatterTooltipCallbacks"
+        :plugins="[quadrantPlugin]"
+        x-label="Budget (€)"
+        y-label="ROI (%)"
+        legend-position="bottom"
+        aria-label="ROI vs Budget scaling opportunities scatter chart"
+      />
     </template>
     <div v-else class="scatter-empty" role="status">
       <p class="scatter-empty-message">Limited data</p>
@@ -355,7 +397,7 @@ const chartOptions = computed<BubbleChartOptions>(() => ({
 }
 
 .scatter-legend {
-  @apply flex items-center justify-center gap-2 mt-3;
+  @apply flex items-center justify-center gap-2 mb-1;
 }
 
 .scatter-legend-dash {
