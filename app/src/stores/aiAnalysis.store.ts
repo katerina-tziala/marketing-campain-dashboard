@@ -8,7 +8,7 @@ import type {
   ExecutiveSummaryResponse,
 } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { useCampaignStore } from './campaign.store'
+import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'
 import { usePortfolioDataStore } from '@/shared/portfolio-data'
 import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
@@ -72,7 +72,7 @@ export interface PortfolioContext {
 
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()
-  const campaignStore = useCampaignStore()
+  const campaignStore = useCampaignPerformanceStore()
   const portfolioData = usePortfolioDataStore()
 
   // ── Shared state ──────────────────────────────────────────────────────

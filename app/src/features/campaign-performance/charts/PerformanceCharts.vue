@@ -23,7 +23,7 @@ import {
   sortCampaignsByRoiDesc,
   sortChannelsByEfficiencyGapImpactDesc,
   sortChannelsByRoiDesc,
-} from "../utils/dashboard-sorting";
+} from "../utils/campaign-performance-sorting";
 import CardHeader from "@/ui/card/CardHeader.vue";
 
 type RevenueBudgetView = "budgetVsRevenue" | "efficiencyGap";

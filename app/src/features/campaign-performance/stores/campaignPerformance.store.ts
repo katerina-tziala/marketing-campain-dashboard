@@ -5,7 +5,7 @@ import type { Channel } from '@/shared/types/channel'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
 import { usePortfolioDataStore } from '@/shared/portfolio-data'
 
-export const useCampaignStore = defineStore('campaigns', () => {
+export const useCampaignPerformanceStore = defineStore('campaignPerformance', () => {
   const portfolioData = usePortfolioDataStore()
 
   // ── State ─────────────────────────────────────────────────────────────

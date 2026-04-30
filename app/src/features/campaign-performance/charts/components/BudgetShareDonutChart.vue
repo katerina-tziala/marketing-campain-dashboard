@@ -10,12 +10,12 @@ import {
   withHexAlpha,
 } from "@/ui";
 import {
-  DASHBOARD_DONUT_DATASET_STYLE,
-  DASHBOARD_DONUT_DIM_ALPHA,
-  DASHBOARD_DONUT_DIM_THRESHOLD,
-  DASHBOARD_DONUT_HIGHLIGHT_ALPHA,
-  DASHBOARD_DONUT_HIGHLIGHT_LIMIT,
-  DASHBOARD_DONUT_SECONDARY_ALPHA,
+  CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
+  CAMPAIGN_PERFORMANCE_DONUT_DIM_ALPHA,
+  CAMPAIGN_PERFORMANCE_DONUT_DIM_THRESHOLD,
+  CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA,
+  CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT,
+  CAMPAIGN_PERFORMANCE_DONUT_SECONDARY_ALPHA,
 } from "../config";
 import type { BudgetShareDonutItem } from "../types";
 import { formatBudgetTooltipLines } from "../utils";
@@ -45,13 +45,13 @@ function getBudgetShare(budget: number): number {
 }
 
 function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
-  if (index < DASHBOARD_DONUT_HIGHLIGHT_LIMIT) {
-    return DASHBOARD_DONUT_HIGHLIGHT_ALPHA;
+  if (index < CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT) {
+    return CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA;
   }
 
-  return getBudgetShare(item.budget) < DASHBOARD_DONUT_DIM_THRESHOLD
-    ? DASHBOARD_DONUT_DIM_ALPHA
-    : DASHBOARD_DONUT_SECONDARY_ALPHA;
+  return getBudgetShare(item.budget) < CAMPAIGN_PERFORMANCE_DONUT_DIM_THRESHOLD
+    ? CAMPAIGN_PERFORMANCE_DONUT_DIM_ALPHA
+    : CAMPAIGN_PERFORMANCE_DONUT_SECONDARY_ALPHA;
 }
 
 function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
@@ -60,8 +60,8 @@ function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
 
 function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
   return (
-    index >= DASHBOARD_DONUT_HIGHLIGHT_LIMIT &&
-    getBudgetShare(item.budget) < DASHBOARD_DONUT_DIM_THRESHOLD
+    index >= CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT &&
+    getBudgetShare(item.budget) < CAMPAIGN_PERFORMANCE_DONUT_DIM_THRESHOLD
   );
 }
 
@@ -79,7 +79,7 @@ const chartData = computed<DonutChartData>(() => ({
     {
       data: props.items.map((item) => item.budget),
       backgroundColor: props.items.map(getSegmentColor),
-      ...DASHBOARD_DONUT_DATASET_STYLE,
+      ...CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
     },
   ],
 }));

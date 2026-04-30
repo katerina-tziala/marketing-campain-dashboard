@@ -46,10 +46,6 @@ const emit = defineEmits<{ aiClick: [] }>();
 </template>
 
 <style lang="scss" scoped>
-.dashboard-title-row {
-  @apply flex items-start justify-center gap-x-4 gap-y-2;
-}
-
 .connected-status {
   @apply absolute
   -top-1

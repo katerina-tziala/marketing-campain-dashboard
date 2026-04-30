@@ -8,7 +8,7 @@ import {
   type BarTooltipItem,
 } from '@/ui'
 import type { RoiBarChartItem } from '../types'
-import { DASHBOARD_BAR_DATASET_STYLE } from '../config'
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config'
 import {
   formatRoiAllocationTooltipLines,
 } from '../utils'
@@ -37,7 +37,7 @@ const chartData = computed<BarChartData>(() => ({
       data: props.items.map((item) => (item.roi ?? 0) * 100),
       backgroundColor: props.items.map((item) => `${item.color}bf`),
       borderColor: props.items.map((item) => item.color),
-      ...DASHBOARD_BAR_DATASET_STYLE,
+      ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
   ],
 }))

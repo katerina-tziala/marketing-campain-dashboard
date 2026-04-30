@@ -1,13 +1,13 @@
 import { withHexAlpha } from '@/ui/charts'
 
-export const DASHBOARD_CHART_COLORS = {
+export const CAMPAIGN_PERFORMANCE_CHART_COLORS = {
   budget: '#3b82f6',
   revenue: '#34d399',
   positiveGap: '#10b981',
   negativeGap: '#ef4444',
 } as const
  
-export const DASHBOARD_ROI_BUDGET_SCALING_COLORS = {
+export const CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS = {
   scaleUp: {
     color: 'rgba(16,185,129,0.75)',
     dimmedColor: 'rgba(16,185,129,0.60)',
@@ -35,11 +35,11 @@ export const DASHBOARD_ROI_BUDGET_SCALING_COLORS = {
   divider: 'rgba(203,213,225,0.38)',
 } as const
 
-export const DASHBOARD_CHART_FILL_ALPHA = 'bf'
+export const CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA = 'bf'
 
-export function getDashboardChartFillColor(
+export function getCampaignPerformanceChartFillColor(
   color: string,
-  alpha = DASHBOARD_CHART_FILL_ALPHA,
+  alpha = CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA,
 ): string {
   return withHexAlpha(color, alpha)
 }

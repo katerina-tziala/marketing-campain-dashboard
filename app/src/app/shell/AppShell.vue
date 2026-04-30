@@ -4,11 +4,8 @@ import { Button, UploadIcon } from "@/ui";
 import { ToastContainer } from "@/ui/toast";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
-import {
-  useUploadModal,
-  UploadDataModal,
-  ReplaceDataModal,
-} from "@/features/data-transfer";
+import { UploadDataModal, ReplaceDataModal } from "@/features/data-transfer";
+import { useUploadModal } from "@/app/composables/useUploadModal";
 import AiToolsDrawer from "./AiToolsDrawer.vue";
 
 const aiStore = useAiConnectionStore();

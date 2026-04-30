@@ -11,9 +11,9 @@ import {
 } from "@/ui";
 import { formatCurrency, formatDecimal } from "@/shared/utils/formatters";
 import {
-  DASHBOARD_BAR_DATASET_STYLE,
-  DASHBOARD_CHART_COLORS,
-  getDashboardChartFillColor,
+  CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
+  CAMPAIGN_PERFORMANCE_CHART_COLORS,
+  getCampaignPerformanceChartFillColor,
 } from "../config";
 import {
   getChannelEfficiencyGapPercent,
@@ -56,12 +56,12 @@ const chartData = computed<BarChartData>(() => ({
     {
       data: props.channels.map((ch) => getGapPercent(ch)),
       backgroundColor: props.channels.map((ch) =>
-        getDashboardChartFillColor(getEfficiencyGapColor(getGapPercent(ch))),
+        getCampaignPerformanceChartFillColor(getEfficiencyGapColor(getGapPercent(ch))),
       ),
       borderColor: props.channels.map((ch) =>
         getEfficiencyGapColor(getGapPercent(ch)),
       ),
-      ...DASHBOARD_BAR_DATASET_STYLE,
+      ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
   ],
 }));
@@ -77,14 +77,14 @@ function formatValueTick(value: string | number): string {
       <MetaItem>
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: DASHBOARD_CHART_COLORS.positiveGap }"
+          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap }"
         />
         Overperforming
       </MetaItem>
       <MetaItem>
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: DASHBOARD_CHART_COLORS.negativeGap }"
+          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap }"
         />
         Underperforming
       </MetaItem>

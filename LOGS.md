@@ -10738,3 +10738,59 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep behavior unchanged — this rename only changes naming and imports, avoiding layout or workflow changes.
 - Keep the dashboard dependency explicit — the empty state still imports from the data-transfer feature barrel, but now the imported name describes the feature-level action.
 - Remove the old export instead of aliasing it — there was only one consumer, so keeping a compatibility alias would add unnecessary API surface.
+
+
+## [#519] Extract Campaign Performance Feature
+**Type:** refactor
+
+**Summary:** Converted the former dashboard feature into a dedicated campaign-performance feature, made `DashboardPage` the app-level orchestrator, moved campaign performance state into the feature, and moved upload modal orchestration into the app layer.
+
+**Brainstorming:** The current dashboard experience is really a campaign performance product feature: it owns campaign/channel filters, KPIs, performance charts, ROI scaling, and the campaign table. The broader dashboard should become a page-level composition that can render campaign performance now and a future period comparison experience later. Keeping everything under `features/dashboard` would make the future comparison view inherit names, stores, and layout assumptions that only belong to campaign performance. The cleaner boundary is `app/pages/DashboardPage.vue` for orchestration, `features/campaign-performance` for the current performance analysis experience, `shared/portfolio-data` for uploaded portfolio state, and later `features/period-comparison` for its own derived model. The upload modal orchestration had the same issue: the modal components belong to data-transfer, but opening the modal, showing replace confirmation, and providing `openUploadModal` are app shell responsibilities.
+
+**Prompt:** Refactor toward a feature-based architecture where campaign performance owns the current dashboard view and store, dashboard is a page rendering features, and fix the `useUploadModal` TODO by moving app-level upload orchestration out of data-transfer.
+
+**What was built:**
+- `app/src/app/pages/DashboardPage.vue` — added the app-level dashboard page that renders the empty state when no campaigns exist and renders the campaign performance feature when data is available.
+- `app/src/app/pages/DashboardPage.vue` — keeps the future-mode TODO for switching between campaign performance and a future period comparison view.
+- `app/src/app/pages/DashboardPage.vue` — imports `CampaignPerformanceView` from `@/features/campaign-performance` and `EmptyState` from the campaign-performance feature.
+- `app/src/app/pages/DashboardPage.vue` — reads `useCampaignPerformanceStore()` only for page-level empty-state branching.
+- `app/src/app/pages/DashboardPage.vue` — keeps AI button state as page/app wiring and passes `showAiButton`, `showConnectedDot`, and `aiClick` into `CampaignPerformanceView`.
+- `app/src/app/router/index.ts` — changed the root route from the old dashboard view to `DashboardPage`.
+- `app/src/features/campaign-performance/CampaignPerformanceView.vue` — created the current campaign performance view from the previous dashboard body.
+- `app/src/features/campaign-performance/CampaignPerformanceView.vue` — owns the campaign performance header, channel filters, KPI cards, performance charts, ROI vs Budget scaling chart, and campaign table.
+- `app/src/features/campaign-performance/CampaignPerformanceView.vue` — owns current channel filter actions and ROI scaling highlight adaptation.
+- `app/src/features/campaign-performance/index.ts` — added a public feature entry export for `CampaignPerformanceView`.
+- `app/src/features/campaign-performance/stores/campaignPerformance.store.ts` — moved the former root campaign store into the campaign-performance feature.
+- `app/src/features/campaign-performance/stores/campaignPerformance.store.ts` — renamed the store export from `useCampaignStore` to `useCampaignPerformanceStore`.
+- `app/src/stores/campaign.store.ts` — removed the old root campaign store location after the move.
+- `app/src/stores/aiAnalysis.store.ts` — updated AI analysis to read from `useCampaignPerformanceStore()` for the current integration.
+- `app/src/features/campaign-performance/components/CampaignPerformanceHeader.vue` — renamed the former `DashboardHeader` component to match its feature-specific purpose.
+- `app/src/features/campaign-performance/components/index.ts` — exported `CampaignPerformanceHeader`, `ChannelFilters`, and `Kpis` from the campaign-performance components barrel.
+- `app/src/features/campaign-performance/components/CampaignTable.vue` — moved the campaign table from the dashboard feature into campaign-performance.
+- `app/src/features/campaign-performance/components/EmptyState.vue` — moved the empty state into campaign-performance because its copy and upload entry point are campaign-data specific.
+- `app/src/features/campaign-performance/components/channel-filters/*` — moved channel filter components into campaign-performance.
+- `app/src/features/campaign-performance/components/kpis/*` — moved KPI components into campaign-performance.
+- `app/src/features/campaign-performance/ui/PerformanceIndicator.vue` — moved the feature-specific performance indicator into campaign-performance UI.
+- `app/src/features/campaign-performance/charts/*` — moved all performance chart compositions, chart components, chart composables, chart configs, chart types, and chart utilities into campaign-performance.
+- `app/src/features/campaign-performance/charts/config/campaign-performance-chart-colors.ts` — renamed the former dashboard chart color config and constants to campaign-performance naming.
+- `app/src/features/campaign-performance/charts/config/campaign-performance-chart-styles.ts` — renamed the former dashboard chart style config and constants to campaign-performance naming.
+- `app/src/features/campaign-performance/utils/campaign-performance-sorting.ts` — renamed the former dashboard sorting utility to campaign-performance naming.
+- `app/src/features/dashboard/*` — removed the old dashboard feature folder after moving its contents into campaign-performance.
+- `app/src/app/composables/useUploadModal.ts` — moved upload modal orchestration from data-transfer into the app layer.
+- `app/src/app/composables/useUploadModal.ts` — removed the previous TODO because the app-level orchestration now lives in the app layer.
+- `app/src/app/shell/AppShell.vue` — imports `useUploadModal` from `@/app/composables/useUploadModal`.
+- `app/src/app/shell/AppShell.vue` — still imports `UploadDataModal` and `ReplaceDataModal` from the data-transfer feature.
+- `app/src/features/data-transfer/index.ts` — removed the `useUploadModal` export so data-transfer no longer exposes app orchestration.
+- `app/src/features/data-transfer/composables/useUploadModal.ts` — removed the old composable location after the move.
+
+**Key decisions & why:**
+- Treat dashboard as a page, not the feature — `DashboardPage` can later switch between campaign performance and period comparison without either feature inheriting the other's assumptions.
+- Treat campaign performance as the current product feature — filters, KPIs, charts, ROI scaling, and campaign table all describe the current campaign performance workflow.
+- Move the campaign store into its owning feature — the store derives campaign-performance state from shared portfolio data, so it belongs beside the feature that consumes those derivations.
+- Keep portfolio data shared — uploaded portfolio data remains in `shared/portfolio-data` because it will feed both campaign performance and future period comparison.
+- Keep AI integration working for now — `aiAnalysis.store` still reads campaign performance state, but the dependency is now named explicitly and can later be replaced by app-provided analysis context.
+- Rename dashboard-specific internals only where ownership changed — chart colors, chart styles, sorting utilities, and header naming now match campaign-performance ownership.
+- Keep data-transfer focused on transfer UI and CSV behavior — upload modals and transfer actions remain in data-transfer, while opening/providing the modal is app orchestration.
+- Move `useUploadModal` to `app/composables` — it coordinates shell-level modal refs, replacement confirmation, and app-wide `openUploadModal` injection, so it is not a feature utility.
+- Preserve behavior during the architecture move — routing, upload entry points, AI drawer opening, campaign filtering, charts, and table rendering should behave the same after the folder/store refactor.
+- Leave period comparison for later — this step clears the boundary without adding placeholder period-comparison files before the feature exists.

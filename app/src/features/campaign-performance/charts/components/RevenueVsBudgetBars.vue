@@ -8,9 +8,9 @@ import {
 } from "@/ui";
 import { formatCompactNumber } from "@/shared/utils/formatters";
 import {
-  DASHBOARD_BAR_DATASET_STYLE,
-  DASHBOARD_CHART_COLORS,
-  getDashboardChartFillColor,
+  CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
+  CAMPAIGN_PERFORMANCE_CHART_COLORS,
+  getCampaignPerformanceChartFillColor,
 } from "../config";
 import { formatBudgetTooltip, formatRevenueTooltip } from "../utils";
 
@@ -35,20 +35,20 @@ const chartData = computed<BarChartData>(() => ({
     {
       label: "Budget (€)",
       data: props.channels.map((ch) => ch.budget),
-      backgroundColor: getDashboardChartFillColor(
-        DASHBOARD_CHART_COLORS.budget,
+      backgroundColor: getCampaignPerformanceChartFillColor(
+        CAMPAIGN_PERFORMANCE_CHART_COLORS.budget,
       ),
-      borderColor: DASHBOARD_CHART_COLORS.budget,
-      ...DASHBOARD_BAR_DATASET_STYLE,
+      borderColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.budget,
+      ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
     {
       label: "Revenue (€)",
       data: props.channels.map((ch) => ch.revenue),
-      backgroundColor: getDashboardChartFillColor(
-        DASHBOARD_CHART_COLORS.revenue,
+      backgroundColor: getCampaignPerformanceChartFillColor(
+        CAMPAIGN_PERFORMANCE_CHART_COLORS.revenue,
       ),
-      borderColor: DASHBOARD_CHART_COLORS.revenue,
-      ...DASHBOARD_BAR_DATASET_STYLE,
+      borderColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.revenue,
+      ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
   ],
 }));

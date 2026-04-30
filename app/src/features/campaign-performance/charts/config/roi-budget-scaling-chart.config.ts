@@ -1,27 +1,27 @@
 import type { QuadrantBackgrounds } from "@/ui"
 import type { RoiBudgetScalingQuadrantConfig } from "../types"
-import { DASHBOARD_ROI_BUDGET_SCALING_COLORS } from "./dashboard-chart-colors"
+import { CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS } from "./campaign-performance-chart-colors"
 
 export const ROI_BUDGET_SCALING_QUADRANTS = [
   {
     key: 'scaleUp',
     label: 'Scale',
-    ...DASHBOARD_ROI_BUDGET_SCALING_COLORS.scaleUp,
+    ...CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS.scaleUp,
   },
   {
     key: 'champions',
     label: 'Maximize',
-    ...DASHBOARD_ROI_BUDGET_SCALING_COLORS.champions,
+    ...CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS.champions,
   },
   {
     key: 'underperforming',
     label: 'Monitor',
-    ...DASHBOARD_ROI_BUDGET_SCALING_COLORS.underperforming,
+    ...CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS.underperforming,
   },
   {
     key: 'overspend',
     label: 'Reduce',
-    ...DASHBOARD_ROI_BUDGET_SCALING_COLORS.overspend,
+    ...CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS.overspend,
   },
 ] as const satisfies readonly RoiBudgetScalingQuadrantConfig[]
 
@@ -32,7 +32,7 @@ export const ROI_BUDGET_SCALING_BUDGET_AXIS_ROUNDING = 1000
 export const ROI_BUDGET_SCALING_TICK_VALUES = [-0.5, 0, 1, 5] as const
 
 export const ROI_BUDGET_SCALING_DIVIDER_STYLE = {
-  color: DASHBOARD_ROI_BUDGET_SCALING_COLORS.divider,
+  color: CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS.divider,
   width: 1,
   dash: [5, 5],
 } as const

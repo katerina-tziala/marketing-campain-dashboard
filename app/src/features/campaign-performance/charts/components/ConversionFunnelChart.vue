@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { formatCompactNumber } from "@/shared/utils/formatters";
-import { PerformanceIndicator } from "@/features/dashboard/ui";
+import { PerformanceIndicator } from "@/features/campaign-performance/ui";
 import type { PortfolioKPIs } from "@/shared/types/campaign";
 
 const MIN_WIDTH_BAR = 12;
