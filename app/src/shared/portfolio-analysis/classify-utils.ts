@@ -1,4 +1,5 @@
 import type { CampaignSummary } from './types'
+import { getMedian } from '@/shared/utils/math'
 
 /**
  * Classification thresholds — all numeric decision boundaries live here.
@@ -69,15 +70,6 @@ export function getFunnelMedians(items: Array<{ ctr: number | null; cvr: number 
     medianCtr: ctrs.length > 0 ? getMedian(ctrs) : null,
     medianCvr: cvrs.length > 0 ? getMedian(cvrs) : null,
   }
-}
-
-export function getMedian(values: number[]): number {
-  if (values.length === 0) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid]
 }
 
 /**

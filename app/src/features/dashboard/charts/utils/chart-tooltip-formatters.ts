@@ -8,6 +8,22 @@ type RoiAllocationTooltipItem = {
   budget: number
 }
 
+type RoiBudgetScalingTooltipItem = RoiAllocationTooltipItem & {
+  channel: string
+}
+
+export function formatChannelTooltip(
+  channel: string,
+): string {
+  return `Channel: ${channel}`
+}
+
+export function formatRoiTooltip(
+  roi: number | null,
+): string {
+  return `ROI: ${formatPercentage(roi)}`
+}
+
 export function formatBudgetTooltip(
   budget: number,
 ): string {
@@ -18,6 +34,17 @@ export function formatRevenueTooltip(
   revenue: number,
 ): string {
   return `Revenue: ${formatCurrency(revenue)}`;
+}
+
+export function formatRoiBudgetScalingTooltipLines(
+  item: RoiBudgetScalingTooltipItem,
+): string[] {
+  return [
+    formatChannelTooltip(item.channel),
+    formatRoiTooltip(item.roi),
+    formatBudgetTooltip(item.budget),
+    formatRevenueTooltip(item.revenue),
+  ]
 }
 
 export function formatBudgetTooltipLines(
@@ -36,7 +63,7 @@ export function formatRoiAllocationTooltipLines(
 ): string[] {
   const [budgetLabel, budgetShareLabel] = formatBudgetTooltipLines(item.budget, kpis.totalBudget)
   return [
-    `ROI: ${formatPercentage(item.roi)}`,
+    formatRoiTooltip(item.roi),
     budgetLabel,
     formatRevenueTooltip(item.revenue),
     budgetShareLabel,

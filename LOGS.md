@@ -10418,3 +10418,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Centralize shared chart API types — tick formatter and legend-position types are wrapper-level concepts reused across chart components.
 - Use DOM for median explanation — the attempted canvas axis labels reduced plot space and introduced overlap, while DOM text remains clearer and easier to control.
 - Preserve custom plugins as caller inputs — quadrant backgrounds, median lines, and campaign labels are passed into `BubbleChart` as plugins rather than built into the generic wrapper.
+
+
+## [#510] Restructure ROI vs Budget Scaling Chart
+**Type:** refactor
+
+**Summary:** Reworked the ROI vs Budget scatter into a dashboard-level scaling component plus a chart-only renderer, moved ROI scaling configuration into dedicated dashboard chart config/types, and centralized quadrant colors for easier scanning.
+
+**Brainstorming:** The previous ROI scatter had too many responsibilities in one component: card composition, empty state, median calculation, chart data mapping, quadrant backgrounds, tooltip formatting, and chart rendering. Since `ui/charts` now provides a reusable `BubbleChart`, the better boundary is to keep the dashboard wrapper responsible for user-facing composition and keep the dashboard chart component focused on rendering the ROI/budget bubble plot. The quadrant background plugin also needed to stay generic, so visual colors should come from dashboard chart config instead of shared chart internals.
+
+**Prompt:** Keep `RoiVsBudgetScaling` in dashboard components, have it import a chart-only ROI vs Budget scatter chart, separate config/types, make height configurable with a default, remove color defaults from the quadrant plugin, and centralize quadrant colors in dashboard chart colors.
+
+**What was built:**
+- `app/src/features/dashboard/components/RoiVsBudgetScaling.vue` — added dashboard-level ROI scaling component that owns the card, title, filtered subtitle, median explanation, empty state, median calculation, and default chart height.
+- `app/src/features/dashboard/charts/components/RoiVsBudgetScatterChart.vue` — added chart-only ROI vs Budget bubble renderer using the shared `BubbleChart`.
+- `app/src/features/dashboard/components/RoiBudgetScatter.vue` — removed the old combined scatter component.
+- `app/src/features/dashboard/DashboardView.vue` — replaced `RoiBudgetScatter` usage with `RoiVsBudgetScaling` and updated highlight typing.
+- `app/src/features/dashboard/charts/config/roi-budget-scaling-chart.config.ts` — added ROI scaling chart config for quadrants, radii, min campaign count, axis rounding, tick values, divider style, and quadrant backgrounds.
+- `app/src/features/dashboard/charts/config/dashboard-chart-colors.ts` — added `DASHBOARD_ROI_BUDGET_SCALING_COLORS` so all ROI scaling quadrant colors are grouped in the dashboard chart color config.
+- `app/src/features/dashboard/charts/types/roi-budget-scaling-chart.types.ts` — added ROI scaling quadrant, median, and highlight types.
+- `app/src/features/dashboard/charts/utils/chart-tooltip-formatters.ts` — added/reused ROI scaling tooltip line formatting.
+- `app/src/shared/utils/math.ts` — moved `getMedian()` into shared math utilities.
+- `app/src/ui/charts/plugins/createQuadrantBackgroundPlugin.ts` — added a reusable quadrant background plugin with caller-provided backgrounds and divider style.
+- `app/src/ui/charts/plugins/createQuadrantBackgroundPlugin.ts` — removed built-in color/style fallbacks so dashboard config owns visual styling.
+- `app/src/ui/charts/plugins/index.ts` and `app/src/ui/charts/index.ts` — exported the shared chart plugin API.
+- Dashboard chart barrels — exported the new ROI scaling chart component, config, types, and utilities.
+
+**Key decisions & why:**
+- Split wrapper from renderer — `RoiVsBudgetScaling` owns dashboard composition, while `RoiVsBudgetScatterChart` owns only chart rendering and chart data mapping.
+- Keep the chart-only component input-driven — `height` is required by `RoiVsBudgetScatterChart`, while the dashboard wrapper provides the `420` default.
+- Centralize colors in `dashboard-chart-colors.ts` — quadrant colors are now easy to scan alongside the rest of dashboard chart colors.
+- Keep semantic quadrant config separate — labels, keys, thresholds, radii, and chart behavior remain in the ROI scaling config.
+- Remove color defaults from shared plugin — `createQuadrantBackgroundPlugin` is now generic and does not encode dashboard styling.
+- Move median calculation to shared math — median is a generic utility and no longer belongs inside a chart component.
+- Keep store analysis outside the chart — `DashboardView` adapts portfolio analysis into highlight inputs, so chart components remain store-free.
