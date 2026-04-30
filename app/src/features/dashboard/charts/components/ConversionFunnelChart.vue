@@ -55,8 +55,7 @@ function scaledWidth(val: number | null): number {
 
 <template>
   <div class="funnel" role="img" :aria-label="ariaLabel ?? 'Conversions funnel chart'">
-    <div v-for="item in funnelItems" class="funnel-row">
-      <span class="funnel-label">{{ item.label }}</span>
+    <div v-for="item in funnelItems" :key="item.label" class="funnel-row">
       <div class="funnel-bar-wrap">
         <div
           class="funnel-bar"
@@ -65,9 +64,8 @@ function scaledWidth(val: number | null): number {
             width: `${scaledWidth(item.value)}%`,
           }"
         >
-          <span class="funnel-value">{{
-            formatCompactNumber(item.value)
-          }}</span>
+          <span class="funnel-value">{{ formatCompactNumber(item.value) }}</span>
+          <span class="funnel-label">{{ item.label }}</span>
         </div>
       </div>
       <span v-if="item.rateLabel" class="funnel-rate">
@@ -83,38 +81,45 @@ function scaledWidth(val: number | null): number {
   @apply grid 
     grid-cols-1  
     auto-rows-auto
-    gap-y-9
-    py-4;
+    w-full
+    gap-y-6
+    py-4
+    border-l 
+    border-typography-strong/15;
+ 
 }
 
 .funnel-row {
-  @apply flex items-center gap-x-3;
-}
-
-.funnel-label {
-  @apply w-24 shrink-0 text-right;
+  @apply grid items-center gap-x-3;
+  grid-template-columns: minmax(0, 1fr) minmax(4.75rem, max-content);
 }
 
 .funnel-bar-wrap {
-  @apply flex justify-start flex-1;
+  @apply flex min-w-0 justify-start;
 }
 
 .funnel-bar {
   @apply flex
-    items-center
+    flex-col
+    justify-center
+    min-w-0
     px-4
     rounded-r-md
-    min-w-16
     duration-500
     h-16
     transition-[width];
+  min-width: min(5rem, 100%);
 }
 
 .funnel-value {
-  @apply min-w-24 font-semibold text-typography-inverse text-sm;
+  @apply min-w-0 truncate text-base font-semibold leading-tight text-typography-inverse;
+}
+
+.funnel-label {
+  @apply min-w-0 truncate text-xs font-medium leading-tight text-typography-inverse/80;
 }
 
 .funnel-rate {
-  @apply flex flex-wrap items-center text-sm gap-x-1.5 gap-y-1.5;
+  @apply flex min-w-0 flex-wrap items-center justify-end text-sm gap-x-1.5 gap-y-1.5;
 }
 </style>

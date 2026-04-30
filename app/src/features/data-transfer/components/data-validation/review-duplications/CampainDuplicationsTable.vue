@@ -13,6 +13,7 @@ import {
 import type { DataTableColumn } from "@/ui";
 import { formatCurrency, formatNumber } from "@/shared/utils/formatters";
 import { useSort } from "@/shared/composables/useSort";
+import { sortByValue } from "@/shared/utils/sorting";
 import DuplicationsHeader from "./DuplicationsHeader.vue";
 
 const props = withDefaults(
@@ -49,10 +50,7 @@ const COLUMNS: DataTableColumn[] = [
 const sortedGroups = computed(() =>
   props.duplicateGroups.map((group) => ({
     ...group,
-    rows: [...group.rows].sort((a, b) => {
-      const dir = sortDir.value === "asc" ? 1 : -1;
-      return (a[sortKey.value] - b[sortKey.value]) * dir;
-    }),
+    rows: sortByValue(group.rows, (row) => row[sortKey.value], sortDir.value),
   })),
 );
 

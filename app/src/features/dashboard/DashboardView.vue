@@ -29,19 +29,21 @@ const showConnectedDot = computed(
   () => aiStore.isConnected && !aiStore.aiPanelOpen,
 );
 
+const ROI_SCALING_HIGHLIGHT_LIMIT = 3;
+
 const roiBudgetScalingHighlights = computed<RoiBudgetScalingHighlights>(() => ({
-  scaleUp: store.portfolioAnalysis.derivedSignals.budgetScalingCandidates.map(
-    (candidate) => candidate.campaign,
-  ),
-  champions: store.portfolioAnalysis.campaignGroups.top.map(
-    (campaign) => campaign.campaign,
-  ),
-  underperforming: store.portfolioAnalysis.campaignGroups.watch.map(
-    (campaign) => campaign.campaign,
-  ),
-  overspend: store.portfolioAnalysis.derivedSignals.inefficientCampaigns.map(
-    (campaign) => campaign.campaign,
-  ),
+  scaleUp: store.portfolioAnalysis.derivedSignals.budgetScalingCandidates
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((candidate) => candidate.campaign),
+  champions: store.portfolioAnalysis.campaignGroups.top
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((campaign) => campaign.campaign),
+  underperforming: store.portfolioAnalysis.campaignGroups.watch
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((campaign) => campaign.campaign),
+  overspend: store.portfolioAnalysis.derivedSignals.inefficientCampaigns
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((campaign) => campaign.campaign),
 }));
 
 function toggleChannelFilter(id: string): void {
@@ -137,7 +139,7 @@ function clearChannelFilters(): void {
     grid-cols-1
     grid-rows-[min-content_1fr]
     pt-4
-    gap-y-5;
+    gap-y-3;
 }
 
 .dashboard-header {
@@ -159,7 +161,7 @@ function clearChannelFilters(): void {
 }
 
 .charts-grid {
-  @apply w-full grid grid-cols-2 gap-5 mx-auto max-w-7xl;
+  @apply w-full grid auto-rows-min grid-cols-2 gap-5 mx-auto max-w-7xl;
 
   // @container (min-width: 60rem) {
   //   @apply grid-cols-2;

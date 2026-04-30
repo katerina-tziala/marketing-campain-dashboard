@@ -18,3 +18,26 @@ export function sortWithNullsLast(
 ): number {
   return compareNullsLast(a, b) ?? compareDirectional(a as string | number, b as string | number, dir)
 }
+
+export type SortDirection = 'asc' | 'desc'
+export type SortableValue = string | number | null
+
+function getSortDirectionMultiplier(direction: SortDirection): 1 | -1 {
+  return direction === 'asc' ? 1 : -1
+}
+
+export function sortByValue<T>(
+  items: readonly T[],
+  getValue: (item: T) => SortableValue,
+  direction: SortDirection,
+): T[] {
+  const dir = getSortDirectionMultiplier(direction)
+  return [...items].sort((a, b) => sortWithNullsLast(getValue(a), getValue(b), dir))
+}
+
+export function sortByValueDesc<T>(
+  items: readonly T[],
+  getValue: (item: T) => SortableValue,
+): T[] {
+  return sortByValue(items, getValue, 'desc')
+}

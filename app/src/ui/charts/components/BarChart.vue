@@ -9,7 +9,6 @@ const props = withDefaults(
   defineProps<{
     chartData: BarChartData
     yLabel?: string
-    height?: number
     horizontal?: boolean
     ariaLabel?: string
     tooltipCallbacks?: BarTooltipCallbacks
@@ -65,15 +64,11 @@ const options = computed<BarChartOptions>(() => ({
   },
 }))
 
-const chartStyle = computed(() =>
-  props.height === undefined ? undefined : { height: `${props.height}px` },
-)
 </script>
 
 <template>
   <div
-    class=" w-full h-full min-h-64"
-    :style="chartStyle"
+    class="w-full h-full min-h-64"
     role="img"
     :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'"
   >

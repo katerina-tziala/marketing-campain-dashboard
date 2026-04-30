@@ -10,7 +10,7 @@ import {
   formatNumber,
   formatPercentage,
 } from "@/shared/utils/formatters";
-import { sortWithNullsLast } from "@/shared/utils/sorting";
+import { sortByValue } from "@/shared/utils/sorting";
 import { PerformanceIndicator } from "@/features/dashboard/ui";
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();
@@ -35,12 +35,11 @@ function getFieldValue(
 }
 
 const sortedCampaigns = computed(() =>
-  [...props.campaigns].sort((a, b) => {
-    const aVal = getFieldValue(a, sortField.value);
-    const bVal = getFieldValue(b, sortField.value);
-    const dir = sortDir.value === "asc" ? 1 : -1;
-    return sortWithNullsLast(aVal, bVal, dir);
-  }),
+  sortByValue(
+    props.campaigns,
+    (campaign) => getFieldValue(campaign, sortField.value),
+    sortDir.value,
+  ),
 );
 
 const COLUMNS: DataTableColumn[] = [

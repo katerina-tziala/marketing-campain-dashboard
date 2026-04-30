@@ -125,17 +125,18 @@ defineExpose({
 }
 
 /* variant info outline */
-.btn.info-outline {
+.btn.info-text-only {
   @apply text-typography-subtle
     border
-    bg-surface
+    border-transparent
+    bg-transparent
     opacity-100
     tracking-normal;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface border-info/65 text-info-light;
+      @apply bg-typography/10 text-info-light;
     }
 
     &:not(.no-ring):focus-visible {
@@ -152,6 +153,27 @@ defineExpose({
     &:hover,
     &:focus-visible {
       @apply bg-typography/10 text-typography;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
+    }
+
+    &:active {
+      @apply opacity-70;
+    }
+  }
+}
+
+
+/* variant info-outline */
+.btn.info-outline {
+  @apply border-transparent text-typography-soft;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-typography/10 text-info;
     }
 
     &:not(.no-ring):focus-visible {

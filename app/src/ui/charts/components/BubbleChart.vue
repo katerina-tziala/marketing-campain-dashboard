@@ -15,7 +15,6 @@ import type {
 const props = withDefaults(
   defineProps<{
     chartData: BubbleChartData<TPoint>;
-    height?: number;
     ariaLabel?: string;
     xLabel?: string;
     yLabel?: string;
@@ -30,8 +29,9 @@ const props = withDefaults(
     tooltipCallbacks?: BubbleTooltipCallbacks;
     plugins?: BubbleChartPlugin[];
     legendPosition?: ChartLegendPosition<"bubble">;
+    usePointLegend?: boolean;
   }>(),
-  { plugins: () => [], legendPosition: "top" },
+  { plugins: () => [], legendPosition: "top", usePointLegend: false },
 );
 
 const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
@@ -66,6 +66,11 @@ const options = computed<BubbleChartOptions>(() => ({
     legend: {
       ...basePlugins.legend,
       position: props.legendPosition,
+      labels: {
+        ...basePlugins.legend.labels,
+        usePointStyle: props.usePointLegend,
+        pointStyle: props.usePointLegend ? "circle" : undefined,
+      },
     },
     tooltip: bubbleTooltip,
   },
@@ -91,15 +96,11 @@ const options = computed<BubbleChartOptions>(() => ({
   },
 }));
 
-const chartStyle = computed(() =>
-  props.height === undefined ? undefined : { height: `${props.height}px` },
-);
 </script>
 
 <template>
   <div
     class="w-full h-full min-h-64"
-    :style="chartStyle"
     role="img"
     :aria-label="ariaLabel ?? yLabel ?? xLabel ?? 'Bubble chart'"
   >

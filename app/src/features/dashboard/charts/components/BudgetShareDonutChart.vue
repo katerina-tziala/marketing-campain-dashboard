@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import type { PortfolioKPIs } from '@/shared/types/campaign'
+import { computed } from "vue";
+import type { PortfolioKPIs } from "@/shared/types/campaign";
 import {
   DonutChart,
   type DonutChartData,
@@ -8,7 +8,7 @@ import {
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
   withHexAlpha,
-} from '@/ui'
+} from "@/ui";
 import {
   DASHBOARD_DONUT_DATASET_STYLE,
   DASHBOARD_DONUT_DIM_ALPHA,
@@ -16,62 +16,62 @@ import {
   DASHBOARD_DONUT_HIGHLIGHT_ALPHA,
   DASHBOARD_DONUT_HIGHLIGHT_LIMIT,
   DASHBOARD_DONUT_SECONDARY_ALPHA,
-} from '../config'
-import type { BudgetShareDonutItem } from '../types'
-import { formatBudgetTooltipLines } from '../utils'
+} from "../config";
+import type { BudgetShareDonutItem } from "../types";
+import { formatBudgetTooltipLines } from "../utils";
 
 const props = defineProps<{
-  items: BudgetShareDonutItem[]
-  kpis: PortfolioKPIs
-  ariaLabel?: string
-}>()
+  items: BudgetShareDonutItem[];
+  kpis: PortfolioKPIs;
+  ariaLabel?: string;
+}>();
 
 function getTooltipDataIndex(ctx: DonutTooltipItem): number {
-  return ctx.dataIndex
+  return ctx.dataIndex;
 }
 
 const tooltipCallbacks: DonutTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? '',
+  title: (items) => items[0]?.label ?? "",
   label: (ctx) => {
-    const item = props.items[getTooltipDataIndex(ctx)]
-    if (!item) return []
+    const item = props.items[getTooltipDataIndex(ctx)];
+    if (!item) return [];
 
-    return formatBudgetTooltipLines(item.budget, props.kpis.totalBudget)
+    return formatBudgetTooltipLines(item.budget, props.kpis.totalBudget);
   },
-}
+};
 
 function getBudgetShare(budget: number): number {
-  return props.kpis.totalBudget > 0 ? budget / props.kpis.totalBudget : 0
+  return props.kpis.totalBudget > 0 ? budget / props.kpis.totalBudget : 0;
 }
 
 function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
   if (index < DASHBOARD_DONUT_HIGHLIGHT_LIMIT) {
-    return DASHBOARD_DONUT_HIGHLIGHT_ALPHA
+    return DASHBOARD_DONUT_HIGHLIGHT_ALPHA;
   }
 
   return getBudgetShare(item.budget) < DASHBOARD_DONUT_DIM_THRESHOLD
     ? DASHBOARD_DONUT_DIM_ALPHA
-    : DASHBOARD_DONUT_SECONDARY_ALPHA
+    : DASHBOARD_DONUT_SECONDARY_ALPHA;
 }
 
 function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
-  return withHexAlpha(item.color, getSegmentAlpha(item, index))
+  return withHexAlpha(item.color, getSegmentAlpha(item, index));
 }
 
 function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
   return (
     index >= DASHBOARD_DONUT_HIGHLIGHT_LIMIT &&
     getBudgetShare(item.budget) < DASHBOARD_DONUT_DIM_THRESHOLD
-  )
+  );
 }
 
 const legendLabelFilter: DonutLegendLabelFilter = (legendItem) => {
-  const itemIndex = legendItem.index
-  if (itemIndex === undefined) return true
+  const itemIndex = legendItem.index;
+  if (itemIndex === undefined) return true;
 
-  const item = props.items[itemIndex]
-  return item ? !isDimmedSegment(item, itemIndex) : true
-}
+  const item = props.items[itemIndex];
+  return item ? !isDimmedSegment(item, itemIndex) : true;
+};
 
 const chartData = computed<DonutChartData>(() => ({
   labels: props.items.map((item) => item.label),
@@ -82,7 +82,7 @@ const chartData = computed<DonutChartData>(() => ({
       ...DASHBOARD_DONUT_DATASET_STYLE,
     },
   ],
-}))
+}));
 </script>
 
 <template>
@@ -91,6 +91,5 @@ const chartData = computed<DonutChartData>(() => ({
     :tooltip-callbacks="tooltipCallbacks"
     :legend-label-filter="legendLabelFilter"
     :aria-label="ariaLabel ?? 'Budget share by campaign donut chart'"
-    class="w-full max-h-96"
   />
 </template>

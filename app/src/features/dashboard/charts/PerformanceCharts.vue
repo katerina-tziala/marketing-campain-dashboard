@@ -35,6 +35,7 @@ const REVENUE_BUDGET_TOGGLE_OPTIONS = [
     label: "Efficiency",
   },
 ];
+
 const props = defineProps<{
   campaigns: CampaignPerformance[];
   channels: Channel[];
@@ -81,60 +82,65 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 </script>
 
 <template>
+  <!-- ROI by Channel -->
   <Card>
     <h3 class="text-base">ROI by Channel</h3>
     <RoiBarChart
+      class="min-h-96"
       :items="roiChannelItems"
       :kpis="kpis"
       aria-label="ROI by channel bar chart"
     />
   </Card>
-
-  <Card>
+  <!-- Revenue vs Budget by Channel -->
+  <Card class="revenue-vs-budget">
     <CardHeader class="flex-wrap">
       <h3 class="grow flex items-center justify-start pt-0.5 text-base">
         Revenue vs Budget by Channel
       </h3>
       <RadioToggle
-        class="small secondary"
+        class="small secondary mx-auto"
         v-model="revenueBudgetView"
         :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
         name="revenue-budget-view"
       />
     </CardHeader>
-
     <RevenueVsBudgetBars
+      class="min-h-96"
       v-if="revenueBudgetView === 'budgetVsRevenue'"
       :channels="channelsByGapImpact"
       aria-label="Revenue vs budget by channel bar chart"
     />
     <EfficiencyGapBars
       v-else
+      class="min-h-96"
       :channels="channelsByGapImpact"
       :kpis="kpis"
       aria-label="Efficiency gap by channel bar chart"
     />
   </Card>
-
-  <Card>
+  <!-- ROI by Campaign -->
+  <Card class="chart-card">
     <h3 class="text-base">ROI by Campaign</h3>
     <RoiBarChart
+     class="h-[464px]"
       :items="roiCampaignItems"
       :kpis="kpis"
       aria-label="ROI by campaign bar chart"
     />
   </Card>
-
-  <Card>
+  <!-- Budget Share by Campaign -->
+  <Card class="chart-card">
     <h3 class="text-base">Budget Share by Campaign</h3>
     <BudgetShareDonutChart
+     class="h-[464px]"
       :items="budgetCampaignItems"
       :kpis="kpis"
       aria-label="Budget share by campaign donut chart"
     />
   </Card>
-
-  <Card>
+  <!-- Conversion Funnel -->
+  <Card class="chart-card">
     <h3 class="text-base">Conversion Funnel</h3>
     <ConversionFunnelChart
       :kpis="kpis"
@@ -145,5 +151,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 </template>
 
 <style lang="scss" scoped>
-
+.revenue-vs-budget {
+  @apply grid gap-2 grid-cols-1 grid-rows-[min-content_1fr];
+}
 </style>

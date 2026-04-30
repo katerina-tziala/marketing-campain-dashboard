@@ -64,7 +64,7 @@ function toggleDropdown(): void {
           <p class="dropdown-title">Channels</p>
           <Button
             v-if="hasSelection"
-            class="ghost small"
+            class="info-text-only small"
             @click="emit('clear')"
           >
             Select all

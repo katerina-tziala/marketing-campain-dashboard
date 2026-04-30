@@ -198,6 +198,7 @@ const quadrantBackgroundPlugin: BubbleChartPlugin =
     x-label="Budget (€)"
     y-label="ROI (%)"
     legend-position="top"
+    use-point-legend
     aria-label="Scaling opportunities by ROI and budget bubble chart"
   />
 </template>

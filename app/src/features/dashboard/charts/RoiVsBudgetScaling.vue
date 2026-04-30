@@ -39,13 +39,13 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
 </script>
 
 <template>
-  <Card>
+  <Card class="gap-0 h-fit">
     <div class="scatter-header">
       <h3 class="text-base">Scaling Opportunities by ROI and Budget</h3>
       <p v-if="isFiltered && hasEnoughCampaigns">Based on selected channels</p>
     </div>
-    <div class="content-container">
-      <template v-if="!hasEnoughCampaigns">
+    <template v-if="!hasEnoughCampaigns">
+      <div class="content-container">
         <Notification variant="info" :show-icon="true">
           <template #title>
             <span>Limited data</span>
@@ -53,27 +53,28 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
           At least 5 campaigns are needed to identify scaling opportunities. Add
           more campaigns or expand your filters to continue
         </Notification>
-      </template>
-      <template v-else>
-        <RoiVsBudgetScatterChart
-          :campaigns="validCampaigns"
-          :medians="medians"
-          :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
-        />
-        <MetaRow class="tiny bullet mt-1.5">
-          <MetaItem>
-            <span class="scatter-legend-dash" />
-            <span class="scatter-legend-label">Median split</span>
-          </MetaItem>
-          <MetaItem
-            ><span>ROI:</span>{{ formatPercentage(medians.roi) }}</MetaItem
-          >
-          <MetaItem
-            ><span>Budget:</span>{{ formatCurrency(medians.budget) }}</MetaItem
-          >
-        </MetaRow>
-      </template>
-    </div>
+      </div>
+    </template>
+    <template v-else>
+      <RoiVsBudgetScatterChart
+        :campaigns="validCampaigns"
+        :medians="medians"
+        class="h-[464px]"
+        :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
+      />
+      <MetaRow class="tiny bullet mt-1.5 mx-auto">
+        <MetaItem>
+          <span class="scatter-legend-dash" />
+          <span class="scatter-legend-label">Median split</span>
+        </MetaItem>
+        <MetaItem
+          ><span>ROI:</span>{{ formatPercentage(medians.roi) }}</MetaItem
+        >
+        <MetaItem
+          ><span>Budget:</span>{{ formatCurrency(medians.budget) }}</MetaItem
+        >
+      </MetaRow>
+    </template>
   </Card>
 </template>
 
@@ -82,7 +83,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
   @apply grow
     w-full
     h-full
-    min-h-96
+    p-8
     flex
     flex-col
     justify-center

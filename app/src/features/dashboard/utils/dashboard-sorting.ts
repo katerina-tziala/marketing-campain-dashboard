@@ -1,12 +1,6 @@
 import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types/campaign'
 import type { Channel } from '@/shared/types/channel'
-import { sortWithNullsLast } from '@/shared/utils/sorting'
-
-type SortableValue = string | number | null
-
-function sortByValueDesc<T>(items: readonly T[], getValue: (item: T) => SortableValue): T[] {
-  return [...items].sort((a, b) => sortWithNullsLast(getValue(a), getValue(b), -1))
-}
+import { sortByValueDesc } from '@/shared/utils/sorting'
 
 // ROI ranking charts should put the strongest performers first; unavailable ROI stays last.
 export function sortCampaignsByRoiDesc(

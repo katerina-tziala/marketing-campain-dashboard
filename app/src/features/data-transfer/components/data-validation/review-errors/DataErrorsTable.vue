@@ -5,6 +5,7 @@ import type { CampainDataRowError } from "@/features/data-transfer/types";
 import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
 import { Table, TableHeader, Badge } from "@/ui";
 import type { DataTableColumn } from "@/ui";
+import { sortByValue } from "@/shared/utils/sorting";
 
 const props = defineProps<{
   errors: CampainDataRowError[];
@@ -25,9 +26,7 @@ const COLUMNS: DataTableColumn[] = [
 ];
 
 const sortedErrors = computed(() =>
-  [...props.errors].sort((a, b) =>
-    sortDir.value === "asc" ? a.row - b.row : b.row - a.row,
-  ),
+  sortByValue(props.errors, (error) => error.row, sortDir.value),
 );
 </script>
 

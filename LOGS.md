@@ -10559,3 +10559,53 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Prefer native Chart.js legend rendering for the donut — it avoids maintaining a second HTML legend system and keeps interactions visually consistent with the shared chart wrapper.
 - Keep dimmed slices visible in the chart — small budget-share slices are still represented and available through tooltips, but they no longer crowd the legend.
 - Keep dashboard-specific filtering outside `ui/charts` — the shared `DonutChart` only exposes a generic filter hook, while the dashboard decides what “dimmed” means.
+
+
+## [#514] Stabilize Chart Layout and Ranking Semantics
+**Type:** refactor
+
+**Summary:** Removed the remaining chart height prop API in favor of parent layout classes, improved funnel and ROI scaling visuals, centralized ranking/sorting utilities, and capped ROI scaling highlights to the top 3 ranked items per group.
+
+**Brainstorming:** The chart wrappers should not own dashboard layout decisions. After trying explicit height props and intermediate chart-area wrappers, the cleaner boundary is to let parent cards provide layout classes while shared chart components simply fill their container. Separately, the ROI scaling chart was emphasizing too many campaigns because every analysis-selected item became a larger bubble. Capping those highlights only makes sense if the analysis outputs are explicitly ranked, so ranking needed to become a documented shared analysis contract instead of scattered inline sorts. Table sorting had a similar duplication smell: each table should still own its column mapping, but the mechanics of value/direction/null-safe sorting should be shared.
+
+**Prompt:** Clean up remaining chart height leftovers, improve the funnel chart responsiveness with HTML/CSS, round the ROI scaling legend markers, make sure analysis outputs are sorted, cap ROI scaling highlights to top 3 per group, and reuse shared sorting in dashboard and data-transfer tables.
+
+**What was built:**
+- `app/src/ui/charts/components/BarChart.vue` — removed the leftover `height` prop, `chartStyle`, and inline style binding.
+- `app/src/ui/charts/components/GroupedBarChart.vue` — removed the leftover `height` prop, `chartStyle`, and inline style binding.
+- `app/src/ui/charts/components/DonutChart.vue` — removed the leftover `height` prop, `chartStyle`, and inline style binding.
+- `app/src/ui/charts/components/BubbleChart.vue` — removed the leftover `height` prop, `chartStyle`, and inline style binding.
+- `app/src/ui/charts/components/BubbleChart.vue` — added `usePointLegend` so bubble charts can opt into circular legend indicators.
+- `app/src/features/dashboard/charts/components/RoiVsBudgetScatterChart.vue` — enabled circular legend indicators for the ROI vs Budget scaling chart.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — removed local chart height constants and uses parent layout classes such as `min-h-96` and `h-[464px]` for dashboard chart sizing.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — added a grid layout for the Revenue vs Budget card so the header/toggle and chart area occupy predictable rows.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — adjusted the card layout, chart height class, median summary alignment, and limited-data content padding.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — moved the value and label inside each funnel bar, made the value the stronger visual element, removed the left label column, added stable bar sizing, and kept rates on the right.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — added `:key` to the funnel row loop and added a subtle left border to ground the funnel bars.
+- `app/src/features/dashboard/charts/components/EfficiencyGapBars.vue` — renamed the legend swatch class to `legend-indicator`, removed negative margin, and simplified spacing.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — kept the Chart.js legend filter behavior and removed the extra chart class constraint so parent layout controls sizing.
+- `app/src/features/dashboard/charts/config/dashboard-chart-styles.ts` — reduced the donut dim alpha from `90` to `65` for clearer separation between meaningful and minor slices.
+- `app/src/features/dashboard/DashboardView.vue` — capped ROI scaling highlight inputs to the top 3 campaigns per quadrant group.
+- `app/src/features/dashboard/DashboardView.vue` — adjusted dashboard vertical spacing and chart-grid row behavior.
+- `app/src/shared/portfolio-analysis/ranking.ts` — added explicit ranking helpers for ROI, efficiency gap, and budget share priority ordering.
+- `app/src/shared/portfolio-analysis/classify-campaigns.ts` — replaced inline group sorting with the new ranking helpers.
+- `app/src/shared/portfolio-analysis/classify-channels.ts` — replaced inline group sorting with the new ranking helpers.
+- `app/src/shared/portfolio-analysis/utils.ts` — replaced inline derived-signal sorting with the new ranking helpers.
+- `app/src/shared/utils/sorting.ts` — added `SortDirection`, `SortableValue`, `sortByValue()`, and `sortByValueDesc()` for shared null-safe value sorting.
+- `app/src/features/dashboard/utils/dashboard-sorting.ts` — reused shared `sortByValueDesc()` instead of defining a local duplicate.
+- `app/src/features/dashboard/components/CampaignTable.vue` — reused shared `sortByValue()` for interactive table sorting.
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampainDuplicationsTable.vue` — reused shared `sortByValue()` for duplicate-row table sorting.
+- `app/src/features/data-transfer/components/data-validation/review-errors/DataErrorsTable.vue` — reused shared `sortByValue()` for row-error table sorting.
+- `app/src/ui/Button.vue` — split `info-text-only` and `info-outline` button variants so text-only actions can be visually lighter.
+- `app/src/features/dashboard/components/channel-filters/ChannelFiltersDialog.vue` — switched the clear/select-all action to the new `info-text-only` button variant.
+
+**Key decisions & why:**
+- Keep layout sizing at the parent level — dashboard cards now decide available chart space, while reusable chart wrappers remain data/rendering adapters.
+- Remove height props completely from shared chart wrappers — the old API invited sizing decisions to leak back into chart components.
+- Use circular legend markers for bubble charts by opt-in — ROI scaling benefits from marker shapes that match the plotted bubbles without changing every bubble chart by default.
+- Make funnel responsiveness content-driven — the funnel is pure HTML/CSS, so moving labels into bars gives the bars more width without shrinking the whole chart.
+- Cap ROI scaling highlights outside the chart — `DashboardView` adapts ranked analysis into chart inputs, keeping the chart renderer unaware of business limits.
+- Rank analysis outputs before UI capping — top 3 highlighting is only meaningful because analysis groups and derived signals now have explicit priority ordering.
+- Keep table column mapping local — tables know which field each column represents, while shared sorting handles direction and null-safe comparison.
+- Reuse shared sorting across dashboard and data transfer — this avoids duplicate value-sort mechanics while preserving feature-specific display choices.
+- Separate button variants by intent — `info-text-only` supports lightweight inline actions without weakening the existing outline button variant.

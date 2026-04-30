@@ -73,17 +73,17 @@ function formatValueTick(value: string | number): string {
 
 <template>
   <div class="efficiency-gap-bars">
-    <MetaRow class="tiny mx-auto -mb-2">
+    <MetaRow class="tiny mx-auto">
       <MetaItem>
         <span
-          class="gap-swatch"
+          class="legend-indicator"
           :style="{ backgroundColor: DASHBOARD_CHART_COLORS.positiveGap }"
         />
         Overperforming
       </MetaItem>
       <MetaItem>
         <span
-          class="gap-swatch"
+          class="legend-indicator"
           :style="{ backgroundColor: DASHBOARD_CHART_COLORS.negativeGap }"
         />
         Underperforming
@@ -101,10 +101,10 @@ function formatValueTick(value: string | number): string {
 
 <style lang="scss" scoped>
 .efficiency-gap-bars {
-  @apply w-full flex flex-col gap-3 pt-3;
+  @apply w-full flex flex-col pt-4;
 }
 
-.gap-swatch {
+.legend-indicator {
   @apply inline-block mr-1.5 size-3 align-middle;
 }
 </style>

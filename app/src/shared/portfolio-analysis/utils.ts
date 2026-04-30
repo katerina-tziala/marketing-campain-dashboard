@@ -11,6 +11,7 @@ import type {
   TransferCandidate,
 } from './types'
 import { getDynamicThresholds } from './classify-utils'
+import { rankByEfficiencyGapDesc, rankByRoiDesc } from './ranking'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ export function getInefficientChannels(
   channels: ChannelSummary[],
   portfolioRoi: number | null,
 ): InefficientChannelSignal[] {
-  return channels
+  const inefficientChannels = channels
     .filter(ch =>
       ch.efficiencyGap > GAP_THRESHOLD &&
       (portfolioRoi === null || toFinite(ch.roi) < portfolioRoi),
@@ -86,7 +87,8 @@ export function getInefficientChannels(
       roi: toFinite(ch.roi),
       reason: 'Budget share exceeds revenue share with weaker efficiency.',
     }))
-    .sort((a, b) => b.efficiencyGap - a.efficiencyGap)
+
+  return rankByEfficiencyGapDesc(inefficientChannels)
 }
 
 // ── Scaling opportunities (mixed campaign + channel) ──────────────────────────
@@ -145,12 +147,12 @@ export function getScalingOpportunities(
   channels: ChannelSummary[],
   portfolioRoi: number | null,
 ): ScalingCandidateSignal[] {
-  return [
+  const scalingOpportunities = [
     ...toCampaignScalingSignals(campaigns, portfolioRoi),
     ...toChannelScalingSignals(channels, portfolioRoi),
   ]
-    .sort((a, b) => b.roi - a.roi)
-    .slice(0, 5)
+
+  return rankByRoiDesc(scalingOpportunities).slice(0, 5)
 }
 
 // ── Budget scaling candidates (campaign-only) ─────────────────────────────────
@@ -159,7 +161,7 @@ export function getBudgetScalingCandidates(
   campaigns: CampaignSummary[],
   portfolioRoi: number | null,
 ): BudgetScalingCandidate[] {
-  return campaigns
+  const budgetScalingCandidates = campaigns
     .filter(c =>
       c.budget > 0 &&
       c.roi !== null &&
@@ -178,7 +180,8 @@ export function getBudgetScalingCandidates(
       expectedRoiRetention: BASE_ROI_RETENTION,
       reason: 'Revenue share exceeds budget share with strong efficiency.',
     }))
-    .sort((a, b) => b.roi - a.roi)
+
+  return rankByRoiDesc(budgetScalingCandidates)
 }
 
 // ── Inefficient campaigns ─────────────────────────────────────────────────────
@@ -187,7 +190,7 @@ export function getInefficientCampaigns(
   campaigns: CampaignSummary[],
   portfolioRoi: number | null,
 ): InefficientCampaignSignal[] {
-  return campaigns
+  const inefficientCampaigns = campaigns
     .filter(c =>
       c.budget > 0 &&
       c.budgetShare >= MIN_BUDGET_SHARE_SIGNAL &&
@@ -205,7 +208,8 @@ export function getInefficientCampaigns(
       maxReducibleBudget: c.budget * MAX_REDUCIBLE_FRACTION,
       reason: 'Budget share exceeds revenue share with weaker efficiency than portfolio.',
     }))
-    .sort((a, b) => b.efficiencyGap - a.efficiencyGap)
+
+  return rankByEfficiencyGapDesc(inefficientCampaigns)
 }
 
 // ── Transfer candidates ───────────────────────────────────────────────────────

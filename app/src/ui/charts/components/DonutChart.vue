@@ -13,7 +13,6 @@ import { formatCompactNumber } from "@/shared/utils/formatters";
 const props = withDefaults(
   defineProps<{
     chartData: DonutChartData;
-    height?: number;
     ariaLabel?: string;
     showLegend?: boolean;
     legendLabelFilter?: DonutLegendLabelFilter;
@@ -100,16 +99,11 @@ const options: DonutChartOptions = {
     },
   },
 };
-
-const chartStyle = computed(() =>
-  props.height === undefined ? undefined : { height: `${props.height}px` },
-);
 </script>
 
 <template>
   <div
     class="w-full h-full min-h-64"
-    :style="chartStyle"
     role="img"
     :aria-label="ariaLabel ?? 'Donut chart'"
   >

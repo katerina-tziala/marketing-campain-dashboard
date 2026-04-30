@@ -1,6 +1,7 @@
 import type { CampaignSummary } from './types'
 import type { CampaignGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getDynamicThresholds, getFunnelMedians } from './classify-utils'
+import { rankByBudgetShareDesc, rankByEfficiencyGapDesc, rankByRoiDesc } from './ranking'
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
@@ -119,11 +120,10 @@ export function classifyCampaigns(
     }
   }
 
-  // Sort each group so the most actionable items appear first.
-  top.sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))
-  opportunity.sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))
-  bottom.sort((a, b) => b.efficiencyGap - a.efficiencyGap)
-  watch.sort((a, b) => b.budgetShare - a.budgetShare)
-
-  return { top, opportunity, bottom, watch }
+  return {
+    top: rankByRoiDesc(top),
+    opportunity: rankByRoiDesc(opportunity),
+    bottom: rankByEfficiencyGapDesc(bottom),
+    watch: rankByBudgetShareDesc(watch),
+  }
 }

@@ -1,6 +1,7 @@
 import type { ChannelSummary } from './types'
 import type { ChannelGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getFunnelMedians } from './classify-utils'
+import { rankByBudgetShareDesc, rankByEfficiencyGapDesc, rankByRoiDesc } from './ranking'
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
@@ -100,11 +101,10 @@ export function classifyChannels(
     }
   }
 
-  // Sort each group so the most actionable items appear first.
-  strong.sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))
-  opportunity.sort((a, b) => (b.roi ?? 0) - (a.roi ?? 0))
-  weak.sort((a, b) => b.efficiencyGap - a.efficiencyGap)
-  watch.sort((a, b) => b.budgetShare - a.budgetShare)
-
-  return { strong, opportunity, weak, watch }
+  return {
+    strong: rankByRoiDesc(strong),
+    opportunity: rankByRoiDesc(opportunity),
+    weak: rankByEfficiencyGapDesc(weak),
+    watch: rankByBudgetShareDesc(watch),
+  }
 }
