@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { FileTextIcon } from '@/ui'
-import { FileActions } from '@/features/data-transfer'
+import { TransferActions } from '@/features/data-transfer'
 
 onMounted(() => { document.body.style.overflow = 'hidden' })
 onUnmounted(() => { document.body.style.overflow = '' })
@@ -17,7 +17,7 @@ const emit = defineEmits<{ upload: [] }>()
       Upload a CSV file to generate your campaign performance dashboard.<br />
       Need a starting point? Download our sample template.
     </p>
-    <FileActions @upload="emit('upload')" />
+    <TransferActions @upload="emit('upload')" />
   </div>
 </template>
 

@@ -10715,3 +10715,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Add a barrel for the domain module — consumers import from `@/shared/portfolio-data` instead of reaching into the store file directly.
 - Leave `useUploadModal` in place temporarily — it currently coordinates app shell modal opening, replacement confirmation, and upload entry points, so it should move later as part of app-page orchestration rather than in the same store-location refactor.
 - Keep the remaining AI coupling visible — `aiAnalysis.store` still imports portfolio/campaign state, but the shared portfolio-data location makes the dependency clearer until explicit AI context wiring is introduced.
+
+
+## [#518] Rename FileActions to TransferActions
+**Type:** refactor
+
+**Summary:** Renamed the data-transfer action component from `FileActions` to `TransferActions` so the public component name matches the feature language more clearly.
+
+**Brainstorming:** The component renders upload/download actions for the data-transfer flow, but `FileActions` is a little too generic for a feature-based architecture. As data-transfer becomes a clearer feature boundary, names exported from the feature should describe the feature action rather than only the underlying file mechanism. `TransferActions` keeps the behavior unchanged while making the dashboard empty state read as an entry point into data transfer instead of a generic file utility.
+
+**Prompt:** Rename file actions to transfer actions.
+
+**What was built:**
+- `app/src/features/data-transfer/components/TransferActions.vue` — renamed the former `FileActions.vue` component file.
+- `app/src/features/data-transfer/components/FileActions.vue` — removed the old component filename after the rename.
+- `app/src/features/data-transfer/components/index.ts` — replaced the public `FileActions` export with `TransferActions`.
+- `app/src/features/dashboard/components/EmptyState.vue` — updated the data-transfer import and template usage from `FileActions` to `TransferActions`.
+- `npm run build` — completed successfully after the rename; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Use feature language in the exported component name — `TransferActions` better reflects the upload/download entry point into the data-transfer feature.
+- Keep behavior unchanged — this rename only changes naming and imports, avoiding layout or workflow changes.
+- Keep the dashboard dependency explicit — the empty state still imports from the data-transfer feature barrel, but now the imported name describes the feature-level action.
+- Remove the old export instead of aliasing it — there was only one consumer, so keeping a compatibility alias would add unnecessary API surface.
