@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
 import CloseIcon from "../icons/CloseIcon.vue";
-import SheetHeader from "../SheetHeader.vue";
-import Button from "../Button.vue";
+import SheetHeader from "../layout/SheetHeader.vue";
+import Button from "../primitives/Button.vue";
 
 defineProps<{
   title: string;

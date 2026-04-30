@@ -4,7 +4,7 @@ import type {
   PriorityAction,
   ActionUrgency,
 } from "@/features/ai-tools/ai-analysis/types";
-import type { BadgeVariant } from "@/ui/types/badge-variant";
+import type { BadgeVariant } from "@/ui";
 import { Badge, Card, CardHeader } from "@/ui";
 import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 

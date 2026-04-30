@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from "vue";
-import type { NotificationVariant } from "@/ui/types/notification-variant";
+import type { NotificationVariant } from "./notification.types";
 import {
   AlertTriangleIcon,
   BellIcon,

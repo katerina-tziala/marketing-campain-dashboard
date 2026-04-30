@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { NotificationVariant } from "@/ui/types/notification-variant";
+import type { NotificationVariant } from "@/ui/feedback";
 import { CloseIcon } from "@/ui/icons";
-import Button from "../Button.vue";
-import Notification from "../Notification.vue";
+import Button from "../primitives/Button.vue";
+import Notification from "../feedback/Notification.vue";
 
 defineProps<{
   title: string;

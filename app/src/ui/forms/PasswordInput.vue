@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from "vue";
-import Button from "@/ui/Button.vue";
+import Button from "@/ui/primitives/Button.vue";
 import EyeIcon from "@/ui/icons/EyeIcon.vue";
 import EyeOffIcon from "@/ui/icons/EyeOffIcon.vue";
 

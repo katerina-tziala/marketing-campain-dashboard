@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { HealthScore, HealthLabel } from "@/features/ai-tools/ai-analysis/types";
-import type { BadgeVariant } from "@/ui/types/badge-variant";
+import type { BadgeVariant } from "@/ui";
 import { Badge } from "@/ui";
 
 const props = defineProps<{

@@ -10868,3 +10868,53 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep AI connection able to clear analysis state — AI connection and AI analysis both belong to `ai-tools`, so the disconnect flow can still clear AI analysis state without crossing feature boundaries.
 - Leave shared portfolio data untouched — AI analysis still watches shared portfolio eviction for cache cleanup, which remains a shared-data concern rather than campaign-performance coupling.
 - Remove root store ambiguity — `app/src/stores` should not own feature-specific state once that state has a clear feature home.
+
+
+## [#522] Reorganize UI Library Primitives and Layout
+**Type:** refactor
+
+**Summary:** Reorganized the UI library around clearer Vue component ownership by moving root-level primitive components into a `primitives` folder, layout shells into a `layout` folder, notification UI into a `feedback` folder, colocating component-owned types, and simplifying the root UI barrel to export folder-level modules.
+
+**Brainstorming:** The existing UI library already had meaningful subfolders for systems such as `forms`, `table`, `modal`, `toast`, `charts`, `card`, `dropdown`, `icons`, and `meta`. The part that felt unclear was the loose root layer and the generic `ui/types` folder. `BadgeVariant` and `NotificationVariant` were not truly UI-wide types; they belonged to their respective components. The cleaner direction is to keep established system folders intact, make root-level building blocks explicit as `primitives`, move reusable shell/layout components into `layout`, keep feedback-specific UI in `feedback`, and use local barrel files so consumers can still import from `@/ui` without knowing the internal folder structure.
+
+**Prompt:** Restructure the UI library with `primitives` and `layout`, move component-owned types beside their components, add barrel files per folder, and clean the root UI barrel.
+
+**What was built:**
+- `app/src/ui/primitives/Button.vue` — moved the generic button primitive out of the UI root.
+- `app/src/ui/primitives/Badge.vue` — moved the badge primitive out of the UI root.
+- `app/src/ui/primitives/Chip.vue` — moved the chip primitive out of the UI root.
+- `app/src/ui/primitives/Disclosure.vue` — moved the disclosure primitive out of the UI root.
+- `app/src/ui/primitives/Spinner.vue` — moved the spinner primitive out of the UI root.
+- `app/src/ui/primitives/Tabs.vue` — moved the tabs primitive out of the UI root while preserving its exported `Tab` type.
+- `app/src/ui/primitives/badge.types.ts` — moved `BadgeVariant` beside `Badge.vue` because it is a badge component contract, not a global UI type.
+- `app/src/ui/primitives/index.ts` — added a primitives barrel exporting `Button`, `Badge`, `Chip`, `Disclosure`, `Spinner`, `Tabs`, `Tab`, and `BadgeVariant`.
+- `app/src/ui/layout/SectionHeaderLayout.vue` — moved the reusable section header layout out of the UI root.
+- `app/src/ui/layout/SheetHeader.vue` — moved the sheet/modal-style header layout out of the UI root.
+- `app/src/ui/layout/index.ts` — added a layout barrel exporting `SectionHeaderLayout` and `SheetHeader`.
+- `app/src/ui/feedback/Notification.vue` — moved the notification component out of the UI root into a feedback-focused folder.
+- `app/src/ui/feedback/notification.types.ts` — moved `NotificationVariant` beside `Notification.vue` because it is a notification component contract.
+- `app/src/ui/feedback/index.ts` — added a feedback barrel exporting `Notification` and `NotificationVariant`.
+- `app/src/ui/forms/index.ts` — added a forms barrel exporting `FileDropzone`, `PasswordInput`, `RadioItem`, and `RadioToggle`.
+- `app/src/ui/index.ts` — simplified the root barrel so it now re-exports folder barrels instead of individual root files and the removed `types` folder.
+- `app/src/ui/types/*` — removed the old generic UI types folder after colocating the only two types with their owning components.
+- `app/src/ui/forms/PasswordInput.vue` — updated the internal `Button` import to the new primitives location.
+- `app/src/ui/modal/Modal.vue` — updated internal imports for `Button` and `SheetHeader` to the new primitives and layout locations.
+- `app/src/ui/toast/ToastNotification.vue` — updated internal imports for `Button`, `Notification`, and `NotificationVariant` to the new folder boundaries.
+- `app/src/ui/feedback/Notification.vue` — updated the local `NotificationVariant` type import to use colocated types.
+- `app/src/app/stores/toast.store.ts` — updated `NotificationVariant` import to come from the public `@/ui` barrel.
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue` — updated `BadgeVariant` import to come from the public `@/ui` barrel.
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/HealthStatus.vue` — updated `BadgeVariant` import to come from the public `@/ui` barrel.
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue` — updated `BadgeVariant` import to come from the public `@/ui` barrel.
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue` — updated `BadgeVariant` import to come from the public `@/ui` barrel.
+- `npm run build` — completed successfully after the UI library restructuring; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Keep existing system folders intact — folders such as `forms`, `table`, `modal`, `toast`, `charts`, `card`, `dropdown`, `icons`, and `meta` already match how the UI library is used.
+- Add `primitives` for generic building blocks — `Button`, `Badge`, `Chip`, `Disclosure`, `Spinner`, and `Tabs` are reusable UI atoms that do not belong to one feature or complex UI system.
+- Add `layout` for reusable structural shells — `SectionHeaderLayout` and `SheetHeader` are layout patterns rather than primitives or feature components.
+- Add `feedback` for notification UI — `Notification` is a feedback pattern, while toast-specific composition remains in the existing `toast` folder.
+- Colocate component-owned types — `BadgeVariant` and `NotificationVariant` now live beside the components they describe instead of in a detached root `ui/types` folder.
+- Keep chart types in `ui/charts/types` — chart types are shared across chart components, composables, plugins, and consumers, so the chart sub-library still benefits from a dedicated types folder.
+- Use folder barrels to keep imports stable — consumers can continue importing UI components and public types from `@/ui`, while internal organization becomes easier to scan.
+- Remove the root `ui/types` folder — it only contained component-owned types, so keeping it made the library look more abstract than it really was.
+- Avoid over-grouping existing folders — the refactor clarifies the loose root layer without disrupting already meaningful UI modules.
