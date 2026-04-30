@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
 import BudgetOptimizationAnalysis from "./budget-optimization/BudgetOptimizationAnalysis.vue";
 import ExecutiveSummaryAnalysis from "./executive-summary/ExecutiveSummaryAnalysis.vue";
 import { FileTextIcon, SlidersIcon } from "@/ui/icons";

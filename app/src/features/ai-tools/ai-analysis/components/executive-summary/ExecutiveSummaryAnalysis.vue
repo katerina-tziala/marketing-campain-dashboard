@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiAnalysisStore } from "@/stores/aiAnalysis.store";
+import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
 import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
 import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
 import Correlations from "./Correlations.vue";

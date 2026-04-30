@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, watch } from 'vue'
-import { useAiAnalysisStore } from '@/stores/aiAnalysis.store'
+import { useAiAnalysisStore } from '@/features/ai-tools/ai-analysis/stores'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
 import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'
 

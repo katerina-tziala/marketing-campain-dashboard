@@ -10836,3 +10836,35 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep panel lifecycle centralized through the orchestrator — opening and closing the drawer now coordinates connection panel state and analysis lifecycle through one app-level API.
 - Preserve existing user behavior — empty state, upload entry point, AI button visibility, connected dot behavior, AI drawer open/close, filter-triggered auto-analysis, portfolio switching, and cache behavior remain aligned with the previous flow.
 - Leave future dashboard modes easier to add — a future period-comparison feature can later provide a different app-level AI analysis context without requiring `aiAnalysis.store` to import that feature directly.
+
+
+## [#521] Move AI Analysis Store Into AI Feature
+**Type:** refactor
+
+**Summary:** Moved the AI analysis Pinia store from the root stores folder into the `ai-tools/ai-analysis` feature, keeping the store behavior unchanged while aligning ownership with the feature-based architecture.
+
+**Brainstorming:** Once `aiAnalysis.store` no longer imported campaign-performance directly, it became safe to move it into the AI analysis feature. The store owns AI-analysis concerns: active tab state, request status, prompt execution, cache, debounce, cooldown, abort handling, token-limit fallback, stale-result handling, and the app-provided analysis context. Those responsibilities belong beside the AI analysis components, types, and prompt utilities rather than in a generic root `stores` folder. The app-level dashboard orchestrator can still import the store because app composition is allowed to coordinate features, but AI analysis consumers should now import through the AI analysis feature boundary.
+
+**Prompt:** Move `aiAnalysis.store` into the AI analysis feature now that the direct campaign-performance dependency has been removed.
+
+**What was built:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — moved the AI analysis store from `app/src/stores/aiAnalysis.store.ts` into the AI analysis feature.
+- `app/src/features/ai-tools/ai-analysis/stores/index.ts` — added a local stores barrel that exports `useAiAnalysisStore`, `AiAnalysisContext`, and `PortfolioContext`.
+- `app/src/stores/aiAnalysis.store.ts` — removed the old root-store location after the move.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — updated the AI analysis store import to use `@/features/ai-tools/ai-analysis/stores`.
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — updated the dev analysis helper import to use the AI analysis feature stores barrel.
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — updated the disconnect flow to import `useAiAnalysisStore` from the AI analysis feature stores barrel.
+- `app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue` — updated the main AI analysis component import to use the feature stores barrel.
+- `app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue` — updated the budget optimizer analysis component import to use the feature stores barrel.
+- `app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue` — updated the executive summary analysis component import to use the feature stores barrel.
+- `app/src/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue` — updated the `PortfolioContext` type import to use the feature stores barrel.
+- `npm run build` — completed successfully after the move; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Move the store after decoupling, not before — the previous dashboard dependency would have made the AI feature import campaign-performance directly, so the orchestrator refactor needed to happen first.
+- Keep AI analysis behavior unchanged — this step only changes ownership and import paths, preserving request lifecycle, cache behavior, auto-analysis, and panel lifecycle behavior.
+- Add a stores barrel inside the feature — consumers import from the feature store boundary instead of the store file path directly.
+- Keep app orchestration allowed to import the feature store — `dashboardOrchestrator.store` lives in the app layer, so it can coordinate AI analysis and campaign performance without creating feature-to-feature imports.
+- Keep AI connection able to clear analysis state — AI connection and AI analysis both belong to `ai-tools`, so the disconnect flow can still clear AI analysis state without crossing feature boundaries.
+- Leave shared portfolio data untouched — AI analysis still watches shared portfolio eviction for cache cleanup, which remains a shared-data concern rather than campaign-performance coupling.
+- Remove root store ambiguity — `app/src/stores` should not own feature-specific state once that state has a clear feature home.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PortfolioContext } from "@/stores/aiAnalysis.store";
+import type { PortfolioContext } from "@/features/ai-tools/ai-analysis/stores";
 import { MagicWandIcon, MetaRow, MetaItem, Button, SectionHeaderLayout } from "@/ui";
 
 defineProps<{
