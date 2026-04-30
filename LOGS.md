@@ -10656,3 +10656,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep the current AI/dashboard coupling intact for this step — this refactor only creates the app-level home; the next step should be a thin `DashboardPage` that wires dashboard context into AI analysis explicitly.
 - Head toward page-level feature composition — the intended next structure is `app/pages/DashboardPage.vue` composing `DashboardView`, AI panel state, upload actions, and AI analysis context, so neither dashboard nor AI needs to import the other directly.
 - Head toward explicit AI analysis context — `aiAnalysis.store` should eventually accept a typed dashboard/portfolio context instead of importing `campaign.store`, allowing it to react to dashboard filter changes through an app-level bridge.
+
+
+## [#516] Refine Dashboard Chart Layout Details
+**Type:** update
+
+**Summary:** Tightened dashboard chart layout behavior by making chart height utilities win over internal chart sizing, reworking the conversion funnel into a more responsive flex layout, and correcting the Tailwind `h-29` utility key.
+
+**Brainstorming:** After moving dashboard charts toward parent-controlled layout, a few visual edge cases remained. The shared chart components still bring their own canvas sizing behavior, so the dashboard-level height classes need to be explicit enough to win where layout experiments are happening. The conversion funnel is pure HTML/CSS rather than Chart.js, so it needed a content-driven layout that can use available width without shrinking the whole chart. Moving the value and label into the bar area keeps the funnel legible, while the rate stays in a narrow right-aligned region. The Tailwind height token also needed to be keyed as a string so `h-29` is generated predictably.
+
+**Prompt:** Based on the latest chart layout changes, create the next log entry and provide a commit message.
+
+**What was built:**
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — changed dashboard chart sizing classes to important utilities such as `!min-h-96` and `!h-29` so parent chart-card sizing is not overridden by internal chart wrapper behavior.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — changed the conversion funnel card usage from a width-only class to `h-96` so the pure HTML/CSS funnel has a defined vertical layout area.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — changed the ROI vs Budget scatter chart height class from `h-29` to `!h-29` for the same parent-layout precedence.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — reworked the template into two row regions: a main bar/value/label region and a right-aligned rate region.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — moved the compact amount and funnel label into the bar area, making the amount visually stronger than the label.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — replaced the previous grid/label-column styling with a flexible row layout, proportional regions, absolute in-bar labels, and a subtler left border.
+- `app/src/features/dashboard/charts/components/ConversionFunnelChart.vue` — adjusted the rate text to wrap with tighter gaps and right alignment when space is constrained.
+- `app/src/features/dashboard/charts/config/dashboard-chart-styles.ts` — increased the donut dim alpha from `65` to `85`, making minor budget-share slices less aggressively muted.
+- `app/tailwind.config.js` — changed the custom height key from numeric `29` to string `'29'` so the `h-29` utility is generated with the intended `464px` value.
+
+**Key decisions & why:**
+- Use important sizing utilities only at the dashboard composition level — this keeps layout experiments local to dashboard cards without changing shared chart components again.
+- Keep the funnel as HTML/CSS — the current funnel needs custom content placement and responsive bar composition, so rebuilding it through Chart.js would add complexity without solving the main issue.
+- Put amount and label inside the funnel bar — this saves horizontal space and makes the funnel easier to scan because the strongest number sits directly on the visual mark.
+- Keep rates in a separate right region — conversion percentages remain comparable and aligned without competing with the funnel bar labels.
+- Make the funnel border quieter — the chart still has a visual anchor, but the border no longer pulls as much attention as the bars.
+- Make dimmed donut slices more visible — the donut still distinguishes minor slices, but the slices are easier to perceive while reviewing the chart.
+- Quote the Tailwind height token key — the utility name is meant to be `h-29`, so storing the extension key as `'29'` removes ambiguity in the generated class.

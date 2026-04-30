@@ -54,72 +54,95 @@ function scaledWidth(val: number | null): number {
 </script>
 
 <template>
-  <div class="funnel" role="img" :aria-label="ariaLabel ?? 'Conversions funnel chart'">
+  <div
+    class="funnel"
+    role="img"
+    :aria-label="ariaLabel ?? 'Conversions funnel chart'"
+  >
     <div v-for="item in funnelItems" :key="item.label" class="funnel-row">
-      <div class="funnel-bar-wrap">
+      <div class="funnel-region-1">
         <div
-          class="funnel-bar"
+          class="bar-percentage"
           :class="[item.styles ?? '']"
           :style="{
             width: `${scaledWidth(item.value)}%`,
           }"
-        >
-          <span class="funnel-value">{{ formatCompactNumber(item.value) }}</span>
-          <span class="funnel-label">{{ item.label }}</span>
+        ></div>
+        <div class="bar-label">
+          <span class="value">{{ formatCompactNumber(item.value) }}</span>
+          <span class="label">{{ item.label }}</span>
         </div>
       </div>
-      <span v-if="item.rateLabel" class="funnel-rate">
-        {{ item.rateLabel }}:
-        <PerformanceIndicator :value="item.rate" />
-      </span>
+      <div class="funnel-region-2">
+        <span v-if="item.rateLabel" class="funnel-rate">
+          <span>{{ item.rateLabel }}:</span>
+          <PerformanceIndicator :value="item.rate" />
+        </span>
+      </div>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .funnel {
-  @apply grid 
-    grid-cols-1  
-    auto-rows-auto
+  @apply grow
     w-full
-    gap-y-6
+    flex
+    flex-col
+    justify-between
     py-4
-    border-l 
-    border-typography-strong/15;
- 
+    border-l
+    border-typography-strong/[7%];
 }
 
 .funnel-row {
-  @apply grid items-center gap-x-3;
-  grid-template-columns: minmax(0, 1fr) minmax(4.75rem, max-content);
-}
+  @apply flex flex-row justify-start gap-2 items-stretch min-h-[20%];
 
-.funnel-bar-wrap {
-  @apply flex min-w-0 justify-start;
-}
+  .funnel-region-1 {
+    @apply grow relative h-full w-[85%];
 
-.funnel-bar {
-  @apply flex
-    flex-col
-    justify-center
-    min-w-0
-    px-4
-    rounded-r-md
-    duration-500
-    h-16
-    transition-[width];
-  min-width: min(5rem, 100%);
-}
+    .bar-percentage {
+      @apply min-w-2 h-full rounded-r-md duration-500 transition-[width];
+    }
 
-.funnel-value {
-  @apply min-w-0 truncate text-base font-semibold leading-tight text-typography-inverse;
-}
+    .bar-label {
+      @apply flex 
+        flex-col
+        gap-0
+        justify-center
+        items-start
+        absolute
+        top-0
+        h-full
+        w-fit
+        left-6;
 
-.funnel-label {
-  @apply min-w-0 truncate text-xs font-medium leading-tight text-typography-inverse/80;
-}
+      > .value {
+        @apply min-w-0 text-lg font-semibold leading-tight text-typography-inverse drop-shadow-sm;
+      }
 
-.funnel-rate {
-  @apply flex min-w-0 flex-wrap items-center justify-end text-sm gap-x-1.5 gap-y-1.5;
+      > .label {
+        @apply min-w-0 text-sm font-medium leading-tight text-typography-inverse drop-shadow-sm;
+      }
+    }
+  }
+
+  .funnel-region-2 {
+    @apply grow w-[15%] flex items-center justify-end;
+
+    .funnel-rate {
+      @apply inline-flex
+        flex-row
+        flex-wrap
+        gap-x-1
+        gap-y-0
+        justify-end
+        content-center
+        items-center 
+        max-w-full
+        text-right
+        leading-tight;
+    }
+  }
 }
 </style>

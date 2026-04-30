@@ -98,7 +98,7 @@ export default {
         ],
       },
       height: {
-        29: "464px",
+        '29': "464px",
       },
       zIndex: {
         1000: "1000",

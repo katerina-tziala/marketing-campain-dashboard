@@ -86,7 +86,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   <Card>
     <h3 class="text-base">ROI by Channel</h3>
     <RoiBarChart
-      class="min-h-96"
+      class="!min-h-96"
       :items="roiChannelItems"
       :kpis="kpis"
       aria-label="ROI by channel bar chart"
@@ -106,7 +106,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
       />
     </CardHeader>
     <RevenueVsBudgetBars
-      class="min-h-96"
+      class="!min-h-96"
       v-if="revenueBudgetView === 'budgetVsRevenue'"
       :channels="channelsByGapImpact"
       aria-label="Revenue vs budget by channel bar chart"
@@ -123,7 +123,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   <Card class="chart-card">
     <h3 class="text-base">ROI by Campaign</h3>
     <RoiBarChart
-      class="h-29"
+      class="!h-29"
       :items="roiCampaignItems"
       :kpis="kpis"
       aria-label="ROI by campaign bar chart"
@@ -133,7 +133,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   <Card class="chart-card">
     <h3 class="text-base">Budget Share by Campaign</h3>
     <BudgetShareDonutChart
-      class="h-29"
+      class="!h-29"
       :items="budgetCampaignItems"
       :kpis="kpis"
       aria-label="Budget share by campaign donut chart"
@@ -145,7 +145,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     <ConversionFunnelChart
       :kpis="kpis"
       aria-label="Conversion funnel chart"
-      class="w-full"
+      class="h-96"
     />
   </Card>
 </template>

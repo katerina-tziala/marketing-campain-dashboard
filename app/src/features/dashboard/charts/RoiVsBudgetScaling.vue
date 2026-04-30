@@ -59,7 +59,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
       <RoiVsBudgetScatterChart
         :campaigns="validCampaigns"
         :medians="medians"
-        class="h-29"
+        class="!h-29"
         :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
       />
       <MetaRow class="tiny bullet mt-1.5 mx-auto">
