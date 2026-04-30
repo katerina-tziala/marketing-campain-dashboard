@@ -15,6 +15,14 @@
   &.meta-row.tiny {
     font-size: 0.75rem;
   }
+
+  &.meta-row.small {
+    @apply text-sm;
+  }
+
+  &:not(.divider, .bullet) {
+    @apply gap-x-2;
+  }
 }
 
 /* bullet variant */

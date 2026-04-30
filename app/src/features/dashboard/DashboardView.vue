@@ -3,7 +3,10 @@ import { computed, inject } from "vue";
 import { useCampaignStore } from "@/stores/campaign.store";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import DashboardCharts from "./components/DashboardCharts.vue";
-import { type RoiBudgetScalingHighlights } from "./charts";
+import {
+  RoiVsBudgetScaling,
+  type RoiBudgetScalingHighlights,
+} from "./charts";
 import EmptyState from "./components/EmptyState.vue";
 import CampaignTable from "./components/CampaignTable.vue";
 //
@@ -11,7 +14,6 @@ import {
   DashboardHeader,
   ChannelFilters,
   Kpis,
-  RoiVsBudgetScaling,
 } from "./components";
 
 const store = useCampaignStore();

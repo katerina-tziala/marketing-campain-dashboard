@@ -10452,3 +10452,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove color defaults from shared plugin — `createQuadrantBackgroundPlugin` is now generic and does not encode dashboard styling.
 - Move median calculation to shared math — median is a generic utility and no longer belongs inside a chart component.
 - Keep store analysis outside the chart — `DashboardView` adapts portfolio analysis into highlight inputs, so chart components remain store-free.
+
+
+## [#511] Move ROI Scaling Card Into Dashboard Charts Module
+**Type:** refactor
+
+**Summary:** Moved `RoiVsBudgetScaling` from broad dashboard components into the dashboard charts module root so it behaves as the public chart-card composition for ROI vs Budget scaling.
+
+**Brainstorming:** `RoiVsBudgetScaling` is not a generic dashboard component like the header, filters, KPI section, or campaign table. It is a complete chart experience: it owns the chart card, title, filtered subtitle, median summary, limited-data info state, and passes chart inputs into the lower-level scatter renderer. Keeping it in `dashboard/components` blurred the boundary between page composition and chart composition. Moving it to the root of `dashboard/charts` makes the charts module expose complete chart-card experiences while keeping `dashboard/charts/components` for lower-level renderers.
+
+**Prompt:** Move `RoiVsBudgetScaling` under charts, import it directly into `DashboardView`, and keep the chart height flowing from the parent into `RoiVsBudgetScatterChart`.
+
+**What was built:**
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — moved the ROI scaling card component into the dashboard charts module root.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — keeps `height?: number` as an input with `ROI_BUDGET_SCALING_CHART_HEIGHT` as the default.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — passes the resolved `height` into `RoiVsBudgetScatterChart`, which remains input-driven.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — uses shared `Card`, `Notification`, `MetaRow`, and `MetaItem` UI primitives for the card shell, info state, and median summary.
+- `app/src/features/dashboard/charts/index.ts` — exports `RoiVsBudgetScaling` as part of the public dashboard charts API.
+- `app/src/features/dashboard/DashboardView.vue` — imports `RoiVsBudgetScaling` directly from `./charts` alongside `RoiBudgetScalingHighlights`.
+- `app/src/features/dashboard/components/index.ts` — removed the old `RoiVsBudgetScaling` export from dashboard components.
+- `app/src/features/dashboard/components/RoiVsBudgetScaling.vue` — removed the old component location.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — aligned `Card` import with the shared `@/ui` barrel.
+- `app/src/ui/meta/MetaRow.vue` — added a `small` size variant and default horizontal gap behavior for non-divider/non-bullet meta rows.
+
+**Key decisions & why:**
+- Treat `RoiVsBudgetScaling` as a public chart-card component — it belongs at `dashboard/charts` root because it is a complete chart experience, not an internal renderer.
+- Keep `RoiVsBudgetScatterChart` inside `dashboard/charts/components` — it is the chart-only renderer used by the public chart-card component.
+- Import chart experiences from `./charts` in `DashboardView` — the dashboard page now consumes the charts module through its public API.
+- Keep height configurable at the public component boundary — callers can override height on `RoiVsBudgetScaling`, while the scatter renderer receives an explicit required height.
+- Keep generic dashboard components separate — `dashboard/components` now stays focused on page sections and broader composition.

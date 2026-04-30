@@ -5,7 +5,7 @@ import type {
   PortfolioKPIs,
 } from "@/shared/types/campaign";
 import type { Channel } from "@/shared/types/channel";
-import { RadioToggle, useChartTheme } from "@/ui";
+import { RadioToggle, useChartTheme, Card } from "@/ui";
 import {
   BudgetShareDonutChart,
   ConversionFunnelChart,
@@ -21,8 +21,7 @@ import {
   sortCampaignsByRoiDesc,
   sortChannelsByEfficiencyGapImpactDesc,
   sortChannelsByRoiDesc,
-} from "../utils/dashboard-sorting";
-import Card from "@/ui/card/Card.vue";
+} from "../utils/dashboard-sorting"; 
 
 type RevenueBudgetView = "budgetVsRevenue" | "efficiencyGap";
 
