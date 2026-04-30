@@ -93,7 +93,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
   <!-- Revenue vs Budget by Channel -->
-  <Card class="revenue-vs-budget">
+  <Card class="grid gap-2 grid-cols-1 grid-rows-[min-content_1fr]">
     <CardHeader class="flex-wrap">
       <h3 class="grow flex items-center justify-start pt-0.5 text-base">
         Revenue vs Budget by Channel
@@ -123,7 +123,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   <Card class="chart-card">
     <h3 class="text-base">ROI by Campaign</h3>
     <RoiBarChart
-     class="h-[464px]"
+      class="h-29"
       :items="roiCampaignItems"
       :kpis="kpis"
       aria-label="ROI by campaign bar chart"
@@ -133,7 +133,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   <Card class="chart-card">
     <h3 class="text-base">Budget Share by Campaign</h3>
     <BudgetShareDonutChart
-     class="h-[464px]"
+      class="h-29"
       :items="budgetCampaignItems"
       :kpis="kpis"
       aria-label="Budget share by campaign donut chart"
@@ -149,9 +149,3 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
 </template>
-
-<style lang="scss" scoped>
-.revenue-vs-budget {
-  @apply grid gap-2 grid-cols-1 grid-rows-[min-content_1fr];
-}
-</style>

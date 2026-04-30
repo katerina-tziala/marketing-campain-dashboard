@@ -1,9 +1,9 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-import App from './App.vue'
+import App from './app/App.vue'
 import { registerCharts } from './ui/charts/register'
-import { router } from './router'
-import './style.scss'
+import { router } from './app/router'
+import './styles/index.scss'
 
 registerCharts()
 

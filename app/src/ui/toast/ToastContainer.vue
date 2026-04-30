@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useToastStore } from "@/stores/toast.store";
+import { useToastStore } from "@/app/stores/toast.store";
 import ToastNotification from "./ToastNotification.vue";
 
 const toastStore = useToastStore();

@@ -5,7 +5,7 @@ import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/type
 import { getErrorCode } from '@/features/ai-tools/ai-connection/utils/error-handling'
 import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { useToastStore } from '@/stores/toast.store'
+import { useToastStore } from '@/app/stores/toast.store'
 
 // [DEV ONLY] — cleared by setDevConnectOverride(null) on deactivate
 type DevConnectFn = (provider: AiProviderType) => Promise<AiModel[]>

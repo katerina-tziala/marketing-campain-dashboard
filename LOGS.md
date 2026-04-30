@@ -10609,3 +10609,50 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep table column mapping local — tables know which field each column represents, while shared sorting handles direction and null-safe comparison.
 - Reuse shared sorting across dashboard and data transfer — this avoids duplicate value-sort mechanics while preserving feature-specific display choices.
 - Separate button variants by intent — `info-text-only` supports lightweight inline actions without weakening the existing outline button variant.
+
+
+## [#515] Create App Wiring Layer
+**Type:** refactor
+
+**Summary:** Started separating application wiring from feature code by introducing `src/app`, moving the router, shell, root app component, and toast store into that layer, and switching the global style entrypoint to `styles/index.scss`.
+
+**Brainstorming:** The dashboard is currently the main feature, but the application is starting to need an explicit composition layer. The dashboard owns product behavior: filters, KPIs, charts, campaign tables, and portfolio analysis display. The shell owns app-level chrome: upload entry, AI drawer placement, modals, and global notifications. The router owns route-level access and will eventually need to support auth. Keeping those concerns beside feature folders makes the dependency graph harder to reason about, especially because AI analysis reacts to dashboard filter changes and will need a clean bridge rather than hidden cross-feature store access. This refactor starts by creating the `app` layer for routing, shell composition, root app wiring, and global app stores. The direction from here is to add a thin dashboard page under `app/pages`, let that page compose dashboard state with AI analysis context, and then remove the remaining dashboard/AI coupling from `DashboardView` and `aiAnalysis.store`.
+
+**Prompt:** Start creating the app-level home for wiring, move router and shell under it, move app-level toast state there, move `App.vue` into the app layer, use `styles/index.scss` as the global style entrypoint, and replace the repeated `h-[464px]` chart height with a Tailwind utility named `h-29`.
+
+**What was built:**
+- `app/src/app/router/index.ts` — moved the Vue Router setup from the root `router` folder into the new app wiring layer.
+- `app/src/router/index.ts` — removed the old root router location after the move.
+- `app/src/app/shell/AppShell.vue` — moved the app shell into the app layer while preserving the existing header, upload button, AI drawer, upload modals, replace confirmation, toast container, and shell layout behavior.
+- `app/src/app/shell/AiToolsDrawer.vue` — moved the AI tools drawer into the app shell folder while preserving the push-drawer and overlay behavior.
+- `app/src/shell/AppShell.vue` and `app/src/shell/AiToolsDrawer.vue` — removed the old root shell locations after the move.
+- `app/src/app/App.vue` — moved the root app component into the app layer so the root shell and router outlet live with app-level composition.
+- `app/src/App.vue` — removed the old root app component location after the move.
+- `app/src/main.ts` — updated the app import to `./app/App.vue`.
+- `app/src/main.ts` — updated the router import to `./app/router`.
+- `app/src/main.ts` — switched the global stylesheet import from `./style.scss` to `./styles/index.scss`.
+- `app/src/styles/index.scss` — became the single global style entrypoint by keeping theme/base/component/utility imports and adding Tailwind `base`, `components`, and `utilities` directives.
+- `app/src/style.scss` — removed the old wrapper stylesheet because it only forwarded to `styles/index.scss` and held the Tailwind directives.
+- `app/src/app/stores/toast.store.ts` — moved the global toast store into the app layer as app infrastructure state.
+- `app/src/stores/toast.store.ts` — removed the old root store location after the move.
+- `app/src/ui/toast/ToastContainer.vue` — updated the toast store import to `@/app/stores/toast.store`.
+- `app/src/features/data-transfer/composables/useDownloadTemplate.ts` — updated the toast store import to `@/app/stores/toast.store`.
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — updated the toast store import to `@/app/stores/toast.store`.
+- `app/tailwind.config.js` — added a custom height utility `h-29` with a value of `464px`.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — replaced repeated `h-[464px]` usages with `h-29`.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — kept the revenue/budget card grid layout inline on the card and removed the now-unneeded scoped style block.
+- `app/src/features/dashboard/charts/RoiVsBudgetScaling.vue` — replaced the ROI scaling chart `h-[464px]` class with `h-29`.
+- `app/index.html` — switched the root theme marker from `class="dark"` to `data-theme="dark"` as part of the ongoing theme-architecture exploration.
+
+**Key decisions & why:**
+- Create `src/app` for wiring, not product behavior — router, shell, app root, and global app stores now have a home that is separate from domain features.
+- Keep `main.ts` at the source root — it remains the runtime bootstrap, while `app/App.vue` owns application composition.
+- Move shell into `app/shell` — the shell coordinates global chrome, the AI drawer, upload modals, and toasts, so it is application infrastructure rather than dashboard feature code.
+- Move toast store into `app/stores` — global notifications are cross-feature app infrastructure, not dashboard, AI, or data-transfer domain state.
+- Keep dashboard feature code in `features/dashboard` — charts, KPIs, filters, and tables remain in the dashboard feature because they are dashboard product behavior.
+- Keep the router in `app/router` — this prepares the project for route-level auth, guards, and future page modules without putting access control inside features.
+- Use `styles/index.scss` as the real style entrypoint — global style imports now have one obvious source, and the old `style.scss` wrapper is gone.
+- Use `h-29` instead of arbitrary `h-[464px]` — the dashboard keeps the exact working chart height while making the value part of the Tailwind utility scale.
+- Keep the current AI/dashboard coupling intact for this step — this refactor only creates the app-level home; the next step should be a thin `DashboardPage` that wires dashboard context into AI analysis explicitly.
+- Head toward page-level feature composition — the intended next structure is `app/pages/DashboardPage.vue` composing `DashboardView`, AI panel state, upload actions, and AI analysis context, so neither dashboard nor AI needs to import the other directly.
+- Head toward explicit AI analysis context — `aiAnalysis.store` should eventually accept a typed dashboard/portfolio context instead of importing `campaign.store`, allowing it to react to dashboard filter changes through an app-level bridge.
