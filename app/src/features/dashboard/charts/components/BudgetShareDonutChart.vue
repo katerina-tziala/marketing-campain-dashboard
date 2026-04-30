@@ -4,6 +4,7 @@ import type { PortfolioKPIs } from '@/shared/types/campaign'
 import {
   DonutChart,
   type DonutChartData,
+  type DonutLegendLabelFilter,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
   withHexAlpha,
@@ -57,6 +58,21 @@ function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
   return withHexAlpha(item.color, getSegmentAlpha(item, index))
 }
 
+function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
+  return (
+    index >= DASHBOARD_DONUT_HIGHLIGHT_LIMIT &&
+    getBudgetShare(item.budget) < DASHBOARD_DONUT_DIM_THRESHOLD
+  )
+}
+
+const legendLabelFilter: DonutLegendLabelFilter = (legendItem) => {
+  const itemIndex = legendItem.index
+  if (itemIndex === undefined) return true
+
+  const item = props.items[itemIndex]
+  return item ? !isDimmedSegment(item, itemIndex) : true
+}
+
 const chartData = computed<DonutChartData>(() => ({
   labels: props.items.map((item) => item.label),
   datasets: [
@@ -73,7 +89,8 @@ const chartData = computed<DonutChartData>(() => ({
   <DonutChart
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
+    :legend-label-filter="legendLabelFilter"
     :aria-label="ariaLabel ?? 'Budget share by campaign donut chart'"
-    class="w-full"
+    class="w-full max-h-96"
   />
 </template>

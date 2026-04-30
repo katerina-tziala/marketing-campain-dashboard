@@ -11,6 +11,7 @@ export type {
   ChartLegendPosition,
   ChartTickFormatter,
   DonutChartData,
+  DonutLegendLabelFilter,
   DonutChartOptions,
   DonutTooltipCallbacks,
   DonutTooltipItem,

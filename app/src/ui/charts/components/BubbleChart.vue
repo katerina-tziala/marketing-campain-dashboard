@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="TPoint extends BubbleDataPoint">
-import { computed } from 'vue'
-import type { BubbleDataPoint } from 'chart.js'
-import { Bubble } from 'vue-chartjs'
-import { useChartConfig, useChartTooltip } from '../composables'
+import { computed } from "vue";
+import type { BubbleDataPoint } from "chart.js";
+import { Bubble } from "vue-chartjs";
+import { useChartConfig, useChartTooltip } from "../composables";
 import type {
   BubbleChartData,
   BubbleChartOptions,
@@ -10,32 +10,32 @@ import type {
   BubbleTooltipCallbacks,
   ChartLegendPosition,
   ChartTickFormatter,
-} from '../types'
+} from "../types";
 
 const props = withDefaults(
   defineProps<{
-    chartData: BubbleChartData<TPoint>
-    height?: number
-    ariaLabel?: string
-    xLabel?: string
-    yLabel?: string
-    xMin?: number
-    xMax?: number
-    yMin?: number
-    yMax?: number
-    xTickFormatter?: ChartTickFormatter
-    yTickFormatter?: ChartTickFormatter
-    xTickValues?: number[]
-    yTickValues?: number[]
-    tooltipCallbacks?: BubbleTooltipCallbacks
-    plugins?: BubbleChartPlugin[]
-    legendPosition?: ChartLegendPosition<'bubble'>
+    chartData: BubbleChartData<TPoint>;
+    height?: number;
+    ariaLabel?: string;
+    xLabel?: string;
+    yLabel?: string;
+    xMin?: number;
+    xMax?: number;
+    yMin?: number;
+    yMax?: number;
+    xTickFormatter?: ChartTickFormatter;
+    yTickFormatter?: ChartTickFormatter;
+    xTickValues?: number[];
+    yTickValues?: number[];
+    tooltipCallbacks?: BubbleTooltipCallbacks;
+    plugins?: BubbleChartPlugin[];
+    legendPosition?: ChartLegendPosition<"bubble">;
   }>(),
-  { plugins: () => [], legendPosition: 'top' },
-)
+  { plugins: () => [], legendPosition: "top" },
+);
 
-const { baseOptions, basePlugins, createScale } = useChartConfig<'bubble'>()
-const bubbleTooltip = useChartTooltip<'bubble'>(props.tooltipCallbacks)
+const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
+const bubbleTooltip = useChartTooltip<"bubble">(props.tooltipCallbacks);
 
 function createScaleOptions(
   label?: string,
@@ -52,11 +52,11 @@ function createScaleOptions(
     ...(tickValues
       ? {
           afterBuildTicks: (axis: { ticks: { value: number }[] }) => {
-            axis.ticks = tickValues.map((value) => ({ value }))
+            axis.ticks = tickValues.map((value) => ({ value }));
           },
         }
       : {}),
-  }
+  };
 }
 
 const options = computed<BubbleChartOptions>(() => ({
@@ -89,16 +89,16 @@ const options = computed<BubbleChartOptions>(() => ({
       ),
     ),
   },
-}))
+}));
 
 const chartStyle = computed(() =>
   props.height === undefined ? undefined : { height: `${props.height}px` },
-)
+);
 </script>
 
 <template>
   <div
-    class="chart-container"
+    class="w-full h-full min-h-64"
     :style="chartStyle"
     role="img"
     :aria-label="ariaLabel ?? yLabel ?? xLabel ?? 'Bubble chart'"
@@ -106,9 +106,3 @@ const chartStyle = computed(() =>
     <Bubble :data="chartData" :options="options" :plugins="plugins" />
   </div>
 </template>
-
-<style lang="scss" scoped>
-.chart-container {
-  @apply w-full h-full min-h-80;
-}
-</style>

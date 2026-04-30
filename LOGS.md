@@ -10530,3 +10530,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep donut thresholds configurable — highlight count, dim threshold, and alpha values live in dashboard chart style config for easy tuning.
 - Keep visual color choices centralized — dashboard chart colors remain grouped in dashboard chart config.
 - Prefer card-header actions for chart toggles — the Performance/Efficiency toggle belongs with the card title, not as loose chart content.
+
+
+## [#513] Refine Dashboard Chart Composition and Donut Legend
+**Type:** refactor
+
+**Summary:** Renamed the dashboard chart section to `PerformanceCharts`, moved it into the dashboard charts module root, and replaced the temporary custom donut label list with a Chart.js legend filter that hides only dimmed budget-share slices.
+
+**Brainstorming:** `DashboardCharts` had become a chart-section composition rather than a generic dashboard component, so keeping it under `dashboard/components` made the feature architecture harder to read. Moving it next to `RoiVsBudgetScaling` makes the `dashboard/charts` module own complete chart experiences, while `dashboard/charts/components` remains the home for lower-level chart renderers. For the Budget Share donut, the temporary HTML label rail solved overflow but created a second legend system. Since the goal is to keep the chart feeling native, the better path is to let Chart.js render the legend and give the reusable donut wrapper a small filtering hook so dashboard-specific dimming rules stay outside `ui/charts`.
+
+**Prompt:** Rename `DashboardCharts` to `PerformanceCharts`, move it into the charts directory next to `RoiVsBudgetScaling`, then hide the custom Budget Share donut legend and show only non-dimmed items through the Chart.js legend.
+
+**What was built:**
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — moved and renamed the former dashboard charts section into the dashboard charts module root.
+- `app/src/features/dashboard/charts/PerformanceCharts.vue` — updated internal imports to use local chart `components` and `composables` instead of importing through the charts root barrel.
+- `app/src/features/dashboard/components/DashboardCharts.vue` — removed the old component path through the file move.
+- `app/src/features/dashboard/charts/index.ts` — exported `PerformanceCharts` from the public dashboard charts API.
+- `app/src/features/dashboard/DashboardView.vue` — replaced `DashboardCharts` import/rendering with `PerformanceCharts` from `./charts`.
+- `app/src/ui/charts/components/DonutChart.vue` — added an optional `legendLabelFilter` prop and applies it to generated Chart.js legend labels.
+- `app/src/ui/charts/types/chart.types.ts` and `app/src/ui/charts/types/index.ts` — exported `DonutLegendLabelFilter` for consumers that need legend filtering.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — removed the custom scrollable HTML legend/list.
+- `app/src/features/dashboard/charts/components/BudgetShareDonutChart.vue` — added a donut legend filter that keeps highlighted and secondary budget-share slices in the Chart.js legend while hiding dimmed tiny slices.
+
+**Key decisions & why:**
+- Treat `PerformanceCharts` as a public chart-section component — it belongs in `dashboard/charts` because it composes multiple chart cards, not generic dashboard UI.
+- Keep lower-level chart renderers in `dashboard/charts/components` — `BudgetShareDonutChart`, `RevenueVsBudgetBars`, and similar components remain implementation pieces consumed by chart-section compositions.
+- Avoid importing the charts root barrel from inside `PerformanceCharts` — local component/composable imports prevent self-referential barrel coupling.
+- Prefer native Chart.js legend rendering for the donut — it avoids maintaining a second HTML legend system and keeps interactions visually consistent with the shared chart wrapper.
+- Keep dimmed slices visible in the chart — small budget-share slices are still represented and available through tooltips, but they no longer crowd the legend.
+- Keep dashboard-specific filtering outside `ui/charts` — the shared `DonutChart` only exposes a generic filter hook, while the dashboard decides what “dimmed” means.

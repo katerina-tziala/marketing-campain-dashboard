@@ -12,10 +12,12 @@ import {
   EfficiencyGapBars,
   RoiBarChart,
   RevenueVsBudgetBars,
+} from "./components";
+import {
   useCampaignBudgetShareDonutItems,
   useCampaignRoiChartItems,
   useChannelRoiChartItems,
-} from "../charts";
+} from "./composables";
 import {
   sortCampaignsByBudgetDesc,
   sortCampaignsByRoiDesc,
@@ -79,79 +81,69 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 </script>
 
 <template>
-  <div class="charts-grid">
-    <Card>
-      <h3 class="text-base">ROI by Channel</h3>
-      <RoiBarChart
-        :items="roiChannelItems"
-        :kpis="kpis"
-        aria-label="ROI by channel bar chart"
-      />
-    </Card>
+  <Card>
+    <h3 class="text-base">ROI by Channel</h3>
+    <RoiBarChart
+      :items="roiChannelItems"
+      :kpis="kpis"
+      aria-label="ROI by channel bar chart"
+    />
+  </Card>
 
-    <Card>
-      <CardHeader class="flex-wrap">
-        <h3 class="grow flex items-center justify-start pt-0.5 text-base">Revenue vs Budget by Channel</h3> 
-        <RadioToggle
-          class="small secondary"
-          v-model="revenueBudgetView"
-          :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
-          name="revenue-budget-view"
-        />
-      </CardHeader>
-
-      <RevenueVsBudgetBars
-        v-if="revenueBudgetView === 'budgetVsRevenue'"
-        :channels="channelsByGapImpact"
-        aria-label="Revenue vs budget by channel bar chart"
-      /> 
-      <EfficiencyGapBars
-        v-else
-        :channels="channelsByGapImpact"
-        :kpis="kpis"
-        aria-label="Efficiency gap by channel bar chart"
+  <Card>
+    <CardHeader class="flex-wrap">
+      <h3 class="grow flex items-center justify-start pt-0.5 text-base">
+        Revenue vs Budget by Channel
+      </h3>
+      <RadioToggle
+        class="small secondary"
+        v-model="revenueBudgetView"
+        :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
+        name="revenue-budget-view"
       />
-    </Card>
+    </CardHeader>
 
-    <Card>
-      <h3 class="text-base">ROI by Campaign</h3>
-      <RoiBarChart
-        :items="roiCampaignItems"
-        :kpis="kpis"
-        aria-label="ROI by campaign bar chart"
-      />
-    </Card>
+    <RevenueVsBudgetBars
+      v-if="revenueBudgetView === 'budgetVsRevenue'"
+      :channels="channelsByGapImpact"
+      aria-label="Revenue vs budget by channel bar chart"
+    />
+    <EfficiencyGapBars
+      v-else
+      :channels="channelsByGapImpact"
+      :kpis="kpis"
+      aria-label="Efficiency gap by channel bar chart"
+    />
+  </Card>
 
-    <Card>
-      <h3 class="text-base">Budget Share by Campaign</h3>
-      <BudgetShareDonutChart
-        :items="budgetCampaignItems"
-        :kpis="kpis"
-        aria-label="Budget share by campaign donut chart"
-      />
-    </Card>
+  <Card>
+    <h3 class="text-base">ROI by Campaign</h3>
+    <RoiBarChart
+      :items="roiCampaignItems"
+      :kpis="kpis"
+      aria-label="ROI by campaign bar chart"
+    />
+  </Card>
 
-    <Card>
-      <h3 class="text-base">Conversion Funnel</h3>
-      <ConversionFunnelChart
-        :kpis="kpis"
-        aria-label="Conversion funnel chart"
-        class="w-full"
-      />
-    </Card>
-  </div>
+  <Card>
+    <h3 class="text-base">Budget Share by Campaign</h3>
+    <BudgetShareDonutChart
+      :items="budgetCampaignItems"
+      :kpis="kpis"
+      aria-label="Budget share by campaign donut chart"
+    />
+  </Card>
+
+  <Card>
+    <h3 class="text-base">Conversion Funnel</h3>
+    <ConversionFunnelChart
+      :kpis="kpis"
+      aria-label="Conversion funnel chart"
+      class="w-full"
+    />
+  </Card>
 </template>
 
 <style lang="scss" scoped>
-.charts-grid {
-  @apply w-full grid grid-cols-2 gap-5 mx-auto max-w-7xl;
 
-  // @container (min-width: 60rem) {
-  //   @apply grid-cols-2;
-  // }
-}
-
-.chart-card-header {
-  @apply flex items-start justify-between gap-4;
-}
 </style>

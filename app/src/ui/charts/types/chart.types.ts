@@ -2,6 +2,7 @@ import type {
   ChartData,
   ChartOptions,
   ChartType,
+  LegendItem,
   LegendOptions,
   Plugin,
   TooltipCallbacks,
@@ -19,6 +20,7 @@ export type BarTooltipItem = TooltipItem<'bar'>
 
 export type DonutChartData = ChartData<'doughnut'>
 export type DonutChartOptions = ChartOptions<'doughnut'>
+export type DonutLegendLabelFilter = (item: LegendItem) => boolean
 export type DonutTooltipCallbacks = Partial<TooltipCallbacks<'doughnut'>>
 export type DonutTooltipItem = TooltipItem<'doughnut'>
 

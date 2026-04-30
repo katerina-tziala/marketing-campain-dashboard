@@ -72,17 +72,11 @@ const chartStyle = computed(() =>
 
 <template>
   <div
-    class="chart-container"
+    class=" w-full h-full min-h-64"
     :style="chartStyle"
     role="img"
     :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'"
   >
     <Bar :data="chartData" :options="options" />
   </div>
-</template>
-
-<style lang="scss" scoped>
-.chart-container {
-  @apply w-full h-full min-h-80;
-}
-</style>
+</template> 

@@ -2,19 +2,15 @@
 import { computed, inject } from "vue";
 import { useCampaignStore } from "@/stores/campaign.store";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
-import DashboardCharts from "./components/DashboardCharts.vue";
 import {
+  PerformanceCharts,
   RoiVsBudgetScaling,
   type RoiBudgetScalingHighlights,
 } from "./charts";
 import EmptyState from "./components/EmptyState.vue";
 import CampaignTable from "./components/CampaignTable.vue";
 //
-import {
-  DashboardHeader,
-  ChannelFilters,
-  Kpis,
-} from "./components";
+import { DashboardHeader, ChannelFilters, Kpis } from "./components";
 
 const store = useCampaignStore();
 const aiStore = useAiConnectionStore();
@@ -107,19 +103,22 @@ function clearChannelFilters(): void {
             : undefined
         "
       />
-      <!-- Charts-->
-      <DashboardCharts
-        :campaigns="store.filteredCampaigns"
-        :channels="store.selectedChannels"
-        :kpis="store.portfolioAnalysis.portfolio"
-      />
+      <div class="charts-grid">
+        <!-- Charts-->
+        <PerformanceCharts
+          :campaigns="store.filteredCampaigns"
+          :channels="store.selectedChannels"
+          :kpis="store.portfolioAnalysis.portfolio"
+        />
+        <!-- insights -->
+      </div>
       <!-- ROI vs Budget Scaling -->
       <RoiVsBudgetScaling
         :campaigns="store.filteredCampaigns"
         :highlight-campaigns-by-quadrant="roiBudgetScalingHighlights"
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"
-      /> 
+      />
       <!-- Campaign Table -->
       <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
         <h3 class="text-base">Campaign Details</h3>
@@ -157,5 +156,17 @@ function clearChannelFilters(): void {
     pb-6;
   // @include cq-container("dashboard-visuals");
   // container-type: inline-size;
+}
+
+.charts-grid {
+  @apply w-full grid grid-cols-2 gap-5 mx-auto max-w-7xl;
+
+  // @container (min-width: 60rem) {
+  //   @apply grid-cols-2;
+  // }
+}
+
+.chart-card-header {
+  @apply flex items-start justify-between gap-4;
 }
 </style>
