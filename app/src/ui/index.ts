@@ -1,6 +1,7 @@
 export * from './charts'
 export * from './card'
 export * from './dropdown'
+export * from './drawer'
 export * from './feedback'
 export * from './forms'
 export * from './icons'

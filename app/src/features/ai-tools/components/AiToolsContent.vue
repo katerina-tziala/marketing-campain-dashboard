@@ -3,7 +3,6 @@ import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/a
 import AiConnectionForm from "@/features/ai-tools/ai-connection/components/AiConnectionForm.vue";
 import AiConnectedStatus from "@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue";
 import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue"; 
-import { Button, SheetHeader, CloseIcon, SparklesIcon } from "@/ui";
 
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,23 +24,9 @@ onUnmounted(deactivate)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const store = useAiConnectionStore();
-const emit = defineEmits<{ close: [] }>();
 </script>
 
 <template>
-  <SheetHeader>
-    <template #icon><SparklesIcon class="mt-1" /></template>
-    <template #header><h2>AI Assistant</h2></template>
-    <template #action>
-      <Button
-        class="btn icon-only text-only"
-        aria-label="Close AI panel"
-        @click="emit('close')"
-      >
-        <CloseIcon />
-      </Button>
-    </template>
-  </SheetHeader>
   <div class="ai-tools-content">
     <!-- Not connected: show connection form -->
     <AiConnectionForm v-if="!store.isConnected" />

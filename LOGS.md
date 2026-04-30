@@ -10944,3 +10944,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use local paths inside UI modules — local imports make ownership clearer and reduce the chance of circular public-barrel dependencies.
 - Keep grouped imports where they cross the UI boundary — `PerformanceCharts.vue` is feature code, so grouping its UI imports under `@/ui` is the right shape.
 - Keep behavior unchanged — this was an import-boundary cleanup only; no component behavior or styling was intentionally changed.
+
+
+## [#524] Extract Responsive Drawer UI Component
+**Type:** refactor
+
+**Summary:** Extracted the reusable AI drawer shell into a UI-level `ResponsiveDrawer` component while keeping `AiToolsDrawer` as the app-specific adapter and making `AiToolsContent` responsible only for AI feature content.
+
+**Brainstorming:** The existing AI tools drawer mixed reusable shell behavior with AI-specific feature content. It owned the desktop push drawer, the small-screen overlay modal, escape-key closing, drawer panel layout, header rendering, close button, and the actual AI tools content. The better boundary is to move generic drawer mechanics into `@/ui`, keep the app shell responsible for wiring the AI drawer open/close state, and keep the AI tools feature focused on connection and analysis content. This gives the app a reusable right-or-left drawer primitive for future side panels without forcing the UI library to know anything about AI.
+
+**Prompt:** Extract the AI tools drawer into a specific UI drawer component that supports left/right placement, defaults to the right side, behaves like a modal on small screens, owns the header and close button, and lets the AI drawer pass the AI content into it.
+
+**What was built:**
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — added a reusable drawer component with `open`, `title`, `side`, and `closeLabel` props; defaulted `side` to `right`; emits `close`; handles Escape key closing; renders a desktop push drawer at `lg` and above; renders a modal-style overlay on smaller screens; owns the `SheetHeader`, default close button, optional icon slot, optional `header-actions` slot, and content slot.
+- `app/src/ui/drawer/index.ts` — added a drawer folder barrel exporting `ResponsiveDrawer`.
+- `app/src/ui/index.ts` — exported the new `drawer` UI module through the public `@/ui` barrel.
+- `app/src/app/shell/AiToolsDrawer.vue` — replaced the local drawer layout, overlay, Escape-key listener, and panel styles with `ResponsiveDrawer`; kept the AI-specific title, icon, close label, open prop, close emit, and `AiToolsContent` composition in the app shell.
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — removed `SheetHeader`, close button, close emit, and drawer icon imports so the component now renders only AI connection and AI analysis content.
+- `rg "from [\"']@/ui" app/src/ui` — confirmed that the new UI drawer follows the internal UI import rule and does not import through the public UI barrel.
+- `npm run build` — completed successfully after the refactor; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Keep `ResponsiveDrawer` in `@/ui` — the drawer behavior is reusable presentation infrastructure, not AI-specific functionality.
+- Keep `AiToolsDrawer` in `app/shell` — the shell adapter still knows this drawer is for AI tools and wires title, icon, open state, close behavior, and content.
+- Keep `AiToolsContent` headerless — feature content should not own the surrounding drawer chrome, close button, or panel header.
+- Preserve the current responsive behavior — desktop still uses a push drawer that sits beside the main content, while smaller screens still use a fixed overlay panel.
+- Default the drawer to the right side — this matches the current AI tools placement while leaving left-side drawers available for future shell needs.
+- Let the UI drawer own the default close button — every drawer gets consistent accessibility and expected close behavior without each consumer rebuilding it.
+- Use slots for extension points — the icon, header actions, and content remain configurable without coupling the drawer to a specific feature.
+- Keep UI internals on local imports — `ResponsiveDrawer` imports `Button`, `CloseIcon`, and `SheetHeader` through relative UI paths rather than through the public `@/ui` barrel.
