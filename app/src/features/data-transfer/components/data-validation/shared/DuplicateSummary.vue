@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import DataErrorSummary from './DataErrorSummary.vue'
 import { Badge } from '@/ui'
+import DataErrorSummary from './DataErrorSummary.vue'
 
 const props = defineProps<{
   count: number

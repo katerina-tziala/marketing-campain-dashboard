@@ -1,6 +1,6 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import type { CampaignPerformance } from '@/shared/types'
-import type { Channel } from '@/shared/types'
+import type { CampaignPerformance } from '@/shared/data'
+import type { Channel } from '@/shared/data'
 import type { RoiBarChartItem } from '../types'
 
 export function useCampaignRoiChartItems(

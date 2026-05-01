@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types";
+import type { CampaignPerformance } from "@/shared/data";
 import { TableHeader, Badge, Table } from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { useSort } from "@/shared/composables/useSort";

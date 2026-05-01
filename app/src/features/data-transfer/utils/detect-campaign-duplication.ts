@@ -1,4 +1,4 @@
-import type { Campaign } from '@/shared/types'
+import type { Campaign } from '@/shared/data'
 import type { CampainDataDuplicateGroup } from '@/features/data-transfer/types'
 
 function getGrouppedCampains(campaigns: Campaign[]): Map<string, Campaign[]> {

@@ -1,4 +1,4 @@
-import type { Campaign } from '@/shared/types'
+import type { Campaign } from '@/shared/data'
 
 const CSV_HEADERS: (keyof Campaign)[] = [
   'campaign',

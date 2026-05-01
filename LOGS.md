@@ -11456,3 +11456,102 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Delete old files instead of leaving stubs — with the re-export in place, the old files in shared/types are dead code; deleting them avoids confusion and accidental future edits.
 - Keep imports in campaign.ts and channel.ts as local relative imports — since they're now in shared/data, they import from each other using local relative paths (./campaign), not through the barrel; this keeps the module graph simple and avoids circular dependency risk.
 - Verify build and keep working tree clean — the build passed with no errors or type issues; all 414 modules transformed successfully, confirming the re-export resolves imports correctly throughout the codebase.
+
+
+## [#540] Update Data-Transfer Feature Imports
+**Type:** update
+
+**Summary:** Updated 9 files in the data-transfer feature to import Campaign type directly from `@/shared/data` instead of `@/shared/types`, aligning with the recent consolidation of foundational data types.
+
+**Brainstorming:** After consolidating Campaign and Channel types into shared/data (entry #539), the backward-compatibility re-export in shared/types allows existing imports to continue working. However, for clarity and directness, consumers should import from the source module where types are defined, not through a re-export layer. The data-transfer feature had 9 imports of Campaign still using the old path; updating them to @/shared/data makes the import graph explicit and documents that this feature consumes foundational data types, not application-layer types.
+
+**Prompt:** In the data-transfer feature, find all imports of Campaign type from @/shared/types and update them to import directly from @/shared/data instead. This includes files in utils/, types/, and components/. Build and verify no errors.
+
+**What was built:**
+- `app/src/features/data-transfer/utils/download-csv.ts` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/utils/validate-row-data.ts` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/utils/detect-campaign-duplication.ts` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/types/index.ts` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/components/UploadDataModal.vue` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/components/data-validation/review-errors/ReviewErrorsComponent.vue` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — updated import: `Campaign` now from `@/shared/data`
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampainDuplicationsTable.vue` — updated import: `Campaign` now from `@/shared/data`
+
+**Key decisions & why:**
+- Update all 9 files in one pass — the change is mechanical and safe; all imports resolve identically (Campaign definition hasn't moved), so batch updating removes ambiguity across the feature.
+- Import from source, not re-export — this signals to future maintainers that Campaign is a foundational data type, not an application type; the direct import is also more performant (one fewer indirection).
+- No changes to data-transfer-specific types — CampainDataValidationError, CampainDataParseResult, etc. remain in features/data-transfer/types/ since they model the upload domain, not the data itself; these imports were not changed.
+- Build verification passed — all 414 modules transformed, confirming the imports resolve correctly and no type issues exist.
+
+
+## [#541] Update All Project Imports from @/shared/types to @/shared/data
+**Type:** refactor
+
+**Summary:** Updated 29 files across the entire project to import Campaign, Channel, CampaignPerformance, PortfolioKPIs, and related foundational data types directly from `@/shared/data` instead of `@/shared/types`, aligning with the type consolidation into shared/data module.
+
+**Brainstorming:** Entry #540 updated data-transfer feature imports (9 files), but the broader codebase still had 20 files importing these types from @/shared/types. While the re-export in shared/types/index.ts maintains backward compatibility, importing from the source module (@/shared/data) makes the intent explicit: these are foundational data types, not application-layer utilities. This refactor completes the import alignment across the entire codebase and documents the proper import path for future developers. The changes are mechanical and safe since the type definitions haven't moved from a functionality perspective—only the source of truth has been clarified.
+
+**Prompt:** Find all remaining imports of Campaign, Channel, CampaignPerformance, PortfolioKPIs, PortfolioScope, ShareEfficiency, PerformanceMetrics, and CampaignMetrics from @/shared/types and update them to import from @/shared/data instead. Include files in campaign-performance (stores, utils, components, charts) and any other features. Build and verify no errors. Ensure all 29 files (9 from data-transfer + 20 from rest of project) now import from @/shared/data.
+
+**What was built:**
+- `app/src/app/stores/portfolioData.store.ts` — updated Campaign, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/stores/campaignPerformance.store.ts` — updated CampaignPerformance, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/utils/campaign-performance-sorting.ts` — updated CampaignPerformance, PortfolioKPIs, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/composables/useRoiChartItems.ts` — updated CampaignPerformance, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/composables/useBudgetShareChartItems.ts` — updated CampaignPerformance imports to @/shared/data
+- `app/src/features/campaign-performance/charts/utils/efficiency-gap.ts` — updated PortfolioKPIs, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/utils/chart-tooltip-formatters.ts` — updated PortfolioKPIs imports to @/shared/data
+- `app/src/features/campaign-performance/charts/PerformanceCharts.vue` — updated CampaignPerformance, PortfolioKPIs, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/RoiVsBudgetScaling.vue` — updated CampaignPerformance imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/RoiVsBudgetScatterChart.vue` — updated CampaignPerformance imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — updated PortfolioKPIs, Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/RevenueVsBudgetBars.vue` — updated Channel imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/RoiBarChart.vue` — updated PortfolioKPIs imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/BudgetShareDonutChart.vue` — updated PortfolioKPIs imports to @/shared/data
+- `app/src/features/campaign-performance/charts/components/ConversionFunnelChart.vue` — updated PortfolioKPIs imports to @/shared/data
+- `app/src/features/campaign-performance/components/CampaignTable.vue` — updated CampaignPerformance imports to @/shared/data
+- `app/src/features/campaign-performance/components/channel-filters/ChannelFilters.vue` — updated Channel imports to @/shared/data
+- `app/src/features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — updated Channel imports to @/shared/data
+- `app/src/features/campaign-performance/components/channel-filters/ChannelFiltersDialog.vue` — updated Channel imports to @/shared/data
+- `app/src/features/campaign-performance/components/kpis/Kpis.vue` — updated PortfolioKPIs imports to @/shared/data
+
+**Key decisions & why:**
+- Batch update all 20 files in one pass — the change is mechanical, safe, and removing the ambiguity across the codebase improves code clarity immediately.
+- Import from source, not re-export — imports from @/shared/data signal that these are foundational entity types consumed by all features; re-export in @/shared/types remains for backward compatibility of external consumers.
+- Verified build passes with 414 modules transformed — zero errors or type issues, confirming all imports resolve correctly and types are properly aligned across the project.
+- Combined with entry #540 (data-transfer feature) — this completes the import alignment across all 29 files in the project that consume foundational data types.
+
+
+## [#542] Standardize Data-Transfer Feature Imports & Document Import Ordering Rules
+**Type:** refactor
+
+**Summary:** Reordered all imports in the data-transfer feature to follow a consistent pattern (Vue → shared → ui → app → features → local), then documented this import ordering convention in CLAUDE.md for future development.
+
+**Brainstorming:** Import ordering was inconsistent across the data-transfer feature: some files imported UI before shared, others mixed feature and shared imports, some had local imports before UI. This inconsistency made the code harder to scan and didn't clearly signal dependency relationships. As the codebase grows (period-comparison, what-if simulator), consistent import organization becomes increasingly important for readability and maintainability. The chosen order—framework → shared infrastructure → ui library → app layer → feature code → local—follows a natural flow from global to local and clarifies the dependency hierarchy. Documenting this rule in CLAUDE.md ensures future developers follow the same convention without having to infer it from code examples.
+
+**Prompt:** Reorder all imports in the data-transfer feature to follow this pattern: 1) Vue/framework imports 2) @/shared/* imports (from specific barrels) 3) @/ui imports (single barrel) 4) @/app imports 5) @/features imports 6) Local ./relative imports. Types follow their values. Check all 25 data-transfer files. Update CLAUDE.md Imports section to document this ordering rule with a code example. Emphasize that @/ui is always the single barrel (not submodules), and @/shared uses specific barrels (not a catch-all). Build and verify.
+
+**What was built:**
+- Reordered imports in 7 data-transfer files to follow the Vue → shared → ui → app → features → local pattern:
+  - `useDownloadTemplate.ts` — moved shared before features
+  - `UploadDataForm.vue` — ui imports already correctly placed
+  - `TransferActions.vue` — ui imports already correctly placed
+  - `ReplaceDataModal.vue` — ui imports already correctly placed
+  - `UploadDataModal.vue` — reorganized to shared first, then ui, then app, then features, then local
+  - `ReviewErrorsComponent.vue` — moved shared before ui, grouped feature types and utilities
+  - `DataErrorsTable.vue` — moved shared first, then ui, then feature types
+  - `ReviewDuplicatedCampaigns.vue` — moved shared before ui
+  - `CampainDuplicationsTable.vue` — reorganized to shared utilities first, then ui, then feature types
+  - `DuplicateSummary.vue` — moved ui before local relative import
+- `CLAUDE.md` — expanded Imports section with: (1) import ordering rule with step-by-step pattern, (2) code example showing correct ordering with types, (3) clarification that @/ui is always a single barrel for app/feature code, (4) clarification that @/shared uses specific barrels (not catch-all), (5) existing rules about UI internals and component naming preserved.
+
+**Key decisions & why:**
+- Vue/framework first — these are the language/runtime foundations.
+- @/shared before @/ui — shared utilities are used by ui and other layers; ui is a consumer of shared, not vice versa.
+- @/ui as single barrel always — ui is a cohesive design system with a public API; importing from submodules signals "I'm inside the design system" which is wrong for app/feature code.
+- @/shared uses specific barrels — @/shared/utils, @/shared/composables, etc. are separate concern domains; specific imports clarify dependencies.
+- @/app before @/features — app layer is the orchestration layer; features consume from it.
+- Local imports last — most specific, most likely to change, grouped at the end.
+- Document the rule proactively — prevents future inconsistency as new features are built; future developers can reference the rule instead of guessing from examples.
+- Build passes with zero errors — all 414 modules transformed successfully, confirming imports resolve correctly with new ordering.

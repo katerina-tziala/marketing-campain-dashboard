@@ -1,5 +1,5 @@
 import { computed, toValue, type MaybeRefOrGetter } from 'vue'
-import type { CampaignPerformance } from '@/shared/types'
+import type { CampaignPerformance } from '@/shared/data'
 import type { BudgetShareDonutItem } from '../types'
 
 export function useCampaignBudgetShareDonutItems(

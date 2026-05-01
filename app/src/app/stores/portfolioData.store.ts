@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Campaign, Channel } from '@/shared/types'
+import type { Campaign, Channel } from '@/shared/data'
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
 import { buildChannelMap } from '@/shared/portfolio-analysis'

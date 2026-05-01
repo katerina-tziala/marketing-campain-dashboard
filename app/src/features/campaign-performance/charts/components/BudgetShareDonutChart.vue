@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PortfolioKPIs } from "@/shared/types";
+import type { PortfolioKPIs } from "@/shared/data";
 import {
   DonutChart,
   type DonutChartData,

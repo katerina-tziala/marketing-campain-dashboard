@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { formatCompactNumber } from "@/shared/utils";
 import { PerformanceIndicator } from "@/features/campaign-performance/ui";
-import type { PortfolioKPIs } from "@/shared/types";
+import type { PortfolioKPIs } from "@/shared/data";
 
 const MIN_WIDTH_BAR = 12;
 

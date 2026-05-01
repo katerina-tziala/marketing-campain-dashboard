@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import type { Campaign } from "@/shared/data";
 import { Modal } from "@/ui";
-import { parseCsv } from "@/features/data-transfer/utils/parse-csv";
-import { getValidationErrorMessage } from "@/features/data-transfer/utils/error-messages";
 import { usePortfolioDataStore } from "@/app/stores";
-import { useDownloadTemplate } from "@/features/data-transfer/composables/useDownloadTemplate";
-import type { Campaign } from "@/shared/types";
 import type {
   CampainDataDuplicateGroup,
   CampainDataRowError,
 } from "@/features/data-transfer/types";
-import UploadDataForm from "./UploadDataForm.vue";
+import { parseCsv } from "@/features/data-transfer/utils/parse-csv";
+import { getValidationErrorMessage } from "@/features/data-transfer/utils/error-messages";
+import { useDownloadTemplate } from "@/features/data-transfer/composables/useDownloadTemplate";
 import { ReviewErrorsComponent } from "@/features/data-transfer/components/data-validation/review-errors";
 import { ReviewDuplicatedCampaigns } from "@/features/data-transfer/components/data-validation/review-duplications";
+import UploadDataForm from "./UploadDataForm.vue";
 
 const portfolioData = usePortfolioDataStore();
 const { downloadTemplate } = useDownloadTemplate();

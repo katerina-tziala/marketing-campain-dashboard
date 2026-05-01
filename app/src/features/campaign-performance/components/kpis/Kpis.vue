@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from "@/shared/types";
+import type { PortfolioKPIs } from "@/shared/data";
 import {
   formatCompactCurrency,
   formatCompactNumber,

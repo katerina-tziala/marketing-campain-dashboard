@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
-import type { Channel } from "@/shared/types";
+import type { Channel } from "@/shared/data";
 import ChannelFilterChips from "./ChannelFilterChips.vue";
 import ChannelFiltersDialog from "./ChannelFiltersDialog.vue";
 

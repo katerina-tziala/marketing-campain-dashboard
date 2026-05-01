@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import type { Campaign } from "@/shared/data";
 import { Button, ModalBody, ModalFooter } from "@/ui";
-import type { Campaign } from "@/shared/types";
 import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
 import { DuplicateSummary } from "@/features/data-transfer/components/data-validation/shared";
 import CampainDuplicationsTable from "./CampainDuplicationsTable.vue";

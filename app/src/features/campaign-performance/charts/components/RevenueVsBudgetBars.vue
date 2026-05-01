@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Channel } from "@/shared/types";
+import type { Channel } from "@/shared/data";
 import {
   GroupedBarChart,
   type BarChartData,

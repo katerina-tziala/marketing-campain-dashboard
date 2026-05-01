@@ -1,4 +1,4 @@
-import type { PortfolioKPIs } from '@/shared/types'
+import type { PortfolioKPIs } from '@/shared/data'
 import { formatCurrency, formatPercentage } from '@/shared/utils'
 import { safeDivide } from '@/shared/utils'
 

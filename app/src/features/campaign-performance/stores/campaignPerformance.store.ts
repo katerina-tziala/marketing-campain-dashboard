@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import type { CampaignPerformance } from '@/shared/types'
-import type { Channel } from '@/shared/types'
+import type { CampaignPerformance } from '@/shared/data'
+import type { Channel } from '@/shared/data'
 import { computePortfolioAnalysis, getPortfolioScope } from '@/shared/portfolio-analysis'
 import { usePortfolioDataStore } from '@/app/stores'
 

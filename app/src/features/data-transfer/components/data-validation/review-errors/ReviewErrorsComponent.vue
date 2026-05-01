@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Campaign } from "@/shared/types";
+import type { Campaign } from "@/shared/data";
+import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
 import type { CampainDataRowError } from "@/features/data-transfer/types";
 import { getRowErrorSummaryWords } from "@/features/data-transfer/utils/error-messages";
 import {
@@ -8,7 +9,6 @@ import {
   DuplicateSummary,
 } from "@/features/data-transfer/components/data-validation/shared";
 import DataErrorsTable from "./DataErrorsTable.vue";
-import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
 
 const props = defineProps<{
   rowErrors: CampainDataRowError[];

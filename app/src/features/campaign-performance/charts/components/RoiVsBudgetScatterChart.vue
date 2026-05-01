@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types";
+import type { CampaignPerformance } from "@/shared/data";
 import {
   BubbleChart,
   createQuadrantBackgroundPlugin,

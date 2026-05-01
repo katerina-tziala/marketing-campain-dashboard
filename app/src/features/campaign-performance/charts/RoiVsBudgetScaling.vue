@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types";
+import type { CampaignPerformance } from "@/shared/data";
 import { formatCurrency, formatPercentage } from "@/shared/utils";
 import { getMedian } from "@/shared/utils";
 import { Card, Notification, MetaRow, MetaItem } from "@/ui";

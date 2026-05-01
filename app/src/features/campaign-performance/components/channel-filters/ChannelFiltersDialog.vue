@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { Channel } from "@/shared/types";
+import type { Channel } from "@/shared/data";
 import { Badge, Button, Dropdown, DropdownPanel, FunnelIcon } from "@/ui";
 import ChannelFilterChips from "./ChannelFilterChips.vue";
 

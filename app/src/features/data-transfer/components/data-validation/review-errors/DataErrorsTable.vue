@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useSort } from "@/shared/composables/useSort";
-import type { CampainDataRowError } from "@/features/data-transfer/types";
-import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
+import { sortByValue } from "@/shared/utils";
 import { Table, TableHeader, Badge } from "@/ui";
 import type { DataTableColumn } from "@/ui";
-import { sortByValue } from "@/shared/utils";
+import type { CampainDataRowError } from "@/features/data-transfer/types";
+import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
 
 const props = defineProps<{
   errors: CampainDataRowError[];

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import type { Campaign } from "@/shared/types";
-import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
+import type { Campaign } from "@/shared/data";
+import { formatCurrency, formatNumber, sortByValue } from "@/shared/utils";
+import { useSort } from "@/shared/composables/useSort";
 import {
   Table,
   TableHeader,
@@ -9,11 +10,9 @@ import {
   TableSelectableRow,
   Badge,
   RadioItem,
+  type DataTableColumn
 } from "@/ui";
-import type { DataTableColumn } from "@/ui";
-import { formatCurrency, formatNumber } from "@/shared/utils";
-import { useSort } from "@/shared/composables/useSort";
-import { sortByValue } from "@/shared/utils";
+import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
 import DuplicationsHeader from "./DuplicationsHeader.vue";
 
 const props = withDefaults(

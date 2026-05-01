@@ -1,5 +1,5 @@
-import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types'
-import type { Channel } from '@/shared/types'
+import type { CampaignPerformance, PortfolioKPIs } from '@/shared/data'
+import type { Channel } from '@/shared/data'
 import {
   computeShareEfficiency,
   rankByBudgetDesc,

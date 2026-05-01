@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { CampaignPerformance, PortfolioKPIs } from "@/shared/types";
-import type { Channel } from "@/shared/types";
+import type { CampaignPerformance, PortfolioKPIs } from "@/shared/data";
+import type { Channel } from "@/shared/data";
 import { Card, CardHeader, RadioToggle, useChartTheme } from "@/ui";
 import {
   BudgetShareDonutChart,

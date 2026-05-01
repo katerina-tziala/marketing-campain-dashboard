@@ -1,5 +1,5 @@
-import type { PortfolioKPIs } from '@/shared/types'
-import type { Channel } from '@/shared/types'
+import type { PortfolioKPIs } from '@/shared/data'
+import type { Channel } from '@/shared/data'
 import { computeShareEfficiency } from '@/shared/portfolio-analysis'
 import { CAMPAIGN_PERFORMANCE_CHART_COLORS } from '../config'
 

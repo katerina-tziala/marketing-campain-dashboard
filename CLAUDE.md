@@ -463,7 +463,20 @@ app/                        # Vue 3 + Vite project
 ### Imports
 - **Always use the `@/` alias** — never use relative `../` paths. `@` maps to `src/`. Same-directory `./foo` imports are the only exception.
 - Example: `import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'` not `'../../stores/campaign.store'`.
-- **UI internals use local paths** — files inside `app/src/ui` must not import through the public `@/ui` barrel; they use local sibling/folder imports. App and feature code always imports from `@/ui`.
+- **Import ordering** — organize imports in this strict order: (1) Vue/framework; (2) `@/shared/*` barrels; (3) `@/ui` (single barrel); (4) `@/app` (if needed); (5) `@/features/*` (same or other features); (6) Local relative imports (./). Types follow their values. Example:
+  ```ts
+  import { ref, computed } from 'vue'
+  import type { Campaign } from '@/shared/data'
+  import { formatCurrency } from '@/shared/utils'
+  import { Button } from '@/ui'
+  import { useToastStore } from '@/app/stores'
+  import type { ValidationError } from '@/features/data-transfer/types'
+  import { validateRow } from '@/features/data-transfer/utils/validate-row-data'
+  import LocalComponent from './LocalComponent.vue'
+  ```
+- **UI always uses the barrel** — app and feature code imports all UI components from `@/ui` (the single public API), never from specific submodules like `@/ui/primitives` or `@/ui/charts`. UI is a cohesive design system.
+- **UI internals use local paths** — files inside `app/src/ui` must not import through the public `@/ui` barrel; they use local sibling/folder imports.
+- **Shared submodules use specific barrels** — import from `@/shared/utils`, `@/shared/composables`, `@/shared/portfolio-analysis`, etc., not from a catch-all `@/shared` barrel. This clarifies which utilities a module depends on.
 - **Vue component naming in templates** — JS/TS (script block) uses camelCase; HTML/template attributes use kebab-case.
   - Props: defined as `myProp` in script, bound as `:my-prop` in template.
   - Events: emitted as `emit('myEvent')` in script, listened to as `@my-event` in template.
