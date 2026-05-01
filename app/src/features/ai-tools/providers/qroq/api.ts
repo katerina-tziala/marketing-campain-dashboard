@@ -1,9 +1,9 @@
- import type { GroqModel, GroqModelsResponse } from './types'
+import type { GroqModel, GroqModelsResponse } from './types'
 import {
   assertChatResponseOk,
   assertResponseOk,
   normalizeConnectionError,
-} from '@/features/ai-tools/providers/utils'
+} from '../utils'
 
 const API_BASE_URL = 'https://api.groq.com/openai/v1'
 

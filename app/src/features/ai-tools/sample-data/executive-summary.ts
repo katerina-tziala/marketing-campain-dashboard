@@ -1,5 +1,6 @@
-import type { AiModel } from '@/features/ai-tools/providers/types'
-import type { ExecutiveSummaryResponse } from '@/features/ai-tools/ai-analysis/types'
+// [DEV ONLY]
+import type { AiModel } from '../providers/types'
+import type { ExecutiveSummaryResponse } from '../ai-analysis/types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',
@@ -301,7 +302,7 @@ const growthPhase: ExecutiveSummaryResponse = {
   ],
 }
 
-export const EXECUTIVE_SUMMARY_MOCKS: ExecutiveSummaryResponse[] = [
+export const EXECUTIVE_SUMMARY_SAMPLES: ExecutiveSummaryResponse[] = [
   strongPortfolio,
   needsAttention,
   excellentPortfolio,

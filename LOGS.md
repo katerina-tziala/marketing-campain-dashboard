@@ -11818,3 +11818,118 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No `* 100` in utility — the utility should return a value in a consistent, meaningful unit; scaling for display belongs in the component formatter, not the computation step.
 - Merge `tone` into `colorClass` — `tone` had no independent consumers; it existed only to feed `colorClass`; one computed is clearer and equally readable.
 - Build passes — zero errors, no regressions.
+
+
+## [#555] Rename colorClass to stateClass in KpiBenchmarkDelta
+**Type:** refactor
+
+**Summary:** Renamed the `colorClass` computed to `stateClass` in `KpiBenchmarkDelta.vue` for more accurate naming — the computed drives the full display state (positive/negative/neutral), not just color.
+
+**Brainstorming:** `colorClass` implied the computed only sets a CSS color, but the value also conveys semantic state (good/bad/neutral) used for both color and icon direction. `stateClass` is more accurate and consistent with how similar computeds are named elsewhere in the codebase.
+
+**Prompt:** In KpiBenchmarkDelta.vue rename `colorClass` to `stateClass` everywhere — in the script block and in all template bindings. Verify build.
+
+**What changed:**
+- [components/kpis/KpiBenchmarkDelta.vue](app/src/features/campaign-performance/components/kpis/KpiBenchmarkDelta.vue) — renamed computed `colorClass` → `stateClass`; updated `:class="colorClass"` binding in template to `:class="stateClass"`
+
+**Key decisions & why:**
+- `stateClass` over `colorClass` — the value encodes semantic display state (positive/negative/neutral), not just a colour token; the name should reflect that.
+- Template binding updated in the same pass — rename without updating the binding would cause a runtime error.
+- Build passes — zero errors, no regressions.
+
+
+## [#556] Merge showArrow + arrowDown into arrowState in KpiBenchmarkDelta
+**Type:** refactor
+
+**Summary:** Replaced two separate boolean computeds (`showArrow`, `arrowDown`) with a single nullable object computed `arrowState` in `KpiBenchmarkDelta.vue`, removing a redundant two-step conditional pattern.
+
+**Brainstorming:** `showArrow` checked whether an arrow should be shown (non-null, non-zero delta), and `arrowDown` determined its direction. Having `v-if="showArrow"` and `:class="{ down: arrowDown }"` as separate bindings forces the template to express one logical decision across two attributes. A single `arrowState` that returns `null` (no arrow) or `{ down: boolean }` (arrow with direction) is cleaner: the template uses `v-if="arrowState"` and `:class="{ down: arrowState.down }"`, making the dependency explicit and eliminating the intermediate boolean.
+
+**Prompt:** In KpiBenchmarkDelta.vue remove `showArrow` and `arrowDown` computeds. Add a single `arrowState` computed that returns `null` when rawDelta is null or zero, otherwise `{ down: rawDelta.value < 0 }`. Update the template to use `v-if="arrowState"` and `:class="{ down: arrowState.down }"`. Verify build.
+
+**What changed:**
+- [components/kpis/KpiBenchmarkDelta.vue](app/src/features/campaign-performance/components/kpis/KpiBenchmarkDelta.vue) — removed `showArrow` and `arrowDown` computeds; added `arrowState` computed returning `null | { down: boolean }`; updated template arrow binding
+
+**Key decisions & why:**
+- Nullable object over two booleans — one computed captures both existence and direction; the template condition is a single truthy check rather than two independent bindings.
+- `{ down: boolean }` shape — mirrors the CSS class name directly; `:class="{ down: arrowState.down }"` reads as intent, not mechanics.
+- Build passes — zero errors, no regressions.
+
+
+## [#557] Fix Within-Feature Absolute Imports in campaign-performance
+**Type:** refactor
+
+**Summary:** Replaced all `@/features/campaign-performance/...` imports inside the `campaign-performance` feature with relative paths, enforcing the within-feature import rule.
+
+**Brainstorming:** The within-feature import rule requires that files inside a feature never import other files in the same feature using the `@/features/feature-name/...` prefix. Three files were violating this rule by importing `@/features/campaign-performance/ui` and `@/features/campaign-performance/stores`. All were replaced with the appropriate relative path.
+
+**Prompt:** Find all `@/features/campaign-performance/` imports inside the campaign-performance feature folder. Replace each with the correct relative path. Verify build.
+
+**What changed:**
+- [CampaignPerformanceView.vue](app/src/features/campaign-performance/CampaignPerformanceView.vue) — `@/features/campaign-performance/stores` → `./stores`
+- [charts/components/ConversionFunnelChart.vue](app/src/features/campaign-performance/charts/components/ConversionFunnelChart.vue) — `@/features/campaign-performance/ui` → `../../ui`
+- [components/CampaignTable.vue](app/src/features/campaign-performance/components/CampaignTable.vue) — `@/features/campaign-performance/ui` → `../ui`
+- [components/kpis/Kpis.vue](app/src/features/campaign-performance/components/kpis/Kpis.vue) — `@/features/campaign-performance/ui` → `../../ui`
+
+**Key decisions & why:**
+- Relative imports inside features — keeps features self-contained and refactor-friendly; renaming the feature folder would not require updating internal import strings.
+- Build passes — zero errors, no regressions.
+
+
+## [#558] Fix Within-Feature Absolute Imports in ai-tools/providers
+**Type:** refactor
+
+**Summary:** Replaced all `@/features/ai-tools/...` imports inside the `ai-tools/providers` subtree with relative paths, enforcing the within-feature import rule.
+
+**Brainstorming:** The providers subtree was using `@/features/ai-tools/types`, `@/features/ai-tools/prompts`, `@/features/ai-tools/providers/types`, and `@/features/ai-tools/providers/utils` as absolute imports. All are within the same feature and must use relative paths per the project rule.
+
+**Prompt:** Find all `@/features/ai-tools/` imports inside ai-tools/providers/ and ai-tools/providers/utils/. Replace each with the correct relative path. Verify build.
+
+**What changed:**
+- [providers/run-provider-prompt.ts](app/src/features/ai-tools/providers/run-provider-prompt.ts) — `@/features/ai-tools/types` → `'../types'`
+- [providers/connect-provider.ts](app/src/features/ai-tools/providers/connect-provider.ts) — `@/features/ai-tools/types` → `'../types'`
+- [providers/gemini/connect.ts](app/src/features/ai-tools/providers/gemini/connect.ts) — four absolute imports replaced with relative equivalents (`../../prompts`, `../types`, `../utils/shared`, `../utils/providers-meta`)
+- [providers/gemini/api.ts](app/src/features/ai-tools/providers/gemini/api.ts) — `@/features/ai-tools/providers/utils` → `'../utils'`
+- [providers/qroq/connect.ts](app/src/features/ai-tools/providers/qroq/connect.ts) — same four fixes as gemini/connect.ts
+- [providers/qroq/api.ts](app/src/features/ai-tools/providers/qroq/api.ts) — `@/features/ai-tools/providers/utils` → `'../utils'`
+- [providers/utils/error-handling.ts](app/src/features/ai-tools/providers/utils/error-handling.ts) — `@/features/ai-tools/types` → `'../../types'`
+- [providers/utils/shared.ts](app/src/features/ai-tools/providers/utils/shared.ts) — `@/features/ai-tools/providers/types` → `'../types'`
+- [providers/utils/models-utils.ts](app/src/features/ai-tools/providers/utils/models-utils.ts) — `@/features/ai-tools/providers/types` → `'../types'`
+- [providers/utils/providers-meta.ts](app/src/features/ai-tools/providers/utils/providers-meta.ts) — `@/features/ai-tools/types` → `'../../types'`
+
+**Key decisions & why:**
+- Systematic scan before editing — grepped for all `@/features/ai-tools/` occurrences inside the providers subtree to ensure complete coverage.
+- Build passes — zero errors, no regressions.
+
+
+## [#559] Restructure Shared Data and AI Tools Sample Data
+**Type:** refactor
+
+**Summary:** Split `shared/data/` into `types/` and `samples/` subfolders, renamed `SAMPLE_CAMPAIGNS` to `CAMPAIGNS_SAMPLE` for domain-first consistency, and moved ai-tools mock files from `mocks/` to `sample-data/` with domain-first naming (`BUDGET_OPTIMIZATION_SAMPLES`, `EXECUTIVE_SUMMARY_SAMPLES`).
+
+**Brainstorming:** Three problems prompted this restructure: (1) `shared/data/` mixed type definitions and sample data in the same flat folder; (2) the `mocks/` folder name implied test doubles rather than dev fixtures; (3) naming was inconsistent — `SAMPLE_CAMPAIGNS` puts the descriptor first, while `BUDGET_OPTIMIZER_MOCKS` and `EXECUTIVE_SUMMARY_MOCKS` use different patterns entirely. The solution organizes by concern: `types/` holds entity type definitions, `samples/` holds sample data arrays. Each subfolder has an `index.ts` barrel so consumers keep a single import path. Files inside the subfolder drop the suffix because the folder already conveys context. The domain-first naming convention (`CAMPAIGNS_SAMPLE`, `BUDGET_OPTIMIZATION_SAMPLES`, `EXECUTIVE_SUMMARY_SAMPLES`) is then applied consistently: domain name first, descriptor after.
+
+**Prompt:** Create `shared/data/types/` (campaign.ts, channel.ts, index.ts) and `shared/data/samples/` (campaigns.ts exporting CAMPAIGNS_SAMPLE, index.ts). Update `shared/data/index.ts` to re-export from both subfolders. Create `ai-tools/sample-data/` (budget-optimization.ts exporting BUDGET_OPTIMIZATION_SAMPLES, executive-summary.ts exporting EXECUTIVE_SUMMARY_SAMPLES, index.ts). Delete the old flat files and the `mocks/` folder. Update all consumers. Verify build.
+
+**What was built:**
+- [shared/data/types/campaign.ts](app/src/shared/data/types/campaign.ts) — moved from `shared/data/campaign.ts`; unchanged
+- [shared/data/types/channel.ts](app/src/shared/data/types/channel.ts) — moved from `shared/data/channel.ts`; unchanged (imports `./campaign`)
+- [shared/data/types/index.ts](app/src/shared/data/types/index.ts) — barrel: `export * from './campaign'; export * from './channel'`
+- [shared/data/samples/campaigns.ts](app/src/shared/data/samples/campaigns.ts) — moved from `SAMPLE_DATA.ts`; export renamed `CAMPAIGNS_SAMPLE`; import updated to `../types`
+- [shared/data/samples/index.ts](app/src/shared/data/samples/index.ts) — barrel: `export { CAMPAIGNS_SAMPLE } from './campaigns'`
+- [shared/data/index.ts](app/src/shared/data/index.ts) — updated to `export * from './types'; export * from './samples'`
+- [ai-tools/sample-data/budget-optimization.ts](app/src/features/ai-tools/sample-data/budget-optimization.ts) — moved from `mocks/budget-optimizer-mocks.ts`; export renamed `BUDGET_OPTIMIZATION_SAMPLES`; `[DEV ONLY]` marker added
+- [ai-tools/sample-data/executive-summary.ts](app/src/features/ai-tools/sample-data/executive-summary.ts) — moved from `mocks/executive-summary-mocks.ts`; export renamed `EXECUTIVE_SUMMARY_SAMPLES`; `[DEV ONLY]` marker added
+- [ai-tools/sample-data/index.ts](app/src/features/ai-tools/sample-data/index.ts) — barrel exporting both sample arrays
+- [app/dev-mode/dev-portfolio-data.ts](app/src/app/dev-mode/dev-portfolio-data.ts) — import and usage updated to `CAMPAIGNS_SAMPLE`
+- [features/data-transfer/composables/useDownloadTemplate.ts](app/src/features/data-transfer/composables/useDownloadTemplate.ts) — import and usage updated to `CAMPAIGNS_SAMPLE`
+- [app/dev-mode/dev-analysis-cycle.ts](app/src/app/dev-mode/dev-analysis-cycle.ts) — import updated to `@/features/ai-tools/sample-data`; usages updated to `BUDGET_OPTIMIZATION_SAMPLES` and `EXECUTIVE_SUMMARY_SAMPLES`
+- **Deleted:** `shared/data/campaign.ts`, `shared/data/channel.ts`, `shared/data/SAMPLE_DATA.ts`, `ai-tools/mocks/budget-optimizer-mocks.ts`, `ai-tools/mocks/executive-summary-mocks.ts`, `ai-tools/mocks/` folder
+
+**Key decisions & why:**
+- `types/` + `samples/` split — separates concerns; type definitions never need to be excluded from production builds, but sample data does; keeping them in separate folders makes the distinction visible.
+- Domain-first naming (`CAMPAIGNS_SAMPLE`, not `SAMPLE_CAMPAIGNS`) — consistent with `BUDGET_OPTIMIZATION_SAMPLES` and `EXECUTIVE_SUMMARY_SAMPLES`; domain comes first, role comes after; easier to group related names when scanning a file.
+- `sample-data/` over `mocks/` — "mock" implies a test double; these are realistic dev fixtures used only in dev mode, not in test suites; `sample-data` is more accurate.
+- Files drop suffix inside their folder — `campaigns.ts` inside `samples/` is self-describing; `budget-optimization.ts` inside `sample-data/` avoids redundancy; the folder provides the context.
+- `[DEV ONLY]` marker on sample-data files — makes it immediately clear to future readers that these files must not be imported from production paths.
+- Build passes — zero errors, no regressions.

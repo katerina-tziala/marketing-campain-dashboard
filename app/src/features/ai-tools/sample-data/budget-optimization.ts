@@ -1,5 +1,6 @@
-import type { AiModel } from '@/features/ai-tools/providers/types'
-import type { BudgetOptimizerResponse } from '@/features/ai-tools/ai-analysis/types'
+// [DEV ONLY]
+import type { AiModel } from '../providers/types'
+import type { BudgetOptimizerResponse } from '../ai-analysis/types'
 
 const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',
@@ -160,7 +161,7 @@ const noStrongOpportunity: BudgetOptimizerResponse = {
   recommendations: [],
 }
 
-export const BUDGET_OPTIMIZER_MOCKS: BudgetOptimizerResponse[] = [
+export const BUDGET_OPTIMIZATION_SAMPLES: BudgetOptimizerResponse[] = [
   aggressiveReallocation,
   conservativeOptimization,
   seasonalPivot,

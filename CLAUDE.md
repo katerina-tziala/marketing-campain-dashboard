@@ -97,10 +97,14 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── useSort.ts          # useSort<T extends string>(defaultKey: T, defaultDir?: SortDir) → { sortKey, sortDir, toggleSort } — generic sort state composable; toggleSort flips dir on same key, resets to defaultDir on new key; used by CampainDuplicationsTable, CampaignTable, DataErrorsTable
 │   │   │   └── index.ts            # Barrel — exports useSort
 │   │   └── data/
-│   │       ├── campaign.ts         # CampaignMetrics, Campaign, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency — foundational entity types consumed by all analytical domains
-│   │       ├── channel.ts          # Channel extends CampaignMetrics + PerformanceMetrics — id (lowercase-trimmed-hyphenated), name, campaigns array
-│   │       ├── SAMPLE_DATA.ts      # 21 sample campaigns across 13 real-world channels; exported as SAMPLE_CAMPAIGNS; used for template download and dev mode seeding
-│   │       └── index.ts            # Barrel — exports campaign, channel, SAMPLE_DATA; imported by shared/types for public re-export via @/shared/types
+│   │       ├── types/
+│   │       │   ├── campaign.ts     # CampaignMetrics, Campaign, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency — foundational entity types consumed by all analytical domains
+│   │       │   ├── channel.ts      # Channel extends CampaignMetrics + PerformanceMetrics — id (lowercase-trimmed-hyphenated), name, campaigns array
+│   │       │   └── index.ts        # Barrel — exports campaign + channel types
+│   │       ├── samples/
+│   │       │   ├── campaigns.ts    # [DEV ONLY] 21 sample campaigns across 13 real-world channels; exported as CAMPAIGNS_SAMPLE; used for template download and dev mode seeding
+│   │       │   └── index.ts        # Barrel — exports CAMPAIGNS_SAMPLE
+│   │       └── index.ts            # Barrel — export * from './types'; export * from './samples'; imported by shared/types for public re-export via @/shared/types
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
 │   │   ├── primitives/         # Generic building blocks — atomic UI components
 │   │   │   ├── Button.vue      # Generic button wrapper — props: disabled?, type? (button/submit/reset); exposes getRootEl() → HTMLButtonElement for dropdown anchoring; class pass-through for scoped modifier classes: .btn.primary, .btn.outline, .btn.text-only, .btn.ghost (neutral text-typography-soft base, hover bg-typography/10 text-typography, focus ring-typography-soft; for close/dismiss chrome buttons), .btn.info-text-only (lightweight inline info actions), .btn.destructive, .btn.info-outline (chip-aligned filter trigger style), .btn.icon-only (8×8 square, p-0), .btn.small (xs text, tight padding), .btn.paddingless (p-0); focus-visible ring on all variants; disabled: cursor-not-allowed opacity-50
@@ -270,9 +274,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── budget-optimization-prompt.ts  # Legacy — kept compilable
 │   │   │   │   ├── model-evaluation-prompt.ts
 │   │   │   │   └── index.ts
-│   │   │   └── mocks/
-│   │   │       ├── budget-optimizer-mocks.ts
-│   │   │       └── executive-summary-mocks.ts
+│   │   │   └── sample-data/            # [DEV ONLY] Dev fixtures for AI analysis cycles
+│   │   │       ├── budget-optimization.ts  # BUDGET_OPTIMIZATION_SAMPLES — 5 BudgetOptimizerResponse fixtures
+│   │   │       ├── executive-summary.ts    # EXECUTIVE_SUMMARY_SAMPLES — 5 ExecutiveSummaryResponse fixtures
+│   │   │       └── index.ts            # Barrel — exports BUDGET_OPTIMIZATION_SAMPLES, EXECUTIVE_SUMMARY_SAMPLES
 │   │   ├── campaign-performance/       # Campaign performance feature — filters, KPIs, charts, table
 │   │   │   ├── index.ts                # Barrel — exports CampaignPerformanceView
 │   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; receives showAiButton/showConnectedDot/aiClick from DashboardPage; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)

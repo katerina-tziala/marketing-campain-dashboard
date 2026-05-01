@@ -1,4 +1,4 @@
-import type { AiProviderType } from '@/features/ai-tools/types'
+import type { AiProviderType } from '../../types'
 
 export const PROVIDER_LABELS: Record<AiProviderType, string> = {
   gemini: 'Google Gemini',

@@ -3,8 +3,7 @@ import type { AiModel } from '@/features/ai-tools/providers/types'
 import type { AnalysisResponse } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useAiAnalysisStore } from '@/features/ai-tools/ai-analysis/stores'
-import { BUDGET_OPTIMIZER_MOCKS } from '@/features/ai-tools/mocks/budget-optimizer-mocks'
-import { EXECUTIVE_SUMMARY_MOCKS } from '@/features/ai-tools/mocks/executive-summary-mocks'
+import { BUDGET_OPTIMIZATION_SAMPLES, EXECUTIVE_SUMMARY_SAMPLES } from '@/features/ai-tools/sample-data'
 import { setAnalysisPromptRunnerOverride } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 
 // ── Fake model ────────────────────────────────────────────────────────────────
@@ -35,15 +34,15 @@ type DevEntry = MockEntry | ErrorEntry
 // can continue without a manual disconnect/reconnect.
 
 const BUDGET_SEQUENCE: DevEntry[] = [
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[0] },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[1] },
+  { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[0] },
+  { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[1] },
   { kind: 'error', code: 'min-campaigns' },
   { kind: 'error', code: 'network' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[2] },
+  { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[2] },
   { kind: 'error', code: 'rate-limit' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[3] },
+  { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[3] },
   { kind: 'error', code: 'server-error' },
-  { kind: 'mock',  response: BUDGET_OPTIMIZER_MOCKS[4] },
+  { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[4] },
   { kind: 'error', code: 'timeout' },
   { kind: 'error', code: 'parse-error' },
   { kind: 'error', code: 'invalid-response' },
@@ -54,14 +53,14 @@ const BUDGET_SEQUENCE: DevEntry[] = [
 ]
 
 const SUMMARY_SEQUENCE: DevEntry[] = [
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[0] },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[1] },
+  { kind: 'mock',  response: EXECUTIVE_SUMMARY_SAMPLES[0] },
+  { kind: 'mock',  response: EXECUTIVE_SUMMARY_SAMPLES[1] },
   { kind: 'error', code: 'network' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[2] },
+  { kind: 'mock',  response: EXECUTIVE_SUMMARY_SAMPLES[2] },
   { kind: 'error', code: 'rate-limit' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[3] },
+  { kind: 'mock',  response: EXECUTIVE_SUMMARY_SAMPLES[3] },
   { kind: 'error', code: 'server-error' },
-  { kind: 'mock',  response: EXECUTIVE_SUMMARY_MOCKS[4] },
+  { kind: 'mock',  response: EXECUTIVE_SUMMARY_SAMPLES[4] },
   { kind: 'error', code: 'timeout' },
   { kind: 'error', code: 'parse-error' },
   { kind: 'error', code: 'invalid-response' },

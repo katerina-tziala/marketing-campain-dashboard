@@ -1,9 +1,9 @@
-import { generateModelEvaluationPrompt } from '@/features/ai-tools/prompts'
-import type { AiModel, AiModelCandidate, ModelsResponse } from '@/features/ai-tools/providers/types'
-import { parseJsonResponse, toValidModels } from '@/features/ai-tools/providers/utils/shared'
+import { generateModelEvaluationPrompt } from '../../prompts'
+import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
+import { parseJsonResponse, toValidModels } from '../utils/shared'
 import { fetchGroqModels, requestGroqChatCompletion } from './api'
 import type { GroqModel } from './types'
-import { GROQ_PROVIDER_RULES } from '@/features/ai-tools/providers/utils/providers-meta'
+import { GROQ_PROVIDER_RULES } from '../utils/providers-meta'
 
 const BANNED = ['whisper', 'audio', 'guard', 'safeguard', 'moderation', 'orpheus']
 

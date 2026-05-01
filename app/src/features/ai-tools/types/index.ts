@@ -1,5 +1,3 @@
-// ── AI Provider & Connection ──────────────────────────────────────────────────
-
 export type AiProviderType = 'gemini' | 'groq';
 
 export type AiErrorCode =
@@ -21,8 +19,6 @@ export type AiConnectionError = {
   code: AiConnectionErrorCode;
   provider: AiProviderType;
 };
-
-// ── AI Analysis meta-types ────────────────────────────────────────────────────
 
 export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';
 
