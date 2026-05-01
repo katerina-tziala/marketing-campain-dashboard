@@ -1,25 +1,10 @@
-import { toFinite } from '../../utils'
-
-interface RoiComparable {
-  roi: number | null
-}
-
-interface ShareComparable {
-  budgetShare: number
-  revenueShare: number
-  allocationGap: number
-  efficiencyGap: number
-}
-
-interface OverfundedUnderperformerThresholds {
-  gapThreshold: number
-  minBudgetShareSignal: number
-}
-
-interface UnderfundedOutperformerThresholds {
-  scalingGapThreshold: number
-  minRevenueShareSignal: number
-}
+import type {
+  OverfundedUnderperformerThresholds,
+  RoiComparable,
+  ShareComparable,
+  UnderfundedOutperformerThresholds,
+} from './types'
+import { toFinite } from '../utils'
 
 export function hasRoiAbovePortfolio(
   item: RoiComparable,

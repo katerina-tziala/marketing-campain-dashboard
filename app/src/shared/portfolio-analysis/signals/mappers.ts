@@ -1,5 +1,5 @@
 import type { CampaignPerformance, Channel } from '../../types'
-import { computeShareEfficiency } from '../../utils'
+import { computeShareEfficiency } from '../metrics'
 import type {
   CampaignSummary,
   ChannelStatusThresholds,

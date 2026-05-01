@@ -11238,3 +11238,96 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Put axis bounds in the reusable chart component — feature charts can handle edge cases without duplicating Chart.js scale wiring.
 - Keep ROI-specific scale logic in `RoiBarChart` — the reusable `BarChart` exposes the capability, while feature charts decide when the bounds make sense.
 - Round axis bounds up to clean integers — integer percentage bounds are easier to scan than fractional extremes when reading performance charts.
+
+## [#532] Modularize Portfolio Classification Thresholds
+**Type:** refactor
+
+**Summary:** Split portfolio classification into its own folder, added configurable classification thresholds, centralized shared predicate types and checkers, and threaded user-overridable threshold objects through scaling-opportunity analysis.
+
+**Brainstorming:** After the signal split, classification was still sitting at the root of `portfolio-analysis` as `classify-*` files with hardcoded thresholds and a few direct dependencies on signal internals. That made the module harder to scan and would make future user-provided thresholds awkward. The desired direction is the same pattern as signals: a dedicated folder, constants that explain default thresholds, interfaces in the shared portfolio-analysis type file, and functions that accept threshold objects while preserving defaults. At the same time, some logic was genuinely shared between signals and classification, but it should not force classification to import from `signals`. The cleaner dependency shape is a neutral `checkers.ts` at the portfolio-analysis root, classification-only checkers inside `classification`, and shared types in `types.ts`.
+
+**Prompt:** Create a `classification` folder, move all related classification files there, reuse signal functions and interfaces where the semantics match, introduce classification threshold objects and defaults, extract identical reusable logic from signals/classification, centralize all local types in `types.ts`, add aggregation helpers for dynamic thresholds, and make threshold overrides flow through scaling opportunities.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/classification/campaign-classification.ts` — moved campaign classification out of the root `classify-campaigns.ts`; updated imports to use the new folder structure; accepts `CampaignClassificationThresholds` with defaults; uses dynamic threshold objects for top-campaign revenue/conversion gates; reuses neutral share/ROI checkers for bottom classification.
+- `app/src/shared/portfolio-analysis/classification/channel-classification.ts` — moved channel classification out of the root `classify-channels.ts`; accepts `ChannelClassificationThresholds` with defaults; renamed short variables like `ch` to `channel`; moved predicate comments into doc blocks; uses `efficiencyGap >= 0` through a local helper instead of recalculating `revenueShare >= budgetShare`.
+- `app/src/shared/portfolio-analysis/classification/classification-utils.ts` — moved classification utility logic out of the root `classify-utils.ts`; removed hardcoded dynamic threshold values; now reads revenue/conversion threshold settings from `CampaignClassificationThresholds`; uses meaningful callback variable names.
+- `app/src/shared/portfolio-analysis/classification/classification-checkers.ts` — added classification-only shared predicates for funnel-leak detection, positive-underperforming ROI, and ROI-above-portfolio-factor checks.
+- `app/src/shared/portfolio-analysis/classification/constants.ts` — added `DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS`, `DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS`, and `DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS` with explanatory comments.
+- `app/src/shared/portfolio-analysis/classification/index.ts` — added a classification barrel exporting campaign classification, channel classification, constants, classification checkers, and classification utilities.
+- `app/src/shared/portfolio-analysis/checkers.ts` — moved neutral ROI/share checker functions out of `signals/checkers.ts` so both `signals` and `classification` can depend on the portfolio-analysis root instead of classification importing from the signals folder.
+- `app/src/shared/portfolio-analysis/signals/checkers.ts` — removed after moving neutral predicates to the root `checkers.ts`.
+- `app/src/shared/portfolio-analysis/signals/index.ts` — removed the checker export from the signals barrel so checkers are no longer presented as signal-only helpers.
+- `app/src/shared/portfolio-analysis/types.ts` — added classification threshold interfaces, shared predicate input interfaces, dynamic classification threshold interfaces, and classification checker threshold interfaces; removed the need for local type/interface declarations inside signals, classification, and root checker behavior files.
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — added `classificationThresholds` as an optional fourth argument to `computePortfolioAnalysis`; threads campaign and channel classification thresholds into classifiers; forwards campaign classification thresholds and channel signal thresholds into scaling-opportunity generation.
+- `app/src/shared/portfolio-analysis/signals/portfolio-signals.ts` — updated `getScalingOpportunities` to accept campaign classification thresholds and channel signal thresholds instead of allowing nested campaign/channel scaling helpers to silently use their own defaults.
+- `app/src/shared/portfolio-analysis/signals/campaign-signals.ts` — updated `toCampaignScalingSignals` to accept campaign classification thresholds for dynamic revenue/conversion gates; uses `DynamicClassificationThresholds` from shared portfolio-analysis types.
+- `app/src/shared/portfolio-analysis/signals/channel-signals.ts` — updated imports to use the neutral root `checkers.ts`.
+- `app/src/shared/portfolio-analysis/ranking.ts` — reused central `RoiComparable` and `ShareComparable` types for ROI, allocation-gap, and budget-share rankings while keeping ranking-specific revenue and max-shift shapes local.
+- `app/src/shared/portfolio-analysis/index.ts` — exported root `checkers` and the new `classification` barrel; exported classification threshold types from the portfolio-analysis type barrel.
+- `app/src/shared/utils/campaign-performance.ts` — added `aggregateCampaignOutcomes` for shared revenue/conversion aggregation used by dynamic classification thresholds.
+- `app/src/shared/utils/index.ts` — exported `aggregateCampaignOutcomes` and `computedMedianOrNull` from the shared utils barrel.
+- `app/src/shared/utils/math.ts` — provides `computedMedianOrNull`, now consumed through the shared utils barrel by classification utilities.
+- `app/src/shared/portfolio-analysis/classify-campaigns.ts` — removed after moving campaign classification to `classification/campaign-classification.ts`.
+- `app/src/shared/portfolio-analysis/classify-channels.ts` — removed after moving channel classification to `classification/channel-classification.ts`.
+- `app/src/shared/portfolio-analysis/classify-utils.ts` — removed after moving classification utilities to `classification/classification-utils.ts`.
+- `npm run build` — completed successfully after the classification split, type centralization, threshold threading, and utility updates.
+
+**Key decisions & why:**
+- Give classification its own folder — classification is now a clear peer of `signals`, making the shared portfolio-analysis domain easier to navigate.
+- Keep classification thresholds separate from signal thresholds — descriptive UI buckets and actionable recommendations may share values today, but they should be tunable independently.
+- Add aggregate classification defaults — `DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS` mirrors the signal default pattern and gives future user settings a single override shape.
+- Thread classification thresholds through `computePortfolioAnalysis` — future UI-provided threshold settings can flow into analysis without changing classifier internals.
+- Remove hidden defaults from scaling opportunities — campaign and channel scaling candidates now receive the relevant threshold objects from the top-level analysis call.
+- Move neutral checkers out of `signals` — ROI/share predicates are not signal-specific anymore, so placing them at the portfolio-analysis root avoids an awkward dependency direction.
+- Keep classification-only checkers in `classification` — funnel leak and positive-underperforming ROI are descriptive classification rules, not generic signal primitives.
+- Centralize predicate and threshold types in `types.ts` — behavior files now contain behavior, while shared shapes live in one analysis type home.
+- Reuse precomputed `efficiencyGap` for inclusive revenue-share checks — classification no longer repeats `revenueShare >= budgetShare` math where the semantic field already exists.
+- Keep local ranking-only shapes local — revenue and max-shift ranking constraints are implementation details, while ROI/share constraints reuse shared analysis types.
+- Add `aggregateCampaignOutcomes` to shared campaign utilities — dynamic classification thresholds need revenue/conversion totals, and that aggregation belongs with campaign metric utilities rather than inside classification.
+- Preserve current behavior through defaults — all new threshold inputs are optional, so existing analysis consumers continue to work without passing custom settings.
+
+## [#533] Move Portfolio Metrics Into Analysis Domain
+**Type:** refactor
+
+**Summary:** Moved campaign portfolio metric helpers and channel mapping out of generic shared utilities, split portfolio-analysis types into grouped files, and normalized shared-internal imports to use relative paths instead of `@/shared` aliases.
+
+**Brainstorming:** The generic `shared/utils` folder had started to carry portfolio-domain concepts such as campaign metric aggregation, portfolio KPI computation, share-efficiency calculation, and channel-map construction. Those helpers are not generic utilities like math, formatting, or sorting; they are part of the portfolio-analysis domain. Keeping them in generic utilities made boundaries blurry and encouraged imports like `@/shared/utils` for business logic. At the same time, the single `portfolio-analysis/types.ts` file had become a mixed bag of summaries, signals, thresholds, predicate inputs, groups, and final analysis shape. Splitting it into a `types/` folder makes each type group easier to find while preserving the `./types` import path through a barrel.
+
+**Prompt:** Move campaign performance and campaign-channel helpers into portfolio analysis, create a `types` folder with meaningful grouped type files, and update all imports inside the shared folder so they do not use `@/shared/...` aliases internally.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/metrics.ts` — moved portfolio-domain metric helpers from `shared/utils/campaign-performance.ts`; now owns `computePerformanceMetrics`, `computeShareEfficiency`, `toCampaignPerformance`, `aggregateCampaignMetrics`, `aggregateCampaignOutcomes`, and `computePortfolioKPIs`.
+- `app/src/shared/portfolio-analysis/channel-map.ts` — moved channel grouping/map construction from `shared/utils/campaign-channel.ts`; now owns `buildChannelMap` and its channel accumulator helpers.
+- `app/src/shared/utils/campaign-performance.ts` — removed after moving portfolio-domain metric helpers into `portfolio-analysis/metrics.ts`.
+- `app/src/shared/utils/campaign-channel.ts` — removed after moving channel map construction into `portfolio-analysis/channel-map.ts`.
+- `app/src/shared/utils/index.ts` — removed campaign/portfolio-domain exports so the generic utils barrel now focuses on formatting, math, and sorting.
+- `app/src/shared/portfolio-analysis/index.ts` — exports `channel-map`, `metrics`, root `checkers`, `classification`, `computePortfolioAnalysis`, and the grouped portfolio-analysis type barrel.
+- `app/src/shared/portfolio-analysis/types/summary.ts` — added portfolio, campaign, and channel summary types.
+- `app/src/shared/portfolio-analysis/types/signals.ts` — added portfolio-analysis signal output types including scaling, inefficient, transfer, concentration, and correlation shapes.
+- `app/src/shared/portfolio-analysis/types/thresholds.ts` — added signal and classification threshold interfaces.
+- `app/src/shared/portfolio-analysis/types/predicates.ts` — added reusable predicate input and checker threshold shapes.
+- `app/src/shared/portfolio-analysis/types/groups.ts` — added campaign and channel classification group types.
+- `app/src/shared/portfolio-analysis/types/analysis.ts` — added the final `PortfolioAnalysis` shape.
+- `app/src/shared/portfolio-analysis/types/index.ts` — added the grouped type barrel so existing imports like `from './types'` and `from '../types'` keep working.
+- `app/src/shared/portfolio-analysis/types.ts` — removed after splitting the flat file into the grouped `types/` folder.
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — imports `computePortfolioKPIs` from local `metrics.ts`; uses relative shared type imports instead of `@/shared/types`.
+- `app/src/shared/portfolio-analysis/signals/mappers.ts` — imports `computeShareEfficiency` from local `metrics.ts`.
+- `app/src/shared/portfolio-analysis/classification/classification-utils.ts` — imports `aggregateCampaignOutcomes` from local `metrics.ts` and keeps generic median math from shared utils.
+- `app/src/shared/portfolio-analysis/ranking.ts` — imports generic sorting through a shared-internal relative path and reuses central comparable/share types.
+- `app/src/app/stores/portfolioData.store.ts` — imports `buildChannelMap` from `@/shared/portfolio-analysis` instead of generic shared utils.
+- `app/src/features/campaign-performance/charts/utils/efficiency-gap.ts` — imports `computeShareEfficiency` from `@/shared/portfolio-analysis`.
+- `app/src/features/campaign-performance/utils/campaign-performance-sorting.ts` — imports `computeShareEfficiency` from `@/shared/portfolio-analysis` and keeps generic sorting from `@/shared/utils`.
+- `app/src/shared/data/SAMPLE_DATA.ts` — changed its campaign type import to a relative shared-internal import.
+- `app/src/shared/portfolio-analysis/metrics.ts`, `channel-map.ts`, `ranking.ts`, `portfolio-analysis.ts`, and `types/*` — changed shared-internal `@/shared/...` imports to relative paths.
+- `npm run build` — completed successfully after moving domain helpers, splitting types, and normalizing shared-internal imports.
+
+**Key decisions & why:**
+- Treat portfolio metric helpers as domain logic — computing ROI, share efficiency, portfolio KPIs, and channel maps belongs to `portfolio-analysis`, not generic utilities.
+- Keep `shared/utils` generic — math, formatting, and sorting remain reusable primitives without campaign/portfolio business meaning.
+- Keep app/feature imports alias-based — consumers outside `shared` should continue to import via stable public barrels like `@/shared/portfolio-analysis` and `@/shared/utils`.
+- Use relative imports inside `shared` — the explicit rule is: files inside `app/src/shared` should import sibling shared modules with relative paths; `@/shared/...` aliases are reserved for app, feature, and UI code crossing into shared.
+- Preserve public portfolio-analysis imports — the new `types/index.ts`, `metrics.ts`, and `channel-map.ts` are exported from the portfolio-analysis barrel so app and feature code can depend on the domain entry point.
+- Split types by meaning — summary, signal, threshold, predicate, group, and final analysis types are easier to scan than one large mixed file.
+- Keep existing `./types` import paths working — moving from a flat `types.ts` file to a `types/` folder barrel avoids broad churn in internal portfolio-analysis files.
+- Move only domain helpers, not generic primitives — `safeDivide`, `computeRoundedRatioOrNull`, `computedMedianOrNull`, and sorting helpers stay in generic utils because they are reusable beyond portfolio analysis.

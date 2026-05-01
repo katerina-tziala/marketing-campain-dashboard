@@ -1,16 +1,5 @@
-import { sortByValueDesc } from '@/shared/utils'
-
-type RoiRanked = {
-  roi: number | null
-}
-
-type AllocationGapRanked = {
-  allocationGap: number
-}
-
-type BudgetShareRanked = {
-  budgetShare: number
-}
+import { sortByValueDesc } from '../utils'
+import type { RoiComparable, ShareComparable } from './types'
 
 type RevenueRanked = {
   revenue: number
@@ -22,17 +11,17 @@ type MaxShiftRanked = {
 
 // Analysis outputs are ranked before returning so downstream UI can safely cap
 // highlighted items without inventing its own priority order.
-export function rankByRoiDesc<T extends RoiRanked>(items: readonly T[]): T[] {
+export function rankByRoiDesc<T extends RoiComparable>(items: readonly T[]): T[] {
   return sortByValueDesc(items, (item) => item.roi)
 }
 
-export function rankByAllocationGapDesc<T extends AllocationGapRanked>(
+export function rankByAllocationGapDesc<T extends Pick<ShareComparable, 'allocationGap'>>(
   items: readonly T[],
 ): T[] {
   return sortByValueDesc(items, (item) => item.allocationGap)
 }
 
-export function rankByBudgetShareDesc<T extends BudgetShareRanked>(
+export function rankByBudgetShareDesc<T extends Pick<ShareComparable, 'budgetShare'>>(
   items: readonly T[],
 ): T[] {
   return sortByValueDesc(items, (item) => item.budgetShare)

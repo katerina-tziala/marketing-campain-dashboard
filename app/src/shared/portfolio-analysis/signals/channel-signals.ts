@@ -13,7 +13,7 @@ import {
 import {
   isOverfundedUnderperformer,
   isUnderfundedOutperformer,
-} from './checkers'
+} from '../checkers'
 
 function isInefficientChannel(
   channel: ChannelSummary,

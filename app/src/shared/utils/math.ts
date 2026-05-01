@@ -33,6 +33,10 @@ export function getMedian(values: number[]): number {
     : sorted[mid]
 }
 
+export function computedMedianOrNull(values: number[]): number | null {
+  return values.length > 0 ? getMedian(values) : null;
+}
+
 /**
  * Round a number to the requested number of decimal places.
  */

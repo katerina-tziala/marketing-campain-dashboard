@@ -1,4 +1,4 @@
-import type { Campaign } from '@/shared/types'
+import type { Campaign } from '../types'
 
 export const SAMPLE_CAMPAIGNS: Campaign[] = [
   // Paid Search

@@ -1,9 +1,12 @@
-import { getDynamicThresholds, type DynamicThresholds } from '../classify-utils'
+import { getDynamicThresholds } from '../classification/classification-utils'
+import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from '../classification/constants'
 import { rankByAllocationGapDesc, rankByRoiDesc } from '../ranking'
 import type {
   BudgetScalingCandidate,
+  CampaignClassificationThresholds,
   CampaignSummary,
   CampaignSignalThresholds,
+  DynamicClassificationThresholds,
   InefficientCampaignSignal,
   ScalingCandidateSignal,
 } from '../types'
@@ -15,7 +18,7 @@ import {
   hasRevenueShareLead,
   hasRoiAbovePortfolio,
   isOverfundedUnderperformer,
-} from './checkers'
+} from '../checkers'
 
 function hasCampaignScalingEfficiency(
   campaign: CampaignSummary,
@@ -30,7 +33,7 @@ function hasCampaignScalingEfficiency(
 function isCampaignScalingOpportunity(
   campaign: CampaignSummary,
   portfolioRoi: number | null,
-  thresholds: DynamicThresholds,
+  thresholds: DynamicClassificationThresholds,
 ): boolean {
   return (
     campaign.roi !== null &&
@@ -60,10 +63,11 @@ function isInefficientCampaign(
 export function toCampaignScalingSignals(
   campaigns: CampaignSummary[],
   portfolioRoi: number | null,
+  classificationThresholds: CampaignClassificationThresholds = DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS,
 ): ScalingCandidateSignal[] {
-  const thresholds = getDynamicThresholds(campaigns)
+  const dynamicThresholds = getDynamicThresholds(campaigns, classificationThresholds)
   return campaigns
-    .filter(campaign => isCampaignScalingOpportunity(campaign, portfolioRoi, thresholds))
+    .filter(campaign => isCampaignScalingOpportunity(campaign, portfolioRoi, dynamicThresholds))
     .map(({
       campaign,
       channel,

@@ -1,7 +1,10 @@
-import type { CampaignPerformance, PortfolioScope } from '@/shared/types'
+import type { CampaignPerformance, Channel, PortfolioScope } from '../types'
 import type { PortfolioSummary } from './types'
-import type { Channel } from '@/shared/types'
-import type { AnalysisSignalThresholds, PortfolioAnalysis } from './types'
+import type {
+  AnalysisClassificationThresholds,
+  AnalysisSignalThresholds,
+  PortfolioAnalysis,
+} from './types'
 import {
   toCampaignSummary,
   toChannelSummary,
@@ -14,14 +17,18 @@ import {
   getCorrelations,
   DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
 } from './signals'
-import { classifyCampaigns } from './classify-campaigns'
-import { classifyChannels } from './classify-channels'
-import { computePortfolioKPIs } from '@/shared/utils'
+import {
+  classifyCampaigns,
+  classifyChannels,
+  DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS,
+} from './classification'
+import { computePortfolioKPIs } from './metrics'
 
 export function computePortfolioAnalysis(
   selectedChannels: Channel[],
   selectedChannelsIds: string[],
   thresholds: AnalysisSignalThresholds = DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
+  classificationThresholds: AnalysisClassificationThresholds = DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS,
 ): PortfolioAnalysis {
   const filteredCampaigns: CampaignPerformance[] = selectedChannels.flatMap(
     (channel) => channel.campaigns,
@@ -90,8 +97,16 @@ export function computePortfolioAnalysis(
     ),
   )
 
-  const campaignGroups = classifyCampaigns(campaignSummaries, aggregatedRoi)
-  const channelGroups = classifyChannels(channelSummaries, aggregatedRoi)
+  const campaignGroups = classifyCampaigns(
+    campaignSummaries,
+    aggregatedRoi,
+    classificationThresholds.campaigns,
+  )
+  const channelGroups = classifyChannels(
+    channelSummaries,
+    aggregatedRoi,
+    classificationThresholds.channels,
+  )
 
   const inefficientCampaigns = getInefficientCampaigns(
     campaignSummaries,
@@ -123,6 +138,8 @@ export function computePortfolioAnalysis(
         channelSummaries,
         aggregatedRoi,
         thresholds.portfolioSignals,
+        classificationThresholds.campaigns,
+        thresholds.channelSignals,
       ),
       budgetScalingCandidates,
       transferCandidates: getTransferCandidates(

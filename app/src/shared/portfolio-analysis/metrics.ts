@@ -1,6 +1,13 @@
-import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '@/shared/types'
-import type { Channel } from '@/shared/types'
-import { computeRoundedRatioOrNull, safeDivide } from './math'
+import type {
+  Campaign,
+  CampaignMetrics,
+  CampaignPerformance,
+  Channel,
+  PerformanceMetrics,
+  PortfolioKPIs,
+  ShareEfficiency,
+} from '../types'
+import { computeRoundedRatioOrNull, safeDivide } from '../utils'
 
 export function computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics {
   const { budget, revenue, impressions, clicks, conversions } = campain;
@@ -45,6 +52,18 @@ export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): Cam
       conversions: acc.conversions + campaign.conversions,
     }),
     { budget: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0 },
+  )
+}
+
+export function aggregateCampaignOutcomes(
+  campaigns: Array<Pick<CampaignMetrics, 'revenue' | 'conversions'>>,
+): Pick<CampaignMetrics, 'revenue' | 'conversions'> {
+  return campaigns.reduce(
+    (totals, campaign) => ({
+      revenue: totals.revenue + campaign.revenue,
+      conversions: totals.conversions + campaign.conversions,
+    }),
+    { revenue: 0, conversions: 0 },
   )
 }
 

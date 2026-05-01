@@ -1,6 +1,7 @@
 import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types'
 import type { Channel } from '@/shared/types'
-import { computeShareEfficiency, sortByValueDesc } from '@/shared/utils'
+import { computeShareEfficiency } from '@/shared/portfolio-analysis'
+import { sortByValueDesc } from '@/shared/utils'
 
 // ROI ranking charts should put the strongest performers first; unavailable ROI stays last.
 export function sortCampaignsByRoiDesc(
