@@ -11110,3 +11110,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Guard against conflicting AI dev cycles — analysis cycle auto-connects while connection cycle tests failed connections, so enabling both at once would create confusing behavior.
 - Leave `useDownloadTemplate` sample data untouched — downloading a sample CSV is product/sample behavior, not automatic dev-mode activation.
 - Use a normal Card selector — `Card.vue` styles are not scoped, so `:deep()` was unnecessary and caused the compiled CSS warning.
+
+## [#529] Add Route-Based Page Metadata
+**Type:** update
+
+**Summary:** Added route-driven page title and description handling while keeping app-level metadata in `index.html`.
+
+**Brainstorming:** The app needs metadata that can change per page as the architecture grows beyond the current dashboard route. At the same time, not every HTML metadata tag belongs in route state. App-level values such as `lang`, `application-name`, and `theme-color` are stable for the whole application and should stay in `index.html`. Page-level values such as title and description belong to the route, because future pages like auth screens, campaign performance, or period comparison may need their own document title and search/social description. This keeps the route metadata focused and avoids mixing rendering/layout concerns into the metadata model.
+
+**Prompt:** Configure app title and description metadata based on routes; keep only page title and description in page metadata; keep `lang`, `application-name`, and `theme-color` as app-level HTML metadata; format page titles as `Application Name | Page Title`; enrich the campaign performance description to mention AI integration.
+
+**What was built:**
+- `app/src/app/router/page-meta.ts` — added `applyPageMeta(route)` for runtime document metadata updates; defines default page title and description; reads `route.meta.page.title` and `route.meta.page.description`; updates `document.title`; creates or updates `<meta name="description">` at runtime.
+- `app/src/app/router/index.ts` — imported `applyPageMeta`; added `meta.page` to the dashboard route; set the route title to `Marketing Campaign Dashboard | Campaign Performance`; set the route description to `Analyze campaign performance with AI-driven budget recommendations and executive summaries for faster, data-driven decisions.`; added a `router.afterEach()` hook so metadata updates after navigation.
+- `app/index.html` — kept the app-level `<html lang="en">`; added static `<meta name="application-name" content="Marketing Campaign Dashboard">`; added static `<meta name="theme-color" content="#0e1022">`; kept the base `<title>` fallback; intentionally did not include a static description because page descriptions are now route-owned and applied dynamically.
+- `npm run build` — completed successfully after wiring the route metadata helper.
+
+**Key decisions & why:**
+- Keep route metadata limited to page title and description — those are page-specific document concerns and should change with navigation.
+- Keep `lang` in `index.html` — language is currently app-wide, not route-specific.
+- Keep `application-name` in `index.html` — the application identity is stable and should not be repeated in every route.
+- Keep `theme-color` in `index.html` — browser chrome color is an app/theme concern, not a page concern.
+- Use `Application Name | Page Title` for page titles — this gives every route a readable browser title while preserving the product name.
+- Let the helper create the description tag at runtime — the app is dynamic, so each route can own its page description without duplicating it in raw HTML.
+- Keep the static title fallback — browsers still have a meaningful title before Vue mounts or if JavaScript fails.

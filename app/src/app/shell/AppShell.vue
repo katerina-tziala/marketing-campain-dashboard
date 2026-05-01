@@ -24,7 +24,7 @@ provide("openAiPanel", dashboard.openAiPanel);
     <!-- Header — full width, never compressed by drawer -->
     <header class="shell-header">
       <h1 class="shell-title">
-        <span class="title-wrapper">Marketing Campaign Dashboard</span>
+        <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
       <div class="shrink-0 mt-1 inline-action-float min-h-9">
         <Button v-if="hasCampaigns" class="outline" @click="requestUpload">
