@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { formatCurrency, formatNumber, sortByValue } from "@/shared/utils";
-import { useSort } from "@/shared/composables/useSort";
+import { useSort } from "@/shared/composables";
 import {
   Table,
   TableHeader,

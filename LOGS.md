@@ -11613,3 +11613,189 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Build passes with 414 modules, zero errors — all path conversions are correct and resolve properly; no type errors or missing imports.
 - Establishes canonical pattern before period-comparison and what-if-simulator features are built — new features can follow data-transfer as a reference implementation of the rule from day one.
 
+
+## [#545] Create Barrel File for Data-Transfer Utils
+**Type:** refactor
+
+**Summary:** Created `data-transfer/utils/index.ts` barrel file to expose all utilities via a single import point. Updated 4 files within the feature to import from the barrel instead of specific utility files.
+
+**Brainstorming:** With the relative import rule now established, the next natural step is creating barrel files for feature submodules. This reduces import complexity: instead of `import { validateRow } from '../utils/validate-row-data'`, files now use `import { validateRow } from '../utils'`. The barrel pattern is already used for components and types; applying it to utils makes the feature consistent and improves maintainability. Files importing from utils/sub-files within the feature already use relative paths; the barrel just makes those paths shorter and more discoverable.
+
+**Prompt:** Create data-transfer/utils/index.ts barrel that exports all utilities from the 6 utility files (download-csv.ts, error-messages.ts, detect-campaign-duplication.ts, parse-csv.ts, validate-campaign-data.ts, validate-row-data.ts). Update all 4 within-feature files that import from utils to import from the barrel instead (useDownloadTemplate.ts, UploadDataForm.vue, UploadDataModal.vue, ReviewErrorsComponent.vue). Verify build passes. Update CLAUDE.md to document the barrel pattern for feature utils.
+
+**What was built:**
+- `data-transfer/utils/index.ts` — new barrel file exporting: downloadCsv, parseCsv, isValidCsvFile, validateCampaignData, validateRow, detectCampaignDuplication, getRowErrorMessage, getRowErrorSummaryWords, getValidationErrorMessage
+- `composables/useDownloadTemplate.ts` — changed `import { downloadCsv } from '../utils/download-csv'` → `import { downloadCsv } from '../utils'`
+- `components/UploadDataForm.vue` — changed `import { isValidCsvFile } from '../utils/parse-csv'` → `import { isValidCsvFile } from '../utils'`
+- `components/UploadDataModal.vue` — changed imports from separate utils files → combined single barrel import: `import { parseCsv, getValidationErrorMessage } from '../utils'`
+- `components/data-validation/review-errors/ReviewErrorsComponent.vue` — changed `import { getRowErrorSummaryWords } from '../../../utils/error-messages'` → `import { getRowErrorSummaryWords } from '../../../utils'`
+- `CLAUDE.md` — added note under Imports section: "Feature barrel imports:" explaining that features should create `index.ts` barrels in util/component subfolders, with within-feature files importing from the barrel and barrels using relative exports. Updated Architecture section to document the new `data-transfer/utils/index.ts` barrel.
+
+**Key decisions & why:**
+- Single barrel for all utils — prevents proliferation of granular imports; cleaner API surface mirrors the component barrel pattern already established in the feature.
+- Relative exports in the barrel — maintains the relative-imports-within-feature convention; barrel is a re-export hub, not a cross-boundary bridge.
+- Updated 4 high-value files — composables, forms, and validation components that directly use utilities; internal utility-to-utility imports (parse-csv → validate-campaign-data) remain unchanged since they're in the same folder.
+- Build passes with 415 modules — confirms barrel imports resolve correctly (one additional module for the new index.ts).
+- Establishes barrel pattern as feature standard — new utility code in data-transfer (or new features) can follow the same pattern: expose via barrel, import via barrel within the feature.
+
+
+## [#546] Create Barrel File for Data-Transfer Composables
+**Type:** refactor
+
+**Summary:** Created `data-transfer/composables/index.ts` barrel file. Updated 2 files within the feature to import from the barrel instead of the specific composable file.
+
+**Brainstorming:** Consistency across submodule barrels. Utils now has a barrel; composables should follow the same pattern. Only one composable exists currently (useDownloadTemplate), but the barrel pattern establishes the convention for any future composables and makes the import path shorter and more discoverable.
+
+**Prompt:** Create data-transfer/composables/index.ts barrel exporting useDownloadTemplate. Update UploadDataModal.vue and TransferActions.vue to import from ../composables instead of ../composables/useDownloadTemplate. Verify build. Update CLAUDE.md.
+
+**What was built:**
+- `data-transfer/composables/index.ts` — new barrel file exporting useDownloadTemplate
+- [UploadDataModal.vue](app/src/features/data-transfer/components/UploadDataModal.vue) — changed `import { useDownloadTemplate } from "../composables/useDownloadTemplate"` → `import { useDownloadTemplate } from "../composables"`
+- [TransferActions.vue](app/src/features/data-transfer/components/TransferActions.vue) — changed `import { useDownloadTemplate } from '../composables/useDownloadTemplate'` → `import { useDownloadTemplate } from '../composables'`
+- `CLAUDE.md` — updated Architecture section to document the new `data-transfer/composables/index.ts` barrel.
+
+**Key decisions & why:**
+- Single barrel for composables — maintains consistency with utils barrel; shorter import paths; establishes convention for future composables.
+- Updated both consuming files — ensures feature uses the barrel consistently across all imports.
+- Build passes with 416 modules — confirms barrel import resolves correctly.
+
+
+## [#547] Use Shared Composables Barrel Instead of Specific File
+**Type:** fix
+
+**Summary:** Updated 3 files to import useSort from `@/shared/composables` (barrel) instead of `@/shared/composables/useSort` (specific file). Clarified CLAUDE.md rule about using submodule barrels for shared imports.
+
+**Brainstorming:** Barrel pattern applies to all shared submodules, not just features. @/shared/composables has a barrel (index.ts) that exports useSort, so imports should use the barrel path, not the specific file path. This is consistent with the rule that shared submodules should expose a public barrel API. Updated rule in CLAUDE.md to clarify this applies to all shared submodules (utils, composables, portfolio-analysis, etc.).
+
+**Prompt:** Find all imports of useSort that use @/shared/composables/useSort and change them to @/shared/composables. Apply the same logic to any shared submodule imports — always use the barrel folder, not specific files. Update CLAUDE.md to clarify this rule.
+
+**What was built:**
+- [CampaignTable.vue](app/src/features/campaign-performance/components/CampaignTable.vue) — changed `import { useSort } from "@/shared/composables/useSort"` → `import { useSort } from "@/shared/composables"`
+- [CampainDuplicationsTable.vue](app/src/features/data-transfer/components/data-validation/review-duplications/CampainDuplicationsTable.vue) — changed `import { useSort } from "@/shared/composables/useSort"` → `import { useSort } from "@/shared/composables"`
+- [DataErrorsTable.vue](app/src/features/data-transfer/components/data-validation/review-errors/DataErrorsTable.vue) — changed `import { useSort } from "@/shared/composables/useSort"` → `import { useSort } from "@/shared/composables"`
+- `CLAUDE.md` — clarified rule: "Shared submodules use barrels — import from `@/shared/utils`, `@/shared/composables`, `@/shared/portfolio-analysis`, etc. (the barrel folders), not from specific files. Each submodule folder has an `index.ts` barrel that re-exports its contents."
+
+**Key decisions & why:**
+- Barrel-first imports for shared — consistent with feature barrel pattern; each shared submodule exposes a public barrel API.
+- Specific files within shared submodules are implementation details — imports should go through the barrel to allow refactoring without breaking external code.
+- Build passes with zero errors — all imports resolve correctly through the barrel.
+
+## [#548] Create Barrel File for Data-Validation Folder
+**Type:** refactor
+
+**Summary:** Created `data-transfer/components/data-validation/index.ts` barrel file to expose the two main validation view components (ReviewErrorsComponent and ReviewDuplicatedCampaigns). Updated UploadDataModal.vue to import from the barrel instead of the individual subfolders.
+
+**Brainstorming:** The data-validation folder is a composite folder with three subfolders (shared, review-errors, review-duplications). Each subfolder already has its own barrel. The next step is to create a top-level data-validation barrel that exports the public components (the two main review components), allowing parent files like UploadDataModal to import with a shorter, more discoverable path. Shared components (DataErrorSummary, DuplicateSummary) remain internal to the data-validation folder and are imported directly from ../shared within the review subfolders — they are not re-exported from the top-level barrel since they are implementation details.
+
+**Prompt:** Create data-transfer/components/data-validation/index.ts barrel that exports ReviewErrorsComponent and ReviewDuplicatedCampaigns from their respective subfolders. Update UploadDataModal.vue to import both components from ./data-validation instead of ./data-validation/review-errors and ./data-validation/review-duplications. Verify build. Update CLAUDE.md to document the barrel.
+
+**What was built:**
+- `data-validation/index.ts` — new barrel file exporting ReviewErrorsComponent from ./review-errors and ReviewDuplicatedCampaigns from ./review-duplications
+- [UploadDataModal.vue](app/src/features/data-transfer/components/UploadDataModal.vue) — changed two separate imports from subfolders into one combined import: `import { ReviewErrorsComponent, ReviewDuplicatedCampaigns } from "./data-validation"`
+- `CLAUDE.md` — added `index.ts` line to data-validation folder documentation in Architecture section to reflect the new barrel.
+
+**Key decisions & why:**
+- Only export public components — ReviewErrorsComponent and ReviewDuplicatedCampaigns are the main review view components used by UploadDataModal; DataErrorSummary and DuplicateSummary are internal implementation details shared only between the review components and remain internal to data-validation.
+- Shorter import path — reduces cognitive load; `./data-validation` is more discoverable than `./data-validation/review-errors` + `./data-validation/review-duplications`.
+- Consistent with existing barrel pattern — data-validation now follows the same pattern as data-transfer/utils and data-transfer/composables: a barrel that re-exports public submodule contents.
+- Build passes — barrel import resolves correctly and no regressions.
+
+
+
+## [#549] Enforce Meaningful Variable Names in Data-Transfer Utils
+**Type:** refactor
+
+**Summary:** Replaced all variable names shorter than 3 characters with meaningful equivalents across all data-transfer/utils files to improve code readability and maintainability.
+
+**Brainstorming:** Code quality standards require all variable names to be at least 3 characters long, ensuring clarity and avoiding single-letter ambiguity. This is a straightforward refactoring to enforce the naming convention across the utils layer. Single-letter variables like `f`, `c`, `h`, `i`, and underscore-based placeholders make code harder to scan and understand. Meaningful names (`file`, `campaign`, `header`, `index`, `placeholderKey`) immediately convey intent without requiring context switching.
+
+**Prompt:** Check all files in data-transfer/utils for variable names shorter than 3 characters. Replace them with meaningful equivalents. Verify build passes. Update LOGS.md.
+
+**What was built:**
+- [parse-csv.ts](app/src/features/data-transfer/utils/parse-csv.ts) — renamed parameter `f: File` → `file: File` in isValidCsvFile function
+- [download-csv.ts](app/src/features/data-transfer/utils/download-csv.ts) — renamed loop variable `c` → `campaign` in map function
+- [validate-campaign-data.ts](app/src/features/data-transfer/utils/validate-campaign-data.ts) — three renames: `h` → `header` in buildHeaderMap reduce; `i` → `index` in data.forEach loop; `h` → `header` in EXPECTED_HEADERS filter
+- [error-messages.ts](app/src/features/data-transfer/utils/error-messages.ts) — renamed placeholder callback parameter `_` → `placeholderKey` in template.replace regex
+
+**Key decisions & why:**
+- Single-letter variables removed entirely — no exceptions, even for conventional uses like `i` for index or `_` for ignored parameters; context names are always clearer.
+- Parameter names consistent with usage — `file`, `campaign`, and `header` immediately signal what each variable contains, reducing mental load.
+- Build verified — zero errors, 418 modules; no side effects on any consumers of these utilities.
+- Scope: utils layer only — this refactoring focuses on the data-transfer utils because it was explicitly requested; other layers can follow if needed.
+
+
+## [#550] Optimize getRowErrorSummaryWords Comparisons
+**Type:** refactor
+
+**Summary:** Optimized `getRowErrorSummaryWords` in error-messages.ts by computing singular/plural flags once instead of performing the same conditional checks three times.
+
+**Brainstorming:** The function was checking `invalidCount === 1` three times (for rowWord, verb, wasWord) and similar checks for validCount and totalCount. Computing these boolean flags once at the start and reusing them reduces redundant comparisons, improves clarity, and makes the logic more maintainable.
+
+**Prompt:** In getRowErrorSummaryWords, compute invalidIsSingular, validIsSingular, and totalIsSingular flags once at the top. Reuse these flags in the return object instead of inline ternary checks. Verify build.
+
+**What was built:**
+- [error-messages.ts](app/src/features/data-transfer/utils/error-messages.ts) — refactored getRowErrorSummaryWords to pre-compute three boolean flags (`invalidIsSingular`, `validIsSingular`, `totalIsSingular`) and use them consistently in the return object
+
+**Key decisions & why:**
+- Single evaluation per condition — each count comparison happens once, then the boolean result is reused across all ternaries that need it.
+- Cleaner intent — the boolean variable names explicitly signal what's being checked (singular vs plural).
+- No behavior change — return object structure and all values remain identical; this is pure optimization.
+- Build passes — zero errors, 418 modules.
+
+
+## [#551] Further Optimize getRowErrorSummaryWords with Object Grouping
+**Type:** refactor
+
+**Summary:** Refined the `getRowErrorSummaryWords` function to group invalid-related word properties into a single object computed in one check, making the logic even more concise and intent-clear.
+
+**Brainstorming:** The previous version computed three separate boolean flags. This refinement goes further by observing that `rowWord`, `verb`, and `wasWord` all depend on the same condition (`invalidCount === 1`). Instead of three separate ternaries, we compute the entire `invalidWords` object in one conditional branch, then spread it into the return. Same number of checks (3), but they're now grouped semantically by which count they depend on, making the structure more readable.
+
+**Prompt:** Refactor getRowErrorSummaryWords to compute an `invalidWords` object containing {rowWord, verb, wasWord} in a single conditional based on `invalidCount === 1`. Spread that object into the return, then add separate ternaries for totalRowWord and validRowWord.
+
+**What was built:**
+- [error-messages.ts](app/src/features/data-transfer/utils/error-messages.ts) — refactored getRowErrorSummaryWords to use a single conditional that returns either the singular or plural version of the `invalidWords` object
+
+**Key decisions & why:**
+- Semantic grouping — properties that depend on the same condition are now grouped in one object, making dependencies explicit.
+- Object spread — cleaner than three individual ternaries; the `...invalidWords` spread clearly signals that these properties come from a common computation.
+- Clarity of intent — the code structure mirrors the data dependency: invalidCount drives one object, other counts drive individual properties.
+- Build passes — zero errors, 418 modules; behavior identical to previous version.
+
+
+## [#552] Move RowErrorSummaryWords Interface to Types
+**Type:** refactor
+
+**Summary:** Moved the `RowErrorSummaryWords` interface from error-messages.ts to the types/index.ts file, where type definitions belong, improving separation of concerns between types and utilities.
+
+**Brainstorming:** The `RowErrorSummaryWords` interface is a data type definition, not a utility function or constant. It should live in the types layer alongside other type definitions like CampainDataValidationError and CampainDataRowError. This improves the architecture by keeping types in one place and utilities separate.
+
+**Prompt:** Move RowErrorSummaryWords interface from utils/error-messages.ts to types/index.ts. Update error-messages.ts to import it from ../types. Update utils/index.ts barrel to re-export it from ../types instead of ./error-messages. Verify build.
+
+**What was built:**
+- [types/index.ts](app/src/features/data-transfer/types/index.ts) — added RowErrorSummaryWords interface definition
+- [utils/error-messages.ts](app/src/features/data-transfer/utils/error-messages.ts) — removed interface definition, added import from ../types
+- [utils/index.ts](app/src/features/data-transfer/utils/index.ts) — changed type export to re-export from ../types instead of ./error-messages
+
+**Key decisions & why:**
+- Types belong in types/ — separation of concerns; the types file is the single source of truth for all type definitions in the feature.
+- Barrel re-exports — utils/index.ts still exports RowErrorSummaryWords so consumers don't need to know where it moved; the barrel abstracts the location.
+- Build passes — zero errors, 418 modules; no regressions.
+
+
+## [#553] Extract Word Constants for Translation Support
+**Type:** refactor
+
+**Summary:** Extracted `SINGULAR_INVALID_WORDS` and `PLURAL_INVALID_WORDS` constants to the top of error-messages.ts, grouping all translatable text in one place for easier future localization.
+
+**Brainstorming:** Having text constants grouped together makes it obvious what content needs translation. These two objects contain all the word variants used in error summaries. By centralizing them, a translator can quickly find all related strings in one place, and a future i18n implementation can easily target these constants.
+
+**Prompt:** Create SINGULAR_INVALID_WORDS and PLURAL_INVALID_WORDS constants at the module level in error-messages.ts. Use them in getRowErrorSummaryWords instead of inline objects. Type them with Pick<RowErrorSummaryWords, ...> for type safety. Verify build.
+
+**What was built:**
+- [utils/error-messages.ts](app/src/features/data-transfer/utils/error-messages.ts) — added two module-level constants (SINGULAR_INVALID_WORDS, PLURAL_INVALID_WORDS) containing the word objects; updated getRowErrorSummaryWords to reference them
+
+**Key decisions & why:**
+- Pick<RowErrorSummaryWords, ...> type — enforces type safety; the constants must contain the correct shape of properties.
+- Top-of-file placement — all translatable strings grouped together; easy to scan and maintain; sets up for future i18n.
+- Reusable in future i18n — these constants can be moved to a separate i18n file without changing the function logic.
+- Build passes — zero errors, 418 modules.

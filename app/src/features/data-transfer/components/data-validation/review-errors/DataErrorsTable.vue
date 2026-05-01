@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useSort } from "@/shared/composables/useSort";
+import { useSort } from "@/shared/composables";
 import { sortByValue } from "@/shared/utils";
 import { Table, TableHeader, Badge } from "@/ui";
 import type { DataTableColumn } from "@/ui";

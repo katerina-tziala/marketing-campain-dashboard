@@ -7,11 +7,9 @@ import type {
   CampainDataDuplicateGroup,
   CampainDataRowError,
 } from "../types";
-import { parseCsv } from "../utils/parse-csv";
-import { getValidationErrorMessage } from "../utils/error-messages";
-import { useDownloadTemplate } from "../composables/useDownloadTemplate";
-import { ReviewErrorsComponent } from "./data-validation/review-errors";
-import { ReviewDuplicatedCampaigns } from "./data-validation/review-duplications";
+import { parseCsv, getValidationErrorMessage } from "../utils";
+import { useDownloadTemplate } from "../composables";
+import { ReviewErrorsComponent, ReviewDuplicatedCampaigns } from "./data-validation";
 import UploadDataForm from "./UploadDataForm.vue";
 
 const portfolioData = usePortfolioDataStore();

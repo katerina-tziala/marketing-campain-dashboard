@@ -1,6 +1,6 @@
 import { SAMPLE_CAMPAIGNS } from '@/shared/data'
 import { useToastStore } from '@/app/stores'
-import { downloadCsv } from '../utils/download-csv'
+import { downloadCsv } from '../utils'
 
 export function useDownloadTemplate() {
   const toastStore = useToastStore()

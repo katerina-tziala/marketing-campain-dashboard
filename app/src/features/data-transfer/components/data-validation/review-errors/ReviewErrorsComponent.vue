@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
 import type { CampainDataRowError } from "../../../types";
-import { getRowErrorSummaryWords } from "../../../utils/error-messages";
+import { getRowErrorSummaryWords } from "../../../utils";
 import {
   DataErrorSummary,
   DuplicateSummary,

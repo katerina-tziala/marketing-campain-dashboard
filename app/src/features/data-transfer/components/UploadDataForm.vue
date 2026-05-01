@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Button, DownloadIcon, UploadIcon, FileDropzone, ModalFooter } from '@/ui'
-import { isValidCsvFile } from '../utils/parse-csv'
-
+import { isValidCsvFile } from '../utils'
 
 const props = defineProps<{
   title: string

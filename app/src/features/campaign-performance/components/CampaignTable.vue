@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { CampaignPerformance } from "@/shared/data";
 import { TableHeader, Badge, Table } from "@/ui";
 import type { DataTableColumn } from "@/ui";
-import { useSort } from "@/shared/composables/useSort";
+import { useSort } from "@/shared/composables";
 import {
   formatCompactNumber,
   formatCurrency,

@@ -48,3 +48,11 @@ export interface CampainDataProcessRowsResult {
   campaigns: Campaign[]
   errors: CampainDataRowError[]
 }
+
+export interface RowErrorSummaryWords {
+  rowWord: string
+  verb: string
+  wasWord: string
+  totalRowWord: string
+  validRowWord: string
+}

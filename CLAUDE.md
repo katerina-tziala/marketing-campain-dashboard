@@ -341,6 +341,7 @@ app/                        # Vue 3 + Vite project
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps Modal; uses ModalBody + ModalFooter; emits confirm/close
 │   │       │   ├── TransferActions.vue     # Download Template + Upload CSV button pair (was FileActions) — emits upload; uses useDownloadTemplate; responsive stacking at <480px
 │   │       │   └── data-validation/
+│   │       │       ├── index.ts            # Barrel — exports ReviewErrorsComponent, ReviewDuplicatedCampaigns
 │   │       │       ├── shared/
 │   │       │       │   ├── DataErrorSummary.vue # Presentational summary block — 3 named slots: title, badge, summary; no props
 │   │       │       │   ├── DuplicateSummary.vue # Duplicate-specific summary — wraps DataErrorSummary; props: count, variant, hasValidCampaigns?
@@ -355,8 +356,10 @@ app/                        # Vue 3 + Vite project
 │   │       │           ├── DuplicationsHeader.vue # Group header content — props: campaignName, rowCount, isSelected, needsAttentionMode; emits clear; Badge states (success "Resolved" / danger "Needs Attention" / warning "Pending"); destructive small Button "Clear selection" when isSelected
 │   │       │           └── index.ts
 │   │       ├── composables/
+│   │       │   ├── index.ts            # Barrel — exports useDownloadTemplate
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
 │   │       └── utils/
+│   │           ├── index.ts            # Barrel — exports all utilities (downloadCsv, parseCsv, validateRow, detectCampaignDuplication, getRowErrorMessage, getRowErrorSummaryWords, getValidationErrorMessage, validateCampaignData, isValidCsvFile)
 │   │           ├── download-csv.ts
 │   │           ├── error-messages.ts
 │   │           ├── detect-campaign-duplication.ts
@@ -472,6 +475,8 @@ app/                        # Vue 3 + Vite project
 
 The `@/features/` prefix is **only for cross-feature and cross-layer imports** (app code importing from features, feature A importing from feature B).
 
+**Feature barrel imports:** Features should create `index.ts` barrel files in util/component subfolders to expose a clean public API. Within-feature files import from the barrel (e.g., `import { validateRow } from '../utils'`), not from specific files. Barrels use relative exports (`export { ... } from './file.ts'`).
+
 ---
 
 - **Always use the `@/` alias for cross-boundary imports** — never use relative `../` paths that escape your feature. `@` maps to `src/`. Same-directory `./foo` imports and within-feature relative imports are the only exceptions.
@@ -492,7 +497,7 @@ The `@/features/` prefix is **only for cross-feature and cross-layer imports** (
   ```
 - **UI always uses the barrel** — app and feature code imports all UI components from `@/ui` (the single public API), never from specific submodules like `@/ui/primitives` or `@/ui/charts`. UI is a cohesive design system.
 - **UI internals use local paths** — files inside `app/src/ui` must not import through the public `@/ui` barrel; they use local sibling/folder imports.
-- **Shared submodules use specific barrels** — import from `@/shared/utils`, `@/shared/composables`, `@/shared/portfolio-analysis`, etc., not from a catch-all `@/shared` barrel. This clarifies which utilities a module depends on.
+- **Shared submodules use barrels** — import from `@/shared/utils`, `@/shared/composables`, `@/shared/portfolio-analysis`, etc. (the barrel folders), not from specific files like `@/shared/composables/useSort`. Each submodule folder has an `index.ts` barrel that re-exports its contents. This clarifies which layer a module depends on and provides a single, stable import point.
 - **Vue component naming in templates** — JS/TS (script block) uses camelCase; HTML/template attributes use kebab-case.
   - Props: defined as `myProp` in script, bound as `:my-prop` in template.
   - Events: emitted as `emit('myEvent')` in script, listened to as `@my-event` in template.
