@@ -32,6 +32,6 @@ const emit = defineEmits<{ upload: [] }>()
 }
 
 .empty-state-description {
-  @apply text-typography text-sm leading-6 tracking-wide;
+  @apply text-typography-muted text-sm leading-6 tracking-wide;
 }
 </style>

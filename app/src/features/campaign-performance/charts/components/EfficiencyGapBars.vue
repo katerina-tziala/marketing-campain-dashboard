@@ -56,7 +56,9 @@ const chartData = computed<BarChartData>(() => ({
     {
       data: props.channels.map((ch) => getGapPercent(ch)),
       backgroundColor: props.channels.map((ch) =>
-        getCampaignPerformanceChartFillColor(getEfficiencyGapColor(getGapPercent(ch))),
+        getCampaignPerformanceChartFillColor(
+          getEfficiencyGapColor(getGapPercent(ch)),
+        ),
       ),
       borderColor: props.channels.map((ch) =>
         getEfficiencyGapColor(getGapPercent(ch)),
@@ -74,22 +76,27 @@ function formatValueTick(value: string | number): string {
 <template>
   <div class="efficiency-gap-bars">
     <MetaRow class="tiny mx-auto">
-      <MetaItem>
+      <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap }"
+          :style="{
+            backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap,
+          }"
         />
-        Overperforming
+        <span>Overperforming</span>
       </MetaItem>
-      <MetaItem>
+      <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap }"
+          :style="{
+            backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap,
+          }"
         />
-        Underperforming
+        <span>Underperforming</span>
       </MetaItem>
     </MetaRow>
     <BarChart
+      class="!h-[354px]"
       :chart-data="chartData"
       :aria-label="ariaLabel ?? 'Efficiency Gap by Channel'"
       :tooltip-callbacks="tooltipCallbacks"
@@ -101,10 +108,17 @@ function formatValueTick(value: string | number): string {
 
 <style lang="scss" scoped>
 .efficiency-gap-bars {
-  @apply w-full flex flex-col pt-4;
+  @apply w-full grid grid-cols-1 grid-rows-[min-content_1fr] min-h-96 pt-4;
+}
+
+.legend-item {
+  @apply flex flex-nowrap justify-end gap-1.5;
+  > span {
+    @apply inline-block;
+  }
 }
 
 .legend-indicator {
-  @apply inline-block mr-1.5 size-3 align-middle;
+  @apply size-[0.813rem];
 }
 </style>

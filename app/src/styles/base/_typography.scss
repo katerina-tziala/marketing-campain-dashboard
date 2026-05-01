@@ -1,11 +1,13 @@
-h2 {
-  @apply text-xl font-semibold tracking-wider text-typography-primary;
-}
+@layer base {
+  h2 {
+    @apply text-xl font-semibold tracking-wider text-typography-primary;
+  }
 
-h3 {
-  @apply text-base font-medium tracking-wider m-0 text-primary-lighter;
-}
+  h3 {
+    @apply text-base font-medium tracking-wider m-0 text-primary-lighter;
+  }
 
-h5 {
-  @apply w-full font-semibold tracking-wider text-typography-primary-subtle text-sm;
+  h5 {
+    @apply w-full font-semibold tracking-wider text-typography-primary-subtle text-sm;
+  }
 }

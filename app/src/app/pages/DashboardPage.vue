@@ -10,19 +10,14 @@ const openUploadModal = inject<() => void>("openUploadModal");
 </script>
 
 <template>
-  <EmptyState
-    v-if="!dashboard.hasCampaigns"
-    @upload="openUploadModal?.()"
+  <EmptyState v-if="!dashboard.hasCampaigns" @upload="openUploadModal?.()" />
+  <!-- TODO: Add overview / period comparison switching here when the comparison view is introduced. -->
+  <CampaignPerformanceView
+    v-else 
+    :show-ai-button="dashboard.showAiButton"
+    :show-connected-dot="dashboard.showConnectedDot"
+    @ai-click="dashboard.openAiPanel"
   />
-
-  <div v-else class="dashboard-page">
-    <!-- TODO: Add overview / period comparison switching here when the comparison view is introduced. -->
-    <CampaignPerformanceView
-      :show-ai-button="dashboard.showAiButton"
-      :show-connected-dot="dashboard.showConnectedDot"
-      @ai-click="dashboard.openAiPanel"
-    />
-  </div>
 </template>
 
 <style lang="scss" scoped>

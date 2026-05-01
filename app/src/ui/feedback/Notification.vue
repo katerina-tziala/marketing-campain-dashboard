@@ -146,7 +146,7 @@ const ariaLive = computed(() => {
 }
 
 .notification-head {
-  @apply flex items-center justify-between gap-2;
+  @apply flex items-center justify-between gap-2 mb-1;
 }
 
 .notification-title {

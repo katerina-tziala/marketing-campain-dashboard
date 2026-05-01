@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import CloseIcon from "../icons/CloseIcon.vue";
 import SheetHeader from "../layout/SheetHeader.vue";
 import Button from "../primitives/Button.vue";
@@ -23,23 +23,45 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const isDesktop = ref(false);
+let desktopMediaQuery: MediaQueryList | null = null;
+
 const drawerClass = computed(() => ({
   open: props.open,
   left: props.side === "left",
   right: props.side === "right",
 }));
 
+function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
+  isDesktop.value = e.matches;
+}
+
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === "Escape" && props.open) emit("close");
 }
 
-onMounted(() => document.addEventListener("keydown", onKeydown));
-onUnmounted(() => document.removeEventListener("keydown", onKeydown));
+onMounted(() => {
+  document.addEventListener("keydown", onKeydown);
+
+  desktopMediaQuery = window.matchMedia("(min-width: 1024px)");
+  syncViewport(desktopMediaQuery);
+  desktopMediaQuery.addEventListener("change", syncViewport);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("keydown", onKeydown);
+  desktopMediaQuery?.removeEventListener("change", syncViewport);
+});
 </script>
 
 <template>
   <div class="responsive-drawer" :class="drawerClass" :aria-hidden="!open">
-    <section class="responsive-drawer-panel" role="dialog" :aria-label="title">
+    <section
+      v-if="isDesktop"
+      class="responsive-drawer-panel"
+      role="dialog"
+      :aria-label="title"
+    >
       <SheetHeader>
         <template v-if="$slots.icon" #icon>
           <slot name="icon" />
@@ -60,15 +82,13 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
           </div>
         </template>
       </SheetHeader>
-      <div class="responsive-drawer-content">
-        <slot />
-      </div>
+      <slot />
     </section>
   </div>
 
   <Transition name="drawer-overlay">
     <div
-      v-if="open"
+      v-if="open && !isDesktop"
       class="responsive-drawer-overlay"
       @click.self="emit('close')"
     >
@@ -108,15 +128,11 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
 
 <style lang="scss" scoped>
 .responsive-drawer {
-  @apply hidden;
+  @apply hidden
+  lg:block lg:overflow-hidden lg:shrink-0 w-0 lg:ease-in-out lg:duration-300 lg:transition-[width];
 
-  @media (min-width: 1024px) {
-    @apply block overflow-hidden shrink-0 w-0 ease-in-out duration-300;
-    transition-property: width;
-
-    &.open {
-      @apply w-[30rem];
-    }
+  &.open {
+    @apply lg:w-[30rem];
   }
 }
 
@@ -158,7 +174,7 @@ onUnmounted(() => document.removeEventListener("keydown", onKeydown));
     overflow-hidden
     z-1000
     inset-0
-    bg-surface-backdrop/75
+    bg-surface-backdrop/70
     py-[5vh]
     px-[5vw]
     lg:hidden;

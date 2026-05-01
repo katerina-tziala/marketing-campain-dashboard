@@ -68,7 +68,7 @@ onUnmounted(() => {
     overflow-hidden
     inset-0
     z-1000
-    bg-surface-backdrop/75;
+    bg-surface-backdrop/70;
 }
 
 .modal {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { provide, ref } from "vue";
-import { Button, UploadIcon, ToastContainer } from "@/ui"; 
+import { Button, UploadIcon, ToastContainer } from "@/ui";
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
 import { UploadDataModal, ReplaceDataModal } from "@/features/data-transfer";
@@ -28,14 +28,12 @@ provide("openAiPanel", dashboard.openAiPanel);
       <h1 class="shell-title">
         <span class="title-wrapper">Marketing Campaign Dashboard</span>
       </h1>
-      <Button
-        v-if="hasCampaigns"
-        class="outline shrink-0 inline-action-float"
-        @click="requestUpload"
-      >
-        <UploadIcon />
-        Upload CSV
-      </Button>
+      <div class="shrink-0 mt-1 inline-action-float min-h-9">
+        <Button v-if="hasCampaigns" class="outline" @click="requestUpload">
+          <UploadIcon />
+          Upload CSV
+        </Button>
+      </div>
     </header>
 
     <!-- Body row — main content + AI drawer side by side -->
@@ -44,7 +42,10 @@ provide("openAiPanel", dashboard.openAiPanel);
         <slot />
       </main>
       <!-- AI drawer — sibling to main only, so header stays full width -->
-      <AiToolsDrawer :open="aiStore.aiPanelOpen" @close="dashboard.closeAiPanel" />
+      <AiToolsDrawer
+        :open="aiStore.aiPanelOpen"
+        @close="dashboard.closeAiPanel"
+      />
     </div>
 
     <UploadDataModal ref="uploadModal" />
@@ -69,11 +70,12 @@ provide("openAiPanel", dashboard.openAiPanel);
     gap-4
     shrink-0
     px-6
-    py-3
+    py-2.5
     shadow-md
     border-b
     border-primary-deeper
-    bg-primary-ink;
+    bg-primary-ink
+    min-h-16;
 }
 
 .shell-title {

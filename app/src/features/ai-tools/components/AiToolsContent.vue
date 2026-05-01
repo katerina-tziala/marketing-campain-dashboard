@@ -2,16 +2,16 @@
 import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
 import AiConnectionForm from "@/features/ai-tools/ai-connection/components/AiConnectionForm.vue";
 import AiConnectedStatus from "@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue";
-import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue"; 
+import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue";
 
 // TODO: [DEV ONLY] Uncomment ONE block below to test dev cycles. Use one at a time.
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK A — Analysis cycle: auto-connects, cycles mock responses + error codes on Analyze.
-import { onMounted, onUnmounted } from 'vue'
-import { useDevAnalysisCycle } from '@/features/ai-tools/dev/dev-analysis-cycle'
-const { activate, deactivate } = useDevAnalysisCycle()
-onMounted(activate)
-onUnmounted(deactivate)
+import { onMounted, onUnmounted } from "vue";
+import { useDevAnalysisCycle } from "@/features/ai-tools/dev/dev-analysis-cycle";
+const { activate, deactivate } = useDevAnalysisCycle();
+onMounted(activate);
+onUnmounted(deactivate);
 // ─────────────────────────────────────────────────────────────────────────────
 // BLOCK B — Connection cycle: type any API key once, then each Connect click
 //           advances through all 8 connection error codes (spinner ~1.5 s each).
@@ -42,7 +42,8 @@ const store = useAiConnectionStore();
 
 <style lang="scss" scoped>
 .ai-tools-content {
-  @apply grow shrink-0 overflow-hidden pb-4;
+  @apply grow shrink-0 overflow-hidden pb-5
+   h-full;
 }
 
 .ai-tools-analysis {

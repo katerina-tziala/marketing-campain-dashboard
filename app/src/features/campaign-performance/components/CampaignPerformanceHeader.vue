@@ -26,9 +26,11 @@ const emit = defineEmits<{ aiClick: [] }>();
       </Button>
       <span
         v-if="showConnectedDot"
-        class="connected-dot connected-status"
+        class="connected-status"
         aria-hidden="true"
-      />
+      >
+        <span class="connected-status-dot" />
+      </span>
     </div>
     Campaign Performance
   </h2>
@@ -50,6 +52,7 @@ const emit = defineEmits<{ aiClick: [] }>();
   @apply absolute
   -top-1
   -right-1
+  z-10
   w-3
   h-3
   rounded-full
@@ -59,6 +62,15 @@ const emit = defineEmits<{ aiClick: [] }>();
   justify-center
   overflow-visible;
   animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.connected-status-dot {
+  @apply block
+    w-2
+    h-2
+    rounded-full
+    bg-success
+    shadow-connection;
 }
 
 @keyframes dot-pop {

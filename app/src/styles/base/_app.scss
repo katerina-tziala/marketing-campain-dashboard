@@ -1,7 +1,10 @@
-html {
-  @apply font-sans bg-background text-typography;
-}
+@layer base {
+  html,
+  body {
+    @apply font-sans bg-background text-typography w-screen h-screen overflow-hidden;
+  }
 
-#app {
-  @apply w-screen h-screen overflow-hidden;
+  #app {
+    @apply w-screen h-screen overflow-hidden;
+  }
 }
