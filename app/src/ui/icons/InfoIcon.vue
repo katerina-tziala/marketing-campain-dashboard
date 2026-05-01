@@ -10,7 +10,7 @@
     aria-hidden="true"
     style="width: 1em; height: 1em; display: inline-block;"
   >
-    <circle cx="12" cy="12" r="10" />
+    <rect x="2" y="2" width="20" height="20" rx="4" />
     <line x1="12" y1="16" x2="12" y2="12" />
     <line x1="12" y1="8" x2="12.01" y2="8" />
   </svg>

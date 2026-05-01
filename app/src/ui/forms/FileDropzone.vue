@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, useSlots, Comment } from 'vue'
-import UploadIcon from '@/ui/icons/UploadIcon.vue'
+import UploadIcon from '../icons/UploadIcon.vue'
 
 const props = defineProps<{
   modelValue: File | null
@@ -82,7 +82,7 @@ function onChange(e: Event): void {
 }
 
 .dropzone-active {
-  @apply border-primary-500;
+  @apply border-primary;
 }
 
 .upload-icon {

@@ -1,3 +1,8 @@
-@use './themes/dark.scss';
-@use './components/index' as components;
-@use './utilities/index' as utilities;
+@use "./themes/dark";
+@use "./base";
+@use "./components/index" as components;
+@use "./utilities/index" as utilities;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

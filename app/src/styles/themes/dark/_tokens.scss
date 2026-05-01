@@ -1,0 +1,105 @@
+@use "./palette";
+/*
+    Dark theme semantics.
+
+    Use this file to assign palette primitives to UI roles. If a color answers
+    "what is it?" it belongs in _palette.scss. If it answers "where is it
+    used?" it belongs here.
+  */
+
+:root,
+[data-theme="dark"] {
+  /* Background and surfaces */
+  --color-background: var(--neutral-900);
+
+  --color-surface-0: 14 16 34;
+  --color-surface-0h: 10 16 38;
+  --color-surface-1: 13 20 42;
+  --color-surface-2: 16 24 52;
+  --color-surface-3: 20 28 60;
+
+  --color-surface-hover: var(--color-surface-2);
+  --color-surface-active: var(--color-surface-3);
+  --color-backdrop: 0 0 0;
+
+  /* Borders and dividers */
+  --color-border-faint: var(--surface-border-1);
+  --color-border-subtle: var(--surface-border-2);
+  --color-border: var(--surface-border-3);
+  --color-border-strong: var(--surface-border-4);
+  --color-border-darker: var(--surface-border-0);
+
+  /* Text */
+  --color-text: var(--neutral-100);
+  --color-text-soft: var(--neutral-200);
+  --color-text-muted: var(--neutral-300);
+  --color-text-subtle: var(--neutral-400);
+  --color-text-inverse: var(--neutral-50);
+  --color-text-strong: var(--neutral-0);
+
+  /* Brand text */
+  --color-text-primary: var(--primary-400);
+  --color-text-primary-strong: var(--primary-500);
+  --color-text-primary-subtle: var(--primary-300);
+  --color-text-primary-light: var(--primary-200);
+
+  /* Brand actions */
+  --color-primary: var(--primary-500);
+  --color-primary-light: var(--primary-400);
+  --color-primary-lighter: var(--primary-300);
+  --color-primary-dark: var(--primary-600);
+  --color-primary-darker: var(--primary-700);
+  --color-primary-soft: var(--primary-200);
+  --color-primary-deep: var(--primary-800);
+  --color-primary-deeper: var(--primary-900);
+  --color-primary-muted: var(--primary-950);
+  --color-primary-ink: var(--primary-1000);
+
+  /* Supporting accents */
+  --color-secondary: var(--secondary-500);
+  --color-secondary-lighter: var(--secondary-300);
+  --color-secondary-light: var(--secondary-400);
+  --color-secondary-dark: var(--secondary-600);
+  --color-secondary-darker: var(--secondary-700);
+
+  --color-accent: var(--accent-500);
+  --color-accent-light: var(--accent-400);
+  --color-accent-lighter: var(--accent-300);
+  --color-accent-dark: var(--accent-600);
+  --color-accent-darker: var(--accent-700);
+
+  /* Feedback */
+  --color-success: var(--success-500);
+  --color-success-light: var(--success-400);
+  --color-success-lighter: var(--success-300);
+  --color-success-dark: var(--success-600);
+  --color-success-darker: var(--success-700);
+
+  --color-warning: var(--warning-500);
+  --color-warning-light: var(--warning-400);
+  --color-warning-lighter: var(--warning-300);
+  --color-warning-dark: var(--warning-600);
+  --color-warning-darker: var(--warning-700);
+
+  --color-danger: var(--danger-500);
+  --color-danger-light: var(--danger-400);
+  --color-danger-lighter: var(--danger-300);
+  --color-danger-dark: var(--danger-600);
+  --color-danger-darker: var(--danger-700);
+
+  --color-info: var(--info-500);
+  --color-info-light: var(--info-400);
+  --color-info-lighter: var(--info-300);
+  --color-info-dark: var(--info-600);
+  --color-info-darker: var(--info-700);
+
+  /* Text on filled semantic colors */
+  --color-on-primary: var(--neutral-50);
+  --color-on-secondary: var(--neutral-50);
+  --color-on-accent: var(--neutral-900);
+  --color-on-success: var(--neutral-50);
+  --color-on-warning: var(--neutral-900);
+  --color-on-danger: var(--neutral-50);
+  --color-on-info: var(--neutral-900);
+
+}

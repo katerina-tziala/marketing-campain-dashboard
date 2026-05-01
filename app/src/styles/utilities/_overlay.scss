@@ -1,0 +1,14 @@
+@layer utilities {
+  .overlay {
+    @apply fixed
+      flex
+      items-center
+      justify-center
+      p-6
+      box-border
+      overflow-hidden
+      inset-0
+      z-1000
+      bg-surface-backdrop/70;
+  }
+}

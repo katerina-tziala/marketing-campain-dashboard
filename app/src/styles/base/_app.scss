@@ -1,0 +1,10 @@
+@layer base {
+  html,
+  body {
+    @apply font-sans bg-background text-typography-soft w-screen h-screen overflow-hidden relative;
+  }
+
+  #app {
+    @apply w-screen h-screen overflow-hidden;
+  }
+}

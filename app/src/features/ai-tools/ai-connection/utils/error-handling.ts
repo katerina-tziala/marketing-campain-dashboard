@@ -1,44 +1,56 @@
-import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types'
-import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { normalizeConnectionError } from '@/features/ai-tools/providers/utils'
+import type { AiConnectionErrorCode, AiProviderType } from '../../types'
+import { PROVIDER_LABELS, normalizeConnectionError } from '../../providers/utils'
 
-const ERROR_CODES = new Set<AiErrorCode>([
-  'invalid-key', 'network', 'timeout', 'rate-limit', 'token-limit', 'server-error', 'no-models', 'invalid-response', 'unknown',
-])
-
-export const ERROR_MESSAGES: Record<AiErrorCode, (provider: AiProviderType) => string> = {
-  'invalid-key': (p) => `Invalid API key for ${PROVIDER_LABELS[p]}`,
-  'network': () => 'Could not reach the server. Check your internet connection.',
-  'timeout': () => 'Connection timed out. Check your network and try again.',
-  'rate-limit': (p) => `${PROVIDER_LABELS[p]} rate limit reached. Please wait a moment and try again.`,
-  'server-error': (p) => `${PROVIDER_LABELS[p]} is temporarily unavailable. Try again later.`,
-  'no-models': (p) => `No suitable models found for ${PROVIDER_LABELS[p]}.`,
-  'unknown': (p) => `Connection to ${PROVIDER_LABELS[p]} failed`,
-  'token-limit': () => 'The provider’s token limit was exceeded. Try again.',
-  'invalid-response': () => 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
-  'parse-error': () => 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
-  'min-campaigns': () => 'Not enough campaigns selected for this analysis.',
+type ConnectionErrorEntry = {
+  message: (provider: AiProviderType) => string
+  hint: string
 }
 
-export const ERROR_HINTS: Record<AiErrorCode, string> = {
-  'invalid-key': 'Double-check that you copied the full key and that it has not been revoked',
-  'network': 'Make sure you are connected to the internet and try again',
-  'timeout': 'The server took too long to respond. Try again in a moment.',
-  'rate-limit': 'You have made too many requests. Wait a minute before trying again.',
-  'server-error': 'This is a problem on the provider’s side, not yours. Try again later.',
-  'no-models': 'The provider returned no models compatible with this application. Try a different provider.',
-  'unknown': 'If this persists, try a different provider or check the provider’s status page',
-  'token-limit': 'The provider has limits on how many tokens can be processed in a given time frame. Wait a moment and try again.',
-  'invalid-response': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
-  'parse-error': 'The provider returned an unexpected response. Try again, and if the problem persists, try a different provider.',
-  'min-campaigns': 'Select at least 2 campaigns to run this analysis.',
+export const CONNECTION_ERRORS: Record<AiConnectionErrorCode, ConnectionErrorEntry> = {
+  'invalid-key': {
+    message: (p) => `Your ${PROVIDER_LABELS[p]} API key doesn't seem to be working`,
+    hint: "Make sure you copied the full key and that it hasn't expired or been revoked.",
+  },
+  'network': {
+    message: () => "We couldn't reach the server",
+    hint: 'Check your internet connection and try again',
+  },
+  'timeout': {
+    message: () => 'The connection took too long',
+    hint: 'This can happen on slow connections. Try again in a moment',
+  },
+  'rate-limit': {
+    message: (p) => `Too many requests to ${PROVIDER_LABELS[p]} in a short time`,
+    hint: 'Wait a minute or two, then try again',
+  },
+  'server-error': {
+    message: (p) => `${PROVIDER_LABELS[p]} is having trouble right now`,
+    hint: "This is a temporary issue on the provider's side. Try again in a few minutes",
+  },
+  'no-models': {
+    message: (p) => `No compatible AI models were found for ${PROVIDER_LABELS[p]}`,
+    hint: 'Try connecting with a different provider',
+  },
+  'token-limit': {
+    message: () => "You've reached your usage limit for this session",
+    hint: 'Wait a while before trying again, or switch to a different provider',
+  },
+  'invalid-response': {
+    message: () => 'Something unexpected came back from the provider',
+    hint: 'Please try again. If it keeps happening, switch to a different provider',
+  },
+  'parse-error': {
+    message: () => 'Something unexpected came back from the provider',
+    hint: 'Please try again. If it keeps happening, switch to a different provider',
+  },
+  'unknown': {
+    message: (p) => `Something went wrong while connecting to ${PROVIDER_LABELS[p]}`,
+    hint: 'Please try again. If the problem continues, switch to a different provider',
+  },
 }
 
-
-export function getErrorCode(error: unknown): AiErrorCode {
+export function getErrorCode(error: unknown): AiConnectionErrorCode {
   const normalized = normalizeConnectionError(error)
-  const code = ERROR_CODES.has(normalized.message as AiErrorCode)
-    ? (normalized.message as AiErrorCode)
-    : 'unknown'
-  return code
+  const code = normalized.message
+  return code in CONNECTION_ERRORS ? (code as AiConnectionErrorCode) : 'unknown'
 }

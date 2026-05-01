@@ -1,5 +1,5 @@
-import type { Campaign } from '@/shared/types/campaign'
-import type { CampainDataParseResult, CampainDataProcessRowsResult, CampainDataRowError, CampainDataValidationError } from '@/features/data-transfer/types'
+import type { Campaign } from '@/shared/data'
+import type { CampainDataParseResult, CampainDataProcessRowsResult, CampainDataRowError, CampainDataValidationError } from '../types'
 import { validateRow } from './validate-row-data'
 import { detectCampaignDuplication } from './detect-campaign-duplication'
 
@@ -14,8 +14,8 @@ const EXPECTED_HEADERS: (keyof Campaign)[] = [
 ]
 
 function buildHeaderMap(fields: string[]): Record<string, string> {
-  return fields.reduce<Record<string, string>>((map, h) => {
-    map[h.toLowerCase().trim()] = h
+  return fields.reduce<Record<string, string>>((map, header) => {
+    map[header.toLowerCase().trim()] = header
     return map
   }, {})
 }
@@ -45,8 +45,8 @@ function processRows(
   const campaigns: Campaign[] = []
   const errors: CampainDataRowError[] = []
 
-  data.forEach((row, i) => {
-    const rowNum = i + 2 // +2: 1-based index + header row
+  data.forEach((row, index) => {
+    const rowNum = index + 2 // +2: 1-based index + header row
     const fields = extractCampaignFields(row, headerMap, rowNum)
     const rowErrors = validateRow(fields, rowNum)
 
@@ -67,7 +67,7 @@ export function validateCampaignData(
   // ── Column validation ──────────────────────────────────────────────────────
   const headerMap = buildHeaderMap(fields)
   const actualHeaders = Object.values(headerMap)
-  const missingColumns = EXPECTED_HEADERS.filter((h) => !actualHeaders.includes(h.toLowerCase()))
+  const missingColumns = EXPECTED_HEADERS.filter((header) => !actualHeaders.includes(header.toLowerCase()))
 
   if (missingColumns.length > 0) {
     return { campaigns: [], errors: [{ type: 'missing_columns', missingColumns }] }

@@ -1,102 +1,132 @@
 /** @type {import('tailwindcss').Config} */
 
 export default {
-  content: ['./index.html', './src/**/*.{vue,ts}'],
-  darkMode: 'class',
+  content: ["./index.html", "./src/**/*.{vue,ts}"],
+  darkMode: "class",
   theme: {
     extend: {
-      colors: { 
+      colors: {
         background: "rgb(var(--color-background) / <alpha-value>)",
-        surface: "rgb(var(--color-surface) / <alpha-value>)",
-        'surface-outline': "rgb(var(--color-surface-outline) / <alpha-value>)",
-        'on-surface-high': "rgb(var(--color-on-surface-high) / <alpha-value>)",
-        'primary-subtle': "rgb(var(--color-primary-subtle) / <alpha-value>)",
-
-        
-
-        // --color-border-primary-low
-        // 
-        black: {
-          DEFAULT: '#000000', 
-        },
-       white: {
-          DEFAULT: '#ffffff', 
-        },
-        typography: {
-          // DEFAULT: '#b5bdc9',
-          // subtle: '#94a3b8',
-          // intense: '#cbd5e1'
-//  --color-typography
-          DEFAULT: "rgb(var(--color-typography) / <alpha-value>)", // main text
-          subtle: "rgb(var(--color-typography-low) / <alpha-value>)",
-          intense: '#f1f5f9'    // headings / emphasis
-        
-        },
-        danger: {
-          DEFAULT: '#f43f5e',
-          '-5p': '#f55671',
-        },
-        success: {
-          DEFAULT: '#10b981', 
-        },
-        warning: {
-          DEFAULT: '#f59e0b', 
-        },
-        slate: {
-          300: '#cbd5e1',
+        "on-primary": "rgb(var(--color-on-primary) / <alpha-value>)",
+        surface: {
+          DEFAULT: "rgb(var(--color-surface-0) / <alpha-value>)",
+          lift: "rgb(var(--color-surface-0h) / <alpha-value>)",
+          elevated: "rgb(var(--color-surface-1) / <alpha-value>)",
+          raised: "rgb(var(--color-surface-2) / <alpha-value>)",
+          overlay: "rgb(var(--color-surface-3) / <alpha-value>)",
+          hover: "rgb(var(--color-surface-hover) / <alpha-value>)",
+          active: "rgb(var(--color-surface-active) / <alpha-value>)",
+          backdrop: "rgb(var(--color-backdrop) / <alpha-value>)",
         },
         primary: {
-          50:  '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
-          1000: '#0f0e25',
-          // 1050: '#0f0e25'
+          DEFAULT: "rgb(var(--color-primary) / <alpha-value>)",
+          light: "rgb(var(--color-primary-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-primary-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-primary-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-primary-darker) / <alpha-value>)",
+          soft: "rgb(var(--color-primary-soft) / <alpha-value>)",
+          deep: "rgb(var(--color-primary-deep) / <alpha-value>)",
+          deeper: "rgb(var(--color-primary-deeper) / <alpha-value>)",
+          muted: "rgb(var(--color-primary-muted) / <alpha-value>)",
+          ink: "rgb(var(--color-primary-ink) / <alpha-value>)",
         },
-        secondary: { 
-          500: '#ec4899', 
+        secondary: {
+          DEFAULT: "rgb(var(--color-secondary) / <alpha-value>)",
+          light: "rgb(var(--color-secondary-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-secondary-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-secondary-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-secondary-darker) / <alpha-value>)",
         },
-        // surface: {
-        //   DEFAULT: '#151b2e',
-        //   // secondary: '#0d1226'
-        //   secondary: '#070913',
-        //   'secondary-10': '#0d1226',
-        //   // modal: 
-        //   '-10': '#101523',
-        // },
-        'surface-border': {
-          DEFAULT: '#1e2a4a',
-          secondary: 'rgba(255, 255, 255, 0.06)'
-          // modal: 
+        accent: {
+          DEFAULT: "rgb(var(--color-accent) / <alpha-value>)",
+          light: "rgb(var(--color-accent-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-accent-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-accent-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-accent-darker) / <alpha-value>)",
         },
-        spinner: {
-          primary:           '#6366f1',
-          'primary-track':   'rgba(99, 102, 241, 0.2)',
-          secondary:         '#eef2ff',
-          'secondary-track': 'rgba(255, 255, 255, 0.3)',
+        success: {
+          DEFAULT: "rgb(var(--color-success) / <alpha-value>)",
+          light: "rgb(var(--color-success-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-success-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-success-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-success-darker) / <alpha-value>)",
+        },
+        warning: {
+          DEFAULT: "rgb(var(--color-warning) / <alpha-value>)",
+          light: "rgb(var(--color-warning-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-warning-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-warning-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-warning-darker) / <alpha-value>)",
+        },
+        danger: {
+          DEFAULT: "rgb(var(--color-danger) / <alpha-value>)",
+          light: "rgb(var(--color-danger-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-danger-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-danger-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-danger-darker) / <alpha-value>)",
+        },
+        info: {
+          DEFAULT: "rgb(var(--color-info) / <alpha-value>)",
+          light: "rgb(var(--color-info-light) / <alpha-value>)",
+          lighter: "rgb(var(--color-info-lighter) / <alpha-value>)",
+          dark: "rgb(var(--color-info-dark) / <alpha-value>)",
+          darker: "rgb(var(--color-info-darker) / <alpha-value>)",
+        },
+        chart: {
+          funnel: {
+            impressions:
+              "rgb(var(--chart-funnel-impressions) / <alpha-value>)",
+            clicks: "rgb(var(--chart-funnel-clicks) / <alpha-value>)",
+            conversions:
+              "rgb(var(--chart-funnel-conversions) / <alpha-value>)",
+          },
+        },
+        typography: {
+          DEFAULT: "rgb(var(--color-text) / <alpha-value>)",
+          soft: "rgb(var(--color-text-soft) / <alpha-value>)",
+          muted: "rgb(var(--color-text-muted) / <alpha-value>)",
+          subtle: "rgb(var(--color-text-subtle) / <alpha-value>)",
+          inverse: "rgb(var(--color-text-inverse) / <alpha-value>)",
+          strong: "rgb(var(--color-text-strong) / <alpha-value>)",
+          primary: "rgb(var(--color-text-primary) / <alpha-value>)",
+          "primary-strong":
+            "rgb(var(--color-text-primary-strong) / <alpha-value>)",
+          "primary-subtle":
+            "rgb(var(--color-text-primary-subtle) / <alpha-value>)",
+          "primary-light":
+            "rgb(var(--color-text-primary-light) / <alpha-value>)",
         },
       },
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'BlinkMacSystemFont', "'Segoe UI'", 'sans-serif'],
-      }, 
+        sans: [
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "'Segoe UI'",
+          "sans-serif",
+        ],
+      },
+      height: {
+        '29': "464px",
+      },
       zIndex: {
-        '1000': '1000', 
+        1000: "1000",
+        1100: "1100",
       },
       boxShadow: {
-        'connection': '0 0 5px rgba(16, 185, 129, 0.6)',
+        connection: "0 0 4px rgb(var(--color-success) / 0.6)",
       },
       screens: {
-        xs: '480px',
-        // '3xl': '1920px',
+        xs: "480px",
+      },
+      borderColor: {
+        DEFAULT: "rgb(var(--color-border) / <alpha-value>)",
+        faint: "rgb(var(--color-border-faint) / <alpha-value>)",
+        subtle: "rgb(var(--color-border-subtle) / <alpha-value>)",
+        strong: "rgb(var(--color-border-strong) / <alpha-value>)",
+        darker: "rgb(var(--color-border-darker) / <alpha-value>)",
       },
     },
   },
   plugins: [],
-}
+};

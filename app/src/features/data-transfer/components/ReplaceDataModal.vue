@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { BaseModal } from '@/ui'
+import { Modal, ModalBody, ModalFooter, Button } from "@/ui";
 
 const emit = defineEmits<{
-  confirm: []
-  close: []
-}>()
+  confirm: [];
+  close: [];
+}>();
 </script>
 
 <template>
-  <BaseModal title="Replace campaign data?" @close="emit('close')">
-    <div class="modal-body">
-      <p class="text-sm text-typography-intense leading-6 w-full">
-        Uploading a new CSV will permanently replace all current campaign data and reset any active
-        analysis. This CANNOT be undone.
+  <Modal title="Replace campaign data?" size="small" @close="emit('close')">
+    <ModalBody>
+      <p class="w-full">
+        Uploading a new CSV will permanently replace all current campaign data
+        and reset any active analysis. This CANNOT be undone.
       </p>
-      <p class="text-sm font-semibold text-primary-300">Do you want to continue?</p>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-primary" @click="emit('confirm')">Replace data</button>
-      <button class="btn-secondary-outline" @click="emit('close')">Cancel</button>
-    </div>
-  </BaseModal>
+      <p class="text-sm font-semibold text-primary-lighter">
+        Do you want to continue?
+      </p>
+    </ModalBody>
+    <ModalFooter>
+      <Button variant="primary" @click="emit('confirm')">Replace data</Button>
+      <Button variant="outline" @click="emit('close')">Cancel</Button>
+    </ModalFooter>
+  </Modal>
 </template>

@@ -175,7 +175,7 @@ INSIGHT RULES:
 - metricHighlight must support the insight with a specific and relevant metric.
 - metricHighlight must add supporting evidence, not restate the same conclusion in shorter form.
 - metricHighlight must not use generic portfolio totals or dashboard headline KPIs.
-- Do not use totalBudget, totalRevenue, aggregatedROI, totalConversions, or channelCount/campaignCount as metricHighlight values unless absolutely necessary to support a non-obvious conclusion.
+- Do not use totalBudget, totalRevenue, aggregatedRoi, totalConversions, or channelCount/campaignCount as metricHighlight values unless absolutely necessary to support a non-obvious conclusion.
 - Prefer concentration metrics, efficiency gaps, budget vs revenue share mismatches, CPA differences, ROI gaps, or campaign/channel-specific evidence.
 - metricHighlight must add specificity through a share, gap, delta, count, or comparison.
 - Do not use the same wording, noun phrase, or conclusion in both insight text and metricHighlight.label.

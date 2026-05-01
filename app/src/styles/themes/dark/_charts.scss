@@ -1,0 +1,12 @@
+/*
+  Dark chart semantics.
+
+  Chart components should consume these chart-specific tokens rather than
+  reaching directly into the app palette.
+*/
+:root,
+[data-theme="dark"] {
+  --chart-funnel-impressions: var(--color-primary-dark);
+  --chart-funnel-clicks: var(--color-secondary-darker);
+  --chart-funnel-conversions: var(--color-warning-darker);
+}

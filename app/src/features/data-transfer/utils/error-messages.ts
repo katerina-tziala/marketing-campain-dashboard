@@ -1,4 +1,16 @@
-import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType } from '@/features/data-transfer/types'
+import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType, RowErrorSummaryWords } from '../types'
+
+const SINGULAR_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'wasWord'> = {
+  rowWord: 'row',
+  verb: 'contains',
+  wasWord: 'was',
+}
+
+const PLURAL_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'wasWord'> = {
+  rowWord: 'rows',
+  verb: 'contain',
+  wasWord: 'were',
+}
 
 const ROW_ISSUE_MESSAGES: Record<CampainDataRowIssueType, string> = {
   empty: 'Cannot be empty',
@@ -19,7 +31,7 @@ const VALIDATION_ERROR_MESSAGES: Record<CampainDataValidationErrorType, string> 
 }
 
 function replacePlaceholders(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? '')
+  return template.replace(/\{(\w+)\}/g, (_, placeholderKey) => values[placeholderKey] ?? '')
 }
 
 export function getRowErrorMessage(error: CampainDataFieldIssue): string {
@@ -27,20 +39,13 @@ export function getRowErrorMessage(error: CampainDataFieldIssue): string {
   return error.details ? `${base} ${error.details}` : base
 }
 
-export interface RowErrorSummaryWords {
-  rowWord: string
-  verb: string
-  wasWord: string
-  totalRowWord: string
-  validRowWord: string
-}
-
 export function getRowErrorSummaryWords(invalidCount: number, validCount: number): RowErrorSummaryWords {
   const totalCount = invalidCount + validCount
+
+  const invalidWords = invalidCount === 1 ? SINGULAR_INVALID_WORDS : PLURAL_INVALID_WORDS
+
   return {
-    rowWord: invalidCount === 1 ? 'row' : 'rows',
-    verb: invalidCount === 1 ? 'contains' : 'contain',
-    wasWord: invalidCount === 1 ? 'was' : 'were',
+    ...invalidWords,
     totalRowWord: totalCount === 1 ? 'row' : 'rows',
     validRowWord: validCount === 1 ? 'row' : 'rows',
   }

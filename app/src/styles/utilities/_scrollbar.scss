@@ -1,29 +1,42 @@
- @layer utilities {
+@mixin scrollbar-colors($thumb, $track, $thumb-hover: $thumb) {
+  scrollbar-color: #{$thumb} #{$track};
+
+  &::-webkit-scrollbar-track {
+    background: #{$track};
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #{$thumb};
+    border-radius: 9999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #{$thumb-hover};
+  }
+}
+
+@layer utilities {
   .scrollbar-stable {
     scrollbar-gutter: stable;
   }
 
   .scrollbar-stable-both {
     scrollbar-gutter: stable both-edges;
-  } 
-
-  .scrollbar-on-surface {
-    scrollbar-color: rgba(165, 180, 252, 0.7) rgba(13, 18, 38, 0.8);
-    
-    &::-webkit-scrollbar-track {
-      background: rgba(13, 18, 38, 0.8);
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: rgba(165, 180, 252, 0.7);
-      border-radius: 9999px;
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background-color: #818cf8;
-    }
-    
   }
 
+  .scrollbar-on-surface {
+    @include scrollbar-colors(
+      rgb(var(--color-primary-lighter) / 0.7),
+      rgb(var(--color-surface-0h) / 0.8),
+      rgb(var(--color-primary-light) / 0.7)
+    );
+  }
 
+  .scrollbar-info-on-surface {
+    @include scrollbar-colors(
+      rgb(var(--color-info) / 0.60),
+      rgb(var(--color-surface-0h) / 0.8),
+      rgb(var(--color-info-light) / 0.80)
+    );
+  }
 }

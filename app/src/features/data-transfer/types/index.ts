@@ -1,4 +1,4 @@
-import type { Campaign } from '@/shared/types/campaign'
+import type { Campaign } from '@/shared/data'
 
 export type CampainDataRowIssueType =
   | 'empty'
@@ -47,4 +47,12 @@ export interface CampainDataParseResult {
 export interface CampainDataProcessRowsResult {
   campaigns: Campaign[]
   errors: CampainDataRowError[]
+}
+
+export interface RowErrorSummaryWords {
+  rowWord: string
+  verb: string
+  wasWord: string
+  totalRowWord: string
+  validRowWord: string
 }

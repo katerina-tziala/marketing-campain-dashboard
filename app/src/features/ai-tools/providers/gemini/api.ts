@@ -1,4 +1,4 @@
-import { assertResponseOk, normalizeConnectionError, assertChatResponseOk } from '@/features/ai-tools/providers/utils'
+import { assertResponseOk, normalizeConnectionError, assertChatResponseOk } from '../utils'
 import type { GeminiModel, GeminiModelsResponse } from "./types"
 
 const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'

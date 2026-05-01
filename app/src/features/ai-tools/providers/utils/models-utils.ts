@@ -1,4 +1,4 @@
-import type { AiModel } from '@/features/ai-tools/providers/types';
+import type { AiModel } from '../types'
  
 export function getModelById(models: AiModel[], modelId: string): AiModel | undefined {
   return models.find((model) => model.id === modelId)

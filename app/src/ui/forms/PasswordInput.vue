@@ -1,31 +1,40 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, Comment } from 'vue'
-import EyeIcon from '@/ui/icons/EyeIcon.vue'
-import EyeOffIcon from '@/ui/icons/EyeOffIcon.vue'
+import { ref, computed, useSlots, Comment } from "vue";
+import Button from "../primitives/Button.vue";
+import EyeIcon from "../icons/EyeIcon.vue";
+import EyeOffIcon from "../icons/EyeOffIcon.vue";
 
-const props = withDefaults(defineProps<{
-  modelValue: string
-  id?: string
-  placeholder?: string
-  disabled?: boolean
-  autocomplete?: string
-}>(), {
-  autocomplete: 'off',
-})
+const props = withDefaults(
+  defineProps<{
+    modelValue: string;
+    id?: string;
+    placeholder?: string;
+    disabled?: boolean;
+    autocomplete?: string;
+  }>(),
+  {
+    autocomplete: "off",
+  },
+);
 
-defineEmits<{ 'update:modelValue': [value: string] }>()
+defineEmits<{ "update:modelValue": [value: string] }>();
 
-const slots = useSlots()
-const visible = ref(false)
+const slots = useSlots();
+const visible = ref(false);
 
 const hasError = computed(() => {
-  if (!slots.error) return false
-  return slots.error().some(vnode => vnode.type !== Comment)
-})
+  if (!slots.error) return false;
+  return slots.error().some((vnode) => vnode.type !== Comment);
+});
+
+const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
 </script>
 
 <template>
-  <div class="password-input" :class="{ 'password-input-error': hasError, 'disabled': disabled }">
+  <div
+    class="password-input"
+    :class="{ 'password-input-error': hasError, disabled: disabled }"
+  >
     <input
       :id="id"
       :value="modelValue"
@@ -36,20 +45,28 @@ const hasError = computed(() => {
       :autocomplete="autocomplete"
       :disabled="disabled"
       spellcheck="false"
-      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+      :aria-invalid="hasError ? 'true' : undefined"
+      :aria-describedby="hasError && errorId ? errorId : undefined"
+      @input="
+        $emit('update:modelValue', ($event.target as HTMLInputElement).value)
+      "
     />
-    <button
+    <Button
+      variant="text-only"
+      no-ring
+      class="toggle-btn"
       type="button"
-      class="btn-icon-secondary btn-small toggle-btn"
-      :aria-label="visible ? 'Hide' : 'Show'"
       :disabled="disabled"
+      :aria-label="visible ? 'Hide password' : 'Show password'"
       @click="visible = !visible"
     >
       <EyeOffIcon v-if="visible" />
       <EyeIcon v-else />
-    </button>
+    </Button>
   </div>
-  <slot name="error" />
+  <div :id="errorId">
+    <slot name="error" />
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -59,23 +76,24 @@ const hasError = computed(() => {
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary-500;
+      @apply border-primary-light;
     }
   }
-}
-
-.input-field {
-  @apply pr-12;
 }
 
 .toggle-btn {
-  @apply absolute right-0 w-10 h-[2.625rem] border border-transparent flex items-center justify-center text-base rounded-l-none rounded-r-sm;
+  @apply absolute
+    right-0
+    w-9
+    h-full
+    border
+    border-transparent
+    mr-[1px]
+    rounded-l-none
+    rounded-r-md;
+}
 
-  &:not(:disabled) {
-    &:focus,
-    &:focus-visible {
-      @apply border-primary-500/20 text-primary-400 bg-primary-500/20;
-    }
-  }
+.input-field {
+  @apply pr-11;
 }
 </style>

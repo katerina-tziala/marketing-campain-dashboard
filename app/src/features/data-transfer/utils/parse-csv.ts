@@ -1,11 +1,11 @@
 import Papa from 'papaparse'
-import type { CampainDataParseResult } from '@/features/data-transfer/types'
+import type { CampainDataParseResult } from '../types'
 import { validateCampaignData } from './validate-campaign-data'
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
 
-export function isValidCsvFile(f: File): boolean {
-  return f.name.toLowerCase().endsWith('.csv') || f.type === 'text/csv'
+export function isValidCsvFile(file: File): boolean {
+  return file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv'
 }
 
 export function parseCsv(file: File): Promise<CampainDataParseResult> {

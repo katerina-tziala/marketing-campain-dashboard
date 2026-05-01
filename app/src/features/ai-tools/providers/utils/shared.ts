@@ -1,4 +1,4 @@
-import type { AiModel } from '@/features/ai-tools/providers/types'
+import type { AiModel } from '../types'
 
 export function parseJsonResponse<T>(text: string): T {
   const cleaned = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim()

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "/Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app"
+    ],
+    "allow": [
+      "Bash(cd /Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app && npx tsc --noEmit 2>&1)",
+      "Bash(cd /Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app && npx tsc --noEmit 2>&1 | head -30)",
+      "Bash(cd /Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app && npx tsc --noEmit 2>&1 | head -40)",
+      "Bash(cd /Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app && npx tsc --noEmit 2>&1 | head -20)",
+      "Bash(cd /Users/katerina.tziala/Documents/GitHub/marketing-campain-dashboard/app && npx vue-tsc --noEmit 2>&1)",
+      "Bash(npx tsc --noEmit 2>&1)"
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-import type { Campaign } from '@/shared/types/campaign'
+import type { Campaign } from '@/shared/data'
 
 const CSV_HEADERS: (keyof Campaign)[] = [
   'campaign',
@@ -20,8 +20,8 @@ function escapeCsvValue(value: string | number): string {
 
 export function downloadCsv(campaigns: Campaign[], filename: string): void {
   const header = CSV_HEADERS.join(',')
-  const rows = campaigns.map((c) =>
-    CSV_HEADERS.map((key) => escapeCsvValue(c[key])).join(','),
+  const rows = campaigns.map((campaign) =>
+    CSV_HEADERS.map((key) => escapeCsvValue(campaign[key])).join(','),
   )
   const csv = [header, ...rows].join('\n')
 

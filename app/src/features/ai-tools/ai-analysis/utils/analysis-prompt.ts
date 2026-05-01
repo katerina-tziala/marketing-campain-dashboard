@@ -1,16 +1,16 @@
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis/types';
-import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '@/features/ai-tools/prompts';
-import { runProviderPrompt } from '@/features/ai-tools/providers';
-import type { AiAnalysisType } from '@/features/ai-tools/types';
-import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types';
-import type { AnalysisContext, AIProviderState, AnalysisResponse } from '@/features/ai-tools/ai-analysis/types';
+import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '../../prompts';
+import { runProviderPrompt } from '../../providers';
+import type { AiAnalysisType } from '../../types';
+import type { BusinessContext, AnalysisContext, AIProviderState, AnalysisResponse } from '../types';
 
-// TODO: [DEV ONLY] Remove this override slot before shipping to production
-type DevOverride = (type: AiAnalysisType, signal: AbortSignal) => Promise<AnalysisResponse | null>
-let _devOverride: DevOverride | null = null
-// TODO: [DEV ONLY] Remove this export before shipping to production
-export function setDevAnalysisOverride(fn: DevOverride | null): void {
-  _devOverride = fn
+type AnalysisPromptRunnerOverride = (type: AiAnalysisType, signal: AbortSignal) => Promise<AnalysisResponse | null>
+let _analysisPromptRunnerOverride: AnalysisPromptRunnerOverride | null = null
+
+// App-level extension point used by dev-mode to replace external prompt calls.
+// Feature code should not call this directly.
+export function setAnalysisPromptRunnerOverride(fn: AnalysisPromptRunnerOverride | null): void {
+  _analysisPromptRunnerOverride = fn
 }
 
 
@@ -41,8 +41,9 @@ export async function runAnalysisPrompt(
   analysisContext: AnalysisContext,
   signal: AbortSignal,
 ): Promise<AnalysisResponse | null> {
-  // TODO: [DEV ONLY] Remove this branch before shipping to production
-  if (_devOverride) return _devOverride(analysisContext.type, signal)
+  if (_analysisPromptRunnerOverride) {
+    return _analysisPromptRunnerOverride(analysisContext.type, signal)
+  }
 
   const prompt = buildAnalysisPrompt(analysisContext)
 

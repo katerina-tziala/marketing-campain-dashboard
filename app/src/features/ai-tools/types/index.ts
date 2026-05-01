@@ -1,5 +1,3 @@
-// ── AI Provider & Connection ──────────────────────────────────────────────────
-
 export type AiProviderType = 'gemini' | 'groq';
 
 export type AiErrorCode =
@@ -15,12 +13,18 @@ export type AiErrorCode =
   | 'min-campaigns'
   | 'unknown';
 
+export type AiConnectionErrorCode = Exclude<AiErrorCode, 'min-campaigns'>
+
 export type AiConnectionError = {
-  code: AiErrorCode;
+  code: AiConnectionErrorCode;
   provider: AiProviderType;
 };
 
-// ── AI Analysis meta-types ────────────────────────────────────────────────────
+export interface AiConnectionEvent {
+  id: number
+  status: 'success' | 'error'
+  provider: AiProviderType
+}
 
 export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';
 

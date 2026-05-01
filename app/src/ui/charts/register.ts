@@ -10,13 +10,15 @@ import {
   Tooltip,
 } from 'chart.js'
 
-ChartJS.register(
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  Legend,
-  LinearScale,
-  PointElement,
-  Title,
-  Tooltip,
-)
+export function registerCharts() {
+  ChartJS.register(
+    ArcElement,
+    BarElement,
+    CategoryScale,
+    Legend,
+    LinearScale,
+    PointElement,
+    Title,
+    Tooltip,
+  )
+}
