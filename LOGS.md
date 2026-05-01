@@ -11331,3 +11331,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Split types by meaning — summary, signal, threshold, predicate, group, and final analysis types are easier to scan than one large mixed file.
 - Keep existing `./types` import paths working — moving from a flat `types.ts` file to a `types/` folder barrel avoids broad churn in internal portfolio-analysis files.
 - Move only domain helpers, not generic primitives — `safeDivide`, `computeRoundedRatioOrNull`, `computedMedianOrNull`, and sorting helpers stay in generic utils because they are reusable beyond portfolio analysis.
+
+
+## [#534] Extract Ranking Helpers and Sort Integration
+**Type:** refactor
+
+**Summary:** Extracted portfolio ranking helpers into a dedicated `ranking.ts` module within the portfolio-analysis domain and integrated them with the existing `sortByValueDesc` utility. Updated campaign-performance sorting and chart utilities to consume ranking functions directly, eliminating redundant sort implementations.
+
+**Brainstorming:** The portfolio-analysis domain needed a central place for ranking operations used by both classification logic and feature-layer chart/sort utilities. Previously, ranking was inline logic scattered across signals, classification, and campaign-performance utilities. Extracting it into a dedicated module — alongside the domain's existing metrics, channel-map, and checkers modules — clarifies the shared responsibility and makes it easy for UI code to reuse ranking without duplicating sort logic. The module uses the existing `sortByValueDesc` from generic shared utils to avoid reinventing directional sorting.
+
+**Prompt:** Create a dedicated `ranking.ts` module in portfolio-analysis that exports typed ranking helpers for ROI, allocation gap, budget, revenue, and max shift. These functions compose the generic `sortByValueDesc` utility to apply domain-specific sort directions. Update `campaign-performance-sorting.ts` to import and delegate to these domain helpers instead of reimplementing sorts. Ensure all ranking functions have clear comments explaining when they are used.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/ranking.ts` — new module with six typed ranking functions: `rankByRoiDesc`, `rankByAllocationGapDesc`, `rankByBudgetShareDesc`, `rankByBudgetDesc`, `rankByRevenueDesc`, `rankByMaxShiftDesc`; each accepts a generic type `T` with a required field and delegates to `sortByValueDesc`; includes inline comments stating when each ranking is used (analysis outputs, classification, scaling candidates, transfer targets).
+- `app/src/shared/portfolio-analysis/index.ts` — added `ranking` to the barrel export so ranking helpers are accessible via the public portfolio-analysis API.
+- `app/src/features/campaign-performance/utils/campaign-performance-sorting.ts` — refactored to import ranking helpers (`rankByRoiDesc`, `rankByBudgetDesc`) from portfolio-analysis domain and delegate to them; removed inline sort logic; updated comment tone to reflect that sorting now defers to domain-layer ranking.
+
+**Key decisions & why:**
+- Create `ranking.ts` as a domain module peer to `metrics.ts`, `channel-map.ts`, and `checkers.ts` — rankings are portfolio-domain operations, not generic utilities, so they belong in `portfolio-analysis` alongside other domain logic.
+- Use generic type constraints (`RoiComparable`, `ShareComparable`) — allows ranking to work with any portfolio-analysis entity (campaigns, channels, signal groups) that carry the required field; the type system ensures correctness at call time.
+- Delegate to existing `sortByValueDesc` utility — avoids reinventing directional sorting; the generic utility already handles null-safe, directional descending sort, so ranking functions compose it rather than duplicate.
+- Export ranking from portfolio-analysis barrel — feature and chart code can now import from `@/shared/portfolio-analysis` instead of reimplementing sorts; one single source of truth for each ranking operation.
+- Move portfolio-specific sorting out of feature-level utils — `campaign-performance-sorting.ts` becomes a thin adapter that delegates to domain ranking rather than owning sort logic; feature layer now focuses on composition and chart integration rather than reimplementing business logic.

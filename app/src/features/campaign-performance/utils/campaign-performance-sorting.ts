@@ -1,25 +1,29 @@
 import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types'
 import type { Channel } from '@/shared/types'
-import { computeShareEfficiency } from '@/shared/portfolio-analysis'
+import {
+  computeShareEfficiency,
+  rankByBudgetDesc,
+  rankByRoiDesc,
+} from '@/shared/portfolio-analysis'
 import { sortByValueDesc } from '@/shared/utils'
 
 // ROI ranking charts should put the strongest performers first; unavailable ROI stays last.
 export function sortCampaignsByRoiDesc(
   campaigns: readonly CampaignPerformance[],
 ): CampaignPerformance[] {
-  return sortByValueDesc(campaigns, (campaign) => campaign.roi)
+  return rankByRoiDesc(campaigns)
 }
 
 // ROI ranking charts should put the strongest channels first; unavailable ROI stays last.
 export function sortChannelsByRoiDesc(channels: readonly Channel[]): Channel[] {
-  return sortByValueDesc(channels, (channel) => channel.roi)
+  return rankByRoiDesc(channels)
 }
 
 // Allocation charts should lead with the largest spend areas.
 export function sortCampaignsByBudgetDesc(
   campaigns: readonly CampaignPerformance[],
 ): CampaignPerformance[] {
-  return sortByValueDesc(campaigns, (campaign) => campaign.budget)
+  return rankByBudgetDesc(campaigns)
 }
 
 function getChannelEfficiencyGapImpact(channel: Channel, kpis: PortfolioKPIs): number | null {

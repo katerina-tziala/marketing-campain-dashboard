@@ -5,6 +5,10 @@ type RevenueRanked = {
   revenue: number
 }
 
+type BudgetRanked = {
+  budget: number
+}
+
 type MaxShiftRanked = {
   maxShift: number
 }
@@ -25,6 +29,10 @@ export function rankByBudgetShareDesc<T extends Pick<ShareComparable, 'budgetSha
   items: readonly T[],
 ): T[] {
   return sortByValueDesc(items, (item) => item.budgetShare)
+}
+
+export function rankByBudgetDesc<T extends BudgetRanked>(items: readonly T[]): T[] {
+  return sortByValueDesc(items, (item) => item.budget)
 }
 
 export function rankByRevenueDesc<T extends RevenueRanked>(items: readonly T[]): T[] {
