@@ -95,7 +95,8 @@ app/                        # Vue 3 + Vite project
 │   │   │       └── index.ts            # Barrel — exports all signal submodules
 │   │   ├── composables/
 │   │   │   ├── useSort.ts          # useSort<T extends string>(defaultKey: T, defaultDir?: SortDir) → { sortKey, sortDir, toggleSort } — generic sort state composable; toggleSort flips dir on same key, resets to defaultDir on new key; used by CampainDuplicationsTable, CampaignTable, DataErrorsTable
-│   │   │   └── index.ts            # Barrel — exports useSort
+│   │   │   ├── useCooldown.ts      # useCooldown(ms) → { tick, schedule, clearAll } — cooldown timer composable for debouncing repeated calls; tick is reactive ref for watchers; used by aiAnalysis.store for per-model cooldown enforcement
+│   │   │   └── index.ts            # Barrel — exports useSort, useCooldown
 │   │   └── data/
 │   │       ├── types/
 │   │       │   ├── campaign.ts     # CampaignMetrics, Campaign, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency — foundational entity types consumed by all analytical domains
@@ -220,17 +221,19 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── AiTools.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── stores/
-│   │   │   │   │   ├── aiAnalysis.store.config.ts # Store-private constants — DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR; imported only by aiAnalysis.store.ts
-│   │   │   │   │   ├── aiAnalysis.store.utils.ts  # Store-private pure helpers — TabDisplay<T> type, DEFAULT_STATE, createTabState(), getOtherAnalysisType(); imported only by aiAnalysis.store.ts
-│   │   │   │   │   ├── aiAnalysis.store.ts # Pinia store (id: 'aiAnalysis') — accepts AiAnalysisContext via setAnalysisContext(); analysisContext drives portfolioContext, filter watcher, portfolio-switch watcher, evaluationDisabled, and prompt execution; no direct campaign-performance import; clearCacheForPortfolio(portfolioId) called by dashboard orchestrator on portfolio eviction; per-tab internal state (plain object): firstAnalyzeCompleted, controller, debounceTimer; per-tab cache (AnalysisCache instance): get/set/getByKey/deletePortfolio/clear/lastVisibleCacheKey; per-tab reactive display state (ref<TabDisplay<T>>): budgetOptimizer + executiveSummary; shared: activeTab, analysisActivated; stores-internal helpers: isBelowOptimizerMinimum, showOptimizerMinimumError, showCachedResult, showTokenLimitState, revertTab, onPortfolioSwitch
+│   │   │   │   │   ├── aiAnalysis.store.config.ts # Store-private constants + types — DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR; TabDisplay<T> type, DEFAULT_STATE, ALL_TABS, DEFAULT_PORTFOLIO_CONTEXT, getOtherAnalysisType(); imported only by aiAnalysis.store.ts
+│   │   │   │   │   ├── utils.ts    # Store-private helper — TabState class (internal per-tab request state: firstAnalyzeCompleted, controller, debounceTimer, cache management); imported only by aiAnalysis.store.ts
+│   │   │   │   │   ├── aiAnalysis.store.ts # Pinia store (id: 'aiAnalysis') — accepts AiAnalysisContext via setAnalysisContext(); analysisContext drives portfolioContext, filter watcher, portfolio-switch watcher, evaluationDisabled, and prompt execution; no direct campaign-performance import; clearCacheForPortfolio(portfolioId) called by dashboard orchestrator on portfolio eviction; per-tab internal state (TabState instance): firstAnalyzeCompleted, controller, debounceTimer, cache; per-tab reactive display state (ref<TabDisplay<T>>): budgetOptimizer + executiveSummary; shared: activeTab, analysisActivated; core async flow: performAnalysisRequest() runs API call, caches result, stamps timestamp/model; executeAnalysis() orchestrates pre-flight checks, request setup, and calls performAnalysisRequest; store-internal helpers: isBelowOptimizerMinimum, showOptimizerMinimumError, showCachedResult, showTokenLimitState, revertTab, onPortfolioSwitch
 │   │   │   │   │   └── index.ts    # Barrel — exports useAiAnalysisStore, AiAnalysisContext, PortfolioContext
 │   │   │   │   ├── utils/
+│   │   │   │   │   ├── tab-state.ts        # TabState class — per-tab request state (firstAnalyzeCompleted, controller, debounceTimer, private cache); methods: cancelRequest(), completeFirstAnalysis(), reset(), getCached/setCached/getLastVisible/clearCache/deletePortfolioCache(portfolioId); used by aiAnalysis.store
 │   │   │   │   │   ├── analysis-messages.ts  # ANALYSIS_ERROR_MESSAGES (Record<AiErrorCode, {title,message}> — all 11 codes incl. 'min-campaigns'); TOKEN_LIMIT_MESSAGE
 │   │   │   │   │   ├── analysis-prompt.ts  # buildAnalysisPrompt (internal); runAnalysisPrompt(providerState, analysisContext, signal) → AnalysisResponse|null; [DEV ONLY] setDevAnalysisOverride export
-│   │   │   │   │   └── analysis-cache/     # Cache module — AnalysisCache class + CacheEntry type + key generation
+│   │   │   │   │   ├── analysis-cache/     # Cache module — AnalysisCache class + CacheEntry type + key generation
 │   │   │   │   │       ├── cache-key.ts    # getCacheKey(channelIds, provider) → 16-char hex string (xxhashjs h64, seed=0); internal to analysis-cache
 │   │   │   │   │       ├── AnalysisCache.ts # AnalysisCache class — no constructor args; get(portfolioId, channelIds, provider) auto-tracks lastVisibleCacheKey on hit; getByKey(portfolioId, key) lookup-only; set(portfolioId, channelIds, provider, entry) auto-tracks lastVisibleCacheKey on write; deletePortfolio/clear
 │   │   │   │   │       └── index.ts        # Barrel — exports AnalysisCache, CacheEntry
+│   │   │   │   │   └── index.ts        # Barrel — exports TabState, ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE, runAnalysisPrompt, AnalysisCache, CacheEntry
 │   │   │   │   ├── types/
 │   │   │   │   │   ├── output.types.ts  # AI response output types — ConfidenceLevel, ExecutionRisk, HealthLabel, InsightType, ActionUrgency; Executive Summary shapes (ExecutiveInsight, PriorityAction, ExecutiveCorrelation, HealthScore, ExecutiveSummaryOutput); Budget Optimizer shapes (BudgetRecommendation, BudgetOptimizerOutput); response envelope types (BudgetOptimizerResponse, ExecutiveSummaryResponse, AnalysisResponse)
 │   │   │   │   │   ├── context.types.ts # Analysis input/context types — BusinessContext, AnalysisContext, AIProviderState, PortfolioContext, AiAnalysisContext
@@ -257,7 +260,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │       └── index.ts                # Barrel — exports ExecutiveSummaryAnalysis
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── stores/
-│   │   │   │   │   ├── aiConnection.store.ts # useAiConnectionStore (id: 'aiConnection') — provider, apiKey (memory-only), isConnected, isConnecting, connectionError, models (AiModel[]), selectedModel; selectedModelLimitReached, allModelsLimitReached, evaluationDisabled (computed); connect(), disconnect(), markModelLimitReached(), selectNextAvailableModel(), openPanel(), closePanel(); connect() publishes AiConnectionEvent via lastConnectionEvent ref (success/error) instead of showing toasts directly — orchestrator handles toast display; [DEV ONLY] setDevConnectOverride export
+│   │   │   │   │   ├── aiConnection.store.ts # useAiConnectionStore (id: 'aiConnection') — provider, apiKey (memory-only), isConnected, isConnecting, connectionError, models (AiModel[]), selectedModel; selectedModelLimitReached, allModelsLimitReached, evaluationDisabled (computed); connect(), disconnect(), markModelLimitReached(), selectNextAvailableModel(), openPanel(), closePanel(); connect() delegates to: handleConnectionError() on error (converts error code, emits event), setProviderModels() on success (sets provider/apiKey/models/selectedModel, marks isConnected, emits event); connect() publishes AiConnectionEvent via lastConnectionEvent ref (success/error) instead of showing toasts directly — orchestrator handles toast display; [DEV ONLY] setDevConnectOverride export
 │   │   │   │   │   └── index.ts    # Barrel — exports useAiConnectionStore, setDevConnectOverride
 │   │   │   │   ├── components/
 │   │   │   │   │   ├── index.ts                # Barrel — exports AiConnectionForm, AiConnectionInstructions, AiConnectedStatus
@@ -294,7 +297,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── index.ts                # Barrel — exports CampaignPerformanceView
 │   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; receives showAiButton/showConnectedDot/aiClick from DashboardPage; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)
 │   │   │   ├── stores/
-│   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; watches pendingSelectionId + lastEvictedId; setChannelFilter(ids) action
+│   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; core functions: getChannelsByIds(ids) → Channel[] (lookup filtered channels), getSelectedChannels() → Channel[] (return all or filtered), onPendingSelection(id) (watch handler), onPortfolioEvicted(id) (watch handler); watchers: pendingSelectionId (immediate) → onPendingSelection, lastEvictedId → onPortfolioEvicted; setChannelFilter(ids) action
 │   │   │   │   └── index.ts        # Barrel — exports useCampaignPerformanceStore
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable, EmptyState

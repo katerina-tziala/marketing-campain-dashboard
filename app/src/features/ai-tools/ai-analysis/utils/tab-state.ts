@@ -1,5 +1,5 @@
-import { AnalysisCache } from '../utils'
-import type { CacheEntry } from '../utils'
+import { AnalysisCache } from './analysis-cache'
+import type { CacheEntry } from './analysis-cache'
 
 export class TabState {
   firstAnalyzeCompleted = false

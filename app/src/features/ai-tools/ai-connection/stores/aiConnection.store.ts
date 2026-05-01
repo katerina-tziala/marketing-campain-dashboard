@@ -26,6 +26,29 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
   const aiPanelOpen = ref(false)
   const lastConnectionEvent = ref<AiConnectionEvent | null>(null)
 
+  function handleConnectionError(error: unknown, providerType: AiProviderType): void {
+    const code = getErrorCode(error)
+    connectionError.value = { code, provider: providerType }
+    lastConnectionEvent.value = {
+      id: Date.now(),
+      status: 'error',
+      provider: providerType,
+    }
+  }
+
+  function setProviderModels(providerType: AiProviderType, apiKeyValue: string, providerModels: AiModel[]): void {
+    provider.value = providerType
+    apiKey.value = apiKeyValue
+    models.value = providerModels
+    selectedModel.value = providerModels[0]
+    isConnected.value = true
+    lastConnectionEvent.value = {
+      id: Date.now(),
+      status: 'success',
+      provider: providerType,
+    }
+  }
+
   async function connect(providerType: AiProviderType, APIkey: string): Promise<void> {
     isConnecting.value = true
     connectionError.value = null
@@ -33,24 +56,9 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
       const providerModels = _connectProviderOverride
         ? await _connectProviderOverride(providerType)
         : await connectProvider(providerType, APIkey)
-      provider.value = providerType
-      apiKey.value = APIkey
-      models.value = providerModels
-      selectedModel.value = providerModels[0]
-      isConnected.value = true
-      lastConnectionEvent.value = {
-        id: Date.now(),
-        status: 'success',
-        provider: providerType,
-      }
+      setProviderModels(providerType, APIkey, providerModels)
     } catch (error) {
-      const code = getErrorCode(error)
-      connectionError.value = { code, provider: providerType }
-      lastConnectionEvent.value = {
-        id: Date.now(),
-        status: 'error',
-        provider: providerType,
-      }
+      handleConnectionError(error, providerType)
     } finally {
       isConnecting.value = false
     }

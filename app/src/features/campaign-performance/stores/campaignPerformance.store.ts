@@ -29,14 +29,20 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     [...portfolioChannels.value.values()].flatMap(channel => channel.campaigns),
   )
 
-  const selectedChannels = computed<Channel[]>(() => {
+  function getChannelsByIds(ids: string[]): Channel[] {
+    return ids.flatMap(id => {
+      const channel = portfolioChannels.value.get(id)
+      return channel ? [channel] : []
+    })
+  }
+
+  function getSelectedChannels(): Channel[] {
     return selectedChannelsIds.value.length === 0
       ? [...portfolioChannels.value.values()]
-      : selectedChannelsIds.value.flatMap(id => {
-          const channel = portfolioChannels.value.get(id)
-          return channel ? [channel] : []
-        })
-  })
+      : getChannelsByIds(selectedChannelsIds.value)
+  }
+
+  const selectedChannels = computed<Channel[]>(() => getSelectedChannels())
 
   const filteredCampaigns = computed<CampaignPerformance[]>(() =>
     selectedChannels.value.flatMap(channel => channel.campaigns),
@@ -71,27 +77,31 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     selectedChannelsIds.value = ids
   }
 
+  function onPendingSelection(id: string | null): void {
+    if (id) {
+      activePortfolioId.value = id
+      selectedChannelsIds.value = []
+    }
+  }
+
+  function onPortfolioEvicted(id: string | null): void {
+    if (id && activePortfolioId.value === id) {
+      activePortfolioId.value = null
+      selectedChannelsIds.value = []
+    }
+  }
+
   // ── Watchers ──────────────────────────────────────────────────────────
 
   watch(
     () => portfolioData.pendingSelectionId,
-    (id) => {
-      if (id) {
-        activePortfolioId.value = id
-        selectedChannelsIds.value = []
-      }
-    },
+    onPendingSelection,
     { immediate: true },
   )
 
   watch(
     () => portfolioData.lastEvictedId,
-    (id) => {
-      if (id && activePortfolioId.value === id) {
-        activePortfolioId.value = null
-        selectedChannelsIds.value = []
-      }
-    },
+    onPortfolioEvicted,
   )
 
   return {

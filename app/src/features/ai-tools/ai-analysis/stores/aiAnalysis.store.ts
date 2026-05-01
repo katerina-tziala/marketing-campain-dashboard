@@ -10,12 +10,19 @@ import type {
   AiAnalysisContext,
 } from '../types'
 import { useAiConnectionStore } from '../../ai-connection/stores'
-import { runAnalysisPrompt } from '../utils'
-import type { CacheEntry } from '../utils'
-import { DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR } from './aiAnalysis.store.config'
-import { useCooldown } from './useCooldown'
-import { type TabDisplay, DEFAULT_STATE, DEFAULT_PORTFOLIO_CONTEXT, ALL_TABS, getOtherAnalysisType } from './aiAnalysis.store.utils'
-import { TabState } from './TabState'
+import { runAnalysisPrompt, type CacheEntry, TabState } from '../utils'
+import { useCooldown } from '@/shared/composables'
+import {
+  DEBOUNCE_MS,
+  COOLDOWN_MS,
+  MIN_OPTIMIZER_CAMPAIGNS,
+  OPTIMIZER_MIN_CAMPAIGNS_ERROR,
+  type TabDisplay,
+  DEFAULT_STATE,
+  DEFAULT_PORTFOLIO_CONTEXT,
+  ALL_TABS,
+  getOtherAnalysisType,
+} from './aiAnalysis.store.config'
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
@@ -176,37 +183,15 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Core analyze ──────────────────────────────────────────────────────
 
-  async function executeAnalysis(tab: AiAnalysisType, isAutomatic: boolean): Promise<void> {
-    if (evaluationDisabled.value) return
-
-    const context = analysisContext.value
-    if (!context) return
-
+  async function performAnalysisRequest(
+    tab: AiAnalysisType,
+    context: AiAnalysisContext,
+    portfolioId: string,
+    tabState: TabState,
+  ): Promise<void> {
     const provider = aiStore.provider!
     const apiKey = aiStore.apiKey
     const selectedModel = aiStore.selectedModel!
-
-    if (showOptimizerMinimumError(tab)) return
-
-    const portfolioId = getPortfolioId()
-
-    // Token limit pre-flight: if selected model is exhausted, try next; if all exhausted, show cache or error
-    if (aiStore.selectedModelLimitReached) {
-      if (!aiStore.selectNextAvailableModel()) {
-        showTokenLimitState(tab)
-        return
-      }
-    }
-
-    if (isAutomatic && showCachedResult(tab)) return
-
-    // Cancel any running request on the other tab (single-request rule)
-    const otherTab = getOtherAnalysisType(tab)
-    if (getTabState(otherTab).controller) revertTab(otherTab)
-
-    const tabState = getTabState(tab)
-    tabState.cancelRequest()
-    setLoading(tab)
 
     const controller = new AbortController()
     tabState.controller = controller
@@ -233,6 +218,37 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       tabState.controller = null
       handleRequestError(tab, error, tabState.getCached(portfolioId, context.selectedChannelIds, provider))
     }
+  }
+
+  async function executeAnalysis(tab: AiAnalysisType, isAutomatic: boolean): Promise<void> {
+    if (evaluationDisabled.value) return
+
+    const context = analysisContext.value
+    if (!context) return
+
+    if (showOptimizerMinimumError(tab)) return
+
+    const portfolioId = getPortfolioId()
+
+    // Token limit pre-flight: if selected model is exhausted, try next; if all exhausted, show cache or error
+    if (aiStore.selectedModelLimitReached) {
+      if (!aiStore.selectNextAvailableModel()) {
+        showTokenLimitState(tab)
+        return
+      }
+    }
+
+    if (isAutomatic && showCachedResult(tab)) return
+
+    // Cancel any running request on the other tab (single-request rule)
+    const otherTab = getOtherAnalysisType(tab)
+    if (getTabState(otherTab).controller) revertTab(otherTab)
+
+    const tabState = getTabState(tab)
+    tabState.cancelRequest()
+    setLoading(tab)
+
+    await performAnalysisRequest(tab, context, portfolioId, tabState)
   }
 
   // ── Public actions ────────────────────────────────────────────────────

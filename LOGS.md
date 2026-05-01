@@ -12344,3 +12344,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `setDisplay` kept as the single write point for the reactive refs — all helpers delegate to it; no logic duplication.
 - `analyze()` still uses `display.value = { ...display.value, notice: null }` directly — it clears only the notice without touching status, which doesn't map to any of the new helpers.
 - `revertTab` ternary replaced with explicit `if/else` to avoid passing `null` as a response to `setDone`.
+
+
+## [580] Restructure stores: move cooldown to shared, extract constants, split async logic
+**Type:** refactor
+
+**Summary:** Reorganized ai-analysis and ai-connection stores by moving cooldown composable to shared, consolidating store constants/types into config, extracting request handling into separate functions, and decomposing watcher callbacks into named functions in campaign-performance store.
+
+**Brainstorming:** The codebase had logic scattered across multiple store-related files: cooldown was feature-specific in ai-analysis stores when it's generic; constants were split between config and utils; async request logic was inlined in executeAnalysis; watchers had inline callbacks; campaign-performance had complex computed logic. Each refactor isolates concerns: composables go to shared, constants to config, async flows to separate functions, watchers to named handlers. This improves testability, readability, and reusability.
+
+**Prompt:** Move useCooldown to @/shared/composables. Move TabDisplay, DEFAULT_STATE, ALL_TABS, DEFAULT_PORTFOLIO_CONTEXT, getOtherAnalysisType from aiAnalysis.store.utils to aiAnalysis.store.config. Move TabState to ai-analysis/utils/tab-state.ts. In aiConnection.store, extract handleConnectionError() and setProviderModels(). In aiAnalysis.store, extract performAnalysisRequest(). In campaignPerformance.store, extract getChannelsByIds(), getSelectedChannels(), onPendingSelection(), onPortfolioEvicted() and wire watchers to call them.
+
+**What changed:**
+- `shared/composables/useCooldown.ts` — new file; moved from `features/ai-tools/ai-analysis/stores/useCooldown.ts`; exports useCooldown(ms) composable
+- `shared/composables/index.ts` — added export of useCooldown
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts` — added TabDisplay<T> type, DEFAULT_STATE, ALL_TABS, DEFAULT_PORTFOLIO_CONTEXT, getOtherAnalysisType(); now imports and re-exports all store setup
+- `features/ai-tools/ai-analysis/stores/utils.ts` — new file (not aiAnalysis.store.utils.ts); moved TabState class from TabState.ts
+- `features/ai-tools/ai-analysis/utils/tab-state.ts` — new file; contains TabState class with request state management
+- `features/ai-tools/ai-analysis/utils/index.ts` — added export of TabState via barrel
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — updated imports from config; imports TabState from utils; extracted performAnalysisRequest(tab, context, portfolioId, tabState); executeAnalysis() now delegates request logic to performAnalysisRequest()
+- `features/ai-tools/ai-connection/stores/aiConnection.store.ts` — extracted handleConnectionError(error, providerType), setProviderModels(providerType, apiKeyValue, providerModels); connect() now delegates to these functions
+- `features/campaign-performance/stores/campaignPerformance.store.ts` — extracted getChannelsByIds(ids), getSelectedChannels(), onPendingSelection(id), onPortfolioEvicted(id); watchers now call these functions; simplified computed logic
+- `CLAUDE.md` — updated architecture: added useCooldown to composables; updated aiAnalysis.store.config, store, and utils descriptions; updated aiConnection.store and campaignPerformance.store descriptions to reflect extracted functions
+
+**Key decisions & why:**
+- Cooldown is a generic timer pattern, not AI-specific — belongs in shared composables alongside useSort.
+- Config now owns both runtime constants (DEBOUNCE_MS, COOLDOWN_MS) and static types/defaults (TabDisplay, DEFAULT_STATE) — single source of truth for store setup.
+- TabState moved to ai-analysis/utils as a utility class (not a store helper) — it's a domain concept (per-tab request tracking), not a store implementation detail.
+- performAnalysisRequest() extracted to isolate API call flow (request, cache, timestamp) from orchestration (pre-flight checks, setup) — makesjson executeAnalysis() a pure orchestrator.
+- campaignPerformance watch handlers extracted as named functions — watchers become thin adapters instead of inline logic; functions are easier to test and reuse.
+- All within-feature imports updated to use relative paths (e.g., `./utils` instead of config-to-store cross-imports); shared imports continue to use @/ alias.
