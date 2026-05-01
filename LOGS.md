@@ -12374,3 +12374,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - performAnalysisRequest() extracted to isolate API call flow (request, cache, timestamp) from orchestration (pre-flight checks, setup) — makesjson executeAnalysis() a pure orchestrator.
 - campaignPerformance watch handlers extracted as named functions — watchers become thin adapters instead of inline logic; functions are easier to test and reuse.
 - All within-feature imports updated to use relative paths (e.g., `./utils` instead of config-to-store cross-imports); shared imports continue to use @/ alias.
+
+## [581] Consolidate modal and drawer headers into ModalHeader
+**Type:** refactor
+
+**Summary:** Extracted modal/drawer header into a reusable ModalHeader component that supports icon slots and action slots, replacing SheetHeader which only worked for one-off usage. Removed SheetHeader from the layout module and deleted the file.
+
+**Brainstorming:** Modal and ResponsiveDrawer were both implementing their own header logic — Modal had SheetHeader, ResponsiveDrawer also used SheetHeader but needed to pass through icon and action slots. SheetHeader was a layout primitive with slots for icon, header, and action, but its slot names and layout didn't match the modal/drawer use case perfectly. Rather than extend SheetHeader or create a new DrawerHeader, we consolidated: ModalHeader became the single header component for both Modal (title + close) and ResponsiveDrawer (title + icon + custom actions + close). This eliminates duplication, makes the header contract explicit, and removes the now-unused SheetHeader.
+
+**Prompt:** Create ModalHeader in ui/modal/ that supports title prop, closeLabel prop, optional #icon slot, and optional #header-actions slot. Update Modal.vue to use ModalHeader. Update ResponsiveDrawer.vue to use ModalHeader for both desktop panel and mobile overlay sections. Remove SheetHeader from layout module and delete SheetHeader.vue.
+
+**What changed:**
+- `ui/modal/ModalHeader.vue` — new file; reusable header component with title, closeLabel props; #icon and #header-actions named slots; flex layout with icon support; emits close event; used by Modal and ResponsiveDrawer
+- `ui/modal/Modal.vue` — replaced SheetHeader with ModalHeader; simplified title + close button rendering; updated to pass closeLabel prop through
+- `ui/drawer/ResponsiveDrawer.vue` — replaced SheetHeader with ModalHeader in both desktop panel (line 63) and mobile overlay (line 87) sections; icon and header-actions slots now passed through ModalHeader; removed unused CloseIcon and Button imports (ModalHeader owns them)
+- `ui/modal/index.ts` — added ModalHeader export to barrel
+- `ui/layout/index.ts` — removed SheetHeader export from barrel
+- `ui/layout/SheetHeader.vue` — deleted file (no longer used)
+- `CLAUDE.md` — updated ui/layout section to remove SheetHeader entry; updated ui/modal section to add ModalHeader entry; updated ResponsiveDrawer description to mention ModalHeader instead of SheetHeader
+
+**Key decisions & why:**
+- ModalHeader owns the close button and icon slot — Modal and ResponsiveDrawer no longer duplicate button creation; clean separation of concerns.
+- ModalHeader supports both icon and header-actions slots — flexible enough for modal (typically just title + close) and drawer (title + icon + custom actions + close).
+- Kept closeLabel as an optional prop with fallback "Close" — Modal doesn't use it, ResponsiveDrawer passes "Close drawer" for more context.
+- SheetHeader removed entirely — it was a generic layout primitive that had exactly one usage pattern and wasn't general enough to justify existence; consolidating into ModalHeader removed the abstraction gap.

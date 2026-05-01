@@ -118,14 +118,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts        # Barrel — exports Button, Badge, BadgeVariant, Chip, Disclosure, Spinner, Tabs, Tab
 │   │   ├── layout/             # Reusable structural layout shells
 │   │   │   ├── SectionHeaderLayout.vue # Flex layout shell — header slot (grows, centered) + action slot (shrinks) in nowrap row; default slot below; no props, no scoped styles
-│   │   │   ├── SheetHeader.vue # Layout-only panel/modal header — three optional named slots: #icon + #header share a grow flex row; #action is trailing; gradient applied via :slotted(h1–h6); border-b separator; no props, no store reads
-│   │   │   └── index.ts        # Barrel — exports SectionHeaderLayout, SheetHeader
+│   │   │   └── index.ts        # Barrel — exports SectionHeaderLayout
 │   │   ├── feedback/           # Notification and feedback UI
 │   │   │   ├── Notification.vue # Inline status notification box — variant?: NotificationVariant (optional); showIcon? (default true); #title named slot; default slot for body; icon auto-selected per variant or BellIcon when undefined; aria role+live region by variant; spacing below notification headers; scoped flat styles
 │   │   │   ├── notification.types.ts # NotificationVariant type — 'success' | 'error' | 'warning' | 'info'
 │   │   │   └── index.ts        # Barrel — exports Notification, NotificationVariant
 │   │   ├── drawer/             # Responsive drawer component
-│   │   │   ├── ResponsiveDrawer.vue # Reusable drawer — props: open (v-model:open), title, side? (default 'right'), closeLabel?; emits close; Escape key handling; viewport tracking via matchMedia — renders desktop push drawer content only at lg+, mobile modal content only below lg (prevents duplicate mounting and side-effect bugs); desktop push drawer (position beside main content); modal-style overlay on smaller screens; owns SheetHeader, default close button; optional #icon slot, #header-actions slot, default content slot; Tailwind-only styles
+│   │   │   ├── ResponsiveDrawer.vue # Reusable drawer — props: open (v-model:open), title, side? (default 'right'), closeLabel?; emits close; Escape key handling; viewport tracking via matchMedia — renders desktop push drawer content only at lg+, mobile modal content only below lg (prevents duplicate mounting and side-effect bugs); desktop push drawer (position beside main content); modal-style overlay on smaller screens; uses ModalHeader for both desktop and mobile headers; optional #icon slot, #header-actions slot, default content slot; Tailwind-only styles
 │   │   │   └── index.ts        # Barrel — exports ResponsiveDrawer
 │   │   ├── charts/             # Chart.js wrapper module — reusable chart primitives only
 │   │   │   ├── register.ts     # registerCharts() function — registers all Chart.js components once; called explicitly in main.ts; includes PointElement (required for Scatter charts)
@@ -196,7 +195,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── MetaRow.vue     # <p> flex-wrap row — .bullet / .divider / .tiny / .info.bullet / .info.divider / .small variants; scoped .meta-row
 │   │   │   └── index.ts
 │   │   ├── modal/
-│   │   │   ├── Modal.vue       # Generic modal shell — Teleport to body; z-modal (1010); aria-modal/role="dialog"; Escape to close; backdrop opacity bg-surface-backdrop/70; scoped styles
+│   │   │   ├── Modal.vue       # Generic modal shell — Teleport to body; z-modal (1010); aria-modal/role="dialog"; Escape to close; backdrop opacity bg-surface-backdrop/70; uses ModalHeader for title + close button; scoped styles
+│   │   │   ├── ModalHeader.vue # Reusable header for modals and drawers — props: title, closeLabel?; slots: #icon (optional), #header-actions (optional); emits close; flex layout with icon support; used by Modal and ResponsiveDrawer
 │   │   │   ├── ModalBody.vue
 │   │   │   ├── ModalFooter.vue
 │   │   │   └── index.ts

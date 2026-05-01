@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import CloseIcon from "../icons/CloseIcon.vue";
-import SheetHeader from "../layout/SheetHeader.vue";
-import Button from "../primitives/Button.vue";
+import ModalHeader from "../modal/ModalHeader.vue";
 
 type DrawerSide = "left" | "right";
 
@@ -62,26 +60,14 @@ onUnmounted(() => {
       role="dialog"
       :aria-label="title"
     >
-      <SheetHeader>
+      <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')">
         <template v-if="$slots.icon" #icon>
           <slot name="icon" />
         </template>
-        <template #header>
-          <h2>{{ title }}</h2>
+        <template #header-actions>
+          <slot name="header-actions" />
         </template>
-        <template #action>
-          <div class="responsive-drawer-actions">
-            <slot name="header-actions" />
-            <Button
-              class="icon-only text-only"
-              :aria-label="closeLabel"
-              @click="emit('close')"
-            >
-              <CloseIcon />
-            </Button>
-          </div>
-        </template>
-      </SheetHeader>
+      </ModalHeader>
       <slot />
     </section>
   </div>
@@ -98,26 +84,14 @@ onUnmounted(() => {
         aria-modal="true"
         :aria-label="title"
       >
-        <SheetHeader>
+        <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')">
           <template v-if="$slots.icon" #icon>
             <slot name="icon" />
           </template>
-          <template #header>
-            <h2>{{ title }}</h2>
+          <template #header-actions>
+            <slot name="header-actions" />
           </template>
-          <template #action>
-            <div class="responsive-drawer-actions">
-              <slot name="header-actions" />
-              <Button
-                class="icon-only text-only"
-                :aria-label="closeLabel"
-                @click="emit('close')"
-              >
-                <CloseIcon />
-              </Button>
-            </div>
-          </template>
-        </SheetHeader>
+        </ModalHeader>
         <div class="responsive-drawer-content">
           <slot />
         </div>
@@ -159,10 +133,6 @@ onUnmounted(() => {
 
 .responsive-drawer-content {
   @apply min-h-0 overflow-hidden;
-}
-
-.responsive-drawer-actions {
-  @apply flex items-center justify-end gap-2;
 }
 
 .responsive-drawer-overlay {

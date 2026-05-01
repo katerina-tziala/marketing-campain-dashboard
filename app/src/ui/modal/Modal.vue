@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
-import CloseIcon from "../icons/CloseIcon.vue";
-import SheetHeader from "../layout/SheetHeader.vue";
-import Button from "../primitives/Button.vue";
+import ModalHeader from "./ModalHeader.vue";
 
 defineProps<{
   title: string;
+  closeLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -37,20 +36,7 @@ onUnmounted(() => {
       @click.self="emit('close')"
     >
       <div class="modal">
-        <SheetHeader>
-          <template #header
-            ><h2>{{ title }}</h2></template
-          >
-          <template #action>
-            <Button
-              class="icon-only text-only"
-              aria-label="Close"
-              @click="emit('close')"
-            >
-              <CloseIcon />
-            </Button>
-          </template>
-        </SheetHeader>
+        <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')" />
         <slot />
       </div>
     </div>
