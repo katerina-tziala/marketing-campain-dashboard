@@ -31,10 +31,10 @@ export interface PortfolioKPIs {
   totalConversions: number;
   totalImpressions: number
   totalClicks: number
-  aggregatedROI: number | null; // decimal, e.g. 1.68 = 168%
-  aggregatedCPA: number | null; // EUR — budget / conversions
-  aggregatedCTR: number | null; // decimal, e.g. 1.68 = 168%
-  aggregatedCVR: number | null; // decimal, e.g. 1.68 = 168%
+  aggregatedRoi: number | null; // decimal, e.g. 1.68 = 168%
+  aggregatedCpa: number | null; // EUR — budget / conversions
+  aggregatedCtr: number | null; // decimal, e.g. 1.68 = 168%
+  aggregatedCvr: number | null; // decimal, e.g. 1.68 = 168%
 }
 
 export interface PortfolioScope {
@@ -49,9 +49,10 @@ export interface ShareEfficiency {
   budgetShare: number
   /** Decimal — item revenue / total revenue */
   revenueShare: number
-  /** Decimal — budgetShare - revenueShare; negative means revenue outperforms budget weight */
+  /** Decimal — budgetShare - revenueShare; positive means budget is over-allocated */
+  allocationGap: number
+  /** Decimal — revenueShare - budgetShare; positive means revenue outperforms budget weight */
   efficiencyGap: number
   /** Currency (EUR) — revenue - budget; positive means profitable */
   gapAmount: number
 }
-

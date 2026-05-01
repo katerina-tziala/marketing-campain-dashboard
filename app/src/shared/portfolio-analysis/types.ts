@@ -1,4 +1,4 @@
-import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency } from '@/shared/types/campaign'
+import type { CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency } from '@/shared/types'
 
 // ── Portfolio summary types ───────────────────────────────────────────────────
 
@@ -79,6 +79,49 @@ export interface CorrelationSignal {
   finding: string
   evidence: string
   implication: string
+}
+
+// ── Signal thresholds ─────────────────────────────────────────────────────────
+
+export interface ChannelStatusThresholds {
+  strongStatusRoiFactor: number
+  weakStatusRoiFactor: number
+}
+
+export interface ChannelSignalThresholds {
+  gapThreshold: number
+  scalingGapThreshold: number
+  minBudgetShareSignal: number
+  minRevenueShareSignal: number
+}
+
+export interface CampaignSignalThresholds {
+  gapThreshold: number
+  minBudgetShareSignal: number
+  maxReducibleFraction: number
+  maxAdditionalFraction: number
+  baseRoiRetention: number
+}
+
+export interface PortfolioSignalThresholds {
+  minShiftFraction: number
+  minShiftFloor: number
+  minCampaignsForConcentration: number
+  topRevenueCampaignCount: number
+  highTop1RevenueShare: number
+  highTop3RevenueShare: number
+  moderateTop1RevenueShare: number
+  moderateTop3RevenueShare: number
+  maxScalingOpportunities: number
+  maxTransferCandidates: number
+  minCampaignsForCorrelations: number
+}
+
+export interface AnalysisSignalThresholds {
+  channelStatus: ChannelStatusThresholds
+  channelSignals: ChannelSignalThresholds
+  campaignSignals: CampaignSignalThresholds
+  portfolioSignals: PortfolioSignalThresholds
 }
 
 // ── Classification groups ─────────────────────────────────────────────────────

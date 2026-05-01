@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PortfolioKPIs } from '@/shared/types/campaign'
+import type { PortfolioKPIs } from '@/shared/types'
 import {
   BarChart,
   type BarChartData,
@@ -29,12 +29,25 @@ function formatRoiTooltipLabel(item: RoiBarChartItem | undefined): string[] {
   return formatRoiAllocationTooltipLines(item, props.kpis)
 }
 
+const roiValues = computed(() => props.items.map((item) => (item.roi ?? 0) * 100))
+
+const roiScaleBounds = computed<{ min?: number; max?: number }>(() => {
+  if (roiValues.value.length === 0) return {}
+
+  if (roiValues.value.every((value) => value < 0)) {
+    const range = Math.ceil(Math.max(...roiValues.value.map((value) => Math.abs(value))))
+    return { min: -range, max: range }
+  }
+
+  return {}
+})
+
 const chartData = computed<BarChartData>(() => ({
   labels: props.items.map((item) => item.label),
   datasets: [
     {
       label: 'ROI (%)',
-      data: props.items.map((item) => (item.roi ?? 0) * 100),
+      data: roiValues.value,
       backgroundColor: props.items.map((item) => `${item.color}bf`),
       borderColor: props.items.map((item) => item.color),
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
@@ -54,6 +67,8 @@ const tooltipCallbacks: BarTooltipCallbacks = {
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
     :aria-label="ariaLabel ?? 'ROI bar chart'"
+    :value-scale-min="roiScaleBounds.min"
+    :value-scale-max="roiScaleBounds.max"
     y-label="ROI (%)"
     horizontal
     class="w-full"

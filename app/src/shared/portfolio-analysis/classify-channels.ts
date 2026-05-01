@@ -1,7 +1,7 @@
 import type { ChannelSummary } from './types'
 import type { ChannelGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getFunnelMedians } from './classify-utils'
-import { rankByBudgetShareDesc, rankByEfficiencyGapDesc, rankByRoiDesc } from './ranking'
+import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from './ranking'
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
@@ -28,12 +28,12 @@ function isOpportunity(ch: ChannelSummary, portfolioRoi: number | null): boolean
 }
 
 function isWeak(ch: ChannelSummary, portfolioRoi: number | null): boolean {
-  // Budget share significantly exceeds revenue share (large efficiencyGap) AND the
+  // Budget share significantly exceeds revenue share (large allocationGap) AND the
   // channel underperforms the portfolio average on ROI. Both conditions together
   // avoid penalising channels that are expensive but still above-average on returns.
   const roi = ch.roi !== null ? ch.roi : -Infinity
   const refRoi = portfolioRoi ?? 0
-  return ch.efficiencyGap > t.gapThreshold && roi < refRoi
+  return ch.allocationGap > t.gapThreshold && roi < refRoi
 }
 
 function isWatch(
@@ -104,7 +104,7 @@ export function classifyChannels(
   return {
     strong: rankByRoiDesc(strong),
     opportunity: rankByRoiDesc(opportunity),
-    weak: rankByEfficiencyGapDesc(weak),
+    weak: rankByAllocationGapDesc(weak),
     watch: rankByBudgetShareDesc(watch),
   }
 }

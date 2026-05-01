@@ -1,6 +1,6 @@
-import type { Campaign } from '@/shared/types/campaign'
+import type { Campaign } from '@/shared/types'
 
-export const MOCK_CAMPAINS: Campaign[] = [
+export const SAMPLE_CAMPAIGNS: Campaign[] = [
   // Paid Search
   { rowId: 1, campaign: 'Google Brand Search', channel: 'Paid Search', budget: 8500, impressions: 142000, clicks: 8520, conversions: 680, revenue: 28900 },
   { rowId: 2, campaign: 'Google Non-Brand Search', channel: 'Paid Search', budget: 12000, impressions: 380000, clicks: 9120, conversions: 420, revenue: 18600 },

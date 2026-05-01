@@ -3,9 +3,9 @@ import { ref, watch } from "vue";
 import { Modal } from "@/ui";
 import { parseCsv } from "@/features/data-transfer/utils/parse-csv";
 import { getValidationErrorMessage } from "@/features/data-transfer/utils/error-messages";
-import { usePortfolioDataStore } from "@/shared/portfolio-data";
+import { usePortfolioDataStore } from "@/app/stores";
 import { useDownloadTemplate } from "@/features/data-transfer/composables/useDownloadTemplate";
-import type { Campaign } from "@/shared/types/campaign";
+import type { Campaign } from "@/shared/types";
 import type {
   CampainDataDuplicateGroup,
   CampainDataRowError,

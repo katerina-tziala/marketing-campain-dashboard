@@ -1,11 +1,11 @@
-import { MOCK_CAMPAINS } from '@/shared/data/MOCK_CAMPAIN_DATA'
-import { usePortfolioDataStore } from '@/shared/portfolio-data'
+import { SAMPLE_CAMPAIGNS } from '@/shared/data'
+import { usePortfolioDataStore } from '@/app/stores'
 
-const MOCK_PORTFOLIO_TITLE = 'Mock Campaign Data (Dev)'
+const DEV_PORTFOLIO_TITLE = 'Sample Campaign Data (Dev)'
 
 export function activateDevPortfolioData(): void {
   const portfolioData = usePortfolioDataStore()
   if (portfolioData.portfolios.length > 0) return
 
-  portfolioData.addPortfolio(MOCK_CAMPAINS, MOCK_PORTFOLIO_TITLE)
+  portfolioData.addPortfolio(SAMPLE_CAMPAIGNS, DEV_PORTFOLIO_TITLE)
 }

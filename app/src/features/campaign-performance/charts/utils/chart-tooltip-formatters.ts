@@ -1,6 +1,6 @@
-import type { PortfolioKPIs } from '@/shared/types/campaign'
-import { formatCurrency, formatPercentage } from '@/shared/utils/formatters'
-import { safeDivide } from '@/shared/utils/math'
+import type { PortfolioKPIs } from '@/shared/types'
+import { formatCurrency, formatPercentage } from '@/shared/utils'
+import { safeDivide } from '@/shared/utils'
 
 type RoiAllocationTooltipItem = {
   roi: number | null

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from "@/shared/types/campaign";
+import type { PortfolioKPIs } from "@/shared/types";
 import {
   formatCompactCurrency,
   formatCompactNumber,
   formatPercentage,
-} from "@/shared/utils/formatters";
+} from "@/shared/utils";
 import { MetaItem } from "@/ui";
 import KpiCard from "./KpiCard.vue";
 import KpiBenchmarkDelta from "./KpiBenchmarkDelta.vue";
@@ -38,7 +38,7 @@ function formatShare(value: number, total: number): string {
         portfolio</MetaItem
       >
       <MetaItem
-        >ROI: <PerformanceIndicator :value="kpis.aggregatedROI"
+        >ROI: <PerformanceIndicator :value="kpis.aggregatedRoi"
       /></MetaItem>
     </KpiCard>
 
@@ -54,16 +54,16 @@ function formatShare(value: number, total: number): string {
         of portfolio</MetaItem
       >
       <MetaItem
-        >CVR: <PerformanceIndicator :value="kpis.aggregatedCVR"
+        >CVR: <PerformanceIndicator :value="kpis.aggregatedCvr"
       /></MetaItem>
     </KpiCard>
 
     <!-- CTR -->
-    <KpiCard label="CTR" :value="formatPercentage(kpis.aggregatedCTR)">
+    <KpiCard label="CTR" :value="formatPercentage(kpis.aggregatedCtr)">
       <KpiBenchmarkDelta
         v-if="portfolioKpis"
-        :current="kpis.aggregatedCTR"
-        :benchmark="portfolioKpis.aggregatedCTR"
+        :current="kpis.aggregatedCtr"
+        :benchmark="portfolioKpis.aggregatedCtr"
         unit="pp"
       />
     </KpiCard>
@@ -72,15 +72,15 @@ function formatShare(value: number, total: number): string {
     <KpiCard
       label="CPA"
       :value="
-        kpis.aggregatedCPA !== null
-          ? formatCompactCurrency(kpis.aggregatedCPA)
+        kpis.aggregatedCpa !== null
+          ? formatCompactCurrency(kpis.aggregatedCpa)
           : null
       "
     >
       <KpiBenchmarkDelta
-        v-if="portfolioKpis && portfolioKpis.aggregatedCPA !== null"
-        :current="kpis.aggregatedCPA"
-        :benchmark="portfolioKpis.aggregatedCPA"
+        v-if="portfolioKpis && portfolioKpis.aggregatedCpa !== null"
+        :current="kpis.aggregatedCpa"
+        :benchmark="portfolioKpis.aggregatedCpa"
         unit="pct"
         :lower-is-better="true"
       />

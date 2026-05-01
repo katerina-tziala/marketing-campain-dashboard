@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types/campaign";
+import type { CampaignPerformance } from "@/shared/types";
 import {
   BubbleChart,
   createQuadrantBackgroundPlugin,
@@ -8,7 +8,7 @@ import {
   type BubbleChartPlugin,
   type BubbleTooltipCallbacks, 
 } from "@/ui";
-import { formatCompactNumber, formatDecimal } from "@/shared/utils/formatters";
+import { formatCompactNumber, formatDecimal } from "@/shared/utils";
 import {
   ROI_BUDGET_SCALING_BUDGET_AXIS_ROUNDING,
   ROI_BUDGET_SCALING_DIVIDER_STYLE,

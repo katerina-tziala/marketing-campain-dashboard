@@ -4,8 +4,8 @@ import { useAiAnalysisStore } from '@/features/ai-tools/ai-analysis/stores'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { usePortfolioDataStore } from '@/shared/portfolio-data'
 import { DEV_MODE_CONFIG, activateDevMode } from '@/app/dev-mode'
+import { usePortfolioDataStore } from './portfolioData.store'
 import { useToastStore } from './toast.store'
 
 // App-level mediator for the dashboard page.

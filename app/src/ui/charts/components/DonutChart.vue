@@ -8,7 +8,7 @@ import type {
   DonutLegendLabelFilter,
   DonutTooltipCallbacks,
 } from "../types";
-import { formatCompactNumber } from "@/shared/utils/formatters";
+import { formatCompactNumber } from "@/shared/utils";
 
 const props = withDefaults(
   defineProps<{

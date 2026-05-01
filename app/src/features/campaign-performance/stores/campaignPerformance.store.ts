@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import type { CampaignPerformance, PortfolioScope } from '@/shared/types/campaign'
-import type { Channel } from '@/shared/types/channel'
+import type { CampaignPerformance, PortfolioScope } from '@/shared/types'
+import type { Channel } from '@/shared/types'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
-import { usePortfolioDataStore } from '@/shared/portfolio-data'
+import { usePortfolioDataStore } from '@/app/stores'
 
 export const useCampaignPerformanceStore = defineStore('campaignPerformance', () => {
   const portfolioData = usePortfolioDataStore()

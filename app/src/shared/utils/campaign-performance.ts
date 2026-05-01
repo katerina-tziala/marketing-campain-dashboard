@@ -1,15 +1,15 @@
-import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '@/shared/types/campaign'
-import type { Channel } from '@/shared/types/channel'
-import { round2, round4, safeDivide } from './math'
+import type { Campaign, CampaignMetrics, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, ShareEfficiency } from '@/shared/types'
+import type { Channel } from '@/shared/types'
+import { computeRoundedRatioOrNull, safeDivide } from './math'
 
 export function computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics {
   const { budget, revenue, impressions, clicks, conversions } = campain;
 
   return {
-    roi: budget > 0 ? round4((revenue - budget) / budget) : null,
-    ctr: impressions > 0 ? round4(clicks / impressions) : null,
-    cvr: clicks > 0 ? round4(conversions / clicks) : null,
-    cpa: conversions > 0 ? round2(budget / conversions) : null,
+    roi: computeRoundedRatioOrNull(revenue - budget, budget),
+    ctr: computeRoundedRatioOrNull(clicks, impressions),
+    cvr: computeRoundedRatioOrNull(conversions, clicks),
+    cpa: computeRoundedRatioOrNull(budget, conversions, 2),
   }
 }
 
@@ -20,10 +20,13 @@ export function computeShareEfficiency(
 ): ShareEfficiency {
   const budgetShare = safeDivide(item.budget, totalBudget)
   const revenueShare = safeDivide(item.revenue, totalRevenue)
+  const allocationGap = budgetShare - revenueShare
+
   return {
     budgetShare,
     revenueShare,
-    efficiencyGap: budgetShare - revenueShare,
+    allocationGap,
+    efficiencyGap: -allocationGap,
     gapAmount: item.revenue - item.budget,
   }
 }
@@ -54,9 +57,9 @@ export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
     totalImpressions: impressions,
     totalClicks: clicks,
     totalConversions: conversions,
-    aggregatedROI: roi,
-    aggregatedCTR: ctr,
-    aggregatedCVR: cvr,
-    aggregatedCPA: cpa,
+    aggregatedRoi: roi,
+    aggregatedCtr: ctr,
+    aggregatedCvr: cvr,
+    aggregatedCpa: cpa,
   }
 }

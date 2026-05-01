@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { formatCompactNumber } from "@/shared/utils/formatters";
+import { formatCompactNumber } from "@/shared/utils";
 import { PerformanceIndicator } from "@/features/campaign-performance/ui";
-import type { PortfolioKPIs } from "@/shared/types/campaign";
+import type { PortfolioKPIs } from "@/shared/types";
 
 const MIN_WIDTH_BAR = 12;
 
@@ -30,14 +30,14 @@ const funnelItems = computed(() => [
     label: "Clicks",
     value: props.kpis.totalClicks,
     rateLabel: "CTR",
-    rate: props.kpis.aggregatedCTR,
+    rate: props.kpis.aggregatedCtr,
     styles: "bg-secondary-darker",
   },
   {
     label: "Conversions",
     value: props.kpis.totalConversions,
     rateLabel: "CVR",
-    rate: props.kpis.aggregatedCVR,
+    rate: props.kpis.aggregatedCvr,
     styles: "bg-warning-darker",
   },
 ]);
@@ -85,8 +85,8 @@ function scaledWidth(val: number | null): number {
 
 <style lang="scss" scoped>
 .funnel {
-  @apply grow
-    w-full
+  @apply w-full
+    h-full
     flex
     flex-col
     justify-between
@@ -96,10 +96,10 @@ function scaledWidth(val: number | null): number {
 }
 
 .funnel-row {
-  @apply flex flex-row justify-start gap-2 items-stretch min-h-[20%];
+  @apply flex flex-row justify-start gap-2 items-stretch min-h-[28%];
 
   .funnel-region-1 {
-    @apply grow relative h-full w-[85%];
+    @apply grow relative h-full w-[82%];
 
     .bar-percentage {
       @apply min-w-2 h-full rounded-r-md duration-500 transition-[width];
@@ -128,7 +128,7 @@ function scaledWidth(val: number | null): number {
   }
 
   .funnel-region-2 {
-    @apply grow w-[15%] flex items-center justify-end;
+    @apply grow w-[18%] flex items-center justify-end;
 
     .funnel-rate {
       @apply inline-flex

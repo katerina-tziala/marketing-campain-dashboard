@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types/campaign";
-import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
-import { getMedian } from "@/shared/utils/math";
+import type { CampaignPerformance } from "@/shared/types";
+import { formatCurrency, formatPercentage } from "@/shared/utils";
+import { getMedian } from "@/shared/utils";
 import { Card, Notification, MetaRow, MetaItem } from "@/ui";
 import { RoiVsBudgetScatterChart } from "./components";
 import { ROI_BUDGET_SCALING_MIN_CAMPAIGNS } from "./config";

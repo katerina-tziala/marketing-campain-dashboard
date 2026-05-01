@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { useChartConfig, useChartTooltip } from '../composables'
 import type { BarChartData, BarChartOptions, BarTooltipCallbacks, ChartTickFormatter } from '../types'
-import { formatCompactNumber } from '@/shared/utils/formatters'
+import { formatCompactNumber } from '@/shared/utils'
 
 const props = withDefaults(
   defineProps<{
@@ -13,6 +13,8 @@ const props = withDefaults(
     ariaLabel?: string
     tooltipCallbacks?: BarTooltipCallbacks
     valueTickFormatter?: ChartTickFormatter
+    valueScaleMin?: number
+    valueScaleMax?: number
     showLegend?: boolean
   }>(),
   { horizontal: false, showLegend: false },
@@ -36,17 +38,21 @@ const scaleOptions = computed(() => {
   const valueTicks = props.valueTickFormatter
     ? { callback: props.valueTickFormatter }
     : undefined
+  const valueScaleBounds = {
+    ...(props.valueScaleMin !== undefined ? { min: props.valueScaleMin } : {}),
+    ...(props.valueScaleMax !== undefined ? { max: props.valueScaleMax } : {}),
+  }
 
   if (props.horizontal) {
     return {
-      x: { title: props.yLabel, ticks: valueTicks },
+      x: { title: props.yLabel, ticks: valueTicks, ...valueScaleBounds },
       y: {},
     }
   }
 
   return {
     x: { adaptiveTickRotation: true },
-    y: { title: props.yLabel, ticks: valueTicks },
+    y: { title: props.yLabel, ticks: valueTicks, ...valueScaleBounds },
   }
 })
 

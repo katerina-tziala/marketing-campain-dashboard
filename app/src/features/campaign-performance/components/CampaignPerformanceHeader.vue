@@ -43,7 +43,7 @@ const emit = defineEmits<{ aiClick: [] }>();
       >{{ filteredCampaignCount }} of
       {{ totalCampaignCount }} campaigns</MetaItem
     >
-    <MetaItem>Percentages reflect current selection</MetaItem>
+    <MetaItem>All percentages are based on the current filters</MetaItem>
   </MetaRow>
 </template>
 

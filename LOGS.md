@@ -11134,3 +11134,107 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `Application Name | Page Title` for page titles — this gives every route a readable browser title while preserving the product name.
 - Let the helper create the description tag at runtime — the app is dynamic, so each route can own its page description without duplicating it in raw HTML.
 - Keep the static title fallback — browsers still have a meaningful title before Vue mounts or if JavaScript fails.
+
+## [#530] Restructure Shared Portfolio Analysis Signals
+**Type:** refactor
+
+**Summary:** Moved shared portfolio data and portfolio-analysis helpers toward clearer app/shared boundaries, split the portfolio-analysis signal layer into focused modules, introduced explicit allocation-vs-efficiency gap semantics, and tightened campaign/channel signal thresholds and chart behavior.
+
+**Brainstorming:** The campaign performance and AI analysis flows increasingly rely on shared portfolio-analysis outputs, so the shared layer needs to be readable, directional, and difficult to misuse. The old `efficiencyGap` value carried an inverted mental model: it was calculated as `budgetShare - revenueShare`, which made positive values mean inefficient allocation even though the name sounded like positive efficiency. At the same time, the signal logic mixed campaign, channel, concentration, transfer, ranking, reason text, constants, and helper predicates in a small number of files. The goal of this pass was to make the data model more explicit, keep chart-ready values available without repeated mapping, and split signal logic so future threshold configuration and AI prompt changes are easier to trace.
+
+**Prompt:** Continue the feature-based architecture cleanup by moving shared portfolio data/stores to clearer homes, adding barrels, replacing vague utilities with focused modules, introducing realistic channel thresholds, extracting shared signal checkers, adding both allocation and efficiency gap values, and splitting portfolio-level transfer and concentration logic into dedicated files.
+
+**What was built:**
+- `app/src/app/stores/portfolioData.store.ts` — moved the portfolio data store out of `shared/portfolio-data` and into app-level stores, because uploaded portfolio lifecycle is app state consumed by multiple features rather than portfolio-analysis domain logic.
+- `app/src/app/stores/index.ts` — exported the portfolio data store from the app store barrel alongside the dashboard orchestrator and toast store.
+- `app/src/shared/portfolio-data/index.ts` — removed after moving the portfolio data store to the app layer.
+- `app/src/shared/portfolio-data/portfolioData.store.ts` — removed after moving the store to `app/src/app/stores`.
+- `app/src/shared/data/MOCK_CAMPAIN_DATA.ts` — removed as part of the sample-data rename.
+- `app/src/shared/data/SAMPLE_DATA.ts` — added the renamed sample campaign dataset used for template/download/sample behavior.
+- `app/src/shared/data/index.ts` — added a shared data barrel.
+- `app/src/shared/composables/index.ts` — added a shared composables barrel.
+- `app/src/shared/types/index.ts` — added a shared types barrel.
+- `app/src/shared/utils/index.ts` — added a shared utils barrel.
+- `app/src/features/data-transfer/composables/useDownloadTemplate.ts` — updated sample data imports to the new shared data naming.
+- `app/src/app/composables/useUploadModal.ts`, `app/src/app/dev-mode/dev-portfolio-data.ts`, `app/src/app/stores/dashboardOrchestrator.store.ts`, campaign performance files, AI analysis files, and data-transfer files — updated imports to use the new app/shared barrels and moved store/data paths.
+- `app/src/shared/utils/math.ts` — added `roundTo`, `computeRoundedRatioOrNull`, and `toFinite`; replaced earlier fixed rounding helpers with a decimal-parameterized rounding helper.
+- `app/src/shared/utils/campaign-performance.ts` — refactored metric computation to use `computeRoundedRatioOrNull`; updated share-efficiency computation to return both `allocationGap` and `efficiencyGap`.
+- `app/src/shared/types/campaign.ts` — extended `ShareEfficiency` with `allocationGap`; changed `efficiencyGap` to mean `revenueShare - budgetShare`, so positive now means revenue outperforms budget weight.
+- `app/src/shared/portfolio-analysis/utils.ts` — removed after replacing the vague utility file with focused signal modules.
+- `app/src/shared/portfolio-analysis/signals/constants.ts` — added default threshold objects for channel status, channel signals, campaign signals, portfolio signals, and full analysis signals; moved signal reason strings into a centralized reason dictionary grouped by campaign, channel, and portfolio.
+- `app/src/shared/portfolio-analysis/types.ts` — added explicit threshold interfaces including channel status, channel signals, campaign signals, portfolio signals, and aggregate analysis thresholds.
+- `app/src/shared/portfolio-analysis/signals/checkers.ts` — added reusable signal predicates for ROI comparisons, minimum share gates, budget/revenue share leads, overfunded underperformers, and underfunded outperformers.
+- `app/src/shared/portfolio-analysis/signals/campaign-signals.ts` — split campaign signal logic out of the previous combined signal file; added campaign-local scaling efficiency checks; reused shared checker primitives; returns both allocation and efficiency gaps in campaign-derived signals.
+- `app/src/shared/portfolio-analysis/signals/channel-signals.ts` — split channel signal logic out of the previous combined signal file; introduced realistic channel thresholds for minimum budget share, minimum revenue share, inefficiency gap, and scaling gap; reused shared checker primitives; returns both allocation and efficiency gaps in channel-derived signals.
+- `app/src/shared/portfolio-analysis/signals/portfolio-signals.ts` — slimmed the module down to scaling opportunities and correlation stubs after extracting transfer and concentration logic into dedicated files.
+- `app/src/shared/portfolio-analysis/signals/transfer-signals.ts` — added a dedicated transfer recommendation module; extracted target-specific transfer candidate construction; uses threshold-aware min/max shift calculations and centralized reason text.
+- `app/src/shared/portfolio-analysis/signals/concentration-signals.ts` — added a dedicated concentration module; split concentration logic into campaign-count eligibility, top revenue share calculation, high concentration checks, and moderate concentration checks.
+- `app/src/shared/portfolio-analysis/signals/mappers.ts` — kept campaign/channel summary mapping focused on converting performance data plus share-efficiency metrics into analysis summaries.
+- `app/src/shared/portfolio-analysis/signals/index.ts` — exported all signal submodules with `export *` so consumers can keep importing through the folder barrel.
+- `app/src/shared/portfolio-analysis/ranking.ts` — renamed inefficient sorting to `rankByAllocationGapDesc`; added `rankByRevenueDesc` for concentration logic and `rankByMaxShiftDesc` for transfer recommendations.
+- `app/src/shared/portfolio-analysis/classify-campaigns.ts` — updated bottom-campaign classification to use `allocationGap` for overfunded underperformers and the renamed allocation-gap ranking helper.
+- `app/src/shared/portfolio-analysis/classify-channels.ts` — updated weak-channel classification to use `allocationGap` for overfunded underperformers and the renamed allocation-gap ranking helper.
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — updated the analysis orchestration to consume the new threshold objects and split signal modules.
+- `app/src/features/campaign-performance/charts/utils/efficiency-gap.ts` — updated efficiency chart math to use positive-good `efficiencyGap` directly instead of flipping the sign at the chart layer.
+- `app/src/features/campaign-performance/utils/campaign-performance-sorting.ts` — routed efficiency-gap impact sorting through `computeShareEfficiency` instead of recalculating revenue/budget share manually.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — added an explicit empty/comparison state when fewer than two channels are available or totals are zero, because a single selected item always has equal budget and revenue share and therefore no meaningful share-comparison gap.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — kept the legend and tooltip behavior aligned with positive-good efficiency values.
+- `app/src/features/campaign-performance` chart, KPI, table, channel-filter, and UI files — updated imports and shared metric fields to the new barrel and gap semantics.
+- `app/src/features/ai-tools/ai-analysis` files — updated imports that consume portfolio-analysis outputs through the cleaned shared exports.
+- `app/src/features/data-transfer` validation, duplication, upload, and type files — updated imports to the renamed shared sample data/types/utils structure.
+- `app/src/ui/charts/components/BarChart.vue` and `app/src/ui/charts/components/DonutChart.vue` — kept chart library imports aligned with the shared utility barrel updates.
+- `npm run build` — completed successfully after the signal split, gap semantic migration, and chart empty-state update.
+
+**Key decisions & why:**
+- Put portfolio data store under `app/stores` — uploaded portfolio lifecycle is cross-feature app state, while `shared/portfolio-analysis` should stay focused on pure analysis logic.
+- Rename mock campaign data to sample data — the dataset is used for user-facing template/sample behavior, not only development mocking.
+- Add shared barrels — broad import normalization makes future moves less disruptive and keeps feature files from depending on concrete filenames.
+- Replace fixed rounding helpers with `roundTo` — one decimal-parameterized helper is easier to reuse than separate `round2` and `round4` functions.
+- Store both `allocationGap` and `efficiencyGap` — inefficient logic needs positive-overfunded `allocationGap`, while charts and scaling language need positive-good `efficiencyGap`.
+- Keep gap semantics explicit in the interface — consumers no longer need to remember which direction a single ambiguous `efficiencyGap` field points.
+- Use `allocationGap` for weak/inefficient classification — overfunding is the actionable signal for budget reduction and transfer candidates.
+- Use `efficiencyGap` for chart-facing performance — positive bars now naturally mean overperforming and negative bars mean underperforming.
+- Add channel thresholds — aggregated channel signals still need realistic gates so tiny/noisy channel shares do not become scaling or inefficiency recommendations.
+- Extract checker primitives carefully — shared predicates remove duplicated ROI/share math without hiding the campaign and channel business rules.
+- Keep campaign-specific scaling gates in campaign signals — campaigns still need dynamic revenue/conversion thresholds because campaign-level ratios are noisier than channel-level aggregates.
+- Split transfer and concentration files — these portfolio-level signals have enough logic to deserve their own files, making future edits easier to locate.
+- Centralize ranking helpers — revenue, ROI, allocation gap, budget share, and max-shift ordering now live in one ranking module instead of inline sorting across signal files.
+- Keep signal reason text centralized — AI prompt and UI-facing explanations are easier to scan when reasons are grouped in constants by campaign, channel, and portfolio.
+- Show an empty state for single-item efficiency comparisons — the chart was mathematically correct but visually confusing; the new state explains that share-based efficiency requires at least two comparable items.
+
+## [#531] Refine Performance Chart Axis Edge Cases
+**Type:** fix
+
+**Summary:** Improved ROI and efficiency chart behavior for filtered edge cases by adding reusable value-axis bounds, centering negative-only ROI ranges around zero, and making share-efficiency chart states explicit when the selected channels cannot produce visible comparison bars.
+
+**Brainstorming:** The portfolio-analysis refactor made `efficiencyGap` semantically correct, but filtering exposed a separate visualization problem: a mathematically valid chart can still look broken when all values sit on one side of zero or collapse to zero. ROI charts with all-negative campaigns were showing zero at the edge, which made the negative bars harder to interpret. The share-efficiency chart also looked empty for one-channel selections and for two-channel selections where both channels have the same revenue-to-budget balance. The right fix is not to change the underlying metrics again, but to teach the chart layer when to constrain the value axis and when to show an explanatory state instead of drawing invisible zero-height bars.
+
+**Prompt:** Refine the efficiency and ROI chart behavior after the allocation/efficiency gap split: keep the efficiency chart as share-efficiency percentage, avoid misleading amount-based values, hide the chart when share-efficiency comparison is not meaningful, and center zero in ROI charts when all values are negative.
+
+**What was built:**
+- `app/src/ui/charts/components/BarChart.vue` — added optional `valueScaleMin` and `valueScaleMax` props so feature charts can set value-axis bounds without reaching into Chart.js directly.
+- `app/src/ui/charts/components/BarChart.vue` — applies the value-axis bounds to the `x` scale for horizontal charts and the `y` scale for vertical charts.
+- `app/src/ui/charts/components/BarChart.vue` — updated the compact number formatter import to use the shared utils barrel.
+- `app/src/features/campaign-performance/charts/components/RoiBarChart.vue` — extracted ROI percentages into `roiValues` so chart data and axis logic use the same computed values.
+- `app/src/features/campaign-performance/charts/components/RoiBarChart.vue` — added `roiScaleBounds`; when all ROI values are negative, the value axis becomes symmetric around zero using the rounded-up maximum absolute ROI percentage.
+- `app/src/features/campaign-performance/charts/components/RoiBarChart.vue` — passes `valueScaleMin` and `valueScaleMax` into `BarChart` so all-negative ROI datasets show zero centered instead of pinned to the axis edge.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — kept the chart value as share-efficiency percentage rather than switching to `revenue - budget`, preserving the chart’s allocation-comparison purpose.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — changed tooltip copy from `%` to `pp` for share-efficiency gap values, making the value read as a percentage-point difference between revenue share and budget share.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — computes `gapValues` once and reuses them for chart data, colors, visibility checks, and axis bounds.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — added `hasVisibleGap` so the chart only renders when at least one selected channel has a visible share-efficiency difference.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — added `isSingleChannelView` and `showChart` to separate the “needs comparison” state from the “no visible difference” state.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — added symmetric axis bounds for same-side positive or negative share-efficiency gaps, rounded up to the next integer with a minimum range of `5`.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — renders an info notification when only one channel is selected: `Share efficiency needs comparison`.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — renders an info notification when multiple selected channels have no visible share-efficiency difference: `No share efficiency difference`.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — preserved the existing Overperforming/Underperforming legend and color mapping.
+- `npm run build` — completed successfully after the chart axis and empty-state refinements.
+
+**Key decisions & why:**
+- Keep share efficiency as a comparison chart — `revenueShare - budgetShare` is useful for allocation quality, while `revenue - budget` belongs to financial impact/ROI views already present elsewhere.
+- Do not show a fake bar for one selected channel — one channel always owns all selected budget and all selected revenue, so the share-efficiency gap is neutral by definition.
+- Explain zero-difference multi-channel selections — channels like CTV/OTT and Display can have the same revenue-to-budget balance, producing valid zero gaps that would otherwise look like a broken chart.
+- Use `pp` in tooltips — share-efficiency gap is a percentage-point difference between shares, not a percent growth rate.
+- Center same-side chart ranges around zero — when all values are negative or all values are positive, a symmetric axis keeps the zero baseline visible and makes directionality easier to read.
+- Put axis bounds in the reusable chart component — feature charts can handle edge cases without duplicating Chart.js scale wiring.
+- Keep ROI-specific scale logic in `RoiBarChart` — the reusable `BarChart` exposes the capability, while feature charts decide when the bounds make sense.
+- Round axis bounds up to clean integers — integer percentage bounds are easier to scan than fractional extremes when reading performance charts.

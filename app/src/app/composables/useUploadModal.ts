@@ -1,5 +1,5 @@
 import { computed, provide, ref, type Ref } from 'vue'
-import { usePortfolioDataStore } from '@/shared/portfolio-data'
+import { usePortfolioDataStore } from '@/app/stores'
 import type UploadDataModal from '@/features/data-transfer/components/UploadDataModal.vue'
 
 export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal> | null>) {

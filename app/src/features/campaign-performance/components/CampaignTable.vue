@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/types/campaign";
+import type { CampaignPerformance } from "@/shared/types";
 import { TableHeader, Badge, Table } from "@/ui";
 import type { DataTableColumn } from "@/ui";
 import { useSort } from "@/shared/composables/useSort";
@@ -9,8 +9,8 @@ import {
   formatCurrency,
   formatNumber,
   formatPercentage,
-} from "@/shared/utils/formatters";
-import { sortByValue } from "@/shared/utils/sorting";
+} from "@/shared/utils";
+import { sortByValue } from "@/shared/utils";
 import { PerformanceIndicator } from "@/features/campaign-performance/ui";
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();

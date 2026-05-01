@@ -9,7 +9,7 @@ import {
   formatCompactCurrency,
   formatDecimal,
   formatPercentage,
-} from "@/shared/utils/formatters";
+} from "@/shared/utils";
 
 type DeltaTone = "positive" | "negative" | "neutral";
 

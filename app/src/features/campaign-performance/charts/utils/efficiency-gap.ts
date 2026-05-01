@@ -1,6 +1,6 @@
-import type { PortfolioKPIs } from '@/shared/types/campaign'
-import type { Channel } from '@/shared/types/channel'
-import { computeShareEfficiency } from '@/shared/utils/campaign-performance'
+import type { PortfolioKPIs } from '@/shared/types'
+import type { Channel } from '@/shared/types'
+import { computeShareEfficiency } from '@/shared/utils'
 import { CAMPAIGN_PERFORMANCE_CHART_COLORS } from '../config'
 
 export function getChannelEfficiencyGapPercent(
@@ -12,7 +12,7 @@ export function getChannelEfficiencyGapPercent(
     kpis.totalBudget,
     kpis.totalRevenue,
   )
-  return -efficiencyGap * 100
+  return efficiencyGap * 100
 }
 
 export function getEfficiencyGapColor(gapPercent: number): string {

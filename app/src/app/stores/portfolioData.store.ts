@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Campaign } from '@/shared/types/campaign'
-import type { Channel } from '@/shared/types/channel'
+import type { Campaign, Channel } from '@/shared/types'
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
-import { buildChannelMap } from '@/shared/utils/campaign-channel'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
+import { buildChannelMap } from '@/shared/utils'
 
 export interface PortfolioEntry {
   id: string

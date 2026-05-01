@@ -1,5 +1,10 @@
 import type { CampaignSummary } from './types'
-import { getMedian } from '@/shared/utils/math'
+import { getMedian } from '@/shared/utils'
+
+export interface DynamicThresholds {
+  minRevenue: number
+  minConversions: number
+}
 
 /**
  * Classification thresholds — all numeric decision boundaries live here.
@@ -78,10 +83,7 @@ export function getFunnelMedians(items: Array<{ ctr: number | null; cvr: number 
  * from crowding out genuinely significant performers in Top classification.
  * Floors are portfolio-relative (2% of total) with hard minimums (€50 / 2 conversions).
  */
-export function getDynamicThresholds(campaigns: CampaignSummary[]): {
-  minRevenue: number
-  minConversions: number
-} {
+export function getDynamicThresholds(campaigns: CampaignSummary[]): DynamicThresholds {
   const totalRevenue = campaigns.reduce((sum, c) => sum + c.revenue, 0)
   const totalConversions = campaigns.reduce((sum, c) => sum + c.conversions, 0)
   return {

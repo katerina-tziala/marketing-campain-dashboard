@@ -1,7 +1,7 @@
 import type { CampaignSummary } from './types'
 import type { CampaignGroups } from './types'
 import { CLASSIFY_THRESHOLDS, getDynamicThresholds, getFunnelMedians } from './classify-utils'
-import { rankByBudgetShareDesc, rankByEfficiencyGapDesc, rankByRoiDesc } from './ranking'
+import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from './ranking'
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ function isOpportunity(c: CampaignSummary, portfolioRoi: number | null): boolean
 }
 
 function isBottom(c: CampaignSummary, portfolioRoi: number | null): boolean {
-  // Budget share significantly exceeds revenue share (large efficiencyGap) AND the
+  // Budget share significantly exceeds revenue share (large allocationGap) AND the
   // campaign underperforms the portfolio average on ROI. Both conditions together
   // avoid penalising campaigns that are expensive but still above-average on returns —
   // those are candidates for scaling, not cutting.
@@ -47,7 +47,7 @@ function isBottom(c: CampaignSummary, portfolioRoi: number | null): boolean {
   return (
     c.budget > 0 &&
     c.budgetShare >= t.minBudgetShare &&
-    c.efficiencyGap > t.gapThreshold &&
+    c.allocationGap > t.gapThreshold &&
     roi < refRoi
   )
 }
@@ -123,7 +123,7 @@ export function classifyCampaigns(
   return {
     top: rankByRoiDesc(top),
     opportunity: rankByRoiDesc(opportunity),
-    bottom: rankByEfficiencyGapDesc(bottom),
+    bottom: rankByAllocationGapDesc(bottom),
     watch: rankByBudgetShareDesc(watch),
   }
 }

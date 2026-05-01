@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PortfolioKPIs } from "@/shared/types/campaign";
-import type { Channel } from "@/shared/types/channel";
+import type { PortfolioKPIs } from "@/shared/types";
+import type { Channel } from "@/shared/types";
 import {
   BarChart,
   MetaItem,
   MetaRow,
   type BarChartData,
   type BarTooltipCallbacks,
+  Notification,
 } from "@/ui";
-import { formatCurrency, formatDecimal } from "@/shared/utils/formatters";
+import { formatCurrency, formatDecimal } from "@/shared/utils";
 import {
   CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_CHART_COLORS,
@@ -38,7 +39,7 @@ function getGapLabel(value: number): string {
 const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
     const value = typeof ctx.raw === "number" ? ctx.raw : 0;
-    return `${getGapLabel(value)}: ${formatDecimal(value)}%`;
+    return `${getGapLabel(value)}: ${formatDecimal(value)}pp`;
   },
   afterLabel: (ctx) => {
     const channel = props.channels[ctx.dataIndex];
@@ -50,23 +51,47 @@ const tooltipCallbacks: BarTooltipCallbacks = {
   },
 };
 
+const gapValues = computed(() => props.channels.map((ch) => getGapPercent(ch)));
+const hasVisibleGap = computed(() =>
+  gapValues.value.some((value) => Math.abs(value) > 0.01),
+);
+
 const chartData = computed<BarChartData>(() => ({
   labels: props.channels.map((ch) => ch.name),
   datasets: [
     {
-      data: props.channels.map((ch) => getGapPercent(ch)),
-      backgroundColor: props.channels.map((ch) =>
-        getCampaignPerformanceChartFillColor(
-          getEfficiencyGapColor(getGapPercent(ch)),
-        ),
+      data: gapValues.value,
+      backgroundColor: gapValues.value.map((gapPercent) =>
+        getCampaignPerformanceChartFillColor(getEfficiencyGapColor(gapPercent)),
       ),
-      borderColor: props.channels.map((ch) =>
-        getEfficiencyGapColor(getGapPercent(ch)),
+      borderColor: gapValues.value.map((gapPercent) =>
+        getEfficiencyGapColor(gapPercent),
       ),
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
   ],
 }));
+
+const isSingleChannelView = computed(() => props.channels.length === 1);
+const showChart = computed(() => !isSingleChannelView.value && hasVisibleGap.value);
+
+const valueScaleBounds = computed<{ min?: number; max?: number }>(() => {
+  if (isSingleChannelView.value) return { min: -5, max: 5 };
+
+  const values = gapValues.value;
+  if (values.length === 0) return {};
+
+  const allNegative = values.every((value) => value < 0);
+  const allPositive = values.every((value) => value > 0);
+  if (!allNegative && !allPositive) return {};
+
+  const range = Math.max(
+    Math.ceil(Math.max(...values.map((value) => Math.abs(value)))),
+    5,
+  );
+
+  return { min: -range, max: range };
+});
 
 function formatValueTick(value: string | number): string {
   return formatDecimal(Number(value), 1);
@@ -96,13 +121,34 @@ function formatValueTick(value: string | number): string {
       </MetaItem>
     </MetaRow>
     <BarChart
-      class="!h-[354px]"
+      v-if="showChart"
+      class="!h-[357px]"
       :chart-data="chartData"
       :aria-label="ariaLabel ?? 'Efficiency Gap by Channel'"
       :tooltip-callbacks="tooltipCallbacks"
       :value-tick-formatter="formatValueTick"
+      :value-scale-min="valueScaleBounds.min"
+      :value-scale-max="valueScaleBounds.max"
       y-label="Gap (%)"
     />
+    <div v-else class="p-4 flex items-center justify-center">
+      <Notification class="text-sm" variant="info" :show-icon="true">
+        <template #title>
+          <span>
+            {{
+              isSingleChannelView
+                ? "Share efficiency needs comparison"
+                : "No share efficiency difference"
+            }}
+          </span>
+        </template>
+        {{
+          isSingleChannelView
+            ? "Select at least two channels to compare revenue share against budget share."
+            : "These channels have the same revenue-to-budget balance in the current selection."
+        }}
+      </Notification>
+    </div>
   </div>
 </template>
 
@@ -120,5 +166,17 @@ function formatValueTick(value: string | number): string {
 
 .legend-indicator {
   @apply size-[0.813rem];
+}
+
+.efficiency-empty {
+  @apply grid min-h-80 place-content-center gap-2 text-center text-sm text-typography-muted;
+}
+
+.efficiency-empty-title {
+  @apply text-base font-semibold text-typography-primary;
+}
+
+.efficiency-empty-copy {
+  @apply mx-auto max-w-md;
 }
 </style>

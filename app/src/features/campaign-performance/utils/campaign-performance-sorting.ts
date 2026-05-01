@@ -1,6 +1,6 @@
-import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types/campaign'
-import type { Channel } from '@/shared/types/channel'
-import { sortByValueDesc } from '@/shared/utils/sorting'
+import type { CampaignPerformance, PortfolioKPIs } from '@/shared/types'
+import type { Channel } from '@/shared/types'
+import { computeShareEfficiency, sortByValueDesc } from '@/shared/utils'
 
 // ROI ranking charts should put the strongest performers first; unavailable ROI stays last.
 export function sortCampaignsByRoiDesc(
@@ -23,9 +23,8 @@ export function sortCampaignsByBudgetDesc(
 
 function getChannelEfficiencyGapImpact(channel: Channel, kpis: PortfolioKPIs): number | null {
   if (kpis.totalBudget === 0 || kpis.totalRevenue === 0) return null
-  const budgetShare = channel.budget / kpis.totalBudget
-  const revenueShare = channel.revenue / kpis.totalRevenue
-  return Math.abs(revenueShare - budgetShare)
+  const { efficiencyGap } = computeShareEfficiency(channel, kpis.totalBudget, kpis.totalRevenue)
+  return Math.abs(efficiencyGap)
 }
 
 // Revenue vs budget charts should surface the channels with the largest allocation mismatch first.

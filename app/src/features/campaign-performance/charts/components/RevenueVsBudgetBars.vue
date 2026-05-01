@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Channel } from "@/shared/types/channel";
+import type { Channel } from "@/shared/types";
 import {
   GroupedBarChart,
   type BarChartData,
   type BarTooltipCallbacks,
 } from "@/ui";
-import { formatCompactNumber } from "@/shared/utils/formatters";
+import { formatCompactNumber } from "@/shared/utils";
 import {
   CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_CHART_COLORS,

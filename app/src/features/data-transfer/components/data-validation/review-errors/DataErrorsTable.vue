@@ -5,7 +5,7 @@ import type { CampainDataRowError } from "@/features/data-transfer/types";
 import { getRowErrorMessage } from "@/features/data-transfer/utils/error-messages";
 import { Table, TableHeader, Badge } from "@/ui";
 import type { DataTableColumn } from "@/ui";
-import { sortByValue } from "@/shared/utils/sorting";
+import { sortByValue } from "@/shared/utils";
 
 const props = defineProps<{
   errors: CampainDataRowError[];

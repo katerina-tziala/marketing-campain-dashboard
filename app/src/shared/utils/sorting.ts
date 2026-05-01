@@ -2,13 +2,12 @@ export function compareNullsLast(a: unknown, b: unknown): number | null {
   if (a === null && b === null) return 0
   if (a === null) return 1
   if (b === null) return -1
-  return null
+  return b === null ? -1 :null
 }
 
 export function compareDirectional(a: string | number, b: string | number, dir: 1 | -1): number {
-  if (a < b) return -dir
-  if (a > b) return dir
-  return 0
+  if (a < b) return -dir 
+  return a > b ? dir : 0
 }
 
 export function sortWithNullsLast(

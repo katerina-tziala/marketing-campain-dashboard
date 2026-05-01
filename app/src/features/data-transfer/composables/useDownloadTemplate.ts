@@ -1,5 +1,5 @@
 import { downloadCsv } from '@/features/data-transfer/utils/download-csv'
-import { MOCK_CAMPAINS } from '@/shared/data/MOCK_CAMPAIN_DATA'
+import { SAMPLE_CAMPAIGNS } from '@/shared/data'
 import { useToastStore } from '@/app/stores'
 
 export function useDownloadTemplate() {
@@ -7,7 +7,7 @@ export function useDownloadTemplate() {
 
   function downloadTemplate(): void {
     try {
-      downloadCsv(MOCK_CAMPAINS, 'marketing_campain_sample')
+      downloadCsv(SAMPLE_CAMPAIGNS, 'marketing_campain_sample')
     } catch {
       toastStore.showErrorToast('Failed to generate the CSV template.', 'Please try again.')
     }

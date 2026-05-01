@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type {
-  CampaignPerformance,
-  PortfolioKPIs,
-} from "@/shared/types/campaign";
-import type { Channel } from "@/shared/types/channel";
+import type { CampaignPerformance, PortfolioKPIs } from "@/shared/types";
+import type { Channel } from "@/shared/types";
 import { Card, CardHeader, RadioToggle, useChartTheme } from "@/ui";
 import {
   BudgetShareDonutChart,
@@ -119,7 +116,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
   <!-- ROI by Campaign -->
-  <Card class="chart-card">
+  <Card>
     <h3 class="text-base">ROI by Campaign</h3>
     <RoiBarChart
       class="!h-29"
@@ -129,7 +126,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
   <!-- Budget Share by Campaign -->
-  <Card class="chart-card">
+  <Card>
     <h3 class="text-base">Budget Share by Campaign</h3>
     <BudgetShareDonutChart
       class="!h-29"
@@ -139,12 +136,12 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
   <!-- Conversion Funnel -->
-  <Card class="chart-card">
+  <Card >
     <h3 class="text-base">Conversion Funnel</h3>
     <ConversionFunnelChart
       :kpis="kpis"
       aria-label="Conversion funnel chart"
-      class="h-96"
+      class="min-h-60"
     />
   </Card>
 </template>

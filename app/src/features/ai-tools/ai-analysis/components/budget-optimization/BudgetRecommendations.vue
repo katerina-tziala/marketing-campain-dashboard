@@ -6,7 +6,7 @@ import type {
   ExecutionRisk,
 } from "@/features/ai-tools/ai-analysis/types";
 import type { BadgeVariant } from "@/ui";
-import { formatCurrency, formatPercentage } from "@/shared/utils/formatters";
+import { formatCurrency, formatPercentage } from "@/shared/utils";
 import { Badge, Card } from "@/ui";
 import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
 

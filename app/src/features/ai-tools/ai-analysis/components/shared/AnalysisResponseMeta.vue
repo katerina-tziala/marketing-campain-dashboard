@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { AiAnalysisNotice } from "@/features/ai-tools/types";
-import { APP_LOCALE } from "@/shared/utils/formatters";
+import { APP_LOCALE } from "@/shared/utils";
 import { MetaRow, MetaItem } from "@/ui";
 
 const props = defineProps<{

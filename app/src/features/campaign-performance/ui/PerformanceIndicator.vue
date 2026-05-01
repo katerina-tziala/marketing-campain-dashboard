@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatPercentage } from "@/shared/utils/formatters";
+import { formatPercentage } from "@/shared/utils";
 
 const props = defineProps<{ value: number | null }>();
 

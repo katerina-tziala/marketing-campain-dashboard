@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Spinner, Notification } from "@/ui";
-import type { AsyncStatus } from "@/shared/types/async-status";
+import type { AsyncStatus } from "@/shared/types";
 import type { AiAnalysisError } from "@/features/ai-tools/types";
 import {
   ANALYSIS_ERROR_MESSAGES,
