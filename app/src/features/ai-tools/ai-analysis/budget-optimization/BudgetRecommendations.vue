@@ -7,8 +7,8 @@ import type {
   BudgetRecommendation,
   ConfidenceLevel,
   ExecutionRisk,
-} from '../../types';
-import { AnalysisSection } from "../shared";
+} from '../types';
+import { AnalysisSection } from "../ui";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
   high: "success",

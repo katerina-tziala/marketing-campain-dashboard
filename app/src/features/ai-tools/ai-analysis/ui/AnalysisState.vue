@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Spinner, Notification } from "@/ui";
 import type { AsyncStatus } from "@/shared/types";
-import type { AiAnalysisError } from '../../../types';
-import { ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE } from '../../utils';
+import type { AiAnalysisError } from "../types";
+import { ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE } from "../utils";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -30,7 +30,7 @@ const errorNotification = computed(() => {
 <template>
   <div v-if="status === 'loading'" class="loader">
     <Spinner class="xxl" />
-    <p role="status" class="loader-text">
+    <p role="status" class="text-typography-muted tracking-wide">
       <slot name="loading" />
     </p>
   </div>

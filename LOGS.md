@@ -12186,3 +12186,43 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Barrel preserved — three distinct consumer layers import from this path; updating all of them would be pure churn with no structural benefit.
 - Two files not three — `BusinessContext` sits in context.types because it is an input to analysis calls, even though it is also referenced by prompts; the split is by data-flow direction (in vs out), not by consumer.
+
+
+## [#572] Rename utils/utils.ts to utils/cache.ts
+**Type:** refactor
+
+**Summary:** Renamed `utils/utils.ts` to `utils/cache.ts` so the filename reflects what the file actually contains — cache key generation.
+
+**Brainstorming:** `utils/utils.ts` is a meaningless name — it duplicates the folder and says nothing about its content. The file exports only `getCacheKey`, making `cache.ts` the precise name. The barrel re-export in `utils/index.ts` is the only change needed; all consumer import paths go through the barrel and are unaffected.
+
+**Prompt:** Rename utils/utils.ts to utils/cache.ts. Update the barrel. Delete the old file. No consumer import paths change.
+
+**What changed:**
+- [utils/cache.ts](app/src/features/ai-tools/ai-analysis/utils/cache.ts) — renamed from utils.ts; content unchanged
+- [utils/index.ts](app/src/features/ai-tools/ai-analysis/utils/index.ts) — updated re-export source from `./utils` to `./cache`
+- [CLAUDE.md](CLAUDE.md) — updated architecture entry
+
+**Key decisions & why:**
+- Barrel-only change — all consumers import `getCacheKey` from `../utils` (the barrel); no consumer file needed updating.
+
+
+## [#573] Restructure ai-analysis components to mirror campaign-performance pattern
+**Type:** refactor
+
+**Summary:** Moved shared UI primitives from `components/shared/` to a sibling `ui/` folder, and promoted the tab implementation folders (`budget-optimization/`, `executive-summary/`) from inside `components/` to sibling folders at the `ai-analysis/` root — matching the pattern used by `campaign-performance`.
+
+**Brainstorming:** The previous structure buried everything inside `components/`, making `shared/`, `budget-optimization/`, and `executive-summary/` all siblings of `AiAnalysis.vue` at the same nesting level. Campaign-performance separates concerns by giving charts, kpis, and ui their own sibling folders next to `components/`. Applying the same mental model to ai-analysis: `components/` owns only the tab orchestrator (`AiAnalysis.vue`), `ui/` owns shared display primitives, and the two tab folders sit at the same level as `components/` and `ui/`. This makes the feature structure scannable at a glance.
+
+**Prompt:** Restructure ai-analysis components to match the campaign-performance pattern: move shared/ to a sibling ui/ folder, promote budget-optimization/ and executive-summary/ to ai-analysis root level. Update all relative import paths. Keep components/index.ts barrel intact.
+
+**What changed:**
+- [ui/](app/src/features/ai-tools/ai-analysis/ui/) — new folder; AnalysisHeader, AnalysisState, AnalysisResponseMeta, AnalysisSection + index.ts barrel
+- [budget-optimization/](app/src/features/ai-tools/ai-analysis/budget-optimization/) — promoted from components/budget-optimization/; BudgetOptimizationAnalysis, BudgetRecommendations + index.ts barrel
+- [executive-summary/](app/src/features/ai-tools/ai-analysis/executive-summary/) — promoted from components/executive-summary/; ExecutiveSummaryAnalysis, HealthStatus, PriorityActions, Insights, Correlations + index.ts barrel
+- [components/AiAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue) — updated imports to use `../budget-optimization` and `../executive-summary` barrels; fixed `AiAnalysisType` import path back to `../../types`
+- Old `components/shared/`, `components/budget-optimization/`, `components/executive-summary/` — deleted
+
+**Key decisions & why:**
+- `ui/` not `shared/` — matches campaign-performance naming (`features/campaign-performance/ui/`); "shared" implies cross-feature sharing which is misleading here.
+- Tab folders at `ai-analysis/` root not inside `components/` — same pattern as `charts/` in campaign-performance; `components/` becomes a thin shell that only owns the orchestrator.
+- Barrel per tab folder — consistent with campaign-performance; consumers import the public tab component without knowing its internal structure.

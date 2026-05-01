@@ -5,8 +5,8 @@ import { Badge, Card } from "@/ui";
 import type {
   ExecutiveInsight,
   InsightType,
-} from '../../types';
-import { AnalysisSection } from "../shared";
+} from '../types';
+import { AnalysisSection } from "../ui";
 
 const props = defineProps<{
   insights: ExecutiveInsight[];

@@ -5,8 +5,8 @@ import { Badge, Card, CardHeader } from "@/ui";
 import type {
   PriorityAction,
   ActionUrgency,
-} from '../../types';
-import { AnalysisSection } from "../shared";
+} from '../types';
+import { AnalysisSection } from "../ui";
 
 const props = defineProps<{
   actions: PriorityAction[];

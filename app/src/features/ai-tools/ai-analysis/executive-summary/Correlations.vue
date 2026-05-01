@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ExecutiveCorrelation } from '../../types'
+import type { ExecutiveCorrelation } from '../types'
 import { Card } from '@/ui'
-import { AnalysisSection } from '../shared'
+import { AnalysisSection } from '../ui'
 
 defineProps<{
   correlations: ExecutiveCorrelation[]

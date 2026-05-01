@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { formatTimestamp } from "@/shared/utils";
 import { MetaRow, MetaItem } from "@/ui";
-import type { AiAnalysisNotice } from '../../../types';
+import type { AiAnalysisNotice } from '../types';
 
 const props = defineProps<{
   timestamp: number | null;

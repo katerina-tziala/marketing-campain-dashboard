@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiAnalysisStore } from '../../stores';
-import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../shared";
+import { useAiAnalysisStore } from '../stores';
+import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../ui";
 import Correlations from "./Correlations.vue";
 import HealthStatus from "./HealthStatus.vue";
 import PriorityActions from "./PriorityActions.vue";
 import Insights from "./Insights.vue";
-
 
 const analysisStore = useAiAnalysisStore();
 

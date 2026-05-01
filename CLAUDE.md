@@ -226,28 +226,31 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── utils/
 │   │   │   │   │   ├── analysis-messages.ts  # ANALYSIS_ERROR_MESSAGES (Record<AiErrorCode, {title,message}> — all 11 codes incl. 'min-campaigns'); TOKEN_LIMIT_MESSAGE
 │   │   │   │   │   ├── analysis-prompt.ts  # buildAnalysisPrompt (internal); runAnalysisPrompt(providerState, analysisContext, signal) → AnalysisResponse|null; [DEV ONLY] setDevAnalysisOverride export
-│   │   │   │   │   └── utils.ts    # getCacheKey(channelIds, provider) → 16-char hex string (xxhashjs h64, seed=0)
+│   │   │   │   │   └── cache.ts    # getCacheKey(channelIds, provider) → 16-char hex string (xxhashjs h64, seed=0)
 │   │   │   │   ├── types/
 │   │   │   │   │   ├── output.types.ts  # AI response output types — ConfidenceLevel, ExecutionRisk, HealthLabel, InsightType, ActionUrgency; Executive Summary shapes (ExecutiveInsight, PriorityAction, ExecutiveCorrelation, HealthScore, ExecutiveSummaryOutput); Budget Optimizer shapes (BudgetRecommendation, BudgetOptimizerOutput); response envelope types (BudgetOptimizerResponse, ExecutiveSummaryResponse, AnalysisResponse)
 │   │   │   │   │   ├── context.types.ts # Analysis input/context types — BusinessContext, AnalysisContext, AIProviderState, PortfolioContext, AiAnalysisContext
 │   │   │   │   │   └── index.ts    # Barrel — re-exports all types from output.types and context.types; all existing import paths remain valid
-│   │   │   │   └── components/
-│   │   │   │       ├── index.ts                # Barrel — exports AiAnalysis
-│   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only
-│   │   │   │       ├── shared/
-│   │   │   │       │   ├── AnalysisHeader.vue      # Shared tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext); emits: analyze; SectionHeaderLayout + MetaRow (bullet); fully props-only
-│   │   │   │       │   ├── AnalysisSection.vue     # Section layout — title prop + default slot; scoped .analysis-section
-│   │   │   │       │   ├── AnalysisResponseMeta.vue  # Response footer — props: timestamp, modelDisplayName?, notice?; MetaRow .divider.tiny.info.italic; "Generated at [time] with [model]" + disclaimer + stale-result notice
-│   │   │   │       │   └── AnalysisState.vue       # Analysis wrapper — props: status, error, tokenLimitReached, hasResult; #loading/#state/default slots; resolves error text via ANALYSIS_ERROR_MESSAGES
-│   │   │   │       ├── budget-optimization/
-│   │   │   │       │   ├── BudgetOptimizationAnalysis.vue  # Budget Optimizer tab orchestrator; reads aiAnalysis.store only; no scoped styles
-│   │   │   │       │   └── BudgetRecommendations.vue       # Recommendations — props: recommendations[]; sortedRecommendations (high confidence first, then low execution risk); cq-container rec-card; scoped @apply flat styles
-│   │   │   │       └── executive-summary/
-│   │   │   │           ├── ExecutiveSummaryAnalysis.vue  # Executive Summary tab orchestrator; reads aiAnalysis.store only; no scoped styles
-│   │   │   │           ├── HealthStatus.vue              # Portfolio Health badge — props: healthScore
-│   │   │   │           ├── PriorityActions.vue           # Priority Actions — props: actions (PriorityAction[]); camelCase fields (expectedOutcome, successMetric)
-│   │   │   │           ├── Insights.vue                  # Insights — props: insights (ExecutiveInsight[]); type badge (inline-action-float) + metric badge; metricHighlight (camelCase)
-│   │   │   │           └── Correlations.vue              # Correlations — props: correlations (ExecutiveCorrelation[]); v-if on length
+│   │   │   │   ├── components/
+│   │   │   │   │   ├── index.ts                # Barrel — exports AiAnalysis
+│   │   │   │   │   └── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
+│   │   │   │   ├── ui/                         # Shared display primitives — no store reads, props-only
+│   │   │   │   │   ├── AnalysisHeader.vue      # Tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext); emits: analyze; SectionHeaderLayout + MetaRow (bullet)
+│   │   │   │   │   ├── AnalysisSection.vue     # Section layout — title prop + default slot; scoped .analysis-section
+│   │   │   │   │   ├── AnalysisResponseMeta.vue  # Response footer — props: timestamp, modelDisplayName?, notice?; MetaRow .divider.tiny.info.italic; "Generated at [time] with [model]" + disclaimer + stale-result notice
+│   │   │   │   │   ├── AnalysisState.vue       # Analysis wrapper — props: status, error, tokenLimitReached, hasResult; #loading/#state/default slots; resolves error text via ANALYSIS_ERROR_MESSAGES
+│   │   │   │   │   └── index.ts                # Barrel — exports AnalysisHeader, AnalysisSection, AnalysisResponseMeta, AnalysisState
+│   │   │   │   ├── budget-optimization/
+│   │   │   │   │   ├── BudgetOptimizationAnalysis.vue  # Budget Optimizer tab orchestrator; reads aiAnalysis.store only; no scoped styles
+│   │   │   │   │   ├── BudgetRecommendations.vue       # Recommendations — props: recommendations[]; sortedRecommendations (high confidence first, then low execution risk); cq-container rec-card; scoped @apply flat styles
+│   │   │   │   │   └── index.ts                # Barrel — exports BudgetOptimizationAnalysis
+│   │   │   │   └── executive-summary/
+│   │   │   │       ├── ExecutiveSummaryAnalysis.vue  # Executive Summary tab orchestrator; reads aiAnalysis.store only; no scoped styles
+│   │   │   │       ├── HealthStatus.vue              # Portfolio Health badge — props: healthScore
+│   │   │   │       ├── PriorityActions.vue           # Priority Actions — props: actions (PriorityAction[]); camelCase fields (expectedOutcome, successMetric)
+│   │   │   │       ├── Insights.vue                  # Insights — props: insights (ExecutiveInsight[]); type badge (inline-action-float) + metric badge; metricHighlight (camelCase)
+│   │   │   │       ├── Correlations.vue              # Correlations — props: correlations (ExecutiveCorrelation[]); v-if on length
+│   │   │   │       └── index.ts                # Barrel — exports ExecutiveSummaryAnalysis
 │   │   │   ├── ai-connection/
 │   │   │   │   ├── stores/
 │   │   │   │   │   ├── aiConnection.store.ts # useAiConnectionStore (id: 'aiConnection') — provider, apiKey (memory-only), isConnected, isConnecting, connectionError, models (AiModel[]), selectedModel; selectedModelLimitReached, allModelsLimitReached, evaluationDisabled (computed); connect(), disconnect(), markModelLimitReached(), selectNextAvailableModel(), openPanel(), closePanel(); connect() publishes AiConnectionEvent via lastConnectionEvent ref (success/error) instead of showing toasts directly — orchestrator handles toast display; [DEV ONLY] setDevConnectOverride export

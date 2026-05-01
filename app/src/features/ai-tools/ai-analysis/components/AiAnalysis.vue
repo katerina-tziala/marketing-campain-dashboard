@@ -2,8 +2,8 @@
 import { type Tab, Tabs, FileTextIcon, SlidersIcon } from "@/ui";
 import { useAiAnalysisStore } from '../stores';
 import type { AiAnalysisType } from '../../types';
-import BudgetOptimizationAnalysis from "./budget-optimization/BudgetOptimizationAnalysis.vue";
-import ExecutiveSummaryAnalysis from "./executive-summary/ExecutiveSummaryAnalysis.vue";
+import { BudgetOptimizationAnalysis } from "../budget-optimization";
+import { ExecutiveSummaryAnalysis } from "../executive-summary";
 
 const analysisStore = useAiAnalysisStore();
 
@@ -28,11 +28,11 @@ const tabs: Tab[] = [
 <style lang="scss" scoped>
 .panel-container {
   @apply p-4
-    pr-3 
+    pr-3
     h-full
     overflow-y-auto
     overflow-x-hidden
-    flex flex-col gap-6 
+    flex flex-col gap-6
     text-sm
     text-typography;
 }

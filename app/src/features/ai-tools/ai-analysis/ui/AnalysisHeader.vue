@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MagicWandIcon, MetaRow, MetaItem, Button, SectionHeaderLayout } from "@/ui";
-import type { PortfolioContext } from '../../types';
+import type { PortfolioContext } from '../types';
 
 defineProps<{
   title: string;

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Notification } from "@/ui";
-import { useAiAnalysisStore } from '../../stores';
-import { ANALYSIS_ERROR_MESSAGES } from '../../utils';
-import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../shared";
+import { useAiAnalysisStore } from '../stores';
+import { ANALYSIS_ERROR_MESSAGES } from '../utils';
+import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../ui";
 import BudgetRecommendations from "./BudgetRecommendations.vue";
-
 
 const analysisStore = useAiAnalysisStore();
 
