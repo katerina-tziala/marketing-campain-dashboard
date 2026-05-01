@@ -12307,3 +12307,40 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Explicit parameters over injected getters — makes data flow visible at the call site; the class has no implicit state dependencies.
 - getChannelIds() store helper added — avoids repeating the null-coalesce inline at every call site.
 - In executeAnalysis, context.selectedChannelIds and provider are passed directly since both are already destructured from context/aiStore at that point.
+
+
+## [578] Rename TabState to TabRequestState and merge AnalysisCache into it
+**Type:** refactor
+
+**Summary:** Renamed `TabState` to `TabRequestState` for clarity, then absorbed `AnalysisCache` into it so each tab's request lifecycle and cache storage are managed by a single object.
+
+**Brainstorming:** `TabState` and `AnalysisCache` are always looked up together (same tab key), have related but distinct reset scopes (request state resets on portfolio switch; cache clears only on disconnect), and both belong conceptually to a single tab's non-reactive state. Merging them into `TabRequestState` eliminates the parallel `tabs`/`caches` maps and the `getCache()` helper, reducing every call site to one lookup. SRP concern is minor — both concerns belong to the same tab and change for tab-related reasons. Abort safety is preserved because the local `controller` variable captured at request start is what `controller.signal.aborted` checks, not `tabRequestState.controller`.
+
+**Prompt:** Rename TabState to TabRequestState across file, class name, import, instantiation, function name, and local variables. Then absorb AnalysisCache into TabRequestState as a private field with delegating methods (getCached, setCached, getLastVisible, clearCache, deletePortfolioCache). Remove the caches map and getCache() helper from the store. Replace all getCache() call sites with getTabRequestState(tab).* equivalents.
+
+**What changed:**
+- `stores/TabState.ts` → renamed to `stores/TabRequestState.ts`; class renamed to `TabRequestState`; `AnalysisCache` added as private field; cache delegation methods added: `getCached`, `setCached`, `getLastVisible`, `clearCache`, `deletePortfolioCache`
+- `stores/aiAnalysis.store.ts` — import updated; `caches` map removed; `getCache()` helper removed; all `getCache(tab).*` call sites replaced with `getTabRequestState(tab).*`; `tabState`/`tabRequestState` local variable consolidation in `executeAnalysis`; double lookup in `clearStateForDisconnect` collapsed
+
+**Key decisions & why:**
+- Cache delegation methods rather than exposing the `AnalysisCache` instance directly — keeps `AnalysisCache` fully encapsulated; callers don't need to know it exists.
+- `reset()` still only clears request state fields — cache lifetime is longer and controlled separately via `clearCache()` and `deletePortfolioCache()`.
+- `clearStateForDisconnect` loop now declares a local `tabRequestState` to avoid double lookup per iteration.
+
+
+## [579] Extract typed display-state helpers in aiAnalysis store
+**Type:** refactor
+
+**Summary:** Replaced raw `setDisplay(tab, status, ...)` call sites with intent-named helpers `setIdle`, `setLoading`, `setDone`, and `setError` that imply the status internally.
+
+**Brainstorming:** The store had 10 raw `setDisplay` calls spread across multiple functions, each reconstructing the full argument list including status string. Extracting named helpers removes the repeated status literal, makes each call site self-documenting, and narrows the parameter surface — `setDone` only accepts a response, `setError` only accepts a code, etc. `setDisplay` stays as the internal primitive delegated to by all four helpers.
+
+**Prompt:** Extract setIdle, setLoading, setDone, setError helpers in aiAnalysis.store.ts. Each implies its status internally. Replace all raw setDisplay call sites. setDisplay stays as the internal primitive.
+
+**What changed:**
+- `aiAnalysis.store.ts` — added `setIdle(tab, error?)`, `setLoading(tab)`, `setDone(tab, response, notice?)`, `setError(tab, code, rawMessage?)` helpers; replaced all 10 raw `setDisplay` call sites with the appropriate helper; `setDisplay` retained as private primitive
+
+**Key decisions & why:**
+- `setDisplay` kept as the single write point for the reactive refs — all helpers delegate to it; no logic duplication.
+- `analyze()` still uses `display.value = { ...display.value, notice: null }` directly — it clears only the notice without touching status, which doesn't map to any of the new helpers.
+- `revertTab` ternary replaced with explicit `if/else` to avoid passing `null` as a response to `setDone`.

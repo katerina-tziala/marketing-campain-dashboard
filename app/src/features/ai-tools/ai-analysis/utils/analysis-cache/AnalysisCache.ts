@@ -9,7 +9,7 @@ export type CacheEntry = {
 
 export class AnalysisCache {
   private readonly store = new Map<string, Map<string, CacheEntry>>()
-  lastVisibleCacheKey: string | null = null
+  private lastVisibleCacheKey: string | null = null
 
   get(portfolioId: string, channelIds: string[], provider: string): CacheEntry | undefined {
     const key = getCacheKey(channelIds, provider)
@@ -18,8 +18,9 @@ export class AnalysisCache {
     return entry
   }
 
-  getByKey(portfolioId: string, cacheKey: string): CacheEntry | undefined {
-    return this.store.get(portfolioId)?.get(cacheKey)
+  getLastVisible(portfolioId: string): CacheEntry | null {
+    if (!this.lastVisibleCacheKey) return null
+    return this.store.get(portfolioId)?.get(this.lastVisibleCacheKey) ?? null
   }
 
   set(portfolioId: string, channelIds: string[], provider: string, entry: CacheEntry): void {

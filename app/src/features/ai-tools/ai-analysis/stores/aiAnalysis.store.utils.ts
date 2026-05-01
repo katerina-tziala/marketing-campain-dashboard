@@ -1,6 +1,6 @@
 import type { AsyncStatus } from '@/shared/types'
 import type { AiAnalysisType, AiAnalysisError, AiAnalysisNotice } from '../../types'
-import type { AnalysisResponse } from '../types'
+import type { AnalysisResponse, PortfolioContext } from '../types'
 
 export type TabDisplay<T extends AnalysisResponse = AnalysisResponse> = {
   status: AsyncStatus
@@ -16,12 +16,13 @@ export const DEFAULT_STATE: TabDisplay = {
   notice: null,
 }
 
-export function createTabState() {
-  return {
-    firstAnalyzeCompleted: false,
-    controller: null as AbortController | null,
-    debounceTimer: null as ReturnType<typeof setTimeout> | null,
-  }
+export const ALL_TABS: AiAnalysisType[] = ['budgetOptimizer', 'executiveSummary']
+
+export const DEFAULT_PORTFOLIO_CONTEXT: PortfolioContext = {
+  portfolioTitle: '',
+  filtersActive: false,
+  channelCount: 0,
+  campaignCount: 0,
 }
 
 export function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {
