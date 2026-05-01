@@ -1,5 +1,26 @@
+<script setup lang="ts">
+import type { SpinnerSize, SpinnerTone } from './spinner.types'
+
+const props = withDefaults(
+  defineProps<{
+    size?: SpinnerSize
+    tone?: SpinnerTone
+  }>(),
+  {
+    size: 'default',
+    tone: 'default',
+  },
+)
+</script>
+
 <template>
-  <svg class="spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg
+    class="spinner"
+    :class="[props.size, props.tone]"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
     <circle
       cx="12"
       cy="12"
@@ -39,6 +60,10 @@
 
 .spinner.sm {
   @apply w-5 h-5;
+}
+
+.spinner.xxl {
+  @apply w-24 h-24;
 }
 
 .spinner.inverse {

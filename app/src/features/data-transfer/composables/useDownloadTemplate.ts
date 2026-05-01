@@ -9,7 +9,7 @@ export function useDownloadTemplate() {
     try {
       downloadCsv(CAMPAIGNS_SAMPLE, 'marketing_campain_sample')
     } catch {
-      toastStore.showErrorToast('Failed to generate the CSV template.', 'Please try again.')
+      toastStore.showErrorToast('Failed to generate the CSV template', 'Please try again')
     }
   }
 

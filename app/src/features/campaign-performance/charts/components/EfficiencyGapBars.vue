@@ -100,7 +100,7 @@ function formatValueTick(value: string | number): string {
 
 <template>
   <div class="efficiency-gap-bars">
-    <MetaRow class="tiny mx-auto">
+    <MetaRow size="tiny" class="mx-auto">
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"

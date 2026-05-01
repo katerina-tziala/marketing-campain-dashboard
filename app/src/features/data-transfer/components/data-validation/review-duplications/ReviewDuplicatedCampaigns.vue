@@ -60,16 +60,17 @@ function handleProceed(): void {
     </div>
   </ModalBody>
   <ModalFooter>
-    <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
+    <Button variant="primary" class="min-w-24 xs:order-1" @click="emit('back')"
       >Back</Button
     >
     <Button
-      class="outline xs:order-3 xs:mr-auto"
+      variant="outline"
+      class="xs:order-3 xs:mr-auto"
       :disabled="!canProceed"
       @click="handleProceed"
       >Proceed with selection</Button
     >
-    <Button class="outline min-w-24 xs:order-2" @click="emit('close')"
+    <Button variant="outline" class="min-w-24 xs:order-2" @click="emit('close')"
       >Cancel</Button
     >
   </ModalFooter>

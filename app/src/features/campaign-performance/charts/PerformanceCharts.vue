@@ -95,10 +95,12 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
         Revenue vs Budget by Channel
       </h3>
       <RadioToggle
-        class="timy secondary mx-auto"
+        class="mx-auto"
         v-model="revenueBudgetView"
         :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
         name="revenue-budget-view"
+        variant="secondary"
+        size="tiny"
       />
     </CardHeader>
     <RevenueVsBudgetBars

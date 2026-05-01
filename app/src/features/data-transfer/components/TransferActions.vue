@@ -8,11 +8,11 @@ const { downloadTemplate } = useDownloadTemplate()
 
 <template>
   <div class="file-actions">
-    <Button class="primary grow w-full" @click="emit('upload')">
+    <Button variant="primary" class="grow w-full" @click="emit('upload')">
       <UploadIcon />
       Upload
     </Button>
-    <Button class="outline grow w-full" @click="downloadTemplate">
+    <Button variant="outline" class="grow w-full" @click="downloadTemplate">
       <DownloadIcon />
       Download Template
     </Button>

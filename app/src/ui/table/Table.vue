@@ -1,7 +1,26 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import type { TableStriped } from './table.types'
+
+const props = withDefaults(
+  defineProps<{
+    striped?: TableStriped
+    verticalSeparators?: boolean
+  }>(),
+  {
+    striped: 'none',
+    verticalSeparators: false,
+  },
+)
+</script>
 
 <template>
-  <div class="scrollbar-info-on-surface table-container">
+  <div
+    class="scrollbar-info-on-surface table-container"
+    :class="[
+      `striped-${props.striped}`,
+      { 'vertical-separators': props.verticalSeparators },
+    ]"
+  >
     <table>
       <slot />
     </table>

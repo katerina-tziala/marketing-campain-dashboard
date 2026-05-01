@@ -71,7 +71,8 @@ const sortedRecommendations = computed(() =>
     <Card
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
-      class="secondary rec-card"
+      variant="secondary"
+      class="rec-card"
     >
       <h5 class="card-title rec-route">
         <div class="shrink flex flex-wrap gap-x-8 gap-y-2 justify-between">
@@ -85,10 +86,10 @@ const sortedRecommendations = computed(() =>
           </div>
         </div>
         <div class="rec-badges">
-          <Badge :class="confidenceVariant(rec.confidence)"
+          <Badge :variant="confidenceVariant(rec.confidence)"
             >{{ rec.confidence }} confidence</Badge
           >
-          <Badge :class="executionRiskVariant(rec.executionRisk)"
+          <Badge :variant="executionRiskVariant(rec.executionRisk)"
             >{{ rec.executionRisk }} risk</Badge
           >
         </div>

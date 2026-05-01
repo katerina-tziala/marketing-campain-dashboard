@@ -69,11 +69,11 @@ async function handleConnect(): Promise<void> {
       </div>
       <!-- Connect -->
       <Button
-        class="primary"
+        variant="primary"
         type="submit"
         :disabled="!apiKey.trim() || store.isConnecting"
       >
-        <Spinner class="sm inverse" v-if="store.isConnecting" />
+        <Spinner v-if="store.isConnecting" size="sm" tone="inverse" />
         <PlugIcon v-else />
         {{ store.isConnecting ? "Connecting…" : "Connect" }}
       </Button>

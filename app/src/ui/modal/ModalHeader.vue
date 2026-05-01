@@ -25,7 +25,8 @@ const finalCloseLabel = props.closeLabel ?? "Close";
     <div class="modal-header-actions">
       <slot name="header-actions" />
       <Button
-        class="icon-only text-only"
+        variant="text-only"
+        icon-only
         :aria-label="finalCloseLabel"
         @click="emit('close')"
       >

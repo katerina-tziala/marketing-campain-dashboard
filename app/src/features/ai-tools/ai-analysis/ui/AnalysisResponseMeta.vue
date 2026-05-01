@@ -16,7 +16,12 @@ const formattedTime = computed(() =>
 </script>
 
 <template>
-  <MetaRow class="divider tiny info italic text-typography-muted py-3">
+  <MetaRow
+    separator="divider"
+    size="tiny"
+    tone="info"
+    class="italic text-typography-muted py-3"
+  >
     <MetaItem v-if="formattedTime">
       Generated at {{ formattedTime
       }}<template v-if="modelDisplayName"> with {{ modelDisplayName }}</template>

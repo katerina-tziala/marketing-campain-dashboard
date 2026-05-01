@@ -10,7 +10,8 @@ defineProps<{
   <Disclosure>
     <template #trigger="{ open, toggle, contentId }">
       <Button
-        class="text-only self-start w-full !px-2.5 !justify-start"
+        variant="text-only"
+        class="self-start w-full !px-2.5 !justify-start"
         type="button"
         :aria-expanded="open"
         :aria-controls="contentId"
@@ -20,7 +21,7 @@ defineProps<{
         How to get your key?
       </Button>
     </template>
-    <Card class="secondary">
+    <Card variant="secondary">
       <h5 class="card-title text-primary-lighter">{{ instructions.title }}</h5>
       <ol class="help-steps">
         <li v-for="step in instructions.steps" :key="step">{{ step }}</li>

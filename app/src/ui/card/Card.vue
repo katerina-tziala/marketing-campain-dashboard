@@ -1,5 +1,18 @@
+<script setup lang="ts">
+import type { CardVariant } from './card.types'
+
+const props = withDefaults(
+  defineProps<{
+    variant?: CardVariant
+  }>(),
+  {
+    variant: 'primary',
+  },
+)
+</script>
+
 <template>
-  <article class="card">
+  <article class="card" :class="props.variant">
     <slot />
   </article>
 </template>

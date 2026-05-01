@@ -39,7 +39,8 @@ function toggleDropdown(): void {
   <div class="relative shrink-0 z-[50]">
     <Button
       ref="triggerButtonRef"
-      class="info-outline filter-trigger-button"
+      variant="info-outline"
+      class="filter-trigger-button"
       :class="{ active: dropdownOpen }"
       :aria-expanded="dropdownOpen"
       :aria-pressed="hasSelection"
@@ -54,7 +55,9 @@ function toggleDropdown(): void {
 
     <Badge
       v-if="hiddenCount > 0 && !dropdownOpen"
-      class="small bold info selected-filters-badge"
+      variant="info"
+      size="small"
+      class="selected-filters-badge"
       >+{{ hiddenCount }}</Badge
     >
 
@@ -72,7 +75,8 @@ function toggleDropdown(): void {
           </p>
           <Button
             v-if="hasSelection"
-            class="info-text-only small"
+            variant="info-text-only"
+            size="small"
             @click="emit('clear')"
           >
             Show all
@@ -103,13 +107,17 @@ function toggleDropdown(): void {
     @apply inline-block w-full h-full flex items-center justify-center;
   }
 
-  &.info-outline.active {
+  &.active {
     @apply bg-info-darker border-info-darker text-info text-typography drop-shadow-sm;
   }
 }
 
 .selected-filters-badge {
   @apply absolute -top-2.5 -right-2.5 min-w-6 max-h-6;
+
+  &:deep(.badge-body) {
+    @apply font-bold;
+  }
 }
 
 .dropdown-header {

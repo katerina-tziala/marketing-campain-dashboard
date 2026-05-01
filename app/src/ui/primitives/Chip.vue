@@ -34,7 +34,7 @@ defineProps<{
     text-typography-subtle;
 
   .chip-content {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1 tracking-wide;
   }
 
   .chip-count {

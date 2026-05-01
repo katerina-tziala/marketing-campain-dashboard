@@ -31,10 +31,11 @@ const sortedErrors = computed(() =>
 </script>
 
 <template>
-  <Table class="striped-even vertical-separators">
+  <Table striped="even" vertical-separators>
     <TableHeader
       :columns="COLUMNS"
-      class="sticky-header vertical-separators"
+      position="sticky"
+      vertical-separators
       sort-key="row"
       :sort-dir="sortDir"
       @sort="toggleSort"
@@ -46,7 +47,7 @@ const sortedErrors = computed(() =>
       >
         <td class="font-semibold tabular-nums">{{ err.row }}</td>
         <td>
-          <Badge class="danger dimmed">{{ err.column }}</Badge>
+          <Badge variant="danger" tone="dimmed">{{ err.column }}</Badge>
         </td>
         <td class="left-alignment">{{ getRowErrorMessage(err) }}</td>
       </tr>

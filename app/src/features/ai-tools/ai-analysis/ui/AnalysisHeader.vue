@@ -19,7 +19,8 @@ defineEmits<{ analyze: [] }>();
     </template>
     <template #action>
       <Button
-        class="primary icon-only"
+        variant="primary"
+        icon-only
         :disabled="isButtonDisabled"
         :aria-label="actionLabel"
         @click="$emit('analyze')"
@@ -27,7 +28,7 @@ defineEmits<{ analyze: [] }>();
         <MagicWandIcon />
       </Button>
     </template>
-    <MetaRow class="bullet text-typography-subtle">
+    <MetaRow separator="bullet" class="text-typography-subtle">
       <MetaItem>{{ context.portfolioTitle }}</MetaItem>
       <MetaItem>{{ context.channelCount }} channels</MetaItem>
       <MetaItem>{{ context.campaignCount }} campaigns</MetaItem>

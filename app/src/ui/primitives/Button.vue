@@ -1,7 +1,29 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import type { ButtonSize, ButtonVariant } from "./button.types";
+
+const props = withDefaults(
+  defineProps<{
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    iconOnly?: boolean;
+    noRing?: boolean;
+  }>(),
+  {
+    variant: "primary",
+    size: "default",
+    iconOnly: false,
+    noRing: false,
+  },
+);
 
 const buttonRef = ref<HTMLButtonElement>();
+const buttonClasses = computed(() => [
+  props.variant,
+  props.size,
+  props.iconOnly ? "icon-only" : undefined,
+  props.noRing ? "no-ring" : undefined,
+]);
 
 function getRootEl(): HTMLButtonElement | undefined {
   return buttonRef.value;
@@ -13,7 +35,12 @@ defineExpose({
 </script>
 
 <template>
-  <button ref="buttonRef" v-bind="$attrs" class="btn">
+  <button
+    ref="buttonRef"
+    v-bind="$attrs"
+    class="btn"
+    :class="buttonClasses"
+  >
     <slot />
   </button>
 </template>
@@ -118,7 +145,7 @@ defineExpose({
   }
 }
 
-/* variant info outline */
+/* variant info-text-only */
 .btn.info-text-only {
   @apply text-typography-subtle
     border

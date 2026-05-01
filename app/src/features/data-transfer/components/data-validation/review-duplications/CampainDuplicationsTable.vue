@@ -104,7 +104,7 @@ defineExpose({ reset });
   <Table>
     <TableHeader
       :columns="COLUMNS"
-      class="sticky-header"
+      position="sticky"
       :sort-key="sortKey"
       :sort-dir="sortDir"
       @sort="handleSort"
@@ -132,7 +132,7 @@ defineExpose({ reset });
             <RadioItem
               :name="`group-${group.campaignName}`"
               :value="entry.rowId"
-              class="info"
+              variant="info"
               :checked="isSelected(group.campaignName, entry.rowId)"
               :aria-label="`Select row ${entry.rowId}`"
               @change="selectRow(group.campaignName, entry.rowId)"
@@ -140,7 +140,7 @@ defineExpose({ reset });
           </td>
           <td>{{ entry.rowId }}</td>
           <td>
-            <Badge class="info dimmed">{{ entry.channel }}</Badge>
+            <Badge variant="info" tone="dimmed">{{ entry.channel }}</Badge>
           </td>
           <td>{{ formatCurrency(entry.budget) }}</td>
           <td>{{ formatNumber(entry.clicks) }}</td>

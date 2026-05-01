@@ -1,10 +1,20 @@
 <script setup lang="ts">
-defineProps<{
-  modelValue: string;
-  options: { value: string; label: string }[];
-  name?: string;
-  disabled?: boolean;
-}>();
+import type { FormControlVariant, RadioToggleSize } from './form.types'
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: string;
+    options: { value: string; label: string }[];
+    name?: string;
+    disabled?: boolean;
+    variant?: FormControlVariant;
+    size?: RadioToggleSize;
+  }>(),
+  {
+    variant: 'primary',
+    size: 'default',
+  },
+);
 
 defineEmits<{ "update:modelValue": [value: string] }>();
 </script>
@@ -12,6 +22,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
 <template>
   <div
     class="radio-toggle"
+    :class="[props.variant, props.size]"
     :style="{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }"
   >
     <label v-for="option in options" :key="option.value" class="block">
@@ -79,7 +90,7 @@ label {
   }
 }
 
-.radio-toggle.timy {
+.radio-toggle.tiny {
   .option-label {
     @apply py-1 
     min-h-7;

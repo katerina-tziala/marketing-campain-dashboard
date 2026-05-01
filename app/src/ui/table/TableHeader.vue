@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ArrowUpIcon } from "../icons";
+import type { TableHeaderPosition } from "./table.types";
 
 export type SortDir = "asc" | "desc";
 
@@ -16,9 +17,13 @@ const props = withDefaults(
     columns: DataTableColumn[];
     sortKey?: string;
     sortDir?: SortDir;
+    position?: TableHeaderPosition;
+    verticalSeparators?: boolean;
   }>(),
   {
     sortDir: "asc",
+    position: "static",
+    verticalSeparators: false,
   },
 );
 
@@ -43,7 +48,12 @@ function sortAriaLabel(col: DataTableColumn): string {
 </script>
 
 <template>
-  <thead>
+  <thead
+    :class="[
+      `is-${props.position}`,
+      { 'vertical-separators': props.verticalSeparators },
+    ]"
+  >
     <tr>
       <th
         v-for="col in columns"
@@ -140,8 +150,7 @@ th {
   }
 }
 
-/* sticky header */
-.sticky-header > tr > th {
+.is-sticky > tr > th {
   @apply sticky top-0 z-10;
 }
 

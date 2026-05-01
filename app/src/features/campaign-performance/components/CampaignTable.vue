@@ -71,7 +71,7 @@ const COLUMNS: DataTableColumn[] = [
   <Table class="campaign-table">
     <TableHeader
       :columns="COLUMNS"
-      class="sticky-header"
+      position="sticky"
       :sort-key="sortField"
       :sort-dir="sortDir"
       @sort="handleSort"
@@ -80,7 +80,7 @@ const COLUMNS: DataTableColumn[] = [
       <tr v-for="c in sortedCampaigns" :key="c.campaign" class="data-table-row">
         <td class="left-alignment">{{ c.campaign }}</td>
         <td>
-          <Badge class="info dimmed">{{ c.channel }}</Badge>
+          <Badge variant="info" tone="dimmed">{{ c.channel }}</Badge>
         </td>
         <td>{{ formatCurrency(c.budget) }}</td>
         <td>{{ formatCompactNumber(c.clicks) }}</td>

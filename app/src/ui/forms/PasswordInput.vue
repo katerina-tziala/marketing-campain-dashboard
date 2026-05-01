@@ -52,7 +52,9 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
       "
     />
     <Button
-      class="text-only no-ring toggle-btn"
+      variant="text-only"
+      no-ring
+      class="toggle-btn"
       type="button"
       :disabled="disabled"
       :aria-label="visible ? 'Hide password' : 'Show password'"

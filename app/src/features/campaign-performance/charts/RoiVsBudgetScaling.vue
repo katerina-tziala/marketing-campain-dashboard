@@ -62,7 +62,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
         class="!h-29"
         :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
       />
-      <MetaRow class="tiny bullet mt-1.5 mx-auto">
+      <MetaRow size="tiny" separator="bullet" class="mt-1.5 mx-auto">
         <MetaItem>
           <span class="scatter-legend-dash" />
           <span class="scatter-legend-label">Median split</span>

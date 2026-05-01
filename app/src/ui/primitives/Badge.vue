@@ -1,5 +1,32 @@
+<script setup lang="ts">
+import type {
+  BadgeShape,
+  BadgeSize,
+  BadgeTone,
+  BadgeVariant,
+} from './badge.types'
+
+const props = withDefaults(
+  defineProps<{
+    variant?: BadgeVariant
+    tone?: BadgeTone
+    shape?: BadgeShape
+    size?: BadgeSize
+  }>(),
+  {
+    variant: 'primary',
+    tone: 'solid',
+    shape: 'pill',
+    size: 'default',
+  },
+)
+</script>
+
 <template>
-  <span class="badge">
+  <span
+    class="badge"
+    :class="[props.variant, props.tone, props.shape, props.size]"
+  >
     <span class="badge-body">
       <slot />
     </span>
@@ -36,11 +63,11 @@
     @apply bg-primary-lighter/10 border-primary-lighter/25 text-primary-lighter;
   }
 
-  &.rounded-rectangle .badge-body {
+  &.rounded .badge-body {
     @apply rounded-md;
   }
 
-  &.rounded-rectangle-sm .badge-body {
+  &.soft-rounded .badge-body {
     @apply rounded-sm;
   }
 
@@ -73,12 +100,8 @@
     }
   }
 
-  &.small>.badge-body  {
+  &.small > .badge-body {
     @apply py-0.5 px-1 text-xs;
-  }
-
-  &.bold>.badge-body  {
-    @apply font-bold;
   }
 }
 </style>

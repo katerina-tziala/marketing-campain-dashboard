@@ -43,7 +43,11 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
 
 <template>
   <AnalysisSection title="Priority Actions">
-    <Card v-for="(action, i) in sortedActions" :key="i" class="secondary">
+    <Card
+      v-for="(action, i) in sortedActions"
+      :key="i"
+      variant="secondary"
+    >
       <CardHeader>
         <span class="font-extrabold text-sm min-w-5 text-primary-soft"
           >#{{ action.priority }}</span
@@ -51,7 +55,7 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
         <h5 class="card-title">
           <Badge
             class="inline-action-float"
-            :class="urgencyVariant(action.urgency)"
+            :variant="urgencyVariant(action.urgency)"
             >{{ URGENCY_LABEL_MAP[action.urgency] }}</Badge
           >
           {{ action.action }}

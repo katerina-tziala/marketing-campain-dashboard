@@ -25,8 +25,8 @@ const words = computed(() => {
        Duplicate campaign names detected
     </template>
     <template #badge>
-      <Badge v-if="variant === 'resolve' && !hasValidCampaigns" class="danger">Resolve duplicates</Badge>
-      <Badge v-else class="warning">Duplicate data</Badge>
+      <Badge v-if="variant === 'resolve' && !hasValidCampaigns" variant="danger">Resolve duplicates</Badge>
+      <Badge v-else variant="warning">Duplicate data</Badge>
     </template>
     <template #summary>
       <template v-if="variant === 'resolve'">

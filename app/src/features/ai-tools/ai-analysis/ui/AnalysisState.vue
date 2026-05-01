@@ -29,7 +29,7 @@ const errorNotification = computed(() => {
 
 <template>
   <div v-if="status === 'loading'" class="loader">
-    <Spinner class="xxl" />
+    <Spinner size="xxl" />
     <p role="status" class="text-typography-muted tracking-wide">
       <slot name="loading" />
     </p>

@@ -39,7 +39,8 @@ const {
       <div class="shrink-0 mt-1 inline-action-float min-h-9">
         <Button
           v-if="hasCampaigns"
-          class="outline small"
+          variant="outline"
+          size="small"
           @click="requestUpload"
         >
           <UploadIcon />

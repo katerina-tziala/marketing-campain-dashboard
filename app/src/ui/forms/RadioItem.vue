@@ -1,18 +1,26 @@
 <script setup lang="ts">
-defineProps<{
-  name: string;
-  value: string | number;
-  checked: boolean;
-  ariaLabel?: string;
-  error?: boolean;
-  disabled?: boolean;
-}>();
+import type { RadioItemVariant } from './form.types'
+
+const props = withDefaults(
+  defineProps<{
+    name: string;
+    value: string | number;
+    checked: boolean;
+    ariaLabel?: string;
+    error?: boolean;
+    disabled?: boolean;
+    variant?: RadioItemVariant;
+  }>(),
+  {
+    variant: 'primary',
+  },
+);
 
 defineEmits<{ change: [value: string | number] }>();
 </script>
 
 <template>
-  <label class="radio-item" :class="{ error, disabled }">
+  <label class="radio-item" :class="[props.variant, { error, disabled }]">
     <input
       type="radio"
       :name="name"

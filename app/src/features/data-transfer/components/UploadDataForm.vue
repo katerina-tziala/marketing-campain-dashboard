@@ -85,15 +85,19 @@ function handleSubmit(): void {
     </div>
   </div>
   <ModalFooter>
-    <Button class="primary" :disabled="isLoading" @click="handleSubmit">
+    <Button variant="primary" :disabled="isLoading" @click="handleSubmit">
       <UploadIcon />
       {{ isLoading ? 'Uploading…' : 'Upload' }}
     </Button>
-    <Button class="outline xs:order-3 xs:mr-auto" @click="emit('downloadTemplate')">
+    <Button
+      variant="outline"
+      class="xs:order-3 xs:mr-auto"
+      @click="emit('downloadTemplate')"
+    >
       <DownloadIcon />
       Download Template
     </Button>
-    <Button class="outline min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
+    <Button variant="outline" class="min-w-24 xs:order-2" @click="emit('close')">Cancel</Button>
   </ModalFooter>
 </template>
 

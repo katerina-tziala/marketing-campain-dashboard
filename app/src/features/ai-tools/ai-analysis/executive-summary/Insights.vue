@@ -46,17 +46,23 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 <template>
   <AnalysisSection title="Insights">
-    <Card v-for="(insight, i) in sortedInsights" :key="i" class="secondary">
+    <Card
+      v-for="(insight, i) in sortedInsights"
+      :key="i"
+      variant="secondary"
+    >
       <p>
         <Badge
           class="inline-action-float"
-          :class="insightTypeVariant(insight.type)"
+          :variant="insightTypeVariant(insight.type)"
           >{{ INSIGHT_TYPE_LABEL_MAP[insight.type] }}</Badge
         >{{ insight.text }}
       </p>
       <Badge
-        :class="insightTypeVariant(insight.type)"
-        class="rounded-rectangle-sm gap-x-2 w-full flex-wrap dimmed"
+        :variant="insightTypeVariant(insight.type)"
+        tone="dimmed"
+        shape="soft-rounded"
+        class="gap-x-2 w-full flex-wrap"
       >
         <span class="insight-metric-label">{{
           insight.metricHighlight.label

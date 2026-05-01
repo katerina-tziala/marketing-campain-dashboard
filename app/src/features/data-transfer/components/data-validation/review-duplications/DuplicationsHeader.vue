@@ -18,19 +18,20 @@ const emit = defineEmits<{ clear: [] }>();
   <span class="group-title-row">
     <span class="group-title-text">{{ props.campaignName }} ({{ props.resolvedCount !== undefined ? `${props.resolvedCount}/${props.rowCount}` : props.rowCount }})</span>
     <!-- Badge based on state -->
-    <Badge v-if="props.isSelected" class="success dimmed">
+    <Badge v-if="props.isSelected" variant="success" tone="dimmed">
       <CheckIcon />Resolved
     </Badge>
-    <Badge v-else-if="props.needsAttentionMode" class="danger">
+    <Badge v-else-if="props.needsAttentionMode" variant="danger">
       <AlertTriangleIcon />Requires selection
     </Badge>
-    <Badge v-else class="warning">
+    <Badge v-else variant="warning">
       <CircleCheckIcon />Select one
     </Badge>
     <!-- Clear button -->
     <Button
       v-if="props.isSelected || props.clearable"
-      class="destructive small"
+      variant="destructive"
+      size="small"
       @click.stop="emit('clear')"
     >
       {{ props.clearLabel ?? 'Clear selection' }}

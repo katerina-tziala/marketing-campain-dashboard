@@ -13,7 +13,7 @@ defineProps<{
     <Card
       v-for="(corr, i) in correlations"
       :key="i"
-      class="secondary"
+      variant="secondary"
     >
       <h5 class="card-title">{{ corr.finding }}</h5>
       <p>{{ corr.implication }}</p>

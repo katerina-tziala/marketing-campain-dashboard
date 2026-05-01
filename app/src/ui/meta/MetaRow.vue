@@ -1,19 +1,47 @@
+<script setup lang="ts">
+import type {
+  MetaRowSeparator,
+  MetaRowSize,
+  MetaRowTone,
+} from './meta.types'
+
+const props = withDefaults(
+  defineProps<{
+    separator?: MetaRowSeparator
+    size?: MetaRowSize
+    tone?: MetaRowTone
+  }>(),
+  {
+    separator: 'none',
+    size: 'small',
+    tone: 'none',
+  },
+)
+</script>
+
 <template>
-  <p class="meta-row">
+  <p
+    class="meta-row"
+    :class="[
+      props.separator,
+      props.size,
+      props.tone === 'none' ? undefined : props.tone,
+    ]"
+  >
     <slot />
   </p>
 </template>
 
 <style lang="scss" scoped>
 .meta-row {
-  @apply flex flex-wrap items-center text-sm gap-x-1.5 gap-y-1.5;
+  @apply flex flex-wrap items-center gap-x-1.5 gap-y-1.5;
 
   &.meta-row.divider {
     @apply gap-x-2;
   }
 
   &.meta-row.tiny {
-    font-size: 0.75rem;
+    @apply text-xs;
   }
 
   &.meta-row.small {

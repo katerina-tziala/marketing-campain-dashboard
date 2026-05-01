@@ -11,7 +11,12 @@ defineProps<{
   <Card class="kpi-card">
     <h3 class="kpi-label">{{ label }}</h3>
     <p class="kpi-value">{{ value ?? "N/A" }}</p>
-    <MetaRow v-if="$slots.default" class="kpi-meta divider primary-lighter">
+    <MetaRow
+      v-if="$slots.default"
+      separator="divider"
+      tone="primary-lighter"
+      class="kpi-meta"
+    >
       <slot />
     </MetaRow>
   </Card>

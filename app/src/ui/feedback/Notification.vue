@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, type Component } from "vue";
-import type { NotificationVariant } from "./notification.types";
+import type {
+  NotificationSurface,
+  NotificationVariant,
+} from "./notification.types";
 import {
   AlertTriangleIcon,
   BellIcon,
@@ -12,9 +15,11 @@ import {
 const props = withDefaults(
   defineProps<{
     variant?: NotificationVariant;
+    surface?: NotificationSurface;
     showIcon?: boolean;
   }>(),
   {
+    surface: "default",
     showIcon: true,
   },
 );
@@ -56,12 +61,16 @@ const ariaLive = computed(() => {
 <template>
   <div
     class="notification"
-    :class="variant"
+    :class="[variant, props.surface]"
     :role="ariaRole"
     :aria-live="ariaLive"
   >
     <div class="notification-body">
-      <div v-if="$slots.title || $slots.action" class="notification-head">
+      <div
+        v-if="$slots.title || $slots.action"
+        class="notification-head"
+        :class="{ 'has-action': $slots.action }"
+      >
         <span v-if="showIcon" class="notification-icon" aria-hidden="true">
           <component :is="iconComponent" />
         </span>
@@ -142,7 +151,7 @@ const ariaLive = computed(() => {
 }
 
 .notification-icon {
-  @apply leading-none shrink-0 text-lg text-typography-subtle pt-2;
+  @apply leading-none shrink-0 text-lg text-typography-subtle;
 }
 
 .notification-head {
@@ -150,15 +159,21 @@ const ariaLive = computed(() => {
 }
 
 .notification-title {
-  @apply leading-5 tracking-wide text-base font-medium pt-2;
+  @apply leading-5 tracking-wide text-base font-medium;
 }
 
 .notification-action {
   @apply shrink-0;
 }
 
-/* variant darket bg */
-.notification.dense-bg {
+.notification-head.has-action {
+  .notification-icon,
+  .notification-title {
+    @apply pt-2;
+  }
+}
+
+.notification.dense {
   @apply bg-surface-backdrop;
 }
 </style>

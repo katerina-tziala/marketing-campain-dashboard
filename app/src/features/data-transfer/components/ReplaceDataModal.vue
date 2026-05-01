@@ -19,8 +19,8 @@ const emit = defineEmits<{
       </p>
     </ModalBody>
     <ModalFooter>
-      <Button class="primary" @click="emit('confirm')">Replace data</Button>
-      <Button class="outline" @click="emit('close')">Cancel</Button>
+      <Button variant="primary" @click="emit('confirm')">Replace data</Button>
+      <Button variant="outline" @click="emit('close')">Cancel</Button>
     </ModalFooter>
   </Modal>
 </template>

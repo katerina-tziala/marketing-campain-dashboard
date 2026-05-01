@@ -27,7 +27,7 @@ const emit = defineEmits<{ aiClick: [] }>();
     </template>
     <template #action>
       <div v-if="showAiButton" class="relative shrink-0">
-        <Button class="primary" @click="emit('aiClick')">
+        <Button variant="primary" @click="emit('aiClick')">
           <SparklesIcon />AI
         </Button>
         <span v-if="showConnectedDot" class="connected-status" aria-hidden="true">
@@ -35,7 +35,7 @@ const emit = defineEmits<{ aiClick: [] }>();
         </span>
       </div>
     </template>
-    <MetaRow class="bullet text-typography-subtle">
+    <MetaRow separator="bullet" class="text-typography-subtle">
       <MetaItem>{{ title }}</MetaItem>
       <MetaItem
         >{{ selectedChannelCount }} of

@@ -18,14 +18,16 @@ defineEmits<{
 <template>
   <Notification
     :variant="variant"
-    class="dense-bg shadow-lg pointer-events-auto"
+    surface="dense"
+    class="shadow-lg pointer-events-auto"
   >
     <template #title>
       <span>{{ title }}</span>
     </template>
     <template #action>
       <Button
-        class="icon-only ghost"
+        variant="ghost"
+        icon-only
         aria-label="Dismiss notification"
         @click="$emit('dismiss')"
       >

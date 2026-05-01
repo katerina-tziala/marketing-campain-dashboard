@@ -33,11 +33,11 @@ const readableLabel = computed(
 
 <template>
   <div class="health-container">
-    <Badge class="rounded-rectangle" :class="variant">
+    <Badge shape="rounded" :variant="variant">
       <span class="text-lg font-extrabold leading-none">{{ healthScore.score }}</span>
       <span class="leading-none">&nbsp;/&nbsp;100</span>
     </Badge>
-    <Badge class="text-only" :class="variant">{{ readableLabel }}</Badge>
+    <Badge tone="text-only" :variant="variant">{{ readableLabel }}</Badge>
   </div>
 </template>
 

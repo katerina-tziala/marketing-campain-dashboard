@@ -47,7 +47,7 @@ const proceedLabel = computed(() =>
         >
           <template #title>Campaign data could not be imported</template>
           <template #badge>
-            <Badge class="danger">Invalid data</Badge>
+            <Badge variant="danger">Invalid data</Badge>
           </template>
           <template #summary>
             <p>
@@ -60,7 +60,7 @@ const proceedLabel = computed(() =>
         <DataErrorSummary v-else>
           <template #title>Some rows contain errors</template>
           <template #badge>
-            <Badge class="warning">Partial import</Badge>
+            <Badge variant="warning">Partial import</Badge>
           </template>
           <template #summary>
             <p>
@@ -90,16 +90,17 @@ const proceedLabel = computed(() =>
     </div>
   </ModalBody>
   <ModalFooter>
-    <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
+    <Button variant="primary" class="min-w-24 xs:order-1" @click="emit('back')"
       >Back</Button
     >
     <Button
       v-if="showProceed"
-      class="outline xs:order-3 xs:mr-auto"
+      variant="outline"
+      class="xs:order-3 xs:mr-auto"
       @click="emit('proceed')"
       >{{ proceedLabel }}</Button
     >
-    <Button class="outline min-w-24 xs:order-2" @click="emit('close')"
+    <Button variant="outline" class="min-w-24 xs:order-2" @click="emit('close')"
       >Cancel</Button
     >
   </ModalFooter>
