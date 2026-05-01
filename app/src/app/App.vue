@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import AppShell from '@/app/shell/AppShell.vue'
+import { ToastContainer } from '@/ui'
 </script>
 
 <template>
-  <AppShell>
-    <RouterView />
-  </AppShell>
+  <RouterView />
+  <ToastContainer />
 </template>

@@ -34,10 +34,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── index.ts        # Vue Router — single route: / → DashboardPage; imports applyPageMeta; router.afterEach() applies page metadata on navigation; route meta.page: { title, description }
 │   │   │   └── page-meta.ts    # applyPageMeta(route) — updates document.title (format: "Marketing Campaign Dashboard | Page Title") and creates/updates <meta name="description"> at runtime; reads route.meta.page; defines fallback defaults
 │   │   ├── shell/
-│   │   │   ├── AppShell.vue    # Top-level layout — header (Upload CSV button in floated action container, gradient title, adjusted padding/min-height), shell-body (main + drawer); provides openUploadModal via provide(); wires panel open/close through dashboardOrchestrator.store; uses useUploadModal from @/app/composables
+│   │   │   ├── AppShell.vue    # Top-level layout — header (Upload CSV button in floated action container, gradient title, adjusted padding/min-height), shell-body (main content area); provides openUploadModal via provide(); uses useUploadModal from @/app/composables
 │   │   │   └── AiToolsDrawer.vue # App-specific drawer adapter — uses ResponsiveDrawer from @/ui; owns AI title, SparklesIcon, close label, open prop, close emit, and AiTools composition
 │   │   ├── pages/
-│   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState (from @/features/data-transfer) and CampaignPerformanceView based on hasCampaigns; passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
+│   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState (from @/features/data-transfer) and CampaignPerformanceView based on hasCampaigns; renders AiToolsDrawer alongside content (push drawer at lg+, modal overlay at <lg); passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
 │   │   ├── composables/
 │   │   │   └── useUploadModal.ts # App-level upload orchestration — manages modal open/close, replacement confirmation, hasCampaigns gate; handles upload completion via handleUploadComplete (calls portfolioData.loadPortfolio); provides openUploadModal via inject
 │   │   ├── utils/
