@@ -1,10 +1,11 @@
 import type { CampaignPerformance, Channel, PortfolioScope } from '../types'
-import type { PortfolioSummary } from './types'
+import type { PortfolioSummary, CampaignSummary, ChannelSummary } from './types'
 import type {
   AnalysisClassificationThresholds,
   AnalysisSignalThresholds,
   PortfolioAnalysis,
 } from './types'
+import type { ConcentrationFlagSignal } from './types/signals'
 import {
   toCampaignSummary,
   toChannelSummary,
@@ -24,6 +25,108 @@ import {
 } from './classification'
 import { computePortfolioKPIs } from './metrics'
 
+const DEFAULT_EMPTY_ANALYSIS_STATE = {
+  channels: [],
+  campaignGroups: { top: [], opportunity: [], bottom: [], watch: [] },
+  channelGroups: { strong: [], opportunity: [], weak: [], watch: [] },
+  derivedSignals: {
+    inefficientChannels: [],
+    inefficientCampaigns: [],
+    scalingOpportunities: [],
+    budgetScalingCandidates: [],
+    transferCandidates: [],
+    concentrationFlag: {
+      flagged: false,
+      level: 'Low' as ConcentrationFlagSignal['level'],
+      top1RevenueShare: 0,
+      top3RevenueShare: 0,
+      reason: 'No data provided',
+    },
+    correlations: [],
+  },
+}
+
+export function getPortfolioScope(
+  allCampaigns: CampaignPerformance[],
+  selectedCampaigns: CampaignPerformance[],
+  allChannelNames: string[],
+  selectedChannelNames: string[],
+): PortfolioScope {
+  return {
+    campaigns: allCampaigns.map((campaign) => campaign.campaign),
+    channels: allChannelNames,
+    selectedCampaigns: selectedCampaigns.map((campaign) => campaign.campaign),
+    selectedChannels: selectedChannelNames,
+  }
+}
+
+function getClassificationGroups(
+  campaignSummaries: CampaignSummary[],
+  channelSummaries: ChannelSummary[],
+  aggregatedRoi: number | null,
+  classificationThresholds: AnalysisClassificationThresholds,
+) {
+  return {
+    campaignGroups: classifyCampaigns(
+      campaignSummaries,
+      aggregatedRoi,
+      classificationThresholds.campaigns,
+    ),
+    channelGroups: classifyChannels(
+      channelSummaries,
+      aggregatedRoi,
+      classificationThresholds.channels,
+    ),
+  }
+}
+
+function getDerivedSignals(
+  campaignSummaries: CampaignSummary[],
+  channelSummaries: ChannelSummary[],
+  aggregatedRoi: number | null,
+  thresholds: AnalysisSignalThresholds,
+  classificationThresholds: AnalysisClassificationThresholds,
+) {
+  const inefficientCampaigns = getInefficientCampaigns(
+    campaignSummaries,
+    aggregatedRoi,
+    thresholds.campaignSignals,
+  )
+  const budgetScalingCandidates = getBudgetScalingCandidates(
+    campaignSummaries,
+    aggregatedRoi,
+    thresholds.campaignSignals,
+  )
+
+  return {
+    inefficientChannels: getInefficientChannels(
+      channelSummaries,
+      aggregatedRoi,
+      thresholds.channelSignals,
+    ),
+    inefficientCampaigns,
+    scalingOpportunities: getScalingOpportunities(
+      campaignSummaries,
+      channelSummaries,
+      aggregatedRoi,
+      thresholds.portfolioSignals,
+      classificationThresholds.campaigns,
+      thresholds.channelSignals,
+    ),
+    budgetScalingCandidates,
+    transferCandidates: getTransferCandidates(
+      inefficientCampaigns,
+      budgetScalingCandidates,
+      thresholds.portfolioSignals,
+    ),
+    concentrationFlag: getConcentrationFlag(
+      campaignSummaries,
+      thresholds.portfolioSignals,
+    ),
+    correlations: getCorrelations(campaignSummaries, thresholds.portfolioSignals),
+  }
+}
+
 export function computePortfolioAnalysis(
   selectedChannels: Channel[],
   selectedChannelsIds: string[],
@@ -36,12 +139,12 @@ export function computePortfolioAnalysis(
 
   const kpis = computePortfolioKPIs(selectedChannels)
 
-  const scope: PortfolioScope = {
-    campaigns: filteredCampaigns.map((campaign) => campaign.campaign),
-    channels: selectedChannels.map((channel) => channel.name),
-    selectedCampaigns: filteredCampaigns.map((campaign) => campaign.campaign),
-    selectedChannels: selectedChannels.map((channel) => channel.name),
-  }
+  const scope: PortfolioScope = getPortfolioScope(
+    filteredCampaigns,
+    filteredCampaigns,
+    selectedChannels.map((channel) => channel.name),
+    selectedChannels.map((channel) => channel.name),
+  )
 
   const portfolio: PortfolioSummary = {
     ...kpis,
@@ -51,33 +154,12 @@ export function computePortfolioAnalysis(
 
   const filteredChannels = selectedChannelsIds.length > 0
 
-  const emptyGroups = {
-    campaignGroups: { top: [], opportunity: [], bottom: [], watch: [] },
-    channelGroups: { strong: [], opportunity: [], weak: [], watch: [] },
-  }
-
   if (filteredCampaigns.length === 0) {
     return {
       portfolio,
       scope,
       filteredChannels,
-      channels: [],
-      ...emptyGroups,
-      derivedSignals: {
-        inefficientChannels: [],
-        inefficientCampaigns: [],
-        scalingOpportunities: [],
-        budgetScalingCandidates: [],
-        transferCandidates: [],
-        concentrationFlag: {
-          flagged: false,
-          level: 'Low',
-          top1RevenueShare: 0,
-          top3RevenueShare: 0,
-          reason: 'No data provided',
-        },
-        correlations: [],
-      },
+      ...DEFAULT_EMPTY_ANALYSIS_STATE,
     }
   }
 
@@ -97,26 +179,19 @@ export function computePortfolioAnalysis(
     ),
   )
 
-  const campaignGroups = classifyCampaigns(
+  const { campaignGroups, channelGroups } = getClassificationGroups(
     campaignSummaries,
-    aggregatedRoi,
-    classificationThresholds.campaigns,
-  )
-  const channelGroups = classifyChannels(
     channelSummaries,
     aggregatedRoi,
-    classificationThresholds.channels,
+    classificationThresholds,
   )
 
-  const inefficientCampaigns = getInefficientCampaigns(
+  const derivedSignals = getDerivedSignals(
     campaignSummaries,
+    channelSummaries,
     aggregatedRoi,
-    thresholds.campaignSignals,
-  )
-  const budgetScalingCandidates = getBudgetScalingCandidates(
-    campaignSummaries,
-    aggregatedRoi,
-    thresholds.campaignSignals,
+    thresholds,
+    classificationThresholds,
   )
 
   return {
@@ -126,32 +201,6 @@ export function computePortfolioAnalysis(
     channels: channelSummaries,
     campaignGroups,
     channelGroups,
-    derivedSignals: {
-      inefficientChannels: getInefficientChannels(
-        channelSummaries,
-        aggregatedRoi,
-        thresholds.channelSignals,
-      ),
-      inefficientCampaigns,
-      scalingOpportunities: getScalingOpportunities(
-        campaignSummaries,
-        channelSummaries,
-        aggregatedRoi,
-        thresholds.portfolioSignals,
-        classificationThresholds.campaigns,
-        thresholds.channelSignals,
-      ),
-      budgetScalingCandidates,
-      transferCandidates: getTransferCandidates(
-        inefficientCampaigns,
-        budgetScalingCandidates,
-        thresholds.portfolioSignals,
-      ),
-      concentrationFlag: getConcentrationFlag(
-        campaignSummaries,
-        thresholds.portfolioSignals,
-      ),
-      correlations: getCorrelations(campaignSummaries, thresholds.portfolioSignals),
-    },
+    derivedSignals,
   }
 }

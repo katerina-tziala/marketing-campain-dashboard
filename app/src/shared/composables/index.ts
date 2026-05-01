@@ -1,1 +1,1 @@
-export { useSort } from './useSort'
+export * from './useSort'

@@ -54,10 +54,8 @@ app/                        # Vue 3 + Vite project
 │   │       └── index.ts        # Barrel — exports useDashboardOrchestratorStore, useToastStore, usePortfolioDataStore, PortfolioEntry
 │   ├── shared/                 # Shared types and data — no framework dependencies; internal imports use relative paths; app/feature code imports via @/shared/... barrels
 │   │   ├── types/
-│   │   │   ├── campaign.ts     # CampaignMetrics interface (budget/revenue/impressions/clicks/conversions: number) + Campaign extends CampaignMetrics (adds rowId: number + campaign/channel: string) + PerformanceMetrics interface (roi/ctr/cvr/cpa: number|null) + CampaignPerformance extends Campaign + PerformanceMetrics (empty body) + PortfolioKPIs (total*/aggregated* fields) + PortfolioScope (campaigns/channels/selectedCampaigns/selectedChannels string arrays) + ShareEfficiency (budgetShare/revenueShare/allocationGap/efficiencyGap: number; gapAmount: number — allocationGap positive = overfunded, efficiencyGap positive = revenue outperforms budget share); portfolio-specific summary types live in portfolio-analysis/types/
-│   │   │   ├── channel.ts      # Channel extends CampaignMetrics, PerformanceMetrics — id: string (lowercase-trimmed-hyphenated from name), name: string, campaigns: CampaignPerformance[]; roi/ctr/cvr/cpa computed from aggregated channel metrics
 │   │   │   ├── async-status.ts # AsyncStatus type — 'idle' | 'loading' | 'done' | 'error'; shared across stores and components that track async operation state
-│   │   │   └── index.ts        # Barrel — exports all shared types
+│   │   │   └── index.ts        # Barrel — exports async-status + re-exports all data types (campaign, channel, PortfolioKPIs, etc.) from shared/data
 │   │   ├── utils/
 │   │   │   ├── math.ts         # safeDivide + roundTo(value, decimals) + computeRoundedRatioOrNull + computedMedianOrNull + toFinite — shared math helpers
 │   │   │   ├── sorting.ts      # compareNullsLast(a, b) → number|null; compareDirectional(a, b, dir) → number; sortWithNullsLast(a, b, dir) → number — null-safe directional sort composing the two; SortDirection type; SortableValue type; sortByValue(items, fn, dir) → sorted array; sortByValueDesc(items, fn) → sorted array — shared null-safe value sorting used across tables and chart sorts
@@ -99,8 +97,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── useSort.ts          # useSort<T extends string>(defaultKey: T, defaultDir?: SortDir) → { sortKey, sortDir, toggleSort } — generic sort state composable; toggleSort flips dir on same key, resets to defaultDir on new key; used by CampainDuplicationsTable, CampaignTable, DataErrorsTable
 │   │   │   └── index.ts            # Barrel — exports useSort
 │   │   └── data/
+│   │       ├── campaign.ts         # CampaignMetrics, Campaign, CampaignPerformance, PerformanceMetrics, PortfolioKPIs, PortfolioScope, ShareEfficiency — foundational entity types consumed by all analytical domains
+│   │       ├── channel.ts          # Channel extends CampaignMetrics + PerformanceMetrics — id (lowercase-trimmed-hyphenated), name, campaigns array
 │   │       ├── SAMPLE_DATA.ts      # 21 sample campaigns across 13 real-world channels; exported as SAMPLE_CAMPAIGNS; used for template download and dev mode seeding
-│   │       └── index.ts            # Barrel — exports SAMPLE_DATA
+│   │       └── index.ts            # Barrel — exports campaign, channel, SAMPLE_DATA; imported by shared/types for public re-export via @/shared/types
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
 │   │   ├── primitives/         # Generic building blocks — atomic UI components
 │   │   │   ├── Button.vue      # Generic button wrapper — props: disabled?, type? (button/submit/reset); exposes getRootEl() → HTMLButtonElement for dropdown anchoring; class pass-through for scoped modifier classes: .btn.primary, .btn.outline, .btn.text-only, .btn.ghost (neutral text-typography-soft base, hover bg-typography/10 text-typography, focus ring-typography-soft; for close/dismiss chrome buttons), .btn.info-text-only (lightweight inline info actions), .btn.destructive, .btn.info-outline (chip-aligned filter trigger style), .btn.icon-only (8×8 square, p-0), .btn.small (xs text, tight padding), .btn.paddingless (p-0); focus-visible ring on all variants; disabled: cursor-not-allowed opacity-50

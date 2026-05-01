@@ -1,1 +1,3 @@
-export { SAMPLE_CAMPAIGNS } from './SAMPLE_DATA'
+export * from './campaign'
+export * from './channel'
+export * from './SAMPLE_DATA'

@@ -5,5 +5,3 @@ export interface Channel extends CampaignMetrics, PerformanceMetrics {
   name: string
   campaigns: CampaignPerformance[]
 }
-
- 

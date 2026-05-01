@@ -11353,3 +11353,106 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Delegate to existing `sortByValueDesc` utility — avoids reinventing directional sorting; the generic utility already handles null-safe, directional descending sort, so ranking functions compose it rather than duplicate.
 - Export ranking from portfolio-analysis barrel — feature and chart code can now import from `@/shared/portfolio-analysis` instead of reimplementing sorts; one single source of truth for each ranking operation.
 - Move portfolio-specific sorting out of feature-level utils — `campaign-performance-sorting.ts` becomes a thin adapter that delegates to domain ranking rather than owning sort logic; feature layer now focuses on composition and chart integration rather than reimplementing business logic.
+
+
+## [#535] Extract Portfolio Scope Builder
+**Type:** refactor
+
+**Summary:** Extracted `PortfolioScope` construction logic into a reusable `getPortfolioScope` function and updated both `portfolio-analysis.ts` and the campaign-performance store to use it, eliminating duplicate scope-building code.
+
+**Brainstorming:** `PortfolioScope` was being constructed in two places: inside `computePortfolioAnalysis` (filtering campaigns to selected channels) and in the `campaignPerformance.store` computed (tracking all vs selected campaigns/channels separately). Both implementations independently mapped campaign arrays to campaign names and channel objects to channel names. Extracting a shared builder function centralizes this logic, makes it reusable for future uses, and simplifies both call sites by clearly separating data gathering from scope construction.
+
+**Prompt:** In `portfolio-analysis.ts`, extract the `PortfolioScope` construction into a standalone function called `getPortfolioScope`. The function should accept all campaigns, selected campaigns, all channel names, and selected channel names as parameters and return a `PortfolioScope` object. Update `computePortfolioAnalysis` to use this function. Check the codebase for other places that construct `PortfolioScope` (especially the campaign-performance store) and refactor them to reuse the new function.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — added `getPortfolioScope` export at module level; function accepts `allCampaigns`, `selectedCampaigns`, `allChannelNames`, `selectedChannelNames` and returns a `PortfolioScope` with campaign/channel names and selected variants; updated `computePortfolioAnalysis` to call `getPortfolioScope` instead of inline object construction.
+- `app/src/features/campaign-performance/stores/campaignPerformance.store.ts` — updated import to include `getPortfolioScope` from portfolio-analysis; refactored the `portfolioScope` computed to call `getPortfolioScope` with all campaigns, filtered campaigns, and channel names derived from the store state.
+
+**Key decisions & why:**
+- Extract to a standalone function rather than a method — `getPortfolioScope` is a simple data builder with no side effects, so a pure function is more composable than a method on a class.
+- Accept pre-processed arrays rather than raw objects — the function takes campaign and channel names/arrays as separate parameters, letting callers decide how to gather data; avoids encoding assumptions about data sources or filtering logic.
+- Export from portfolio-analysis barrel — callers can import via `@/shared/portfolio-analysis` alongside other domain APIs rather than hunting for a utility file.
+- Keep function simple and focused — `getPortfolioScope` only maps campaign arrays to names and assigns them to the scope shape; it doesn't compute campaigns, filter, or validate — that responsibility stays with the caller.
+
+
+## [#536] Extract Default Empty Analysis State
+**Type:** refactor
+
+**Summary:** Extracted the default empty analysis state used in the no-data case (`filteredCampaigns.length === 0`) into a reusable module-level constant `DEFAULT_EMPTY_ANALYSIS_STATE`, eliminating hardcoded duplication and making the early-return logic concise.
+
+**Brainstorming:** The early return in `computePortfolioAnalysis` was repeating a large object literal with empty groups, channels, and signals. This structure was hardcoded inline and would be difficult to maintain if the shape changes. Extracting it into a named constant at module level makes the structure explicit and reusable, and the early return becomes a simple spread operation that's easy to read.
+
+**Prompt:** In `computePortfolioAnalysis`, extract the default analysis object returned when `filteredCampaigns.length === 0` into a module-level constant called `DEFAULT_EMPTY_ANALYSIS_STATE`. The constant should hold the empty groups, channels, and signals structures. Update the early return to spread this constant instead of repeating the entire object literal.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — added `DEFAULT_EMPTY_ANALYSIS_STATE` constant at module level; holds all empty analysis structures (empty channels array, campaign/channel groups with empty arrays, and derivedSignals with empty arrays + default concentrationFlag); updated early return in `computePortfolioAnalysis` to spread the constant instead of repeating the full object literal; imported `ConcentrationFlagSignal` type to properly type the concentrationFlag level field.
+
+**Key decisions & why:**
+- Extract to a module-level constant — the empty state is stable, never changes, and is now a single source of truth that the early return can reference cleanly.
+- Use spread operator in early return — spreading the constant into the return object makes it clear that we're combining dynamic values (portfolio, scope, filteredChannels) with static defaults (empty groups and signals).
+- Type the level field explicitly — the `level: 'Low'` string needs an explicit type cast to `ConcentrationFlagSignal['level']` so TypeScript knows it's a valid `ConcentrationLevel` ('Low' | 'Moderate' | 'High') and not just any string.
+
+
+## [#537] Extract Derived Signals Computation
+**Type:** refactor
+
+**Summary:** Extracted the derived signals computation logic from `computePortfolioAnalysis` into a reusable non-exported `getDerivedSignals` helper function, reducing the main function's size and improving readability.
+
+**Brainstorming:** The `computePortfolioAnalysis` function had a large block (lines 128–172) dedicated to computing all derived signals: inefficient channels/campaigns, scaling opportunities, budget candidates, transfer candidates, concentration flag, and correlations. This logic was tightly embedded in the main function, making it harder to read and impossible to reuse if needed elsewhere. Extracting this into a focused helper function clarifies the two responsibilities: data summaries and classification (in the main function) vs. signal computation (in the helper), and it makes the main function more concise and the signal-building logic explicit and testable.
+
+**Prompt:** Extract the derived signals computation from `computePortfolioAnalysis` into a non-exported function called `getDerivedSignals`. The function should accept the campaign summaries, channel summaries, aggregated ROI, signal thresholds, and classification thresholds, and return the complete derivedSignals object. Update `computePortfolioAnalysis` to call this helper.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — added `getDerivedSignals` non-exported function at module level; accepts `campaignSummaries`, `channelSummaries`, `aggregatedRoi`, `thresholds`, and `classificationThresholds`; returns the complete `derivedSignals` object with all signal computations; added `CampaignSummary` and `ChannelSummary` type imports to support function parameters; updated `computePortfolioAnalysis` to call `getDerivedSignals` instead of inline signal computation, assigning the result to a `derivedSignals` variable and using it directly in the return object.
+
+**Key decisions & why:**
+- Extract to a non-exported helper — the function is internal to `portfolio-analysis.ts`, serving only `computePortfolioAnalysis`; exporting it would expose an intermediate step that consumers don't need.
+- Accept pre-built summaries and thresholds — the helper receives campaign/channel summaries and threshold objects that the main function already prepared; no need to duplicate data gathering or assume data sources.
+- Accept `aggregatedRoi: number | null` — matches the type from `computePortfolioKPIs` and signals already handle null ROI gracefully.
+- Return the full derivedSignals object — rather than partial results or individual signals; the main function assigns it directly to the return object, keeping the return statement clean and symmetrical with other return properties.
+- Keep helper non-exported — consumers have no use for an intermediate signal computer; the public API is `computePortfolioAnalysis`, which bundles everything together.
+- Preserve inline signal computation in the helper — signal functions are still called directly (not imported as pre-built results); the helper just organizes them into a single object literal, avoiding complex destructuring in the main function.
+
+
+## [#538] Extract Classification Groups Computation
+**Type:** refactor
+
+**Summary:** Extracted the campaign and channel group classification logic from `computePortfolioAnalysis` into a reusable non-exported `getClassificationGroups` helper function, keeping `computePortfolioAnalysis` focused and improving code organization.
+
+**Brainstorming:** Following the same pattern as the derived signals extraction, the classification logic (campaign groups and channel groups) was two separate function calls that could be grouped together since they operate on the same summaries and thresholds. Extracting them into a single helper reduces the main function's size further and makes the classification step explicit and self-contained.
+
+**Prompt:** Extract the `classifyCampaigns` and `classifyChannels` calls from `computePortfolioAnalysis` into a non-exported function called `getClassificationGroups`. The function should return an object with both `campaignGroups` and `channelGroups`. Update `computePortfolioAnalysis` to call this helper and destructure the result.
+
+**What was built:**
+- `app/src/shared/portfolio-analysis/portfolio-analysis.ts` — added `getClassificationGroups` non-exported function at module level; accepts `campaignSummaries`, `channelSummaries`, `aggregatedRoi`, and `classificationThresholds`; returns an object with `campaignGroups` and `channelGroups`; updated `computePortfolioAnalysis` to call the helper and destructure the result instead of assigning to separate variables.
+
+**Key decisions & why:**
+- Extract to a non-exported helper — the function is internal to `portfolio-analysis.ts`, serving only `computePortfolioAnalysis`; consumers don't need to classify independently.
+- Return both groups together — classification of campaigns and channels are conceptually paired operations; returning them as a single object keeps the main function cleaner with a single destructuring statement.
+- Accept `aggregatedRoi: number | null` — matches the type from `computePortfolioKPIs` and classification functions already handle null ROI gracefully.
+- Keep calls inline in the helper — classifier functions are still called directly in the helper; no intermediate state or complex logic beyond the single classification step.
+- Keep arrays mutable in the constant — arrays are not typed `as const` so they can be assigned to the mutable `PortfolioAnalysis` interface; only the level field needs a type annotation.
+
+## [#539] Consolidate Foundational Data Types Into shared/data
+**Type:** refactor
+
+**Summary:** Moved Campaign, Channel, CampaignMetrics, PerformanceMetrics, PortfolioKPIs, PortfolioScope, and ShareEfficiency types from `shared/types/` to `shared/data/` alongside SAMPLE_DATA, establishing a clear separation between foundational entity types (data model) and generic cross-cutting types.
+
+**Brainstorming:** The previous structure separated campaign and channel type definitions in `shared/types/campaign.ts` and `shared/types/channel.ts`, but kept SAMPLE_DATA in `shared/data/`. This created semantic confusion: the types were defined elsewhere while their sample instances lived in data. With future analytical domains planned (period-comparison, what-if simulator), all consuming the same Campaign and Channel types, it made sense to consolidate them with SAMPLE_DATA as a cohesive "data model and samples" module. This also avoids the inconsistency of having campaign.ts and channel.ts in shared/types/ while portfolio-analysis/types/ held analysis-specific types. The solution: move both type definitions into shared/data/ alongside SAMPLE_DATA, then re-export from shared/types/index.ts for backward compatibility. All imports throughout the codebase continue to work via the re-export (from @/shared/types), but the actual definitions are now in their proper home.
+
+**Prompt:** Move campaign.ts and channel.ts from shared/types into shared/data, consolidating them with SAMPLE_DATA. Update shared/data/index.ts to export both new type modules. Update shared/types/index.ts to re-export from shared/data for backward compatibility. Delete the old files from shared/types. Verify the build passes. Update CLAUDE.md architecture section to reflect the new structure.
+
+**What was built:**
+- `app/src/shared/data/campaign.ts` — created new file with CampaignMetrics, PerformanceMetrics, Campaign, CampaignPerformance, PortfolioKPIs, PortfolioScope, ShareEfficiency (moved from shared/types/campaign.ts).
+- `app/src/shared/data/channel.ts` — created new file with Channel type importing from local campaign.ts (moved from shared/types/channel.ts).
+- `app/src/shared/data/index.ts` — updated to export campaign, channel, and SAMPLE_DATA; becomes the single source for all foundational data types and samples.
+- `app/src/shared/types/index.ts` — updated to re-export from ../data, preserving backward compatibility; all existing imports from @/shared/types continue to work.
+- Deleted `app/src/shared/types/campaign.ts` and `app/src/shared/types/channel.ts` — old files are now redundant; re-export handles all imports.
+- `CLAUDE.md` — updated Architecture section: removed campaign.ts and channel.ts entries from shared/types/, moved their descriptions to shared/data/, clarified that shared/types/index.ts re-exports from shared/data for backward compatibility.
+
+**Key decisions & why:**
+- Move to shared/data, not a new shared/data-model/ folder — the name "data" is already in use; consolidating with SAMPLE_DATA keeps the folder lean and focused on "what is the data shape and what are the examples."
+- Re-export from shared/types for backward compatibility — all existing code importing from @/shared/types continues to work without changes; the re-export is transparent to consumers and requires no churn across the codebase.
+- Delete old files instead of leaving stubs — with the re-export in place, the old files in shared/types are dead code; deleting them avoids confusion and accidental future edits.
+- Keep imports in campaign.ts and channel.ts as local relative imports — since they're now in shared/data, they import from each other using local relative paths (./campaign), not through the barrel; this keeps the module graph simple and avoids circular dependency risk.
+- Verify build and keep working tree clean — the build passed with no errors or type issues; all 414 modules transformed successfully, confirming the re-export resolves imports correctly throughout the codebase.

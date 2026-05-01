@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import type { CampaignPerformance, PortfolioScope } from '@/shared/types'
+import type { CampaignPerformance } from '@/shared/types'
 import type { Channel } from '@/shared/types'
-import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
+import { computePortfolioAnalysis, getPortfolioScope } from '@/shared/portfolio-analysis'
 import { usePortfolioDataStore } from '@/app/stores'
 
 export const useCampaignPerformanceStore = defineStore('campaignPerformance', () => {
@@ -42,14 +42,16 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     selectedChannels.value.flatMap(channel => channel.campaigns),
   )
 
-  const portfolioScope = computed((): PortfolioScope => ({
-    campaigns: campaigns.value.map(campaign => campaign.campaign),
-    channels: [...portfolioChannels.value.values()].map(channel => channel.name),
-    selectedCampaigns: filteredCampaigns.value.map(campaign => campaign.campaign),
-    selectedChannels: selectedChannelsIds.value.map(
-      id => portfolioChannels.value.get(id)?.name ?? id,
+  const portfolioScope = computed(() =>
+    getPortfolioScope(
+      campaigns.value,
+      filteredCampaigns.value,
+      [...portfolioChannels.value.values()].map(channel => channel.name),
+      selectedChannelsIds.value.map(
+        id => portfolioChannels.value.get(id)?.name ?? id,
+      ),
     ),
-  }))
+  )
 
   const portfolioAnalysis = computed(() => {
     const portfolio = portfolioData.getById(activePortfolioId.value ?? '')
