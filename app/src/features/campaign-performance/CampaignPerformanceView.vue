@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useCampaignPerformanceStore } from "@/features/campaign-performance/stores";
+import { useCampaignPerformanceStore } from "./stores";
 import {
   PerformanceCharts,
   RoiVsBudgetScaling,

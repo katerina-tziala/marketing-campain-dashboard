@@ -32,21 +32,21 @@ function performanceClass(value: number | null): string {
   &.negative {
     @apply text-danger;
   }
+}
 
-  &.dimmed {
-    @apply font-normal;
+.performance-indicator .dimmed {
+  @apply font-normal;
 
-    &.positive {
-      @apply text-success/90;
-    }
+  &.positive {
+    @apply text-success/90;
+  }
 
-    &.warning {
-      @apply text-warning/90;
-    }
+  &.warning {
+    @apply text-warning/90;
+  }
 
-    &.negative {
-      @apply text-danger/90;
-    }
+  &.negative {
+    @apply text-danger/90;
   }
 }
 </style>

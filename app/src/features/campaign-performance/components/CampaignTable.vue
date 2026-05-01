@@ -11,7 +11,7 @@ import {
   formatPercentage,
 } from "@/shared/utils";
 import { sortByValue } from "@/shared/utils";
-import { PerformanceIndicator } from "@/features/campaign-performance/ui";
+import { PerformanceIndicator } from "../ui";
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();
 

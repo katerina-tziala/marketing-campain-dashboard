@@ -50,18 +50,18 @@ const emit = defineEmits<{ aiClick: [] }>();
 <style lang="scss" scoped>
 .connected-status {
   @apply absolute
-  -top-1
-  -right-1
-  z-10
-  w-3
-  h-3
-  rounded-full
-  bg-surface
-  flex
-  items-center
-  justify-center
-  overflow-visible;
-  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    -top-1
+    -right-1
+    z-10
+    w-3
+    h-3
+    rounded-full
+    bg-surface
+    flex
+    items-center
+    justify-center
+    overflow-visible;
+    animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .connected-status-dot {

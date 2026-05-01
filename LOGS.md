@@ -11799,3 +11799,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Top-of-file placement — all translatable strings grouped together; easy to scan and maintain; sets up for future i18n.
 - Reusable in future i18n — these constants can be moved to a separate i18n file without changing the function logic.
 - Build passes — zero errors, 418 modules.
+
+
+## [#554] Refine KpiBenchmarkDelta Logic
+**Type:** refactor
+
+**Summary:** Eliminated the ×100/÷100 round-trip in the `pct` delta path and removed the redundant intermediate `tone` computed in `KpiBenchmarkDelta`.
+
+**Brainstorming:** `getKpiBenchmarkRawDelta` was multiplying the `pct` result by 100 so `deltaLabel` in the component could immediately divide by 100 before passing to `formatPercentage`. This served no purpose — the round-trip added cognitive overhead with zero benefit. The fix is to return the ratio directly from the utility and format it directly in the component. Separately, `tone` was just a string enum that immediately mapped 1:1 to a CSS class string in `colorClass`; merging both computeds into one removes the indirection without losing any clarity.
+
+**Prompt:** In kpi-benchmark-delta.ts, remove the `* 100` from the `pct` branch so it returns the raw ratio. In KpiBenchmarkDelta.vue: remove the `DeltaTone` type and `tone` computed; merge the direction logic directly into `colorClass`; remove the `/ 100` in `deltaLabel` for the `pct` branch. Verify build.
+
+**What changed:**
+- [utils/kpi-benchmark-delta.ts](app/src/features/campaign-performance/utils/kpi-benchmark-delta.ts) — `pct` branch now returns `(current - benchmark) / benchmark` (no `* 100`)
+- [components/kpis/KpiBenchmarkDelta.vue](app/src/features/campaign-performance/components/kpis/KpiBenchmarkDelta.vue) — removed `DeltaTone` type and `tone` computed; `colorClass` now derives direction directly from `rawDelta`; `deltaLabel` pct branch uses `formatPercentage(abs, ...)` without the `/ 100`
+
+**Key decisions & why:**
+- No `* 100` in utility — the utility should return a value in a consistent, meaningful unit; scaling for display belongs in the component formatter, not the computation step.
+- Merge `tone` into `colorClass` — `tone` had no independent consumers; it existed only to feed `colorClass`; one computed is clearer and equally readable.
+- Build passes — zero errors, no regressions.
