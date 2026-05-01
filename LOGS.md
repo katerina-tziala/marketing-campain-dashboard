@@ -12147,3 +12147,42 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Barrel as public API — consumers import what they need from the folder, not from individual files inside it; consistent with the project's barrel pattern.
 - Named imports replace default imports — barrel exports use named exports (`export { default as X }`), so consumers switch from `import X from './shared/X.vue'` to `import { X } from './shared'`; this is idiomatic for barrel re-exports.
+
+
+## [#570] Extract store-private constants into sibling config file
+**Type:** refactor
+
+**Summary:** Moved the four constants from the top of `aiAnalysis.store.ts` into a dedicated sibling file `aiAnalysis.store.config.ts` to keep the store free of inline magic numbers.
+
+**Brainstorming:** The constants (DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR) are implementation details of the store only — not shared with any other file. A feature-level `config/` folder would imply they are public/shared, which they are not. A sibling file with the `.store.config.ts` suffix signals clearly that it belongs to and is private to the store.
+
+**Prompt:** Extract the four constants from the top of aiAnalysis.store.ts into a sibling file aiAnalysis.store.config.ts. The config file is private to the store — no barrel, no public export. Update CLAUDE.md architecture.
+
+**What changed:**
+- [stores/aiAnalysis.store.config.ts](app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts) — new file; exports DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR
+- [stores/aiAnalysis.store.ts](app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts) — removed inline constants; imports from sibling config file
+- [CLAUDE.md](CLAUDE.md) — added aiAnalysis.store.config.ts entry under ai-analysis/stores/
+
+**Key decisions & why:**
+- Sibling file over `config/` folder — the constants are private to one store; a folder implies a public shared layer which would be misleading.
+- No barrel export — the config file is intentionally not re-exported from `stores/index.ts`; it is an internal implementation detail.
+
+
+## [#571] Split ai-analysis types into output and context files
+**Type:** refactor
+
+**Summary:** Replaced the flat `types/index.ts` with two focused files — `output.types.ts` for AI response shapes and `context.types.ts` for analysis input/context shapes — keeping the barrel intact so all existing import paths remain valid.
+
+**Brainstorming:** The single `types/index.ts` mixed two unrelated concerns: what the AI returns (output shapes, literal types, response envelopes) and what goes into an analysis call (context, provider state, portfolio context). Splitting by concern makes each file independently readable and matches the types-by-domain pattern used in campaign-performance charts. The barrel must stay in place because consumers across three layers (within ai-analysis, within ai-tools, and app/dev-mode) all import from `../types` or `@/features/ai-tools/ai-analysis/types` — updating all of them would be churn with no benefit.
+
+**Prompt:** Split ai-analysis/types/index.ts into output.types.ts (AI response shapes) and context.types.ts (analysis input/context shapes). Keep types/index.ts as a barrel that re-exports everything — no consumer import paths change.
+
+**What changed:**
+- [types/output.types.ts](app/src/features/ai-tools/ai-analysis/types/output.types.ts) — new file; all AI response output types and literal types
+- [types/context.types.ts](app/src/features/ai-tools/ai-analysis/types/context.types.ts) — new file; BusinessContext, AnalysisContext, AIProviderState, PortfolioContext, AiAnalysisContext
+- [types/index.ts](app/src/features/ai-tools/ai-analysis/types/index.ts) — replaced flat content with named re-exports from both new files
+- [CLAUDE.md](CLAUDE.md) — updated ai-analysis/types/ architecture entry
+
+**Key decisions & why:**
+- Barrel preserved — three distinct consumer layers import from this path; updating all of them would be pure churn with no structural benefit.
+- Two files not three — `BusinessContext` sits in context.types because it is an input to analysis calls, even though it is also referenced by prompts; the split is by data-flow direction (in vs out), not by consumer.

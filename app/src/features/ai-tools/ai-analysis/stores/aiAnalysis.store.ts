@@ -11,16 +11,7 @@ import type {
 } from '../types'
 import { useAiConnectionStore } from '../../ai-connection/stores'
 import { runAnalysisPrompt, getCacheKey } from '../utils'
-
-// ── Constants ──────────────────────────────────────────────────────────────
-
-const DEBOUNCE_MS = 350
-const COOLDOWN_MS = 5_000
-const MIN_OPTIMIZER_CAMPAIGNS = 2
-
-const OPTIMIZER_MIN_CAMPAIGNS_ERROR: AiAnalysisError = {
-  code: 'min-campaigns',
-}
+import { DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR } from './aiAnalysis.store.config'
 
 // ── Per-tab state shape ────────────────────────────────────────────────────
 

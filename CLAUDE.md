@@ -220,6 +220,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── AiTools.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── stores/
+│   │   │   │   │   ├── aiAnalysis.store.config.ts # Store-private constants — DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR; imported only by aiAnalysis.store.ts
 │   │   │   │   │   ├── aiAnalysis.store.ts # Pinia store (id: 'aiAnalysis') — accepts AiAnalysisContext via setAnalysisContext(); analysisContext drives portfolioContext, filter watcher, portfolio-switch watcher, cache partitioning, evaluationDisabled, and prompt execution; no direct campaign-performance import; clearCacheForPortfolio(portfolioId) called by dashboard orchestrator on portfolio eviction; per-tab internal state (plain object): firstAnalyzeCompleted, controller, debounceTimer, cache (Map<portfolioId, Map<cacheKey, CacheEntry>>), lastVisibleCacheKey; per-tab reactive display state (ref<TabDisplay<T>>): budgetOptimizer + executiveSummary; shared: activeTab, analysisActivated; exports PortfolioContext interface + AiAnalysisContext type; stores-internal helpers: isBelowOptimizerMinimum, showOptimizerMinimumError, showCachedResult, showTokenLimitState, revertTab, onPortfolioSwitch; module-level helpers: getOtherAnalysisType, setDisplay, createTabState, TabDisplay<T> type
 │   │   │   │   │   └── index.ts    # Barrel — exports useAiAnalysisStore, AiAnalysisContext, PortfolioContext
 │   │   │   │   ├── utils/
@@ -227,7 +228,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   │   ├── analysis-prompt.ts  # buildAnalysisPrompt (internal); runAnalysisPrompt(providerState, analysisContext, signal) → AnalysisResponse|null; [DEV ONLY] setDevAnalysisOverride export
 │   │   │   │   │   └── utils.ts    # getCacheKey(channelIds, provider) → 16-char hex string (xxhashjs h64, seed=0)
 │   │   │   │   ├── types/
-│   │   │   │   │   └── index.ts    # All AI analysis types — BusinessContext; response literals; Executive Summary output types; Budget Optimizer output types; response types (BudgetOptimizerResponse, ExecutiveSummaryResponse — each with model?/timestamp?); shared orchestration types (AnalysisResponse, AnalysisContext, AIProviderState)
+│   │   │   │   │   ├── output.types.ts  # AI response output types — ConfidenceLevel, ExecutionRisk, HealthLabel, InsightType, ActionUrgency; Executive Summary shapes (ExecutiveInsight, PriorityAction, ExecutiveCorrelation, HealthScore, ExecutiveSummaryOutput); Budget Optimizer shapes (BudgetRecommendation, BudgetOptimizerOutput); response envelope types (BudgetOptimizerResponse, ExecutiveSummaryResponse, AnalysisResponse)
+│   │   │   │   │   ├── context.types.ts # Analysis input/context types — BusinessContext, AnalysisContext, AIProviderState, PortfolioContext, AiAnalysisContext
+│   │   │   │   │   └── index.ts    # Barrel — re-exports all types from output.types and context.types; all existing import paths remain valid
 │   │   │   │   └── components/
 │   │   │   │       ├── index.ts                # Barrel — exports AiAnalysis
 │   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only
