@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
 import { Notification } from "@/ui";
-import { ANALYSIS_ERROR_MESSAGES } from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
-import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
-import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
-import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
+import { useAiAnalysisStore } from '../../stores';
+import { ANALYSIS_ERROR_MESSAGES } from '../../utils';
+import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../shared";
 import BudgetRecommendations from "./BudgetRecommendations.vue";
 
 
@@ -23,8 +21,8 @@ const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES["min-campaigns"];
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive
-    ? "Selection Budget Optimizer"
-    : "Portfolio Budget Optimizer",
+    ? "Selection Budget Optimization"
+    : "Portfolio Budget Optimization",
 );
 
 const actionLabel = computed(() =>

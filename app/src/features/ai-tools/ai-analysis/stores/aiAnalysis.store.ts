@@ -1,16 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed, type Ref } from 'vue'
 import type { AsyncStatus } from '@/shared/types'
-import type { AiAnalysisType, AiAnalysisError, AiErrorCode, AiAnalysisNotice } from '@/features/ai-tools/types'
+import type { AiAnalysisType, AiAnalysisError, AiErrorCode, AiAnalysisNotice } from '../../types'
 import type {
   AnalysisResponse,
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
-} from '@/features/ai-tools/ai-analysis/types'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
-import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
-import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
-import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
+  PortfolioContext,
+  AiAnalysisContext,
+} from '../types'
+import { useAiConnectionStore } from '../../ai-connection/stores'
+import { runAnalysisPrompt, getCacheKey } from '../utils'
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -61,19 +61,6 @@ function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {
 }
 
 // ── Store ──────────────────────────────────────────────────────────────────
-
-export interface PortfolioContext {
-  portfolioTitle: string
-  channelCount: number
-  campaignCount: number
-  filtersActive: boolean
-}
-
-export interface AiAnalysisContext extends PortfolioContext {
-  portfolioId: string
-  selectedChannelIds: string[]
-  portfolioAnalysis: PortfolioAnalysis
-}
 
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()

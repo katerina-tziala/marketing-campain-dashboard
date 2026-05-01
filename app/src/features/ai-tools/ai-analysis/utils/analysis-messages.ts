@@ -1,4 +1,4 @@
-import type { AiErrorCode } from '@/features/ai-tools/types'
+import type { AiErrorCode } from '../../types'
 
 const TRY_AGAIN_LATER = 'Please try again in a moment'
 const UNUSABLE_RESPONSE = {

@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/types'
-import { getErrorCode } from '@/features/ai-tools/ai-connection/utils/error-handling'
-import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
+import type { AiProviderType, AiConnectionError, AiConnectionEvent } from '../../types'
+import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '../../providers'
+import { getErrorCode } from '../utils/error-handling'
 
 type ConnectProviderOverride = (provider: AiProviderType) => Promise<AiModel[]>
 let _connectProviderOverride: ConnectProviderOverride | null = null
@@ -14,11 +14,6 @@ export function setConnectProviderOverride(fn: ConnectProviderOverride | null): 
   _connectProviderOverride = fn
 }
 
-export type AiConnectionEvent = {
-  id: number
-  status: 'success' | 'error'
-  provider: AiProviderType
-}
 
 export const useAiConnectionStore = defineStore('aiConnection', () => {
   const provider = ref<AiProviderType | null>(null)

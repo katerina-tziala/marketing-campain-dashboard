@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
-import AnalysisState from "@/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue";
-import AnalysisHeader from "@/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue";
+import { useAiAnalysisStore } from '../../stores';
+import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../shared";
 import Correlations from "./Correlations.vue";
-import AnalysisResponseMeta from "@/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue";
 import HealthStatus from "./HealthStatus.vue";
 import PriorityActions from "./PriorityActions.vue";
 import Insights from "./Insights.vue";

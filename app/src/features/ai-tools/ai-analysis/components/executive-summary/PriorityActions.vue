@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { BadgeVariant } from "@/ui";
+import { Badge, Card, CardHeader } from "@/ui";
 import type {
   PriorityAction,
   ActionUrgency,
-} from "@/features/ai-tools/ai-analysis/types";
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card, CardHeader } from "@/ui";
-import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
+} from '../../types';
+import { AnalysisSection } from "../shared";
 
 const props = defineProps<{
   actions: PriorityAction[];

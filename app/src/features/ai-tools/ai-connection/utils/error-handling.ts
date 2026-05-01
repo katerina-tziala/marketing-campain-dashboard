@@ -1,6 +1,5 @@
-import type { AiConnectionErrorCode, AiProviderType } from '@/features/ai-tools/types'
-import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { normalizeConnectionError } from '@/features/ai-tools/providers/utils'
+import type { AiConnectionErrorCode, AiProviderType } from '../../types'
+import { PROVIDER_LABELS, normalizeConnectionError } from '../../providers/utils'
 
 type ConnectionErrorEntry = {
   message: (provider: AiProviderType) => string

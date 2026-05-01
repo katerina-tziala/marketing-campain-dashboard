@@ -35,7 +35,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── page-meta.ts    # applyPageMeta(route) — updates document.title (format: "Marketing Campaign Dashboard | Page Title") and creates/updates <meta name="description"> at runtime; reads route.meta.page; defines fallback defaults
 │   │   ├── shell/
 │   │   │   ├── AppShell.vue    # Top-level layout — header (Upload CSV button in floated action container, gradient title, adjusted padding/min-height), shell-body (main + drawer); provides openUploadModal via provide(); wires panel open/close through dashboardOrchestrator.store; uses useUploadModal from @/app/composables
-│   │   │   └── AiToolsDrawer.vue # App-specific drawer adapter — uses ResponsiveDrawer from @/ui; owns AI title, SparklesIcon, close label, open prop, close emit, and AiToolsContent composition
+│   │   │   └── AiToolsDrawer.vue # App-specific drawer adapter — uses ResponsiveDrawer from @/ui; owns AI title, SparklesIcon, close label, open prop, close emit, and AiTools composition
 │   │   ├── pages/
 │   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState and CampaignPerformanceView; passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
 │   │   ├── composables/
@@ -217,7 +217,7 @@ app/                        # Vue 3 + Vite project
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   └── AiToolsContent.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
+│   │   │   │   └── AiTools.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── stores/
 │   │   │   │   │   ├── aiAnalysis.store.ts # Pinia store (id: 'aiAnalysis') — accepts AiAnalysisContext via setAnalysisContext(); analysisContext drives portfolioContext, filter watcher, portfolio-switch watcher, cache partitioning, evaluationDisabled, and prompt execution; no direct campaign-performance import; clearCacheForPortfolio(portfolioId) called by dashboard orchestrator on portfolio eviction; per-tab internal state (plain object): firstAnalyzeCompleted, controller, debounceTimer, cache (Map<portfolioId, Map<cacheKey, CacheEntry>>), lastVisibleCacheKey; per-tab reactive display state (ref<TabDisplay<T>>): budgetOptimizer + executiveSummary; shared: activeTab, analysisActivated; exports PortfolioContext interface + AiAnalysisContext type; stores-internal helpers: isBelowOptimizerMinimum, showOptimizerMinimumError, showCachedResult, showTokenLimitState, revertTab, onPortfolioSwitch; module-level helpers: getOtherAnalysisType, setDisplay, createTabState, TabDisplay<T> type
@@ -229,6 +229,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── types/
 │   │   │   │   │   └── index.ts    # All AI analysis types — BusinessContext; response literals; Executive Summary output types; Budget Optimizer output types; response types (BudgetOptimizerResponse, ExecutiveSummaryResponse — each with model?/timestamp?); shared orchestration types (AnalysisResponse, AnalysisContext, AIProviderState)
 │   │   │   │   └── components/
+│   │   │   │       ├── index.ts                # Barrel — exports AiAnalysis
 │   │   │   │       ├── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only
 │   │   │   │       ├── shared/
 │   │   │   │       │   ├── AnalysisHeader.vue      # Shared tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext); emits: analyze; SectionHeaderLayout + MetaRow (bullet); fully props-only
@@ -249,6 +250,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   │   ├── aiConnection.store.ts # useAiConnectionStore (id: 'aiConnection') — provider, apiKey (memory-only), isConnected, isConnecting, connectionError, models (AiModel[]), selectedModel; selectedModelLimitReached, allModelsLimitReached, evaluationDisabled (computed); connect(), disconnect(), markModelLimitReached(), selectNextAvailableModel(), openPanel(), closePanel(); connect() publishes AiConnectionEvent via lastConnectionEvent ref (success/error) instead of showing toasts directly — orchestrator handles toast display; [DEV ONLY] setDevConnectOverride export
 │   │   │   │   │   └── index.ts    # Barrel — exports useAiConnectionStore, setDevConnectOverride
 │   │   │   │   ├── components/
+│   │   │   │   │   ├── index.ts                # Barrel — exports AiConnectionForm, AiConnectionInstructions, AiConnectedStatus
 │   │   │   │   │   ├── AiConnectionForm.vue        # Provider selection + API key + Connect button + Disclosure
 │   │   │   │   │   ├── AiConnectionInstructions.vue # Instructions card — props: instructions ({ title, steps, note? }); uses <Card class="secondary">
 │   │   │   │   │   └── AiConnectedStatus.vue       # Status bar — provider label + green dot + "Connected" + Disconnect
@@ -261,7 +263,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── types/              # index.ts (barrel), types.ts (AiModelCandidate, AiModel, ModelsResponse)
 │   │   │   │   ├── gemini/             # index.ts, types.ts, api.ts, connect.ts
 │   │   │   │   ├── qroq/               # index.ts, types.ts, api.ts, connect.ts (folder name: qroq)
-│   │   │   │   └── utils/              # error-handling.ts, models-utils.ts, providers-meta.ts (PROVIDER_LABELS, PROVIDER_HELP, PROVIDER_OPTIONS, GROQ_PROVIDER_RULES, GEMINI_PROVIDER_RULES), shared.ts, index.ts
+│   │   │   │   └── utils/              # error-handling.ts, models-utils.ts, providers-meta.ts (PROVIDER_LABELS, PROVIDER_HELP, PROVIDER_OPTIONS, GROQ_PROVIDER_RULES, GEMINI_PROVIDER_RULES), shared.ts; index.ts barrel re-exports all four modules including providers-meta
 │   │   │   ├── types/
 │   │   │   │   └── index.ts            # AiProviderType, AiErrorCode (11 codes), AiConnectionError; AiAnalysisType, AiAnalysisError, AiAnalysisNoticeCode, AiAnalysisNotice
 │   │   │   ├── prompts/

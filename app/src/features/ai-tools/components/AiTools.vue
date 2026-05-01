@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores";
-import AiConnectionForm from "@/features/ai-tools/ai-connection/components/AiConnectionForm.vue";
-import AiConnectedStatus from "@/features/ai-tools/ai-connection/components/AiConnectedStatus.vue";
-import AiAnalysis from "@/features/ai-tools/ai-analysis/components/AiAnalysis.vue";
+import { useAiConnectionStore } from '../ai-connection/stores'
+import { AiConnectionForm, AiConnectedStatus } from '../ai-connection/components'
+import { AiAnalysis } from '../ai-analysis/components'
 
 const store = useAiConnectionStore();
 </script>
 
 <template>
-  <div class="ai-tools-content">
+  <div class="ai-tools">
     <!-- Not connected: show connection form -->
     <AiConnectionForm v-if="!store.isConnected" />
-    <!-- Connected: status bar + tabs + tab content -->
+    <!-- Connected: status bar + ai-analysis -->
     <template v-else>
       <div class="ai-tools-analysis">
         <AiConnectedStatus />
@@ -22,7 +21,7 @@ const store = useAiConnectionStore();
 </template>
 
 <style lang="scss" scoped>
-.ai-tools-content {
+.ai-tools {
   @apply grow shrink-0 overflow-hidden pb-5
    h-full;
 }

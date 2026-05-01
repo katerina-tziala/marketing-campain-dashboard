@@ -4,7 +4,7 @@ import type { AnalysisResponse } from '@/features/ai-tools/ai-analysis/types'
 import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useAiAnalysisStore } from '@/features/ai-tools/ai-analysis/stores'
 import { BUDGET_OPTIMIZATION_SAMPLES, EXECUTIVE_SUMMARY_SAMPLES } from '@/features/ai-tools/sample-data'
-import { setAnalysisPromptRunnerOverride } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
+import { setAnalysisPromptRunnerOverride } from '@/features/ai-tools/ai-analysis/utils'
 
 // ── Fake model ────────────────────────────────────────────────────────────────
 

@@ -20,6 +20,12 @@ export type AiConnectionError = {
   provider: AiProviderType;
 };
 
+export interface AiConnectionEvent {
+  id: number
+  status: 'success' | 'error'
+  provider: AiProviderType
+}
+
 export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';
 
 export type AiAnalysisError = {

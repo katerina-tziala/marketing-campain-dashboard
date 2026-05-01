@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AiToolsContent from '@/features/ai-tools/components/AiToolsContent.vue'
+import AiTools from '@/features/ai-tools/components/AiTools.vue'
 import { ResponsiveDrawer, SparklesIcon } from '@/ui'
 
 defineProps<{ open: boolean }>()
@@ -18,6 +18,6 @@ const emit = defineEmits<{ close: [] }>()
       <SparklesIcon class="mt-1" />
     </template>
 
-    <AiToolsContent />
+    <AiTools />
   </ResponsiveDrawer>
 </template>

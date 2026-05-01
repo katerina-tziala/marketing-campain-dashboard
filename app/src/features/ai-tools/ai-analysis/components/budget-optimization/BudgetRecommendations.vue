@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { BadgeVariant } from "@/ui";
+import { formatCurrency, formatPercentage } from "@/shared/utils";
+import { Badge, Card } from "@/ui";
 import type {
   BudgetRecommendation,
   ConfidenceLevel,
   ExecutionRisk,
-} from "@/features/ai-tools/ai-analysis/types";
-import type { BadgeVariant } from "@/ui";
-import { formatCurrency, formatPercentage } from "@/shared/utils";
-import { Badge, Card } from "@/ui";
-import AnalysisSection from "@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue";
+} from '../../types';
+import { AnalysisSection } from "../shared";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
   high: "success",

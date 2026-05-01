@@ -1,6 +1,6 @@
-import type { PortfolioAnalysis } from '@/shared/portfolio-analysis/types'
-import type { AiModel } from '@/features/ai-tools/providers'
-import type { AiAnalysisType, AiProviderType } from '@/features/ai-tools/types'
+import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
+import type { AiModel } from '../../providers'
+import type { AiAnalysisType, AiProviderType } from '../../types'
 
 // ── Business context ──────────────────────────────────────────────────────────
 
@@ -109,4 +109,19 @@ export interface AIProviderState {
   provider: AiProviderType;
   apiKey: string;
   selectedModel: AiModel;
+}
+
+// ── Store context types ───────────────────────────────────────────────────────
+
+export interface PortfolioContext {
+  portfolioTitle: string
+  channelCount: number
+  campaignCount: number
+  filtersActive: boolean
+}
+
+export interface AiAnalysisContext extends PortfolioContext {
+  portfolioId: string
+  selectedChannelIds: string[]
+  portfolioAnalysis: PortfolioAnalysis
 }

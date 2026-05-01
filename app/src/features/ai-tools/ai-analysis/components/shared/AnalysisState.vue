@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { Spinner, Notification } from "@/ui";
 import type { AsyncStatus } from "@/shared/types";
-import type { AiAnalysisError } from "@/features/ai-tools/types";
-import {
-  ANALYSIS_ERROR_MESSAGES,
-  TOKEN_LIMIT_MESSAGE,
-} from "@/features/ai-tools/ai-analysis/utils/analysis-messages";
+import type { AiAnalysisError } from '../../../types';
+import { ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE } from '../../utils';
 import { computed } from "vue";
 
 const props = defineProps<{

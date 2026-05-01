@@ -1,9 +1,8 @@
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis/types';
-import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '@/features/ai-tools/prompts';
-import { runProviderPrompt } from '@/features/ai-tools/providers';
-import type { AiAnalysisType } from '@/features/ai-tools/types';
-import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types';
-import type { AnalysisContext, AIProviderState, AnalysisResponse } from '@/features/ai-tools/ai-analysis/types';
+import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '../../prompts';
+import { runProviderPrompt } from '../../providers';
+import type { AiAnalysisType } from '../../types';
+import type { BusinessContext, AnalysisContext, AIProviderState, AnalysisResponse } from '../types';
 
 type AnalysisPromptRunnerOverride = (type: AiAnalysisType, signal: AbortSignal) => Promise<AnalysisResponse | null>
 let _analysisPromptRunnerOverride: AnalysisPromptRunnerOverride | null = null

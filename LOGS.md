@@ -11933,3 +11933,217 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Files drop suffix inside their folder — `campaigns.ts` inside `samples/` is self-describing; `budget-optimization.ts` inside `sample-data/` avoids redundancy; the folder provides the context.
 - `[DEV ONLY]` marker on sample-data files — makes it immediately clear to future readers that these files must not be imported from production paths.
 - Build passes — zero errors, no regressions.
+
+
+## [#560] Rename AiToolsContent to AiTools
+**Type:** refactor
+
+**Summary:** Renamed `AiToolsContent.vue` to `AiTools.vue` and updated the scoped CSS class from `.ai-tools-content` to `.ai-tools` for consistency with the new name.
+
+**Brainstorming:** The `Content` suffix was redundant — every component is content; the name added no information. `AiTools` is shorter, clearer, and matches how the drawer that wraps it is named (`AiToolsDrawer`).
+
+**Prompt:** Rename AiToolsContent.vue to AiTools.vue. Update the import and template usage in AiToolsDrawer.vue. Rename the root CSS class from .ai-tools-content to .ai-tools inside the component. Update CLAUDE.md. Verify build.
+
+**What changed:**
+- [features/ai-tools/components/AiTools.vue](app/src/features/ai-tools/components/AiTools.vue) — renamed from AiToolsContent.vue; root class renamed `.ai-tools-content` → `.ai-tools`
+- [app/shell/AiToolsDrawer.vue](app/src/app/shell/AiToolsDrawer.vue) — import and template tag updated from `AiToolsContent` to `AiTools`
+
+**Key decisions & why:**
+- Drop `Content` suffix — adds no information; every component is content by definition.
+- CSS class renamed in same pass — leaving `.ai-tools-content` would create a misleading mismatch between file name and scoped class.
+- Build passes — zero errors, no regressions.
+
+
+## [#561] Add Component Barrels for ai-connection and ai-analysis; Fix AiTools Imports
+**Type:** refactor
+
+**Summary:** Created `index.ts` barrels for `ai-connection/components/` and `ai-analysis/components/`, and updated `AiTools.vue` to use relative paths and the new barrels instead of deep absolute imports.
+
+**Brainstorming:** `AiTools.vue` was importing individual `.vue` files via `@/features/ai-tools/...` absolute paths — both a within-feature import violation and an unnecessary bypass of the barrel pattern. The fix has two parts: add barrel files so the folders have a clean public API, then update `AiTools.vue` to use relative paths to those barrels.
+
+**Prompt:** Create index.ts barrels for ai-connection/components/ (exports AiConnectionForm, AiConnectionInstructions, AiConnectedStatus) and ai-analysis/components/ (exports AiAnalysis). Update AiTools.vue to replace all @/features/ai-tools/... imports with relative paths importing from the new barrels. Verify build.
+
+**What was built:**
+- [ai-connection/components/index.ts](app/src/features/ai-tools/ai-connection/components/index.ts) — barrel exporting AiConnectionForm, AiConnectionInstructions, AiConnectedStatus
+- [ai-analysis/components/index.ts](app/src/features/ai-tools/ai-analysis/components/index.ts) — barrel exporting AiAnalysis
+- [components/AiTools.vue](app/src/features/ai-tools/components/AiTools.vue) — replaced three absolute imports with relative paths: `../ai-connection/stores`, `../ai-connection/components`, `../ai-analysis/components`
+
+**Key decisions & why:**
+- `ai-analysis/components/index.ts` exports only `AiAnalysis` — sub-folders (shared/, budget-optimization/, executive-summary/) are internal to that layer and not part of the public components API.
+- Relative imports in AiTools.vue — enforces the within-feature rule; the `@/features/ai-tools/` prefix is only for cross-feature imports.
+- Build passes — zero errors, no regressions.
+
+
+## [#562] Fix Within-Feature Absolute Imports in ai-tools/ai-connection
+**Type:** refactor
+
+**Summary:** Replaced all `@/features/ai-tools/...` imports inside the `ai-connection` subtree with relative paths, enforcing the within-feature import rule.
+
+**Brainstorming:** Four files in `ai-connection/` were importing other parts of the `ai-tools` feature via absolute `@/features/ai-tools/...` paths — a violation of the within-feature import rule. All were straightforward relative-path replacements.
+
+**Prompt:** Find all @/features/ai-tools/ imports inside ai-tools/ai-connection/. Replace each with the correct relative path. Verify build.
+
+**What changed:**
+- [ai-connection/utils/error-handling.ts](app/src/features/ai-tools/ai-connection/utils/error-handling.ts) — `@/features/ai-tools/types` → `'../../types'`; `@/features/ai-tools/providers/utils/providers-meta` → `'../../providers/utils/providers-meta'`; `@/features/ai-tools/providers/utils` → `'../../providers/utils'`
+- [ai-connection/components/AiConnectionForm.vue](app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue) — `@/features/ai-tools/ai-connection/stores` → `'../stores'`; `@/features/ai-tools/types` → `'../../types'`; `@/features/ai-tools/providers/utils/providers-meta` → `'../../providers/utils/providers-meta'`; `@/features/ai-tools/ai-connection/utils/error-handling` → `'../utils/error-handling'`
+- [ai-connection/components/AiConnectedStatus.vue](app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue) — `@/features/ai-tools/ai-connection/stores` → `'../stores'`; `@/features/ai-tools/ai-analysis/stores` → `'../../ai-analysis/stores'`; `@/features/ai-tools/providers/utils/providers-meta` → `'../../providers/utils/providers-meta'`
+- [ai-connection/stores/aiConnection.store.ts](app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts) — `@/features/ai-tools/types` → `'../../types'`; `@/features/ai-tools/ai-connection/utils/error-handling` → `'../utils/error-handling'`; `@/features/ai-tools/providers` → `'../../providers'`
+
+**Key decisions & why:**
+- `providers/utils/providers-meta` imported by specific file path — `PROVIDER_LABELS`, `PROVIDER_OPTIONS`, and `PROVIDER_HELP` are not re-exported from the `providers/utils` barrel, so direct file import is correct.
+- Build passes — zero errors, no regressions.
+
+
+## [#563] Add providers-meta to providers/utils Barrel; Merge Imports
+**Type:** refactor
+
+**Summary:** Added `providers-meta` to the `providers/utils/index.ts` barrel so all provider utility imports come from one path, then merged split imports in three `ai-connection` files.
+
+**Brainstorming:** `providers-meta.ts` exports `PROVIDER_LABELS`, `PROVIDER_OPTIONS`, `PROVIDER_HELP`, `GROQ_PROVIDER_RULES`, and `GEMINI_PROVIDER_RULES` — all utility-level constants that belong alongside the other exports in the utils barrel. Not including it was an omission. Once it's in the barrel, any file that previously had two separate imports (`providers/utils/providers-meta` + `providers/utils`) can collapse them into one.
+
+**Prompt:** Add `export * from './providers-meta'` to providers/utils/index.ts. Update all ai-connection files that imported from providers/utils/providers-meta to import from providers/utils instead. Merge any resulting duplicate imports. Verify build.
+
+**What changed:**
+- [providers/utils/index.ts](app/src/features/ai-tools/providers/utils/index.ts) — added `export * from './providers-meta'`
+- [ai-connection/utils/error-handling.ts](app/src/features/ai-tools/ai-connection/utils/error-handling.ts) — two imports merged into one: `import { PROVIDER_LABELS, normalizeConnectionError } from '../../providers/utils'`
+- [ai-connection/components/AiConnectionForm.vue](app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue) — `providers/utils/providers-meta` → `providers/utils`
+- [ai-connection/components/AiConnectedStatus.vue](app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue) — `providers/utils/providers-meta` → `providers/utils`
+
+**Key decisions & why:**
+- `providers-meta` belongs in the barrel — it's a utility module like the others; the omission was inconsistent.
+- Single import path — consumers should not need to know which file inside `utils/` owns a given export; the barrel is the API.
+- Build passes — zero errors, no regressions.
+
+
+## [#564] Move AiConnectionEvent to ai-tools/types; Convert to Interface
+**Type:** refactor
+
+**Summary:** Moved `AiConnectionEvent` from `aiConnection.store.ts` into `ai-tools/types/index.ts` and converted it from a `type` alias to an `interface`.
+
+**Brainstorming:** `AiConnectionEvent` is a plain object shape with no union or intersection — an interface is the correct construct. It also belongs in the types file alongside the other AI connection types (`AiConnectionError`, `AiConnectionErrorCode`) rather than living in the store file, which should own state and actions, not type definitions.
+
+**Prompt:** Move AiConnectionEvent from aiConnection.store.ts to ai-tools/types/index.ts as an interface. Import it back in the store from ../../types. Remove the local declaration. Verify no other consumers imported it from the store barrel.
+
+**What changed:**
+- [ai-tools/types/index.ts](app/src/features/ai-tools/types/index.ts) — added `export interface AiConnectionEvent { id, status, provider }`
+- [ai-connection/stores/aiConnection.store.ts](app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts) — removed local type declaration; added `AiConnectionEvent` to the import from `'../../types'`
+
+**Key decisions & why:**
+- `interface` over `type` — the shape is a plain object with no union/intersection; interface is semantically correct and more extensible.
+- Placed alongside `AiConnectionError` in types — groups related connection types together; the store file should not own type definitions.
+- Store barrel unchanged — `AiConnectionEvent` was never re-exported from `stores/index.ts`, so no consumer paths broke.
+- Build passes — zero errors, no regressions.
+
+
+## [#565] Fix All Within-Feature Absolute Imports in ai-analysis
+**Type:** refactor
+
+**Summary:** Replaced every `@/features/ai-tools/...` import inside the `ai-analysis/` subtree with the correct relative path, matching the same import rule applied to `ai-connection/` in the previous session.
+
+**Brainstorming:** The `ai-analysis/` subtree had the same violation as `ai-connection/`: files within the feature used `@/features/ai-tools/...` to reference sibling folders. Cross-sub-domain references within the feature (e.g., `ai-analysis` → `ai-connection`) also need relative paths because both live inside the same feature root. Additionally, `analysis-prompt.ts` had two separate imports from the same `types` file that were merged into one. Import ordering was aligned (framework → @/shared → @/ui → relative) where adjusted.
+
+**Prompt:** Update all imports in ai-analysis based on the within-feature import rule: all `@/features/ai-tools/...` references inside `ai-analysis/` must become relative paths. This includes stores, types, utils, components, and cross-sub-domain references to ai-connection.
+
+**What changed:**
+- [components/AiAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/AiAnalysis.vue) — `@/features/ai-tools/ai-analysis/stores` → `../stores`; `@/features/ai-tools/types` → `../types`; import order aligned
+- [components/shared/AnalysisHeader.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue) — `@/features/ai-tools/ai-analysis/stores` → `../../stores`
+- [components/shared/AnalysisResponseMeta.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue) — `@/features/ai-tools/types` → `../../../types`
+- [components/shared/AnalysisState.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue) — `@/features/ai-tools/types` → `../../../types`; `@/features/ai-tools/ai-analysis/utils/analysis-messages` → `../../utils/analysis-messages`
+- [components/budget-optimization/BudgetOptimizationAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue) — store, utils, and three shared component imports all converted to relative; import order aligned
+- [components/budget-optimization/BudgetRecommendations.vue](app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue) — `@/features/ai-tools/ai-analysis/types` → `../../types`; `@/features/ai-tools/ai-analysis/components/shared/AnalysisSection.vue` → `../shared/AnalysisSection.vue`; import order aligned
+- [components/executive-summary/Correlations.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/Correlations.vue) — `@/features/ai-tools/ai-analysis/types` → `../../types`
+- [components/executive-summary/ExecutiveSummaryAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue) — store and three shared component imports converted to relative; import order aligned
+- [components/executive-summary/HealthStatus.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/HealthStatus.vue) — `@/features/ai-tools/ai-analysis/types` → `../../types`
+- [components/executive-summary/Insights.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue) — types and `AnalysisSection` import converted to relative; import order aligned
+- [components/executive-summary/PriorityActions.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue) — types and `AnalysisSection` import converted to relative; import order aligned
+- [stores/aiAnalysis.store.ts](app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts) — five imports fixed: `@/features/ai-tools/types` → `../../types`, `ai-analysis/types` → `../types`, `ai-connection/stores` → `../../ai-connection/stores`, `ai-analysis/utils/analysis-prompt` → `../utils/analysis-prompt`, `ai-analysis/utils/utils` → `../utils/utils`
+- [types/index.ts](app/src/features/ai-tools/ai-analysis/types/index.ts) — `@/features/ai-tools/providers` → `../../providers`; `@/features/ai-tools/types` → `../../types`
+- [utils/analysis-messages.ts](app/src/features/ai-tools/ai-analysis/utils/analysis-messages.ts) — `@/features/ai-tools/types` → `../../types`
+- [utils/analysis-prompt.ts](app/src/features/ai-tools/ai-analysis/utils/analysis-prompt.ts) — four absolute imports replaced with relative; two duplicate imports from `ai-analysis/types` merged into one
+
+**Key decisions & why:**
+- Cross-sub-domain within the feature uses relative paths — `ai-analysis/stores` importing from `ai-connection/stores` goes via `../../ai-connection/stores`; the rule applies to the entire feature tree, not just the immediate folder.
+- Duplicate `types` imports merged in `analysis-prompt.ts` — same barrel, no reason to split; keeps the import block clean.
+
+
+## [#566] Move PortfolioContext and AiAnalysisContext to ai-analysis/types
+**Type:** refactor
+
+**Summary:** Moved `PortfolioContext` and `AiAnalysisContext` interfaces out of the store file and into `ai-analysis/types/index.ts`, where type definitions belong.
+
+**Brainstorming:** Store files should own state and actions, not type definitions. `PortfolioContext` and `AiAnalysisContext` are plain data shapes — they belong in the types barrel alongside the other AI analysis types. Moving them also removes the need for the stores barrel to re-export types: no external consumer imported these via the stores barrel (confirmed by grep — `dashboardOrchestrator.store.ts` calls `setAnalysisContext()` with an object literal and never imports the type). `AnalysisHeader.vue` was the only component importing `PortfolioContext` and it did so from the stores barrel, which is wrong — updated to import from the types barrel directly. Also fixed a pre-existing import rule violation: `@/shared/portfolio-analysis/types` (specific file) → `@/shared/portfolio-analysis` (barrel).
+
+**Prompt:** Move PortfolioContext and AiAnalysisContext interfaces from aiAnalysis.store.ts to ai-analysis/types/index.ts. Import them back in the store from ../types. Update the stores barrel to remove the type re-exports. Update AnalysisHeader.vue to import PortfolioContext from the types barrel instead of the stores barrel.
+
+**What changed:**
+- [ai-analysis/types/index.ts](app/src/features/ai-tools/ai-analysis/types/index.ts) — added `PortfolioContext` and `AiAnalysisContext` interfaces in a new "Store context types" section; fixed `@/shared/portfolio-analysis/types` → `@/shared/portfolio-analysis`
+- [ai-analysis/stores/aiAnalysis.store.ts](app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts) — removed both interface definitions and the `PortfolioAnalysis` import; added `PortfolioContext` and `AiAnalysisContext` to the `'../types'` import
+- [ai-analysis/stores/index.ts](app/src/features/ai-tools/ai-analysis/stores/index.ts) — removed type re-exports; stores barrel now only exports `useAiAnalysisStore`
+- [components/shared/AnalysisHeader.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisHeader.vue) — `PortfolioContext` import changed from `'../../stores'` to `'../../types'`
+
+**Key decisions & why:**
+- Types barrel, not stores barrel — type definitions belong in `types/`, not in the store file; store files own state and actions.
+- Stores barrel exports only the store function — no external consumer imported `PortfolioContext` or `AiAnalysisContext` from the stores barrel, so there is no re-export needed there.
+- Barrel import for shared dependency — `@/shared/portfolio-analysis` is the stable public API; importing from the specific `/types` subfile bypasses the barrel contract.
+
+
+## [#567] Extract formatTimestamp into shared formatters
+**Type:** refactor
+
+**Summary:** Moved the inline timestamp formatting logic from `AnalysisResponseMeta.vue` into a named `formatTimestamp` function in `shared/utils/formatters.ts`.
+
+**Brainstorming:** The timestamp formatting used `APP_LOCALE` and `toLocaleString` with a specific option set — the same pattern as every other formatter in `formatters.ts`. It was only used in one component but belongs in shared utils because it's a generic date/time formatting concern, not AI-specific logic. Extracting it keeps the component clean and makes the format reusable.
+
+**Prompt:** Create formatTimestamp(timestamp: number): string in shared/utils/formatters.ts and import it in AnalysisResponseMeta.vue, replacing the inline computed logic.
+
+**What changed:**
+- [shared/utils/formatters.ts](app/src/shared/utils/formatters.ts) — added `formatTimestamp(timestamp)` using `APP_LOCALE` with day/month/year/hour/minute/second options
+- [components/shared/AnalysisResponseMeta.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisResponseMeta.vue) — replaced inline `toLocaleString` block with `formatTimestamp`; removed `APP_LOCALE` import; import order aligned
+
+**Key decisions & why:**
+- `formatters.ts` over component-local — timestamp display format is a generic concern; the function belongs with the other locale-aware formatters.
+- Simplified computed — one-liner ternary replaces the multi-line `toLocaleString` block.
+
+
+## [#568] Create barrel for ai-analysis/utils
+**Type:** refactor
+
+**Summary:** Created `ai-analysis/utils/index.ts` and updated all consumers to import from the barrel instead of specific files.
+
+**Brainstorming:** The `utils/` folder had no barrel, so consumers imported from specific files. Four consumers needed updating: two within `ai-analysis/` (the store and two components) and one external (dev-mode). The store also had two separate one-symbol imports from different util files — those collapsed into one import from the barrel. The `utils.ts` filename is generic but the barrel provides the stable public API, so consumers no longer need to know which file owns a given export.
+
+**Prompt:** Create a barrel file for ai-analysis/utils and update all imports to use it.
+
+**What changed:**
+- [ai-analysis/utils/index.ts](app/src/features/ai-tools/ai-analysis/utils/index.ts) — created; re-exports all public symbols from `analysis-messages`, `analysis-prompt`, and `utils`
+- [ai-analysis/stores/aiAnalysis.store.ts](app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts) — two separate util imports merged into one: `import { runAnalysisPrompt, getCacheKey } from '../utils'`
+- [components/shared/AnalysisState.vue](app/src/features/ai-tools/ai-analysis/components/shared/AnalysisState.vue) — `'../../utils/analysis-messages'` → `'../../utils'`
+- [components/budget-optimization/BudgetOptimizationAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue) — `'../../utils/analysis-messages'` → `'../../utils'`
+- [app/dev-mode/dev-analysis-cycle.ts](app/src/app/dev-mode/dev-analysis-cycle.ts) — `'@/features/ai-tools/ai-analysis/utils/analysis-prompt'` → `'@/features/ai-tools/ai-analysis/utils'`
+
+**Key decisions & why:**
+- Barrel is the public API — consumers should not need to know which file inside `utils/` owns a given export; the barrel provides a single stable import point.
+- Two store imports collapsed to one — `runAnalysisPrompt` and `getCacheKey` came from different files but the same logical module; one barrel import is cleaner.
+
+
+## [#569] Create barrel for ai-analysis/components/shared
+**Type:** refactor
+
+**Summary:** Created `ai-analysis/components/shared/index.ts` and updated all six consumers to import from the barrel instead of specific `.vue` files.
+
+**Brainstorming:** The `shared/` folder exports four components used by both `budget-optimization/` and `executive-summary/` sub-folders, but every consumer imported each component by direct file path. A barrel gives the folder a stable public API, collapses multi-line groups of individual imports into one, and keeps the pattern consistent with the other barrels in the feature.
+
+**Prompt:** Create a barrel file for ai-analysis/components/shared and update all imports to use it.
+
+**What changed:**
+- [components/shared/index.ts](app/src/features/ai-tools/ai-analysis/components/shared/index.ts) — created; re-exports `AnalysisHeader`, `AnalysisResponseMeta`, `AnalysisSection`, `AnalysisState`
+- [components/budget-optimization/BudgetOptimizationAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetOptimizationAnalysis.vue) — three individual `.vue` imports collapsed to one: `import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../shared"`
+- [components/executive-summary/ExecutiveSummaryAnalysis.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/ExecutiveSummaryAnalysis.vue) — same collapse as above
+- [components/budget-optimization/BudgetRecommendations.vue](app/src/features/ai-tools/ai-analysis/components/budget-optimization/BudgetRecommendations.vue) — `"../shared/AnalysisSection.vue"` → `"../shared"`
+- [components/executive-summary/Insights.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/Insights.vue) — same
+- [components/executive-summary/PriorityActions.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/PriorityActions.vue) — same
+- [components/executive-summary/Correlations.vue](app/src/features/ai-tools/ai-analysis/components/executive-summary/Correlations.vue) — same
+
+**Key decisions & why:**
+- Barrel as public API — consumers import what they need from the folder, not from individual files inside it; consistent with the project's barrel pattern.
+- Named imports replace default imports — barrel exports use named exports (`export { default as X }`), so consumers switch from `import X from './shared/X.vue'` to `import { X } from './shared'`; this is idiomatic for barrel re-exports.
