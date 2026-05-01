@@ -81,7 +81,7 @@ function clearChannelFilters(): void {
       </div>
     </section>
     <div
-      class="scrollbar-stable-both scrollbar-on-surface campaign-performance-view"
+      class="scrollbar-on-surface campaign-performance-view"
     >
       <Kpis
         class="kpi-grid"
@@ -138,7 +138,7 @@ function clearChannelFilters(): void {
   @apply overflow-y-auto w-full flex
     flex-col
     gap-5
-    px-5 
+    px-6 
     pb-8;
 
   @include cq-container("campaign-performance-view");

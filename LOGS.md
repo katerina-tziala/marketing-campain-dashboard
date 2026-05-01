@@ -122,3 +122,89 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use `+N` for the compact filter badge — the plus sign communicates "additional hidden selected filters" better than a bare number.
 - Keep temporary UI playground work out of production components — the EmptyState/placeholder component was used as a visual workbench for controls, then cleaned back to its product role.
 - Build verification currently still stops on TypeScript errors outside this polish batch: missing `AiAnalysisContext`/`CampaignPerformanceStore` exports in `app/utils/map-analysis-context.ts`, plus an unused `ModalBody` import in `ui/drawer/ResponsiveDrawer.vue`.
+
+
+## [587] Restore connected status dot and formalize modal size variants
+**Type:** fix/refactor
+
+**Summary:** Restored the AI connected status dot on the dashboard header after the `SectionHeaderLayout` refactor, and moved modal width control into `Modal.vue` with explicit `size` variants. The upload validation review screens now use a large modal shell instead of trying to constrain `ModalBody`, and the replace-data confirmation uses the small modal variant.
+
+**Brainstorming:** The connected dot disappeared because the header refactor preserved the `showConnectedDot` prop and CSS but dropped the actual dot markup around the AI button. The fix was to wrap the AI button in a relative container inside the `SectionHeaderLayout` action slot and reinsert the existing dot elements. The modal issue came from trying to apply max-width on `ModalBody` while the parent `.modal` still owned the dialog's intrinsic width. This appeared to work for `ReplaceDataModal` because its content is only text, but the upload review modals contain wide tables that force the `w-fit` modal shell to grow. The better boundary is for `Modal.vue` to own panel width through a typed `size` prop, while `ModalBody` remains responsible for padding, vertical layout, and scrolling.
+
+**Prompt:** Fix the missing connected dot on the dashboard AI button after the header layout refactor. Then repair modal sizing by adding explicit size variants to `Modal.vue`: keep the default modal compact, add small/medium/large panel widths, use the large variant for upload validation review screens, and use the small variant for the replace-data confirmation. Remove body-level max-width hacks from the review components so modal width is controlled by the modal shell.
+
+**What changed:**
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — restored the connected status dot markup around the AI button inside the `SectionHeaderLayout` action slot.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — kept the existing connected-dot CSS and animation; the missing piece was only the template markup.
+- `ui/modal/Modal.vue` — added a typed `size` prop with `default`, `small`, `medium`, and `large` options.
+- `ui/modal/Modal.vue` — keeps `default` as compact `w-fit`, while named sizes opt into `w-full` with `max-w-2xl`, `max-w-3xl`, or `max-w-5xl`.
+- `features/data-transfer/components/UploadDataModal.vue` — uses `default` size for the upload form and `large` size for row-error / duplicate-review screens.
+- `features/data-transfer/components/ReplaceDataModal.vue` — uses `size="small"` instead of relying on external classes or `ModalBody` max-width.
+- `features/data-transfer/components/data-validation/review-errors/ReviewErrorsComponent.vue` — removed modal body sizing responsibility and wrapped review content in a local `.body-content` grid.
+- `features/data-transfer/components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — removed modal body sizing responsibility and wrapped review content in a local `.body-content` grid.
+
+**Key decisions & why:**
+- Modal shell owns width — the shell decides dialog dimensions; body components should not fight the parent modal's intrinsic sizing.
+- `size` instead of external classes — classes passed to `Modal` do not naturally land on the teleported `.modal` panel, so an explicit prop is clearer and safer.
+- Keep default compact — simple text/form modals should not become full-width just because the modal component supports larger variants.
+- Use large for validation tables — review screens contain table-heavy content, so they need a wider shell with internal scrolling.
+- Use small for replace confirmation — the confirmation modal is text-only and should stay visually compact.
+- Restore dot locally in the header — the store and prop flow were already correct; only the header action template lost the dot markup.
+- Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
+
+
+## [588] Extract SplitPaneLayout and only mount it for loaded dashboards
+**Type:** refactor
+
+**Summary:** Extracted the dashboard’s main-plus-aside structure into a reusable `SplitPaneLayout` UI primitive and updated `DashboardPage` so the split pane only mounts when campaign data exists. The no-data state now renders as a simple centered main area with `UploadDataPlaceholder`, while the loaded dashboard renders `CampaignPerformanceView` beside the AI drawer.
+
+**Brainstorming:** After removing the old shell abstraction, `DashboardPage` still had a local layout pattern that was not really dashboard-specific: a main content area plus an optional side pane. That pattern is generic enough for `ui/layout`, as long as it stays dumb and does not know about AI tools, campaign data, stores, or route state. The important boundary is that `SplitPaneLayout` should only provide the flex row and main slot container; `ResponsiveDrawer` should keep owning drawer open/close, width transition, and mobile overlay behavior. Once the primitive existed, the dashboard conditional could become clearer too: the empty upload placeholder does not need a split pane or mounted drawer, so it gets a plain `<main>`. The split pane is reserved for the loaded dashboard state where the AI drawer actually belongs.
+
+**Prompt:** Create a generic `SplitPaneLayout` in `ui/layout` that projects main content and an aside slot without knowing about dashboard or AI behavior. Export it from the layout barrel. Refactor `DashboardPage` to use the split pane only when campaign data exists; when there is no data, render a plain main area with `UploadDataPlaceholder`. Keep the `ResponsiveDrawer` in the aside slot and leave drawer behavior unchanged.
+
+**What changed:**
+- `ui/layout/SplitPaneLayout.vue` — new layout primitive with a default slot rendered inside a main content container and a named `aside` slot rendered as a sibling.
+- `ui/layout/SplitPaneLayout.vue` — owns only generic flex-row layout styles: `flex`, `flex-row`, `flex-1`, and overflow containment.
+- `ui/layout/index.ts` — exports `SplitPaneLayout` alongside `SectionHeaderLayout`.
+- `app/pages/DashboardPage.vue` — imports `SplitPaneLayout` from `@/ui`.
+- `app/pages/DashboardPage.vue` — replaces the previous local `.dashboard-body` / `.dashboard-main` split-pane markup with the new layout primitive.
+- `app/pages/DashboardPage.vue` — renders `<main class="dashboard-main">` with `UploadDataPlaceholder` when `dashboard.hasCampaigns` is false.
+- `app/pages/DashboardPage.vue` — renders `SplitPaneLayout` only when campaign data exists; `CampaignPerformanceView` goes in the default slot and `ResponsiveDrawer` + `AiTools` go in the `aside` slot.
+- `app/pages/DashboardPage.vue` — keeps the upload modal and replace confirmation modal outside the split pane so modal lifecycle is independent from the loaded/empty page layout.
+
+**Key decisions & why:**
+- Put `SplitPaneLayout` in `ui/layout` — the layout is generic projection of main and aside content, not a dashboard-specific route layout.
+- Keep it dumb — it does not receive dashboard state, drawer state, or width props; it just provides stable slots and layout containment.
+- Leave drawer behavior in `ResponsiveDrawer` — the drawer already owns desktop width push, inner panel motion, escape handling, and mobile overlay behavior.
+- Do not mount the drawer for empty state — no campaign data means no dashboard analysis surface, so the split pane and AI drawer should not exist yet.
+- Keep page composition in `DashboardPage` — the page still decides which feature components render for empty vs loaded state.
+- Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
+
+
+## [589] Add chart funnel tokens and align chart text theme
+**Type:** refactor
+
+**Summary:** Started a chart-specific token layer by adding semantic funnel colors to the dark chart theme, exposing them through Tailwind, and updating the conversion funnel chart to consume chart utilities instead of app palette utilities. Also aligned Chart.js label/title/tooltip text colors with the app typography tokens and updated tooltip border color to better match the dark UI theme.
+
+**Brainstorming:** Chart components sit between two styling worlds: Vue templates can use Tailwind utilities, while Chart.js needs runtime color strings. The long-term direction is a small chart token layer that maps theme variables into chart-specific semantics. For the first step, the conversion funnel is a good candidate because it already has three clear semantic stages: impressions, clicks, and conversions. Those should not reach directly for `primary`, `secondary`, or `warning` palette classes forever; they should consume chart-specific tokens that can later be remapped without changing the component. Separately, Chart.js labels were using hardcoded slate-like colors. Those values should match the app typography system: labels/ticks use muted typography, scale titles use regular typography, and the tooltip border should feel like the app’s dark border treatment rather than a generic white alpha.
+
+**Prompt:** Create chart color tokens for the conversion funnel in the dark chart theme, expose them in Tailwind, update the funnel chart to use the new chart utility classes, and align Chart.js label/title/tooltip colors with the app’s typography and border theme. Keep the change small and focused on the funnel and existing chart theme config.
+
+**What changed:**
+- `styles/themes/dark/_charts.scss` — added three semantic funnel CSS variables: `--chart-funnel-impressions`, `--chart-funnel-clicks`, and `--chart-funnel-conversions`.
+- `styles/themes/dark/_charts.scss` — mapped the funnel tokens to existing semantic color variables for now: primary dark, secondary darker, and warning darker.
+- `tailwind.config.js` — added a `chart.funnel` color namespace that exposes the funnel CSS variables as Tailwind utilities.
+- `features/campaign-performance/charts/components/ConversionFunnelChart.vue` — replaced palette classes (`bg-primary-dark`, `bg-secondary-darker`, `bg-warning-darker`) with chart classes (`bg-chart-funnel-impressions`, `bg-chart-funnel-clicks`, `bg-chart-funnel-conversions`).
+- `ui/charts/config/chart-theme.config.ts` — introduced named constants for chart typography colors and grid/border color to make the theme intent clearer.
+- `ui/charts/config/chart-theme.config.ts` — updated chart text, scale ticks, legend labels, and tooltip body to match `text-typography-muted`.
+- `ui/charts/config/chart-theme.config.ts` — updated scale title color to match regular `text-typography`.
+- `ui/charts/config/chart-theme.config.ts` — updated tooltip border color to a stronger dark-theme border value.
+
+**Key decisions & why:**
+- Use chart-specific tokens — funnel stages are chart semantics, not general UI palette decisions.
+- Expose tokens through Tailwind — the Vue funnel chart can keep using utility classes while still depending on chart semantics.
+- Keep tokens mapped to existing colors for now — this creates the abstraction without forcing a full chart color redesign.
+- Use muted typography for chart labels — legends, ticks, and tooltip body text should visually match secondary UI copy.
+- Use regular typography for chart titles — axis/scale titles need slightly stronger hierarchy than labels.
+- Do not add tooltip shadow yet — Chart.js built-in tooltips are canvas-rendered, so CSS `box-shadow` is not directly available without an external HTML tooltip or a custom drawing plugin.
+- Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).

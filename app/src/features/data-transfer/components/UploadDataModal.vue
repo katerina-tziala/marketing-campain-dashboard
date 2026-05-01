@@ -2,19 +2,19 @@
 import { ref, watch } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Modal } from "@/ui";
-import type {
-  CampainDataDuplicateGroup,
-  CampainDataRowError,
-} from "../types";
+import type { CampainDataDuplicateGroup, CampainDataRowError } from "../types";
 import { parseCsv, getValidationErrorMessage } from "../utils";
 import { useDownloadTemplate } from "../composables";
-import { ReviewErrorsComponent, ReviewDuplicatedCampaigns } from "./data-validation";
+import {
+  ReviewErrorsComponent,
+  ReviewDuplicatedCampaigns,
+} from "./data-validation";
 import UploadDataForm from "./UploadDataForm.vue";
 
 const { downloadTemplate } = useDownloadTemplate();
 
 const emit = defineEmits<{
-  'upload-complete': [campaigns: Campaign[], title: string]
+  "upload-complete": [campaigns: Campaign[], title: string];
 }>();
 
 // ── Open / close ───────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ async function handleSubmit(): Promise<void> {
       parseError.value = getValidationErrorMessage(result.errors[0]);
       return;
     }
-    emit('upload-complete', result.campaigns, title.value);
+    emit("upload-complete", result.campaigns, title.value);
     close();
     return;
   }
@@ -105,7 +105,7 @@ function handleProceedFromErrors(): void {
     view.value = "duplicate-rows";
     return;
   }
-  emit('upload-complete', validCampaigns.value, pendingTitle.value);
+  emit("upload-complete", validCampaigns.value, pendingTitle.value);
   close();
 }
 
@@ -118,13 +118,22 @@ function handleBackFromDuplicates(): void {
 }
 
 function handleProceedFromDuplicates(selected: Campaign[]): void {
-  emit('upload-complete', [...validCampaigns.value, ...selected], pendingTitle.value);
+  emit(
+    "upload-complete",
+    [...validCampaigns.value, ...selected],
+    pendingTitle.value,
+  );
   close();
 }
 </script>
 
 <template>
-  <Modal v-if="isOpen" title="Upload Campaign Data" @close="close">
+  <Modal
+    v-if="isOpen"
+    title="Upload Campaign Data"
+    :size="view === 'form' ? 'default' : 'large'"
+    @close="close"
+  >
     <UploadDataForm
       v-if="view === 'form'"
       v-model:title="title"

@@ -33,6 +33,11 @@ export type ChartTheme = {
   }
 }
 
+const TYPOGRAPHY_MUTED = '#aabcd4'
+const TYPOGRAPHY = '#dde4ee'
+const BORDER_STRONG = 'rgba(38, 52, 92, 0.9)'
+const GRID_LINE_COLOR = 'rgba(255,255,255,0.07)'
+
 export const DEFAULT_CHART_THEME = {
   baseOptions: {
     responsive: true,
@@ -93,21 +98,21 @@ export const DEFAULT_CHART_THEME = {
     '#e11d48', // rose-600
     '#ca8a04', // yellow-600 
   ],
-  textColor: '#cbd5e1',
+  textColor: TYPOGRAPHY_MUTED,
   arc: {
     separatorColor: '#151b2e',
   },
   scales: {
-    tickColor: '#cbd5e1',
-    titleColor: '#cbd5e1',
-    gridColor: 'rgba(255,255,255,0.07)',
-    borderColor: 'rgba(255,255,255,0.07)',
+    tickColor: TYPOGRAPHY_MUTED,
+    titleColor: TYPOGRAPHY,
+    gridColor: GRID_LINE_COLOR,
+    borderColor: GRID_LINE_COLOR,
     tickFontSize: 11,
     titleFontSize: 11,
     maxTickRotation: 45,
   },
   legend: {
-    labelColor: '#cbd5e1',
+    labelColor: TYPOGRAPHY_MUTED,
     labelFontSize: 12,
     labelPadding: 16,
     boxWidth: 12,
@@ -117,7 +122,7 @@ export const DEFAULT_CHART_THEME = {
   tooltip: {
     backgroundColor: '#0f172a',
     titleColor: '#f8fafc',
-    bodyColor: '#cbd5e1',
-    borderColor: 'rgba(255,255,255,0.15)',
+    bodyColor: TYPOGRAPHY_MUTED,
+    borderColor: BORDER_STRONG,
   },
 } as const satisfies ChartTheme

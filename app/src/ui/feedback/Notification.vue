@@ -142,15 +142,15 @@ const ariaLive = computed(() => {
 }
 
 .notification-icon {
-  @apply leading-none shrink-0 text-lg text-typography-subtle;
+  @apply leading-none shrink-0 text-lg text-typography-subtle pt-2;
 }
 
 .notification-head {
-  @apply flex items-center justify-between gap-2 mb-1;
+  @apply flex items-start justify-between gap-2 mb-1;
 }
 
 .notification-title {
-  @apply leading-5 tracking-wide text-base font-medium;
+  @apply leading-5 tracking-wide text-base font-medium pt-2;
 }
 
 .notification-action {

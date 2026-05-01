@@ -24,21 +24,21 @@ const funnelItems = computed(() => [
     label: "Impressions",
     value: props.kpis.totalImpressions,
     rate: null,
-    styles: "bg-primary-dark",
+    styles: "bg-chart-funnel-impressions",
   },
   {
     label: "Clicks",
     value: props.kpis.totalClicks,
     rateLabel: "CTR",
     rate: props.kpis.aggregatedCtr,
-    styles: "bg-secondary-darker",
+    styles: "bg-chart-funnel-clicks",
   },
   {
     label: "Conversions",
     value: props.kpis.totalConversions,
     rateLabel: "CVR",
     rate: props.kpis.aggregatedCvr,
-    styles: "bg-warning-darker",
+    styles: "bg-chart-funnel-conversions",
   },
 ]);
 

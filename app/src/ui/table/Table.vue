@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="scrollbar-stable scrollbar-info-on-surface table-container">
+  <div class="scrollbar-info-on-surface table-container">
     <table>
       <slot />
     </table>
@@ -31,7 +31,7 @@
 
 /* default theming */
 .table-container > table {
-  @apply text-sm text-typography-soft;
+  @apply text-sm text-typography-muted;
 
   &:deep(tr:not(:last-of-type) > td) {
     @apply border-b border-b-info-dark/20;

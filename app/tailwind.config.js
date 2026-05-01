@@ -72,6 +72,15 @@ export default {
           dark: "rgb(var(--color-info-dark) / <alpha-value>)",
           darker: "rgb(var(--color-info-darker) / <alpha-value>)",
         },
+        chart: {
+          funnel: {
+            impressions:
+              "rgb(var(--chart-funnel-impressions) / <alpha-value>)",
+            clicks: "rgb(var(--chart-funnel-clicks) / <alpha-value>)",
+            conversions:
+              "rgb(var(--chart-funnel-conversions) / <alpha-value>)",
+          },
+        },
         typography: {
           DEFAULT: "rgb(var(--color-text) / <alpha-value>)",
           soft: "rgb(var(--color-text-soft) / <alpha-value>)",

@@ -2,10 +2,18 @@
 import { onMounted, onUnmounted } from "vue";
 import ModalHeader from "./ModalHeader.vue";
 
-defineProps<{
-  title: string;
-  closeLabel?: string;
-}>();
+type ModalSize = "default" | "small" | "medium" | "large";
+
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    closeLabel?: string;
+    size?: ModalSize;
+  }>(),
+  {
+    size: "default",
+  },
+);
 
 const emit = defineEmits<{
   close: [];
@@ -35,7 +43,7 @@ onUnmounted(() => {
       :aria-label="title"
       @click.self="emit('close')"
     >
-      <div class="modal">
+      <div class="modal" :class="props.size">
         <ModalHeader
           :title="title"
           :close-label="closeLabel"
@@ -57,9 +65,21 @@ onUnmounted(() => {
     bg-surface-elevated
     border
     border-faint
-    grid
-    grid-cols-1
-    auto-rows-auto
-    max-h-[92vh] max-w-[92vw];
+    flex
+    flex-col 
+    max-h-[98vh]
+    max-w-[98vw];
+
+  &.small {
+    @apply w-full max-w-2xl;
+  }
+
+  &.medium {
+    @apply w-full max-w-3xl;
+  }
+
+  &.large {
+    @apply w-full max-w-5xl;
+  }
 }
 </style>

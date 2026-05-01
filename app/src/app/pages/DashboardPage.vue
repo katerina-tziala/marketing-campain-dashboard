@@ -9,7 +9,13 @@ import {
 } from "@/features/data-transfer";
 import { useUploadModal } from "@/app/composables/useUploadModal";
 import AiTools from "@/features/ai-tools/components/AiTools.vue";
-import { Button, ResponsiveDrawer, SparklesIcon, UploadIcon } from "@/ui";
+import {
+  Button,
+  ResponsiveDrawer,
+  SparklesIcon,
+  SplitPaneLayout,
+  UploadIcon,
+} from "@/ui";
 
 const dashboard = useDashboardOrchestratorStore();
 
@@ -31,44 +37,49 @@ const {
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
       <div class="shrink-0 mt-1 inline-action-float min-h-9">
-        <Button v-if="hasCampaigns" class="outline small" @click="requestUpload">
+        <Button
+          v-if="hasCampaigns"
+          class="outline small"
+          @click="requestUpload"
+        >
           <UploadIcon />
           Upload CSV
         </Button>
       </div>
     </header>
 
-    <div class="dashboard-body">
-      <main class="dashboard-main">
-        <UploadDataPlaceholder
-          v-if="!dashboard.hasCampaigns"
-          @upload="requestUpload"
-        />
-        <!-- TODO: Add overview / period comparison switching here when the comparison view is introduced. -->
-        <CampaignPerformanceView
-          v-else
-          :show-ai-button="dashboard.showAiButton"
-          :show-connected-dot="dashboard.showConnectedDot"
-          @ai-click="dashboard.openAiPanel"
-        />
-      </main>
+    <main v-if="!dashboard.hasCampaigns" class="dashboard-main">
+      <UploadDataPlaceholder @upload="requestUpload" />
+    </main>
 
-      <ResponsiveDrawer
-        :open="dashboard.aiPanelOpen"
-        title="AI Assistant"
-        side="right"
-        close-label="Close AI panel"
-        @close="dashboard.closeAiPanel"
-      >
-        <template #icon>
-          <SparklesIcon class="mt-1" />
-        </template>
+    <SplitPaneLayout v-else>
+      <!-- TODO: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
+      <CampaignPerformanceView
+        :show-ai-button="dashboard.showAiButton"
+        :show-connected-dot="dashboard.showConnectedDot"
+        @ai-click="dashboard.openAiPanel"
+      />
 
-        <AiTools />
-      </ResponsiveDrawer>
-    </div>
+      <template #aside>
+        <ResponsiveDrawer
+          :open="dashboard.aiPanelOpen"
+          title="AI Assistant"
+          side="right"
+          close-label="Close AI panel"
+          @close="dashboard.closeAiPanel"
+        >
+          <template #icon>
+            <SparklesIcon class="mt-1" />
+          </template>
+          <AiTools />
+        </ResponsiveDrawer>
+      </template>
+    </SplitPaneLayout>
 
-    <UploadDataModal ref="uploadModal" @upload-complete="handleUploadComplete" />
+    <UploadDataModal
+      ref="uploadModal"
+      @upload-complete="handleUploadComplete"
+    />
     <ReplaceDataModal
       v-if="showReplaceConfirm"
       @confirm="onReplaceConfirm"
@@ -79,7 +90,7 @@ const {
 
 <style lang="scss" scoped>
 .dashboard-shell {
-  @apply flex flex-col h-screen overflow-hidden;
+  @apply h-screen w-screen grid grid-cols-1 grid-rows-[min-content_1fr] overflow-hidden;
 }
 
 .dashboard-header {
@@ -119,11 +130,7 @@ const {
   }
 }
 
-.dashboard-body {
-  @apply flex flex-row flex-1 overflow-hidden;
-}
-
 .dashboard-main {
-  @apply flex flex-col w-full mx-auto overflow-x-hidden overflow-y-hidden;
+  @apply flex flex-col justify-center items-center w-full mx-auto overflow-x-hidden overflow-y-hidden;
 }
 </style>

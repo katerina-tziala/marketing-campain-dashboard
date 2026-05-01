@@ -38,24 +38,26 @@ function handleProceed(): void {
 </script>
 
 <template>
-  <ModalBody class="duplicate-body">
-    <DuplicateSummary
-      :count="duplicateGroups.length"
-      variant="resolve"
-      :has-valid-campaigns="validCampaigns.length > 0"
-    />
-    <p class="resolve-indicator" :class="{ resolved: allResolved }">
-      <span
-        >Resolve duplicates ({{ resolvedCount }}/{{
-          duplicateGroups.length
-        }})</span
-      >
-    </p>
-    <CampainDuplicationsTable
-      :duplicate-groups="duplicateGroups"
-      :required-selection="validCampaigns.length === 0"
-      @change="onSelectionChange"
-    />
+  <ModalBody>
+    <div class="body-content">
+      <DuplicateSummary
+        :count="duplicateGroups.length"
+        variant="resolve"
+        :has-valid-campaigns="validCampaigns.length > 0"
+      />
+      <p class="resolve-indicator" :class="{ resolved: allResolved }">
+        <span
+          >Resolve duplicates ({{ resolvedCount }}/{{
+            duplicateGroups.length
+          }})</span
+        >
+      </p>
+      <CampainDuplicationsTable
+        :duplicate-groups="duplicateGroups"
+        :required-selection="validCampaigns.length === 0"
+        @change="onSelectionChange"
+      />
+    </div>
   </ModalBody>
   <ModalFooter>
     <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
@@ -74,20 +76,9 @@ function handleProceed(): void {
 </template>
 
 <style lang="scss" scoped>
-.duplicate-body {
-  @apply w-[90vw]
-    max-w-4xl
-    max-h-screen
-    grid
-    grid-cols-1
-    grid-rows-[min-content_min-content_1fr]
-    gap-3
-    p-6
-    h-fit
-    max-h-[75vh]
-    xs:max-h-[50vh];
+.body-content {
+  @apply w-full max-w-full grid grid-rows-[min-content_1fr] grid-cols-1 gap-4;
 }
-
 .resolve-indicator {
   @apply flex items-center gap-2 text-sm font-semibold text-typography-subtle -mb-3;
 

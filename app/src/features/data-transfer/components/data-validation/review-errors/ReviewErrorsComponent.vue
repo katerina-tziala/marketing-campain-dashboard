@@ -4,10 +4,7 @@ import type { Campaign } from "@/shared/data";
 import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
 import type { CampainDataRowError } from "../../../types";
 import { getRowErrorSummaryWords } from "../../../utils";
-import {
-  DataErrorSummary,
-  DuplicateSummary,
-} from "../shared";
+import { DataErrorSummary, DuplicateSummary } from "../shared";
 import DataErrorsTable from "./DataErrorsTable.vue";
 
 const props = defineProps<{
@@ -42,52 +39,55 @@ const proceedLabel = computed(() =>
 </script>
 
 <template>
-  <!-- Body -->
-  <ModalBody class="error-body">
-    <div class="flex flex-col gap-4">
-      <DataErrorSummary
-        v-if="validCampaigns.length === 0 && duplicateGroupCount === 0"
-      >
-        <template #title>Campaign data could not be imported</template>
-        <template #badge>
-          <Badge class="danger">Invalid data</Badge>
-        </template>
-        <template #summary>
-          <p>None of the rows could be imported because they contain errors.</p>
-          <p>Please fix the issues below and upload the file again.</p>
-        </template>
-      </DataErrorSummary>
+  <ModalBody>
+    <div class="body-content">
+      <div class="flex flex-col gap-4">
+        <DataErrorSummary
+          v-if="validCampaigns.length === 0 && duplicateGroupCount === 0"
+        >
+          <template #title>Campaign data could not be imported</template>
+          <template #badge>
+            <Badge class="danger">Invalid data</Badge>
+          </template>
+          <template #summary>
+            <p>
+              None of the rows could be imported because they contain errors.
+            </p>
+            <p>Please fix the issues below and upload the file again.</p>
+          </template>
+        </DataErrorSummary>
 
-      <DataErrorSummary v-else>
-        <template #title>Some rows contain errors</template>
-        <template #badge>
-          <Badge class="warning">Partial import</Badge>
-        </template>
-        <template #summary>
-          <p>
-            <strong
-              >{{ invalidRowCount }} of {{ totalRows }}
-              {{ summaryWords.totalRowWord }}</strong
-            >
-            {{ summaryWords.verb }} errors and
-            {{ summaryWords.wasWord }} skipped.
-          </p>
-          <p>
-            You can proceed with the
-            <strong
-              >{{ validCampaigns.length }} valid
-              {{ summaryWords.validRowWord }}</strong
-            >, or go back and fix the file.
-          </p>
-        </template>
-      </DataErrorSummary>
+        <DataErrorSummary v-else>
+          <template #title>Some rows contain errors</template>
+          <template #badge>
+            <Badge class="warning">Partial import</Badge>
+          </template>
+          <template #summary>
+            <p>
+              <strong
+                >{{ invalidRowCount }} of {{ totalRows }}
+                {{ summaryWords.totalRowWord }}</strong
+              >
+              {{ summaryWords.verb }} errors and
+              {{ summaryWords.wasWord }} skipped.
+            </p>
+            <p>
+              You can proceed with the
+              <strong
+                >{{ validCampaigns.length }} valid
+                {{ summaryWords.validRowWord }}</strong
+              >, or go back and fix the file.
+            </p>
+          </template>
+        </DataErrorSummary>
 
-      <DuplicateSummary
-        v-if="duplicateGroupCount > 0"
-        :count="duplicateGroupCount"
-      />
+        <DuplicateSummary
+          v-if="duplicateGroupCount > 0"
+          :count="duplicateGroupCount"
+        />
+      </div>
+      <DataErrorsTable :errors="rowErrors" />
     </div>
-    <DataErrorsTable :errors="rowErrors" />
   </ModalBody>
   <ModalFooter>
     <Button class="primary min-w-24 xs:order-1" @click="emit('back')"
@@ -106,17 +106,7 @@ const proceedLabel = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-.error-body {
-  @apply w-[90vw]
-    max-w-3xl
-    h-fit
-    max-h-screen
-    grid
-    grid-cols-1
-    grid-rows-[min-content_1fr]
-    gap-6
-    p-6
-    max-h-[75vh]
-    xs:max-h-[50vh];
+.body-content {
+  @apply w-full max-w-full grid grid-rows-[min-content_1fr] grid-cols-1 gap-4;
 }
 </style>

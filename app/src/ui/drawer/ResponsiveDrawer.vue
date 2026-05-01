@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import ModalHeader from "../modal/ModalHeader.vue";
-import ModalBody from "../modal/ModalBody.vue";
 
 type DrawerSide = "left" | "right";
 
@@ -55,12 +54,7 @@ onUnmounted(() => {
 
 <template>
   <div class="responsive-drawer" :class="drawerClass" :aria-hidden="!open">
-    <section
-      v-if="isDesktop"
-      class="responsive-drawer-panel"
-      role="dialog"
-      :aria-label="title"
-    >
+    <aside v-if="isDesktop" class="responsive-drawer-panel" :aria-label="title">
       <ModalHeader
         :title="title"
         :close-label="closeLabel"
@@ -76,7 +70,7 @@ onUnmounted(() => {
       <div class="responsive-drawer-content">
         <slot />
       </div>
-    </section>
+    </aside>
   </div>
 
   <Transition name="drawer-overlay">

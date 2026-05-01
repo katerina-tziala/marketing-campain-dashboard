@@ -23,12 +23,17 @@ const emit = defineEmits<{ aiClick: [] }>();
 <template>
   <SectionHeaderLayout>
     <template #header>
-      <h2 class="w-full grow text-lg">Campaign Performance</h2>
+      <h2 class="w-full grow text-xl">Campaign Performance</h2>
     </template>
     <template #action>
-      <Button v-if="showAiButton" class="primary" @click="emit('aiClick')">
-        <SparklesIcon />AI
-      </Button>
+      <div v-if="showAiButton" class="relative shrink-0">
+        <Button class="primary" @click="emit('aiClick')">
+          <SparklesIcon />AI
+        </Button>
+        <span v-if="showConnectedDot" class="connected-status" aria-hidden="true">
+          <span class="connected-status-dot" />
+        </span>
+      </div>
     </template>
     <MetaRow class="bullet text-typography-subtle">
       <MetaItem>{{ title }}</MetaItem>
