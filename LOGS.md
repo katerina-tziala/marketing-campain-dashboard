@@ -10973,3 +10973,41 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Let the UI drawer own the default close button — every drawer gets consistent accessibility and expected close behavior without each consumer rebuilding it.
 - Use slots for extension points — the icon, header actions, and content remain configurable without coupling the drawer to a specific feature.
 - Keep UI internals on local imports — `ResponsiveDrawer` imports `Button`, `CloseIcon`, and `SheetHeader` through relative UI paths rather than through the public `@/ui` barrel.
+
+
+## [#525] Polish Campaign Layout and Fix AI Drawer Connection Indicator
+**Type:** update
+
+**Summary:** Refined the campaign performance page layout, adjusted shared base styling, improved KPI/chart composition, and fixed the AI tools drawer lifecycle bug that caused the connected status dot to disappear after closing the panel.
+
+**Brainstorming:** The dashboard/campaign-performance layout is moving toward clearer feature ownership: `DashboardPage` decides whether to show empty state or the campaign performance feature, while `CampaignPerformanceView` owns its own header, filters, scroll region, KPI grid, charts, scaling chart, and campaign table. At the same time, the AI drawer had a subtle lifecycle problem after the responsive drawer extraction: both desktop and mobile drawer content could be mounted at once, so closing the panel could unmount a hidden copy of `AiToolsContent` and run dev cleanup that disconnected AI. The fix keeps the drawer responsive behavior but ensures only the active viewport branch renders feature content.
+
+**Prompt:** Check the changed files and prepare the next log; also fix the bug where the AI connected dot disappears after opening and closing the tools panel.
+
+**What was built:**
+- `app/src/app/pages/DashboardPage.vue` — simplified rendering so `DashboardPage` directly switches between `EmptyState` and `CampaignPerformanceView`; kept the TODO for future overview / period comparison switching.
+- `app/src/app/shell/AppShell.vue` — cleaned import formatting; wrapped the upload button in a stable floated action container; adjusted header padding and minimum height; kept `AiToolsDrawer` wired through the dashboard orchestrator.
+- `app/src/features/campaign-performance/CampaignPerformanceView.vue` — moved the main dashboard layout shell into the campaign performance feature; added the feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout.
+- `app/src/features/campaign-performance/components/CampaignPerformanceHeader.vue` — made the AI connected indicator render as a real nested status dot with explicit success color and z-index, instead of relying on an empty element plus the shared pseudo-element utility.
+- `app/src/features/campaign-performance/components/kpis/Kpis.vue` — removed the internal wrapper/grid responsibility so the parent feature layout controls KPI grid placement.
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — refined legend markup for overperforming/underperforming labels, adjusted legend indicator sizing, and updated the chart container layout.
+- `app/src/features/campaign-performance/components/EmptyState.vue` — softened empty-state description text color.
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — cleaned formatting and kept the AI tools body filling the drawer height.
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — added viewport tracking with `matchMedia`; renders desktop drawer content only on desktop and mobile modal content only below `lg`; preserves Escape close behavior; prevents duplicate mounting of drawer slot content.
+- `app/src/styles/base/_app.scss` — moved app sizing and base font/background/text rules into Tailwind’s base layer.
+- `app/src/styles/base/_reset.scss` — moved reset rules into Tailwind’s base layer.
+- `app/src/styles/base/_typography.scss` — moved heading defaults into Tailwind’s base layer.
+- `app/src/styles/index.scss` — normalized SCSS import quote style.
+- `app/src/ui/feedback/Notification.vue` — added spacing below notification headers.
+- `app/src/ui/modal/Modal.vue` — adjusted modal backdrop opacity to `bg-surface-backdrop/70`.
+- `npm run build` — completed successfully; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Let `CampaignPerformanceView` own campaign-performance layout — the feature now controls its own internal composition instead of relying on an extra page wrapper.
+- Keep `DashboardPage` as an orchestrator — it decides which feature view to show now and leaves room for future period comparison switching.
+- Keep KPI grid responsibility in the parent layout — this makes `Kpis` easier to reuse without carrying dashboard-specific grid rules.
+- Fix the connected dot at the lifecycle source — the disappearing dot was caused by duplicated drawer content mounting, not just dot styling.
+- Render only one drawer content branch per viewport — this avoids accidental mount/unmount side effects from hidden responsive branches.
+- Keep the dot visually explicit — the header status dot now has a real child element, making it less fragile than pseudo-element rendering on an empty span.
+- Use Tailwind base layers for global styling — reset, app sizing, and heading defaults now live in the expected cascade layer.
+- Preserve current functionality while preparing layout boundaries — the current campaign performance view remains the visible dashboard experience while leaving a clearer path for future dashboard modes.
