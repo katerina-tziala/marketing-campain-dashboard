@@ -2,8 +2,8 @@
 import { ref, computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Button, ModalBody, ModalFooter } from "@/ui";
-import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
-import { DuplicateSummary } from "@/features/data-transfer/components/data-validation/shared";
+import type { CampainDataDuplicateGroup } from "../../../types";
+import { DuplicateSummary } from "../shared";
 import CampainDuplicationsTable from "./CampainDuplicationsTable.vue";
 
 const props = defineProps<{

@@ -461,18 +461,34 @@ app/                        # Vue 3 + Vite project
 - The user handles all git operations. When asked for a commit message, provide the text only — no commands.
 
 ### Imports
-- **Always use the `@/` alias** — never use relative `../` paths. `@` maps to `src/`. Same-directory `./foo` imports are the only exception.
-- Example: `import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'` not `'../../stores/campaign.store'`.
-- **Import ordering** — organize imports in this strict order: (1) Vue/framework; (2) `@/shared/*` barrels; (3) `@/ui` (single barrel); (4) `@/app` (if needed); (5) `@/features/*` (same or other features); (6) Local relative imports (./). Types follow their values. Example:
+
+**🚨 CRITICAL RULE — NEVER USE @/features/ FOR WITHIN-FEATURE IMPORTS 🚨**
+
+**Feature-internal imports use relative paths ONLY.** When a file in a feature (e.g., data-transfer, campaign-performance) imports something else from the same feature, use relative paths: `./something`, `../utils/something`, `../../types`. Never use `@/features/feature-name/...` inside the feature. This keeps features self-contained, refactor-friendly, and improves code scannability.
+
+- **Wrong**: `import { validateRow } from '@/features/data-transfer/utils/validate-row-data'` (inside data-transfer feature)
+- **Right**: `import { validateRow } from '../utils/validate-row-data'` (inside data-transfer feature)
+- **Right**: `import { UploadDataModal } from '@/features/data-transfer/components'` (outside data-transfer, from app code)
+
+The `@/features/` prefix is **only for cross-feature and cross-layer imports** (app code importing from features, feature A importing from feature B).
+
+---
+
+- **Always use the `@/` alias for cross-boundary imports** — never use relative `../` paths that escape your feature. `@` maps to `src/`. Same-directory `./foo` imports and within-feature relative imports are the only exceptions.
+- Example of cross-boundary: `import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores/campaignPerformance.store'` not `'../../stores/campaign.store'`.
+- **Import ordering** — organize imports in this strict order: (1) Vue/framework; (2) `@/shared/*` barrels; (3) `@/ui` (single barrel); (4) `@/app` (if needed); (5) `@/features/*` **for cross-feature imports only**; (6) Relative imports (./something, ../folder/something) **for within-feature imports**. Types follow their values.
+  
+  Example (feature file importing from different layers):
   ```ts
   import { ref, computed } from 'vue'
   import type { Campaign } from '@/shared/data'
   import { formatCurrency } from '@/shared/utils'
   import { Button } from '@/ui'
   import { useToastStore } from '@/app/stores'
-  import type { ValidationError } from '@/features/data-transfer/types'
-  import { validateRow } from '@/features/data-transfer/utils/validate-row-data'
-  import LocalComponent from './LocalComponent.vue'
+  import { UploadDataModal } from '@/features/data-transfer/components'  // cross-feature
+  import type { CampainDataRowError } from '../types'                   // within-feature relative
+  import { validateRow } from '../utils/validate-row-data'              // within-feature relative
+  import ErrorBadge from './ErrorBadge.vue'                             // same-folder relative
   ```
 - **UI always uses the barrel** — app and feature code imports all UI components from `@/ui` (the single public API), never from specific submodules like `@/ui/primitives` or `@/ui/charts`. UI is a cohesive design system.
 - **UI internals use local paths** — files inside `app/src/ui` must not import through the public `@/ui` barrel; they use local sibling/folder imports.

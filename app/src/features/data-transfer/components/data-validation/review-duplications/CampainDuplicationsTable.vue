@@ -12,7 +12,7 @@ import {
   RadioItem,
   type DataTableColumn
 } from "@/ui";
-import type { CampainDataDuplicateGroup } from "@/features/data-transfer/types";
+import type { CampainDataDuplicateGroup } from "../../../types";
 import DuplicationsHeader from "./DuplicationsHeader.vue";
 
 const props = withDefaults(

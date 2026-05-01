@@ -1,5 +1,5 @@
 import Papa from 'papaparse'
-import type { CampainDataParseResult } from '@/features/data-transfer/types'
+import type { CampainDataParseResult } from '../types'
 import { validateCampaignData } from './validate-campaign-data'
 
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB

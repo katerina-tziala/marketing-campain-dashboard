@@ -6,12 +6,12 @@ import { usePortfolioDataStore } from "@/app/stores";
 import type {
   CampainDataDuplicateGroup,
   CampainDataRowError,
-} from "@/features/data-transfer/types";
-import { parseCsv } from "@/features/data-transfer/utils/parse-csv";
-import { getValidationErrorMessage } from "@/features/data-transfer/utils/error-messages";
-import { useDownloadTemplate } from "@/features/data-transfer/composables/useDownloadTemplate";
-import { ReviewErrorsComponent } from "@/features/data-transfer/components/data-validation/review-errors";
-import { ReviewDuplicatedCampaigns } from "@/features/data-transfer/components/data-validation/review-duplications";
+} from "../types";
+import { parseCsv } from "../utils/parse-csv";
+import { getValidationErrorMessage } from "../utils/error-messages";
+import { useDownloadTemplate } from "../composables/useDownloadTemplate";
+import { ReviewErrorsComponent } from "./data-validation/review-errors";
+import { ReviewDuplicatedCampaigns } from "./data-validation/review-duplications";
 import UploadDataForm from "./UploadDataForm.vue";
 
 const portfolioData = usePortfolioDataStore();

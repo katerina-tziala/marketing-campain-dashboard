@@ -2,12 +2,12 @@
 import { computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
-import type { CampainDataRowError } from "@/features/data-transfer/types";
-import { getRowErrorSummaryWords } from "@/features/data-transfer/utils/error-messages";
+import type { CampainDataRowError } from "../../../types";
+import { getRowErrorSummaryWords } from "../../../utils/error-messages";
 import {
   DataErrorSummary,
   DuplicateSummary,
-} from "@/features/data-transfer/components/data-validation/shared";
+} from "../shared";
 import DataErrorsTable from "./DataErrorsTable.vue";
 
 const props = defineProps<{

@@ -11555,3 +11555,61 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Local imports last — most specific, most likely to change, grouped at the end.
 - Document the rule proactively — prevents future inconsistency as new features are built; future developers can reference the rule instead of guessing from examples.
 - Build passes with zero errors — all 414 modules transformed successfully, confirming imports resolve correctly with new ordering.
+
+
+
+## [#543] Establish Feature-Internal Relative Import Rule
+**Type:** refactor
+
+**Summary:** Established rule that feature-internal imports use relative paths (./something, ../folder/something), not absolute @/features paths, keeping features self-contained and refactor-friendly. Updated CLAUDE.md to document this convention.
+
+**Brainstorming:** After initial implementation, clarified that within a feature, relative imports are preferred—they keep the feature boundary clear and make files easier to move/refactor. The @/features prefix is for cross-feature imports and imports from the app layer, not within-feature imports. This is simpler and more conventional than treating features as external modules (which @/features implies). Relative paths signal "this is internal to the feature," while @/features signals "this is from outside the feature."
+
+**Prompt:** Within data-transfer feature, all internal imports should use relative paths: ./foo, ../utils/bar, not @/features/data-transfer/... paths. This keeps features self-contained. Update CLAUDE.md Imports section to clarify this rule. Verify build.
+
+**What was built:**
+- `CLAUDE.md` — updated Imports section with new rule: **Feature-internal imports use relative paths** — clarifies that files within a feature use relative paths (not absolute @/features paths), with examples explaining the boundary between internal (relative) and external (absolute @/features) imports.
+- Confirmed 7 data-transfer files and all barrel index.ts files use relative paths for internal feature imports (no changes needed, this was the original state).
+
+**Key decisions & why:**
+- Relative paths within features — simpler convention, clearer boundary semantics, enables fearless refactoring (moving a folder doesn't break cross-folder imports if they stay relative).
+- @/features prefix reserved for cross-feature imports — external code importing from data-transfer uses `@/features/data-transfer/components/UploadDataModal.vue`, not `../..`.
+- Barrel exports use relative paths — `export { default as X } from './Component.vue'` is the standard convention and signals re-export inside a module.
+- Build passes with 414 modules, zero errors — confirming all relative paths resolve correctly.
+
+
+
+## [#544] Enforce Feature-Internal Relative Imports Across Entire Data-Transfer Feature
+**Type:** refactor
+
+**Summary:** Converted 13 data-transfer files to use relative paths (./file, ../folder/file) for all within-feature imports, eliminating all `@/features/data-transfer/...` paths from inside the feature. Added prominent warning to CLAUDE.md to establish and enforce this rule permanently.
+
+**Brainstorming:** After clarifying the rule, discovered 13 data-transfer files still using absolute `@/features/data-transfer/...` paths for internal imports (across utils, composables, and components). The feature boundary was unclear in the codebase and in examples. To enforce the rule consistently and permanently, converted all internal imports to relative paths and added a bold, visible rule block to CLAUDE.md with emoji warning, clear wrong/right examples, and explanation of when `@/features/` is appropriate (cross-feature and cross-layer imports only, never within a feature).
+
+**Prompt:** Convert ALL imports within data-transfer feature that use `@/features/data-transfer/...` to relative paths. This includes utils, composables, and components importing from types, utils, and composables. Make the data-transfer feature a consistent example of the rule. Update CLAUDE.md Imports section with a prominent, unmissable rule: feature-internal imports use relative paths ONLY. Add wrong/right examples and clarify when @/features/ is allowed (cross-boundary only). Build and verify.
+
+**What was built:**
+- Converted 13 data-transfer files to use relative paths for all within-feature imports:
+  - `composables/useDownloadTemplate.ts` — `@/features/data-transfer/utils/download-csv` → `../utils/download-csv`
+  - `utils/validate-campaign-data.ts` — `@/features/data-transfer/types` → `../types`
+  - `utils/error-messages.ts` — `@/features/data-transfer/types` → `../types`
+  - `utils/detect-campaign-duplication.ts` — `@/features/data-transfer/types` → `../types`
+  - `utils/parse-csv.ts` — `@/features/data-transfer/types` → `../types`
+  - `utils/validate-row-data.ts` — `@/features/data-transfer/types` → `../types`
+  - `components/UploadDataModal.vue` — 5 `@/features/data-transfer/...` imports → `../types`, `../utils/...`, `../composables/...`, `./data-validation/...`
+  - `components/UploadDataForm.vue` — `@/features/data-transfer/utils/parse-csv` → `../utils/parse-csv`
+  - `components/TransferActions.vue` — `@/features/data-transfer/composables/useDownloadTemplate` → `../composables/useDownloadTemplate`
+  - `components/data-validation/review-errors/ReviewErrorsComponent.vue` — 3 `@/features/data-transfer/...` imports → `../../../types`, `../../../utils/...`, `../shared`
+  - `components/data-validation/review-errors/DataErrorsTable.vue` — 2 `@/features/data-transfer/...` imports → `../../../types`, `../../../utils/...`
+  - `components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — 2 `@/features/data-transfer/...` imports → `../../../types`, `../shared`
+  - `components/data-validation/review-duplications/CampainDuplicationsTable.vue` — `@/features/data-transfer/types` → `../../../types`
+- `CLAUDE.md` — added prominent warning block at top of Imports section: **🚨 CRITICAL RULE — NEVER USE @/features/ FOR WITHIN-FEATURE IMPORTS 🚨** with clear wrong/right examples, rule explanation, and clarification that `@/features/` is ONLY for cross-feature/cross-layer boundaries. Updated import ordering example to show both cross-feature (`@/features/...`) and within-feature (`../...`) imports side-by-side for clarity.
+
+**Key decisions & why:**
+- All 13 files converted in one pass — ensures consistent application of the rule across the entire feature and establishes data-transfer as the canonical example of correct within-feature import patterns.
+- Relative paths for all within-feature imports — signals clear feature boundary, enables fearless file movement/refactoring without breaking imports, makes code easier to scan (relative imports = "this is internal").
+- Prominent warning in CLAUDE.md — uses emoji, bold text, and separate rule block so the rule is unmissable and never forgotten in future development.
+- Wrong/right examples with explicit context — `// (inside data-transfer feature)` clarifies scope, preventing confusion.
+- Build passes with 414 modules, zero errors — all path conversions are correct and resolve properly; no type errors or missing imports.
+- Establishes canonical pattern before period-comparison and what-if-simulator features are built — new features can follow data-transfer as a reference implementation of the rule from day one.
+
