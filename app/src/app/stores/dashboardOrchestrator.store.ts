@@ -5,6 +5,7 @@ import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 import { usePortfolioDataStore } from '@/shared/portfolio-data'
+import { DEV_MODE_CONFIG, activateDevMode } from '@/app/dev-mode'
 import { useToastStore } from './toast.store'
 
 // App-level mediator for the dashboard page.
@@ -15,6 +16,10 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
   const campaignPerformance = useCampaignPerformanceStore()
   const portfolioData = usePortfolioDataStore()
   const toastStore = useToastStore()
+
+  // DEV MODE
+  // Configure local/demo behavior in app/dev-mode/config.ts.
+  activateDevMode(DEV_MODE_CONFIG)
 
   // Page state derived from the composed features.
   const hasCampaigns = computed(() => campaignPerformance.campaigns.length > 0)

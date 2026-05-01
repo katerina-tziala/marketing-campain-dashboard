@@ -5,11 +5,13 @@ import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/type
 import { getErrorCode } from '@/features/ai-tools/ai-connection/utils/error-handling'
 import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
 
-// [DEV ONLY] — cleared by setDevConnectOverride(null) on deactivate
-type DevConnectFn = (provider: AiProviderType) => Promise<AiModel[]>
-let _devConnectOverride: DevConnectFn | null = null
-export function setDevConnectOverride(fn: DevConnectFn | null): void {
-  _devConnectOverride = fn
+type ConnectProviderOverride = (provider: AiProviderType) => Promise<AiModel[]>
+let _connectProviderOverride: ConnectProviderOverride | null = null
+
+// App-level extension point used by dev-mode to replace external provider calls.
+// Feature code should not call this directly.
+export function setConnectProviderOverride(fn: ConnectProviderOverride | null): void {
+  _connectProviderOverride = fn
 }
 
 export type AiConnectionEvent = {
@@ -33,8 +35,8 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
     isConnecting.value = true
     connectionError.value = null
     try {
-      const providerModels = _devConnectOverride
-        ? await _devConnectOverride(providerType)
+      const providerModels = _connectProviderOverride
+        ? await _connectProviderOverride(providerType)
         : await connectProvider(providerType, APIkey)
       provider.value = providerType
       apiKey.value = APIkey

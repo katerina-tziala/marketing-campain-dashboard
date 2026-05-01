@@ -1,8 +1,6 @@
-// TODO: [DEV ONLY] Remove this entire file before shipping to production
-
 import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types'
 import type { AiModel } from '@/features/ai-tools/providers/types'
-import { setDevConnectOverride } from '@/features/ai-tools/ai-connection/stores'
+import { setConnectProviderOverride } from '@/features/ai-tools/ai-connection/stores'
 
 // ── Sequence ──────────────────────────────────────────────────────────────────
 //
@@ -48,11 +46,11 @@ async function runDevConnect(_provider: AiProviderType): Promise<AiModel[]> {
 export function useDevConnectionCycle() {
   function activate(): void {
     counter = 0
-    setDevConnectOverride(runDevConnect)
+    setConnectProviderOverride(runDevConnect)
   }
 
   function deactivate(): void {
-    setDevConnectOverride(null)
+    setConnectProviderOverride(null)
   }
 
   return { activate, deactivate }

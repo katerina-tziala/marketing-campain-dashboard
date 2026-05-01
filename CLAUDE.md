@@ -39,6 +39,13 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState and CampaignPerformanceView; passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
 │   │   ├── composables/
 │   │   │   └── useUploadModal.ts # App-level upload orchestration — coordinates modal refs, replacement confirmation, hasCampaigns gate; calls provide('openUploadModal')
+│   │   ├── dev-mode/               # [DEV ONLY] Centralized dev mode — remove before shipping
+│   │   │   ├── config.ts           # DEV_MODE_CONFIG — switchboard object (enabled, portfolioData.seedMockCampaigns, aiTools.analysisCycle/connectionCycle)
+│   │   │   ├── types.ts            # DevModeConfig type
+│   │   │   ├── dev-analysis-cycle.ts  # Dev AI analysis cycle (was features/ai-tools/dev/); activated when aiTools.analysisCycle=true
+│   │   │   ├── dev-connection-cycle.ts # Dev AI connection cycle (was features/ai-tools/dev/); activated when aiTools.connectionCycle=true; mutually exclusive with analysisCycle
+│   │   │   ├── dev-portfolio-data.ts   # Seeds mock campaigns into portfolioData store on app start if no portfolios exist
+│   │   │   └── index.ts            # Barrel — exports DevModeConfig, DEV_MODE_CONFIG; activateDevMode(config) orchestrates all dev cycles; deactivateDevMode() tears them down
 │   │   └── stores/
 │   │       ├── toast.store.ts  # Global toast Pinia store — Toast { title: string, message?: string, type: NotificationVariant }; addToast(title, type, message?) internal helper + 4 public helpers: showSuccessToast/showErrorToast/showWarningToast/showInfoToast; removeToast; 5s auto-dismiss
 │   │       ├── dashboardOrchestrator.store.ts # Cross-feature mediator — composes useCampaignPerformanceStore + useAiConnectionStore + useAiAnalysisStore + usePortfolioDataStore; hasCampaigns/showAiButton/showConnectedDot/aiPanelOpen computed; openAiPanel()/closeAiPanel() coordinate both AI connection panel state and AI analysis panel lifecycle; watcher maps campaign performance state into plain AiAnalysisContext and pushes via setAnalysisContext(); clears context when no active portfolio; watches portfolioData.lastEvictedId → calls aiAnalysis.clearCacheForPortfolio(id); watches aiConnection.lastConnectionEvent → shows success/error toasts only when AI panel is closed
@@ -127,6 +134,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── BellIcon.vue
 │   │   │   ├── CheckCircleIcon.vue
 │   │   │   ├── CheckIcon.vue
+│   │   │   ├── ChevronIcon.vue
 │   │   │   ├── CircleCheckIcon.vue
 │   │   │   ├── ClockIcon.vue
 │   │   │   ├── CloseIcon.vue
@@ -136,7 +144,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── FileTextIcon.vue
 │   │   │   ├── FunnelIcon.vue      # Filter/funnel icon — filled polygon; used as channel filter trigger
 │   │   │   ├── InfoIcon.vue
+│   │   │   ├── LinkIcon.vue
 │   │   │   ├── MagicWandIcon.vue
+│   │   │   ├── PlugIcon.vue
 │   │   │   ├── SlidersIcon.vue     # Sliders icon — used for Optimizer tab
 │   │   │   ├── SparklesIcon.vue
 │   │   │   ├── UploadIcon.vue
@@ -179,7 +189,7 @@ app/                        # Vue 3 + Vite project
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   └── AiToolsContent.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; [DEV ONLY] dev analysis cycle ACTIVE (BLOCK A uncommented) — comment out before shipping
+│   │   │   │   └── AiToolsContent.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── stores/
 │   │   │   │   │   ├── aiAnalysis.store.ts # Pinia store (id: 'aiAnalysis') — accepts AiAnalysisContext via setAnalysisContext(); analysisContext drives portfolioContext, filter watcher, portfolio-switch watcher, cache partitioning, evaluationDisabled, and prompt execution; no direct campaign-performance import; clearCacheForPortfolio(portfolioId) called by dashboard orchestrator on portfolio eviction; per-tab internal state (plain object): firstAnalyzeCompleted, controller, debounceTimer, cache (Map<portfolioId, Map<cacheKey, CacheEntry>>), lastVisibleCacheKey; per-tab reactive display state (ref<TabDisplay<T>>): budgetOptimizer + executiveSummary; shared: activeTab, analysisActivated; exports PortfolioContext interface + AiAnalysisContext type; stores-internal helpers: isBelowOptimizerMinimum, showOptimizerMinimumError, showCachedResult, showTokenLimitState, revertTab, onPortfolioSwitch; module-level helpers: getOtherAnalysisType, setDisplay, createTabState, TabDisplay<T> type
@@ -196,8 +206,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │       │   ├── AnalysisHeader.vue      # Shared tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext); emits: analyze; SectionHeaderLayout + MetaRow (bullet); fully props-only
 │   │   │   │       │   ├── AnalysisSection.vue     # Section layout — title prop + default slot; scoped .analysis-section
 │   │   │   │       │   ├── AnalysisResponseMeta.vue  # Response footer — props: timestamp, modelDisplayName?, notice?; MetaRow .divider.tiny.info.italic; "Generated at [time] with [model]" + disclaimer + stale-result notice
-│   │   │   │       │   ├── AnalysisState.vue       # Analysis wrapper — props: status, error, tokenLimitReached, hasResult; #loading/#state/default slots; resolves error text via ANALYSIS_ERROR_MESSAGES
-│   │   │   │       │   └── AnalysisSummary.vue     # Section header — props: title, period?, scope; #badge slot; analysis-details renders inline spans
+│   │   │   │       │   └── AnalysisState.vue       # Analysis wrapper — props: status, error, tokenLimitReached, hasResult; #loading/#state/default slots; resolves error text via ANALYSIS_ERROR_MESSAGES
 │   │   │   │       ├── budget-optimization/
 │   │   │   │       │   ├── BudgetOptimizationAnalysis.vue  # Budget Optimizer tab orchestrator; reads aiAnalysis.store only; no scoped styles
 │   │   │   │       │   └── BudgetRecommendations.vue       # Recommendations — props: recommendations[]; sortedRecommendations (high confidence first, then low execution risk); cq-container rec-card; scoped @apply flat styles
@@ -221,11 +230,10 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── index.ts
 │   │   │   │   ├── connect-provider.ts # connectProvider(provider, apiKey) → AiModel[]; applies shared rankModels step
 │   │   │   │   ├── run-provider-prompt.ts # runProviderPrompt<T>(provider, apiKey, model, prompt, signal?) → T
-│   │   │   │   ├── types.ts            # AiModelCandidate, AiModel, ModelsResponse
-│   │   │   │   ├── providers-meta.ts   # PROVIDER_LABELS, PROVIDER_HELP, PROVIDER_OPTIONS, GROQ_PROVIDER_RULES, GEMINI_PROVIDER_RULES
+│   │   │   │   ├── types/              # index.ts (barrel), types.ts (AiModelCandidate, AiModel, ModelsResponse)
 │   │   │   │   ├── gemini/             # index.ts, types.ts, api.ts, connect.ts
 │   │   │   │   ├── qroq/               # index.ts, types.ts, api.ts, connect.ts (folder name: qroq)
-│   │   │   │   └── utils/              # error-handling.ts, models-utils.ts, shared.ts, index.ts
+│   │   │   │   └── utils/              # error-handling.ts, models-utils.ts, providers-meta.ts (PROVIDER_LABELS, PROVIDER_HELP, PROVIDER_OPTIONS, GROQ_PROVIDER_RULES, GEMINI_PROVIDER_RULES), shared.ts, index.ts
 │   │   │   ├── types/
 │   │   │   │   └── index.ts            # AiProviderType, AiErrorCode (11 codes), AiConnectionError; AiAnalysisType, AiAnalysisError, AiAnalysisNoticeCode, AiAnalysisNotice
 │   │   │   ├── prompts/
@@ -233,16 +241,14 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── prompt-utils.ts
 │   │   │   │   ├── business-context.ts
 │   │   │   │   ├── executive-summary-prompt2.ts
+│   │   │   │   ├── executive-summary-prompt.ts  # Legacy — kept compilable
 │   │   │   │   ├── budget-optimization-prompt2.ts
 │   │   │   │   ├── budget-optimization-prompt.ts  # Legacy — kept compilable
 │   │   │   │   ├── model-evaluation-prompt.ts
 │   │   │   │   └── index.ts
-│   │   │   ├── mocks/
-│   │   │   │   ├── budget-optimizer-mocks.ts
-│   │   │   │   └── executive-summary-mocks.ts
-│   │   │   └── dev/                    # [DEV ONLY] Remove before shipping
-│   │   │       ├── dev-analysis-cycle.ts  # BLOCK A — currently ACTIVE in AiToolsContent.vue
-│   │   │       └── dev-connection-cycle.ts # BLOCK B — commented out; mutually exclusive with BLOCK A
+│   │   │   └── mocks/
+│   │   │       ├── budget-optimizer-mocks.ts
+│   │   │       └── executive-summary-mocks.ts
 │   │   ├── campaign-performance/       # Campaign performance feature — filters, KPIs, charts, table
 │   │   │   ├── index.ts                # Barrel — exports CampaignPerformanceView
 │   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; receives showAiButton/showConnectedDot/aiClick from DashboardPage; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)
@@ -265,7 +271,8 @@ app/                        # Vue 3 + Vite project
 │   │   │       ├── KpiCard.vue         # Single KPI metric card — props: label, value (string|null|undefined); MetaRow (.divider) wraps #secondary slot content; uses @include cq-container + @include cq-up for container-query font size scaling; scoped flat styles
 │   │   │       └── KpiBenchmarkDelta.vue # Directional delta indicator — props: current/benchmark (number|null), unit ('pp'|'pct'), lowerIsBetter?; computes rawDelta via getKpiBenchmarkRawDelta() from dashboard utils; owns tone selection, label formatting, ArrowUpIcon (rotate-180 when down); renders as MetaItem fragment inside KpiCard's MetaRow
 │   │   ├── ui/                     # Campaign-performance-specific UI primitives
-│   │   │   └── PerformanceIndicator.vue # Performance color indicator — props: value (number|null); default slot (or formatPercentage(value) fallback); color class: positive/warning/negative; .dimmed modifier reduces opacity + font-normal; scoped SCSS
+│   │   │   ├── PerformanceIndicator.vue # Performance color indicator — props: value (number|null); default slot (or formatPercentage(value) fallback); color class: positive/warning/negative; .dimmed modifier reduces opacity + font-normal; scoped SCSS
+│   │   │   └── index.ts            # Barrel — exports PerformanceIndicator
 │   │   ├── utils/
 │   │   │   ├── campaign-performance-sorting.ts # Named sort helpers — sortCampaignsByRoiDesc, sortChannelsByRoiDesc, sortCampaignsByBudgetDesc, sortChannelsByEfficiencyGapImpactDesc; use shared sortByValueDesc()
 │   │   │   └── kpi-benchmark-delta.ts  # getKpiBenchmarkRawDelta(current, benchmark, unit, lowerIsBetter?) → { rawDelta, direction }; KpiBenchmarkDeltaUnit type
@@ -306,6 +313,7 @@ app/                        # Vue 3 + Vite project
 │   │       ├── components/
 │   │       │   ├── index.ts        # Barrel — exports UploadDataModal, ReplaceDataModal, TransferActions
 │   │       │   ├── UploadDataModal.vue     # Self-contained modal (was UploadModal) — view: 'form'|'row-errors'|'duplicate-rows'; open/close/parse/store; exposes only open(); sequential error handling; bidirectional navigation; handleProceedFromDuplicates merges validCampaigns + selected duplicate resolutions; uses usePortfolioDataStore from @/shared/portfolio-data
+│   │       │   ├── UploadDataForm.vue      # Upload form body — FileDropzone + file type/size validation; used inside UploadDataModal
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps Modal; uses ModalBody + ModalFooter; emits confirm/close
 │   │       │   ├── TransferActions.vue     # Download Template + Upload CSV button pair (was FileActions) — emits upload; uses useDownloadTemplate; responsive stacking at <480px
 │   │       │   └── data-validation/
@@ -320,7 +328,7 @@ app/                        # Vue 3 + Vite project
 │   │       │       └── review-duplications/
 │   │       │           ├── ReviewDuplicatedCampaigns.vue # Multi-root (body + ModalFooter) — uses DuplicateSummary (variant="resolve") + CampainDuplicationsTable; resolve-indicator shows resolvedCount/total; emits proceed([Campaign[]]); scoped @apply styles
 │   │       │           ├── CampainDuplicationsTable.vue # Sortable grouped duplicate table — props: duplicateGroups, requiredSelection?; selection Map<campaignName, rowId>; sort via useSort + sortByValue(); uses TableGroupHeaderRow + TableSelectableRow; applies class="info" to RadioItem for info-colored radios; 8-column table
-│   │       │           ├── DuplicationGroupHeader.vue # Group header content — props: campaignName, rowCount, isSelected, needsAttentionMode; emits clear; Badge states (success "Resolved" / danger "Needs Attention" / warning "Pending"); destructive small Button "Clear selection" when isSelected
+│   │       │           ├── DuplicationsHeader.vue # Group header content — props: campaignName, rowCount, isSelected, needsAttentionMode; emits clear; Badge states (success "Resolved" / danger "Needs Attention" / warning "Pending"); destructive small Button "Clear selection" when isSelected
 │   │       │           └── index.ts
 │   │       ├── composables/
 │   │       │   └── useDownloadTemplate.ts  # Shared composable — downloadCsv + toast error fallback
@@ -348,13 +356,11 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── container-queries.scss # SCSS mixin library — numeric $container-sizes scale (cq-220 through cq-1536); cq-container(), cq-up(), cq-down(), cq-between() mixins; globally injected via Vite additionalData
 │   │   ├── components/
 │   │   │   ├── index.scss
-│   │   │   ├── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
-│   │   │   └── _table.scss         # @layer components — .data-table, .data-table-header, .data-table-row, .data-table-cell
+│   │   │   └── _forms.scss         # @layer components — .form, .field, .field-label, .form-control, .input-error, .field-errors, .field-error, .field-error-hint
 │   │   └── utilities/
 │   │       ├── index.scss
 │   │       ├── _connected-dot.scss # .connected-dot::before pseudo-element (w-2 h-2 rounded-full bg-success shadow-connection)
 │   │       ├── _inline-action-float.scss # .inline-action-float — float-right ml-2 mb-1; action must render before the prose it wraps
-│   │       ├── _roi.scss           # .roi-text with .positive/.warning/.negative modifiers
 │   │       └── _scrollbar.scss     # scrollbar-colors($thumb, $track, $thumb-hover) mixin; .scrollbar-stable, .scrollbar-stable-both, .scrollbar-on-surface, .scrollbar-info-on-surface (info-palette scrollbars for table areas)
 │   └── main.ts                 # Entry point — registers Pinia, Router, calls registerCharts(); imports from @/app/App.vue + @/app/router; global style: @/styles/index.scss
 ├── index.html                  # data-theme="dark" — dark mode active before JS runs

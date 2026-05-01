@@ -11072,3 +11072,41 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve existing notification behavior — success/error toasts still only appear when the AI tools panel is closed.
 - Keep provider label formatting outside the raw connection store — display copy now lives with the app-level reaction rather than the connection state mutation.
 - Avoid new dependencies from AI tools to app stores — the dependency now points from app orchestrator to feature stores, not the other way around.
+
+## [#528] Centralize Dev Mode Wiring
+**Type:** refactor
+
+**Summary:** Moved all active dev-mode behavior into the app-level `dev-mode` module, removed dev activation from feature/shared stores and feature components, and fixed the Card heading selector that was leaking Vue-specific syntax into compiled CSS.
+
+**Brainstorming:** The app is moving toward cleaner feature boundaries: campaign performance owns campaign UI/state, AI tools owns AI connection/analysis behavior, portfolio data owns uploaded portfolio entries, and the dashboard orchestrator coordinates app-level cross-feature wiring. Dev behavior cuts across those same boundaries, so it should not live inside individual feature components or shared stores. A centralized `app/dev-mode` module gives one place to enable mock portfolio data, AI analysis cycles, and AI connection cycles while keeping the feature stores free from dev-mode decisions. The AI feature still needs small override seams for external provider calls, but those are generic app-level extension points rather than dev-mode config.
+
+**Prompt:** Centralize all dev-mode logic so it can be configured from one `dev-mode` folder, enable dev behavior from the dashboard orchestrator, clean dev references from stores/components, add comments to the remaining override hooks, and fix the `:deep(h5)` selector warning in `Card.vue`.
+
+**What was built:**
+- `app/src/app/dev-mode/config.ts` — added the central dev-mode switchboard with `enabled`, `portfolioData.seedMockCampaigns`, `aiTools.analysisCycle`, and `aiTools.connectionCycle` flags.
+- `app/src/app/dev-mode/types.ts` — added the `DevModeConfig` type that describes the centralized dev-mode configuration shape.
+- `app/src/app/dev-mode/index.ts` — added `activateDevMode(config)`; deactivates existing dev modes before applying config; seeds mock portfolio data when enabled; activates either the AI analysis cycle or AI connection cycle; guards against enabling both AI cycles at the same time.
+- `app/src/app/dev-mode/dev-analysis-cycle.ts` — moved the AI analysis dev cycle from `features/ai-tools/dev`; keeps mock AI responses and error cycling in app-level dev-mode; uses `setAnalysisPromptRunnerOverride` to replace external prompt calls during dev mode.
+- `app/src/app/dev-mode/dev-connection-cycle.ts` — moved the AI connection error cycle from `features/ai-tools/dev`; uses `setConnectProviderOverride` to replace external provider connection calls during dev mode.
+- `app/src/app/dev-mode/dev-portfolio-data.ts` — added app-level mock portfolio seeding using `MOCK_CAMPAINS`; skips seeding when portfolio data already exists.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — imports `DEV_MODE_CONFIG` and `activateDevMode`; activates dev mode from the app-level orchestrator with a short comment pointing future changes to `app/dev-mode/config.ts`.
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — removed dev-cycle imports, lifecycle hooks, and commented dev-mode blocks so AI tools content is no longer responsible for activating dev behavior.
+- `app/src/shared/portfolio-data/portfolioData.store.ts` — removed `DEV_MOCK_CAMPAIGNS`, the direct `MOCK_CAMPAINS` import, and automatic mock portfolio seeding from the shared store.
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — renamed `setDevConnectOverride` to `setConnectProviderOverride`; added a comment explaining it is an app-level extension point for replacing external provider calls and should not be called directly by feature code.
+- `app/src/features/ai-tools/ai-connection/stores/index.ts` — updated the store barrel to export `setConnectProviderOverride`.
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — renamed `setDevAnalysisOverride` to `setAnalysisPromptRunnerOverride`; added a comment explaining it is an app-level extension point for replacing external prompt calls and should not be called directly by feature code.
+- `app/src/ui/card/Card.vue` — replaced the unscoped `:deep(h5)` selector with a normal `h5` descendant selector inside `.card.secondary`, removing the Lightning CSS warning while preserving the secondary card heading style.
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — removed after moving the implementation to `app/src/app/dev-mode/dev-analysis-cycle.ts`.
+- `app/src/features/ai-tools/dev/dev-connection-cycle.ts` — removed after moving the implementation to `app/src/app/dev-mode/dev-connection-cycle.ts`.
+- `npm run build` — completed successfully with no remaining Lightning CSS warning from `Card.vue`.
+
+**Key decisions & why:**
+- Put dev-mode under `app` — dev behavior coordinates multiple features, so it belongs to application wiring rather than any single feature.
+- Keep the dashboard orchestrator as the activation point — the orchestrator already composes campaign performance, AI tools, portfolio data, and app feedback, so it is the right place to apply app-level dev configuration.
+- Keep config separate from implementation — `config.ts` exposes the dev knobs, while the individual dev cycle files own the mock behavior.
+- Remove dev activation from `AiToolsContent` — feature content should render AI UI, not decide whether mock cycles are active.
+- Remove mock seeding from `portfolioData.store.ts` — shared data stores should not contain environment-specific behavior or automatic dev data decisions.
+- Keep generic override seams in AI internals — replacing external provider/prompt calls still requires a hook, but the hooks are neutral extension points and only `app/dev-mode` should use them.
+- Guard against conflicting AI dev cycles — analysis cycle auto-connects while connection cycle tests failed connections, so enabling both at once would create confusing behavior.
+- Leave `useDownloadTemplate` sample data untouched — downloading a sample CSV is product/sample behavior, not automatic dev-mode activation.
+- Use a normal Card selector — `Card.vue` styles are not scoped, so `:deep()` was unnecessary and caused the compiled CSS warning.

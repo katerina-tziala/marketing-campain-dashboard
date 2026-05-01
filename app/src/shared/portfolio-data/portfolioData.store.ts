@@ -5,9 +5,6 @@ import type { Channel } from '@/shared/types/channel'
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
 import { buildChannelMap } from '@/shared/utils/campaign-channel'
 import { computePortfolioAnalysis } from '@/shared/portfolio-analysis'
-// TODO: DEV MOCK — remove these when reverting DEV_MOCK_CAMPAIGNS
-import { MOCK_CAMPAINS } from '@/shared/data/MOCK_CAMPAIN_DATA'
-const DEV_MOCK_CAMPAIGNS = true
 
 export interface PortfolioEntry {
   id: string
@@ -61,11 +58,6 @@ export const usePortfolioDataStore = defineStore('portfolioData', () => {
       portfolios.value.splice(index, 1)
       lastEvictedId.value = id
     }
-  }
-
-  // TODO: DEV MOCK — remove this block when reverting DEV_MOCK_CAMPAIGNS
-  if (DEV_MOCK_CAMPAIGNS) {
-    addPortfolio(MOCK_CAMPAINS, 'Mock Campaign Data (Dev)')
   }
 
   return {

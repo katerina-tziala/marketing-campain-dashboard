@@ -1,4 +1,4 @@
 export {
-  setDevConnectOverride,
+  setConnectProviderOverride,
   useAiConnectionStore,
 } from './aiConnection.store'
