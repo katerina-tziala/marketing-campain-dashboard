@@ -12226,3 +12226,84 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ui/` not `shared/` — matches campaign-performance naming (`features/campaign-performance/ui/`); "shared" implies cross-feature sharing which is misleading here.
 - Tab folders at `ai-analysis/` root not inside `components/` — same pattern as `charts/` in campaign-performance; `components/` becomes a thin shell that only owns the orchestrator.
 - Barrel per tab folder — consistent with campaign-performance; consumers import the public tab component without knowing its internal structure.
+
+
+## [574] Extract store-private utils from aiAnalysis.store.ts
+**Type:** refactor
+
+**Summary:** Moved store-private pure helpers out of the store body into a sibling `aiAnalysis.store.utils.ts` file, separating data/logic definitions from reactive store code.
+
+**Brainstorming:** The store had several definitions that belonged outside the `defineStore` body: `CacheEntry` and `TabDisplay<T>` types, `DEFAULT_STATE` constant, `createTabState()` factory, and `getOtherAnalysisType()` lookup. None of these close over store refs or depend on reactivity — they are pure types and functions. Extracting them to a sibling `.utils.ts` file (store-private, not barrel-exported) reduces store file noise and makes the reactive store boundary clearer. A separate `.utils.ts` was preferred over adding to `.config.ts` because the config file is for constants; the utils file holds types and functions.
+
+**Prompt:** Extract CacheEntry, TabDisplay<T>, DEFAULT_STATE, createTabState, and getOtherAnalysisType from aiAnalysis.store.ts into a new sibling aiAnalysis.store.utils.ts file. Keep both files store-private (not exported from the stores/ barrel). Fix any resulting import errors in the store.
+
+**What changed:**
+- `stores/aiAnalysis.store.utils.ts` — new file; exports `CacheEntry`, `TabDisplay<T>`, `DEFAULT_STATE`, `createTabState()`, `getOtherAnalysisType()`
+- `stores/aiAnalysis.store.ts` — removed inlined type/function definitions; imports them from `./aiAnalysis.store.utils`; retained `AsyncStatus` and `AiAnalysisNotice` imports needed by `setDisplay` signature
+
+**Key decisions & why:**
+- Separate `.utils.ts` not `.config.ts` — config holds scalar constants; utils holds types and functions; mixing them would blur the distinction.
+- Store-private only — neither file is exported from `stores/index.ts`; consumers never need these internal shapes directly.
+- `getOtherAnalysisType` stays store-private (in utils, not `ai-analysis/utils/`) — it has exactly one call site inside the store and no external consumers.
+
+
+## [575] Extract AnalysisCache class from aiAnalysis store
+**Type:** refactor
+
+**Summary:** Extracted cache logic into an `AnalysisCache` class in a new `utils/response-cache/` folder, making key generation internal and removing raw Map manipulation from the store.
+
+**Brainstorming:** The store had raw Map manipulation for cache get/set/delete spread across multiple functions, plus `getCacheKey`/`getCurrentCacheKey` exposed as store-level concerns. Encapsulating this in a class gives a cleaner store surface and hides the key generation entirely. The class takes getter functions for `channelIds` and `provider` in its constructor so the current key is always derived lazily from live context — no `setContext` calls needed. `getByKey` was added alongside `get` to support `revertTab`, which needs to look up by the last visible key rather than the current one.
+
+**Prompt:** Create an AnalysisCache class in utils/response-cache/ that encapsulates cache storage and key generation. The constructor takes getter functions for channelIds and provider. Key generation stays internal (not exposed to the store). Move getCacheKey from utils/cache.ts into response-cache/cache-key.ts. Update the store to instantiate one AnalysisCache per tab, removing getCacheEntry, setCacheEntry, getCurrentCacheKey, and raw Map access.
+
+**What changed:**
+- `utils/response-cache/cache-key.ts` — getCacheKey moved here from utils/cache.ts; internal to the module
+- `utils/response-cache/AnalysisCache.ts` — new class; CacheEntry type lives here; constructor takes getter fns; exposes get/getByKey/set/deletePortfolio/clear/lastVisibleCacheKey/key()
+- `utils/response-cache/index.ts` — barrel exporting AnalysisCache and CacheEntry
+- `utils/index.ts` — replaced getCacheKey export with AnalysisCache + CacheEntry from response-cache barrel
+- `utils/cache.ts` — deleted
+- `stores/aiAnalysis.store.utils.ts` — removed CacheEntry and cache/lastVisibleCacheKey from createTabState()
+- `stores/aiAnalysis.store.ts` — replaced getCacheEntry/setCacheEntry/getCurrentCacheKey with per-tab AnalysisCache instances; handleRequestError now receives the entry directly instead of a cacheKey string
+
+**Key decisions & why:**
+- Getter functions in constructor, not setContext — the class always reads the latest context without the store needing to sync it manually.
+- getByKey separate from get — revertTab needs lookup by the last visible key, which may differ from the current key when context has changed.
+- CacheEntry lives in AnalysisCache.ts not store.utils.ts — it is a cache data shape, not a store display shape; co-locating with the class that owns it is more coherent.
+- cache-key.ts stays internal to response-cache/ — nothing outside the module needs to generate a cache key directly.
+
+
+## [576] Internalize lastVisibleCacheKey tracking in AnalysisCache
+**Type:** refactor
+
+**Summary:** Moved `lastVisibleCacheKey` tracking into `AnalysisCache.get()` and `set()` so the store no longer manages it directly.
+
+**Brainstorming:** `lastVisibleCacheKey` was being assigned in the store after every `get` hit and every `set` call — but the cache already has all the information needed to track it internally. Moving the assignment into `get()` (on hit) and `set()` (on write) means the store never touches `lastVisibleCacheKey` directly. `clear()` already resets it. `getByKey()` intentionally does not update it — it is a lookup-only call used by `revertTab`. Logic is unchanged.
+
+**Prompt:** Make AnalysisCache.get() auto-update lastVisibleCacheKey on a cache hit, and set() auto-update it on write. Remove all cache.lastVisibleCacheKey assignments from the store.
+
+**What changed:**
+- `utils/analysis-cache/AnalysisCache.ts` — get() updates lastVisibleCacheKey on hit; set() updates it after write
+- `stores/aiAnalysis.store.ts` — removed three manual lastVisibleCacheKey assignments; showCachedResult simplified
+
+**Key decisions & why:**
+- getByKey() does not update lastVisibleCacheKey — it is a targeted lookup for revertTab, not a display-path call.
+- clear() already resets lastVisibleCacheKey — onPortfolioSwitch null-reset removed from store as a result.
+
+
+## [577] Remove getter injection from AnalysisCache — pass context at call time
+**Type:** refactor
+
+**Summary:** Replaced constructor getter functions in AnalysisCache with explicit channelIds/provider parameters on get() and set(), making the class a pure data structure with no external dependencies.
+
+**Brainstorming:** The constructor getters were a form of dependency injection that gave the class implicit access to store state. Simpler alternative: the store already has channelIds and provider in scope at every call site, so passing them explicitly makes the data flow obvious and removes the class's dependency on closures entirely. The class becomes a plain Map wrapper with no knowledge of Vue reactivity. Also removed the now-redundant key() public method and keyFor() private method — getCacheKey is called directly in get() and set().
+
+**Prompt:** Remove getChannelIds/getProvider constructor parameters from AnalysisCache. Add channelIds and provider as explicit parameters to get() and set(). Remove the key() public method. Update all store call sites to pass the values explicitly.
+
+**What changed:**
+- `utils/analysis-cache/AnalysisCache.ts` — no constructor; get/set now take (portfolioId, channelIds, provider, ...); key() and keyFor() removed; getCacheKey called inline
+- `stores/aiAnalysis.store.ts` — caches instantiated with new AnalysisCache(); added getChannelIds() helper; all cache.get/set call sites updated to pass channelIds and provider explicitly
+
+**Key decisions & why:**
+- Explicit parameters over injected getters — makes data flow visible at the call site; the class has no implicit state dependencies.
+- getChannelIds() store helper added — avoids repeating the null-coalesce inline at every call site.
+- In executeAnalysis, context.selectedChannelIds and provider are passed directly since both are already destructured from context/aiStore at that point.
