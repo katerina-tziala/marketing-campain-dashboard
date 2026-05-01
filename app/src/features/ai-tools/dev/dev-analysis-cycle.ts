@@ -3,7 +3,7 @@
 import type { AiAnalysisType, AiErrorCode } from '@/features/ai-tools/types'
 import type { AiModel } from '@/features/ai-tools/providers/types'
 import type { AnalysisResponse } from '@/features/ai-tools/ai-analysis/types'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useAiAnalysisStore } from '@/features/ai-tools/ai-analysis/stores'
 import { BUDGET_OPTIMIZER_MOCKS } from '@/features/ai-tools/mocks/budget-optimizer-mocks'
 import { EXECUTIVE_SUMMARY_MOCKS } from '@/features/ai-tools/mocks/executive-summary-mocks'

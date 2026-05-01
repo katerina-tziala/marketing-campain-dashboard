@@ -4,14 +4,18 @@ import { ref, computed } from 'vue'
 import type { AiProviderType, AiConnectionError } from '@/features/ai-tools/types'
 import { getErrorCode } from '@/features/ai-tools/ai-connection/utils/error-handling'
 import { type AiModel, connectProvider, getAllModelsLimitReached, getModelById, getNextAvailableMode } from '@/features/ai-tools/providers'
-import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
-import { useToastStore } from '@/app/stores/toast.store'
 
 // [DEV ONLY] — cleared by setDevConnectOverride(null) on deactivate
 type DevConnectFn = (provider: AiProviderType) => Promise<AiModel[]>
 let _devConnectOverride: DevConnectFn | null = null
 export function setDevConnectOverride(fn: DevConnectFn | null): void {
   _devConnectOverride = fn
+}
+
+export type AiConnectionEvent = {
+  id: number
+  status: 'success' | 'error'
+  provider: AiProviderType
 }
 
 export const useAiConnectionStore = defineStore('aiConnection', () => {
@@ -23,9 +27,9 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
   const models = ref<AiModel[]>([])
   const selectedModel = ref<AiModel | null>(null)
   const aiPanelOpen = ref(false)
+  const lastConnectionEvent = ref<AiConnectionEvent | null>(null)
 
   async function connect(providerType: AiProviderType, APIkey: string): Promise<void> {
-    const toastStore = useToastStore()
     isConnecting.value = true
     connectionError.value = null
     try {
@@ -37,14 +41,18 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
       models.value = providerModels
       selectedModel.value = providerModels[0]
       isConnected.value = true
-      if (!aiPanelOpen.value) {
-        toastStore.showSuccessToast(`Connected to ${PROVIDER_LABELS[providerType]}`)
+      lastConnectionEvent.value = {
+        id: Date.now(),
+        status: 'success',
+        provider: providerType,
       }
     } catch (error) {
       const code = getErrorCode(error)
       connectionError.value = { code, provider: providerType }
-      if (!aiPanelOpen.value) {
-        toastStore.showErrorToast(`Connection to ${PROVIDER_LABELS[providerType]} failed`, 'Reopen the panel for details')
+      lastConnectionEvent.value = {
+        id: Date.now(),
+        status: 'error',
+        provider: providerType,
       }
     } finally {
       isConnecting.value = false
@@ -101,6 +109,7 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
     selectedModelLimitReached,
     allModelsLimitReached,
     aiPanelOpen,
+    lastConnectionEvent,
     evaluationDisabled,
     // actions
     connect,

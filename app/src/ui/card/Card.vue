@@ -36,7 +36,7 @@
     bg-surface
     border-darker;
 
-  :slotted(h5) {
+  :deep(h5) {
     @apply font-medium text-typography-primary-light leading-5;
   }
 }

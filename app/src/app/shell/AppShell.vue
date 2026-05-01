@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { provide, ref } from "vue";
 import { Button, UploadIcon, ToastContainer } from "@/ui";
-import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
-import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
+import { useDashboardOrchestratorStore } from "@/app/stores";
 import { UploadDataModal, ReplaceDataModal } from "@/features/data-transfer";
 import { useUploadModal } from "@/app/composables/useUploadModal";
 import AiToolsDrawer from "./AiToolsDrawer.vue";
 
-const aiStore = useAiConnectionStore();
 const dashboard = useDashboardOrchestratorStore();
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
 const {
@@ -43,7 +41,7 @@ provide("openAiPanel", dashboard.openAiPanel);
       </main>
       <!-- AI drawer — sibling to main only, so header stays full width -->
       <AiToolsDrawer
-        :open="aiStore.aiPanelOpen"
+        :open="dashboard.aiPanelOpen"
         @close="dashboard.closeAiPanel"
       />
     </div>

@@ -7,8 +7,7 @@ import type {
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
 } from '@/features/ai-tools/ai-analysis/types'
-import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
-import { usePortfolioDataStore } from '@/shared/portfolio-data'
+import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { runAnalysisPrompt } from '@/features/ai-tools/ai-analysis/utils/analysis-prompt'
 import { getCacheKey } from '@/features/ai-tools/ai-analysis/utils/utils'
 import type { PortfolioAnalysis } from '@/shared/portfolio-analysis'
@@ -78,7 +77,6 @@ export interface AiAnalysisContext extends PortfolioContext {
 
 export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const aiStore = useAiConnectionStore()
-  const portfolioData = usePortfolioDataStore()
 
   // ── Shared state ──────────────────────────────────────────────────────
   const activeTab = ref<AiAnalysisType>('executiveSummary')
@@ -393,6 +391,12 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     }
   }
 
+  function clearCacheForPortfolio(portfolioId: string): void {
+    for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
+      getTabState(tab).cache.delete(portfolioId)
+    }
+  }
+
   // ── Panel open/close ──────────────────────────────────────────────────
 
   function onPanelOpen(): void {
@@ -458,17 +462,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     () => onPortfolioSwitch(),
   )
 
-  // Watch portfolio eviction — remove evicted portfolio's cache entries
-  watch(
-    () => portfolioData.lastEvictedId,
-    (id) => {
-      if (!id) return
-      for (const tab of ['budgetOptimizer', 'executiveSummary'] as AiAnalysisType[]) {
-        getTabState(tab).cache.delete(id)
-      }
-    },
-  )
-
   return {
     // Shared
     activeTab,
@@ -489,5 +482,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     onPanelOpen,
     onPanelClose,
     clearStateForDisconnect,
+    clearCacheForPortfolio,
   }
 })

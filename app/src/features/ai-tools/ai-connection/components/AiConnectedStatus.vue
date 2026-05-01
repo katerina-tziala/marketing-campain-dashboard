@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores/aiConnection.store";
+import { useAiConnectionStore } from "@/features/ai-tools/ai-connection/stores";
 import { useAiAnalysisStore } from "@/features/ai-tools/ai-analysis/stores";
 import { PROVIDER_LABELS } from "@/features/ai-tools/providers/utils/providers-meta";
 import { Button } from "@/ui";

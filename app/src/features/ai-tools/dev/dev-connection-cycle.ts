@@ -2,7 +2,7 @@
 
 import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types'
 import type { AiModel } from '@/features/ai-tools/providers/types'
-import { setDevConnectOverride } from '@/features/ai-tools/ai-connection/stores/aiConnection.store'
+import { setDevConnectOverride } from '@/features/ai-tools/ai-connection/stores'
 
 // ── Sequence ──────────────────────────────────────────────────────────────────
 //

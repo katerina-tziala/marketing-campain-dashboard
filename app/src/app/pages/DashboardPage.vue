@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject } from "vue";
-import { useDashboardOrchestratorStore } from "@/app/stores/dashboardOrchestrator.store";
+import { useDashboardOrchestratorStore } from "@/app/stores";
 import { CampaignPerformanceView } from "@/features/campaign-performance";
 import EmptyState from "@/features/campaign-performance/components/EmptyState.vue";
 

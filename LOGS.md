@@ -11011,3 +11011,64 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep the dot visually explicit — the header status dot now has a real child element, making it less fragile than pseudo-element rendering on an empty span.
 - Use Tailwind base layers for global styling — reset, app sizing, and heading defaults now live in the expected cascade layer.
 - Preserve current functionality while preparing layout boundaries — the current campaign performance view remains the visible dashboard experience while leaving a clearer path for future dashboard modes.
+
+## [#526] Decouple AI Analysis Store from Portfolio Data
+**Type:** refactor
+
+**Summary:** Tightened store ownership boundaries by removing the direct portfolio-data dependency from AI analysis, routing portfolio lifecycle cleanup through the dashboard orchestrator, and adding store barrel exports for cleaner feature/app imports.
+
+**Brainstorming:** The current store split is close to the desired feature-based architecture: campaign performance owns campaign filters and derived campaign analysis, portfolio data owns uploaded portfolio entries, AI connection owns provider/session state, AI analysis owns request/cache/display state, and the dashboard orchestrator mediates between page-level features. The remaining architectural smell was that `aiAnalysis.store.ts` still imported `portfolioData.store.ts` only to watch portfolio eviction and clean cached AI results. That made AI analysis aware of shared portfolio storage even though the feature should receive plain analysis context from the app layer. Moving eviction handling into the dashboard orchestrator keeps cross-feature lifecycle wiring at the app boundary.
+
+**Prompt:** Fix the remaining store architecture issues without breaking functionality, while leaving `DEV_MOCK_CAMPAIGNS` untouched.
+
+**What was built:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — removed the direct `usePortfolioDataStore` import and the internal `lastEvictedId` watcher; added `clearCacheForPortfolio(portfolioId)` so external orchestration can clear cached AI analysis for an evicted portfolio without AI analysis reading portfolio data directly.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — imported `usePortfolioDataStore`; watches `portfolioData.lastEvictedId`; calls `aiAnalysis.clearCacheForPortfolio(id)` when a portfolio is removed; exposes `aiPanelOpen` as a computed shell-facing value.
+- `app/src/app/shell/AppShell.vue` — removed the direct `useAiConnectionStore` dependency; now reads `dashboard.aiPanelOpen` from the orchestrator when wiring `AiToolsDrawer`.
+- `app/src/app/stores/index.ts` — added an app stores barrel for `useDashboardOrchestratorStore` and `useToastStore`.
+- `app/src/features/ai-tools/ai-connection/stores/index.ts` — added an AI connection stores barrel for `useAiConnectionStore` and `setDevConnectOverride`.
+- `app/src/features/campaign-performance/stores/index.ts` — added a campaign performance stores barrel for `useCampaignPerformanceStore`.
+- `app/src/app/pages/DashboardPage.vue` — updated the orchestrator import to use the new app stores barrel.
+- `app/src/features/campaign-performance/CampaignPerformanceView.vue` — updated the campaign performance store import to use the feature store barrel.
+- `app/src/features/ai-tools/components/AiToolsContent.vue` — updated the AI connection store import to use the feature store barrel.
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — updated the AI connection store import to use the feature store barrel.
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — updated the AI connection store import to use the feature store barrel.
+- `app/src/features/ai-tools/dev/dev-analysis-cycle.ts` — updated the dev AI connection store import to use the feature store barrel.
+- `app/src/features/ai-tools/dev/dev-connection-cycle.ts` — updated the dev connection override import to use the feature store barrel.
+- `app/src/features/data-transfer/composables/useDownloadTemplate.ts` — updated the toast store import to use the app stores barrel.
+- `app/src/ui/toast/ToastContainer.vue` — updated the toast store import to use the app stores barrel.
+- `app/src/shared/portfolio-data/portfolioData.store.ts` — intentionally left `DEV_MOCK_CAMPAIGNS` unchanged.
+- `npm run build` — completed successfully; the existing Lightning CSS warning about `.card.secondary :slotted(h5)` still appears.
+
+**Key decisions & why:**
+- Keep AI analysis context-driven — AI analysis now depends on explicit context/actions instead of reading portfolio storage directly.
+- Put cross-feature cleanup in the orchestrator — portfolio eviction is shared app lifecycle, so the app-level mediator is the right place to translate it into AI cache cleanup.
+- Keep request/cache behavior inside AI analysis — the orchestrator does not know how AI analysis caches tabs; it only asks the feature to clear a portfolio by id.
+- Keep campaign performance as the owner of filters and campaign analysis — the orchestrator continues to read campaign performance state and push plain context into AI analysis.
+- Let `AppShell` depend on the orchestrator instead of AI connection — shell-level AI drawer state now flows through the same app boundary as the rest of the dashboard/AI coordination.
+- Add store barrels — feature and app consumers now import stores through stable folder entry points instead of reaching into concrete store filenames.
+- Preserve dev mock campaigns — the requested dev mock data path was not changed.
+- Preserve runtime behavior — AI panel open/close, analysis context sync, portfolio eviction cache cleanup, data transfer toasts, and campaign performance rendering continue to use the same functionality with cleaner ownership boundaries.
+
+## [#527] Move AI Connection Toasts to Dashboard Orchestrator
+**Type:** refactor
+
+**Summary:** Removed app-level toast side effects from the AI connection store and moved connection success/error notification handling into the dashboard orchestrator.
+
+**Brainstorming:** The AI connection store should own provider state, API key state, model selection, connection status, and connection errors. Toasts are app chrome: they depend on shell context such as whether the AI tools panel is currently open. Keeping that notification decision inside `aiConnection.store.ts` made the feature store aware of app feedback behavior. The cleaner boundary is for AI connection to emit a plain connection result event, while the dashboard orchestrator decides how the app should react to that event.
+
+**Prompt:** Move the AI connection toast logic into the orchestrator without creating new feature-to-app dependencies.
+
+**What was built:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — removed `useToastStore` and `PROVIDER_LABELS` imports; added `AiConnectionEvent`; added `lastConnectionEvent`; updated `connect()` so success and failure update connection state and publish a plain success/error event instead of showing toasts directly.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — imported `useToastStore` and `PROVIDER_LABELS`; watches `aiConnection.lastConnectionEvent`; preserves the existing rule that connection toasts are only shown when the AI panel is closed; shows the same success and error toast copy as before.
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — normalized `aiPanelOpen` into a named computed value before returning it to shell consumers.
+- `npm run build` — completed successfully; Lightning CSS still reports a selector warning for the currently modified `Card.vue` `:deep(h5)` rule.
+
+**Key decisions & why:**
+- Keep `aiConnection.store.ts` focused on AI connection state — it no longer imports app toast infrastructure or provider labels just to render notification copy.
+- Use a plain event instead of calling the orchestrator from the feature — `AiConnectionForm` can keep depending only on the AI connection store, avoiding a feature-to-app dependency.
+- Let the dashboard orchestrator own app feedback — it is already the composition point for AI connection state, AI panel state, and dashboard shell behavior.
+- Preserve existing notification behavior — success/error toasts still only appear when the AI tools panel is closed.
+- Keep provider label formatting outside the raw connection store — display copy now lives with the app-level reaction rather than the connection state mutation.
+- Avoid new dependencies from AI tools to app stores — the dependency now points from app orchestrator to feature stores, not the other way around.
