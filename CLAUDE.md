@@ -37,9 +37,12 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── AppShell.vue    # Top-level layout — header (Upload CSV button in floated action container, gradient title, adjusted padding/min-height), shell-body (main + drawer); provides openUploadModal via provide(); wires panel open/close through dashboardOrchestrator.store; uses useUploadModal from @/app/composables
 │   │   │   └── AiToolsDrawer.vue # App-specific drawer adapter — uses ResponsiveDrawer from @/ui; owns AI title, SparklesIcon, close label, open prop, close emit, and AiTools composition
 │   │   ├── pages/
-│   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState and CampaignPerformanceView; passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
+│   │   │   └── DashboardPage.vue # Page-level orchestrator — reads dashboardOrchestrator.store; directly switches between EmptyState (from @/features/data-transfer) and CampaignPerformanceView based on hasCampaigns; passes AI button state from orchestrator; wires openAiPanel through orchestrator; leaves room for future overview/period comparison switching
 │   │   ├── composables/
-│   │   │   └── useUploadModal.ts # App-level upload orchestration — coordinates modal refs, replacement confirmation, hasCampaigns gate; calls provide('openUploadModal')
+│   │   │   └── useUploadModal.ts # App-level upload orchestration — manages modal open/close, replacement confirmation, hasCampaigns gate; handles upload completion via handleUploadComplete (calls portfolioData.loadPortfolio); provides openUploadModal via inject
+│   │   ├── utils/
+│   │   │   ├── map-analysis-context.ts # mapAnalysisContext(campaignPerformance) → AiAnalysisContext — transforms campaign performance state into analysis context for feature isolation
+│   │   │   └── index.ts               # Barrel — exports mapAnalysisContext
 │   │   ├── dev-mode/               # [DEV ONLY] Centralized dev mode — remove before shipping
 │   │   │   ├── config.ts           # DEV_MODE_CONFIG — switchboard object (enabled, portfolioData.seedMockCampaigns, aiTools.analysisCycle/connectionCycle)
 │   │   │   ├── types.ts            # DevModeConfig type
@@ -49,7 +52,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── index.ts            # Barrel — exports DevModeConfig, DEV_MODE_CONFIG; activateDevMode(config) orchestrates all dev cycles; deactivateDevMode() tears them down
 │   │   └── stores/
 │   │       ├── toast.store.ts  # Global toast Pinia store — Toast { title: string, message?: string, type: NotificationVariant }; addToast(title, type, message?) internal helper + 4 public helpers: showSuccessToast/showErrorToast/showWarningToast/showInfoToast; removeToast; 5s auto-dismiss
-│   │       ├── dashboardOrchestrator.store.ts # Cross-feature mediator — composes useCampaignPerformanceStore + useAiConnectionStore + useAiAnalysisStore + usePortfolioDataStore; hasCampaigns/showAiButton/showConnectedDot/aiPanelOpen computed; openAiPanel()/closeAiPanel() coordinate both AI connection panel state and AI analysis panel lifecycle; watcher maps campaign performance state into plain AiAnalysisContext and pushes via setAnalysisContext(); clears context when no active portfolio; watches portfolioData.lastEvictedId → calls aiAnalysis.clearCacheForPortfolio(id); watches aiConnection.lastConnectionEvent → shows success/error toasts only when AI panel is closed
+│   │       ├── dashboardOrchestrator.store.ts # Cross-feature mediator — composes useCampaignPerformanceStore + useAiConnectionStore + useAiAnalysisStore + usePortfolioDataStore; hasCampaigns/showAiButton/showConnectedDot/aiPanelOpen computed; openAiPanel()/closeAiPanel() coordinate both AI connection panel state and AI analysis panel lifecycle; onAnalysisContextChange(context) maps campaign performance state into plain AiAnalysisContext and pushes via setAnalysisContext(); onPortfolioEvicted(id) clears analysis cache when portfolio deleted; onConnectionEventChange(event) shows success/error toasts only when AI panel is closed; uses mapAnalysisContext(campaignPerformance) to derive analysis context in watcher
 │   │       ├── portfolioData.store.ts # Pinia store (moved from shared/portfolio-data/) — PortfolioEntry array (id/title/channelMap/fullAnalysis/uploadedAt); signals: pendingSelectionId (ref<string|null> — set on add/replace, watched by campaignPerformance.store to auto-select), lastEvictedId (ref<string|null> — set on deletePortfolio, watched by campaignPerformance.store + aiAnalysis.store); buildChannelMap + computePortfolioAnalysis called at add/replace time; actions: addPortfolio, replacePortfolio, loadPortfolio (delegates to add or replace based on portfolios.length), deletePortfolio, getById; no selection logic in this store
 │   │       └── index.ts        # Barrel — exports useDashboardOrchestratorStore, useToastStore, usePortfolioDataStore, PortfolioEntry
 │   ├── shared/                 # Shared types and data — no framework dependencies; internal imports use relative paths; app/feature code imports via @/shared/... barrels
@@ -300,10 +303,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; core functions: getChannelsByIds(ids) → Channel[] (lookup filtered channels), getSelectedChannels() → Channel[] (return all or filtered), onPendingSelection(id) (watch handler), onPortfolioEvicted(id) (watch handler); watchers: pendingSelectionId (immediate) → onPendingSelection, lastEvictedId → onPortfolioEvicted; setChannelFilter(ids) action
 │   │   │   │   └── index.ts        # Barrel — exports useCampaignPerformanceStore
 │   │   │   ├── components/
-│   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable, EmptyState
+│   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable
 │   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, channelCounts, campaignCounts, showAiButton, showConnectedDot; emits aiClick; multi-root (title-row + MetaRow bullet); AI button v-if !showAiButton hidden; connected dot rendered as explicit child element with success color + z-index (not a pseudo-element on an empty span) + dot-pop animation
 │   │   │   │   ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; sort via useSort / sortByValue(); PerformanceIndicator for Revenue (roi-colored) and CVR (dimmed); channel cell uses .badge.info.dimmed
-│   │   │   │   ├── EmptyState.vue      # No-data screen — uses TransferActions for download/upload buttons; softened description text color
 │   │   │   │   ├── channel-filters/    # ChannelFilters module — props-only, no store reads
 │   │   │   │   │   ├── index.ts        # Barrel — exports ChannelFilters
 │   │   │   │   │   ├── ChannelFilterChips.vue  # Internal chip renderer — props: variant? ('visible'|'probe'), layout? ('strip'|'plain'), channels, totalCampaigns, selectedIds?, showAll?, allActive?, allReadonly?, singleRow?; probe variant is absolutely-positioned invisible measurement layer (aria-hidden); exposes getRootEl(), getChannelChipEls(), hasOverflow(); emits clear / toggle (suppressed in probe mode); scoped SCSS with --channel-filter-max-height CSS var
@@ -351,12 +353,13 @@ app/                        # Vue 3 + Vite project
 │   │           ├── chart-tooltip-formatters.ts # formatBudgetTooltipLines, formatRevenueTooltipLines, formatBudgetTooltip, formatRevenueTooltip, formatRoiAllocationTooltipLines — reusable tooltip body line formatters
 │   │           └── efficiency-gap.ts           # getChannelEfficiencyGapPercent, getEfficiencyGapColor, getEfficiencyGapSignedAmount — helpers for efficiency gap chart
 │   │   └── data-transfer/          # CSV upload & data transfer feature folder
-│   │       ├── index.ts            # Barrel — exports UploadDataModal, ReplaceDataModal, TransferActions
+│   │       ├── index.ts            # Barrel — exports UploadDataModal, ReplaceDataModal, TransferActions, EmptyState
 │   │       ├── types/
 │   │       │   └── index.ts        # CampainDataRowIssueType + CampainDataFieldIssue + CampainDataRowError + CampainDataDuplicateGroup + CampainDataValidationErrorType + CampainDataValidationError + CampainDataParseResult + CampainDataProcessRowsResult
 │   │       ├── components/
-│   │       │   ├── index.ts        # Barrel — exports UploadDataModal, ReplaceDataModal, TransferActions
-│   │       │   ├── UploadDataModal.vue     # Self-contained modal (was UploadModal) — view: 'form'|'row-errors'|'duplicate-rows'; open/close/parse/store; exposes only open(); sequential error handling; bidirectional navigation; handleProceedFromDuplicates merges validCampaigns + selected duplicate resolutions; uses usePortfolioDataStore from @/app/stores
+│   │       │   ├── index.ts        # Barrel — exports EmptyState, UploadDataModal, ReplaceDataModal, TransferActions
+│   │       │   ├── EmptyState.vue      # No-data screen — uses TransferActions for download/upload buttons; softened description text color
+│   │       │   ├── UploadDataModal.vue     # Upload form modal — view: 'form'|'row-errors'|'duplicate-rows'; exposes open(); handles CSV validation + error resolution; emits 'upload-complete' with validated campaigns + title (no store write — deferred to app layer); sequential error handling; bidirectional navigation
 │   │       │   ├── UploadDataForm.vue      # Upload form body — FileDropzone + file type/size validation; used inside UploadDataModal
 │   │       │   ├── ReplaceDataModal.vue    # Confirmation modal — wraps Modal; uses ModalBody + ModalFooter; emits confirm/close
 │   │       │   ├── TransferActions.vue     # Download Template + Upload CSV button pair (was FileActions) — emits upload; uses useDownloadTemplate; responsive stacking at <480px

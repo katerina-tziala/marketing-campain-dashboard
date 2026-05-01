@@ -12,6 +12,7 @@ const {
   hasCampaigns,
   showReplaceConfirm,
   requestUpload,
+  handleUploadComplete,
   onReplaceConfirm,
   closeReplaceConfirm,
 } = useUploadModal(uploadModal);
@@ -46,7 +47,7 @@ provide("openAiPanel", dashboard.openAiPanel);
       />
     </div>
 
-    <UploadDataModal ref="uploadModal" />
+    <UploadDataModal ref="uploadModal" @upload-complete="handleUploadComplete" />
     <ReplaceDataModal
       v-if="showReplaceConfirm"
       @confirm="onReplaceConfirm"

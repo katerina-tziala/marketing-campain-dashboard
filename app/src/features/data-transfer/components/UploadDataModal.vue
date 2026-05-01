@@ -2,7 +2,6 @@
 import { ref, watch } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Modal } from "@/ui";
-import { usePortfolioDataStore } from "@/app/stores";
 import type {
   CampainDataDuplicateGroup,
   CampainDataRowError,
@@ -12,8 +11,11 @@ import { useDownloadTemplate } from "../composables";
 import { ReviewErrorsComponent, ReviewDuplicatedCampaigns } from "./data-validation";
 import UploadDataForm from "./UploadDataForm.vue";
 
-const portfolioData = usePortfolioDataStore();
 const { downloadTemplate } = useDownloadTemplate();
+
+const emit = defineEmits<{
+  'upload-complete': [campaigns: Campaign[], title: string]
+}>();
 
 // ── Open / close ───────────────────────────────────────────────────────────────
 
@@ -73,7 +75,7 @@ async function handleSubmit(): Promise<void> {
       parseError.value = getValidationErrorMessage(result.errors[0]);
       return;
     }
-    portfolioData.loadPortfolio(result.campaigns, title.value);
+    emit('upload-complete', result.campaigns, title.value);
     close();
     return;
   }
@@ -103,7 +105,7 @@ function handleProceedFromErrors(): void {
     view.value = "duplicate-rows";
     return;
   }
-  portfolioData.loadPortfolio(validCampaigns.value, pendingTitle.value);
+  emit('upload-complete', validCampaigns.value, pendingTitle.value);
   close();
 }
 
@@ -116,10 +118,7 @@ function handleBackFromDuplicates(): void {
 }
 
 function handleProceedFromDuplicates(selected: Campaign[]): void {
-  portfolioData.loadPortfolio(
-    [...validCampaigns.value, ...selected],
-    pendingTitle.value,
-  );
+  emit('upload-complete', [...validCampaigns.value, ...selected], pendingTitle.value);
   close();
 }
 </script>

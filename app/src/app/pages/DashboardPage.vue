@@ -2,7 +2,7 @@
 import { inject } from "vue";
 import { useDashboardOrchestratorStore } from "@/app/stores";
 import { CampaignPerformanceView } from "@/features/campaign-performance";
-import EmptyState from "@/features/campaign-performance/components/EmptyState.vue";
+import { EmptyState } from "@/features/data-transfer";
 
 const dashboard = useDashboardOrchestratorStore();
 
