@@ -52,7 +52,7 @@ function handleSummarize(): void {
     <template #loading>Generating summary…</template>
 
     <template #state>
-      <p class="text-sm text-typography py-2 leading-5 tracking-wide">
+      <p class="text-sm text-typography-soft py-2 leading-5 tracking-wide">
         Generate an AI summary for the current portfolio view, including
         performance context and recommended next actions
       </p>
@@ -65,7 +65,7 @@ function handleSummarize(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <p class="-mb-4">
+      <p class="-mb-4 text-typography-soft">
         <HealthStatus
           class="inline-action-float"
           :health-score="response.healthScore"
@@ -75,7 +75,7 @@ function handleSummarize(): void {
       <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-5">
         Bottom Line
       </h5>
-      <p>{{ response.bottomLine }}</p>
+      <p class="text-typography-soft">{{ response.bottomLine }}</p>
       <PriorityActions :actions="response.priorityActions" />
       <Insights :insights="response.insights" />
       <Correlations :correlations="response.correlations" />

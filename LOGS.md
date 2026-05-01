@@ -78,3 +78,47 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No new `app/layouts` yet — future shared layouts should be introduced when multiple pages actually share structure; until then, flattening is clearer than renaming `AppShell` to a layout.
 - Keep `ui/layout` generic — reusable layout primitives can live there, but dashboard/auth/product-aware layouts should not be promoted into the UI library.
 - Build verification surfaced unrelated existing TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` export missing and `CampaignPerformanceStore` type name mismatch); the shell/toast refactor itself left no stale shell imports.
+
+
+## [586] UI polish: drawer motion, channel filters, controls, and upload placeholder rename
+**Type:** refactor
+
+**Summary:** Polished several shared UI surfaces after the shell flattening: the AI drawer keeps its desktop width-push behavior while its inner content slides in more smoothly, modal and drawer overlays now share a utility class, buttons/forms/radio controls received visual refinements, channel filters now expose clearer selected-count feedback, and the dashboard’s no-data component was renamed from `EmptyState` to `UploadDataPlaceholder`.
+
+**Brainstorming:** The first drawer idea tried to keep dashboard content visually stable by overlaying or transform-pushing the main content, but that broke the intended product behavior: the drawer should take real horizontal space and the dashboard should shrink beside it. The better fix was more precise: keep the outer drawer slot as a flex sibling that animates from `0` to `30rem`, but make the inner drawer panel a fixed-width surface that fades/slides inside that slot. That preserves the layout contract while making the drawer content feel like it enters as a panel instead of stretching from zero. While reviewing overlays, we also extracted the duplicated fixed backdrop styling into a shared `.overlay` utility used by modal and drawer mobile overlay paths. Separately, the channel filter button and dropdown needed clearer selection feedback: the compact badge should communicate hidden selected filters with `+N`, and the dropdown header should always show how many channels are effectively selected, including the "no explicit filter means all selected" state. Finally, the old `EmptyState` name was too generic for a data-transfer component whose actual role is to prompt CSV upload, so it became `UploadDataPlaceholder`.
+
+**Prompt:** Polish the dashboard UI after the shell refactor. Keep the AI drawer’s outer behavior as a desktop side panel that pushes/shrinks the dashboard content, but make the drawer’s own content feel like it slides in rather than expands. Extract a reusable overlay utility for modal/drawer backdrops. Refine shared button and form control sizing/hover states. Improve channel filter feedback by adding a `+` prefix to the hidden-count badge and showing an effective selected/total channel count in the dropdown header, where no explicit selection displays as all channels selected. Rename the no-data upload component from `EmptyState` to `UploadDataPlaceholder` and update exports/usages. Do not keep temporary UI playground markup in the final EmptyState/placeholder component.
+
+**What changed:**
+- `ui/drawer/ResponsiveDrawer.vue` — kept the outer desktop drawer as the flex sibling that transitions width from `0` to `30rem`, preserving the dashboard shrink/push behavior.
+- `ui/drawer/ResponsiveDrawer.vue` — made the desktop drawer panel fixed-width inside the animated slot and added `opacity`/`transform` transitions so the panel content slides/fades in instead of visually stretching.
+- `ui/drawer/ResponsiveDrawer.vue` — wrapped desktop slot content in `.responsive-drawer-content` and reused the shared `.overlay` class for the mobile overlay path.
+- `styles/utilities/_overlay.scss` — added a reusable `.overlay` utility for fixed, centered, backdrop-covered overlays.
+- `styles/utilities/index.scss` — registered the new overlay utility.
+- `ui/modal/Modal.vue` — replaced local modal backdrop styling with the shared `.overlay` utility and constrained modal max dimensions.
+- `ui/modal/ModalHeader.vue` — tightened modal header spacing and content alignment.
+- `ui/primitives/Button.vue` — refined base button height, border treatment, icon sizing, active state, small/icon-only sizing, and variant colors for primary, outline, text-only, info-text-only, ghost, info-outline, and destructive.
+- `styles/components/_forms.scss` — adjusted base form-control minimum height and hover/focus border color.
+- `ui/forms/PasswordInput.vue` — aligned password hover/focus border behavior with the form-control updates and made the visibility toggle fill the input height.
+- `ui/forms/RadioItem.vue` — increased radio indicator and checked-dot sizes for better visibility.
+- `ui/forms/RadioToggle.vue` — adjusted default/small/tiny sizing, removed the unused info variant, and tuned secondary styling.
+- `features/campaign-performance/components/channel-filters/ChannelFiltersDialog.vue` — changed the compact selected-filter badge from `N` to `+N`.
+- `features/campaign-performance/components/channel-filters/ChannelFiltersDialog.vue` — added `selectedChannelCount` so the dropdown header shows effective selected channels; when no channels are explicitly selected, it displays all channels as selected.
+- `features/campaign-performance/components/channel-filters/ChannelFiltersDialog.vue` — added a no-wrap selection-count label next to `Channels`, renamed the clear action text to `Show all`, and polished the active filter button state.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — moved header composition onto `SectionHeaderLayout` and kept the AI action in the layout action slot.
+- `features/campaign-performance/CampaignPerformanceView.vue` and `features/campaign-performance/charts/PerformanceCharts.vue` — tuned spacing and switched the revenue/budget toggle to the smaller radio-toggle size.
+- `features/ai-tools/*` — tightened AI drawer/form/analysis spacing so content fits better in the drawer surface.
+- `features/data-transfer/components/EmptyState.vue` — renamed to `UploadDataPlaceholder.vue`.
+- `features/data-transfer/components/index.ts` — replaced the `EmptyState` export with `UploadDataPlaceholder`.
+- `app/pages/DashboardPage.vue` — imports and renders `UploadDataPlaceholder`; the upload header button now uses the small outline button style.
+- `features/data-transfer/components/UploadDataPlaceholder.vue` — cleaned back down to the real upload placeholder after temporary button/form playground markup was used for visual tuning.
+
+**Key decisions & why:**
+- Preserve real drawer layout behavior — the drawer should push/shrink dashboard content on desktop, so the outer width transition stays.
+- Slide the inner panel, not the whole page — fixing the perceived "expanding content" problem belongs inside the drawer panel, not in the dashboard layout.
+- Share overlay styling — modal and drawer overlays need the same fixed backdrop behavior, so a utility avoids duplicating those Tailwind rules.
+- Keep `UploadDataPlaceholder` domain-specific — `Placeholder` alone was too vague, and `EmptyState` was too generic; the new name says this component exists to prompt data upload.
+- Treat "no channel filter" as "all selected" — this matches the app behavior and avoids showing `0 / N selected` when all channels are effectively visible.
+- Use `+N` for the compact filter badge — the plus sign communicates "additional hidden selected filters" better than a bare number.
+- Keep temporary UI playground work out of production components — the EmptyState/placeholder component was used as a visual workbench for controls, then cleaned back to its product role.
+- Build verification currently still stops on TypeScript errors outside this polish batch: missing `AiAnalysisContext`/`CampaignPerformanceStore` exports in `app/utils/map-analysis-context.ts`, plus an unused `ModalBody` import in `ui/drawer/ResponsiveDrawer.vue`.

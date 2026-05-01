@@ -22,7 +22,6 @@ defineExpose({
 .btn {
   @apply cursor-pointer
     outline-none
-    border-2
     relative
     overflow-hidden
     inline-flex
@@ -32,74 +31,57 @@ defineExpose({
     transition ease-in-out duration-150
     rounded-md
     opacity-85
-    text-sm font-medium leading-none text-center
     tracking-wide
     gap-1.5 px-2.5 py-3
-    max-h-9;
+    h-10 
+    border border-transparent
+    text-base font-medium leading-none text-center;
 
   &:deep(svg) {
-    @apply text-lg;
+    @apply text-xl;
   }
 
   &:disabled {
     @apply cursor-not-allowed opacity-50;
   }
+
+  &:active {
+    @apply opacity-75;
+  }
+
+  /* variant small */
+  &.btn.small {
+    @apply text-sm px-3 h-9 py-0 leading-4;
+  }
 }
 
 /* variant icon-only */
 .btn.icon-only {
-  @apply h-8 w-8 min-h-8 min-w-8 p-0;
-}
+  @apply p-0 size-10;
+  &:deep(svg) {
+    @apply text-2xl;
+  }
 
-/* variant small */
-.btn.small {
-  @apply text-xs px-2 py-1 leading-4;
-}
-
-/* variant medium */
-.btn.medium {
-  @apply px-2 py-1.5;
-}
-
-/* variant primary */
-.btn.primary {
-  @apply bg-primary-dark border-primary-dark text-typography-strong;
-
-  &:not(:disabled) {
-    &:hover {
-      @apply border-primary-light bg-primary-light text-primary-ink;
-    }
-
-    &:focus-visible {
-      @apply bg-primary-dark text-on-primary ;
-    }
-
-    &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary;
-    }
-
-    &:active {
-      @apply opacity-90;
+  &.btn.small {
+    @apply p-0 size-9;
+    &:deep(svg) {
+      @apply text-xl;
     }
   }
 }
 
-/* variant text-only */
-.btn.text-only {
-  @apply border-transparent text-primary-lighter/95;
+/* variant primary */
+.btn.primary {
+  @apply bg-primary-dark text-typography-strong;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light/15 text-primary-lighter;
+      @apply bg-primary-light text-primary-ink;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
-    }
-
-    &:active {
-      @apply text-primary-light;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
     }
   }
 }
@@ -115,11 +97,23 @@ defineExpose({
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
+    }
+  }
+}
+
+/* variant text-only */
+.btn.text-only {
+  @apply border-transparent text-primary-lighter/80;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-primary-light/[12%] text-primary-light;
     }
 
-    &:active {
-      @apply text-primary-light;
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
     }
   }
 }
@@ -129,14 +123,12 @@ defineExpose({
   @apply text-typography-subtle
     border
     border-transparent
-    bg-transparent
-    opacity-100
-    tracking-normal;
+    bg-transparent;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-typography/10 text-info-light;
+      @apply bg-surface text-info;
     }
 
     &:not(.no-ring):focus-visible {
@@ -147,7 +139,7 @@ defineExpose({
 
 /* variant ghost */
 .btn.ghost {
-  @apply border-transparent text-typography-soft;
+  @apply border-transparent text-typography-muted;
 
   &:not(:disabled) {
     &:hover,
@@ -158,37 +150,28 @@ defineExpose({
     &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
     }
-
-    &:active {
-      @apply opacity-70;
-    }
   }
 }
 
-
 /* variant info-outline */
 .btn.info-outline {
-  @apply border-transparent text-typography-soft;
+  @apply border-info-dark text-info bg-surface;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-typography/10 text-info;
+      @apply bg-info-dark text-info text-primary-ink;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
-    }
-
-    &:active {
-      @apply opacity-70;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-info;
     }
   }
 }
 
 /* variant destructive */
 .btn.destructive {
-  @apply border-transparent text-typography-soft;
+  @apply border-transparent text-typography-subtle font-normal;
 
   &:not(:disabled) {
     &:hover,
@@ -199,14 +182,6 @@ defineExpose({
     &:not(.no-ring):focus-visible {
       @apply ring-2 ring-danger/60 ring-offset-1 ring-offset-background;
     }
-
-    &:active {
-      @apply text-danger/80;
-    }
   }
-}
-
-.btn.paddingless {
-  @apply p-0;
 }
 </style>

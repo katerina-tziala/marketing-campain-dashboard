@@ -37,11 +37,11 @@ const finalCloseLabel = props.closeLabel ?? "Close";
 
 <style lang="scss" scoped>
 .modal-header {
-  @apply flex items-start gap-2 py-4 px-4 border-b border-t border-t-transparent;
+  @apply flex items-start gap-2 border-b py-3.5 px-4;
 }
 
 .modal-header-content {
-  @apply grow flex items-start gap-2;
+  @apply grow flex items-start gap-2 pt-1.5;
 }
 
 .modal-header-icon {

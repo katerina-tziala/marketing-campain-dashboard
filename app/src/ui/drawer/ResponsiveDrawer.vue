@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import ModalHeader from "../modal/ModalHeader.vue";
+import ModalBody from "../modal/ModalBody.vue";
 
 type DrawerSide = "left" | "right";
 
@@ -60,7 +61,11 @@ onUnmounted(() => {
       role="dialog"
       :aria-label="title"
     >
-      <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')">
+      <ModalHeader
+        :title="title"
+        :close-label="closeLabel"
+        @close="emit('close')"
+      >
         <template v-if="$slots.icon" #icon>
           <slot name="icon" />
         </template>
@@ -68,14 +73,16 @@ onUnmounted(() => {
           <slot name="header-actions" />
         </template>
       </ModalHeader>
-      <slot />
+      <div class="responsive-drawer-content">
+        <slot />
+      </div>
     </section>
   </div>
 
   <Transition name="drawer-overlay">
     <div
       v-if="open && !isDesktop"
-      class="responsive-drawer-overlay"
+      class="overlay lg:hidden"
       @click.self="emit('close')"
     >
       <section
@@ -84,7 +91,11 @@ onUnmounted(() => {
         aria-modal="true"
         :aria-label="title"
       >
-        <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')">
+        <ModalHeader
+          :title="title"
+          :close-label="closeLabel"
+          @close="emit('close')"
+        >
           <template v-if="$slots.icon" #icon>
             <slot name="icon" />
           </template>
@@ -103,10 +114,22 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .responsive-drawer {
   @apply hidden
-  lg:block lg:overflow-hidden lg:shrink-0 w-0 lg:ease-in-out lg:duration-300 lg:transition-[width];
+  lg:block lg:relative lg:overflow-hidden lg:shrink-0 w-0 lg:ease-in-out lg:duration-300 lg:transition-[width];
 
   &.open {
     @apply lg:w-[30rem];
+  }
+
+  &.left .responsive-drawer-panel {
+    @apply lg:left-0 lg:-translate-x-full;
+  }
+
+  &.right .responsive-drawer-panel {
+    @apply lg:right-0 lg:translate-x-full;
+  }
+
+  &.open .responsive-drawer-panel {
+    @apply lg:opacity-100 lg:translate-x-0;
   }
 }
 
@@ -120,33 +143,28 @@ onUnmounted(() => {
     shadow-md
     bg-surface-elevated
     border
-    border-faint;
+    border-faint
+    text-typography-soft;
 }
 
 .responsive-drawer-panel {
-  @apply h-full sticky top-0;
+  @apply h-full
+    sticky
+    top-0
+    lg:absolute
+    lg:inset-y-0
+    lg:w-[30rem]
+    lg:opacity-0
+    lg:ease-in-out
+    lg:duration-300
+    lg:transition-[opacity,transform];
 }
 
 .responsive-drawer-modal {
-  @apply rounded-md min-h-[50vh] max-h-[92vh] max-w-[92vw];
+  @apply rounded-md max-h-[92vh] max-w-[92vw];
 }
 
 .responsive-drawer-content {
-  @apply min-h-0 overflow-hidden;
-}
-
-.responsive-drawer-overlay {
-  @apply fixed
-    flex
-    items-center
-    justify-center
-    box-border
-    overflow-hidden
-    z-1000
-    inset-0
-    bg-surface-backdrop/70
-    py-[5vh]
-    px-[5vw]
-    lg:hidden;
+  @apply min-h-0 overflow-hidden pb-4;
 }
 </style>

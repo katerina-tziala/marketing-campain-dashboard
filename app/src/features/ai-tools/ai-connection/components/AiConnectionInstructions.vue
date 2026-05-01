@@ -35,7 +35,7 @@ defineProps<{
 
 <style lang="scss" scoped>
 .help-steps {
-  @apply text-sm text-typography list-inside list-decimal leading-5 px-1;
+  @apply text-sm text-typography-soft list-inside list-decimal leading-5 px-1;
 
   > li {
     @apply py-1;

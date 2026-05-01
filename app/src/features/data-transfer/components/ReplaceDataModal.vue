@@ -8,8 +8,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Modal title="Replace campaign data?" @close="emit('close')">
-    <ModalBody>
+  <Modal title="Replace campaign data?" @close="emit('close')" class="max-h-52">
+    <ModalBody class="grow">
       <p class="w-full">
         Uploading a new CSV will permanently replace all current campaign data and reset any active
         analysis. This CANNOT be undone.

@@ -2,7 +2,11 @@
 import { ref } from "vue";
 import { useDashboardOrchestratorStore } from "@/app/stores";
 import { CampaignPerformanceView } from "@/features/campaign-performance";
-import { EmptyState, ReplaceDataModal, UploadDataModal } from "@/features/data-transfer";
+import {
+  ReplaceDataModal,
+  UploadDataModal,
+  UploadDataPlaceholder,
+} from "@/features/data-transfer";
 import { useUploadModal } from "@/app/composables/useUploadModal";
 import AiTools from "@/features/ai-tools/components/AiTools.vue";
 import { Button, ResponsiveDrawer, SparklesIcon, UploadIcon } from "@/ui";
@@ -27,7 +31,7 @@ const {
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
       <div class="shrink-0 mt-1 inline-action-float min-h-9">
-        <Button v-if="hasCampaigns" class="outline" @click="requestUpload">
+        <Button v-if="hasCampaigns" class="outline small" @click="requestUpload">
           <UploadIcon />
           Upload CSV
         </Button>
@@ -36,7 +40,10 @@ const {
 
     <div class="dashboard-body">
       <main class="dashboard-main">
-        <EmptyState v-if="!dashboard.hasCampaigns" @upload="requestUpload" />
+        <UploadDataPlaceholder
+          v-if="!dashboard.hasCampaigns"
+          @upload="requestUpload"
+        />
         <!-- TODO: Add overview / period comparison switching here when the comparison view is introduced. -->
         <CampaignPerformanceView
           v-else

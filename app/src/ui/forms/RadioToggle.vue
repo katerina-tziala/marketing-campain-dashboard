@@ -47,7 +47,7 @@ defineEmits<{ "update:modelValue": [value: string] }>();
     text-sm
     px-2 
     py-1.5
-    min-h-9
+    min-h-10
     text-primary-lighter
     overflow-hidden;
 }
@@ -65,7 +65,7 @@ label {
 .radio-toggle.small {
   .option-label {
     @apply py-1 
-    min-h-1;
+    min-h-9;
   }
 
   label {
@@ -78,6 +78,24 @@ label {
     }
   }
 }
+
+.radio-toggle.timy {
+  .option-label {
+    @apply py-1 
+    min-h-7;
+  }
+
+  label {
+    &:first-of-type > .option-label {
+      @apply rounded-l;
+    }
+
+    &:last-of-type > .option-label {
+      @apply rounded-r;
+    }
+  }
+}
+
 
 input[type="radio"] {
   &:checked + .option-label {
@@ -99,32 +117,12 @@ input[type="radio"] {
   }
 }
 
-.radio-toggle.info {
-  .option-label {
-    @apply text-info-lighter/85;
-  }
-  input[type="radio"] {
-    &:checked + .option-label {
-      @apply bg-info-dark text-typography-strong;
-    }
-
-    &:not(:disabled) {
-      &:hover + .option-label {
-        @apply bg-info-light text-primary-ink;
-      }
-
-      &:focus-visible + .option-label {
-        @apply bg-info-dark text-on-primary ring-2 ring-offset-1 ring-offset-background ring-info-dark;
-      }
-    }
-  }
-}
-
 .radio-toggle.secondary {
-  @apply border-primary-light/70;
+  @apply border-primary-light/60;
+
   input[type="radio"] {
     + .option-label {
-      @apply text-primary-lighter/80;
+      @apply text-primary-lighter/75;
     }
 
     &:checked + .option-label {

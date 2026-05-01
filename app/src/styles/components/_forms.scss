@@ -26,7 +26,7 @@
       text-primary-light
       bg-surface
       px-3 
-      h-9;
+      min-h-10;
 
     &::placeholder {
       @apply text-typography-subtle;
@@ -36,7 +36,7 @@
       &:focus,
       &:focus-within,
       &:hover {
-        @apply border-primary;
+        @apply border-primary-light;
       }
     }
 

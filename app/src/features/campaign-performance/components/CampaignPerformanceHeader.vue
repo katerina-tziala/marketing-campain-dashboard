@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { SparklesIcon, MetaRow, MetaItem, Button } from "@/ui";
+import {
+  SparklesIcon,
+  MetaRow,
+  MetaItem,
+  Button,
+  SectionHeaderLayout,
+} from "@/ui";
 
 defineProps<{
   title: string;
@@ -15,36 +21,28 @@ const emit = defineEmits<{ aiClick: [] }>();
 </script>
 
 <template>
-  <h2 class="grow pt-1 min-h-9">
-    <div class="relative shrink-0 inline-action-float">
-      <Button
-        v-if="showAiButton"
-        class="primary medium"
-        @click="emit('aiClick')"
-      >
+  <SectionHeaderLayout>
+    <template #header>
+      <h2 class="w-full grow text-lg">Campaign Performance</h2>
+    </template>
+    <template #action>
+      <Button v-if="showAiButton" class="primary" @click="emit('aiClick')">
         <SparklesIcon />AI
       </Button>
-      <span
-        v-if="showConnectedDot"
-        class="connected-status"
-        aria-hidden="true"
+    </template>
+    <MetaRow class="bullet text-typography-subtle">
+      <MetaItem>{{ title }}</MetaItem>
+      <MetaItem
+        >{{ selectedChannelCount }} of
+        {{ totalChannelCount }} channels</MetaItem
       >
-        <span class="connected-status-dot" />
-      </span>
-    </div>
-    Campaign Performance
-  </h2>
-  <MetaRow class="bullet text-typography-subtle">
-    <MetaItem>{{ title }}</MetaItem>
-    <MetaItem
-      >{{ selectedChannelCount }} of {{ totalChannelCount }} channels</MetaItem
-    >
-    <MetaItem
-      >{{ filteredCampaignCount }} of
-      {{ totalCampaignCount }} campaigns</MetaItem
-    >
-    <MetaItem>All percentages are based on the current filters</MetaItem>
-  </MetaRow>
+      <MetaItem
+        >{{ filteredCampaignCount }} of
+        {{ totalCampaignCount }} campaigns</MetaItem
+      >
+      <MetaItem>All percentages are based on the current filters</MetaItem>
+    </MetaRow>
+  </SectionHeaderLayout>
 </template>
 
 <style lang="scss" scoped>
@@ -61,7 +59,7 @@ const emit = defineEmits<{ aiClick: [] }>();
     items-center
     justify-center
     overflow-visible;
-    animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .connected-status-dot {

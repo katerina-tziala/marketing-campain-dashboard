@@ -7,7 +7,6 @@ const store = useAiConnectionStore();
 </script>
 
 <template>
-  <div class="ai-tools">
     <!-- Not connected: show connection form -->
     <AiConnectionForm v-if="!store.isConnected" />
     <!-- Connected: status bar + ai-analysis -->
@@ -17,20 +16,15 @@ const store = useAiConnectionStore();
         <AiAnalysis />
       </div>
     </template>
-  </div>
 </template>
 
 <style lang="scss" scoped>
-.ai-tools {
-  @apply grow shrink-0 overflow-hidden pb-5
-   h-full;
-}
-
 .ai-tools-analysis {
   @apply h-full
     grid
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
-    overflow-hidden;
+    overflow-hidden
+    min-h-[50vh];
 }
 </style>

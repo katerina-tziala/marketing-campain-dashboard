@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-import { FileTextIcon } from '@/ui'
-import TransferActions from './TransferActions.vue'
+import { onMounted, onUnmounted } from "vue";
+import { FileTextIcon } from "@/ui";
+import TransferActions from "./TransferActions.vue";
 
-onMounted(() => { document.body.style.overflow = 'hidden' })
-onUnmounted(() => { document.body.style.overflow = '' })
+onMounted(() => {
+  document.body.style.overflow = "hidden";
+});
+onUnmounted(() => {
+  document.body.style.overflow = "";
+});
 
-const emit = defineEmits<{ upload: [] }>()
+const emit = defineEmits<{ upload: [] }>();
 </script>
 
 <template>
@@ -22,9 +26,8 @@ const emit = defineEmits<{ upload: [] }>()
 </template>
 
 <style lang="scss" scoped>
-
 .empty-state {
-  @apply flex flex-col items-center justify-center text-center p-8 gap-6 m-auto;
+  @apply flex flex-col items-center justify-center text-center p-8 gap-6 m-auto w-full;
 }
 
 .empty-state-title {

@@ -66,7 +66,7 @@ const errorNotification = computed(() => {
 
 <style lang="scss" scoped>
 .loader {
-  @apply flex flex-col items-center gap-4 p-8;
+  @apply flex flex-col items-center gap-4 pt-12;
 }
 
 .message-title {

@@ -60,7 +60,7 @@ function handleAnalyze(): void {
         </template>
         {{ minCampaignsEntry.message }}
       </Notification>
-      <p v-else class="text-sm text-typography py-2 leading-5 tracking-wide">
+      <p v-else class="text-sm text-typography-soft py-2 leading-5 tracking-wide">
         Get budget reallocation recommendations based on campaign performance
       </p>
     </template>
@@ -72,7 +72,7 @@ function handleAnalyze(): void {
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <p>{{ response.summary }}</p>
+      <p class="text-typography-soft">{{ response.summary }}</p>
       <BudgetRecommendations :recommendations="response.recommendations" />
     </template>
   </AnalysisState>

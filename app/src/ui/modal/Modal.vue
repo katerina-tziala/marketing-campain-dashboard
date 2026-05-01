@@ -29,14 +29,18 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <div
-      class="modal-backdrop"
+      class="overlay"
       aria-modal="true"
       role="dialog"
       :aria-label="title"
       @click.self="emit('close')"
     >
       <div class="modal">
-        <ModalHeader :title="title" :close-label="closeLabel" @close="emit('close')" />
+        <ModalHeader
+          :title="title"
+          :close-label="closeLabel"
+          @close="emit('close')"
+        />
         <slot />
       </div>
     </div>
@@ -44,19 +48,6 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.modal-backdrop {
-  @apply fixed
-    flex
-    items-center
-    justify-center
-    p-4
-    box-border
-    overflow-hidden
-    inset-0
-    z-1000
-    bg-surface-backdrop/70;
-}
-
 .modal {
   @apply w-fit
     h-fit
@@ -68,6 +59,7 @@ onUnmounted(() => {
     border-faint
     grid
     grid-cols-1
-    auto-rows-auto;
+    auto-rows-auto
+    max-h-[92vh] max-w-[92vw];
 }
 </style>

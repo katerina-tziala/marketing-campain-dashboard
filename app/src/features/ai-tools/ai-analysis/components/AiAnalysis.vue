@@ -19,7 +19,7 @@ const tabs: Tab[] = [
     :active-tab="analysisStore.activeTab"
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
-  <div class="scrollbar-stable scrollbar-on-surface panel-container">
+  <div class="scrollbar-stable-both scrollbar-on-surface panel-container">
     <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
     <ExecutiveSummaryAnalysis v-else />
   </div>
@@ -27,8 +27,8 @@ const tabs: Tab[] = [
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply p-4
-    pr-3
+  @apply pt-4
+    px-2
     h-full
     overflow-y-auto
     overflow-x-hidden

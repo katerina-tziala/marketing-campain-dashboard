@@ -123,14 +123,14 @@ function clearChannelFilters(): void {
     grid-cols-1
     grid-rows-[min-content_1fr]
     pt-4
-    gap-y-3;
+    gap-y-4;
 }
 
 .campaign-performance-header {
   @apply w-full px-6 flex items-center justify-center;
 
   .campaign-performance-header-container {
-    @apply w-full mx-auto max-w-7xl flex flex-col gap-2;
+    @apply w-full mx-auto max-w-7xl flex flex-col gap-3;
   }
 }
 
@@ -138,7 +138,7 @@ function clearChannelFilters(): void {
   @apply overflow-y-auto w-full flex
     flex-col
     gap-5
-    px-3
+    px-5 
     pb-8;
 
   @include cq-container("campaign-performance-view");

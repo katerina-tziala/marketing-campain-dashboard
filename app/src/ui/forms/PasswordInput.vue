@@ -74,7 +74,7 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary;
+      @apply border-primary-light;
     }
   }
 }
@@ -83,7 +83,7 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
   @apply absolute
     right-0
     w-9
-    h-[2.125rem]
+    h-full
     border
     border-transparent
     mr-[1px]

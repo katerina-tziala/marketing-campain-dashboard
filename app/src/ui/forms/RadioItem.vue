@@ -32,10 +32,10 @@ defineEmits<{ change: [value: string | number] }>();
   @apply inline-flex items-center justify-center cursor-pointer;
 
   .radio-indicator {
-    @apply w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300;
+    @apply w-7 h-7 rounded-full border-2 flex items-center justify-center transition-colors duration-300;
 
     &::before {
-      @apply content-[''] block w-2 h-2 rounded-full bg-transparent transition-colors duration-300;
+      @apply content-[''] block w-4 h-4 rounded-full bg-transparent transition-colors duration-300;
     }
   }
 }
