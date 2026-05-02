@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from "vue";
-import { FileTextIcon } from "@/ui";
-import TransferActions from "./TransferActions.vue";
+import { Button, DownloadIcon, FileTextIcon, UploadIcon } from "@/ui";
+import { useDownloadTemplate } from "../composables";
 
 onMounted(() => {
   document.body.style.overflow = "hidden";
@@ -11,6 +11,7 @@ onUnmounted(() => {
 });
 
 const emit = defineEmits<{ upload: [] }>();
+const { downloadTemplate } = useDownloadTemplate();
 </script>
 
 <template>
@@ -21,7 +22,17 @@ const emit = defineEmits<{ upload: [] }>();
       Upload a CSV file to generate your campaign performance dashboard.<br />
       Need a starting point? Download our sample template.
     </p>
-    <TransferActions @upload="emit('upload')" />
+
+    <div class="file-actions">
+      <Button variant="outline" class="grow w-full" @click="downloadTemplate">
+        <DownloadIcon />
+        Download Template
+      </Button>
+      <Button variant="primary" class="grow w-full" @click="emit('upload')">
+        <UploadIcon />
+        Upload data
+      </Button>
+    </div>
   </div>
 </template>
 
@@ -36,5 +47,16 @@ const emit = defineEmits<{ upload: [] }>();
 
 .empty-state-description {
   @apply text-typography-muted text-sm leading-6 tracking-wide;
+}
+
+.file-actions {
+  @apply flex
+  items-center
+  gap-6
+  mt-2
+  w-full
+  flex-col
+  max-w-md
+  xs:flex-row;
 }
 </style>

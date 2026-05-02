@@ -4,6 +4,7 @@ import Button from "../primitives/Button.vue";
 
 const props = defineProps<{
   title: string;
+  titleId?: string;
   closeLabel?: string;
 }>();
 
@@ -20,13 +21,15 @@ const finalCloseLabel = props.closeLabel ?? "Close";
       <div v-if="$slots.icon" class="modal-header-icon">
         <slot name="icon" />
       </div>
-      <h2>{{ title }}</h2>
+      <h2 :id="titleId">{{ title }}</h2>
     </div>
     <div class="modal-header-actions">
       <slot name="header-actions" />
       <Button
         variant="text-only"
+        size="small"
         icon-only
+        data-modal-close
         :aria-label="finalCloseLabel"
         @click="emit('close')"
       >

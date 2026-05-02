@@ -1,4 +1,5 @@
 export * from './formatters'
+export * from './date-format'
 export * from './math'
 export * from './sorting'
 export type { SortableValue, SortDirection } from './sorting'

@@ -2,7 +2,6 @@
 defineProps<{
   active?: boolean;
   readonly?: boolean;
-  count?: number;
 }>();
 </script>
 
@@ -15,7 +14,6 @@ defineProps<{
   >
     <span class="chip-content">
       <slot />
-      <span v-if="count !== undefined" class="chip-count">{{ count }}</span>
     </span>
   </button>
 </template>
@@ -25,31 +23,26 @@ defineProps<{
   @apply inline-block
     text-sm
     font-medium
-    transition-colors
+    font-semibold
+    tracking-wide
     outline-none
     shrink-0
     rounded-full
     border
     bg-surface
+
+    bg-primary-ink
     text-typography-subtle;
 
   .chip-content {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1 tracking-wide;
-  }
-
-  .chip-count {
-    @apply inline-flex items-center justify-center
-      rounded-full px-1.5 min-w-[1.25rem] h-5
-      text-xs font-medium bg-on-primary/10;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1;
   }
 
   &[aria-pressed="true"] {
-    @apply bg-background border-info/65;
+    @apply border-info-darker;
+
     > .chip-content {
-      @apply bg-info/15 text-info-light;
-    }
-    .chip-count {
-      @apply bg-background/65;
+      @apply bg-info-dark/10 text-info/90;
     }
   }
 
@@ -60,14 +53,15 @@ defineProps<{
   &:not(.readonly) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface border-info/65;
+      @apply bg-surface border-info;
+
       > .chip-content {
-        @apply text-info-light;
+        @apply bg-transparent text-info-light;
       }
     }
 
     &:focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-info-dark;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-info;
     }
   }
 }

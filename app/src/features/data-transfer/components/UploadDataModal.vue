@@ -158,7 +158,8 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
   <Modal
     v-if="isOpen"
     title="Upload Campaign Data"
-    :size="view === 'form' ? 'default' : 'large'"
+    :size="view === 'form' ? 'small' : 'large'"
+    :initial-focus="view === 'form' ? 'first-control' : 'content'"
     @close="close"
   >
     <UploadDataForm

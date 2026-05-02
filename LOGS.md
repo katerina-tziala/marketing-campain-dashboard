@@ -394,3 +394,103 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Replace casts with factories where possible — `createTabDisplay<T>()` preserves generic response typing without asking TypeScript to trust an assertion.
 - Type Chart.js wrappers with Chart.js types — the chart scale helper still abstracts theme defaults, but its public options now follow the chart library rather than an arbitrary unknown record.
 - Verify by scanning, then building — targeted scans excluding prompts showed no remaining concrete type smells, and `npm run build` passes with only the existing Vite chunk-size warning.
+
+
+## [594] Move chip counts to channel filters and expose line color utilities
+**Type:** refactor
+
+**Summary:** Kept the shared `Chip` primitive generic by removing count-specific behavior, moved the channel count badge markup and styling into `ChannelFilterChips`, and added reusable Tailwind `line` color utilities that mirror the app border scale for backgrounds, text, and rings.
+
+**Brainstorming:** The chip count looked reusable at first, but it was actually feature-specific: the number represents campaign counts inside channel filters, not a generic primitive responsibility. Keeping `count` inside `Chip` would make every chip carry channel-filter assumptions and styling pressure. The better boundary is for `Chip` to own the interactive pill shell and for `ChannelFilterChips` to project its own count badge through the slot. Separately, the existing `borderColor` tokens already exposed `border`, `border-faint`, `border-subtle`, `border-strong`, and `border-darker`, but those values were locked to border utilities. The needed system token was not an `action` color family; it was a neutral line/divider scale that can also be used for backgrounds, text, and rings.
+
+**Prompt:** Remove count from the shared chip primitive and move the count behavior and styling into `ChannelFilterChips`. Then add Tailwind color utilities for the existing border scale so the same values can be used as backgrounds or other color utilities. Avoid misleading names like `action`; use a token name that does not imply buttons or interactions.
+
+**What changed:**
+- `ui/primitives/Chip.vue` — removed the `count` prop from the primitive API.
+- `ui/primitives/Chip.vue` — removed the internal count badge markup and `.chip-count` styles.
+- `ui/primitives/Chip.vue` — kept the primitive focused on chip shell states: default, active, readonly, hover, and focus.
+- `features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — renders the “All” and per-channel campaign counts inside the chip slot.
+- `features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — added local `.channel-chip-count` styling so the feature owns its count badge surface.
+- `features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — added active and hover/focus adjustments for the channel count badge through scoped deep selectors.
+- `tailwind.config.js` — added a `line` color family that mirrors the existing border token scale: `DEFAULT`, `faint`, `subtle`, `strong`, and `darker`.
+- `tailwind.config.js` — kept the existing `borderColor` aliases unchanged so `border`, `border-faint`, `border-subtle`, `border-strong`, and `border-darker` continue to work.
+- `styles/themes/dark/_tokens.scss` — removed the unused experimental `action` token section after deciding the name implied interaction/button semantics.
+- `ui/primitives/Button.vue` — reverted the experimental action-token usage so button styles remain unchanged while the new line utilities are introduced independently.
+
+**Key decisions & why:**
+- Keep primitives domain-neutral — `Chip` should not know about campaign counts or channel-filter badge treatment.
+- Let features own feature data presentation — channel counts belong in `ChannelFilterChips`, where the data and interaction context already live.
+- Use slots for composed chip content — the primitive still provides the shell, while feature markup can add badges or other inline details without expanding the primitive API.
+- Use `line` instead of `action` — the color scale describes borders/dividers/visual lines, not interaction intent.
+- Preserve existing border utilities — adding `line` should extend available utilities (`bg-line-faint`, `ring-line-subtle`, `text-line-strong`) without breaking `border-faint` and related classes.
+- Avoid applying new utilities globally in the same pass — Tailwind tokens were added as system capability, while component restyling stays deliberate and local.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [595] Build reusable upload form controls and improve modal accessibility
+**Type:** feature/refactor
+
+**Summary:** Reworked the upload-data form around reusable form primitives, extracted date/file/required validation helpers, improved field feedback and accessible error wiring, cleaned the upload placeholder back to a simple empty state, and upgraded modal ARIA/focus behavior with typed initial-focus targets. Button variants and theme tokens also gained small additions needed by the refreshed form and modal surfaces.
+
+**Brainstorming:** The upload modal had grown from a simple file picker into a real form with report metadata, a required reporting period, optional industry context, file validation, and multiple feedback states. Keeping label, hint, error, and layout behavior inside each field would make the form hard to maintain and inconsistent across future inputs. The better boundary is a small UI form layer: `Form` owns spacing, `FormControl` owns label/control/feedback wiring, `FormFieldFeedback` owns hint/error display and transitions, and specialized inputs like `DateField`, `PeriodFields`, and `FileDropzone` own their validation events. At the same time, modal keyboard behavior belonged in `Modal.vue`, not in feature modals: the upload form wants initial focus on the first form control, confirmation dialogs may want footer actions, and review screens should focus the content. Finally, the temporary upload form preview inside `UploadDataPlaceholder` was useful for styling but needed to be removed so the placeholder stayed a clean empty-state CTA.
+
+**Prompt:** Continue polishing the upload form. Add reusable validation helpers and form primitives, move form-control styles out of global SCSS and into scoped components, make fields show either a hint or an error with accessible `aria-describedby` wiring, validate period dates and file requirements properly, and keep visual feedback smooth. Then fix modal ARIA/focus so upload opens on the form, confirmation dialogs can focus footer actions, and content screens can focus the body. Remove the temporary form from the upload placeholder, inline the over-small `TransferActions` component, add needed button variants/tokens, and verify with a build.
+
+**What changed:**
+- `ui/forms/Form.vue` — added a native form wrapper primitive with typed spacing variants and a form container-query boundary.
+- `ui/forms/FormControl.vue` — added a reusable control wrapper for label/legend, required indicator, invalid state, scoped `.form-control` styling, and automatic `aria-describedby` ids.
+- `ui/forms/FormFieldFeedback.vue` — extracted hint/error/error-hint rendering into a reusable feedback component with one-message-at-a-time behavior and smooth error transitions.
+- `ui/forms/DateField.vue` — added a reusable typed date input that validates on blur, emits validation results, accepts a placeholder prop, and defaults to the current shared date-format example.
+- `ui/forms/PeriodFields.vue` — added a reusable period fieldset with Start Date and End Date controls, per-field date validation, cross-field `from <= to` validation, fieldset-level feedback, and `DD/MM/YYYY` placeholders.
+- `ui/forms/validation/required.validation.ts` — extracted reusable required validation returning an error key.
+- `ui/forms/validation/date-field.validation.ts` — extracted reusable date-field validation built on shared locale-date parsing.
+- `ui/forms/validation/file.validation.ts` — extracted reusable file validation for required, accepted CSV type, and max-size checks.
+- `shared/utils/date-format.ts` — added shared date parsing/format metadata for `DD/MM/YYYY`, ISO normalization, date examples, and strict invalid-format vs invalid-date error keys.
+- `shared/utils/index.ts` — exported the new date-format utilities.
+- `features/data-transfer/components/UploadDataForm.vue` — rebuilt the upload form with `Form`, `FormControl`, `PeriodFields`, and `FileDropzone` instead of ad hoc field markup.
+- `features/data-transfer/components/UploadDataForm.vue` — added field-specific hint/error/error-hint copy for report name, period, and file upload.
+- `features/data-transfer/components/UploadDataForm.vue` — validates report name, period, file type, file size, required file, and parser errors through the new validation primitives before submit.
+- `features/data-transfer/components/UploadDataForm.vue` — imports `MAX_CSV_FILE_SIZE_BYTES` from the data-transfer parser utilities so the UI and parser share the same file-size limit.
+- `features/data-transfer/utils/parse-csv.ts` and `features/data-transfer/utils/index.ts` — exported `MAX_CSV_FILE_SIZE_BYTES` for reuse by the upload form.
+- `ui/forms/FileDropzone.vue` — moved to explicit validation events, shows rejected file names for invalid file type/size, clears stale required errors after successful file selection, and only runs required validation after the field has been touched/blurred.
+- `ui/forms/FileDropzone.vue` — accepts a required `accept` prop, uses the default “Drag & drop a file here or browse” message when no hint is supplied, and supports `invalid`/`describedBy` from `FormControl`.
+- `styles/components/_forms.scss` and `styles/components/index.scss` — removed the old global form-control styles after moving form styling into scoped UI form components.
+- `styles/index.scss` — removed the now-empty components style import.
+- `ui/forms/PasswordInput.vue` — simplified password input error handling to accept external `invalid` and `describedBy` props, aligning it with the new `FormControl` model.
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — migrated from the removed global `.form` class to the new `Form` wrapper.
+- `features/data-transfer/components/UploadDataPlaceholder.vue` — removed the temporary embedded `UploadDataForm` preview and restored the empty-state upload CTA.
+- `features/data-transfer/components/TransferActions.vue` — deleted the tiny action wrapper after inlining its upload/download buttons into `UploadDataPlaceholder`.
+- `features/data-transfer/components/index.ts` — removed the deleted `TransferActions` export.
+- `features/data-transfer/components/UploadDataModal.vue` — sets modal initial focus to `first-control` for the upload form and `content` for review screens.
+- `features/data-transfer/components/ReplaceDataModal.vue` — sets modal initial focus to `footer-actions` for the confirmation action flow.
+- `ui/modal/modal.types.ts` — added typed `ModalSize` and `ModalInitialFocus` definitions.
+- `ui/modal/Modal.vue` — added typed `initialFocus` support for `content`, `first-control`, `footer-actions`, and `close`.
+- `ui/modal/Modal.vue` — added focus trapping, Escape close handling, focus restoration on close, and scoped focus lookup so first-control only searches inside the modal body.
+- `ui/modal/Modal.vue` — switched dialog labeling from `aria-label` to `aria-labelledby` using a generated title id.
+- `ui/modal/composables/useModalAria.ts` — extracted reusable modal ARIA id/attribute setup for future dialog-like primitives.
+- `ui/modal/ModalHeader.vue` — accepts `titleId`, applies it to the heading, and marks the close button as the close focus target.
+- `ui/modal/ModalBody.vue` — marks the body as the content focus target and removes visible outline for programmatic body focus.
+- `ui/modal/ModalFooter.vue` — marks the footer as the footer-actions focus target.
+- `ui/modal/index.ts` — exports modal types and the new modal composable.
+- `ui/primitives/button.types.ts` and `ui/primitives/Button.vue` — added `accent-outline` and `ghost-outline` button variants.
+- `styles/themes/dark/_palette.scss`, `styles/themes/dark/_tokens.scss`, and `tailwind.config.js` — added a darker/fainter typography token exposed as `text-typography-faint`.
+- `ui/feedback/Notification.vue` and `ui/toast/ToastNotification.vue` — tightened notification spacing and made the toast dismiss button use the small icon-button size.
+- `ui/forms/RadioItem.vue` — adjusted radio indicator sizing after the form-control visual pass.
+- `ui/meta/MetaRow.vue` — cleaned small SCSS/style details while preserving the typed meta-row API.
+
+**Key decisions & why:**
+- Put form layout in UI primitives — upload metadata fields are not unique enough to justify one-off label/error/layout code in the feature component.
+- Keep validation reusable but not over-abstracted — `required`, date, and file validators return simple error keys that parents can map to product copy.
+- Let parents own error copy — validation helpers identify the problem, while feature forms decide the exact message and tone.
+- Use `FormFieldFeedback` for both controls and grouped fields — the same hint/error transition should work for a single input and a period fieldset.
+- Show hint OR error, not both — this keeps field feedback calm and avoids stacked helper text that competes with errors.
+- Keep period range errors at fieldset level — the range error describes the relationship between two dates, while individual invalid/required dates stay attached to their fields.
+- Use `DD/MM/YYYY` as the placeholder — the placeholder communicates the accepted input shape, while error messages can still show an example date.
+- Keep rejected file names visible for invalid files — users need to know which dropped/selected file failed validation, especially for wrong type or oversized files.
+- Remove global form-control SCSS — scoped form primitives make the UI library easier to reason about and reduce global style coupling.
+- Treat modal focus as a primitive concern — feature modals state intent with `initial-focus`; the modal layer handles selectors, focus trap, Escape, and restoration.
+- Add `footer-actions` as a first-class focus target — destructive/confirmation dialogs often want the primary decision area focused before content controls.
+- Use a modal ARIA composable — id generation and ARIA attributes are reusable dialog mechanics and should not stay embedded directly in the template.
+- Inline `TransferActions` — two buttons used by one placeholder did not justify a separate feature component.
+- Keep placeholder production-focused — temporary form-preview markup was removed once visual work moved back into the modal form.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.

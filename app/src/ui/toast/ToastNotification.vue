@@ -22,11 +22,12 @@ defineEmits<{
     class="shadow-lg pointer-events-auto"
   >
     <template #title>
-      <span>{{ title }}</span>
+      {{ title }}
     </template>
     <template #action>
       <Button
         variant="ghost"
+        size="small"
         icon-only
         aria-label="Dismiss notification"
         @click="$emit('dismiss')"

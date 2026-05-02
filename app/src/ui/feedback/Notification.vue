@@ -81,7 +81,7 @@ const ariaLive = computed(() => {
           <slot name="action" />
         </div>
       </div>
-      <p class="text-sm text-typography-muted" :class="{ 'pl-1': showIcon }">
+      <p class="text-sm text-typography-muted">
         <slot />
       </p>
     </div>
@@ -155,7 +155,7 @@ const ariaLive = computed(() => {
 }
 
 .notification-head {
-  @apply flex items-start justify-between gap-2 mb-1;
+  @apply flex items-start justify-between gap-2;
 }
 
 .notification-title {

@@ -60,8 +60,7 @@ export function formatCompactNumber(value: number): string {
   }
   return formatNumber(value)
 }
-
-// TODO: DateTimeFormat
+ 
 export function formatTimestamp(timestamp: number): string {
   return new Date(timestamp).toLocaleString(APP_LOCALE, {
     day: '2-digit',

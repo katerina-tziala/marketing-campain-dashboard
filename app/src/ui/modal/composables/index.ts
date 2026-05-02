@@ -1,0 +1,1 @@
+export { useModalAria } from "./useModalAria";

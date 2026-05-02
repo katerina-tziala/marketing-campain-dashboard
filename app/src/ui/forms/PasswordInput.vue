@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, Comment } from "vue";
+import { ref } from "vue";
 import Button from "../primitives/Button.vue";
 import EyeIcon from "../icons/EyeIcon.vue";
 import EyeOffIcon from "../icons/EyeOffIcon.vue";
@@ -11,42 +11,38 @@ const props = withDefaults(
     placeholder?: string;
     disabled?: boolean;
     autocomplete?: string;
+    invalid?: boolean;
+    describedBy?: string;
   }>(),
   {
     autocomplete: "off",
+    invalid: false,
+    describedBy: undefined,
   },
 );
 
 defineEmits<{ "update:modelValue": [value: string] }>();
 
-const slots = useSlots();
 const visible = ref(false);
-
-const hasError = computed(() => {
-  if (!slots.error) return false;
-  return slots.error().some((vnode) => vnode.type !== Comment);
-});
-
-const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
 </script>
 
 <template>
   <div
     class="password-input"
-    :class="{ 'password-input-error': hasError, disabled: disabled }"
+    :class="{ 'password-input-error': invalid, disabled: disabled }"
   >
     <input
       :id="id"
       :value="modelValue"
       :type="visible ? 'text' : 'password'"
       class="form-control input-field"
-      :class="{ 'input-error': hasError }"
+      :class="{ 'input-error': invalid }"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
       :disabled="disabled"
       spellcheck="false"
-      :aria-invalid="hasError ? 'true' : undefined"
-      :aria-describedby="hasError && errorId ? errorId : undefined"
+      :aria-invalid="invalid ? 'true' : undefined"
+      :aria-describedby="describedBy"
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
@@ -64,9 +60,6 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
       <EyeOffIcon v-if="visible" />
       <EyeIcon v-else />
     </Button>
-  </div>
-  <div :id="errorId">
-    <slot name="error" />
   </div>
 </template>
 

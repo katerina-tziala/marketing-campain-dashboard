@@ -8,7 +8,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Modal title="Replace campaign data?" size="small" @close="emit('close')">
+  <Modal
+    title="Replace campaign data?"
+    size="small"
+    initial-focus="footer-actions"
+    @close="emit('close')"
+  >
     <ModalBody>
       <p class="w-full">
         Uploading a new CSV will permanently replace all current campaign data

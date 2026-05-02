@@ -14,7 +14,7 @@ const props = withDefaults(
     allActive?: boolean;
     allReadonly?: boolean;
     singleRow?: boolean;
-}>(),
+  }>(),
   {
     variant: "visible",
     layout: "strip",
@@ -114,7 +114,7 @@ defineExpose({
 
 <style lang="scss" scoped>
 .channel-filter-chips {
-  @apply flex flex-wrap gap-2.5 p-1;
+  @apply flex flex-wrap gap-2.5 py-1;
 
   &:not(.plain) {
     @apply flex-1 overflow-hidden;
@@ -136,14 +136,28 @@ defineExpose({
 }
 
 .channel-chip-count {
-  @apply inline-flex items-center justify-center
-    rounded-full px-1.5 min-w-[1.25rem] h-5
-    text-xs font-medium bg-on-primary/10;
+  @apply inline-flex
+    items-center
+    justify-center
+    rounded-full
+    px-1.5
+    min-w-[1.25rem] h-5
+    text-xs
+    -mr-0.5
+    bg-line;
 }
 
 .channel-filter-chips :deep(.chip[aria-pressed="true"]) {
   .channel-chip-count {
-    @apply bg-background/65;
+    @apply bg-surface;
+  }
+  &:not(.readonly) {
+    &:hover,
+    &:focus-visible {
+      .channel-chip-count {
+        @apply bg-line;
+      }
+    }
   }
 }
 </style>

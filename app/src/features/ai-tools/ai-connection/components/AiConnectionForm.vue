@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 
-import { Spinner, PasswordInput, RadioToggle, Button, PlugIcon } from "@/ui";
+import {
+  Spinner,
+  PasswordInput,
+  RadioToggle,
+  Button,
+  PlugIcon,
+  Form,
+  FormControl,
+} from "@/ui";
 
 import { useAiConnectionStore } from "../stores";
 import type { AiProviderType } from "../../types";
@@ -39,34 +47,39 @@ async function handleConnect(): Promise<void> {
       Connect your AI API key to enable Executive Summary and Budget Optimizer
       features
     </p>
-    <form class="form" @submit.prevent="handleConnect">
+    <Form @submit.prevent="handleConnect">
       <!-- Provider -->
-      <fieldset class="field conn-fieldset">
-        <legend class="field-label">Provider</legend>
+      <FormControl
+        id="ai-provider"
+        as="fieldset"
+        label="Provider"
+        class="conn-fieldset"
+      >
         <RadioToggle
           v-model="selectedProvider"
           :options="PROVIDER_OPTIONS"
           name="ai-provider"
           :disabled="store.isConnecting"
         />
-      </fieldset>
+      </FormControl>
       <!-- API Key -->
-      <div class="field">
-        <label class="field-label" for="ai-key">API Key</label>
-        <PasswordInput
-          id="ai-key"
-          v-model="apiKey"
-          placeholder="Paste your API key"
-          :disabled="store.isConnecting"
-        >
-          <template v-if="connectionErrorDisplay" #error>
-            <p class="field-error" role="alert">
-              {{ connectionErrorDisplay.message }}
-            </p>
-            <p class="field-error-hint">{{ connectionErrorDisplay.hint }}</p>
-          </template>
-        </PasswordInput>
-      </div>
+      <FormControl
+        id="ai-key"
+        label="API Key"
+        :error-text="connectionErrorDisplay?.message"
+        :error-hint-text="connectionErrorDisplay?.hint"
+      >
+        <template #default="{ id, invalid, describedBy }">
+          <PasswordInput
+            :id="id"
+            v-model="apiKey"
+            placeholder="Paste your API key"
+            :disabled="store.isConnecting"
+            :invalid="invalid"
+            :described-by="describedBy"
+          />
+        </template>
+      </FormControl>
       <!-- Connect -->
       <Button
         variant="primary"
@@ -79,7 +92,7 @@ async function handleConnect(): Promise<void> {
       </Button>
       <!-- Instructions -->
       <AiConnectionInstructions :instructions="providerHelp" />
-    </form>
+    </Form>
   </div>
 </template>
 
