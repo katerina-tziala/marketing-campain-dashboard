@@ -7,11 +7,8 @@ import {
   type RoiBudgetScalingHighlights,
 } from "./charts";
 import CampaignTable from "./components/CampaignTable.vue";
-import {
-  CampaignPerformanceHeader,
-  ChannelFilters,
-  Kpis,
-} from "./components";
+import { CampaignPerformanceHeader, ChannelFilters, Kpis } from "./components";
+import { Card } from "@/ui";
 
 defineProps<{
   showAiButton: boolean;
@@ -85,9 +82,7 @@ function clearChannelFilters(): void {
         />
       </div>
     </section>
-    <div
-      class="scrollbar-on-surface campaign-performance-view"
-    >
+    <div class="scrollbar-on-surface campaign-performance-view">
       <Kpis
         class="kpi-grid"
         :kpis="store.portfolioAnalysis.portfolio"
@@ -110,10 +105,10 @@ function clearChannelFilters(): void {
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"
       />
-      <div class="card table-card max-h-full mx-auto max-w-7xl w-full">
+      <Card class="max-h-full mx-auto max-w-7xl w-full"> 
         <h3 class="text-base">Campaign Details</h3>
-        <CampaignTable :campaigns="store.filteredCampaigns" />
-      </div>
+        <CampaignTable :campaigns="store.filteredCampaigns" /> 
+      </Card>
     </div>
   </div>
 </template>
@@ -152,14 +147,36 @@ function clearChannelFilters(): void {
 
   @include cq-up(cq-540, "campaign-performance-view") {
     @apply grid-cols-2;
+    :deep(.kpi-card:nth-of-type(3)) {
+      @apply col-span-2;
+    }
   }
 
   @include cq-up(cq-640, "campaign-performance-view") {
-    @apply grid-cols-3;
+    @apply grid-cols-6;
+
+    :deep(.kpi-card:nth-of-type(1)),
+    :deep(.kpi-card:nth-of-type(2)) {
+      @apply col-span-3;
+    }
+
+    :deep(.kpi-card:nth-of-type(3)),
+    :deep(.kpi-card:nth-of-type(4)),
+    :deep(.kpi-card:nth-of-type(5)) {
+      @apply col-span-2;
+    }
   }
 
   @include cq-up(cq-1024, "campaign-performance-view") {
     @apply grid-cols-5;
+
+    :deep(.kpi-card:nth-of-type(1)),
+    :deep(.kpi-card:nth-of-type(2)),
+    :deep(.kpi-card:nth-of-type(3)),
+    :deep(.kpi-card:nth-of-type(4)),
+    :deep(.kpi-card:nth-of-type(5)) {
+      @apply col-span-1;
+    }
   }
 }
 

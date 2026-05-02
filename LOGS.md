@@ -645,3 +645,68 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve Escape close — keyboard users should be able to dismiss both desktop and mobile drawer states consistently.
 - Restore focus on close — returning focus to the opener keeps keyboard navigation predictable after the mobile dialog disappears.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [599] Tighten campaign table surface and reusable table controls
+**Type:** refactor
+
+**Summary:** Kept the active campaign-performance table experience focused on the simpler campaign details table, moved that surface to the shared `Card` component, refined KPI grid behavior at intermediate widths, and added a reusable `cellPadding` variant to the shared table primitive for advanced table layouts.
+
+**Brainstorming:** While exploring grouped table layouts, two reusable improvements surfaced independently from the experiment. First, the main campaign details surface should use the shared `Card` primitive instead of raw card classes so it stays aligned with the UI system. Second, advanced table rows sometimes need to own their internal padding for animation or richer content, so table cell padding should be a typed primitive variant instead of ad hoc selector overrides. The KPI grid also needed a small layout pass so intermediate widths read as an intentional composition before the full five-column desktop layout.
+
+**Prompt:** Keep the campaign performance view clean while working through the table experiment. Preserve the main campaign details table as the active table, move reusable table concerns into the UI table primitive, and keep the KPI/table surfaces aligned with the rest of the UI system.
+
+**What changed:**
+- `features/campaign-performance/CampaignPerformanceView.vue` — keeps the simpler `CampaignTable` as the active campaign details table.
+- `features/campaign-performance/CampaignPerformanceView.vue` — removes the active TODO/channel-details rendering path from the dashboard view.
+- `features/campaign-performance/CampaignPerformanceView.vue` — wraps the campaign details table in the shared `Card` component instead of raw card classes.
+- `features/campaign-performance/CampaignPerformanceView.vue` — adjusts KPI grid spans at intermediate container widths so the KPI row balances better before the five-column desktop layout.
+- `ui/table/Table.vue` — added a typed `cellPadding` prop with `default` and `none` variants.
+- `ui/table/Table.vue` — added `cell-padding-none` support so complex table rows can own their inner padding.
+- `ui/table/Table.vue` — added `scrollbar-stable` to the table container to reduce layout shifts when table scrollbars appear.
+- `ui/table/table.types.ts` — added the `TableCellPadding` type.
+- `ui/table/index.ts` — exports `TableCellPadding` with the rest of the table primitive types.
+
+**Key decisions & why:**
+- Keep the active dashboard table simple — the main view should keep the campaign details table as the primary scanning surface.
+- Use `Card` for the table container — the dashboard should lean on shared UI primitives instead of raw style classes when the surface maps to an existing primitive.
+- Add table cell padding as a typed variant — advanced rows may need to own internal padding, and a primitive prop is clearer than one-off deep overrides.
+- Preserve default table behavior — `cellPadding` defaults to `default`, so existing table consumers keep their current spacing.
+- Stabilize table scrollbar behavior — predictable scrollbar space reduces small layout shifts in dense data surfaces.
+- Balance KPI cards before desktop width — intermediate container widths should look intentional, not like a temporary broken grid.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [600] Prototype grouped campaign table and decide against adoption
+**Type:** experiment
+
+**Summary:** Built a grouped campaign table prototype that organizes campaign rows under expandable channel total rows, then decided not to keep it in the main campaign performance view because it adds more visual and interaction noise than actionable value.
+
+**Brainstorming:** A channel-grouped campaign table sounded useful because it could combine channel-level totals with campaign-level detail in one table. The first implementation path used nested tables to animate grouped rows, but that broke column alignment because nested tables compute column widths independently. The better table-native direction was a flat table: group header rows remain normal table rows, campaign rows stay in the same table, and collapse/expand animation happens inside cell wrappers rather than on `<tr>` itself. After getting that working smoothly, the product read was still clear: the extra grouping control and repeated channel totals introduce more scanning overhead than the existing campaign table, KPIs, filters, and charts justify.
+
+**Prompt:** Replace the campaign-performance TODO with a new `GroupedCampaignTable`: like `CampaignTable`, but grouped by channel, without a separate Channel column. Put the channel name in the campaign column, make groups expandable/collapsible, calculate channel header totals from campaigns inside each channel, apply sorting to channel groups and then campaigns within each group, start groups expanded, and add an expand/collapse-all control. Then evaluate whether the table should remain in the main view.
+
+**What changed:**
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — added a new grouped campaign table prototype.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — groups filtered campaigns by `channel`.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — removes the separate Channel column from the grouped table.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — uses the first column for both channel group names and campaign names.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — computes group totals from campaigns in each channel using `aggregateCampaignMetrics`.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — recalculates grouped `CTR`, `CVR`, `CPA`, and `ROI` from aggregated totals with `computePerformanceMetrics`.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — keeps groups expanded by default.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — adds per-channel expand/collapse controls with `aria-expanded` and `aria-controls`.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — adds one table-level action that shows `Collapse all` when any group is expanded and `Expand all` when all groups are collapsed.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — sorts channel groups by the active column and then sorts campaigns within each channel by the same column/direction.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — moved away from nested tables after discovering column-width drift.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — moved to a flat table structure so group rows and campaign rows share the same native table column layout.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — uses JS enter/leave hooks so campaign rows are inserted collapsed before expanding and removed only after the collapse animation completes.
+- `features/campaign-performance/components/GroupedCampaignTable.vue` — animates cell wrappers instead of `<tr>` height because table rows do not animate height/overflow reliably.
+
+**Key decisions & why:**
+- Do not adopt the grouped table in the main view — it adds a second way to inspect the same campaign data, but does not add enough decision value to justify the extra UI weight.
+- Prefer the existing campaign table for the primary workflow — filters, charts, KPIs, and the flat campaign table already provide the useful scanning path.
+- Keep grouped-table work separate from the active dashboard — channel grouping reads nicely in isolation, but in the full page it competes with charts and filters rather than clarifying them.
+- Use flat rows for grouped-table behavior — native table layout preserves column alignment; nested tables should be avoided for this use case.
+- Animate wrappers, not table rows — `<tr>` height/overflow transitions are unreliable, while inner cell wrappers can animate smoothly.
+- Remove rows after collapse — JS transition hooks let rows leave the DOM after animation, avoiding hidden rows that still affect table semantics or spacing.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.

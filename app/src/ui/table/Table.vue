@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import type { TableStriped } from './table.types'
+import type { TableCellPadding, TableStriped } from './table.types'
 
 const props = withDefaults(
   defineProps<{
     striped?: TableStriped
     verticalSeparators?: boolean
+    cellPadding?: TableCellPadding
   }>(),
   {
     striped: 'none',
     verticalSeparators: false,
+    cellPadding: 'default',
   },
 )
 </script>
 
 <template>
   <div
-    class="scrollbar-info-on-surface table-container"
+    class="scrollbar-stable scrollbar-info-on-surface table-container"
     :class="[
       `striped-${props.striped}`,
+      `cell-padding-${props.cellPadding}`,
       { 'vertical-separators': props.verticalSeparators },
     ]"
   >
@@ -67,5 +70,9 @@ const props = withDefaults(
 
 .table-container.vertical-separators > table :deep(tr > td:not(:last-of-type)) {
   @apply border-r border-x-info-dark/10;
+}
+
+.table-container.cell-padding-none > table :deep(td) {
+  padding: 0;
 }
 </style>
