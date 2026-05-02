@@ -25,7 +25,7 @@ const emit = defineEmits<{ clear: [] }>();
       <AlertTriangleIcon />Requires selection
     </Badge>
     <Badge v-else variant="warning">
-      <CircleCheckIcon />Select one
+      <CircleCheckIcon />Choose one
     </Badge>
     <!-- Clear button -->
     <Button

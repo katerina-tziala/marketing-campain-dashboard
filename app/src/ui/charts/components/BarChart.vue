@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useAttrs } from 'vue'
 import { Bar } from 'vue-chartjs'
 import { useChartConfig, useChartTooltip } from '../composables'
 import type { BarChartData, BarChartOptions, BarTooltipCallbacks, ChartTickFormatter } from '../types'
@@ -10,7 +10,6 @@ const props = withDefaults(
     chartData: BarChartData
     yLabel?: string
     horizontal?: boolean
-    ariaLabel?: string
     tooltipCallbacks?: BarTooltipCallbacks
     valueTickFormatter?: ChartTickFormatter
     valueScaleMin?: number
@@ -20,6 +19,11 @@ const props = withDefaults(
   { horizontal: false, showLegend: false },
 )
 
+defineOptions({
+  inheritAttrs: false,
+})
+
+const attrs = useAttrs()
 const { baseOptions, basePlugins, createScale } = useChartConfig<'bar'>()
 
 const defaultTooltipCallbacks: BarTooltipCallbacks = {
@@ -70,13 +74,19 @@ const options = computed<BarChartOptions>(() => ({
   },
 }))
 
+const chartAriaLabel = computed(() =>
+  typeof attrs['aria-label'] === 'string'
+    ? attrs['aria-label']
+    : props.yLabel ?? 'Bar chart',
+)
 </script>
 
 <template>
   <div
+    v-bind="$attrs"
     class="w-full h-full min-h-64"
     role="img"
-    :aria-label="ariaLabel ?? yLabel ?? 'Bar chart'"
+    :aria-label="chartAriaLabel"
   >
     <Bar :data="chartData" :options="options" />
   </div>

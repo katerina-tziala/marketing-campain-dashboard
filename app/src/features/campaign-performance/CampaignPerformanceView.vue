@@ -67,6 +67,7 @@ function clearChannelFilters(): void {
       <div class="campaign-performance-header-container">
         <CampaignPerformanceHeader
           :title="store.title"
+          :business-context="store.businessContext"
           :selected-channel-count="selectedChannelCount"
           :total-channel-count="store.portfolioChannels.size"
           :filtered-campaign-count="store.filteredCampaigns.length"

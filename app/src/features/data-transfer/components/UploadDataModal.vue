@@ -160,6 +160,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
     title="Upload Campaign Data"
     :size="view === 'form' ? 'small' : 'large'"
     :initial-focus="view === 'form' ? 'first-control' : 'content'"
+    :close-on-backdrop="false"
     @close="close"
   >
     <UploadDataForm
@@ -188,6 +189,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
       v-else
       :duplicate-groups="duplicateGroups"
       :valid-campaigns="validCampaigns"
+      :back-label="rowErrors.length > 0 ? 'Review errors' : 'Fix file'"
       @back="handleBackFromDuplicates"
       @proceed="handleProceedFromDuplicates"
       @close="close"

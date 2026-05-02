@@ -44,7 +44,7 @@ const {
           @click="requestUpload"
         >
           <UploadIcon />
-          Upload CSV
+          Upload data
         </Button>
       </div>
     </header>

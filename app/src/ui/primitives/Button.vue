@@ -113,16 +113,32 @@ defineExpose({
 
 /* variant primary */
 .btn.primary {
-  @apply bg-primary-darker text-typography;
+  @apply bg-primary-darker text-typography-strong;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-deep text-typography-strong;
+      @apply bg-primary-deep text-typography-inverse;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
+    }
+  }
+}
+
+/* variant text-only */
+.btn.text-only {
+  @apply border-transparent text-primary-lighter/80;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply bg-primary-light/[12%] text-primary-light;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
     }
   }
 }
@@ -155,22 +171,6 @@ defineExpose({
 
     &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-accent;
-    }
-  }
-}
-
-/* variant text-only */
-.btn.text-only {
-  @apply border-transparent text-primary-lighter/80;
-
-  &:not(:disabled) {
-    &:hover,
-    &:focus-visible {
-      @apply bg-primary-light/[12%] text-primary-light;
-    }
-
-    &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
     }
   }
 }
@@ -221,18 +221,6 @@ defineExpose({
       @apply border-typography-soft;
     }
   }
-  // @apply bg-transparent border-typography-subtle text-typography-subtle;
-
-  // &:not(:disabled) {
-  //   &:hover,
-  //   &:focus-visible {
-  //     @apply bg-typography/[8%] border-typography-soft text-typography;
-  //   }
-
-  //   &:not(.no-ring):focus-visible {
-  //     @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
-  //   }
-  // }
 }
 
 /* variant info-outline */

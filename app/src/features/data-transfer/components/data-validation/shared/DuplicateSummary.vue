@@ -31,13 +31,13 @@ const words = computed(() => {
     <template #summary>
       <template v-if="variant === 'resolve'">
         <p><strong>{{ count }} {{ words.group }}</strong> {{ words.verb }} more than once in the file.</p>
-        <p>Select one row from each group to include in the import. Groups without a selection will be skipped.</p>
+        <p>Select one row from each group to include in the import. Groups without a selection will not be imported.</p>
         <p v-if="!hasValidCampaigns">Select at least one row to proceed.</p>
       </template>
       <template v-else>
-        <p><strong>{{ count }} campaign {{ words.nameHas }}</strong> duplicate rows that will need to be resolved.</p>
-        <p>You will be asked to resolve these duplicates in the next step.</p>
+        <p><strong>{{ count }} campaign {{ words.nameHas }}</strong> duplicate rows that will need to be resolved</p>
+        <p>You will be asked to resolve these duplicates in the next step</p>
       </template>
     </template>
   </DataErrorSummary>
-</template>
+</template> 

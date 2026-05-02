@@ -1,3 +1,5 @@
+import { APP_LOCALE } from './formatters'
+
 export type DateParseErrorKey = 'invalid-format' | 'invalid-date'
 
 export interface LocaleDateFormat {
@@ -26,6 +28,19 @@ export const localeDateFormat: LocaleDateFormat = {
 
 function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10)
+}
+
+export function formatIsoDate(value: string): string {
+  return new Date(`${value}T00:00:00Z`).toLocaleDateString(APP_LOCALE, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
+export function formatIsoDateRange(from: string, to: string): string {
+  return `${formatIsoDate(from)} – ${formatIsoDate(to)}`
 }
 
 function hasExpectedDateParts(day: string, month: string, year: string): boolean {

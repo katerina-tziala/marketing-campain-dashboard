@@ -36,6 +36,11 @@ const props = withDefaults(
     @apply gap-x-2;
   }
 
+
+  &.meta-row.base {
+    @apply text-base;
+  }
+
   &.meta-row.tiny {
     @apply text-xs;
   }

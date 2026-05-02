@@ -10,10 +10,12 @@ const props = withDefaults(
     closeLabel?: string;
     size?: ModalSize;
     initialFocus?: ModalInitialFocus;
+    closeOnBackdrop?: boolean;
   }>(),
   {
     size: "default",
     initialFocus: "content",
+    closeOnBackdrop: true,
   },
 );
 
@@ -87,6 +89,11 @@ async function scheduleInitialFocus(): Promise<void> {
   focusInitialTarget();
 }
 
+function handleBackdropClick(): void {
+  if (!props.closeOnBackdrop) return;
+  emit("close");
+}
+
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === "Escape") {
     emit("close");
@@ -144,7 +151,7 @@ watch(
     <div
       v-bind="dialogAria"
       class="overlay"
-      @click.self="emit('close')"
+      @click.self="handleBackdropClick"
     >
       <div ref="modalRef" class="modal" :class="props.size" tabindex="-1">
         <ModalHeader

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useAttrs } from "vue";
 import type { PortfolioKPIs } from "@/shared/portfolio";
 import type { Channel } from "@/shared/data";
 import {
@@ -25,8 +25,17 @@ import {
 const props = defineProps<{
   channels: Channel[];
   kpis: PortfolioKPIs;
-  ariaLabel?: string;
 }>();
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const attrs = useAttrs();
+const rootAttrs = computed(() => {
+  const { "aria-label": _ariaLabel, ...rest } = attrs;
+  return rest;
+});
 
 function getGapPercent(channel: Channel): number {
   return getChannelEfficiencyGapPercent(channel, props.kpis);
@@ -96,10 +105,16 @@ const valueScaleBounds = computed<{ min?: number; max?: number }>(() => {
 function formatValueTick(value: string | number): string {
   return formatDecimal(Number(value), 1);
 }
+
+const chartAriaLabel = computed(() =>
+  typeof attrs["aria-label"] === "string"
+    ? attrs["aria-label"]
+    : "Efficiency Gap by Channel",
+);
 </script>
 
 <template>
-  <div class="efficiency-gap-bars">
+  <div v-bind="rootAttrs" class="efficiency-gap-bars">
     <MetaRow size="tiny" class="mx-auto">
       <MetaItem class="legend-item">
         <span
@@ -124,7 +139,7 @@ function formatValueTick(value: string | number): string {
       v-if="showChart"
       class="!h-[357px]"
       :chart-data="chartData"
-      :aria-label="ariaLabel ?? 'Efficiency Gap by Channel'"
+      :aria-label="chartAriaLabel"
       :tooltip-callbacks="tooltipCallbacks"
       :value-tick-formatter="formatValueTick"
       :value-scale-min="valueScaleBounds.min"

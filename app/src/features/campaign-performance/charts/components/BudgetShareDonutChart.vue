@@ -23,7 +23,6 @@ import { formatBudgetTooltipLines } from "../utils";
 const props = defineProps<{
   items: BudgetShareDonutItem[];
   kpis: PortfolioKPIs;
-  ariaLabel?: string;
 }>();
 
 function getTooltipDataIndex(ctx: DonutTooltipItem): number {
@@ -90,6 +89,5 @@ const chartData = computed<DonutChartData>(() => ({
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
     :legend-label-filter="legendLabelFilter"
-    :aria-label="ariaLabel ?? 'Budget share by campaign donut chart'"
   />
 </template>

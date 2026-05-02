@@ -16,7 +16,6 @@ import { formatBudgetTooltip, formatRevenueTooltip } from "../utils";
 
 const props = defineProps<{
   channels: Channel[];
-  ariaLabel?: string;
 }>();
 
 const tooltipCallbacks: BarTooltipCallbacks = {
@@ -61,7 +60,6 @@ function formatValueTick(value: string | number): string {
 <template>
   <GroupedBarChart
     :chart-data="chartData"
-    :aria-label="ariaLabel ?? 'Revenue vs Budget by Channel'"
     :tooltip-callbacks="tooltipCallbacks"
     :value-tick-formatter="formatValueTick"
     y-label="Amount (€)"

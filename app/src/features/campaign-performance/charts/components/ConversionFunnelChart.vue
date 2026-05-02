@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useAttrs } from "vue";
 import { formatCompactNumber } from "@/shared/utils";
 import { PerformanceIndicator } from "../../ui";
 import type { PortfolioKPIs } from "@/shared/portfolio";
@@ -16,9 +16,13 @@ export interface FunnelItem {
 
 const props = defineProps<{
   kpis: PortfolioKPIs;
-  ariaLabel?: string;
 }>();
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const attrs = useAttrs();
 const funnelItems = computed(() => [
   {
     label: "Impressions",
@@ -51,13 +55,20 @@ function scaledWidth(val: number | null): number {
   const ratio = val === null ? 0 : Math.cbrt(val) / Math.cbrt(maxValue.value);
   return MIN_WIDTH_BAR + ratio * (100 - MIN_WIDTH_BAR);
 }
+
+const chartAriaLabel = computed(() =>
+  typeof attrs["aria-label"] === "string"
+    ? attrs["aria-label"]
+    : "Conversions funnel chart",
+);
 </script>
 
 <template>
   <div
+    v-bind="$attrs"
     class="funnel"
     role="img"
-    :aria-label="ariaLabel ?? 'Conversions funnel chart'"
+    :aria-label="chartAriaLabel"
   >
     <div v-for="item in funnelItems" :key="item.label" class="funnel-row">
       <div class="funnel-region-1">

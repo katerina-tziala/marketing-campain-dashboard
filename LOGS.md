@@ -494,3 +494,60 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Inline `TransferActions` — two buttons used by one placeholder did not justify a separate feature component.
 - Keep placeholder production-focused — temporary form-preview markup was removed once visual work moved back into the modal form.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [596] Surface portfolio context and tighten modal/chart accessibility
+**Type:** feature/refactor
+
+**Summary:** Added portfolio period and industry metadata to the campaign dashboard header, simplified aria-label handling for root-level UI/chart components, added explicit modal backdrop-close control, and tightened the upload validation review actions so each button label matches the actual next screen.
+
+**Brainstorming:** Once uploaded portfolios started carrying required period data and optional industry, the dashboard header needed to show that business context near the portfolio name rather than hiding it inside analysis prompts. At the same time, several first-level components were carrying `ariaLabel` props even though Vue already forwards attributes to root elements; that made the UI API noisier than necessary. The better rule is to let consumers pass native `aria-label` directly to root-level components, while keeping explicit aria props only when a component needs to place the label on a nested control. Modal behavior needed one additional escape hatch: upload data should not close from an accidental backdrop click during multi-step validation, but Escape and explicit close controls should continue to work. The review screens also needed clearer action copy, because the same back action can return either to the upload form or to the row-error table depending on the validation path.
+
+**Prompt:** Add period and industry to the dashboard header metadata after the portfolio name. Check root components that receive aria labels as props and move labels to native attribute fallthrough where possible. Add a modal option to prevent backdrop close and make the upload-data modal use it. Then fix duplicate-campaign review actions so the primary back button says `Fix file` when it returns to the form and `Review errors` when it returns to the error table.
+
+**What changed:**
+- `features/campaign-performance/CampaignPerformanceView.vue` — passes `store.businessContext` into `CampaignPerformanceHeader`.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — accepts `BusinessContext | null` and renders period and optional industry immediately after the portfolio name.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — split portfolio metadata and filter metadata into two `MetaRow` instances so business context and filter context read as separate groups.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — keeps the AI connected dot next to the AI button while tightening header spacing.
+- `shared/utils/date-format.ts` — added `formatIsoDate` and `formatIsoDateRange` using `APP_LOCALE` so stored ISO portfolio dates render as localized dashboard copy.
+- `ui/meta/meta.types.ts` — added the `base` meta-row size.
+- `ui/meta/MetaRow.vue` — supports the new `base` text size.
+- `ui/meta/MetaItem.vue` — removed the forced `leading-none` so multi-row header metadata has healthier line-height.
+- `ui/dropdown/DropdownPanel.vue` — removed the root-level `ariaLabel` prop and now relies on native `aria-label` attribute fallthrough.
+- `ui/charts/components/BarChart.vue` — removed the `ariaLabel` prop, disabled automatic inheritance, and applies native `$attrs` plus a computed `aria-label` fallback on the chart root.
+- `ui/charts/components/GroupedBarChart.vue` — moved chart labeling from `ariaLabel` prop to native `aria-label` fallthrough with a fallback.
+- `ui/charts/components/DonutChart.vue` — moved chart labeling from `ariaLabel` prop to native `aria-label` fallthrough with a fallback.
+- `ui/charts/components/BubbleChart.vue` — moved chart labeling from `ariaLabel` prop to native `aria-label` fallthrough with a fallback.
+- `features/campaign-performance/charts/components/RoiBarChart.vue` — removed the pass-through `ariaLabel` prop so consumers pass `aria-label` directly to the underlying chart component.
+- `features/campaign-performance/charts/components/RevenueVsBudgetBars.vue` — removed the pass-through `ariaLabel` prop.
+- `features/campaign-performance/charts/components/BudgetShareDonutChart.vue` — removed the pass-through `ariaLabel` prop.
+- `features/campaign-performance/charts/components/ConversionFunnelChart.vue` — moved from an `ariaLabel` prop to native `aria-label` fallthrough with a default funnel label.
+- `features/campaign-performance/charts/components/EfficiencyGapBars.vue` — separates wrapper attrs from chart labeling so `aria-label` reaches the inner chart while other attrs remain on the wrapper.
+- `ui/modal/Modal.vue` — added a typed `closeOnBackdrop` prop with a default of `true`.
+- `ui/modal/Modal.vue` — routes backdrop clicks through `handleBackdropClick`, allowing modals to opt out of backdrop close without changing Escape behavior.
+- `features/data-transfer/components/UploadDataModal.vue` — sets `:close-on-backdrop="false"` so upload and validation state is not lost by an accidental outside click.
+- `features/data-transfer/components/UploadDataModal.vue` — passes a dynamic duplicate-review back label based on whether row errors still exist.
+- `features/data-transfer/components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — accepts `backLabel` and renders `Review errors` or `Fix file` according to the actual destination.
+- `features/data-transfer/components/data-validation/review-duplications/ReviewDuplicatedCampaigns.vue` — reordered footer actions to keep `Cancel` separated, `Import selected rows` as the secondary action, and the destination-aware back action as primary.
+- `features/data-transfer/components/data-validation/review-errors/ReviewErrorsComponent.vue` — simplified footer actions to `Cancel`, `Import N valid rows`, and `Fix file`.
+- `features/data-transfer/components/data-validation/review-errors/ReviewErrorsComponent.vue` — removed periods from short validation copy and clarified that valid rows can be imported or the file can be fixed.
+- `features/data-transfer/components/data-validation/shared/DuplicateSummary.vue` — clarified duplicate copy so unselected duplicate groups “will not be imported” instead of “skipped.”
+- `features/data-transfer/components/data-validation/review-duplications/DuplicationsHeader.vue` — changed the unresolved duplicate badge copy from `Select one` to `Choose one`.
+- `features/data-transfer/components/ReplaceDataModal.vue` — softened the destructive copy, reordered footer actions, and keeps cancel visually separated.
+- `app/pages/DashboardPage.vue` — updated the empty-dashboard upload CTA from `Upload CSV` to `Upload data`.
+- `ui/primitives/Button.vue` — adjusted primary button typography colors, kept `accent-outline`, and removed stale commented-out ghost-outline experimentation.
+
+**Key decisions & why:**
+- Show business context in the dashboard header — period and industry describe the active portfolio and should be visible before users ask AI for analysis.
+- Format stored ISO dates at the edge — portfolio dates remain stable in the model, while UI copy uses `APP_LOCALE`.
+- Keep metadata grouped by meaning — portfolio identity/context and current filter scope are related, but they should not read as one long flat sentence.
+- Prefer native attribute fallthrough for root accessibility labels — root-level `ariaLabel` props duplicate Vue behavior and make component APIs heavier.
+- Keep explicit aria props only for nested targets — table columns and radio inputs still need explicit labels because the final accessible element is not the component root.
+- Disable chart attr inheritance deliberately — chart components need to put attrs on the accessible chart wrapper, not accidentally on an inner Chart.js component.
+- Preserve useful chart label fallbacks — consumers can pass `aria-label`, but charts still have sensible labels when they do not.
+- Make backdrop close opt-out, not opt-in — most modals can close on backdrop by default, while multi-step upload validation protects user progress.
+- Keep Escape close behavior unchanged — the requested guard only concerns backdrop clicks, so keyboard close remains available.
+- Make review action labels destination-aware — `Back` or a hard-coded `Fix file` hides whether the user is returning to the form or to row-error review.
+- Use clearer import language in validation flows — “Import selected rows” and “Import N valid rows” explain the consequence better than generic proceed labels.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
