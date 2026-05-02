@@ -1,5 +1,5 @@
-import { sortByValueDesc } from '../utils'
-import type { RoiComparable, ShareComparable } from './types'
+import { sortByValueDesc } from '@/shared/utils'
+import type { RoiComparable, ShareComparable } from '../types'
 
 type RevenueRanked = {
   revenue: number

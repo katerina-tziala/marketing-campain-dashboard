@@ -9,7 +9,7 @@ import type {
   DynamicClassificationThresholds,
   InefficientCampaignSignal,
   ScalingCandidateSignal,
-} from '../types'
+} from '../../types'
 import {
   DEFAULT_CAMPAIGN_SIGNAL_THRESHOLDS,
   SIGNAL_REASONS,

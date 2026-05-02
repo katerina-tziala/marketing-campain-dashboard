@@ -2,13 +2,13 @@
 import { computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
-import type { CampainDataRowError } from "../../../types";
+import type { CampaignDataRowError } from "../../../types";
 import { getRowErrorSummaryWords } from "../../../utils";
 import { DataErrorSummary, DuplicateSummary } from "../shared";
 import DataErrorsTable from "./DataErrorsTable.vue";
 
 const props = defineProps<{
-  rowErrors: CampainDataRowError[];
+  rowErrors: CampaignDataRowError[];
   validCampaigns: Campaign[];
   duplicateGroupCount: number;
 }>();

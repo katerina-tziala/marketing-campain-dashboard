@@ -1,12 +1,11 @@
 import { computed, provide, ref, type Ref } from 'vue'
-import type { Campaign } from '@/shared/data'
-import { usePortfolioDataStore } from '@/app/stores'
+import { usePortfolioStore, type PortfolioInput } from '@/shared/portfolio'
 import type UploadDataModal from '@/features/data-transfer/components/UploadDataModal.vue'
 
 export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal> | null>) {
-  const portfolioData = usePortfolioDataStore()
+  const portfolioStore = usePortfolioStore()
   const showReplaceConfirm = ref(false)
-  const hasCampaigns = computed(() => portfolioData.portfolios.length > 0)
+  const hasCampaigns = computed(() => portfolioStore.portfolios.length > 0)
 
   function openUploadModal(): void {
     modalRef.value?.open()
@@ -17,8 +16,8 @@ export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal
     else openUploadModal()
   }
 
-  function handleUploadComplete(campaigns: Campaign[], title: string): void {
-    portfolioData.loadPortfolio(campaigns, title)
+  function handleUploadComplete(input: PortfolioInput): void {
+    portfolioStore.loadPortfolio(input)
   }
 
   function onReplaceConfirm(): void {

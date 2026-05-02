@@ -1,7 +1,7 @@
 import type { Campaign } from '@/shared/data'
-import type { CampainDataDuplicateGroup } from '../types'
+import type { CampaignDataDuplicateGroup } from '../types'
 
-function getGrouppedCampains(campaigns: Campaign[]): Map<string, Campaign[]> {
+function getGroupedCampaigns(campaigns: Campaign[]): Map<string, Campaign[]> {
   const grouped = new Map<string, Campaign[]>()
 
   for (const campaign of campaigns) {
@@ -15,12 +15,12 @@ function getGrouppedCampains(campaigns: Campaign[]): Map<string, Campaign[]> {
 
 export function detectCampaignDuplication(campaigns: Campaign[]): {
   unique: Campaign[]
-  groups: CampainDataDuplicateGroup[]
+  groups: CampaignDataDuplicateGroup[]
 } {
-  const grouped = getGrouppedCampains(campaigns)
+  const grouped = getGroupedCampaigns(campaigns)
 
   const unique: Campaign[] = []
-  const groups: CampainDataDuplicateGroup[] = []
+  const groups: CampaignDataDuplicateGroup[] = []
 
   for (const rows of grouped.values()) {
     if (rows.length === 1) {

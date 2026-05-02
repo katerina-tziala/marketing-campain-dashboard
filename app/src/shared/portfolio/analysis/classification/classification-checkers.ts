@@ -3,7 +3,7 @@ import type {
   FunnelLeakThresholds,
   RoiComparable,
   UnderperformingRoiThresholds,
-} from '../types'
+} from '../../types'
 
 export function hasFunnelLeak(
   item: FunnelComparable,

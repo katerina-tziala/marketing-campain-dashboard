@@ -27,7 +27,7 @@ const emit = defineEmits<{ aiClick: [] }>();
     </template>
     <template #action>
       <div v-if="showAiButton" class="relative shrink-0">
-        <Button variant="primary" @click="emit('aiClick')">
+        <Button variant="primary" size="small" @click="emit('aiClick')">
           <SparklesIcon />AI
         </Button>
         <span v-if="showConnectedDot" class="connected-status" aria-hidden="true">

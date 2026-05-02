@@ -1,4 +1,4 @@
-import type { ShareEfficiency } from '../../types'
+import type { ShareEfficiency } from './summary'
 
 export interface ScalingCandidateSignal extends ShareEfficiency {
   name: string;

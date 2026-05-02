@@ -31,7 +31,7 @@ const emit = defineEmits<{ clear: [] }>();
     <Button
       v-if="props.isSelected || props.clearable"
       variant="destructive"
-      size="small"
+      size="smaller"
       @click.stop="emit('clear')"
     >
       {{ props.clearLabel ?? 'Clear selection' }}
@@ -41,7 +41,7 @@ const emit = defineEmits<{ clear: [] }>();
 
 <style lang="scss" scoped>
 .group-title-row {
-  @apply flex flex-wrap items-center gap-2 min-h-9;
+  @apply flex flex-wrap items-center gap-2 min-h-9 px-0.5;
 }
 
 .group-title-text {

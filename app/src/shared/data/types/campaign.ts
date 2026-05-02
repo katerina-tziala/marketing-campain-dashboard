@@ -1,4 +1,4 @@
-export interface CampaignMetrics {
+export interface CampaignRawMetrics {
   budget: number
   impressions: number
   clicks: number
@@ -17,42 +17,10 @@ export interface PerformanceMetrics {
   cpa: number | null
 }
 
-export interface Campaign extends CampaignMetrics {
+export interface Campaign extends CampaignRawMetrics {
   rowId: number
   campaign: string
   channel: string
 }
 
 export interface CampaignPerformance extends Campaign, PerformanceMetrics { }
-
-export interface PortfolioKPIs {
-  totalBudget: number;
-  totalRevenue: number;
-  totalConversions: number;
-  totalImpressions: number
-  totalClicks: number
-  aggregatedRoi: number | null; // decimal, e.g. 1.68 = 168%
-  aggregatedCpa: number | null; // EUR — budget / conversions
-  aggregatedCtr: number | null; // decimal, e.g. 1.68 = 168%
-  aggregatedCvr: number | null; // decimal, e.g. 1.68 = 168%
-}
-
-export interface PortfolioScope {
-  campaigns: string[]
-  channels: string[]
-  selectedCampaigns: string[]
-  selectedChannels: string[]
-}
-
-export interface ShareEfficiency {
-  /** Decimal — item budget / total budget */
-  budgetShare: number
-  /** Decimal — item revenue / total revenue */
-  revenueShare: number
-  /** Decimal — budgetShare - revenueShare; positive means budget is over-allocated */
-  allocationGap: number
-  /** Decimal — revenueShare - budgetShare; positive means revenue outperforms budget weight */
-  efficiencyGap: number
-  /** Currency (EUR) — revenue - budget; positive means profitable */
-  gapAmount: number
-}

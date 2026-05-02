@@ -1,6 +1,6 @@
-import type { PortfolioKPIs } from '@/shared/data'
+import type { PortfolioKPIs } from '@/shared/portfolio'
 import type { Channel } from '@/shared/data'
-import { computeShareEfficiency } from '@/shared/portfolio-analysis'
+import { computeShareEfficiency } from '@/shared/portfolio'
 import { CAMPAIGN_PERFORMANCE_CHART_COLORS } from '../config'
 
 export function getChannelEfficiencyGapPercent(

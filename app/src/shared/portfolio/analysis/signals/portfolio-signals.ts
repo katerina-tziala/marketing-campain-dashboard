@@ -6,7 +6,7 @@ import type {
   CorrelationSignal,
   PortfolioSignalThresholds,
   ScalingCandidateSignal,
-} from '../types'
+} from '../../types'
 import { rankByRoiDesc } from '../ranking'
 import { toCampaignScalingSignals } from './campaign-signals'
 import { toChannelScalingSignals } from './channel-signals'

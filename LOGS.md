@@ -306,3 +306,91 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Add titles where the user may meet acronyms out of context — KPI cards introduce the terminology, but campaign table users can be visually away from the cards, so table headers also expose the same acronym expansions.
 - Do not repeat acronym titles everywhere — chart titles and axis labels keep using the product terminology without extra title wiring; KPI cards and dense table headers are the useful glossary surfaces.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
+
+
+## [592] Add upload period and industry business context
+**Type:** feature/refactor
+
+**Summary:** Extended the upload-data form so each portfolio now carries required campaign period metadata and optional industry context. The period is entered as localized From/To dates, validated at the fieldset level, normalized into ISO dates, stored on the portfolio, and forwarded into AI analysis context.
+
+**Brainstorming:** The analysis prompts were missing business context that a marketer would naturally expect: what period the uploaded data covers and what industry the campaign belongs to. Period should not live as loose AI-only metadata because it describes the uploaded portfolio itself. Industry is useful but not always known, so it belongs beside the portfolio as optional context. The form needed to accept one date format for now, but hardcoding `DD/MM/YYYY` would make the UI drift from the app formatting conventions. The better approach was to derive the accepted format and example from `APP_LOCALE`, validate both dates together as a period fieldset, and emit normalized ISO dates into the portfolio model.
+
+**Prompt:** In the upload data modal form, add three inputs: From date, To date, and optional Industry. Group From and To under a Period fieldset. Period is required, industry is optional, and From must be less than or equal to To. Use the locale from the formatting file and accept one date format for now. If the range is invalid, show the error at the fieldset level from an accessibility perspective. Then make period and industry reach the analysis calls as business context.
+
+**What changed:**
+- `features/data-transfer/components/UploadDataForm.vue` — added `periodFrom`, `periodTo`, and `industry` props plus matching `update:*` emits.
+- `features/data-transfer/components/UploadDataForm.vue` — added a required `Period` fieldset with From and To inputs, a localized date-format hint, and one fieldset-level validation error.
+- `features/data-transfer/components/UploadDataForm.vue` — derives the accepted date pattern and example from `APP_LOCALE` through `Intl.DateTimeFormat.formatToParts`.
+- `features/data-transfer/components/UploadDataForm.vue` — validates required title, required period, valid localized dates, `from <= to`, and required CSV file before submitting.
+- `features/data-transfer/components/UploadDataForm.vue` — normalizes valid dates to ISO `YYYY-MM-DD` strings before emitting `PortfolioDetails`.
+- `features/data-transfer/components/UploadDataForm.vue` — added an optional Industry input and emits `industry: undefined` when the field is empty.
+- `features/data-transfer/components/UploadDataModal.vue` — lifted period and industry state beside title/file state so values survive row-error and duplicate-review view switches.
+- `features/data-transfer/components/UploadDataModal.vue` — resets title, period, industry, file, parsing errors, row errors, valid campaigns, duplicate groups, and pending portfolio details on close.
+- `features/data-transfer/components/UploadDataModal.vue` — stores pending `PortfolioDetails` while CSV validation screens are active, then combines those details with valid/selected campaigns into a `PortfolioInput`.
+- `app/composables/useUploadModal.ts` — accepts the new `PortfolioInput` shape from the modal and passes it into the portfolio store.
+- `shared/portfolio/types/portfolio.ts` — introduced `Period`, `BusinessContext`, `PortfolioDetails`, and `PortfolioInput`.
+- `shared/portfolio/types/portfolio.ts` — made `Portfolio` carry `name`, required `period`, optional `industry`, `channelMap`, `analysis`, and `uploadedAt`.
+- `shared/portfolio/portfolio.store.ts` — stores period and industry on each portfolio entry and computes portfolio analysis from the uploaded campaigns.
+- `features/campaign-performance/stores/campaignPerformance.store.ts` — exposes `businessContext` from the active portfolio so campaign filters and AI analysis can share the same contextual metadata.
+- `app/utils/map-analysis-context.ts` and `app/stores/dashboardOrchestrator.store.ts` — include `businessContext` in the mapped analysis context and only set AI analysis context when an active portfolio and business context are both available.
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — passes `businessContext` into `runAnalysisPrompt` for both analysis tabs.
+- `features/ai-tools/prompts/business-context.ts`, `executive-summary-prompt2.ts`, and `budget-optimization-prompt2.ts` — consume the portfolio `BusinessContext` shape so active prompts can include period and industry context.
+- `app/dev-mode/dev-portfolio-data.ts` — supplies a sample period and industry for seeded dev data.
+
+**Key decisions & why:**
+- Period belongs to the portfolio — it describes the uploaded dataset, not only an AI prompt request.
+- Industry is optional — useful context when available, but it should not block data upload.
+- Store dates as ISO strings — UI can accept localized input while the domain model stays stable and easy to serialize.
+- Validate the date range at fieldset level — the error concerns the relationship between From and To, so the accessible error belongs to the grouped Period control.
+- Derive the date label from `APP_LOCALE` — the form and formatting utilities stay aligned even if the app locale changes.
+- Keep `BusinessContext` in shared portfolio types — AI analysis consumes it, but does not own the business metadata model.
+- Preserve upload validation flow — row-error and duplicate-review screens keep using the same pending portfolio details instead of dropping the newly entered context.
+
+
+## [593] Consolidate portfolio domain types and remove remaining type smells
+**Type:** refactor
+
+**Summary:** Cleaned up the portfolio and analysis type boundaries after adding business context. The old `portfolioData` store and `shared/portfolio-analysis` folder were consolidated into a shared `portfolio` domain module, confusing analysis context names were made explicit, broad `unknown`/barrel exports were removed, and UI/chart/dev-mode type smells were tightened. The app now builds successfully with only the existing Vite chunk-size warning.
+
+**Brainstorming:** Once period and industry became part of the uploaded portfolio, the older model names started fighting the architecture. `PortfolioEntry`, `portfolioData`, `BusinessContext` inside AI analysis, and a separate `shared/portfolio-analysis` folder made it unclear which layer owned the portfolio model. The cleaner rule is: raw campaign/channel data lives in `shared/data`; portfolio state, portfolio metadata, portfolio analysis, and analysis-derived types live in `shared/portfolio`; AI analysis receives an explicit request context but does not define the portfolio’s business metadata. After that boundary was clarified, the remaining type cleanup was mostly about removing accidental indirection: no broad `unknown` source shape in the mapper, no data re-export from `shared/types`, no AI-side `BusinessContext` re-export, no `TabDisplay` casts, and no loose chart scale option record.
+
+**Prompt:** Clean up confusing portfolio and analysis interfaces step by step. Move portfolio models and portfolio analysis under a shared portfolio domain, rename raw campaign metric types clearly, make period part of the portfolio, remove redundant or AI-owned copies of business context, keep legacy prompt files isolated for future work, then rescan the codebase for type smells excluding prompts and fix the remaining concrete issues.
+
+**What changed:**
+- `shared/portfolio/` — introduced the portfolio domain module with `index.ts`, `portfolio.store.ts`, `analysis/`, and `types/`.
+- `shared/portfolio-analysis/` — removed the old standalone analysis folder after moving its analysis functions, classification helpers, signals, ranking, metrics, and types into `shared/portfolio`.
+- `app/stores/portfolioData.store.ts` — removed the old app-level portfolio data store.
+- `shared/portfolio/portfolio.store.ts` — replaced `usePortfolioDataStore` with `usePortfolioStore`.
+- `shared/portfolio/types/portfolio.ts` — replaced `PortfolioEntry` with the domain `Portfolio` model and introduced `PortfolioInput`, `PortfolioDetails`, `BusinessContext`, and `Period`.
+- `shared/data/types/campaign.ts` — renamed `CampaignMetrics` to `CampaignRawMetrics` so uploaded CSV metrics are clearly distinguished from computed campaign performance.
+- `shared/data/types/portfolio.ts` / `shared/portfolio/types/portfolio.ts` — moved `PortfolioKPIs` into the portfolio domain because aggregate KPIs describe the portfolio, not a raw campaign.
+- `shared/data/types/index.ts` and `shared/portfolio/types/index.ts` — adjusted exports so raw data types and portfolio-domain types are available from their own modules.
+- `shared/portfolio/analysis/portfolio-analysis.ts` — kept analysis output typed from `PortfolioAnalysis`, including explicit return types for classification groups and derived signals.
+- `app/stores/index.ts`, `app/composables/useUploadModal.ts`, `app/dev-mode/dev-portfolio-data.ts`, and feature stores — updated imports/usages from the old app store to `usePortfolioStore`.
+- `features/campaign-performance/stores/campaignPerformance.store.ts` — now reads active portfolio data from `usePortfolioStore`, recomputes filtered analysis when channel filters are active, and exposes active `businessContext`.
+- `app/utils/map-analysis-context.ts` — replaced store-specific return typing and broad `unknown` fields with a structural source interface using concrete `Channel`, `CampaignPerformance`, `PortfolioAnalysis`, and `BusinessContext` types.
+- `app/stores/dashboardOrchestrator.store.ts` — maps campaign-performance state into `AiAnalysisRequestContext`, guards against missing portfolio/business context, and keeps AI analysis feature-agnostic.
+- `features/ai-tools/ai-analysis/types/context.types.ts` — renamed analysis context types to explicit names: `AnalysisPromptContext`, `AnalysisProviderState`, `AnalysisPortfolioContext`, and `AiAnalysisRequestContext`.
+- `features/ai-tools/ai-analysis/types/context.types.ts` — removed the AI-owned `BusinessContext` shape and imports the portfolio-owned `BusinessContext` instead.
+- `features/ai-tools/ai-analysis/types/context.types.ts` — made `AiAnalysisRequestContext.businessContext` and `AnalysisPromptContext.businessContext` required for app analysis calls.
+- `features/ai-tools/ai-analysis/utils/analysis-prompt.ts` — normalized `PortfolioAnalysis` import to `@/shared/portfolio` and requires business context in the prompt context.
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts` — added `createTabDisplay<T>()` to initialize typed tab display state without `as TabDisplay<...>` casts.
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — replaced tab-display casts with the typed factory and forwards business context into prompt execution.
+- `shared/types/index.ts` — removed the accidental `../data` re-export so `@/shared/types` stays reserved for generic app types like `AsyncStatus`.
+- `shared/portfolio/analysis/index.ts` — removed `export * from '../types'` so the analysis barrel exports analysis functions only; portfolio-level barrels still expose both analysis and types intentionally.
+- `ui/charts/composables/useChartScales.ts` — replaced `Record<string, unknown>` and open index signatures with Chart.js scale/tick option types.
+- `app/dev-mode/config.ts`, `app/dev-mode/types.ts`, `app/dev-mode/index.ts`, and `app/dev-mode/dev-portfolio-data.ts` — renamed `portfolioData` dev-mode config to `portfolio` and renamed the activation helper to `activateDevPortfolio`.
+- `features/data-transfer/types/index.ts` and data-transfer validation components/utilities — fixed the non-prompt `Campain` typo in campaign validation/duplication types and component naming.
+- Legacy prompt files — left structurally isolated for future prompt work; only imports required for current compilation were adjusted to reference the shared portfolio `BusinessContext`.
+
+**Key decisions & why:**
+- Use `shared/portfolio` as the domain boundary — portfolio state, metadata, aggregate KPIs, and portfolio analysis belong together because they represent the uploaded portfolio, not a raw CSV row.
+- Keep `shared/data` raw — campaign and channel raw/computed data types remain reusable without knowing about portfolio storage or AI analysis.
+- Make naming explicit instead of generic — `AiAnalysisRequestContext` and `AnalysisPromptContext` describe where the data is used, while `BusinessContext` stays domain-owned.
+- Prefer structural mapper input over store return types — `mapAnalysisContext` should depend on the shape it needs, not on the concrete Pinia store type.
+- Remove broad barrels that hide ownership — `shared/types` should not secretly export data models, and `portfolio/analysis` should not silently export portfolio types.
+- Require business context at the app analysis boundary — the upload flow now guarantees period metadata, so analysis calls should not pretend it may be absent.
+- Keep prompt fallback optional only inside prompt-specific utilities — legacy and future prompt work can handle fallbacks locally without weakening the app-level contract.
+- Replace casts with factories where possible — `createTabDisplay<T>()` preserves generic response typing without asking TypeScript to trust an assertion.
+- Type Chart.js wrappers with Chart.js types — the chart scale helper still abstracts theme defaults, but its public options now follow the chart library rather than an arbitrary unknown record.
+- Verify by scanning, then building — targeted scans excluding prompts showed no remaining concrete type smells, and `npm run build` passes with only the existing Vite chunk-size warning.

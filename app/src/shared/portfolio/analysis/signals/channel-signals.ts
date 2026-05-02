@@ -1,10 +1,10 @@
-import { toFinite } from '../../utils'
+import { toFinite } from '@/shared/utils'
 import type {
   ChannelSignalThresholds,
   ChannelSummary,
   InefficientChannelSignal,
   ScalingCandidateSignal,
-} from '../types'
+} from '../../types'
 import { rankByAllocationGapDesc } from '../ranking'
 import {
   DEFAULT_CHANNEL_SIGNAL_THRESHOLDS,

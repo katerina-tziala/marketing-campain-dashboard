@@ -1,5 +1,5 @@
-import type { ChannelClassificationThresholds, ChannelSummary } from '../types'
-import type { ChannelGroups } from '../types'
+import type { ChannelClassificationThresholds, ChannelSummary } from '../../types'
+import type { ChannelGroups } from '../../types'
 import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking'
 import { hasBudgetShareLead, hasRoiBelowPortfolio } from '../checkers'
 import {

@@ -2,9 +2,9 @@ import type {
   CampaignClassificationThresholds,
   CampaignSummary,
   DynamicClassificationThresholds,
-} from '../types'
+} from '../../types'
 import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from './constants'
-import { computedMedianOrNull } from '../../utils'
+import { computedMedianOrNull } from '@/shared/utils'
 import { aggregateCampaignOutcomes } from '../metrics'
 
 // ── Shared math helpers ───────────────────────────────────────────────────────

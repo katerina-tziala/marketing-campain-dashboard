@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import type { Campaign } from "@/shared/data";
+import type { PortfolioDetails, PortfolioInput } from "@/shared/portfolio";
 import { Modal } from "@/ui";
-import type { CampainDataDuplicateGroup, CampainDataRowError } from "../types";
+import type {
+  CampaignDataDuplicateGroup,
+  CampaignDataRowError,
+} from "../types";
 import { parseCsv, getValidationErrorMessage } from "../utils";
 import { useDownloadTemplate } from "../composables";
 import {
@@ -14,7 +18,7 @@ import UploadDataForm from "./UploadDataForm.vue";
 const { downloadTemplate } = useDownloadTemplate();
 
 const emit = defineEmits<{
-  "upload-complete": [campaigns: Campaign[], title: string];
+  "upload-complete": [portfolio: PortfolioInput];
 }>();
 
 // ── Open / close ───────────────────────────────────────────────────────────────
@@ -29,11 +33,15 @@ function close(): void {
   isOpen.value = false;
   view.value = "form";
   title.value = "";
+  periodFrom.value = "";
+  periodTo.value = "";
+  industry.value = "";
   file.value = null;
   parseError.value = "";
   rowErrors.value = [];
   validCampaigns.value = [];
   duplicateGroups.value = [];
+  pendingPortfolioDetails.value = null;
 }
 
 defineExpose({ open });
@@ -41,6 +49,9 @@ defineExpose({ open });
 // ── Form state (lifted so it survives view switches) ───────────────────────────
 
 const title = ref("");
+const periodFrom = ref("");
+const periodTo = ref("");
+const industry = ref("");
 const file = ref<File | null>(null);
 const parseError = ref("");
 const isLoading = ref(false);
@@ -52,15 +63,23 @@ watch(file, () => {
 // ── View state ─────────────────────────────────────────────────────────────────
 
 const view = ref<"form" | "row-errors" | "duplicate-rows">("form");
-const pendingTitle = ref("");
+const pendingPortfolioDetails = ref<PortfolioDetails | null>(null);
 const validCampaigns = ref<Campaign[]>([]);
-const rowErrors = ref<CampainDataRowError[]>([]);
-const duplicateGroups = ref<CampainDataDuplicateGroup[]>([]);
+const rowErrors = ref<CampaignDataRowError[]>([]);
+const duplicateGroups = ref<CampaignDataDuplicateGroup[]>([]);
 
 // ── Handlers ───────────────────────────────────────────────────────────────────
 
-async function handleSubmit(): Promise<void> {
+function toPortfolioInput(campaigns: Campaign[], details: PortfolioDetails): PortfolioInput {
+  return {
+    ...details,
+    campaigns,
+  };
+}
+
+async function handleSubmit(details: PortfolioDetails): Promise<void> {
   parseError.value = "";
+  pendingPortfolioDetails.value = details;
   isLoading.value = true;
   const result = await parseCsv(file.value!);
   isLoading.value = false;
@@ -75,12 +94,11 @@ async function handleSubmit(): Promise<void> {
       parseError.value = getValidationErrorMessage(result.errors[0]);
       return;
     }
-    emit("upload-complete", result.campaigns, title.value);
+    emit("upload-complete", toPortfolioInput(result.campaigns, details));
     close();
     return;
   }
 
-  pendingTitle.value = title.value;
   validCampaigns.value = result.campaigns;
   duplicateGroups.value = duplicateError?.duplicateGroups ?? [];
 
@@ -101,11 +119,16 @@ function handleBackFromErrors(): void {
 }
 
 function handleProceedFromErrors(): void {
+  if (!pendingPortfolioDetails.value) return;
+
   if (duplicateGroups.value.length > 0) {
     view.value = "duplicate-rows";
     return;
   }
-  emit("upload-complete", validCampaigns.value, pendingTitle.value);
+  emit(
+    "upload-complete",
+    toPortfolioInput(validCampaigns.value, pendingPortfolioDetails.value),
+  );
   close();
 }
 
@@ -118,10 +141,14 @@ function handleBackFromDuplicates(): void {
 }
 
 function handleProceedFromDuplicates(selected: Campaign[]): void {
+  if (!pendingPortfolioDetails.value) return;
+
   emit(
     "upload-complete",
-    [...validCampaigns.value, ...selected],
-    pendingTitle.value,
+    toPortfolioInput(
+      [...validCampaigns.value, ...selected],
+      pendingPortfolioDetails.value,
+    ),
   );
   close();
 }
@@ -137,6 +164,9 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
     <UploadDataForm
       v-if="view === 'form'"
       v-model:title="title"
+      v-model:period-from="periodFrom"
+      v-model:period-to="periodTo"
+      v-model:industry="industry"
       v-model:file="file"
       :parse-error="parseError"
       :is-loading="isLoading"

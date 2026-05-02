@@ -14,7 +14,7 @@ const props = withDefaults(
     allActive?: boolean;
     allReadonly?: boolean;
     singleRow?: boolean;
-  }>(),
+}>(),
   {
     variant: "visible",
     layout: "strip",
@@ -87,7 +87,6 @@ defineExpose({
   >
     <Chip
       v-if="showAll"
-      :count="totalCampaigns"
       :active="allActive"
       :readonly="allReadonly || isProbe"
       :tabindex="isProbe ? -1 : undefined"
@@ -95,12 +94,12 @@ defineExpose({
       @click="onClear"
     >
       All
+      <span class="channel-chip-count">{{ totalCampaigns }}</span>
     </Chip>
     <Chip
       v-for="channel in channels"
       :key="channel.id"
       :data-channel-id="channel.id"
-      :count="channel.campaigns.length"
       :active="isSelected(channel.id)"
       :readonly="isProbe"
       :tabindex="isProbe ? -1 : undefined"
@@ -108,6 +107,7 @@ defineExpose({
       @click="onToggle(channel.id)"
     >
       {{ channel.name }}
+      <span class="channel-chip-count">{{ channel.campaigns.length }}</span>
     </Chip>
   </div>
 </template>
@@ -132,6 +132,18 @@ defineExpose({
 
   &.single-row {
     @apply max-h-9;
+  }
+}
+
+.channel-chip-count {
+  @apply inline-flex items-center justify-center
+    rounded-full px-1.5 min-w-[1.25rem] h-5
+    text-xs font-medium bg-on-primary/10;
+}
+
+.channel-filter-chips :deep(.chip[aria-pressed="true"]) {
+  .channel-chip-count {
+    @apply bg-background/65;
   }
 }
 </style>

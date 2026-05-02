@@ -1,6 +1,6 @@
 export type DevModeConfig = {
   enabled: boolean
-  portfolioData: {
+  portfolio: {
     seedMockCampaigns: boolean
   }
   aiTools: {

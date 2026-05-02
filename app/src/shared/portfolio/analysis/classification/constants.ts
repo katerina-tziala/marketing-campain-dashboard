@@ -2,7 +2,7 @@ import type {
   AnalysisClassificationThresholds,
   CampaignClassificationThresholds,
   ChannelClassificationThresholds,
-} from '../types'
+} from '../../types'
 
 /**
  * Classification thresholds are descriptive UI buckets, not action signals.

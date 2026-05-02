@@ -1,7 +1,7 @@
 import type { DevModeConfig } from './types'
 import { useDevAnalysisCycle } from './dev-analysis-cycle'
 import { useDevConnectionCycle } from './dev-connection-cycle'
-import { activateDevPortfolioData } from './dev-portfolio-data'
+import { activateDevPortfolio } from './dev-portfolio-data'
 
 export type { DevModeConfig } from './types'
 export { DEV_MODE_CONFIG } from './config'
@@ -21,8 +21,8 @@ export function activateDevMode(config: DevModeConfig): void {
     throw new Error('Enable either analysisCycle or connectionCycle dev mode, not both.')
   }
 
-  if (config.portfolioData.seedMockCampaigns) {
-    activateDevPortfolioData()
+  if (config.portfolio.seedMockCampaigns) {
+    activateDevPortfolio()
   }
 
   if (config.aiTools.analysisCycle) {

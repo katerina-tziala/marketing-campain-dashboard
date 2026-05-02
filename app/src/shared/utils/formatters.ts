@@ -50,17 +50,6 @@ export function formatCompactCurrency(value: number): string {
   }).format(value)
 }
 
-export function formatTimestamp(timestamp: number): string {
-  return new Date(timestamp).toLocaleString(APP_LOCALE, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
-
 export function formatCompactNumber(value: number): string {
   if (Math.abs(value) >= 1000) {
     return new Intl.NumberFormat(APP_LOCALE, {
@@ -70,4 +59,16 @@ export function formatCompactNumber(value: number): string {
     }).format(value)
   }
   return formatNumber(value)
+}
+
+// TODO: DateTimeFormat
+export function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(APP_LOCALE, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
 }

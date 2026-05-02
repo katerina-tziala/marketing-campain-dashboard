@@ -1,4 +1,3 @@
-import type { PortfolioScope } from '../../types'
 import type { CampaignGroups, ChannelGroups } from './groups'
 import type {
   BudgetScalingCandidate,
@@ -11,9 +10,18 @@ import type {
 } from './signals'
 import type { ChannelSummary, PortfolioSummary } from './summary'
 
+export interface DerivedSignals {
+  inefficientChannels: InefficientChannelSignal[]
+  inefficientCampaigns: InefficientCampaignSignal[]
+  scalingOpportunities: ScalingCandidateSignal[]
+  budgetScalingCandidates: BudgetScalingCandidate[]
+  transferCandidates: TransferCandidate[]
+  concentrationFlag: ConcentrationFlagSignal
+  correlations?: CorrelationSignal[]
+}
+
 export interface PortfolioAnalysis {
   portfolio: PortfolioSummary
-  scope: PortfolioScope
   filteredChannels: boolean
   /** Flat list of all channel summaries — use for tables and raw enumeration. */
   channels: ChannelSummary[]
@@ -21,13 +29,5 @@ export interface PortfolioAnalysis {
   campaignGroups: CampaignGroups
   /** Mutually exclusive channel classification groups. */
   channelGroups: ChannelGroups
-  derivedSignals: {
-    inefficientChannels: InefficientChannelSignal[]
-    inefficientCampaigns: InefficientCampaignSignal[]
-    scalingOpportunities: ScalingCandidateSignal[]
-    budgetScalingCandidates: BudgetScalingCandidate[]
-    transferCandidates: TransferCandidate[]
-    concentrationFlag: ConcentrationFlagSignal
-    correlations?: CorrelationSignal[]
-  }
+  derivedSignals: DerivedSignals
 }

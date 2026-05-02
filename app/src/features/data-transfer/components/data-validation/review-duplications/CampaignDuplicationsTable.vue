@@ -12,12 +12,12 @@ import {
   RadioItem,
   type DataTableColumn
 } from "@/ui";
-import type { CampainDataDuplicateGroup } from "../../../types";
+import type { CampaignDataDuplicateGroup } from "../../../types";
 import DuplicationsHeader from "./DuplicationsHeader.vue";
 
 const props = withDefaults(
   defineProps<{
-    duplicateGroups: CampainDataDuplicateGroup[];
+    duplicateGroups: CampaignDataDuplicateGroup[];
     requiredSelection?: boolean;
   }>(),
   { requiredSelection: true },

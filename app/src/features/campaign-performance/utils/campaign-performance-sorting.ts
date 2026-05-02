@@ -1,10 +1,11 @@
-import type { CampaignPerformance, PortfolioKPIs } from '@/shared/data'
+import type { CampaignPerformance } from '@/shared/data'
+import type { PortfolioKPIs } from '@/shared/portfolio'
 import type { Channel } from '@/shared/data'
 import {
   computeShareEfficiency,
   rankByBudgetDesc,
   rankByRoiDesc,
-} from '@/shared/portfolio-analysis'
+} from '@/shared/portfolio'
 import { sortByValueDesc } from '@/shared/utils'
 
 // ROI ranking charts should put the strongest performers first; unavailable ROI stays last.

@@ -1,4 +1,4 @@
-import type { CampainDataFieldIssue, CampainDataRowIssueType, CampainDataValidationError, CampainDataValidationErrorType, RowErrorSummaryWords } from '../types'
+import type { CampaignDataFieldIssue, CampaignDataRowIssueType, CampaignDataValidationError, CampaignDataValidationErrorType, RowErrorSummaryWords } from '../types'
 
 const SINGULAR_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'wasWord'> = {
   rowWord: 'row',
@@ -12,7 +12,7 @@ const PLURAL_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'was
   wasWord: 'were',
 }
 
-const ROW_ISSUE_MESSAGES: Record<CampainDataRowIssueType, string> = {
+const ROW_ISSUE_MESSAGES: Record<CampaignDataRowIssueType, string> = {
   empty: 'Cannot be empty',
   positive_number: 'Must be a number greater than 0',
   non_negative_number: 'Must be a non-negative number',
@@ -20,7 +20,7 @@ const ROW_ISSUE_MESSAGES: Record<CampainDataRowIssueType, string> = {
   exceeds: 'Cannot exceed',
 }
 
-const VALIDATION_ERROR_MESSAGES: Record<CampainDataValidationErrorType, string> = {
+const VALIDATION_ERROR_MESSAGES: Record<CampaignDataValidationErrorType, string> = {
   file_type: 'Only CSV files are accepted.',
   file_size: 'File exceeds the 2 MB size limit.',
   empty_file: 'The CSV file contains no data rows.',
@@ -34,7 +34,7 @@ function replacePlaceholders(template: string, values: Record<string, string>): 
   return template.replace(/\{(\w+)\}/g, (_, placeholderKey) => values[placeholderKey] ?? '')
 }
 
-export function getRowErrorMessage(error: CampainDataFieldIssue): string {
+export function getRowErrorMessage(error: CampaignDataFieldIssue): string {
   const base = ROW_ISSUE_MESSAGES[error.issue]
   return error.details ? `${base} ${error.details}` : base
 }
@@ -51,7 +51,7 @@ export function getRowErrorSummaryWords(invalidCount: number, validCount: number
   }
 }
 
-export function getValidationErrorMessage(error: CampainDataValidationError): string {
+export function getValidationErrorMessage(error: CampaignDataValidationError): string {
   const template = VALIDATION_ERROR_MESSAGES[error.type]
 
   if (error.type === 'missing_columns') {

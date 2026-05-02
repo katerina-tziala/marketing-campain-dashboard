@@ -1,5 +1,6 @@
 export * from './analysis'
 export * from './groups'
+export * from './portfolio'
 export * from './predicates'
 export * from './signals'
 export * from './summary'

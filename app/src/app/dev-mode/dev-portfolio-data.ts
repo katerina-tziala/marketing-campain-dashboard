@@ -1,11 +1,19 @@
 import { CAMPAIGNS_SAMPLE } from '@/shared/data'
-import { usePortfolioDataStore } from '@/app/stores'
+import { usePortfolioStore } from '@/shared/portfolio'
 
-const DEV_PORTFOLIO_TITLE = 'Sample Campaign Data (Dev)'
+const DEV_PORTFOLIO_INPUT = {
+  name: 'Sample Campaign Data (Dev)',
+  period: {
+    from: '2025-01-01',
+    to: '2025-03-31',
+  },
+  industry: 'Retail',
+  campaigns: CAMPAIGNS_SAMPLE,
+}
 
-export function activateDevPortfolioData(): void {
-  const portfolioData = usePortfolioDataStore()
-  if (portfolioData.portfolios.length > 0) return
+export function activateDevPortfolio(): void {
+  const portfolioStore = usePortfolioStore()
+  if (portfolioStore.portfolios.length > 0) return
 
-  portfolioData.addPortfolio(CAMPAIGNS_SAMPLE, DEV_PORTFOLIO_TITLE)
+  portfolioStore.addPortfolio(DEV_PORTFOLIO_INPUT)
 }

@@ -3,7 +3,7 @@ import type {
   InefficientCampaignSignal,
   PortfolioSignalThresholds,
   TransferCandidate,
-} from '../types'
+} from '../../types'
 import { rankByMaxShiftDesc } from '../ranking'
 import {
   DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,

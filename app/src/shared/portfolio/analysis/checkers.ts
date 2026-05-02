@@ -3,8 +3,8 @@ import type {
   RoiComparable,
   ShareComparable,
   UnderfundedOutperformerThresholds,
-} from './types'
-import { toFinite } from '../utils'
+} from '../types'
+import { toFinite } from '@/shared/utils'
 
 export function hasRoiAbovePortfolio(
   item: RoiComparable,

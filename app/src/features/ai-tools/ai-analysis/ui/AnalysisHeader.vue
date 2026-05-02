@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { MagicWandIcon, MetaRow, MetaItem, Button, SectionHeaderLayout } from "@/ui";
-import type { PortfolioContext } from '../types';
+import type { AnalysisPortfolioContext } from '../types';
 
 defineProps<{
   title: string;
   actionLabel: string;
   isButtonDisabled: boolean;
-  context: PortfolioContext;
+  context: AnalysisPortfolioContext;
 }>();
 
 defineEmits<{ analyze: [] }>();
@@ -20,6 +20,7 @@ defineEmits<{ analyze: [] }>();
     <template #action>
       <Button
         variant="primary"
+        size="small"
         icon-only
         :disabled="isButtonDisabled"
         :aria-label="actionLabel"

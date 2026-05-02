@@ -1,9 +1,25 @@
-import type { AiAnalysisContext } from '@/features/ai-tools/ai-analysis/stores'
-import type { CampaignPerformanceStore } from '@/features/campaign-performance/stores'
+import type { AiAnalysisRequestContext } from '@/features/ai-tools/ai-analysis/types'
+import type { CampaignPerformance, Channel } from '@/shared/data'
+import type { BusinessContext, PortfolioAnalysis } from '@/shared/portfolio'
+
+type DashboardAnalysisContext = Omit<AiAnalysisRequestContext, 'portfolioId' | 'businessContext'> & {
+  portfolioId: string | null
+  businessContext: BusinessContext | null
+}
+
+interface CampaignPerformanceContextSource {
+  activePortfolioId: string | null
+  title: string
+  selectedChannelsIds: string[]
+  portfolioChannels: Map<string, Channel>
+  filteredCampaigns: CampaignPerformance[]
+  portfolioAnalysis: PortfolioAnalysis
+  businessContext: BusinessContext | null
+}
 
 export function mapAnalysisContext(
-  campaignPerformance: ReturnType<CampaignPerformanceStore>,
-): AiAnalysisContext {
+  campaignPerformance: CampaignPerformanceContextSource,
+): DashboardAnalysisContext {
   return {
     portfolioId: campaignPerformance.activePortfolioId,
     portfolioTitle: campaignPerformance.title,
@@ -15,5 +31,6 @@ export function mapAnalysisContext(
     campaignCount: campaignPerformance.filteredCampaigns.length,
     filtersActive: campaignPerformance.selectedChannelsIds.length > 0,
     portfolioAnalysis: campaignPerformance.portfolioAnalysis,
+    businessContext: campaignPerformance.businessContext,
   }
 }

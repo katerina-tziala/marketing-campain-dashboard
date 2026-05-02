@@ -1,11 +1,11 @@
-import type { CampaignPerformance, Channel } from '../../types'
+import type { CampaignPerformance, Channel } from '@/shared/data'
 import { computeShareEfficiency } from '../metrics'
 import type {
   CampaignSummary,
   ChannelStatusThresholds,
   ChannelSummary,
   SummaryMetricStatus,
-} from '../types'
+} from '../../types'
 import {
   DEFAULT_CHANNEL_STATUS_THRESHOLDS,
 } from './constants'

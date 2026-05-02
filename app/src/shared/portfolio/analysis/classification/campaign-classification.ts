@@ -1,5 +1,5 @@
-import type { CampaignClassificationThresholds, CampaignSummary } from '../types'
-import type { CampaignGroups } from '../types'
+import type { CampaignClassificationThresholds, CampaignSummary } from '../../types'
+import type { CampaignGroups } from '../../types'
 import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking'
 import {
   hasBudgetShareLead,

@@ -1,4 +1,4 @@
-import type { Campaign, CampaignPerformance, Channel } from '../types'
+import type { Campaign, CampaignPerformance, Channel } from '@/shared/data'
 import { aggregateCampaignMetrics, computePerformanceMetrics, toCampaignPerformance } from './metrics'
 
 type ChannelAccumulator = { id: string; name: string; campaigns: CampaignPerformance[] }

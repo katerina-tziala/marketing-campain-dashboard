@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { formatCompactNumber } from "@/shared/utils";
 import { PerformanceIndicator } from "../../ui";
-import type { PortfolioKPIs } from "@/shared/data";
+import type { PortfolioKPIs } from "@/shared/portfolio";
 
 const MIN_WIDTH_BAR = 12;
 
@@ -128,7 +128,7 @@ function scaledWidth(val: number | null): number {
   }
 
   .funnel-region-2 {
-    @apply shrink-0 flex items-center justify-end;
+    @apply shrink-0 flex h-full items-center justify-end; 
 
     .funnel-rate {
       @apply inline-flex
@@ -142,7 +142,7 @@ function scaledWidth(val: number | null): number {
         max-w-full
         text-right
         leading-tight
-        px-2;
+        px-2; 
     }
   }
 }

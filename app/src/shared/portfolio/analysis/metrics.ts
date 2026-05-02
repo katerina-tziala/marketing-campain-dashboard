@@ -1,16 +1,18 @@
 import type {
   Campaign,
-  CampaignMetrics,
+  CampaignRawMetrics,
   CampaignPerformance,
   Channel,
   PerformanceMetrics,
+} from '@/shared/data'
+import type {
   PortfolioKPIs,
   ShareEfficiency,
 } from '../types'
-import { computeRoundedRatioOrNull, safeDivide } from '../utils'
+import { computeRoundedRatioOrNull, safeDivide } from '@/shared/utils'
 
-export function computePerformanceMetrics(campain: CampaignMetrics): PerformanceMetrics {
-  const { budget, revenue, impressions, clicks, conversions } = campain;
+export function computePerformanceMetrics(campaign: CampaignRawMetrics): PerformanceMetrics {
+  const { budget, revenue, impressions, clicks, conversions } = campaign;
 
   return {
     roi: computeRoundedRatioOrNull(revenue - budget, budget),
@@ -21,7 +23,7 @@ export function computePerformanceMetrics(campain: CampaignMetrics): Performance
 }
 
 export function computeShareEfficiency(
-  item: CampaignMetrics,
+  item: CampaignRawMetrics,
   totalBudget: number,
   totalRevenue: number,
 ): ShareEfficiency {
@@ -42,7 +44,7 @@ export function toCampaignPerformance(campaign: Campaign): CampaignPerformance {
   return { ...campaign, ...computePerformanceMetrics(campaign) }
 }
 
-export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): CampaignMetrics {
+export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): CampaignRawMetrics {
   return campaigns.reduce(
     (acc, campaign) => ({
       budget: acc.budget + campaign.budget,
@@ -56,8 +58,8 @@ export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): Cam
 }
 
 export function aggregateCampaignOutcomes(
-  campaigns: Array<Pick<CampaignMetrics, 'revenue' | 'conversions'>>,
-): Pick<CampaignMetrics, 'revenue' | 'conversions'> {
+  campaigns: Array<Pick<CampaignRawMetrics, 'revenue' | 'conversions'>>,
+): Pick<CampaignRawMetrics, 'revenue' | 'conversions'> {
   return campaigns.reduce(
     (totals, campaign) => ({
       revenue: totals.revenue + campaign.revenue,

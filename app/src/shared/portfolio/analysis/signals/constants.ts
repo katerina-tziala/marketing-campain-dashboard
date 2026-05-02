@@ -4,7 +4,7 @@ import type {
   ChannelSignalThresholds,
   ChannelStatusThresholds,
   PortfolioSignalThresholds,
-} from '../types'
+} from '../../types'
 
 // Channel status uses a narrow ROI band around the portfolio average so the
 // summary label stays stable unless a channel is meaningfully above or below it.

@@ -2,7 +2,7 @@ import type {
   CampaignSummary,
   ConcentrationFlagSignal,
   PortfolioSignalThresholds,
-} from '../types'
+} from '../../types'
 import { rankByRevenueDesc } from '../ranking'
 import {
   DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,

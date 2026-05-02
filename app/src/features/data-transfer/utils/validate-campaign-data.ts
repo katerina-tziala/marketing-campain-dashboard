@@ -1,5 +1,5 @@
 import type { Campaign } from '@/shared/data'
-import type { CampainDataParseResult, CampainDataProcessRowsResult, CampainDataRowError, CampainDataValidationError } from '../types'
+import type { CampaignDataParseResult, CampaignDataProcessRowsResult, CampaignDataRowError, CampaignDataValidationError } from '../types'
 import { validateRow } from './validate-row-data'
 import { detectCampaignDuplication } from './detect-campaign-duplication'
 
@@ -41,9 +41,9 @@ function extractCampaignFields(
 function processRows(
   data: Record<string, string>[],
   headerMap: Record<string, string>,
-): CampainDataProcessRowsResult {
+): CampaignDataProcessRowsResult {
   const campaigns: Campaign[] = []
-  const errors: CampainDataRowError[] = []
+  const errors: CampaignDataRowError[] = []
 
   data.forEach((row, index) => {
     const rowNum = index + 2 // +2: 1-based index + header row
@@ -63,7 +63,7 @@ function processRows(
 export function validateCampaignData(
   data: Record<string, string>[],
   fields: string[],
-): CampainDataParseResult {
+): CampaignDataParseResult {
   // ── Column validation ──────────────────────────────────────────────────────
   const headerMap = buildHeaderMap(fields)
   const actualHeaders = Object.values(headerMap)
@@ -84,7 +84,7 @@ export function validateCampaignData(
   // ── Duplicate detection ────────────────────────────────────────────────────
   const { unique, groups } = detectCampaignDuplication(validCampaigns)
 
-  const errors: CampainDataValidationError[] = []
+  const errors: CampaignDataValidationError[] = []
   if (rowErrors.length > 0) errors.push({ type: 'invalid_rows', rowErrors })
   if (groups.length > 0) errors.push({ type: 'duplicate_campaigns', duplicateGroups: groups })
 

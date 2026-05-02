@@ -1,11 +1,12 @@
-import type { CampaignPerformance, Channel, PortfolioScope } from '../types'
-import type { PortfolioSummary, CampaignSummary, ChannelSummary } from './types'
+import type { CampaignPerformance, Channel } from '@/shared/data'
+import type { PortfolioSummary, CampaignSummary, ChannelSummary } from '../types'
 import type {
   AnalysisClassificationThresholds,
   AnalysisSignalThresholds,
+  DerivedSignals,
   PortfolioAnalysis,
-} from './types'
-import type { ConcentrationFlagSignal } from './types/signals'
+} from '../types'
+import type { ConcentrationFlagSignal } from '../types'
 import {
   toCampaignSummary,
   toChannelSummary,
@@ -46,20 +47,6 @@ const DEFAULT_EMPTY_ANALYSIS_STATE = {
   },
 }
 
-export function getPortfolioScope(
-  allCampaigns: CampaignPerformance[],
-  selectedCampaigns: CampaignPerformance[],
-  allChannelNames: string[],
-  selectedChannelNames: string[],
-): PortfolioScope {
-  return {
-    campaigns: allCampaigns.map((campaign) => campaign.campaign),
-    channels: allChannelNames,
-    selectedCampaigns: selectedCampaigns.map((campaign) => campaign.campaign),
-    selectedChannels: selectedChannelNames,
-  }
-}
-
 function getClassificationGroups(
   campaignSummaries: CampaignSummary[],
   channelSummaries: ChannelSummary[],
@@ -86,7 +73,7 @@ function getDerivedSignals(
   aggregatedRoi: number | null,
   thresholds: AnalysisSignalThresholds,
   classificationThresholds: AnalysisClassificationThresholds,
-): PortfolioAnalysis['derivedSignals'] {
+): DerivedSignals {
   const inefficientCampaigns = getInefficientCampaigns(
     campaignSummaries,
     aggregatedRoi,
@@ -139,13 +126,6 @@ export function computePortfolioAnalysis(
 
   const kpis = computePortfolioKPIs(selectedChannels)
 
-  const scope: PortfolioScope = getPortfolioScope(
-    filteredCampaigns,
-    filteredCampaigns,
-    selectedChannels.map((channel) => channel.name),
-    selectedChannels.map((channel) => channel.name),
-  )
-
   const portfolio: PortfolioSummary = {
     ...kpis,
     campaignCount: filteredCampaigns.length,
@@ -157,7 +137,6 @@ export function computePortfolioAnalysis(
   if (filteredCampaigns.length === 0) {
     return {
       portfolio,
-      scope,
       filteredChannels,
       ...DEFAULT_EMPTY_ANALYSIS_STATE,
     }
@@ -196,7 +175,6 @@ export function computePortfolioAnalysis(
 
   return {
     portfolio,
-    scope,
     filteredChannels,
     channels: channelSummaries,
     campaignGroups,
