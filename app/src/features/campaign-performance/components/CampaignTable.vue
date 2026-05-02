@@ -53,17 +53,36 @@ const COLUMNS: DataTableColumn[] = [
   { key: "budget", label: "Budget", sortable: true },
   { key: "clicks", label: "Clicks", sortable: true },
   { key: "impressions", label: "Impressions", sortable: true },
-  { key: "ctr", label: "CTR", ariaLabel: "Click-through rate", sortable: true },
+  {
+    key: "ctr",
+    label: "CTR",
+    title: "Click-through Rate",
+    ariaLabel: "Click-through rate",
+    sortable: true,
+  },
   { key: "conversions", label: "Conversions", sortable: true },
-  { key: "cvr", label: "CVR", ariaLabel: "Conversion rate", sortable: true },
+  {
+    key: "cvr",
+    label: "CVR",
+    title: "Conversion Rate",
+    ariaLabel: "Conversion rate",
+    sortable: true,
+  },
   { key: "revenue", label: "Revenue", sortable: true },
   {
     key: "cpa",
     label: "CPA",
+    title: "Cost per Acquisition",
     ariaLabel: "Cost per acquisition",
     sortable: true,
   },
-  { key: "roi", label: "ROI", sortable: true },
+  {
+    key: "roi",
+    label: "ROI",
+    title: "Return on Investment",
+    ariaLabel: "Return on investment",
+    sortable: true,
+  },
 ];
 </script>
 

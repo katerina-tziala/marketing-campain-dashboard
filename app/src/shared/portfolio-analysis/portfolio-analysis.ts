@@ -65,7 +65,7 @@ function getClassificationGroups(
   channelSummaries: ChannelSummary[],
   aggregatedRoi: number | null,
   classificationThresholds: AnalysisClassificationThresholds,
-) {
+): Pick<PortfolioAnalysis, 'campaignGroups' | 'channelGroups'> {
   return {
     campaignGroups: classifyCampaigns(
       campaignSummaries,
@@ -86,7 +86,7 @@ function getDerivedSignals(
   aggregatedRoi: number | null,
   thresholds: AnalysisSignalThresholds,
   classificationThresholds: AnalysisClassificationThresholds,
-) {
+): PortfolioAnalysis['derivedSignals'] {
   const inefficientCampaigns = getInefficientCampaigns(
     campaignSummaries,
     aggregatedRoi,

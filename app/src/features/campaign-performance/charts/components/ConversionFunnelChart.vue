@@ -96,13 +96,13 @@ function scaledWidth(val: number | null): number {
 }
 
 .funnel-row {
-  @apply flex flex-row justify-start gap-2 items-stretch min-h-[28%];
+  @apply flex flex-row justify-start items-start min-h-[28%];
 
   .funnel-region-1 {
-    @apply grow relative h-full w-[82%];
+    @apply grow relative h-full;
 
     .bar-percentage {
-      @apply min-w-2 h-full rounded-r-md duration-500 transition-[width];
+      @apply min-w-16 h-full w-full rounded-r-md duration-500 transition-[width];
     }
 
     .bar-label {
@@ -128,7 +128,7 @@ function scaledWidth(val: number | null): number {
   }
 
   .funnel-region-2 {
-    @apply grow w-[18%] flex items-center justify-end;
+    @apply shrink-0 flex items-center justify-end;
 
     .funnel-rate {
       @apply inline-flex
@@ -141,7 +141,8 @@ function scaledWidth(val: number | null): number {
         items-center 
         max-w-full
         text-right
-        leading-tight;
+        leading-tight
+        px-2;
     }
   }
 }

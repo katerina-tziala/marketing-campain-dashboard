@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, useAttrs } from "vue";
 import type { ButtonSize, ButtonVariant } from "./button.types";
 
 const props = withDefaults(
@@ -17,6 +17,7 @@ const props = withDefaults(
   },
 );
 
+const attrs = useAttrs();
 const buttonRef = ref<HTMLButtonElement>();
 const buttonClasses = computed(() => [
   props.variant,
@@ -24,6 +25,11 @@ const buttonClasses = computed(() => [
   props.iconOnly ? "icon-only" : undefined,
   props.noRing ? "no-ring" : undefined,
 ]);
+const buttonTitle = computed(() => {
+  if (typeof attrs.title === "string") return attrs.title;
+  const ariaLabel = attrs["aria-label"];
+  return props.iconOnly && typeof ariaLabel === "string" ? ariaLabel : undefined;
+});
 
 function getRootEl(): HTMLButtonElement | undefined {
   return buttonRef.value;
@@ -40,6 +46,7 @@ defineExpose({
     v-bind="$attrs"
     class="btn"
     :class="buttonClasses"
+    :title="buttonTitle"
   >
     <slot />
   </button>

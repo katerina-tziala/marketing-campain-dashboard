@@ -7,6 +7,7 @@ export type SortDir = "asc" | "desc";
 export type DataTableColumn = {
   key: string;
   label: string;
+  title?: string;
   sortable?: boolean;
   ariaLabel?: string;
   class?: string;
@@ -58,6 +59,7 @@ function sortAriaLabel(col: DataTableColumn): string {
       <th
         v-for="col in columns"
         :key="col.key"
+        :title="col.title"
         :aria-label="!col.sortable && col.ariaLabel ? col.ariaLabel : undefined"
         :class="[
           col.sortable ? 'table-sortable-header' : 'table-header',
@@ -68,6 +70,7 @@ function sortAriaLabel(col: DataTableColumn): string {
           v-if="col.sortable"
           type="button"
           class="sortable-button"
+          :title="col.title"
           :aria-label="sortAriaLabel(col)"
           @click="emit('sort', col.key)"
         >

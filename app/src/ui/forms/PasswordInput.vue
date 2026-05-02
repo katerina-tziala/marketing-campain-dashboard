@@ -53,6 +53,7 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
     />
     <Button
       variant="text-only"
+      icon-only
       no-ring
       class="toggle-btn"
       type="button"

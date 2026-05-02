@@ -40,6 +40,7 @@ function toggleDropdown(): void {
     <Button
       ref="triggerButtonRef"
       variant="info-outline"
+      icon-only
       class="filter-trigger-button"
       :class="{ active: dropdownOpen }"
       :aria-expanded="dropdownOpen"

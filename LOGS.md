@@ -265,3 +265,44 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep `Chip`, `Tabs`, `Disclosure`, dropdowns, modal body/footer/header, table row helpers, layouts, icons, and chart components unchanged — they are already prop-driven enough or do not currently expose repeated class-based variants.
 - Move Button class generation into a computed — Vue template parsing did not like an inline class object with quoted kebab-case keys, and the computed keeps class generation easier to read.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches); the UI variant refactor itself passed the targeted scans for leftover old class-based variant APIs.
+
+
+## [591] Tighten analysis typing and refine campaign performance chart layout
+**Type:** refactor
+
+**Summary:** Added explicit return types to portfolio-analysis helper functions, explored an insights card for campaign performance, then removed it after deciding the campaign scatterplot already owns that story better. The chart grid now avoids the empty slot by letting the conversion funnel span the full chart width at desktop sizes, with a reduced funnel height. KPI and campaign-table acronym labels plus icon-only buttons also gained title text for better discoverability.
+
+**Brainstorming:** The analysis layer had two private helpers whose return types were inferred even though they define important analysis structure: classification groups and derived signals. Rather than duplicating object shapes, the return types should reference the canonical `PortfolioAnalysis` interface so the helper contracts stay in sync with the public analysis type. Separately, we explored whether a new insight card should sit near the charts. The first version used channel and campaign groups, but narrow filters could create duplicate "Opportunity" entries because group classifiers must bucket items even when there is only one channel or one campaign. We then tried campaign-level derived signals only, but that still overlapped with the ROI/budget scatterplot, which already highlights scale-up candidates, champions, underperformers, and overspend. The cleaner decision was to remove the standalone insights card for now and make the existing chart grid feel intentional by spanning the conversion funnel across both columns.
+
+**Prompt:** Add explicit return types to `getDerivedSignals` and `getClassificationGroups`. Then experiment with an insights component for campaign performance: first try one item from each channel/campaign group, then switch to derived signals, then restrict to campaign-level derived signals only. If the insights card feels redundant with the campaign scatterplot, remove it and fix the empty chart-grid space. Finally, add hover titles for icon-only buttons and KPI acronyms (`CPA`, `CVR`, `CTR`, `ROI`) inside KPI cards, then extend the same acronym title behavior to campaign table headers because users can encounter the table away from the KPI cards.
+
+**What changed:**
+- `shared/portfolio-analysis/portfolio-analysis.ts` — added `PortfolioAnalysis['derivedSignals']` as the explicit return type for `getDerivedSignals`.
+- `shared/portfolio-analysis/portfolio-analysis.ts` — added `Pick<PortfolioAnalysis, 'campaignGroups' | 'channelGroups'>` as the explicit return type for `getClassificationGroups`.
+- `features/campaign-performance/components/PerformanceInsights.vue` — created during exploration as a campaign-performance insight component, first using channel/campaign groups and later derived signals.
+- `features/campaign-performance/components/PerformanceInsights.vue` — removed after deciding the standalone insight card duplicated the campaign scatterplot story.
+- `features/campaign-performance/components/index.ts` — briefly exported `PerformanceInsights`, then removed the export when the component was deleted.
+- `features/campaign-performance/CampaignPerformanceView.vue` — briefly rendered `PerformanceInsights`, then removed it from the charts grid.
+- `features/campaign-performance/charts/PerformanceCharts.vue` — kept `PerformanceCharts` chart-only after removing insight-card responsibilities.
+- `features/campaign-performance/charts/PerformanceCharts.vue` — made the conversion funnel card span both chart columns at `cq-1024` and above so the chart grid has no empty slot after removing the insight card.
+- `features/campaign-performance/charts/PerformanceCharts.vue` — reduced `ConversionFunnelChart` height from `min-h-60` to `min-h-44` now that the funnel spans a wider area.
+- `ui/primitives/Button.vue` — icon-only buttons now derive `title` from `aria-label` when no explicit title is provided.
+- `features/campaign-performance/components/channel-filters/ChannelFiltersDialog.vue` — marked the filter trigger button as `icon-only` so it receives a matching hover title from its `aria-label`.
+- `ui/forms/PasswordInput.vue` — marked the password visibility toggle as `icon-only`, so its `aria-label` also becomes the hover title.
+- `features/campaign-performance/components/kpis/KpiCard.vue` — added an optional `labelTitle` prop and applies it to the KPI label.
+- `features/campaign-performance/components/kpis/Kpis.vue` — added KPI-card label titles for `CTR` (`Click-through Rate`) and `CPA` (`Cost per Acquisition`).
+- `features/campaign-performance/components/kpis/Kpis.vue` — added inline titles for meta-row acronyms `ROI` (`Return on Investment`) and `CVR` (`Conversion Rate`) inside KPI cards only.
+- `ui/table/TableHeader.vue` — added optional `title` support to `DataTableColumn` and applies it to both the header cell and sortable header button.
+- `features/campaign-performance/components/CampaignTable.vue` — added campaign-table header titles for `CTR` (`Click-through Rate`), `CVR` (`Conversion Rate`), `CPA` (`Cost per Acquisition`), and `ROI` (`Return on Investment`).
+
+**Key decisions & why:**
+- Reuse `PortfolioAnalysis` for helper return types — avoids duplicating analysis shapes and keeps private helpers aligned with the public analysis contract.
+- Avoid group-based insight cards for narrow filters — classification groups are mandatory buckets, so they can create redundant or overconfident-looking insights when a filter leaves only one channel or campaign.
+- Avoid a campaign-only derived-signal card beside the charts — the ROI/budget scatterplot already visualizes the campaign-level action story more effectively.
+- Keep `PerformanceCharts` focused on charts — insight composition belongs in the feature view or in a purpose-built scatterplot companion, not inside the generic chart collection.
+- Span the conversion funnel instead of leaving a blank grid cell — removing the insights card should improve the chart layout, not create awkward empty space.
+- Reduce funnel height after widening it — a full-width funnel reads better as a shorter horizontal chart block than as a tall card.
+- Derive icon-only button titles from `aria-label` — icon buttons already need accessible labels, so reusing that text for `title` avoids duplicated title props and keeps hover hints consistent.
+- Add titles where the user may meet acronyms out of context — KPI cards introduce the terminology, but campaign table users can be visually away from the cards, so table headers also expose the same acronym expansions.
+- Do not repeat acronym titles everywhere — chart titles and axis labels keep using the product terminology without extra title wiring; KPI cards and dense table headers are the useful glossary surfaces.
+- Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).

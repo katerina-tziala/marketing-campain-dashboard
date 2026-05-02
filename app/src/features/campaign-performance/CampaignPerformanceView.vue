@@ -7,7 +7,11 @@ import {
   type RoiBudgetScalingHighlights,
 } from "./charts";
 import CampaignTable from "./components/CampaignTable.vue";
-import { CampaignPerformanceHeader, ChannelFilters, Kpis } from "./components";
+import {
+  CampaignPerformanceHeader,
+  ChannelFilters,
+  Kpis,
+} from "./components";
 
 defineProps<{
   showAiButton: boolean;
@@ -98,7 +102,6 @@ function clearChannelFilters(): void {
           :channels="store.selectedChannels"
           :kpis="store.portfolioAnalysis.portfolio"
         />
-        <!-- TODO: insights -->
       </div>
       <RoiVsBudgetScaling
         :campaigns="store.filteredCampaigns"
@@ -120,7 +123,6 @@ function clearChannelFilters(): void {
     h-full
     overflow-hidden
     grid
-    grid-cols-1
     grid-rows-[min-content_1fr]
     pt-4
     gap-y-4;
