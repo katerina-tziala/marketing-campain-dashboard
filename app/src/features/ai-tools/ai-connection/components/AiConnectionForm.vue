@@ -9,6 +9,7 @@ import {
   PlugIcon,
   Form,
   FormControl,
+  validateRequired,
 } from "@/ui";
 
 import { useAiConnectionStore } from "../stores";
@@ -17,27 +18,67 @@ import { PROVIDER_OPTIONS, PROVIDER_HELP } from "../../providers/utils";
 import { CONNECTION_ERRORS } from "../utils/error-handling";
 import AiConnectionInstructions from "./AiConnectionInstructions.vue";
 
-const store = useAiConnectionStore();
+const props = defineProps<{
+  resetKey?: number;
+}>();
 
-const selectedProvider = ref<AiProviderType>("groq");
+const store = useAiConnectionStore();
+const defaultProvider: AiProviderType = "groq";
+
+const selectedProvider = ref<AiProviderType>(defaultProvider);
 const apiKey = ref("");
+const apiKeyError = ref("");
 
 watch(selectedProvider, () => {
   store.connectionError = null;
+  apiKeyError.value = "";
   apiKey.value = "";
 });
+
+watch(
+  () => props.resetKey,
+  () => {
+    selectedProvider.value = defaultProvider;
+    apiKey.value = "";
+    apiKeyError.value = "";
+    store.connectionError = null;
+  },
+);
 
 const providerHelp = computed(() => PROVIDER_HELP[selectedProvider.value]);
 
 const connectionErrorDisplay = computed(() => {
+  if (apiKeyError.value) {
+    return {
+      message: apiKeyError.value,
+      hint: "Paste your API key before connecting",
+    };
+  }
+
   if (!store.connectionError) return null;
   const { message, hint } = CONNECTION_ERRORS[store.connectionError.code];
   return { message: message(store.connectionError.provider), hint };
 });
 
 async function handleConnect(): Promise<void> {
-  if (!apiKey.value.trim()) return;
+  apiKeyError.value = validateRequired(apiKey.value).errorKey
+    ? "API key is required"
+    : "";
+  if (apiKeyError.value) return;
+
   await store.connect(selectedProvider.value, apiKey.value.trim());
+}
+
+function handleApiKeyUpdate(value: string): void {
+  store.connectionError = null;
+  apiKeyError.value = "";
+  apiKey.value = value;
+}
+
+function handleApiKeyBlur(): void {
+  apiKeyError.value = validateRequired(apiKey.value).errorKey
+    ? "API key is required"
+    : "";
 }
 </script>
 
@@ -66,17 +107,20 @@ async function handleConnect(): Promise<void> {
       <FormControl
         id="ai-key"
         label="API Key"
+        required
         :error-text="connectionErrorDisplay?.message"
         :error-hint-text="connectionErrorDisplay?.hint"
       >
         <template #default="{ id, invalid, describedBy }">
           <PasswordInput
             :id="id"
-            v-model="apiKey"
+            :model-value="apiKey"
             placeholder="Paste your API key"
             :disabled="store.isConnecting"
             :invalid="invalid"
             :described-by="describedBy"
+            @update:model-value="handleApiKeyUpdate"
+            @blur="handleApiKeyBlur"
           />
         </template>
       </FormControl>
@@ -84,7 +128,7 @@ async function handleConnect(): Promise<void> {
       <Button
         variant="primary"
         type="submit"
-        :disabled="!apiKey.trim() || store.isConnecting"
+        :disabled="store.isConnecting"
       >
         <Spinner v-if="store.isConnecting" size="sm" tone="inverse" />
         <PlugIcon v-else />

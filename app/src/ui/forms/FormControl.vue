@@ -188,5 +188,13 @@ const describedBy = computed(() => {
 :deep(.input-error) {
   @extend %_theme-transition;
   @apply border-danger text-danger;
+
+  &:not(:disabled) {
+    &:focus,
+    &:focus-within,
+    &:hover {
+      @apply border-primary-lighter text-primary-lighter;
+    }
+  }
 }
 </style>

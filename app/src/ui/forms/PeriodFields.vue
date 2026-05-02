@@ -89,6 +89,20 @@ function handlePeriodToValidate(result: DateFieldValidation): void {
   updatePeriodRangeError();
 }
 
+function handlePeriodFromUpdate(value: string): void {
+  periodFromError.value = "";
+  periodRangeError.value = "";
+  periodFromValidation.value = null;
+  emit("update:periodFrom", value);
+}
+
+function handlePeriodToUpdate(value: string): void {
+  periodToError.value = "";
+  periodRangeError.value = "";
+  periodToValidation.value = null;
+  emit("update:periodTo", value);
+}
+
 function validate(): Period | null {
   periodFromError.value = "";
   periodToError.value = "";
@@ -167,7 +181,7 @@ defineExpose({
             :invalid="invalid"
             :described-by="describedBy"
             :placeholder="dateFormatPlaceholder"
-            @update:model-value="emit('update:periodFrom', $event)"
+            @update:model-value="handlePeriodFromUpdate"
             @validate="handlePeriodFromValidate"
           />
         </template>
@@ -191,7 +205,7 @@ defineExpose({
             :invalid="invalid"
             :described-by="describedBy"
             :placeholder="dateFormatPlaceholder"
-            @update:model-value="emit('update:periodTo', $event)"
+            @update:model-value="handlePeriodToUpdate"
             @validate="handlePeriodToValidate"
           />
         </template>

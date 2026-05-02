@@ -56,6 +56,11 @@ function handleFileValidate(result: FileFieldValidation): void {
   fileErrorKey.value = result.errorKey;
 }
 
+function handleTitleInput(value: string): void {
+  titleError.value = "";
+  emit("update:title", value);
+}
+
 function handleTitleValidate(): void {
   titleError.value = getRequiredFieldError(props.title, "Report name");
 }
@@ -111,9 +116,7 @@ function handleSubmit(): void {
             :disabled="isLoading"
             :aria-invalid="invalid ? 'true' : undefined"
             :aria-describedby="describedBy"
-            @input="
-              emit('update:title', ($event.target as HTMLInputElement).value)
-            "
+            @input="handleTitleInput(($event.target as HTMLInputElement).value)"
             @blur="handleTitleValidate"
           />
         </template>

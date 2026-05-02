@@ -35,8 +35,8 @@ function handleDisconnect(): void {
     flex-wrap
     items-center
     justify-between
-    gap-y-2
-    gap-x-4
+    gap-y-1.5
+    gap-x-6
     py-2
     pl-6
     pr-4

@@ -34,9 +34,9 @@ const periodLabel = computed(() =>
 </script>
 
 <template>
-  <SectionHeaderLayout class="!gap-1">
+  <SectionHeaderLayout class="!gap-0">
     <template #header>
-      <h2 class="w-full grow text-xl">Campaign Performance</h2>
+      <h2 class="w-full grow text-xl min-h-9">Campaign Performance</h2>
     </template>
     <template #action>
       <div v-if="showAiButton" class="relative shrink-0">
@@ -59,7 +59,7 @@ const periodLabel = computed(() =>
         {{ businessContext.industry }}
       </MetaItem>
     </MetaRow>
-    <MetaRow separator="bullet" tone="info" class="text-typography-subtle">
+    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1">
       <MetaItem
         >{{ selectedChannelCount }} of
         {{ totalChannelCount }} channels</MetaItem
@@ -78,11 +78,11 @@ const periodLabel = computed(() =>
 <style lang="scss" scoped>
 .connected-status {
   @apply absolute
-    -top-1
-    -right-1
+    -top-1.5
+    -right-1.5
     z-10
-    w-3
-    h-3
+    w-3.5
+    h-3.5
     rounded-full
     bg-surface
     flex

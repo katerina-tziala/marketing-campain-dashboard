@@ -21,9 +21,27 @@ const props = withDefaults(
   },
 );
 
-defineEmits<{ "update:modelValue": [value: string] }>();
+defineEmits<{
+  "update:modelValue": [value: string];
+  blur: [];
+}>();
 
 const visible = ref(false);
+const toggleButtonRef = ref<InstanceType<typeof Button> | null>(null);
+const activatedByPointer = ref(false);
+
+function handleTogglePointerDown(): void {
+  activatedByPointer.value = true;
+}
+
+function handleToggleClick(): void {
+  visible.value = !visible.value;
+
+  if (activatedByPointer.value) {
+    toggleButtonRef.value?.$el?.blur();
+    activatedByPointer.value = false;
+  }
+}
 </script>
 
 <template>
@@ -46,8 +64,10 @@ const visible = ref(false);
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
+      @blur="$emit('blur')"
     />
     <Button
+      ref="toggleButtonRef"
       variant="text-only"
       icon-only
       no-ring
@@ -55,10 +75,11 @@ const visible = ref(false);
       type="button"
       :disabled="disabled"
       :aria-label="visible ? 'Hide password' : 'Show password'"
-      @click="visible = !visible"
+      @pointerdown="handleTogglePointerDown"
+      @click="handleToggleClick"
     >
-      <EyeOffIcon v-if="visible" />
-      <EyeIcon v-else />
+      <EyeOffIcon v-if="visible" class="!text-xl" />
+      <EyeIcon class="!text-xl" v-else />
     </Button>
   </div>
 </template>
@@ -70,7 +91,7 @@ const visible = ref(false);
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary-light;
+      @apply border-primary-lighter text-primary-lighter;
     }
   }
 }

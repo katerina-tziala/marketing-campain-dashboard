@@ -82,7 +82,7 @@ const sortedRecommendations = computed(() =>
           </div>
           <div class="flex flex-col gap-0.5">
             <span class="text-xs text-typography-subtle">To</span>
-            <span class="text-primary-light">{{ rec.toCampaign }}</span>
+            <span class="text-typography-inverse">{{ rec.toCampaign }}</span>
           </div>
         </div>
         <div class="rec-badges">
@@ -109,13 +109,13 @@ const sortedRecommendations = computed(() =>
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Revenue</span>
-          <span class="text-success-dark"
+          <span class="text-success"
             >+{{ formatCurrency(rec.expectedImpact.revenueChange) }}</span
           >
         </p>
         <p class="rec-row">
           <span class="rec-label">Est. Conversions</span>
-          <span class="text-success-dark"
+          <span class="text-success"
             >+{{ rec.expectedImpact.conversionChange }}</span
           >
         </p>

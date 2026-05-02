@@ -40,6 +40,7 @@ export const DEFAULT_PORTFOLIO_CONTEXT: AnalysisPortfolioContext = {
   filtersActive: false,
   channelCount: 0,
   campaignCount: 0,
+  businessContext: null,
 }
 
 export function getOtherAnalysisType(type: AiAnalysisType): AiAnalysisType {

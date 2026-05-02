@@ -551,3 +551,97 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Make review action labels destination-aware — `Back` or a hard-coded `Fix file` hides whether the user is returning to the form or to row-error review.
 - Use clearer import language in validation flows — “Import selected rows” and “Import N valid rows” explain the consequence better than generic proceed labels.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [597] Polish AI panel forms, idle states, and analysis context metadata
+**Type:** feature/refactor
+
+**Summary:** Refined the AI assistant panel experience by adding portfolio period/industry context to analysis headers, making idle analysis states more reusable, improving AI connection form validation/reset behavior, and tightening password-field focus/error interactions. This pass also included small visual consistency updates across analysis cards, badges, and campaign header metadata.
+
+**Brainstorming:** The AI panel had two kinds of state that needed clearer boundaries. Analysis display state should be owned by `AnalysisState`, while each analysis view should still own its exact idle copy and result markup. Connection form state should be local to the form and reset when the panel closes, but it should not disconnect the user or mutate durable connection status. The API key field should behave like a real required form field instead of disabling the primary action before the user can submit. For metadata, period and industry are useful in the AI modal context but noisy in the desktop side panel, so the analysis header needed responsive visibility that matches the drawer behavior.
+
+**Prompt:** Clean up AI analysis idle-state rendering, add period and industry after the analysis header, show that metadata only in the modal layout, make the Connect button stay enabled while the API key field is required, clear field errors on input/change without live revalidation, reset the connection form when the panel closes without affecting connection status, and fix password-toggle focus so active/error states do not get stuck.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/ui/AnalysisState.vue` — replaced the old `state` slot with an `idle` slot wrapped by a single `.idle` container owned by the state component.
+- `features/ai-tools/ai-analysis/ui/AnalysisState.vue` — moved common idle paragraph styling into the idle container using scoped deep styling for direct child paragraphs.
+- `features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — updated to use the new `#idle` slot and removed repeated idle paragraph utility classes.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — updated to use the new `#idle` slot while preserving the minimum-campaign warning notification.
+- `features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — grouped the health reasoning, bottom line title, and bottom line copy into a response section for cleaner spacing.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — moved `AnalysisResponseMeta` after the summary/recommendations content to align with the refreshed analysis response flow.
+- `features/ai-tools/ai-analysis/ui/AnalysisResponseMeta.vue` — switched metadata separators from divider to bullet and removed extra vertical padding.
+- `features/ai-tools/ai-analysis/components/AiAnalysis.vue` — added bottom padding and cleaned panel container spacing so analysis content has breathing room at the bottom of the drawer.
+- `features/ai-tools/ai-analysis/types/context.types.ts` — added `businessContext` to `AnalysisPortfolioContext`.
+- `features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts` — updated `DEFAULT_PORTFOLIO_CONTEXT` with `businessContext: null`.
+- `features/ai-tools/ai-analysis/ui/AnalysisHeader.vue` — renders portfolio period and optional industry from `businessContext` alongside portfolio, channel, and campaign metadata.
+- `features/ai-tools/ai-analysis/ui/AnalysisHeader.vue` — formats the analysis period with `formatIsoDateRange`.
+- `features/ai-tools/ai-analysis/ui/AnalysisHeader.vue` — shows the metadata row only in the mobile/modal drawer layout with `flex lg:hidden`.
+- `features/ai-tools/ai-analysis/ui/AnalysisHeader.vue` — keeps the analyze action button from shrinking in tighter header layouts.
+- `features/ai-tools/components/AiTools.vue` — accepts `panelOpen` and increments a local reset key when the panel closes.
+- `app/pages/DashboardPage.vue` — passes `dashboard.aiPanelOpen` into `AiTools` so AI tools can react to panel close.
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — accepts `resetKey` and resets local provider, API key, required error, and transient connection error when the panel closes.
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — made API Key a required form field and validates it on blur and submit.
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — keeps the Connect button enabled unless a connection request is already running.
+- `features/ai-tools/ai-connection/components/AiConnectionForm.vue` — clears required-field and provider connection errors when the user edits the API key or changes provider.
+- `features/ai-tools/ai-connection/utils/error-handling.ts` — removed the trailing period from the invalid-key hint to match the app’s form copy style.
+- `ui/forms/PasswordInput.vue` — emits `blur` from the real password input so parent forms can validate required state.
+- `ui/forms/PasswordInput.vue` — blurs the visibility-toggle button after pointer activation so the wrapper does not remain in a stuck `focus-within` visual state.
+- `ui/forms/PasswordInput.vue` — preserves keyboard focus behavior for the visibility toggle while fixing pointer-click active-state behavior.
+- `ui/forms/PasswordInput.vue` — applies stronger interactive border/text states when the password input wrapper is hovered or focused.
+- `ui/forms/FormControl.vue` — allows invalid controls to still show normal hover/focus interactive colors instead of staying locked in the static danger state.
+- `features/data-transfer/components/UploadDataForm.vue` — clears the report-name required error as soon as the user types.
+- `ui/forms/PeriodFields.vue` — clears start/end date errors and the cross-field range error when either period field changes, without revalidating until blur or submit.
+- `features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — tightened connected-status spacing.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — adjusted recommendation emphasis colors for destination campaign and positive estimated impact values.
+- `features/ai-tools/ai-analysis/executive-summary/PriorityActions.vue` — simplified success-metric row styling by removing the extra tinted background/border treatment.
+- `ui/card/Card.vue` — moved card background to `bg-surface-overlay` for the refreshed analysis surfaces.
+- `ui/primitives/Badge.vue` — normalized formatting and moved rounded/soft-rounded shape styling to the badge root while keeping body rounding in sync.
+- `features/campaign-performance/components/CampaignPerformanceHeader.vue` — tightened header gaps, added stable title height, adjusted metadata spacing, and slightly enlarged/repositioned the connected status dot.
+
+**Key decisions & why:**
+- Keep idle layout in `AnalysisState` — the state component owns consistent idle spacing, while feature views own their exact idle copy or warning content.
+- Rename the slot to `idle` — the slot now describes the actual state it renders instead of using the generic `state` name.
+- Keep result markup in each analysis view — summary and optimizer responses have different structure and should not be over-abstracted into the state wrapper.
+- Add business context to `AnalysisPortfolioContext` — the analysis header needs the same portfolio context that prompts already use, without reaching into unrelated stores.
+- Show analysis metadata only in modal layout — period and industry help when the AI tool is detached from the main dashboard, but the desktop side panel sits beside the dashboard header that already shows this context.
+- Use responsive visibility for the modal-only metadata — the drawer behaves as a modal below `lg`, so `flex lg:hidden` maps directly to the UI behavior.
+- Reset form-local state on panel close — closing the panel should clear abandoned input and transient errors, but should not disconnect an established AI connection.
+- Keep Connect enabled — a required field should report its own validation error on blur/submit instead of hiding the action behind disabled state.
+- Clear errors on edit without live validation — typing should remove stale errors, while blur and submit remain the deliberate validation moments.
+- Preserve keyboard accessibility for the password toggle — pointer clicks should not leave a stuck active state, but keyboard users should keep focus where they navigated.
+- Let invalid controls still react to interaction — error styling should communicate the problem, not prevent hover/focus affordances.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [598] Bring modal accessibility behavior to responsive drawer dialogs
+**Type:** refactor/accessibility
+
+**Summary:** Updated the responsive drawer’s mobile modal path to use the same core accessibility behavior as the shared `Modal` component: generated title labeling, focus initialization, keyboard focus trapping, focus restoration, body-scroll locking, and Escape close handling. Desktop drawer behavior remains unchanged.
+
+**Brainstorming:** `ResponsiveDrawer` behaves like two different surfaces: a desktop aside and a mobile modal dialog. The desktop aside should stay lightweight and visible in layout, but the mobile overlay is a real dialog and should follow the same accessibility contract as `Modal.vue`. Reusing the modal ARIA composable keeps title labeling consistent, while implementing focus handling inside `ResponsiveDrawer` avoids forcing the drawer through the full modal primitive and risking layout regressions.
+
+**Prompt:** For `ResponsiveDrawer`, when it renders as a modal, implement the same ARIA functionality as the shared modal.
+
+**What changed:**
+- `ui/drawer/ResponsiveDrawer.vue` — imports and uses `useModalAria()` for generated `titleId` and dialog ARIA attributes.
+- `ui/drawer/ResponsiveDrawer.vue` — replaces the mobile dialog’s `aria-label` with `aria-labelledby` via `v-bind="dialogAria"`.
+- `ui/drawer/ResponsiveDrawer.vue` — passes `titleId` into `ModalHeader` so the rendered heading labels the mobile dialog.
+- `ui/drawer/ResponsiveDrawer.vue` — adds a mobile dialog ref and `tabindex="-1"` so the drawer modal can receive programmatic focus.
+- `ui/drawer/ResponsiveDrawer.vue` — marks drawer content with `data-modal-body` and `tabindex="-1"` as the initial focus target.
+- `ui/drawer/ResponsiveDrawer.vue` — stores the previously focused element when the mobile drawer modal opens.
+- `ui/drawer/ResponsiveDrawer.vue` — restores focus to the previously focused element when the mobile drawer modal closes.
+- `ui/drawer/ResponsiveDrawer.vue` — locks body scrolling while the mobile drawer modal is open and restores body scrolling when it closes.
+- `ui/drawer/ResponsiveDrawer.vue` — adds focusable-element lookup scoped to the mobile drawer modal.
+- `ui/drawer/ResponsiveDrawer.vue` — traps `Tab` and `Shift+Tab` inside the mobile drawer modal.
+- `ui/drawer/ResponsiveDrawer.vue` — keeps Escape close behavior, while limiting the focus trap to the modal/mobile rendering path.
+- `ui/drawer/ResponsiveDrawer.vue` — leaves the desktop aside path as an aside with its existing `aria-label` and layout behavior.
+
+**Key decisions & why:**
+- Treat only the mobile drawer as a dialog — the desktop drawer is part of the page layout, while the mobile overlay is modal interaction.
+- Reuse `useModalAria()` — dialog title wiring should be consistent between `Modal` and drawer modal surfaces.
+- Keep implementation local to `ResponsiveDrawer` — the drawer has unique desktop/mobile rendering, so wrapping it in `Modal` would blur responsibilities.
+- Focus content first — the drawer’s content is the useful starting point after opening, while the close button remains available in the trap.
+- Trap focus only in modal mode — desktop users should not have aside focus constrained like a modal.
+- Preserve Escape close — keyboard users should be able to dismiss both desktop and mobile drawer states consistently.
+- Restore focus on close — returning focus to the opener keeps keyboard navigation predictable after the mobile dialog disappears.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.

@@ -21,6 +21,7 @@ export interface AnalysisPortfolioContext {
   channelCount: number
   campaignCount: number
   filtersActive: boolean
+  businessContext: BusinessContext | null
 }
 
 export interface AiAnalysisRequestContext extends AnalysisPortfolioContext {

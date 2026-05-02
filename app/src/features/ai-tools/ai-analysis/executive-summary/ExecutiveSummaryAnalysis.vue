@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useAiAnalysisStore } from '../stores';
+import { useAiAnalysisStore } from "../stores";
 import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../ui";
 import Correlations from "./Correlations.vue";
 import HealthStatus from "./HealthStatus.vue";
@@ -51,34 +51,35 @@ function handleSummarize(): void {
   >
     <template #loading>Generating summary…</template>
 
-    <template #state>
-      <p class="text-sm text-typography-soft py-2 leading-5 tracking-wide">
+    <template #idle>
+      <p>
         Generate an AI summary for the current portfolio view, including
         performance context and recommended next actions
       </p>
     </template>
 
     <template v-if="response">
+      <section>
+        <p class="text-typography-soft">
+          <HealthStatus
+            class="inline-action-float"
+            :health-score="response.healthScore"
+          />
+          {{ response.healthScore.reasoning }}
+        </p>
+        <h5 class="text-sm tracking-wide font-semibold text-primary-soft pt-2">
+          Bottom Line
+        </h5>
+        <p class="text-typography-soft">{{ response.bottomLine }}</p>
+      </section>
+      <PriorityActions :actions="response.priorityActions" />
+      <Insights :insights="response.insights" />
+      <Correlations :correlations="response.correlations" />
       <AnalysisResponseMeta
-        class="-mt-5 -mb-2"
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <p class="-mb-4 text-typography-soft">
-        <HealthStatus
-          class="inline-action-float"
-          :health-score="response.healthScore"
-        />
-        {{ response.healthScore.reasoning }}
-      </p>
-      <h5 class="text-sm tracking-wide font-semibold text-primary-soft -mb-5">
-        Bottom Line
-      </h5>
-      <p class="text-typography-soft">{{ response.bottomLine }}</p>
-      <PriorityActions :actions="response.priorityActions" />
-      <Insights :insights="response.insights" />
-      <Correlations :correlations="response.correlations" />
     </template>
   </AnalysisState>
 </template>

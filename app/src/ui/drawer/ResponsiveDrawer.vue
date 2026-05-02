@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ModalHeader from "../modal/ModalHeader.vue";
+import { useModalAria } from "../modal/composables";
 
 type DrawerSide = "left" | "right";
 
@@ -22,6 +23,9 @@ const emit = defineEmits<{
 }>();
 
 const isDesktop = ref(false);
+const drawerModalRef = ref<HTMLElement | null>(null);
+const previouslyFocusedElement = ref<HTMLElement | null>(null);
+const { titleId, dialogAria } = useModalAria();
 let desktopMediaQuery: MediaQueryList | null = null;
 
 const drawerClass = computed(() => ({
@@ -29,13 +33,77 @@ const drawerClass = computed(() => ({
   left: props.side === "left",
   right: props.side === "right",
 }));
+const modalOpen = computed(() => props.open && !isDesktop.value);
+
+const focusableSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "textarea:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
 
 function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
   isDesktop.value = e.matches;
 }
 
+function getFocusableElements(): HTMLElement[] {
+  if (!drawerModalRef.value) return [];
+
+  return Array.from(
+    drawerModalRef.value.querySelectorAll<HTMLElement>(focusableSelector),
+  ).filter((element) => element.offsetParent !== null);
+}
+
+function focusInitialTarget(): void {
+  const drawerModal = drawerModalRef.value;
+  if (!drawerModal) return;
+
+  const target =
+    drawerModal.querySelector<HTMLElement>("[data-modal-body]") ??
+    getFocusableElements()[0] ??
+    drawerModal;
+
+  target.focus();
+}
+
+async function scheduleInitialFocus(): Promise<void> {
+  await nextTick();
+  focusInitialTarget();
+}
+
 function onKeydown(e: KeyboardEvent): void {
-  if (e.key === "Escape" && props.open) emit("close");
+  if (!props.open) return;
+
+  if (e.key === "Escape") {
+    emit("close");
+    return;
+  }
+
+  if (!modalOpen.value || e.key !== "Tab") return;
+
+  const focusableElements = getFocusableElements();
+  if (focusableElements.length === 0) {
+    e.preventDefault();
+    focusInitialTarget();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  const activeElement = document.activeElement;
+
+  if (e.shiftKey && activeElement === firstElement) {
+    e.preventDefault();
+    lastElement.focus();
+    return;
+  }
+
+  if (!e.shiftKey && activeElement === lastElement) {
+    e.preventDefault();
+    firstElement.focus();
+  }
 }
 
 onMounted(() => {
@@ -50,6 +118,23 @@ onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown);
   desktopMediaQuery?.removeEventListener("change", syncViewport);
 });
+
+watch(
+  modalOpen,
+  (open) => {
+    if (open) {
+      previouslyFocusedElement.value =
+        document.activeElement as HTMLElement | null;
+      document.body.style.overflow = "hidden";
+      void scheduleInitialFocus();
+      return;
+    }
+
+    document.body.style.overflow = "";
+    previouslyFocusedElement.value?.focus();
+    previouslyFocusedElement.value = null;
+  },
+);
 </script>
 
 <template>
@@ -57,6 +142,7 @@ onUnmounted(() => {
     <aside v-if="isDesktop" class="responsive-drawer-panel" :aria-label="title">
       <ModalHeader
         :title="title"
+        :title-id="titleId"
         :close-label="closeLabel"
         @close="emit('close')"
       >
@@ -80,13 +166,14 @@ onUnmounted(() => {
       @click.self="emit('close')"
     >
       <section
+        ref="drawerModalRef"
+        v-bind="dialogAria"
         class="responsive-drawer-modal"
-        role="dialog"
-        aria-modal="true"
-        :aria-label="title"
+        tabindex="-1"
       >
         <ModalHeader
           :title="title"
+          :title-id="titleId"
           :close-label="closeLabel"
           @close="emit('close')"
         >
@@ -97,7 +184,7 @@ onUnmounted(() => {
             <slot name="header-actions" />
           </template>
         </ModalHeader>
-        <div class="responsive-drawer-content">
+        <div class="responsive-drawer-content" data-modal-body tabindex="-1">
           <slot />
         </div>
       </section>
