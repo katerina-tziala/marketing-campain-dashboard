@@ -119,3 +119,178 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Conditional rule selection as a single `const` before `promptSections` — keeps the function body clean; all complexity is in naming (FULL vs SELECTION), not in conditionally building the sections array.
 - `OUTPUT_SCHEMA` moved to `config.ts` — it is static prose, not logic; co-locating it with the rule groups makes `config.ts` the single file to open when changing either the rules or the expected response shape.
 - `promptSections` array pattern (no template literals) — each section is independently readable and reorderable; joining with `\n\n` is explicit and consistent across all three prompts.
+
+
+
+## [#606] Add expansions and reduction samples to budget optimizer; create BudgetExpansions component; fix BudgetRecommendations for mixed types
+**Type:** update
+
+**Summary:** Populated all budget optimization mock samples with expansions and `reduction` type recommendations to exercise the full schema in UI, created `BudgetExpansions.vue` matching `BudgetRecommendations.vue` in structure and sort logic, fixed `BudgetRecommendations.vue` to handle `reduction` type (null `toCampaign`, null impact metrics, conditional label, type badge), and rewrote `BudgetOptimizationAnalysis.vue` to use both components.
+
+**Brainstorming:** Three problems needed solving together. First, `expansions: []` in most mocks meant the Growth Opportunities section never rendered during dev cycles — added realistic expansion data to mocks 1, 3, and 4. Second, all five mocks used only `reallocation` recommendations — `reduction` type existed in the schema but was never exercised, meaning the UI rendering path for reductions (null `toCampaign`, null impact fields, different budget label) was untested; added `reduction` items to mocks 1 and 3. Third, `BudgetRecommendations.vue` rendered `rec.toCampaign` unconditionally (would show "null"), used `formatPercentage` for ROI (wrong format), and had no null guards on impact metrics — all of which broke with reduction data. The orchestrator also had stale inline raw markup for both sections instead of using the dedicated components.
+
+**Prompt:** Add expansions to all budget optimization sample data (mocks 1, 3, 4 get new expansions; mock 2 already had one; mock 5 stays empty). Add at least one reduction recommendation to mocks 1 and 3 to cover both recommendation types in the UI. Fix BudgetRecommendations.vue to handle reduction type: hide "To" column when toCampaign is null, add null guards on all impact metrics, add a type badge (info for reallocation, warning dimmed for reduction), rename section title from "Reallocation Recommendations" to "Recommendations", conditionalise the budget shift label (Reallocate vs Reduce), fix ROI format from formatPercentage to .toFixed(1)x. Create BudgetExpansions.vue matching BudgetRecommendations.vue structure. Rewrite BudgetOptimizationAnalysis.vue to use both components.
+
+**What changed:**
+- `features/ai-tools/sample-data/budget-optimization.ts` — added 1 `reduction` + 2 expansions to `aggressiveReallocation`; added 1 `reduction` to `conservativeOptimization` (CTV Campaign trimmed to holding budget); added 1 `reduction` + 2 expansions to `seasonalPivot`; added 1 expansion to `noRecommendationsWithReason` (Podcast new channel, low confidence); mock 5 unchanged (empty, exercises no-results state); mocks 1, 2, 3 all have at least one reallocation and one reduction
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — section title changed to "Recommendations"; added `typeVariant()` helper + `TYPE_MAP`; added type `Badge` (dimmed) to header badges; "To" column wrapped in `v-if="rec.toCampaign"`; budget label conditionalised (Reallocate/Reduce); ROI format changed to `.toFixed(1)x` with null guard; revenue and conversions wrapped in null-guard `v-if`; removed unused `formatPercentage` import
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — created; props: `expansions: BudgetExpansion[]`; sorts by confidence asc then execution risk asc; card: Channel/Campaign header (Campaign column hidden when null), confidence/risk badges, 4-metric grid (Additional Budget, Est. Revenue, Est. ROI, Est. Conversions) with null guards, reason paragraph; `cq-container` + `cq-up(cq-400)` for 2-col metric grid
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — rewrote to use `BudgetRecommendations` + `BudgetExpansions`; removed all inline raw markup; extracted `hasNoResults` computed; no logic changes
+
+**Key decisions & why:**
+- `reduction` type badge dimmed to distinguish from the primary action without introducing a fourth colour — dimmed warning reads as "caution/downgrade" without competing visually with confidence/risk badges.
+- Null impact metrics render `—` rather than hiding the row — keeping all four metric rows present preserves the grid layout and makes it immediately clear that no revenue/conversion estimate was provided.
+- Section title changed to "Recommendations" — the section now covers both reallocations and reductions; "Reallocation Recommendations" was no longer accurate.
+- `BudgetExpansions.vue` as a separate component — expansion shape (`targetChannel`/`targetCampaign`) differs from recommendation shape (`fromCampaign`/`toCampaign`/`type`); merging would require conditionals throughout both card headers.
+
+
+## [#607] Split budget optimization UI into Reallocate / Expand / Reduce sections
+**Type:** update
+
+**Summary:** Restructured the Budget Optimizer result view to render three named sections in order — Reallocate, Expand, Reduce — instead of a single mixed Recommendations section followed by expansions.
+
+**Brainstorming:** The original layout put all recommendations together and expansions after — ordering was confidence-sorted within a single section. The new requirement separates by intent: reallocations (budget shifts between campaigns) are the primary action and appear first, expansions (new budget opportunities) come next, and reductions (budget cuts) come last. This makes the output easier to scan and act on. The cleanest implementation is to filter in the orchestrator and pass typed subsets to `BudgetRecommendations.vue` with a `title` prop, keeping the card component generic.
+
+**Prompt:** Structure the budget optimization UI as three separate sections in order: Reallocate, Expand, Reduce. Reallocate and Reduce sections reuse BudgetRecommendations.vue filtered by type; Expand stays as BudgetExpansions.vue. Remove the type badge from recommendation cards since the section title makes type redundant.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — added `title` prop; changed `AnalysisSection` to use `:title="title"`; removed `TYPE_MAP`, `typeVariant()`, and type `Badge` from card header (redundant with section title)
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — added `reallocations` and `reductions` computed (filter `response.recommendations` by type); renders `BudgetRecommendations` twice with titles "Reallocate" and "Reduce" with `BudgetExpansions` in between
+
+**Key decisions & why:**
+- Type badge removed from cards — once recommendations are split into titled sections, the badge repeats information already conveyed by the section heading; removing it reduces visual noise.
+- Expand section rendered between Reallocate and Reduce — expansions are additive (new budget spend) while reductions are subtractive; grouping the two "spend more/spend differently" actions before the "spend less" action reflects natural decision priority.
+
+
+## [#608] Create BudgetReductions component; sort reallocations by revenue change
+**Type:** update
+
+**Summary:** Created a dedicated `BudgetReductions.vue` component for the Reduce section (simplified card without impact metrics), and sorted reallocations by estimated revenue change descending with nulls last.
+
+**Brainstorming:** Two separate concerns. First, `BudgetRecommendations.vue` was doing double duty for both reallocations and reductions — reductions always have null impact metrics so the four-metric grid was mostly dashes, and the `v-if`/`v-else` null guards added noise. A dedicated component renders only the fields that matter for a reduction: campaign name, budget reduction amount, confidence/risk badges, and reason. Second, reallocations should surface the highest-revenue-impact moves first — sorting by `revenueChange` descending with nulls pushed to the end gives the most actionable item priority position.
+
+**Prompt:** Sort reallocations by revenueChange descending (nulls last). Create a dedicated BudgetReductions.vue component for the Reduce section — simpler card: campaign name, reduce-by amount, confidence/risk badges, reason; no impact metrics grid. Wire it into the orchestrator replacing the second BudgetRecommendations call.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — created; props: `reductions: BudgetRecommendation[]`; sorts by confidence asc then execution risk asc; card: Campaign header + confidence/risk badges, single "Reduce by" metric row, reason paragraph; no 4-metric grid (reductions have no expected impact data)
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — `reallocations` computed now sorts by `revenueChange` desc with explicit null handling (nulls last); imports `BudgetReductions`; replaces second `BudgetRecommendations` call with `<BudgetReductions :reductions="reductions" />`
+
+**Key decisions & why:**
+- Revenue sort in orchestrator not in `BudgetRecommendations` — the component is generic (title prop, any recommendations array); sort order is a concern of the caller, not the renderer.
+- `BudgetReductions` sorts by confidence/risk (same as expansions) rather than revenue — reductions have no revenue impact so confidence is the right primary sort.
+- Dedicated component rather than conditional in `BudgetRecommendations` — eliminates four null-guard rows that are never filled for reductions; the card structure is genuinely different enough to warrant separation.
+
+
+## [#609] Add inferImpactLabel to BudgetReductions cards
+**Type:** update
+
+**Summary:** Added `inferImpactLabel` logic and a dimmed badge to each reduction card showing whether the cut saves budget or eliminates waste.
+
+**Brainstorming:** Reductions always have null impact metrics, so the card only showed a budget amount with no qualitative framing. The `inferImpactLabel` function (provided by the user) classifies each reduction as `budget_saved` or `waste_reduced` based on the impact fields. Rendering this as a small dimmed badge inline with "Reduce by" adds context without cluttering the card.
+
+**Prompt:** Add the inferImpactLabel function and ImpactLabel type to BudgetReductions.vue. Show the resulting label as a dimmed badge next to "Reduce by" in each card. Map budget_saved → info, waste_reduced → warning, revenue_gain → success.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — added `ImpactLabel` type, `IMPACT_LABEL_DISPLAY`, `IMPACT_LABEL_VARIANT` maps, `inferImpactLabel(rec)` function; "Reduce by" row changed from `<p>` to `<div>` with a flex left group (label + dimmed `rounded-rectangle-sm` Badge) and right-aligned currency amount
+
+**Key decisions & why:**
+- `rounded-rectangle-sm` badge variant — keeps the impact label visually lighter than the confidence/risk badges in the header; small pill shape reads as a qualifier rather than a status.
+- `inferImpactLabel` called twice per card in template (once for `v-if`, once for value) — acceptable given the function is pure and cheap; avoids introducing a per-item computed or pre-mapped array.
+
+
+## [#610] Polish AI analysis result cards and executive summary sections
+**Type:** refactor/ui
+
+**Summary:** Refined the AI analysis result layout by adding a raised card variant, anchoring response metadata to the bottom of result panels, replacing the old risk renderer with dedicated executive-summary sections, and tightening badge/card visual hierarchy across the summary and optimizer views.
+
+**Brainstorming:** The executive summary response needed clearer visual hierarchy. The health/overview/bottom-line block is the lead narrative and should read as a raised surface, while key risks and growth outlook are separate sections with their own badge mapping rules. A shared summary-card abstraction was briefly useful while shaping the risk/outlook layout, but growth outlook now needs a different raised treatment, so keeping risk-card structure directly in `KeyRisks.vue` is simpler. Response metadata should behave consistently across analysis tabs: it should sit at the bottom when the panel has extra vertical space, instead of floating immediately after short responses.
+
+**Prompt:** Create dedicated `KeyRisks` and `GrowthOutlook` components for executive summary output. Keep badge variant mapping inside each section. Use secondary cards for key risks, a raised card for growth outlook, add severity sorting and colored left borders for risks, create a raised card variant for the first executive summary section, keep response meta aligned at the bottom, and preserve existing commented code/import context unless explicitly asked to remove it.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/executive-summary/KeyRisks.vue` — created/reworked as the dedicated key-risk section component.
+- `features/ai-tools/ai-analysis/executive-summary/KeyRisks.vue` — accepts `KeyRisk[]`, owns `RiskSeverity -> BadgeVariant` mapping, and sorts risks `High -> Medium -> Low`.
+- `features/ai-tools/ai-analysis/executive-summary/KeyRisks.vue` — renders secondary cards directly instead of delegating to a shared summary-card component.
+- `features/ai-tools/ai-analysis/executive-summary/KeyRisks.vue` — adds severity classes (`high`, `medium`, `low`) on risk cards and maps those to colored left borders in scoped styles.
+- `features/ai-tools/ai-analysis/executive-summary/GrowthOutlook.vue` — created/reworked as the dedicated growth-outlook section component.
+- `features/ai-tools/ai-analysis/executive-summary/GrowthOutlook.vue` — accepts `GrowthOutlook`, owns `GrowthOutlookLabel -> BadgeVariant` mapping, and renders the outlook in a raised card.
+- `features/ai-tools/ai-analysis/executive-summary/Correlations.vue` — removed from the active executive-summary flow; risks now have a correctly named component.
+- `features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — uses `Card variant="raised"` for the lead health/overview/bottom-line section.
+- `features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — composes `PriorityActions`, `Insights`, `KeyRisks`, and `GrowthOutlook` as separate sections.
+- `features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — restored preserved commented exploratory summary markup and its imports.
+- `features/ai-tools/ai-analysis/executive-summary/Insights.vue` — restored normal-case styling on the metric value so badge capitalization does not affect metric text.
+- `features/ai-tools/ai-analysis/executive-summary/PriorityActions.vue` — simplified priority card copy spacing and muted the expected-outcome line.
+- `features/ai-tools/ai-analysis/ui/AnalysisState.vue` — wraps successful result content in a flex column result container.
+- `features/ai-tools/ai-analysis/ui/AnalysisResponseMeta.vue` — adds `mt-auto` so generated-at/model metadata stays aligned to the bottom of the available result area.
+- `features/ai-tools/ai-analysis/ui/AnalysisHeader.vue` — reduces the analysis title from `text-lg` to `text-base` for tighter panel hierarchy.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — wraps the budget optimizer summary in a raised card to match the new lead-summary treatment.
+- `ui/card/card.types.ts` — adds the typed `raised` card variant.
+- `ui/card/Card.vue` — implements `Card` `raised` styling with raised surface, border, shadow, and heading treatment.
+- `ui/card/Card.vue` — keeps secondary cards visually quieter for nested AI result cards.
+- `ui/primitives/Badge.vue` — swaps primary/opportunity visual treatment so opportunity reads with the former primary-style emphasis while primary uses the lighter primary badge treatment.
+
+**Key decisions & why:**
+- One component per executive summary section — key risks and growth outlook each own their domain type, badge mapping, section title, and rendering rules.
+- Keep risk severity mapping inside `KeyRisks.vue` — risk color semantics are specific to this section and should not leak into shared card or badge primitives.
+- Use direct card markup for key risks — once growth outlook diverged to a raised card, the temporary shared `SummaryCard` abstraction no longer removed meaningful duplication.
+- Use `raised` only for lead/summary surfaces — the raised variant signals primary narrative content, while secondary cards remain quieter supporting details.
+- Sort risks by severity in the UI — the API output remains untouched, but the user sees the highest-risk items first.
+- Use scoped risk-card classes for borders — dynamic Tailwind border classes were brittle here; local severity classes make the styling explicit.
+- Keep `AnalysisResponseMeta` layout responsibility shared — placing `mt-auto` on the meta component plus a flex result wrapper makes both analysis tabs align consistently.
+- Preserve commented code/imports unless asked — exploratory/commented blocks are treated as user-owned context and should not be removed during unrelated refactors.
+- Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [#611] Refine Budget Optimizer result sections and expected impact cards
+**Type:** refactor/ui
+
+**Summary:** Split the Budget Optimizer output into clearer Reallocate, Growth Opportunities, and Reduce sections; introduced reusable expected-impact rendering for recommendation and expansion cards; created a dedicated reduction card with plain-language impact copy and compact meta values; kept recommendation channel context visible under each campaign name; and removed the temporary shared header abstraction because projection made it noisier than the markup it replaced.
+
+**Brainstorming:** The Budget Optimizer UI needed to match the shape of the new output schema without turning every card into a conditional renderer. Reallocations, expansions, and reductions are different user decisions, so each section now owns the layout that best explains its decision. Reallocations still show From/To campaign routes, now with channel context under each campaign so the user does not lose channel information. Expansions show target campaign/channel plus expected impact. Reductions are simpler and focus on the campaign, channel, amount reduced, and the reason for cutting spend. A `BudgetActionHeader` abstraction was tested, but once badges and route labels were projected, the component added indirection without enough reuse value, so it was removed and the local header markup was kept in each component.
+
+**Prompt:** Refactor the Budget Optimizer result UI into three explicit sections. Keep `BudgetRecommendations.vue` for Reallocate cards only, and preserve both campaign and channel in the From/To header. Create/use `BudgetExpansions.vue` for Growth Opportunities and `BudgetReductions.vue` for Reduce. Extract only the repeated metric grid into `ExpectedImpactGrid.vue`; do not extract the card header because each section has slightly different semantics. Reductions should say “Reduce by <formatted amount> to increase revenue / to reduce wasted spend / to free up budget / to optimize spend allocation”, then show any available expected impact as a compact `MetaRow` with highlighted values. Keep badges small. Do not remove existing comments/imports. Do not touch unrelated executive-summary code. If trying an abstraction, remove it if the projected slots become more verbose than the original markup.
+
+**What changed:**
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — imports and composes the dedicated budget result components instead of rendering all recommendation/expansion markup inline.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — adds `reallocations` computed sorted by expected revenue change descending with nulls last.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — adds `reductions` computed filtered from recommendation type `reduction`.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — adds `hasNoResults` computed for the empty optimization state.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — renders result summary in a raised card before the detailed sections.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — takes a `title` prop so the parent can render it as the Reallocate section.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — keeps From/To campaign names in the route header and adds `fromChannel` / `toChannel` underneath each campaign.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — uses small confidence and execution-risk badges in the header.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetRecommendations.vue` — delegates expected impact rows to `ExpectedImpactGrid.vue`.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — created as the Growth Opportunities renderer.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — sorts expansions by confidence first, then execution risk.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — renders target campaign when present, otherwise target channel, and always keeps target channel visible underneath.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — uses the same small confidence/risk badge pattern as recommendations.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetExpansions.vue` — delegates expected impact rows to `ExpectedImpactGrid.vue`.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — created as the dedicated Reduce renderer.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — sorts reductions by confidence first, then execution risk.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — renders campaign title with channel underneath and small confidence/risk badges.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — adds `inferImpactLabel` to classify reduction copy as revenue gain, waste reduction, budget saved, or generic allocation optimization.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — renders “Reduce by <amount> …” as a sentence instead of a generic grid row.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — uses `MetaRow` and `MetaItem` for available expected-impact values after the reduction sentence.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetReductions.vue` — formats ROI as `Est. ROI 1.5x` and highlights expected impact values.
+- `features/ai-tools/ai-analysis/budget-optimization/ExpectedImpactGrid.vue` — created to centralize the repeated four-value grid used by reallocations and expansions.
+- `features/ai-tools/ai-analysis/budget-optimization/ExpectedImpactGrid.vue` — accepts `amountLabel`, `amount`, and `ExpectedImpact`.
+- `features/ai-tools/ai-analysis/budget-optimization/ExpectedImpactGrid.vue` — formats amount/revenue as currency, ROI as `1.5x`, conversions as plain count, and null estimates as `—`.
+- `features/ai-tools/sample-data/budget-optimization.ts` — expanded mock scenarios with realistic reduction items.
+- `features/ai-tools/sample-data/budget-optimization.ts` — added expected impact estimates to reductions so the compact reduction meta row can be exercised.
+- `features/ai-tools/sample-data/budget-optimization.ts` — added expansion scenarios so Growth Opportunities is visible during dev cycling.
+- `features/ai-tools/ai-analysis/budget-optimization/BudgetActionHeader.vue` — removed after review because the projection-based abstraction made the local card headers harder to follow and did not reduce meaningful duplication.
+
+**Key decisions & why:**
+- Keep one renderer per decision type — reallocations, expansions, and reductions are not just visual variants; they answer different user questions.
+- Extract the metric grid, not the header — the impact grid is structurally identical across recommendations and expansions, while headers carry different semantics.
+- Keep channel context in recommendations — once the user is away from dashboard-level filters, seeing only campaign names is not enough context.
+- Do not show a recommendation type badge inside split sections — section titles already communicate Reallocate / Growth Opportunities / Reduce, so repeating type badges adds noise.
+- Sort reallocations by estimated revenue change — the highest upside move should be easiest to find.
+- Sort reductions and expansions by confidence/risk — these sections are more about action reliability than revenue ranking alone.
+- Use compact `MetaRow` for reduction estimates — reduction cards need supporting context without becoming as heavy as the reallocation/expansion metric grid.
+- Use `ExpectedImpactGrid` null fallbacks — a dash is clearer than hiding rows and causing inconsistent card rhythm.
+- Remove `BudgetActionHeader` — a shared component is not useful when the consumer has to project almost the entire header structure into it.
+- Leave the container-query TODO in `ExpectedImpactGrid` commented — the current component likely needs another wrapper to make the query useful, and that was intentionally deferred.
+
+**Prompting note for next time:**
+- A better prompt would be: “Refactor only the Budget Optimizer result cards. Preserve the existing visual structure unless I explicitly say to redesign it. Extract only repeated metric rendering into a reusable component. Keep headers local unless the abstraction reduces markup without heavy slots. Reallocations must show From/To campaign and channel; expansions must show target campaign/channel; reductions must show campaign/channel plus a short reduce-by sentence and compact expected-impact meta. Do not touch executive-summary files, logs, comments, or unrelated styles.”

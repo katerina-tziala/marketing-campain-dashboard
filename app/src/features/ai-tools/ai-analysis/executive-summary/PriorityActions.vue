@@ -19,8 +19,8 @@ defineProps<{
         <span class="font-extrabold text-sm min-w-5 text-primary-soft">#{{ priority.priority }}</span>
         <h5 class="card-title">{{ priority.title }}</h5>
       </CardHeader>
-      <p class="px-2 text-typography-soft text-sm">{{ priority.rationale }}</p>
-      <p class="w-full py-1 px-2">{{ priority.expectedOutcome }}</p>
+      <p >{{ priority.rationale }}</p>
+      <p class="text-typography-subtle">{{ priority.expectedOutcome }}</p>
     </Card>
   </AnalysisSection>
 </template>

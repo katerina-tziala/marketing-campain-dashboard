@@ -31,7 +31,7 @@ export const OUTPUT_SCHEMA = `{
   "healthScore": {
     "score": number,
     "label": "Excellent | Good | NeedsAttention | Critical",
-    "reasoning": "string — one sentence explaining the score"
+    "reasoning": "string — one short sentence explaining the score"
   },
   "bottomLine": "string — one sentence with the main executive takeaway",
   "overview": "string — two to three sentences summarizing overall performance",

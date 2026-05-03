@@ -62,7 +62,9 @@ const errorNotification = computed(() => {
       {{ errorNotification?.message }}
     </Notification>
 
-    <slot v-else-if="hasResult" />
+    <div v-else-if="hasResult" class="result">
+      <slot />
+    </div>
   </template>
 </template>
 
@@ -79,5 +81,9 @@ const errorNotification = computed(() => {
   :deep(> p) {
     @apply py-2 text-sm text-typography-soft leading-5 tracking-wide;
   }
+}
+
+.result {
+  @apply grow flex flex-col gap-6;
 }
 </style>

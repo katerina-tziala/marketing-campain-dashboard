@@ -32,7 +32,7 @@ const periodLabel = computed(() =>
 <template>
   <SectionHeaderLayout>
     <template #header>
-      <h3 class="w-full grow text-lg">{{ title }}</h3>
+      <h3 class="w-full grow text-base">{{ title }}</h3>
     </template>
     <template #action>
       <Button

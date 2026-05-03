@@ -41,5 +41,7 @@ const tabs: Tab[] = [
     pb-2
     text-sm
     text-typography;
+
+    // container query parent
 }
 </style>

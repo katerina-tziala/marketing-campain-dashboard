@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { Card } from "@/ui";
 import { useAiAnalysisStore } from "../stores";
 import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../ui";
-import Correlations from "./Correlations.vue";
+import GrowthOutlook from "./GrowthOutlook.vue";
 import HealthStatus from "./HealthStatus.vue";
-import PriorityActions from "./PriorityActions.vue";
 import Insights from "./Insights.vue";
+import KeyRisks from "./KeyRisks.vue";
+import PriorityActions from "./PriorityActions.vue";
 
 const analysisStore = useAiAnalysisStore();
 
@@ -59,32 +61,24 @@ function handleSummarize(): void {
     </template>
 
     <template v-if="response">
-      <section>
-        <p class="text-typography-soft">
+      <Card variant="raised">
+        <h4 class="text-typography-soft">
           <HealthStatus
             class="inline-action-float"
             :health-score="response.healthScore"
           />
           {{ response.healthScore.reasoning }}
-        </p>
-        <h5 class="text-sm tracking-wide font-semibold text-primary-soft pt-2">
-          Bottom Line
-        </h5>
-        <p class="text-typography-soft">{{ response.bottomLine }}</p>
-        <p class="text-typography-soft pt-2">{{ response.overview }}</p>
-      </section>
+        </h4>
+        <p>{{ response.overview }}</p>
+        <p>{{ response.bottomLine }}</p>
+      </Card>
       <PriorityActions :priorities="response.keyPriorities" />
-      <Insights :insights="response.executiveInsights" title="Executive Insights" />
-      <Correlations :risks="response.keyRisks" />
-      <section v-if="response.growthOutlook">
-        <h5 class="text-sm tracking-wide font-semibold text-primary-soft">
-          Growth Outlook
-        </h5>
-        <p class="text-typography-soft">
-          <span class="font-semibold">{{ response.growthOutlook.label }}</span>
-          &mdash; {{ response.growthOutlook.reasoning }}
-        </p>
-      </section>
+      <Insights
+        :insights="response.executiveInsights"
+        title="Executive Insights"
+      />
+      <KeyRisks :risks="response.keyRisks" />
+      <GrowthOutlook :outlook="response.growthOutlook" />
       <AnalysisResponseMeta
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"

@@ -20,7 +20,7 @@ const formattedTime = computed(() =>
     separator="bullet"
     size="tiny"
     tone="info"
-    class="italic text-typography-muted"
+    class="mt-auto italic text-typography-muted"
   >
     <MetaItem v-if="formattedTime">
       Generated at {{ formattedTime

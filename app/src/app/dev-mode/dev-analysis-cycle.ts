@@ -34,20 +34,20 @@ type DevEntry = MockEntry | ErrorEntry
 const BUDGET_SEQUENCE: DevEntry[] = [
   { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[0] },
   { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[1] },
-  { kind: 'error', code: 'min-campaigns' },
-  { kind: 'error', code: 'network' },
+  // { kind: 'error', code: 'min-campaigns' },
+  // { kind: 'error', code: 'network' },
   { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[2] },
-  { kind: 'error', code: 'rate-limit' },
+  // { kind: 'error', code: 'rate-limit' },
   { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[3] },
-  { kind: 'error', code: 'server-error' },
+  // { kind: 'error', code: 'server-error' },
   { kind: 'mock',  response: BUDGET_OPTIMIZATION_SAMPLES[4] },
-  { kind: 'error', code: 'timeout' },
-  { kind: 'error', code: 'parse-error' },
-  { kind: 'error', code: 'invalid-response' },
-  { kind: 'error', code: 'invalid-key' },
-  { kind: 'error', code: 'no-models' },
-  { kind: 'error', code: 'unknown' },
-  { kind: 'error', code: 'token-limit' }, // terminal — button disabled after this; disconnect to reset
+  // { kind: 'error', code: 'timeout' },
+  // { kind: 'error', code: 'parse-error' },
+  // { kind: 'error', code: 'invalid-response' },
+  // { kind: 'error', code: 'invalid-key' },
+  // { kind: 'error', code: 'no-models' },
+  // { kind: 'error', code: 'unknown' },
+  // { kind: 'error', code: 'token-limit' }, // terminal — button disabled after this; disconnect to reset
 ]
 
 const SUMMARY_SEQUENCE: DevEntry[] = [

@@ -2,10 +2,7 @@
 import { computed } from "vue";
 import type { BadgeVariant } from "@/ui";
 import { Badge, Card } from "@/ui";
-import type {
-  ExecutiveInsight,
-  InsightType,
-} from '../types';
+import type { ExecutiveInsight, InsightType } from "../types";
 import { AnalysisSection } from "../ui";
 
 const props = defineProps<{
@@ -13,7 +10,7 @@ const props = defineProps<{
   title?: string;
 }>();
 
-const sectionTitle = computed(() => props.title ?? 'Insights');
+const sectionTitle = computed(() => props.title ?? "Insights");
 
 const INSIGHT_TYPE_ORDER: Record<InsightType, number> = {
   Achievement: 0,
@@ -49,11 +46,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 <template>
   <AnalysisSection :title="sectionTitle">
-    <Card
-      v-for="(insight, i) in sortedInsights"
-      :key="i"
-      variant="secondary"
-    >
+    <Card v-for="(insight, i) in sortedInsights" :key="i" variant="secondary">
       <p>
         <Badge
           class="inline-action-float"
@@ -88,22 +81,6 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 }
 
 .insight-metric-value {
-  @apply font-bold;
-}
-
-.insight {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: start;
-  gap: 8px;
-}
-
-.text {
-  grid-column: 1 / -1; /* take full width */
-}
-
-.chip {
-  grid-column: 2;
-  justify-self: end;
+  @apply font-bold normal-case whitespace-nowrap inline-block pl-1;
 }
 </style>
