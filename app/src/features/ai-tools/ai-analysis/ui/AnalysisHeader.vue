@@ -32,7 +32,7 @@ const periodLabel = computed(() =>
 <template>
   <SectionHeaderLayout>
     <template #header>
-      <h3 class="w-full grow text-base">{{ title }}</h3>
+      <h3 class="analysis-header">{{ title }}</h3>
     </template>
     <template #action>
       <Button
@@ -47,7 +47,10 @@ const periodLabel = computed(() =>
         <MagicWandIcon />
       </Button>
     </template>
-    <MetaRow separator="bullet" class="analysis-header-meta text-typography-subtle">
+    <MetaRow
+      separator="bullet"
+      class="analysis-header-meta text-typography-subtle"
+    >
       <MetaItem>{{ context.portfolioTitle }}</MetaItem>
       <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
       <MetaItem v-if="context.businessContext?.industry">
@@ -60,6 +63,10 @@ const periodLabel = computed(() =>
 </template>
 
 <style lang="scss" scoped>
+.analysis-header {
+  @apply w-full grow text-base font-medium tracking-wider m-0 text-primary-light;
+}
+
 .analysis-header-meta {
   @apply flex lg:hidden;
 }

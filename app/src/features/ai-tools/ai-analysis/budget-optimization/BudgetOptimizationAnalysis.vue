@@ -115,12 +115,12 @@ function handleAnalyze(): void {
           <template #title>No Optimization Needed</template>
           {{ noRecommendationMessage }}
         </Notification>
-      </AnalysisSection> 
+      </AnalysisSection>
       <template v-else>
         <BudgetRecommendations
           title="Reallocate"
           :recommendations="reallocations"
-        /> 
+        />
         <BudgetExpansions
           v-if="response.expansions.length"
           :expansions="response.expansions"

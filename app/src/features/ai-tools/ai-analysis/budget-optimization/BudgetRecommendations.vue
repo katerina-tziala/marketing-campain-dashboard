@@ -73,30 +73,36 @@ const sortedRecommendations = computed(() =>
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
       variant="secondary"
-      class="rec-card"
+      class="recommendation-card"
     >
-      <div class="card-title rec-route">
-        <h5 class="rec-route">
-          <span class="rec-route-item">
-            <span class="rec-label">From</span>
-            <span class="font-medium text-typography-primary-light leading-5">{{
+      <div class="recommendation-route">
+        <h5 class="recommendation-route">
+          <span class="recommendation-route-item">
+            <span class="recommendation-label">From</span>
+            <span class="font-medium text-typography-primary leading-5">{{
               rec.fromCampaign
             }}</span>
-            <span class="rec-channel">{{ rec.fromChannel }}</span>
+            <span class="recommendation-channel">{{ rec.fromChannel }}</span>
           </span>
-          <span v-if="rec.toCampaign" class="rec-route-item">
-            <span class="rec-label">To</span>
-            <span class="font-medium text-typography-primary-light leading-5">{{
+          <span v-if="rec.toCampaign" class="recommendation-route-item">
+            <span class="recommendation-label">To</span>
+            <span class="font-semibold text-typography-primary-lighter leading-5">{{
               rec.toCampaign
             }}</span>
-            <span class="rec-channel">{{ rec.toChannel }}</span>
+            <span class="recommendation-channel">{{ rec.toChannel }}</span>
           </span>
         </h5>
-        <div class="rec-badges">
-          <Badge :variant="confidenceVariant(rec.confidence)" size="small"
+        <div class="recommendation-badges">
+          <Badge
+            :variant="confidenceVariant(rec.confidence)"
+            size="small"
+            tone="dimmed"
             >{{ rec.confidence }} confidence</Badge
           >
-          <Badge :variant="executionRiskVariant(rec.executionRisk)" size="small"
+          <Badge
+            :variant="executionRiskVariant(rec.executionRisk)"
+            size="small"
+            tone="dimmed"
             >{{ rec.executionRisk }} risk</Badge
           >
         </div>
@@ -112,31 +118,29 @@ const sortedRecommendations = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-.rec-card {
-  @include cq-container("rec-card");
+.recommendation-route {
+  @apply w-full 
+  flex
+  flex-wrap
+  gap-x-6
+  gap-y-3 
+  items-center
+  justify-between;
 }
 
-.rec-route {
-  @apply w-full flex flex-wrap gap-x-4 gap-y-3 items-center justify-between;
-}
-
-.rec-routes {
-  @apply shrink flex flex-wrap gap-x-8 gap-y-2 justify-between;
-}
-
-.rec-route-item {
+.recommendation-route-item {
   @apply grow flex flex-col gap-0.5;
 }
 
-.rec-badges {
+.recommendation-badges {
   @apply shrink flex flex-wrap gap-x-4 gap-y-2 items-center justify-start w-fit;
 }
 
-.rec-label {
+.recommendation-label {
   @apply text-xs text-typography-subtle font-normal;
 }
 
-.rec-channel {
+.recommendation-channel {
   @apply text-xs text-typography-muted font-medium;
 }
 </style>

@@ -68,26 +68,34 @@ const sortedExpansions = computed(() =>
       v-for="(exp, i) in sortedExpansions"
       :key="i"
       variant="secondary"
-      class="exp-card"
+      class="expansion-card"
     >
-      <div class="exp-header">
-        <h5 class="exp-title">
+      <div class="expansion-header">
+        <h5 class="expansion-title">
           <span>{{ exp.targetCampaign ?? exp.targetChannel }}</span>
-          <span class="exp-channel">{{ exp.targetChannel }}</span>
+          <span class="expansion-channel">{{ exp.targetChannel }}</span>
         </h5>
-        <div class="exp-badges">
-          <Badge :variant="confidenceVariant(exp.confidence)" size="small"
+        <div class="expansion-badges">
+          <Badge
+            :variant="confidenceVariant(exp.confidence)"
+            size="small"
+            tone="dimmed"
             >{{ exp.confidence }} confidence</Badge
           >
-          <Badge :variant="executionRiskVariant(exp.executionRisk)" size="small"
-            >{{ exp.executionRisk }} risk</Badge
+          <Badge
+            :variant="executionRiskVariant(exp.executionRisk)"
+            size="small"
+            tone="dimmed"
+          >
+            {{ exp.executionRisk }} risk</Badge
           >
         </div>
       </div>
       <ExpectedImpactGrid
-        amount-label="Additional Budget"
+        amount-label="Investment"
         :amount="exp.additionalBudget"
         :impact="exp.expectedImpact"
+        show-amount-sign
       />
       <p class="card-content">{{ exp.reason }}</p>
     </Card>
@@ -95,23 +103,27 @@ const sortedExpansions = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-.exp-card {
-  @include cq-container("exp-card");
+.expansion-card {
+  @include cq-container("expansion-card");
 }
 
-.exp-header {
-  @apply w-full flex flex-wrap gap-x-4 gap-y-3 items-start justify-between;
+.expansion-header {
+  @apply w-full flex flex-col gap-x-2 gap-y-2 items-start justify-between;
+
+  @include cq-up(cq-540, "expansion-card") {
+    @apply flex-row;
+  }
 }
 
-.exp-title {
-  @apply flex flex-col gap-0.5;
+.expansion-title {
+  @apply flex flex-col gap-0.5 flex-1 min-w-[50%];
 }
 
-.exp-badges {
-  @apply shrink flex flex-wrap gap-x-4 gap-y-2 items-center justify-start w-fit;
+.expansion-badges {
+  @apply flex flex-nowrap gap-x-4 gap-y-2 items-center justify-start w-fit;
 }
 
-.exp-channel {
-  @apply text-xs text-typography-muted font-medium;
+.expansion-channel {
+  @apply inline-block text-xs text-typography-muted font-medium;
 }
 </style>

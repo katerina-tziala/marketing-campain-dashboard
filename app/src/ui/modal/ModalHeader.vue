@@ -53,7 +53,7 @@ const finalCloseLabel = props.closeLabel ?? "Close";
 }
 
 .modal-header-content > h2 {
-  @apply m-0 text-primary-lighter font-medium text-lg grow;
+  @apply m-0 tracking-wider text-primary-lighter font-medium text-lg grow;
 }
 
 .modal-header-actions {

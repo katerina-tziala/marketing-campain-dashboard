@@ -9,6 +9,7 @@ import type {
   ExecutionRisk,
 } from "../types";
 import { AnalysisSection } from "../ui";
+import CardHeader from "@/ui/card/CardHeader.vue";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
   high: "success",
@@ -102,17 +103,30 @@ const sortedReductions = computed(() =>
 
 <template>
   <AnalysisSection title="Reduce">
-    <Card v-for="(red, i) in sortedReductions" :key="i" variant="secondary">
-      <div class="red-header">
-        <h5 class="red-title">
+    <Card
+      v-for="(red, i) in sortedReductions"
+      :key="i"
+      variant="secondary"
+      class="reduction-card"
+    >
+      <div class="reduction-header">
+        <h5 class="reduction-title">
           <span>{{ red.fromCampaign }}</span>
-          <span class="red-channel">{{ red.fromChannel }}</span>
+          <span class="reduction-channel">{{ red.fromChannel }}</span>
         </h5>
-        <div class="red-badges">
-          <Badge :variant="confidenceVariant(red.confidence)" size="small"
+        <div class="reduction-badges">
+          <Badge
+            :variant="confidenceVariant(red.confidence)"
+            size="small"
+            class="whitespace-nowrap"
+            tone="dimmed"
             >{{ red.confidence }} confidence</Badge
           >
-          <Badge :variant="executionRiskVariant(red.executionRisk)" size="small"
+          <Badge
+            :variant="executionRiskVariant(red.executionRisk)"
+            size="small"
+            tone="dimmed"
+            class="whitespace-nowrap"
             >{{ red.executionRisk }} risk</Badge
           >
         </div>
@@ -125,26 +139,26 @@ const sortedReductions = computed(() =>
         </p>
         <MetaRow
           v-if="hasExpectedImpact(red)"
-          class="pt-1 font-semibold"
+          class="pt-1.5 font-semibold"
           separator="bullet"
           size="tiny"
           tone="primary-lighter"
         >
           <MetaItem v-if="red.expectedImpact.roiEstimate !== null">
             Est. ROI
-            <span class="red-impact-value">
+            <span class="reduction-impact-value">
               {{ red.expectedImpact.roiEstimate.toFixed(1) }}x
             </span>
           </MetaItem>
           <MetaItem v-if="red.expectedImpact.revenueChange !== null">
             Est. Revenue
-            <span class="red-impact-value text-success">
+            <span class="reduction-impact-value text-success">
               +{{ formatCurrency(red.expectedImpact.revenueChange) }}
             </span>
           </MetaItem>
           <MetaItem v-if="red.expectedImpact.conversionChange !== null">
             Est. Conversions
-            <span class="red-impact-value text-success">
+            <span class="reduction-impact-value text-success">
               +{{ red.expectedImpact.conversionChange }}
             </span>
           </MetaItem>
@@ -156,23 +170,31 @@ const sortedReductions = computed(() =>
 </template>
 
 <style lang="scss" scoped>
-.red-header {
-  @apply w-full flex flex-wrap gap-x-4 gap-y-3 items-start justify-between;
+.reduction-card {
+  @include cq-container("reduction-card");
 }
 
-.red-title {
-  @apply flex flex-col gap-0.5;
+.reduction-header {
+  @apply w-full flex flex-col gap-x-2 gap-y-2 items-start justify-between;
+
+  @include cq-up(cq-540, "reduction-card") {
+    @apply flex-row;
+  }
 }
 
-.red-badges {
-  @apply shrink flex flex-wrap gap-x-4 gap-y-2 items-center justify-start w-fit;
+.reduction-title {
+  @apply flex flex-col gap-0.5 flex-1 min-w-[50%];
 }
 
-.red-channel {
-  @apply text-xs text-typography-muted font-medium;
+.reduction-badges {
+  @apply flex flex-nowrap gap-x-4 gap-y-2 items-center justify-start w-fit;
 }
 
-.red-impact-value {
-  @apply text-typography-soft font-bold;
+.reduction-channel {
+  @apply inline-block text-xs text-typography-muted font-medium;
+}
+
+.reduction-impact-value {
+  @apply inline-block text-typography-soft font-bold;
 }
 </style>

@@ -30,7 +30,7 @@ const words = computed(() => {
     </template>
     <template #summary>
       <template v-if="variant === 'resolve'">
-        <p><strong>{{ count }} {{ words.group }}</strong> {{ words.verb }} more than once in the file.</p>
+        <p><strong>{{ count }} {{ words.group }}</strong> {{ words.verb }} more than once in the file</p>
         <p>Select one row from each group to include in the import. Groups without a selection will not be imported.</p>
         <p v-if="!hasValidCampaigns">Select at least one row to proceed.</p>
       </template>

@@ -32,25 +32,29 @@ const props = withDefaults(
     bg-surface-elevated
     border
     border-faint;
+
+  h3 {
+    @apply text-base font-medium tracking-wider m-0 text-primary-lighter;
+  }
 }
 
 .card.secondary {
   @apply rounded-md
     shadow-sm
     border
-    p-3
+    p-3.5
     flex
     flex-col
     items-start
     justify-stretch
-    gap-3
+    gap-3.5
     text-sm
     text-typography-subtle
     bg-background
     border-darker;
 
   h5 {
-    @apply font-medium text-typography-primary-light leading-5;
+    @apply w-full font-semibold text-primary-lighter leading-5 tracking-wide;
   }
 }
 
@@ -61,7 +65,7 @@ const props = withDefaults(
     shadow-md
     text-sm
     text-typography-muted
-    bg-surface-raised
+    bg-surface-hover
     border
     border-faint;
 

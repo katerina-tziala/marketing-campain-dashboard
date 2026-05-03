@@ -36,7 +36,7 @@ const periodLabel = computed(() =>
 <template>
   <SectionHeaderLayout class="!gap-0">
     <template #header>
-      <h2 class="w-full grow text-xl min-h-9">Campaign Performance</h2>
+      <h2 class="performance-header">Campaign Performance</h2>
     </template>
     <template #action>
       <div v-if="showAiButton" class="relative shrink-0">
@@ -76,6 +76,10 @@ const periodLabel = computed(() =>
 </template>
 
 <style lang="scss" scoped>
+.performance-header {
+  @apply w-full grow text-xl min-h-9 font-medium pt-1 tracking-wider text-typography-primary;
+}
+
 .connected-status {
   @apply absolute
     -top-1.5

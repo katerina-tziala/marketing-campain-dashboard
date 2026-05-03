@@ -1,6 +1,6 @@
 <template>
   <div
-    class="scrollbar-stable scrollbar-on-surface modal-body"
+    class="scrollbar-stable-both scrollbar-on-surface modal-body"
     data-modal-body
     tabindex="-1"
   >
@@ -16,7 +16,7 @@
   justify-stretch
   gap-3
   py-4
-  px-4
+  px-1.5
   w-full
   max-w-full
   text-typography-soft
