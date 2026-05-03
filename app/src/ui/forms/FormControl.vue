@@ -148,7 +148,7 @@ const describedBy = computed(() => {
 
 .field-label.is-required::after {
   @extend %_theme-transition;
-  @apply content-["*"] inline-block translate-y-0.5 text-primary-lighter/70 text-2xl leading-none;
+  @apply content-["*"] inline-block translate-y-0.5 text-primary-lighter/70 text-xl leading-none;
 }
 
 :deep(.form-control) {
