@@ -3,6 +3,7 @@ import type { PortfolioSummary, CampaignSummary, ChannelSummary } from '../types
 import type {
   AnalysisClassificationThresholds,
   AnalysisSignalThresholds,
+  ChannelContext,
   DerivedSignals,
   PortfolioAnalysis,
 } from '../types'
@@ -19,6 +20,7 @@ import {
   getCorrelations,
   DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
 } from './signals'
+import { computedMedianOrNull, roundTo } from '@/shared/utils'
 import {
   classifyCampaigns,
   classifyChannels,
@@ -28,6 +30,7 @@ import { computePortfolioKPIs } from './metrics'
 
 const DEFAULT_EMPTY_ANALYSIS_STATE = {
   channels: [],
+  channelContext: { topByBudget: [], topByRevenue: [] },
   campaignGroups: { top: [], opportunity: [], bottom: [], watch: [] },
   channelGroups: { strong: [], opportunity: [], weak: [], watch: [] },
   derivedSignals: {
@@ -45,6 +48,42 @@ const DEFAULT_EMPTY_ANALYSIS_STATE = {
     },
     correlations: [],
   },
+}
+
+const CHANNEL_CONTEXT_LIMIT = 5
+
+function getCampaignRoiBaselines(campaignSummaries: CampaignSummary[]): Pick<
+  PortfolioSummary,
+  'averageCampaignRoi' | 'medianCampaignRoi'
+> {
+  const campaignRois = campaignSummaries
+    .map((campaign) => campaign.roi)
+    .filter((roi): roi is number => roi !== null && Number.isFinite(roi))
+
+  if (campaignRois.length === 0) {
+    return {
+      averageCampaignRoi: null,
+      medianCampaignRoi: null,
+    }
+  }
+
+  const totalRoi = campaignRois.reduce((total, roi) => total + roi, 0)
+
+  return {
+    averageCampaignRoi: roundTo(totalRoi / campaignRois.length, 4),
+    medianCampaignRoi: computedMedianOrNull(campaignRois),
+  }
+}
+
+function getChannelContext(channelSummaries: ChannelSummary[]): ChannelContext {
+  return {
+    topByBudget: [...channelSummaries]
+      .sort((a, b) => b.budget - a.budget)
+      .slice(0, CHANNEL_CONTEXT_LIMIT),
+    topByRevenue: [...channelSummaries]
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, CHANNEL_CONTEXT_LIMIT),
+  }
 }
 
 function getClassificationGroups(
@@ -116,7 +155,6 @@ function getDerivedSignals(
 
 export function computePortfolioAnalysis(
   selectedChannels: Channel[],
-  selectedChannelsIds: string[],
   thresholds: AnalysisSignalThresholds = DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
   classificationThresholds: AnalysisClassificationThresholds = DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS,
 ): PortfolioAnalysis {
@@ -130,14 +168,13 @@ export function computePortfolioAnalysis(
     ...kpis,
     campaignCount: filteredCampaigns.length,
     channelCount: selectedChannels.length,
+    averageCampaignRoi: null,
+    medianCampaignRoi: null,
   }
-
-  const filteredChannels = selectedChannelsIds.length > 0
 
   if (filteredCampaigns.length === 0) {
     return {
       portfolio,
-      filteredChannels,
       ...DEFAULT_EMPTY_ANALYSIS_STATE,
     }
   }
@@ -148,6 +185,11 @@ export function computePortfolioAnalysis(
     toCampaignSummary(campaign, totalBudget, totalRevenue),
   )
 
+  // Campaign-level ROI baselines require per-campaign summaries, so they are populated after summary mapping.
+  const { averageCampaignRoi, medianCampaignRoi } = getCampaignRoiBaselines(campaignSummaries)
+  portfolio.averageCampaignRoi = averageCampaignRoi
+  portfolio.medianCampaignRoi = medianCampaignRoi
+
   const channelSummaries = selectedChannels.map((channel) =>
     toChannelSummary(
       channel,
@@ -157,6 +199,8 @@ export function computePortfolioAnalysis(
       thresholds.channelStatus,
     ),
   )
+
+  const channelContext = getChannelContext(channelSummaries)
 
   const { campaignGroups, channelGroups } = getClassificationGroups(
     campaignSummaries,
@@ -175,8 +219,8 @@ export function computePortfolioAnalysis(
 
   return {
     portfolio,
-    filteredChannels,
     channels: channelSummaries,
+    channelContext,
     campaignGroups,
     channelGroups,
     derivedSignals,

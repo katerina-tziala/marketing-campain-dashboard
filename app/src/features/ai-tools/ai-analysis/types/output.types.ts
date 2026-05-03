@@ -4,7 +4,9 @@ export type ConfidenceLevel = 'High' | 'Medium' | 'Low'
 export type ExecutionRisk = 'Low' | 'Medium' | 'High'
 export type HealthLabel = 'Excellent' | 'Good' | 'NeedsAttention' | 'Critical'
 export type InsightType = 'Performance' | 'Opportunity' | 'Warning' | 'Achievement'
-export type ActionUrgency = 'Immediate' | 'ThisQuarter' | 'NextQuarter'
+export type RiskSeverity = 'Low' | 'Medium' | 'High'
+export type GrowthOutlookLabel = 'High' | 'Moderate' | 'Limited'
+export type PortfolioScope = 'fullPortfolio' | 'selectedSubset'
 
 export interface ExecutiveInsight {
   type: InsightType
@@ -15,17 +17,22 @@ export interface ExecutiveInsight {
   }
 }
 
-export interface PriorityAction {
+export interface KeyPriority {
   priority: number
-  action: string
+  title: string
+  rationale: string
   expectedOutcome: string
-  urgency: ActionUrgency
-  successMetric: string
 }
 
-export interface ExecutiveCorrelation {
-  finding: string
+export interface KeyRisk {
+  risk: string
+  severity: RiskSeverity
   implication: string
+}
+
+export interface GrowthOutlook {
+  label: GrowthOutlookLabel
+  reasoning: string
 }
 
 export interface HealthScore {
@@ -35,23 +42,41 @@ export interface HealthScore {
 }
 
 export interface ExecutiveSummaryOutput {
+  scope: PortfolioScope
   healthScore: HealthScore
   bottomLine: string
-  insights: ExecutiveInsight[]
-  priorityActions: PriorityAction[]
-  correlations: ExecutiveCorrelation[]
+  overview: string
+  executiveInsights: ExecutiveInsight[]
+  keyPriorities: KeyPriority[]
+  keyRisks: KeyRisk[]
+  growthOutlook: GrowthOutlook
+}
+
+export interface ExpectedImpact {
+  revenueChange: number | null
+  conversionChange: number | null
+  roiEstimate: number | null
 }
 
 export interface BudgetRecommendation {
+  type: 'reallocation' | 'reduction'
   fromCampaign: string
-  toCampaign: string
+  fromChannel: string
+  toCampaign: string | null
+  toChannel: string | null
   budgetShift: number
   reason: string
-  expectedImpact: {
-    revenueChange: number
-    conversionChange: number
-    roiEstimate: number
-  }
+  expectedImpact: ExpectedImpact
+  confidence: ConfidenceLevel
+  executionRisk: ExecutionRisk
+}
+
+export interface BudgetExpansion {
+  targetCampaign: string | null
+  targetChannel: string
+  additionalBudget: number
+  reason: string
+  expectedImpact: ExpectedImpact
   confidence: ConfidenceLevel
   executionRisk: ExecutionRisk
 }
@@ -59,6 +84,8 @@ export interface BudgetRecommendation {
 export interface BudgetOptimizerOutput {
   summary: string
   recommendations: BudgetRecommendation[]
+  expansions: BudgetExpansion[]
+  noRecommendationReason: string | null
 }
 
 export type BudgetOptimizerResponse = BudgetOptimizerOutput & {

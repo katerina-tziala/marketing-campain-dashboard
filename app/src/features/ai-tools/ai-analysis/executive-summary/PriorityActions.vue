@@ -1,70 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card, CardHeader } from "@/ui";
-import type {
-  PriorityAction,
-  ActionUrgency,
-} from '../types';
+import { Card, CardHeader } from "@/ui";
+import type { KeyPriority } from '../types';
 import { AnalysisSection } from "../ui";
 
-const props = defineProps<{
-  actions: PriorityAction[];
+defineProps<{
+  priorities: KeyPriority[];
 }>();
-
-const URGENCY_ORDER: Record<ActionUrgency, number> = {
-  Immediate: 0,
-  ThisQuarter: 1,
-  NextQuarter: 2,
-};
-
-const URGENCY_VARIANT_MAP: Record<ActionUrgency, BadgeVariant> = {
-  Immediate: "danger",
-  ThisQuarter: "warning",
-  NextQuarter: "info",
-};
-
-const URGENCY_LABEL_MAP: Record<ActionUrgency, string> = {
-  Immediate: "Immediate",
-  ThisQuarter: "This Quarter",
-  NextQuarter: "Next Quarter",
-};
-
-const sortedActions = computed(() =>
-  [...props.actions].sort(
-    (a, b) => URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency],
-  ),
-);
-
-function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
-  return URGENCY_VARIANT_MAP[urgency] ?? "info";
-}
 </script>
 
 <template>
-  <AnalysisSection title="Priority Actions">
+  <AnalysisSection title="Key Priorities">
     <Card
-      v-for="(action, i) in sortedActions"
+      v-for="(priority, i) in priorities"
       :key="i"
       variant="secondary"
     >
       <CardHeader>
-        <span class="font-extrabold text-sm min-w-5 text-primary-soft"
-          >#{{ action.priority }}</span
-        >
-        <h5 class="card-title">
-          <Badge
-            class="inline-action-float"
-            :variant="urgencyVariant(action.urgency)"
-            >{{ URGENCY_LABEL_MAP[action.urgency] }}</Badge
-          >
-          {{ action.action }}
-        </h5>
-      </CardHeader> 
-      <p class="px-2">{{ action.expectedOutcome }}</p>
-      <p class="w-full py-1 px-2">
-        <strong>Success metric:</strong> {{ action.successMetric }}
-      </p>
+        <span class="font-extrabold text-sm min-w-5 text-primary-soft">#{{ priority.priority }}</span>
+        <h5 class="card-title">{{ priority.title }}</h5>
+      </CardHeader>
+      <p class="px-2 text-typography-soft text-sm">{{ priority.rationale }}</p>
+      <p class="w-full py-1 px-2">{{ priority.expectedOutcome }}</p>
     </Card>
   </AnalysisSection>
 </template>

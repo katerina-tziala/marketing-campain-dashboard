@@ -201,9 +201,11 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
         { provider, apiKey, selectedModel },
         {
           type: tab,
-          analysis: context.portfolioAnalysis,
-          isFiltered: context.filtersActive,
-          businessContext: context.businessContext,
+          context: {
+            analysis: context.portfolioAnalysis,
+            businessContext: context.businessContext,
+            portfolioBenchmark: context.portfolioBenchmark,
+          },
         },
         controller.signal,
       )

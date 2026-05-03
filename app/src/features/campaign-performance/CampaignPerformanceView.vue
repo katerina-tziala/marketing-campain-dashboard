@@ -88,7 +88,7 @@ function clearChannelFilters(): void {
         :kpis="store.portfolioAnalysis.portfolio"
         :portfolio-kpis="
           store.selectedChannelsIds.length > 0
-            ? store.fullPortfolioKpis
+            ? store.portfolioBenchmark
             : undefined
         "
       />
@@ -101,6 +101,7 @@ function clearChannelFilters(): void {
       </div>
       <RoiVsBudgetScaling
         :campaigns="store.filteredCampaigns"
+        :median-campaign-roi="store.portfolioAnalysis.portfolio.medianCampaignRoi"
         :highlight-campaigns-by-quadrant="roiBudgetScalingHighlights"
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"

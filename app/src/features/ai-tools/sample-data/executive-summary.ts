@@ -6,9 +6,7 @@ const MOCK_GEMINI_FLASH: AiModel = {
   id: 'gemini-2.0-flash',
   displayName: 'Gemini 2.0 Flash',
   family: 'Gemini',
-  strength: 'Fast and efficient for structured analysis tasks',
   strengthScore: 8,
-  reason: 'Best balance of speed and accuracy for executive summary generation',
   limitReached: false,
 }
 
@@ -16,9 +14,7 @@ const MOCK_GROQ_LLAMA: AiModel = {
   id: 'llama-3.3-70b-versatile',
   displayName: 'Llama 3.3 70B',
   family: 'Llama',
-  strength: 'High-quality reasoning with detailed analytical depth',
   strengthScore: 9,
-  reason: 'Strong analytical reasoning with comprehensive portfolio insights',
   limitReached: false,
 }
 
@@ -26,13 +22,15 @@ const MOCK_GROQ_LLAMA: AiModel = {
 
 const strongPortfolio: ExecutiveSummaryResponse = {
   model: MOCK_GEMINI_FLASH,
+  scope: 'fullPortfolio',
   healthScore: {
     score: 82,
     label: 'Good',
     reasoning: 'Portfolio delivers a healthy overall ROI with strong owned-channel performers, offset by two negative-ROI campaigns consuming 16% of budget.',
   },
   bottomLine: 'Owned channels are generating exceptional returns; immediate gains are available by reallocating budget from Display and CTV to proven winners.',
-  insights: [
+  overview: 'The portfolio shows a clear divide between high-efficiency owned channels and underperforming paid placements. Email and Referral together deliver 42% of revenue on 18% of budget, while Display and CTV absorb 16% of spend with negative ROI. Reallocation is low-risk given the performance gap.',
+  executiveInsights: [
     {
       type: 'Achievement',
       text: 'Web Push Re-engagement delivers the highest ROI in the portfolio on a minimal budget, signalling untapped scaling headroom.',
@@ -46,54 +44,58 @@ const strongPortfolio: ExecutiveSummaryResponse = {
     {
       type: 'Warning',
       text: 'Display and CTV collectively absorb 16% of budget with negative ROI, representing a direct drag on portfolio efficiency.',
-      metricHighlight: { label: 'Budget wasted on negative-ROI channels', value: '16%' },
+      metricHighlight: { label: 'Budget on negative-ROI channels', value: '16%' },
     },
   ],
-  priorityActions: [
+  keyPriorities: [
     {
       priority: 1,
-      action: 'Reduce Display and CTV budgets by at least 50% and reallocate to Email and Web Push.',
-      expectedOutcome: 'Eliminate the primary efficiency drag and increase overall portfolio ROI by an estimated 8–12 points.',
-      urgency: 'Immediate',
-      successMetric: 'Portfolio ROI improves above 250% within 30 days of reallocation.',
+      title: 'Reallocate Display and CTV budget to Email and Web Push',
+      rationale: 'Display and CTV are the primary efficiency drag — negative ROI at 16% of budget share with no conversion signal to justify the spend.',
+      expectedOutcome: 'Eliminate the main portfolio drag and increase overall ROI by an estimated 8–12 points within 30 days.',
     },
     {
       priority: 2,
-      action: 'Scale Web Push Re-engagement budget from €600 to €2,000 to test volume capacity.',
-      expectedOutcome: 'Capture additional high-ROI conversions from the highest-performing channel before saturation.',
-      urgency: 'ThisQuarter',
-      successMetric: 'Web Push ROI stays above 500% after scaling; incremental conversions tracked weekly.',
+      title: 'Scale Web Push Re-engagement to test volume ceiling',
+      rationale: 'Web Push runs at 1,900% ROI on a €600 budget — far below saturation. Even a 3× increase is unlikely to erode efficiency.',
+      expectedOutcome: 'Capture additional high-ROI conversions before diminishing returns set in.',
     },
     {
       priority: 3,
-      action: 'Restructure CTV campaign targeting to focus on high-conversion audience segments.',
-      expectedOutcome: 'Convert a negative-ROI channel into a break-even or positive contributor.',
-      urgency: 'NextQuarter',
-      successMetric: 'CTV ROI reaches 0% or above within the quarter.',
+      title: 'Restructure CTV targeting before next budget cycle',
+      rationale: 'CTV negative ROI is structural if audience targeting remains broad — pausing or narrowing scope prevents further compounding loss.',
+      expectedOutcome: 'Convert CTV from a net drag to break-even or positive contributor within the quarter.',
     },
   ],
-  correlations: [
+  keyRisks: [
     {
-      finding: 'Channels with budget share below 10% consistently deliver revenue share above 15%.',
-      implication: 'Owned and niche channels are systematically underfunded relative to their contribution.',
+      risk: 'Over-concentration in owned channels',
+      severity: 'Medium',
+      implication: 'Further reallocation to Email and Push increases dependency on channels with limited reach expansion — any deliverability issue or audience saturation would disproportionately impact revenue.',
     },
   ],
+  growthOutlook: {
+    label: 'Moderate',
+    reasoning: 'Owned channels have clear headroom but limited total addressable audience. Growth beyond current trajectory requires activating new acquisition channels rather than purely optimizing existing allocation.',
+  },
 }
 
 // ── Mock 2: Needs Attention ────────────────────────────────────────────────────
 
 const needsAttention: ExecutiveSummaryResponse = {
   model: MOCK_GROQ_LLAMA,
+  scope: 'fullPortfolio',
   healthScore: {
     score: 58,
     label: 'NeedsAttention',
     reasoning: 'Mixed performance with several high-spend channels underperforming on ROI and CPA, and budget allocation misaligned with revenue contribution.',
   },
   bottomLine: 'Budget is concentrated in channels that underdeliver; three reallocation moves could materially improve portfolio efficiency this quarter.',
-  insights: [
+  overview: 'The portfolio is generating revenue but at poor capital efficiency. Paid Social absorbs 28% of budget while contributing only 14% of revenue, and its CPA is 3.2× the portfolio average. SEO and Email outperform their budget share significantly but remain underfunded. Structural misalignment between allocation and contribution is the primary issue.',
+  executiveInsights: [
     {
       type: 'Warning',
-      text: 'Paid Social consumes 28% of the budget but generates only 14% of revenue, creating the largest efficiency gap in the portfolio.',
+      text: 'Paid Social consumes 28% of budget but generates only 14% of revenue, creating the largest efficiency gap in the portfolio.',
       metricHighlight: { label: 'Paid Social efficiency gap', value: '−14 pp' },
     },
     {
@@ -103,52 +105,61 @@ const needsAttention: ExecutiveSummaryResponse = {
     },
     {
       type: 'Opportunity',
-      text: 'CPA across Paid Social is 3.2× the portfolio average, indicating poor conversion quality that warrants audience or creative review before any budget increase.',
+      text: 'CPA across Paid Social is 3.2× the portfolio average, indicating poor conversion quality that warrants audience review before any budget increase.',
       metricHighlight: { label: 'Paid Social CPA vs portfolio average', value: '3.2×' },
     },
   ],
-  priorityActions: [
+  keyPriorities: [
     {
       priority: 1,
-      action: 'Cut Paid Social budget by 30% and redirect to SEO content investment.',
-      expectedOutcome: "Reduce the highest-CPA channel's drag and amplify the most efficient acquisition channel.",
-      urgency: 'Immediate',
-      successMetric: 'Overall CPA decreases by 15% within 60 days; SEO organic traffic grows 10%.',
+      title: 'Cut Paid Social budget by 30% and redirect to SEO',
+      rationale: 'Paid Social CPA at 3.2× portfolio average signals a conversion quality problem, not a reach problem — more budget will not fix it.',
+      expectedOutcome: 'Reduce the highest-CPA channel drag and amplify the most efficient acquisition channel; overall CPA expected to fall 15% within 60 days.',
     },
     {
       priority: 2,
-      action: 'Audit Paid Social audience targeting and creative assets before the next cycle.',
-      expectedOutcome: 'Identify whether the CPA gap is structural or fixable through optimisation.',
-      urgency: 'ThisQuarter',
-      successMetric: 'Paid Social CPA falls within 1.5× of portfolio average after creative refresh.',
+      title: 'Audit Paid Social audience targeting and creative before next cycle',
+      rationale: 'The CPA gap could be structural or fixable — determining which prevents either premature channel abandonment or continued waste.',
+      expectedOutcome: 'Clear go/no-go decision on Paid Social with a revised targeting brief or deactivation plan.',
     },
     {
       priority: 3,
-      action: 'Increase SEO budget allocation by 20% to test whether organic performance scales linearly.',
-      expectedOutcome: 'Determine the scaling ceiling of the most efficient channel before further reallocation.',
-      urgency: 'NextQuarter',
-      successMetric: 'SEO revenue share reaches 30% without ROI degradation.',
+      title: 'Increase SEO budget by 20% to test linear scaling',
+      rationale: 'SEO is the strongest efficiency performer but underfunded — validating whether it scales linearly unlocks the next reallocation decision.',
+      expectedOutcome: 'SEO revenue share reaches 30% without ROI degradation; result determines future allocation ceiling.',
     },
   ],
-  correlations: [
+  keyRisks: [
     {
-      finding: 'Channels with the highest CPA also have the largest gap between budget share and revenue share.',
-      implication: 'Inefficient acquisition cost and poor capital efficiency co-occur, suggesting systemic targeting or funnel issues rather than isolated campaign failures.',
+      risk: 'Paid Social spend continuing without creative refresh',
+      severity: 'High',
+      implication: 'Each cycle without addressing the CPA gap compounds the allocation inefficiency — delay has a direct and measurable cost.',
+    },
+    {
+      risk: 'SEO scaling assumption untested',
+      severity: 'Low',
+      implication: 'If SEO performance does not scale linearly, the reallocation thesis breaks and an alternative channel must be identified before budget is shifted.',
     },
   ],
+  growthOutlook: {
+    label: 'Moderate',
+    reasoning: 'Growth is available through reallocation rather than new spend — fixing the Paid Social drag and scaling SEO could improve portfolio ROI materially without increasing total budget.',
+  },
 }
 
 // ── Mock 3: Excellent Portfolio ───────────────────────────────────────────────
 
 const excellentPortfolio: ExecutiveSummaryResponse = {
   model: MOCK_GEMINI_FLASH,
+  scope: 'fullPortfolio',
   healthScore: {
     score: 91,
     label: 'Excellent',
     reasoning: 'Strong profitability across all major channels, efficient CPA, and well-distributed revenue with no significant concentration risk.',
   },
   bottomLine: 'The portfolio is performing at a high level with efficient allocation; the primary focus should be scaling top performers before market conditions shift.',
-  insights: [
+  overview: 'All six primary channels are ROI-positive and operating within acceptable CPA range. Revenue is distributed across channels with no single source exceeding 35%. CVR is 2.1× the industry benchmark. The main opportunity is incremental scaling of Affiliate and Influencer, which are currently under-invested relative to their returns.',
+  executiveInsights: [
     {
       type: 'Achievement',
       text: 'All six primary channels are ROI-positive, with the lowest-performing channel still delivering 85% of the portfolio average.',
@@ -165,141 +176,160 @@ const excellentPortfolio: ExecutiveSummaryResponse = {
       metricHighlight: { label: 'Portfolio CVR vs benchmark', value: '2.1×' },
     },
   ],
-  priorityActions: [
+  keyPriorities: [
     {
       priority: 1,
-      action: 'Increase Affiliate and Influencer combined budget by 40% to exploit their disproportionate revenue contribution.',
-      expectedOutcome: 'Grow high-efficiency revenue share while maintaining current portfolio ROI level.',
-      urgency: 'ThisQuarter',
-      successMetric: 'Affiliate + Influencer revenue share reaches 25% without ROI falling below portfolio average.',
+      title: 'Scale Affiliate and Influencer budget by 40%',
+      rationale: 'Both channels deliver revenue share well above their budget share with no saturation signal — scaling now captures returns before the efficiency window closes.',
+      expectedOutcome: 'Combined revenue share reaches 25% without ROI falling below portfolio average.',
     },
     {
       priority: 2,
-      action: 'Establish a revenue concentration monitor: flag any single channel exceeding 40% revenue share.',
-      expectedOutcome: 'Prevent over-dependence on any single channel as scaling continues.',
-      urgency: 'ThisQuarter',
-      successMetric: 'No channel exceeds 40% revenue share for two consecutive months.',
+      title: 'Establish a revenue concentration monitoring threshold',
+      rationale: 'As Affiliate and Influencer scale, concentration risk increases — a formal threshold prevents over-dependence from developing silently.',
+      expectedOutcome: 'No single channel exceeds 40% revenue share for two consecutive months.',
     },
     {
       priority: 3,
-      action: 'Document and replicate the conversion funnel approach from the top CVR campaigns across lower-performing ones.',
-      expectedOutcome: 'Bring underperforming campaign CVR closer to the portfolio average, increasing conversion volume without added spend.',
-      urgency: 'NextQuarter',
-      successMetric: 'Bottom-quartile campaign CVR improves by 25% over baseline.',
+      title: 'Replicate top CVR campaign funnel approach across lower performers',
+      rationale: 'Portfolio CVR at 2.1× benchmark is a structural advantage — transferring the approach to underperforming campaigns captures conversion volume without added spend.',
+      expectedOutcome: 'Bottom-quartile campaign CVR improves by 25% over baseline within the quarter.',
     },
   ],
-  correlations: [],
+  keyRisks: [],
+  growthOutlook: {
+    label: 'High',
+    reasoning: 'With all channels ROI-positive and two clearly under-invested, the portfolio has room to scale efficiently. The main constraint is audience saturation timing rather than structural inefficiency.',
+  },
 }
 
 // ── Mock 4: Critical Portfolio ────────────────────────────────────────────────
 
 const criticalPortfolio: ExecutiveSummaryResponse = {
   model: MOCK_GROQ_LLAMA,
+  scope: 'fullPortfolio',
   healthScore: {
     score: 34,
     label: 'Critical',
     reasoning: 'Negative overall ROI, severe budget misallocation, and three channels with zero conversions consuming 35% of total spend.',
   },
-  bottomLine: 'The portfolio is in a critical state requiring immediate triage — 35% of budget is generating no conversions and must be paused or restructured before further spend occurs.',
-  insights: [
+  bottomLine: 'The portfolio is in a critical state requiring immediate triage — 35% of budget is generating no conversions and must be paused before further spend occurs.',
+  overview: 'Three channels — Video, Programmatic, and OOH — have produced zero conversions while absorbing 35% of budget. Email is the only positive-ROI channel and currently accounts for 71% of all revenue. This single-channel dependency combined with the zero-conversion spend creates both an immediate financial drain and a structural fragility risk.',
+  executiveInsights: [
     {
       type: 'Warning',
-      text: 'Three channels (Video, Programmatic, OOH) have produced zero conversions while absorbing 35% of the total budget, making them the primary cause of portfolio underperformance.',
+      text: 'Three channels have produced zero conversions while absorbing 35% of total budget, making them the primary cause of portfolio underperformance.',
       metricHighlight: { label: 'Budget with zero conversions', value: '35%' },
     },
     {
       type: 'Performance',
-      text: 'Email is the only channel with a positive ROI, delivering 178% on 8% of budget — it is bearing the full weight of the portfolio\'s conversion output.',
+      text: 'Email is the only positive-ROI channel and is bearing the entire conversion output of the portfolio on 8% of budget.',
       metricHighlight: { label: 'Email ROI', value: '178%' },
     },
     {
       type: 'Warning',
-      text: 'Revenue concentration in a single channel creates structural fragility — any disruption to Email would eliminate the only positive contributor.',
-      metricHighlight: { label: 'Revenue from single channel (Email)', value: '71%' },
+      text: 'Revenue concentration in a single channel creates structural fragility — any disruption to Email eliminates the only positive contributor.',
+      metricHighlight: { label: 'Revenue from Email', value: '71%' },
     },
   ],
-  priorityActions: [
+  keyPriorities: [
     {
       priority: 1,
-      action: 'Immediately pause Video, Programmatic, and OOH spending pending a root-cause review.',
-      expectedOutcome: 'Stop the active budget drain and free up 35% of spend for redistribution to proven channels.',
-      urgency: 'Immediate',
-      successMetric: 'Zero budget allocated to zero-conversion channels within 7 days.',
+      title: 'Immediately pause Video, Programmatic, and OOH spend',
+      rationale: 'Zero conversions on 35% of budget is not an optimization problem — it is an active drain that must be stopped before any reallocation can be meaningful.',
+      expectedOutcome: 'Stop budget loss and free 35% of spend for redistribution within 7 days.',
     },
     {
       priority: 2,
-      action: 'Reallocate 50% of freed budget to Email to increase volume from the only positive-ROI channel.',
-      expectedOutcome: 'Grow Email revenue contribution while the remaining channels are reviewed.',
-      urgency: 'Immediate',
-      successMetric: 'Email conversion volume increases by at least 30% within 30 days.',
+      title: 'Reallocate 50% of freed budget to Email',
+      rationale: 'Email is the only channel with proven conversion performance — increasing its budget is the only immediately safe move while other channels are under review.',
+      expectedOutcome: 'Email conversion volume increases by at least 30% within 30 days.',
     },
     {
       priority: 3,
-      action: 'Conduct a creative and targeting audit on paused channels before considering reactivation.',
-      expectedOutcome: 'Determine whether underperformance is structural or fixable before committing further budget.',
-      urgency: 'ThisQuarter',
-      successMetric: 'Audit completed with a go/no-go decision per channel within 6 weeks.',
+      title: 'Conduct root-cause audit on paused channels before any reactivation',
+      rationale: 'Zero conversion rate may be structural (wrong audience, wrong format) or operational (tracking failure, creative issues) — determining which shapes whether to reactivate or replace.',
+      expectedOutcome: 'Go/no-go decision per paused channel within 6 weeks with documented rationale.',
     },
   ],
-  correlations: [],
+  keyRisks: [
+    {
+      risk: 'Email single-channel dependency',
+      severity: 'High',
+      implication: 'With 71% of revenue from one channel, any deliverability issue, list fatigue, or algorithm change would eliminate the portfolio\'s only positive contributor with no fallback.',
+    },
+    {
+      risk: 'Zero-conversion channels may have tracking failures rather than performance failures',
+      severity: 'Medium',
+      implication: 'If the zero-conversion signal is a measurement error rather than a true performance signal, pausing those channels based on bad data would destroy attribution and complicate recovery.',
+    },
+  ],
+  growthOutlook: {
+    label: 'Limited',
+    reasoning: 'Growth is not viable until the zero-conversion channels are resolved and Email dependency is reduced. The immediate priority is stabilization, not scaling.',
+  },
 }
 
 // ── Mock 5: Growth Phase ──────────────────────────────────────────────────────
 
 const growthPhase: ExecutiveSummaryResponse = {
   model: MOCK_GEMINI_FLASH,
+  scope: 'selectedSubset',
   healthScore: {
     score: 74,
     label: 'Good',
-    reasoning: 'Solid overall profitability with strong new-channel performance, though budget concentration and early-stage CPA instability in two channels limit the score.',
+    reasoning: 'Solid overall profitability with strong new-channel performance, though budget concentration and early-stage CPA instability limit the score.',
   },
   bottomLine: 'Growth channels are validating quickly; the portfolio is healthy but needs concentration risk management before budget is increased further.',
-  insights: [
+  overview: 'Paid Search has confirmed scalability with ROI improving from 140% to 210% as spend increased from €5k to €22k. TikTok Ads is showing strong early efficiency at 18% revenue share on 7% budget share. However, the top two channels now absorb 61% of total budget, creating concentration risk that limits resilience if either shifts in performance.',
+  executiveInsights: [
     {
       type: 'Achievement',
-      text: 'Paid Search has scaled from €5k to €22k spend with ROI improving from 140% to 210%, confirming it as a scalable channel.',
+      text: 'Paid Search has scaled from €5k to €22k with ROI improving from 140% to 210%, confirming it as a scalable channel with positive efficiency momentum.',
       metricHighlight: { label: 'Paid Search ROI improvement at scale', value: '+70 pp' },
     },
     {
       type: 'Opportunity',
-      text: 'TikTok Ads delivers 18% of revenue on 7% of budget in its first full quarter, suggesting strong early traction worth accelerating.',
+      text: 'TikTok Ads delivers 18% of revenue on 7% of budget in its first full quarter, suggesting strong early traction worth accelerating before the channel matures.',
       metricHighlight: { label: 'TikTok revenue vs budget share', value: '+11 pp' },
     },
     {
       type: 'Warning',
-      text: 'Top 2 channels account for 61% of total budget, creating concentration risk that limits resilience if either channel performance shifts.',
-      metricHighlight: { label: 'Budget concentration in top 2 channels', value: '61%' },
+      text: 'Top two channels account for 61% of total budget, creating concentration risk that limits resilience if either channel shifts.',
+      metricHighlight: { label: 'Budget in top 2 channels', value: '61%' },
     },
   ],
-  priorityActions: [
+  keyPriorities: [
     {
       priority: 1,
-      action: 'Increase TikTok Ads budget by 50% to determine whether early-stage efficiency holds at higher volume.',
-      expectedOutcome: 'Validate TikTok as a scalable acquisition channel before committing to a larger structural reallocation.',
-      urgency: 'ThisQuarter',
-      successMetric: 'TikTok ROI remains above 150% after budget increase; CPA stays within 1.2× portfolio average.',
+      title: 'Increase TikTok Ads budget by 50% to validate scalability',
+      rationale: 'Early efficiency signal is strong but unconfirmed at higher volume — testing now while the channel is in its growth phase maximizes the window before audience saturation.',
+      expectedOutcome: 'TikTok ROI stays above 150% post-increase; CPA remains within 1.2× portfolio average.',
     },
     {
       priority: 2,
-      action: 'Cap the top 2 channels\' combined budget share at 55% and reallocate the difference to TikTok and Affiliate.',
-      expectedOutcome: 'Reduce concentration risk while directing incremental spend to the two highest-efficiency growth channels.',
-      urgency: 'ThisQuarter',
-      successMetric: 'Top 2 channel budget share falls below 55% by end of quarter with no overall ROI degradation.',
+      title: 'Cap top two channels at 55% combined budget share',
+      rationale: 'Current 61% concentration means a single channel disruption has outsized portfolio impact — a structural cap enforces diversification without requiring a full reallocation.',
+      expectedOutcome: 'Top two channel budget share falls below 55% by end of quarter with no overall ROI degradation.',
     },
     {
       priority: 3,
-      action: 'Set a quarterly review cadence to reassess channel budget allocation as TikTok and Affiliate data matures.',
-      expectedOutcome: 'Ensure allocation decisions are driven by performance signals rather than inertia as the portfolio evolves.',
-      urgency: 'NextQuarter',
-      successMetric: 'Budget allocation reviewed and adjusted quarterly with documented performance rationale.',
+      title: 'Establish a quarterly channel review cadence as new channels mature',
+      rationale: 'TikTok and Affiliate are early-stage — allocation decisions made now based on limited data risk over-indexing on noise rather than signal.',
+      expectedOutcome: 'Budget allocation reviewed and adjusted quarterly with documented performance rationale per channel.',
     },
   ],
-  correlations: [
+  keyRisks: [
     {
-      finding: 'Newer channels (TikTok, Affiliate) show a consistent pattern of revenue share exceeding budget share in their first full quarter.',
-      implication: 'Early-stage efficiency signals are a reliable indicator for scaling candidates in this portfolio — new channel performance should be reviewed monthly in the first two quarters.',
+      risk: 'TikTok efficiency does not hold at scale',
+      severity: 'Medium',
+      implication: 'If TikTok CPA degrades above 1.5× portfolio average after budget increase, the growth thesis collapses and the incremental spend becomes difficult to redeploy quickly.',
     },
   ],
+  growthOutlook: {
+    label: 'High',
+    reasoning: 'Two validated or validating channels with efficiency surplus provide a strong basis for growth. Concentration risk is manageable with a budget cap — the primary constraint is TikTok scalability confirmation.',
+  },
 }
 
 export const EXECUTIVE_SUMMARY_SAMPLES: ExecutiveSummaryResponse[] = [

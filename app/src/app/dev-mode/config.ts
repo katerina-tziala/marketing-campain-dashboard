@@ -8,7 +8,7 @@ export const DEV_MODE_CONFIG: DevModeConfig = {
     seedMockCampaigns: true,
   },
   aiTools: {
-    analysisCycle: false,
+    analysisCycle: true,
     connectionCycle: false,
   },
 }

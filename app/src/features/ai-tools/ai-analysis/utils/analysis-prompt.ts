@@ -1,8 +1,7 @@
-import type { BusinessContext, PortfolioAnalysis } from '@/shared/portfolio';
 import { generateBudgetOptimizationPrompt, generateExecutiveSummaryPrompt } from '../../prompts';
 import { runProviderPrompt } from '../../providers';
 import type { AiAnalysisType } from '../../types';
-import type { AnalysisPromptContext, AnalysisProviderState, AnalysisResponse } from '../types';
+import type { AiAnalysisContext, AnalysisPromptContext, AnalysisProviderState, AnalysisResponse } from '../types';
 
 type AnalysisPromptRunnerOverride = (type: AiAnalysisType, signal: AbortSignal) => Promise<AnalysisResponse | null>
 let _analysisPromptRunnerOverride: AnalysisPromptRunnerOverride | null = null
@@ -15,9 +14,7 @@ export function setAnalysisPromptRunnerOverride(fn: AnalysisPromptRunnerOverride
 
 
 type PromptBuilder = (
-  analysis: PortfolioAnalysis,
-  isFiltered: boolean,
-  businessContext: BusinessContext,
+  context: AiAnalysisContext,
 ) => string
 
 
@@ -29,11 +26,11 @@ const PROMPT_BUILDERS: Record<AiAnalysisType, PromptBuilder> = {
 function buildAnalysisPrompt(
   analysisContext: AnalysisPromptContext,
 ): string {
-  const { type, analysis, isFiltered, businessContext } = analysisContext;
+  const { type, context } = analysisContext;
 
   const builder = PROMPT_BUILDERS[type]
 
-  return builder(analysis, isFiltered, businessContext)
+  return builder(context)
 }
 
 export async function runAnalysisPrompt(

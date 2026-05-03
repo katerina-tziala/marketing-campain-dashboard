@@ -1,22 +1,36 @@
 <script setup lang="ts">
-import type { ExecutiveCorrelation } from '../types'
-import { Card } from '@/ui'
+import type { BadgeVariant } from '@/ui'
+import { Badge, Card, CardHeader } from '@/ui'
+import type { KeyRisk, RiskSeverity } from '../types'
 import { AnalysisSection } from '../ui'
 
 defineProps<{
-  correlations: ExecutiveCorrelation[]
+  risks: KeyRisk[]
 }>()
+
+const SEVERITY_VARIANT_MAP: Record<RiskSeverity, BadgeVariant> = {
+  Low: 'info',
+  Medium: 'warning',
+  High: 'danger',
+}
+
+function severityVariant(severity: RiskSeverity): BadgeVariant {
+  return SEVERITY_VARIANT_MAP[severity] ?? 'info'
+}
 </script>
 
 <template>
-  <AnalysisSection v-if="correlations.length" title="Correlations">
+  <AnalysisSection v-if="risks.length" title="Key Risks">
     <Card
-      v-for="(corr, i) in correlations"
+      v-for="(risk, i) in risks"
       :key="i"
       variant="secondary"
     >
-      <h5 class="card-title">{{ corr.finding }}</h5>
-      <p>{{ corr.implication }}</p>
+      <CardHeader>
+        <Badge :variant="severityVariant(risk.severity)" tone="dimmed">{{ risk.severity }}</Badge>
+        <h5 class="card-title">{{ risk.risk }}</h5>
+      </CardHeader>
+      <p class="px-2">{{ risk.implication }}</p>
     </Card>
   </AnalysisSection>
 </template>

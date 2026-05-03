@@ -71,10 +71,20 @@ function handleSummarize(): void {
           Bottom Line
         </h5>
         <p class="text-typography-soft">{{ response.bottomLine }}</p>
+        <p class="text-typography-soft pt-2">{{ response.overview }}</p>
       </section>
-      <PriorityActions :actions="response.priorityActions" />
-      <Insights :insights="response.insights" />
-      <Correlations :correlations="response.correlations" />
+      <PriorityActions :priorities="response.keyPriorities" />
+      <Insights :insights="response.executiveInsights" title="Executive Insights" />
+      <Correlations :risks="response.keyRisks" />
+      <section v-if="response.growthOutlook">
+        <h5 class="text-sm tracking-wide font-semibold text-primary-soft">
+          Growth Outlook
+        </h5>
+        <p class="text-typography-soft">
+          <span class="font-semibold">{{ response.growthOutlook.label }}</span>
+          &mdash; {{ response.growthOutlook.reasoning }}
+        </p>
+      </section>
       <AnalysisResponseMeta
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"

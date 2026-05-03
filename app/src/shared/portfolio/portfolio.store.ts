@@ -21,7 +21,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
       period: input.period,
       industry: input.industry,
       channelMap,
-      analysis: computePortfolioAnalysis(channels, []),
+      analysis: computePortfolioAnalysis(channels),
       uploadedAt: Date.now(),
     }
   }

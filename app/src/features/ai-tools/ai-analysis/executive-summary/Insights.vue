@@ -10,7 +10,10 @@ import { AnalysisSection } from "../ui";
 
 const props = defineProps<{
   insights: ExecutiveInsight[];
+  title?: string;
 }>();
+
+const sectionTitle = computed(() => props.title ?? 'Insights');
 
 const INSIGHT_TYPE_ORDER: Record<InsightType, number> = {
   Achievement: 0,
@@ -45,7 +48,7 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 </script>
 
 <template>
-  <AnalysisSection title="Insights">
+  <AnalysisSection :title="sectionTitle">
     <Card
       v-for="(insight, i) in sortedInsights"
       :key="i"

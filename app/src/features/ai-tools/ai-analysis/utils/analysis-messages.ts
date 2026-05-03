@@ -16,7 +16,7 @@ export const ANALYSIS_ERROR_MESSAGES: Record<AiErrorCode, { title: string; messa
   'invalid-response': UNUSABLE_RESPONSE,
   'invalid-key': { title: 'Your API key is no longer valid', message: 'Please disconnect and reconnect with a valid key' },
   'no-models': { title: 'No suitable AI models are available', message: 'Please disconnect and reconnect to refresh available models' },
-  'min-campaigns': { title: 'Budget optimization requires at least 2 campaigns', message: 'Please adjust the channel filters' },
+  'min-campaigns': { title: 'Budget optimization requires at least 5 campaigns', message: 'Please adjust the channel filters' },
   'unknown': { title: 'An unexpected error occurred', message: 'Please try again or disconnect and reconnect' },
 }
 

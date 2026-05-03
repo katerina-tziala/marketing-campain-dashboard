@@ -5,7 +5,7 @@ import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 import type { AiConnectionEvent } from '@/features/ai-tools/types'
-import { usePortfolioStore, type BusinessContext, type PortfolioAnalysis } from '@/shared/portfolio'
+import { usePortfolioStore, type BusinessContext, type PortfolioAnalysis, type PortfolioSummary } from '@/shared/portfolio'
 import { mapAnalysisContext } from '../utils'
 import { useToastStore } from './toast.store'
 // Dev mode
@@ -51,6 +51,7 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
     campaignCount: number
     filtersActive: boolean
     portfolioAnalysis: PortfolioAnalysis
+    portfolioBenchmark?: PortfolioSummary
     businessContext: BusinessContext | null
   }): void {
     if (!context.portfolioId || !context.businessContext) {

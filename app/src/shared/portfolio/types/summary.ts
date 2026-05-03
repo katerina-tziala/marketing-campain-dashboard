@@ -21,6 +21,10 @@ export interface ShareEfficiency {
 export interface PortfolioSummary extends PortfolioKPIs {
   campaignCount: number;
   channelCount: number;
+  /** Decimal ratio — average ROI across campaigns with valid ROI values. */
+  averageCampaignRoi?: number | null;
+  /** Decimal ratio — median ROI across campaigns with valid ROI values. */
+  medianCampaignRoi?: number | null;
 }
 
 export type SummaryMetricStatus = 'Strong' | 'Moderate' | 'Weak';

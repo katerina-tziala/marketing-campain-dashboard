@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { CampaignPerformance } from '@/shared/data'
 import type { Channel } from '@/shared/data'
-import { computePortfolioAnalysis, usePortfolioStore, type BusinessContext } from '@/shared/portfolio'
+import { computePortfolioAnalysis, usePortfolioStore, type BusinessContext, type PortfolioSummary } from '@/shared/portfolio'
 
 export const useCampaignPerformanceStore = defineStore('campaignPerformance', () => {
   const portfolioStore = usePortfolioStore()
@@ -61,12 +61,12 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
 
   const portfolioAnalysis = computed(() => {
     const portfolio = portfolioStore.getById(activePortfolioId.value ?? '')
-    if (!portfolio) return computePortfolioAnalysis([], [])
+    if (!portfolio) return computePortfolioAnalysis([])
     if (selectedChannelsIds.value.length === 0) return portfolio.analysis
-    return computePortfolioAnalysis(selectedChannels.value, selectedChannelsIds.value)
+    return computePortfolioAnalysis(selectedChannels.value)
   })
 
-  const fullPortfolioKpis = computed(() => {
+  const portfolioBenchmark = computed<PortfolioSummary | null>(() => {
     const portfolio = portfolioStore.getById(activePortfolioId.value ?? '')
     return portfolio?.analysis.portfolio ?? null
   })
@@ -114,7 +114,7 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     selectedChannelsIds,
     filteredCampaigns,
     portfolioAnalysis,
-    fullPortfolioKpis,
+    portfolioBenchmark,
     // actions
     setChannelFilter,
   }

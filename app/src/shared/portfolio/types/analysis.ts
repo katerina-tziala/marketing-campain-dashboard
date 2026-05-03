@@ -20,11 +20,17 @@ export interface DerivedSignals {
   correlations?: CorrelationSignal[]
 }
 
+export interface ChannelContext {
+  topByBudget: ChannelSummary[]
+  topByRevenue: ChannelSummary[]
+}
+
 export interface PortfolioAnalysis {
   portfolio: PortfolioSummary
-  filteredChannels: boolean
   /** Flat list of all channel summaries — use for tables and raw enumeration. */
   channels: ChannelSummary[]
+  /** Compact ranked channel context for analysis and prompts. */
+  channelContext: ChannelContext
   /** Mutually exclusive campaign classification groups. */
   campaignGroups: CampaignGroups
   /** Mutually exclusive channel classification groups. */

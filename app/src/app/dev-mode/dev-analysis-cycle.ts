@@ -11,10 +11,8 @@ import { setAnalysisPromptRunnerOverride } from '@/features/ai-tools/ai-analysis
 const DEV_GROQ_MODEL: AiModel = {
   id: 'llama-3.3-70b-versatile',
   displayName: 'Llama 3.3 70B (dev)',
-  family: 'Llama',
-  strength: 'High-quality reasoning with detailed analytical depth',
-  strengthScore: 9,
-  reason: 'Dev fake model — no API calls are made',
+  family: 'Llama', 
+  strengthScore: 9, 
   limitReached: false,
 }
 

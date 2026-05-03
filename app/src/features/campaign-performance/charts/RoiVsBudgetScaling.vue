@@ -15,6 +15,7 @@ const props = defineProps<{
   campaigns: CampaignPerformance[];
   highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
   isFiltered?: boolean;
+  medianCampaignRoi?: number | null;
 }>();
 
 const validCampaigns = computed(() =>
@@ -32,7 +33,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
   const budgetValues = validCampaigns.value.map((campaign) => campaign.budget);
 
   return {
-    roi: getMedian(roiValues),
+    roi: props.medianCampaignRoi ?? getMedian(roiValues),
     budget: getMedian(budgetValues),
   };
 });
