@@ -23,7 +23,6 @@ function evaluateModels(apiKey: string, candidates: AiModelCandidate[]): Promise
 
 export async function connectGemini(apiKey: string): Promise<AiModel[]> {
   const models = await fetchGeminiModels(apiKey)
-  const candidates = extractCandidates(models)
-  console.log({ models, candidates });
+  const candidates = extractCandidates(models) 
   return evaluateModels(apiKey, candidates)
 }

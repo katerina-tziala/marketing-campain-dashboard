@@ -18,7 +18,7 @@ function withLimitReset(m: AiModel): AiModel {
 
 function rankModels(models: AiModel[]): AiModel[] {
   const ranked = models
-    .filter((m) => m.strengthScore >= 6)
+    .filter((m) => m.strengthScore >= 5)
     .sort(byStrengthDesc)
     .map(withLimitReset)
   if (ranked.length === 0) throw new Error('no-models')
@@ -30,7 +30,5 @@ export async function connectProvider(
   apiKey: string,
 ): Promise<AiModel[]> {
   const p = await CONNECTORS[provider](apiKey);
-  console.log(p);
-  
   return rankModels(p)
 }
