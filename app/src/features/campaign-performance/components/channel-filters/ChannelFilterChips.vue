@@ -87,7 +87,6 @@ defineExpose({
   >
     <Chip
       v-if="showAll"
-      :count="totalCampaigns"
       :active="allActive"
       :readonly="allReadonly || isProbe"
       :tabindex="isProbe ? -1 : undefined"
@@ -95,12 +94,12 @@ defineExpose({
       @click="onClear"
     >
       All
+      <span class="channel-chip-count">{{ totalCampaigns }}</span>
     </Chip>
     <Chip
       v-for="channel in channels"
       :key="channel.id"
       :data-channel-id="channel.id"
-      :count="channel.campaigns.length"
       :active="isSelected(channel.id)"
       :readonly="isProbe"
       :tabindex="isProbe ? -1 : undefined"
@@ -108,13 +107,14 @@ defineExpose({
       @click="onToggle(channel.id)"
     >
       {{ channel.name }}
+      <span class="channel-chip-count">{{ channel.campaigns.length }}</span>
     </Chip>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .channel-filter-chips {
-  @apply flex flex-wrap gap-2.5 p-1;
+  @apply flex flex-wrap gap-2.5 py-1;
 
   &:not(.plain) {
     @apply flex-1 overflow-hidden;
@@ -132,6 +132,32 @@ defineExpose({
 
   &.single-row {
     @apply max-h-9;
+  }
+}
+
+.channel-chip-count {
+  @apply inline-flex
+    items-center
+    justify-center
+    rounded-full
+    px-1.5
+    min-w-[1.25rem] h-5
+    text-xs
+    -mr-0.5
+    bg-line;
+}
+
+.channel-filter-chips :deep(.chip[aria-pressed="true"]) {
+  .channel-chip-count {
+    @apply bg-surface;
+  }
+  &:not(.readonly) {
+    &:hover,
+    &:focus-visible {
+      .channel-chip-count {
+        @apply bg-line;
+      }
+    }
   }
 }
 </style>

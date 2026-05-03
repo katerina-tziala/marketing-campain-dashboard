@@ -1,5 +1,5 @@
 <template>
-  <div class="modal-footer">
+  <div class="modal-footer" data-modal-footer>
     <slot />
   </div>
 </template>
@@ -14,8 +14,8 @@
     border-t
     py-5
     px-6
-    xs:flex-row-reverse
-    xs:items-center
-    xs:justify-start;
+    sm:flex-row
+    sm:items-center
+    sm:justify-stretch;
 }
 </style>

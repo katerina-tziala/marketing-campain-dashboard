@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useAttrs } from "vue";
 import { formatCompactNumber } from "@/shared/utils";
 import { PerformanceIndicator } from "../../ui";
-import type { PortfolioKPIs } from "@/shared/data";
+import type { PortfolioKPIs } from "@/shared/portfolio";
 
 const MIN_WIDTH_BAR = 12;
 
@@ -16,9 +16,13 @@ export interface FunnelItem {
 
 const props = defineProps<{
   kpis: PortfolioKPIs;
-  ariaLabel?: string;
 }>();
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const attrs = useAttrs();
 const funnelItems = computed(() => [
   {
     label: "Impressions",
@@ -51,13 +55,20 @@ function scaledWidth(val: number | null): number {
   const ratio = val === null ? 0 : Math.cbrt(val) / Math.cbrt(maxValue.value);
   return MIN_WIDTH_BAR + ratio * (100 - MIN_WIDTH_BAR);
 }
+
+const chartAriaLabel = computed(() =>
+  typeof attrs["aria-label"] === "string"
+    ? attrs["aria-label"]
+    : "Conversions funnel chart",
+);
 </script>
 
 <template>
   <div
+    v-bind="$attrs"
     class="funnel"
     role="img"
-    :aria-label="ariaLabel ?? 'Conversions funnel chart'"
+    :aria-label="chartAriaLabel"
   >
     <div v-for="item in funnelItems" :key="item.label" class="funnel-row">
       <div class="funnel-region-1">
@@ -96,13 +107,13 @@ function scaledWidth(val: number | null): number {
 }
 
 .funnel-row {
-  @apply flex flex-row justify-start gap-2 items-stretch min-h-[28%];
+  @apply flex flex-row justify-start items-start min-h-[28%];
 
   .funnel-region-1 {
-    @apply grow relative h-full w-[82%];
+    @apply grow relative h-full;
 
     .bar-percentage {
-      @apply min-w-2 h-full rounded-r-md duration-500 transition-[width];
+      @apply min-w-16 h-full w-full rounded-r-md duration-500 transition-[width];
     }
 
     .bar-label {
@@ -128,7 +139,7 @@ function scaledWidth(val: number | null): number {
   }
 
   .funnel-region-2 {
-    @apply grow w-[18%] flex items-center justify-end;
+    @apply shrink-0 flex h-full items-center justify-end; 
 
     .funnel-rate {
       @apply inline-flex
@@ -141,7 +152,8 @@ function scaledWidth(val: number | null): number {
         items-center 
         max-w-full
         text-right
-        leading-tight;
+        leading-tight
+        px-2; 
     }
   }
 }

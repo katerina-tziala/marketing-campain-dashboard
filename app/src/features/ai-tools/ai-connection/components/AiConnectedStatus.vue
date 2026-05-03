@@ -22,7 +22,7 @@ function handleDisconnect(): void {
     <p class="status-provider">{{ providerLabel }}</p>
     <div class="flex flex-wrap items-center justify-between grow shrink gap-x-4 gap-y-2">
       <p role="status" class="connected-dot status-connected">Connected</p>
-      <Button variant="destructive" size="small" @click="handleDisconnect"
+      <Button variant="destructive" size="smaller" @click="handleDisconnect"
         >Disconnect</Button
       >
     </div>
@@ -35,8 +35,8 @@ function handleDisconnect(): void {
     flex-wrap
     items-center
     justify-between
-    gap-y-2
-    gap-x-4
+    gap-y-1.5
+    gap-x-6
     py-2
     pl-6
     pr-4

@@ -1,15 +1,32 @@
 <script setup lang="ts">
-import { MagicWandIcon, MetaRow, MetaItem, Button, SectionHeaderLayout } from "@/ui";
-import type { PortfolioContext } from '../types';
+import { computed } from "vue";
+import {
+  MagicWandIcon,
+  MetaRow,
+  MetaItem,
+  Button,
+  SectionHeaderLayout,
+} from "@/ui";
+import { formatIsoDateRange } from "@/shared/utils";
+import type { AnalysisPortfolioContext } from "../types";
 
-defineProps<{
+const props = defineProps<{
   title: string;
   actionLabel: string;
   isButtonDisabled: boolean;
-  context: PortfolioContext;
+  context: AnalysisPortfolioContext;
 }>();
 
 defineEmits<{ analyze: [] }>();
+
+const periodLabel = computed(() =>
+  props.context.businessContext
+    ? formatIsoDateRange(
+        props.context.businessContext.period.from,
+        props.context.businessContext.period.to,
+      )
+    : "",
+);
 </script>
 
 <template>
@@ -20,6 +37,8 @@ defineEmits<{ analyze: [] }>();
     <template #action>
       <Button
         variant="primary"
+        size="small"
+        class="shrink-0"
         icon-only
         :disabled="isButtonDisabled"
         :aria-label="actionLabel"
@@ -28,10 +47,20 @@ defineEmits<{ analyze: [] }>();
         <MagicWandIcon />
       </Button>
     </template>
-    <MetaRow separator="bullet" class="text-typography-subtle">
+    <MetaRow separator="bullet" class="analysis-header-meta text-typography-subtle">
       <MetaItem>{{ context.portfolioTitle }}</MetaItem>
+      <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
+      <MetaItem v-if="context.businessContext?.industry">
+        {{ context.businessContext.industry }}
+      </MetaItem>
       <MetaItem>{{ context.channelCount }} channels</MetaItem>
       <MetaItem>{{ context.campaignCount }} campaigns</MetaItem>
     </MetaRow>
   </SectionHeaderLayout>
 </template>
+
+<style lang="scss" scoped>
+.analysis-header-meta {
+  @apply flex lg:hidden;
+}
+</style>

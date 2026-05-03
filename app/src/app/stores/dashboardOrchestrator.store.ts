@@ -5,8 +5,8 @@ import { useAiConnectionStore } from '@/features/ai-tools/ai-connection/stores'
 import { useCampaignPerformanceStore } from '@/features/campaign-performance/stores'
 import { PROVIDER_LABELS } from '@/features/ai-tools/providers/utils/providers-meta'
 import type { AiConnectionEvent } from '@/features/ai-tools/types'
+import { usePortfolioStore, type BusinessContext, type PortfolioAnalysis } from '@/shared/portfolio'
 import { mapAnalysisContext } from '../utils'
-import { usePortfolioDataStore } from './portfolioData.store'
 import { useToastStore } from './toast.store'
 // Dev mode
 import { activateDevMode, DEV_MODE_CONFIG } from '../dev-mode'
@@ -17,7 +17,7 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
   const aiConnection = useAiConnectionStore()
   const aiAnalysis = useAiAnalysisStore()
   const campaignPerformance = useCampaignPerformanceStore()
-  const portfolioData = usePortfolioDataStore()
+  const portfolioStore = usePortfolioStore()
   const toastStore = useToastStore()
 
   // DEV MODE
@@ -50,9 +50,10 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
     channelCount: number
     campaignCount: number
     filtersActive: boolean
-    portfolioAnalysis: any
+    portfolioAnalysis: PortfolioAnalysis
+    businessContext: BusinessContext | null
   }): void {
-    if (!context.portfolioId) {
+    if (!context.portfolioId || !context.businessContext) {
       aiAnalysis.setAnalysisContext(null)
       return
     }
@@ -60,6 +61,7 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
     aiAnalysis.setAnalysisContext({
       ...context,
       portfolioId: context.portfolioId,
+      businessContext: context.businessContext,
     })
   }
 
@@ -93,7 +95,7 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
   // Portfolio data is shared app state; the orchestrator translates its lifecycle
   // into feature-specific cleanup so AI analysis does not read campaign data stores.
   watch(
-    () => portfolioData.lastEvictedId,
+    () => portfolioStore.lastEvictedId,
     onPortfolioEvicted,
   )
 

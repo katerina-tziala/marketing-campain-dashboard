@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, useSlots, Comment } from "vue";
+import { ref } from "vue";
 import Button from "../primitives/Button.vue";
 import EyeIcon from "../icons/EyeIcon.vue";
 import EyeOffIcon from "../icons/EyeOffIcon.vue";
@@ -11,61 +11,76 @@ const props = withDefaults(
     placeholder?: string;
     disabled?: boolean;
     autocomplete?: string;
+    invalid?: boolean;
+    describedBy?: string;
   }>(),
   {
     autocomplete: "off",
+    invalid: false,
+    describedBy: undefined,
   },
 );
 
-defineEmits<{ "update:modelValue": [value: string] }>();
+defineEmits<{
+  "update:modelValue": [value: string];
+  blur: [];
+}>();
 
-const slots = useSlots();
 const visible = ref(false);
+const toggleButtonRef = ref<InstanceType<typeof Button> | null>(null);
+const activatedByPointer = ref(false);
 
-const hasError = computed(() => {
-  if (!slots.error) return false;
-  return slots.error().some((vnode) => vnode.type !== Comment);
-});
+function handleTogglePointerDown(): void {
+  activatedByPointer.value = true;
+}
 
-const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
+function handleToggleClick(): void {
+  visible.value = !visible.value;
+
+  if (activatedByPointer.value) {
+    toggleButtonRef.value?.$el?.blur();
+    activatedByPointer.value = false;
+  }
+}
 </script>
 
 <template>
   <div
     class="password-input"
-    :class="{ 'password-input-error': hasError, disabled: disabled }"
+    :class="{ 'password-input-error': invalid, disabled: disabled }"
   >
     <input
       :id="id"
       :value="modelValue"
       :type="visible ? 'text' : 'password'"
       class="form-control input-field"
-      :class="{ 'input-error': hasError }"
+      :class="{ 'input-error': invalid }"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
       :disabled="disabled"
       spellcheck="false"
-      :aria-invalid="hasError ? 'true' : undefined"
-      :aria-describedby="hasError && errorId ? errorId : undefined"
+      :aria-invalid="invalid ? 'true' : undefined"
+      :aria-describedby="describedBy"
       @input="
         $emit('update:modelValue', ($event.target as HTMLInputElement).value)
       "
+      @blur="$emit('blur')"
     />
     <Button
+      ref="toggleButtonRef"
       variant="text-only"
+      icon-only
       no-ring
       class="toggle-btn"
       type="button"
       :disabled="disabled"
       :aria-label="visible ? 'Hide password' : 'Show password'"
-      @click="visible = !visible"
+      @pointerdown="handleTogglePointerDown"
+      @click="handleToggleClick"
     >
-      <EyeOffIcon v-if="visible" />
-      <EyeIcon v-else />
+      <EyeOffIcon v-if="visible" class="!text-xl" />
+      <EyeIcon class="!text-xl" v-else />
     </Button>
-  </div>
-  <div :id="errorId">
-    <slot name="error" />
   </div>
 </template>
 
@@ -76,7 +91,7 @@ const errorId = computed(() => (props.id ? `${props.id}-error` : undefined));
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary-light;
+      @apply border-primary-lighter text-primary-lighter;
     }
   }
 }

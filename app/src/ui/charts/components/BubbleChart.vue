@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TPoint extends BubbleDataPoint">
-import { computed } from "vue";
+import { computed, useAttrs } from "vue";
 import type { BubbleDataPoint } from "chart.js";
 import { Bubble } from "vue-chartjs";
 import { useChartConfig, useChartTooltip } from "../composables";
@@ -15,7 +15,6 @@ import type {
 const props = withDefaults(
   defineProps<{
     chartData: BubbleChartData<TPoint>;
-    ariaLabel?: string;
     xLabel?: string;
     yLabel?: string;
     xMin?: number;
@@ -34,6 +33,11 @@ const props = withDefaults(
   { plugins: () => [], legendPosition: "top", usePointLegend: false },
 );
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const attrs = useAttrs();
 const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
 const bubbleTooltip = useChartTooltip<"bubble">(props.tooltipCallbacks);
 
@@ -96,13 +100,20 @@ const options = computed<BubbleChartOptions>(() => ({
   },
 }));
 
+const chartAriaLabel = computed(() =>
+  typeof attrs["aria-label"] === "string"
+    ? attrs["aria-label"]
+    : props.yLabel ?? props.xLabel ?? "Bubble chart",
+);
+
 </script>
 
 <template>
   <div
+    v-bind="$attrs"
     class="w-full h-full min-h-64"
     role="img"
-    :aria-label="ariaLabel ?? yLabel ?? xLabel ?? 'Bubble chart'"
+    :aria-label="chartAriaLabel"
   >
     <Bubble :data="chartData" :options="options" :plugins="plugins" />
   </div>

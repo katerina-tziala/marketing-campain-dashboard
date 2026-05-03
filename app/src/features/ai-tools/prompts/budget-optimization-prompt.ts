@@ -1,3 +1,4 @@
+import type { BusinessContext } from '@/shared/portfolio';
 import type { PromptInstructions, PromptScopeConfig } from './types';
 
 // ── Legacy local types ─────────────────────────────────────────────────────────
@@ -27,9 +28,7 @@ type PortfolioCount = {
   channelCount: number;
 };
 
-type BudgetOptimizerContextInput = {
-  period?: string;
-  industry?: string;
+type BudgetOptimizerContextInput = BusinessContext & {
   goal?: string;
   businessStage?: string;
   attributionModel?: string;
@@ -170,9 +169,11 @@ const OPTIMIZER_SCOPE_CONFIG: PromptScopeConfig = {
 function generateBudgetOptimizerContext(
   context?: BudgetOptimizerContextInput,
 ): string {
-  const { allowBudgetExpansion, ...businessContext } = context ?? {};
+  if (!context) return getBusinessContextForPrompt(getBusinessContextLinesForPrompt());
 
-  const lines = getBusinessContextLinesForPrompt(businessContext ?? {});
+  const { allowBudgetExpansion, ...businessContext } = context;
+
+  const lines = getBusinessContextLinesForPrompt(businessContext);
   if (allowBudgetExpansion === true) {
     lines.push(` - Budget expansion is allowed.`);
     lines.push(`Total portfolio budget may increase if performance signals clearly support additional investment.`);

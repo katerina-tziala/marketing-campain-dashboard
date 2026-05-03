@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, useAttrs } from "vue";
 import { Doughnut } from "vue-chartjs";
 import { useChartConfig, useChartTheme, useChartTooltip } from "../composables";
 import type {
@@ -13,7 +13,6 @@ import { formatCompactNumber } from "@/shared/utils";
 const props = withDefaults(
   defineProps<{
     chartData: DonutChartData;
-    ariaLabel?: string;
     showLegend?: boolean;
     legendLabelFilter?: DonutLegendLabelFilter;
     tooltipCallbacks?: DonutTooltipCallbacks;
@@ -23,6 +22,11 @@ const props = withDefaults(
   },
 );
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const attrs = useAttrs();
 const chartTheme = useChartTheme();
 const { baseOptions, basePlugins } = useChartConfig<"doughnut">();
 
@@ -99,13 +103,20 @@ const options: DonutChartOptions = {
     },
   },
 };
+
+const chartAriaLabel = computed(() =>
+  typeof attrs["aria-label"] === "string"
+    ? attrs["aria-label"]
+    : "Donut chart",
+);
 </script>
 
 <template>
   <div
+    v-bind="$attrs"
     class="w-full h-full min-h-64"
     role="img"
-    :aria-label="ariaLabel ?? 'Donut chart'"
+    :aria-label="chartAriaLabel"
   >
     <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
   </div>

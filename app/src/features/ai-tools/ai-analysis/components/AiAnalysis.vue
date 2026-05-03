@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Tab, Tabs, FileTextIcon, SlidersIcon } from "@/ui";
-import { useAiAnalysisStore } from '../stores';
-import type { AiAnalysisType } from '../../types';
+import { useAiAnalysisStore } from "../stores";
+import type { AiAnalysisType } from "../../types";
 import { BudgetOptimizationAnalysis } from "../budget-optimization";
 import { ExecutiveSummaryAnalysis } from "../executive-summary";
 
@@ -15,12 +15,15 @@ const tabs: Tab[] = [
 
 <template>
   <Tabs
+    aria-label="AI Tools"
     :tabs="tabs"
     :active-tab="analysisStore.activeTab"
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
   <div class="scrollbar-stable-both scrollbar-on-surface panel-container">
-    <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
+    <BudgetOptimizationAnalysis
+      v-if="analysisStore.activeTab === 'budgetOptimizer'"
+    />
     <ExecutiveSummaryAnalysis v-else />
   </div>
 </template>
@@ -32,7 +35,10 @@ const tabs: Tab[] = [
     h-full
     overflow-y-auto
     overflow-x-hidden
-    flex flex-col gap-6
+    flex
+    flex-col
+    gap-6
+    pb-2
     text-sm
     text-typography;
 }

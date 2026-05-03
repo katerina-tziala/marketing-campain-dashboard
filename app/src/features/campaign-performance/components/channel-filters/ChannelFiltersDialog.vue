@@ -39,7 +39,8 @@ function toggleDropdown(): void {
   <div class="relative shrink-0 z-[50]">
     <Button
       ref="triggerButtonRef"
-      variant="info-outline"
+      variant="info-outline" 
+      icon-only
       class="filter-trigger-button"
       :class="{ active: dropdownOpen }"
       :aria-expanded="dropdownOpen"
@@ -49,7 +50,7 @@ function toggleDropdown(): void {
       @keydown.escape.prevent="dropdownOpen = false"
     >
       <span class="icon-wrapper">
-        <FunnelIcon class="text-xl" />
+        <FunnelIcon class="!text-lg" />
       </span>
     </Button>
 
@@ -64,7 +65,7 @@ function toggleDropdown(): void {
     <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonEl" :gap="2">
       <DropdownPanel
         aria-label="Channel filters"
-        class="min-w-[260px] max-w-[310px] pb-2.5"
+        class="min-w-32 max-w-md pb-2.5 mr-6 max-h-[200px]"
       >
         <div class="dropdown-header">
           <p class="dropdown-title">
@@ -84,7 +85,7 @@ function toggleDropdown(): void {
         </div>
 
         <div
-          class="dropdown-content scrollbar-stable scrollbar-info-on-surface"
+          class="scrollbar-info-on-surface dropdown-content max-h-full overflow-auto"
         >
           <ChannelFilterChips
             layout="plain"
@@ -102,7 +103,7 @@ function toggleDropdown(): void {
 
 <style lang="scss" scoped>
 .filter-trigger-button {
-  @apply h-8 w-8 min-h-8 min-w-8 p-0 mt-0.5;
+  @apply max-h-8 max-w-8 min-h-8 min-w-8 p-0 mt-0.5;
   > .icon-wrapper {
     @apply inline-block w-full h-full flex items-center justify-center;
   }
@@ -144,7 +145,7 @@ function toggleDropdown(): void {
   @apply text-typography-subtle font-medium normal-case whitespace-nowrap;
 }
 
-.dropdown-content {
-  @apply max-h-[320px] overflow-y-auto;
-}
+// .dropdown-content {
+//   @apply max-h-[320px] overflow-y-auto;
+// }
 </style>

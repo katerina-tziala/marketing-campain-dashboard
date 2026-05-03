@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { CampaignPerformance, PortfolioKPIs } from "@/shared/data";
+import type { CampaignPerformance } from "@/shared/data"
+import type { PortfolioKPIs } from "@/shared/portfolio";
 import type { Channel } from "@/shared/data";
 import { Card, CardHeader, RadioToggle, useChartTheme } from "@/ui";
 import {
@@ -138,12 +139,20 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
     />
   </Card>
   <!-- Conversion Funnel -->
-  <Card >
+  <Card class="conversion-funnel-card">
     <h3 class="text-base">Conversion Funnel</h3>
     <ConversionFunnelChart
       :kpis="kpis"
       aria-label="Conversion funnel chart"
-      class="min-h-60"
+      class="min-h-52"
     />
   </Card>
 </template>
+
+<style lang="scss" scoped>
+.conversion-funnel-card {
+  @include cq-up(cq-1024, "campaign-performance-view") {
+    @apply col-span-2;
+  }
+}
+</style>

@@ -2,13 +2,13 @@
 import { computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Badge, Button, ModalFooter, ModalBody } from "@/ui";
-import type { CampainDataRowError } from "../../../types";
+import type { CampaignDataRowError } from "../../../types";
 import { getRowErrorSummaryWords } from "../../../utils";
 import { DataErrorSummary, DuplicateSummary } from "../shared";
 import DataErrorsTable from "./DataErrorsTable.vue";
 
 const props = defineProps<{
-  rowErrors: CampainDataRowError[];
+  rowErrors: CampaignDataRowError[];
   validCampaigns: Campaign[];
   duplicateGroupCount: number;
 }>();
@@ -30,11 +30,6 @@ const summaryWords = computed(() =>
 );
 const showProceed = computed(
   () => props.validCampaigns.length > 0 || props.duplicateGroupCount > 0,
-);
-const proceedLabel = computed(() =>
-  props.validCampaigns.length > 0
-    ? "Proceed with valid rows"
-    : "Review duplicate campaigns",
 );
 </script>
 
@@ -69,14 +64,14 @@ const proceedLabel = computed(() =>
                 {{ summaryWords.totalRowWord }}</strong
               >
               {{ summaryWords.verb }} errors and
-              {{ summaryWords.wasWord }} skipped.
-            </p>
+              {{ summaryWords.wasWord }} skipped
+            </p> 
             <p>
-              You can proceed with the
+              You can import the
               <strong
                 >{{ validCampaigns.length }} valid
                 {{ summaryWords.validRowWord }}</strong
-              >, or go back and fix the file.
+              >, or go back and fix the file
             </p>
           </template>
         </DataErrorSummary>
@@ -90,18 +85,15 @@ const proceedLabel = computed(() =>
     </div>
   </ModalBody>
   <ModalFooter>
-    <Button variant="primary" class="min-w-24 xs:order-1" @click="emit('back')"
-      >Back</Button
-    >
-    <Button
-      v-if="showProceed"
-      variant="outline"
-      class="xs:order-3 xs:mr-auto"
-      @click="emit('proceed')"
-      >{{ proceedLabel }}</Button
-    >
-    <Button variant="outline" class="min-w-24 xs:order-2" @click="emit('close')"
+    <Button variant="outline" class="min-w-24 sm:mr-auto" @click="emit('close')"
       >Cancel</Button
+    >
+    <Button v-if="showProceed" variant="outline" @click="emit('proceed')"
+      >Import {{ validCampaigns.length }} valid rows</Button
+    >
+
+    <Button variant="primary" class="min-w-24" @click="emit('back')"
+      >Fix file</Button
     >
   </ModalFooter>
 </template>

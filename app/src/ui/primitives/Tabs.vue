@@ -25,7 +25,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="tabs" role="tablist" aria-label="AI Tools">
+  <div class="tabs" role="tablist">
     <button
       v-for="tab in tabs"
       :key="tab.id"
@@ -50,6 +50,7 @@ onMounted(() => {
   @apply flex
       items-center
       justify-center
+      flex-wrap
       gap-2
       grow
       px-4
@@ -72,7 +73,7 @@ onMounted(() => {
   }
 
   .tab-icon {
-    @apply shrink-0 text-lg;
+    @apply shrink-0 text-base;
   }
 
   &:hover,

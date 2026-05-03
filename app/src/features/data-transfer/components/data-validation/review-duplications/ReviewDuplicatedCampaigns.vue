@@ -2,13 +2,14 @@
 import { ref, computed } from "vue";
 import type { Campaign } from "@/shared/data";
 import { Button, ModalBody, ModalFooter } from "@/ui";
-import type { CampainDataDuplicateGroup } from "../../../types";
+import type { CampaignDataDuplicateGroup } from "../../../types";
 import { DuplicateSummary } from "../shared";
-import CampainDuplicationsTable from "./CampainDuplicationsTable.vue";
+import CampaignDuplicationsTable from "./CampaignDuplicationsTable.vue";
 
 const props = defineProps<{
-  duplicateGroups: CampainDataDuplicateGroup[];
+  duplicateGroups: CampaignDataDuplicateGroup[];
   validCampaigns: Campaign[];
+  backLabel: string;
 }>();
 
 const emit = defineEmits<{
@@ -52,7 +53,7 @@ function handleProceed(): void {
           }})</span
         >
       </p>
-      <CampainDuplicationsTable
+      <CampaignDuplicationsTable
         :duplicate-groups="duplicateGroups"
         :required-selection="validCampaigns.length === 0"
         @change="onSelectionChange"
@@ -60,18 +61,14 @@ function handleProceed(): void {
     </div>
   </ModalBody>
   <ModalFooter>
-    <Button variant="primary" class="min-w-24 xs:order-1" @click="emit('back')"
-      >Back</Button
-    >
-    <Button
-      variant="outline"
-      class="xs:order-3 xs:mr-auto"
-      :disabled="!canProceed"
-      @click="handleProceed"
-      >Proceed with selection</Button
-    >
-    <Button variant="outline" class="min-w-24 xs:order-2" @click="emit('close')"
+    <Button variant="outline" class="min-w-24 sm:mr-auto" @click="emit('close')"
       >Cancel</Button
+    >
+    <Button variant="outline" :disabled="!canProceed" @click="handleProceed"
+      >Import selected rows</Button
+    >
+    <Button variant="primary" class="min-w-24" @click="emit('back')"
+      >{{ props.backLabel }}</Button
     >
   </ModalFooter>
 </template>

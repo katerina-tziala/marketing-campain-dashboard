@@ -1,4 +1,4 @@
-import type { BusinessContext } from '@/features/ai-tools/ai-analysis/types';
+import type { BusinessContext } from '@/shared/portfolio';
 import type { PromptScopeConfig } from './types';
 
 // Legacy data shape — replaced by PortfolioAnalysis in the active prompt

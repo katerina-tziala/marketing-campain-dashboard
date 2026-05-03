@@ -72,6 +72,13 @@ export default {
           dark: "rgb(var(--color-info-dark) / <alpha-value>)",
           darker: "rgb(var(--color-info-darker) / <alpha-value>)",
         },
+        line: {
+          DEFAULT: "rgb(var(--color-border) / <alpha-value>)",
+          faint: "rgb(var(--color-border-faint) / <alpha-value>)",
+          subtle: "rgb(var(--color-border-subtle) / <alpha-value>)",
+          strong: "rgb(var(--color-border-strong) / <alpha-value>)",
+          darker: "rgb(var(--color-border-darker) / <alpha-value>)",
+        },
         chart: {
           funnel: {
             impressions:
@@ -86,6 +93,7 @@ export default {
           soft: "rgb(var(--color-text-soft) / <alpha-value>)",
           muted: "rgb(var(--color-text-muted) / <alpha-value>)",
           subtle: "rgb(var(--color-text-subtle) / <alpha-value>)",
+          faint: "rgb(var(--color-text-faint) / <alpha-value>)",
           inverse: "rgb(var(--color-text-inverse) / <alpha-value>)",
           strong: "rgb(var(--color-text-strong) / <alpha-value>)",
           primary: "rgb(var(--color-text-primary) / <alpha-value>)",

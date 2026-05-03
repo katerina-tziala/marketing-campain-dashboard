@@ -8,19 +8,24 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <Modal title="Replace campaign data?" size="small" @close="emit('close')">
+  <Modal
+    title="Replace campaign data?"
+    size="small"
+    initial-focus="footer-actions"
+    @close="emit('close')"
+  >
     <ModalBody>
       <p class="w-full">
-        Uploading a new CSV will permanently replace all current campaign data
-        and reset any active analysis. This CANNOT be undone.
+        Uploading new data will replace your current dataset and reset any
+        active analysis. This action cannot be undone.
       </p>
       <p class="text-sm font-semibold text-primary-lighter">
         Do you want to continue?
       </p>
     </ModalBody>
     <ModalFooter>
+      <Button variant="outline" class="sm:mr-auto" @click="emit('close')">Cancel</Button>
       <Button variant="primary" @click="emit('confirm')">Replace data</Button>
-      <Button variant="outline" @click="emit('close')">Cancel</Button>
     </ModalFooter>
   </Modal>
 </template>

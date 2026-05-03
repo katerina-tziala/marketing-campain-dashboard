@@ -60,10 +60,9 @@ function urgencyVariant(urgency: ActionUrgency): BadgeVariant {
           >
           {{ action.action }}
         </h5>
-      </CardHeader>
-
+      </CardHeader> 
       <p class="px-2">{{ action.expectedOutcome }}</p>
-      <p class="w-full bg-primary/10 border-primary/25 py-1 px-2">
+      <p class="w-full py-1 px-2">
         <strong>Success metric:</strong> {{ action.successMetric }}
       </p>
     </Card>

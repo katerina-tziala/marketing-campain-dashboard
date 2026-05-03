@@ -1,22 +1,18 @@
 <script setup lang="ts">
-import type {
-  MetaRowSeparator,
-  MetaRowSize,
-  MetaRowTone,
-} from './meta.types'
+import type { MetaRowSeparator, MetaRowSize, MetaRowTone } from "./meta.types";
 
 const props = withDefaults(
   defineProps<{
-    separator?: MetaRowSeparator
-    size?: MetaRowSize
-    tone?: MetaRowTone
+    separator?: MetaRowSeparator;
+    size?: MetaRowSize;
+    tone?: MetaRowTone;
   }>(),
   {
-    separator: 'none',
-    size: 'small',
-    tone: 'none',
+    separator: "none",
+    size: "small",
+    tone: "none",
   },
-)
+);
 </script>
 
 <template>
@@ -40,6 +36,11 @@ const props = withDefaults(
     @apply gap-x-2;
   }
 
+
+  &.meta-row.base {
+    @apply text-base;
+  }
+
   &.meta-row.tiny {
     @apply text-xs;
   }
@@ -55,8 +56,8 @@ const props = withDefaults(
 
 /* bullet variant */
 .meta-row.bullet :slotted(*:not(:first-child))::before {
-  content: "";
-  @apply inline-block
+  @apply content-['']
+    inline-block
     w-1
     h-1
     rounded-full

@@ -2,11 +2,10 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import type { CampaignPerformance } from '@/shared/data'
 import type { Channel } from '@/shared/data'
-import { computePortfolioAnalysis, getPortfolioScope } from '@/shared/portfolio-analysis'
-import { usePortfolioDataStore } from '@/app/stores'
+import { computePortfolioAnalysis, usePortfolioStore, type BusinessContext } from '@/shared/portfolio'
 
 export const useCampaignPerformanceStore = defineStore('campaignPerformance', () => {
-  const portfolioData = usePortfolioDataStore()
+  const portfolioStore = usePortfolioStore()
 
   // ── State ─────────────────────────────────────────────────────────────
 
@@ -16,11 +15,23 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
   // ── Derived from active portfolio ─────────────────────────────────────
 
   const portfolioChannels = computed<Map<string, Channel>>(
-    () => portfolioData.getById(activePortfolioId.value ?? '')?.channelMap ?? new Map(),
+    () => portfolioStore.getById(activePortfolioId.value ?? '')?.channelMap ?? new Map(),
   )
 
   const title = computed<string>(
-    () => portfolioData.getById(activePortfolioId.value ?? '')?.title ?? '',
+    () => portfolioStore.getById(activePortfolioId.value ?? '')?.name ?? '',
+  )
+
+  const businessContext = computed<BusinessContext | null>(
+    () => {
+      const portfolio = portfolioStore.getById(activePortfolioId.value ?? '')
+      if (!portfolio) return null
+
+      return {
+        period: portfolio.period,
+        industry: portfolio.industry,
+      }
+    },
   )
 
   // ── Getters ───────────────────────────────────────────────────────────
@@ -48,27 +59,16 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     selectedChannels.value.flatMap(channel => channel.campaigns),
   )
 
-  const portfolioScope = computed(() =>
-    getPortfolioScope(
-      campaigns.value,
-      filteredCampaigns.value,
-      [...portfolioChannels.value.values()].map(channel => channel.name),
-      selectedChannelsIds.value.map(
-        id => portfolioChannels.value.get(id)?.name ?? id,
-      ),
-    ),
-  )
-
   const portfolioAnalysis = computed(() => {
-    const portfolio = portfolioData.getById(activePortfolioId.value ?? '')
+    const portfolio = portfolioStore.getById(activePortfolioId.value ?? '')
     if (!portfolio) return computePortfolioAnalysis([], [])
-    if (selectedChannelsIds.value.length === 0) return portfolio.fullAnalysis
+    if (selectedChannelsIds.value.length === 0) return portfolio.analysis
     return computePortfolioAnalysis(selectedChannels.value, selectedChannelsIds.value)
   })
 
   const fullPortfolioKpis = computed(() => {
-    const portfolio = portfolioData.getById(activePortfolioId.value ?? '')
-    return portfolio?.fullAnalysis.portfolio ?? null
+    const portfolio = portfolioStore.getById(activePortfolioId.value ?? '')
+    return portfolio?.analysis.portfolio ?? null
   })
 
   // ── Actions ───────────────────────────────────────────────────────────
@@ -94,25 +94,25 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
   // ── Watchers ──────────────────────────────────────────────────────────
 
   watch(
-    () => portfolioData.pendingSelectionId,
+    () => portfolioStore.pendingSelectionId,
     onPendingSelection,
     { immediate: true },
   )
 
   watch(
-    () => portfolioData.lastEvictedId,
+    () => portfolioStore.lastEvictedId,
     onPortfolioEvicted,
   )
 
   return {
     title,
+    businessContext,
     activePortfolioId,
     portfolioChannels,
     campaigns,
     selectedChannels,
     selectedChannelsIds,
     filteredCampaigns,
-    portfolioScope,
     portfolioAnalysis,
     fullPortfolioKpis,
     // actions

@@ -53,27 +53,26 @@ function handleAnalyze(): void {
   >
     <template #loading>Analyzing campaigns…</template>
 
-    <template #state>
+    <template #idle>
       <Notification v-if="isBelowMinimum" variant="warning" :show-icon="false">
         <template #title>
           <span class="text-sm font-normal">{{ minCampaignsEntry.title }}</span>
         </template>
         {{ minCampaignsEntry.message }}
       </Notification>
-      <p v-else class="text-sm text-typography-soft py-2 leading-5 tracking-wide">
+      <p v-else>
         Get budget reallocation recommendations based on campaign performance
       </p>
     </template>
 
     <template v-if="response">
-      <AnalysisResponseMeta
-        class="-mt-5 -mb-2"
+      <p class="text-typography-soft">{{ response.summary }}</p>
+      <BudgetRecommendations :recommendations="response.recommendations" />
+      <AnalysisResponseMeta 
         :timestamp="response.timestamp ?? null"
         :model-display-name="response.model?.displayName"
         :notice="notice"
       />
-      <p class="text-typography-soft">{{ response.summary }}</p>
-      <BudgetRecommendations :recommendations="response.recommendations" />
     </template>
   </AnalysisState>
 </template>

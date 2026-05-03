@@ -9,7 +9,7 @@ type ConnectionErrorEntry = {
 export const CONNECTION_ERRORS: Record<AiConnectionErrorCode, ConnectionErrorEntry> = {
   'invalid-key': {
     message: (p) => `Your ${PROVIDER_LABELS[p]} API key doesn't seem to be working`,
-    hint: "Make sure you copied the full key and that it hasn't expired or been revoked.",
+    hint: "Make sure you copied the full key and that it hasn't expired or been revoked",
   },
   'network': {
     message: () => "We couldn't reach the server",

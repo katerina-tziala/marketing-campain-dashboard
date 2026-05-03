@@ -1,13 +1,16 @@
+import type { ScaleOptions } from 'chart.js'
 import { useChartTheme } from './useChartTheme'
 
-type CreateChartScaleOptions = {
+type CartesianChartScaleOptions = ScaleOptions<'category' | 'linear'>
+type ChartScaleTicks = NonNullable<CartesianChartScaleOptions['ticks']>
+
+type CreateChartScaleOptions = Omit<CartesianChartScaleOptions, 'ticks' | 'title'> & {
   title?: string
   adaptiveTickRotation?: boolean
-  ticks?: Record<string, unknown>
-  [key: string]: unknown
+  ticks?: Partial<ChartScaleTicks>
 }
 
-export function createChartScale(options: CreateChartScaleOptions = {}) {
+export function createChartScale(options: CreateChartScaleOptions = {}): CartesianChartScaleOptions {
   const chartTheme = useChartTheme()
   const baseScale = {
     ticks: {
@@ -19,7 +22,7 @@ export function createChartScale(options: CreateChartScaleOptions = {}) {
   }
   const { title, adaptiveTickRotation = false, ticks, ...scaleOptions } = options
 
-  return {
+  const scale = {
     ...baseScale,
     ...scaleOptions,
     ...(title
@@ -44,6 +47,8 @@ export function createChartScale(options: CreateChartScaleOptions = {}) {
       ...ticks,
     },
   }
+
+  return scale as CartesianChartScaleOptions
 }
 
 export function useChartScales() {

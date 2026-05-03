@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, useAttrs } from "vue";
 import type { ButtonSize, ButtonVariant } from "./button.types";
 
 const props = withDefaults(
@@ -17,6 +17,7 @@ const props = withDefaults(
   },
 );
 
+const attrs = useAttrs();
 const buttonRef = ref<HTMLButtonElement>();
 const buttonClasses = computed(() => [
   props.variant,
@@ -24,6 +25,13 @@ const buttonClasses = computed(() => [
   props.iconOnly ? "icon-only" : undefined,
   props.noRing ? "no-ring" : undefined,
 ]);
+const buttonTitle = computed(() => {
+  if (typeof attrs.title === "string") return attrs.title;
+  const ariaLabel = attrs["aria-label"];
+  return props.iconOnly && typeof ariaLabel === "string"
+    ? ariaLabel
+    : undefined;
+});
 
 function getRootEl(): HTMLButtonElement | undefined {
   return buttonRef.value;
@@ -40,6 +48,7 @@ defineExpose({
     v-bind="$attrs"
     class="btn"
     :class="buttonClasses"
+    :title="buttonTitle"
   >
     <slot />
   </button>
@@ -80,6 +89,11 @@ defineExpose({
   &.btn.small {
     @apply text-sm px-3 h-9 py-0 leading-4;
   }
+
+  /* variant smaller */
+  &.btn.smaller {
+    @apply text-xs px-2.5 h-7 py-0 leading-none;
+  }
 }
 
 /* variant icon-only */
@@ -99,28 +113,12 @@ defineExpose({
 
 /* variant primary */
 .btn.primary {
-  @apply bg-primary-dark text-typography-strong;
+  @apply bg-primary-darker text-typography-strong;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light text-primary-ink;
-    }
-
-    &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
-    }
-  }
-}
-
-/* variant outline */
-.btn.outline {
-  @apply text-primary-lighter/95 border border-primary-lighter;
-
-  &:not(:disabled) {
-    &:hover,
-    &:focus-visible {
-      @apply bg-surface text-primary-light border-primary-light;
+      @apply bg-primary-deep text-typography-inverse;
     }
 
     &:not(.no-ring):focus-visible {
@@ -141,6 +139,38 @@ defineExpose({
 
     &:not(.no-ring):focus-visible {
       @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+    }
+  }
+}
+
+/* variant outline */
+.btn.outline {
+  @apply bg-surface text-primary-light border-primary-light;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply text-primary-lighter border-primary-lighter;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
+    }
+  }
+}
+
+/* variant accent-outline */
+.btn.accent-outline {
+  @apply bg-surface text-accent-light border-accent-dark;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply text-accent-lighter border-accent;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2 ring-offset-1 ring-offset-background ring-accent;
     }
   }
 }
@@ -166,16 +196,29 @@ defineExpose({
 
 /* variant ghost */
 .btn.ghost {
-  @apply border-transparent text-typography-muted;
+  @apply border-transparent text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-typography/10 text-typography;
+      @apply bg-typography/[8%] text-typography;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-typography-soft;
+      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+    }
+  }
+}
+
+/* variant ghost-outline */
+.btn.ghost-outline {
+  @extend .ghost;
+  @apply border-typography-subtle;
+
+  &:not(:disabled) {
+    &:hover,
+    &:focus-visible {
+      @apply border-typography-soft;
     }
   }
 }

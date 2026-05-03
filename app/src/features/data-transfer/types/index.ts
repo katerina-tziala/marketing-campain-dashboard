@@ -1,28 +1,28 @@
 import type { Campaign } from '@/shared/data'
 
-export type CampainDataRowIssueType =
+export type CampaignDataRowIssueType =
   | 'empty'
   | 'positive_number'
   | 'non_negative_number'
   | 'non_negative_integer'
   | 'exceeds'
 
-export interface CampainDataFieldIssue {
+export interface CampaignDataFieldIssue {
   column: string
-  issue: CampainDataRowIssueType
+  issue: CampaignDataRowIssueType
   details?: string
 }
 
-export interface CampainDataRowError extends CampainDataFieldIssue {
+export interface CampaignDataRowError extends CampaignDataFieldIssue {
   row: number
 }
 
-export interface CampainDataDuplicateGroup {
+export interface CampaignDataDuplicateGroup {
   campaignName: string
   rows: Campaign[]
 }
 
-export type CampainDataValidationErrorType =
+export type CampaignDataValidationErrorType =
   | 'file_type'
   | 'file_size'
   | 'empty_file'
@@ -31,22 +31,22 @@ export type CampainDataValidationErrorType =
   | 'parse_error'
   | 'duplicate_campaigns'
 
-export interface CampainDataValidationError {
-  type: CampainDataValidationErrorType
+export interface CampaignDataValidationError {
+  type: CampaignDataValidationErrorType
   detail?: string
   missingColumns?: string[]
-  rowErrors?: CampainDataRowError[]
-  duplicateGroups?: CampainDataDuplicateGroup[]
+  rowErrors?: CampaignDataRowError[]
+  duplicateGroups?: CampaignDataDuplicateGroup[]
 }
 
-export interface CampainDataParseResult {
+export interface CampaignDataParseResult {
   campaigns: Campaign[]
-  errors: CampainDataValidationError[]
+  errors: CampaignDataValidationError[]
 }
 
-export interface CampainDataProcessRowsResult {
+export interface CampaignDataProcessRowsResult {
   campaigns: Campaign[]
-  errors: CampainDataRowError[]
+  errors: CampaignDataRowError[]
 }
 
 export interface RowErrorSummaryWords {

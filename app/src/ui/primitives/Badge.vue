@@ -4,22 +4,22 @@ import type {
   BadgeSize,
   BadgeTone,
   BadgeVariant,
-} from './badge.types'
+} from "./badge.types";
 
 const props = withDefaults(
   defineProps<{
-    variant?: BadgeVariant
-    tone?: BadgeTone
-    shape?: BadgeShape
-    size?: BadgeSize
+    variant?: BadgeVariant;
+    tone?: BadgeTone;
+    shape?: BadgeShape;
+    size?: BadgeSize;
   }>(),
   {
-    variant: 'primary',
-    tone: 'solid',
-    shape: 'pill',
-    size: 'default',
+    variant: "primary",
+    tone: "solid",
+    shape: "pill",
+    size: "default",
   },
-)
+);
 </script>
 
 <template>
@@ -63,14 +63,6 @@ const props = withDefaults(
     @apply bg-primary-lighter/10 border-primary-lighter/25 text-primary-lighter;
   }
 
-  &.rounded .badge-body {
-    @apply rounded-md;
-  }
-
-  &.soft-rounded .badge-body {
-    @apply rounded-sm;
-  }
-
   &.text-only {
     @apply bg-transparent border-none;
     .badge-body {
@@ -102,6 +94,20 @@ const props = withDefaults(
 
   &.small > .badge-body {
     @apply py-0.5 px-1 text-xs;
+  }
+
+  &.rounded {
+    @apply rounded-md;
+    .badge-body {
+      @apply rounded-md;
+    }
+  }
+
+  &.soft-rounded {
+    @apply rounded-sm;
+    .badge-body {
+      @apply rounded-sm;
+    }
   }
 }
 </style>

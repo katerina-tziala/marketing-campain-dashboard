@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
+import type { BusinessContext } from "@/shared/portfolio";
+import { formatIsoDateRange } from "@/shared/utils";
 import {
   SparklesIcon,
   MetaRow,
@@ -7,8 +10,9 @@ import {
   SectionHeaderLayout,
 } from "@/ui";
 
-defineProps<{
+const props = defineProps<{
   title: string;
+  businessContext: BusinessContext | null;
   selectedChannelCount: number;
   totalChannelCount: number;
   filteredCampaignCount: number;
@@ -18,25 +22,44 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{ aiClick: [] }>();
+
+const periodLabel = computed(() =>
+  props.businessContext
+    ? formatIsoDateRange(
+        props.businessContext.period.from,
+        props.businessContext.period.to,
+      )
+    : "",
+);
 </script>
 
 <template>
-  <SectionHeaderLayout>
+  <SectionHeaderLayout class="!gap-0">
     <template #header>
-      <h2 class="w-full grow text-xl">Campaign Performance</h2>
+      <h2 class="w-full grow text-xl min-h-9">Campaign Performance</h2>
     </template>
     <template #action>
       <div v-if="showAiButton" class="relative shrink-0">
-        <Button variant="primary" @click="emit('aiClick')">
+        <Button variant="primary" size="small" @click="emit('aiClick')">
           <SparklesIcon />AI
         </Button>
-        <span v-if="showConnectedDot" class="connected-status" aria-hidden="true">
+        <span
+          v-if="showConnectedDot"
+          class="connected-status"
+          aria-hidden="true"
+        >
           <span class="connected-status-dot" />
         </span>
       </div>
     </template>
-    <MetaRow separator="bullet" class="text-typography-subtle">
+    <MetaRow separator="bullet" size="base" class="text-typography-subtle">
       <MetaItem>{{ title }}</MetaItem>
+      <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
+      <MetaItem v-if="businessContext?.industry">
+        {{ businessContext.industry }}
+      </MetaItem>
+    </MetaRow>
+    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1">
       <MetaItem
         >{{ selectedChannelCount }} of
         {{ totalChannelCount }} channels</MetaItem
@@ -45,19 +68,21 @@ const emit = defineEmits<{ aiClick: [] }>();
         >{{ filteredCampaignCount }} of
         {{ totalCampaignCount }} campaigns</MetaItem
       >
-      <MetaItem>All percentages are based on the current filters</MetaItem>
-    </MetaRow>
+      <MetaItem
+        >All percentages are based on the current filters</MetaItem
+      ></MetaRow
+    >
   </SectionHeaderLayout>
 </template>
 
 <style lang="scss" scoped>
 .connected-status {
   @apply absolute
-    -top-1
-    -right-1
+    -top-1.5
+    -right-1.5
     z-10
-    w-3
-    h-3
+    w-3.5
+    h-3.5
     rounded-full
     bg-surface
     flex

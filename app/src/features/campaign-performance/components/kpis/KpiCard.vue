@@ -3,13 +3,14 @@ import { Card, MetaRow } from "@/ui";
 
 defineProps<{
   label: string;
+  labelTitle?: string;
   value: string | null | undefined;
 }>();
 </script>
 
 <template>
   <Card class="kpi-card">
-    <h3 class="kpi-label">{{ label }}</h3>
+    <h3 class="kpi-label" :title="labelTitle">{{ label }}</h3>
     <p class="kpi-value">{{ value ?? "N/A" }}</p>
     <MetaRow
       v-if="$slots.default"
@@ -32,10 +33,10 @@ defineProps<{
 }
 
 .kpi-value {
-  @apply text-3xl font-semibold text-on-primary;
+  @apply text-3xl font-medium text-on-primary;
 }
 
 .kpi-meta {
-  @apply text-xs text-typography-soft;
+  @apply text-xs text-typography-muted;
 }
 </style>

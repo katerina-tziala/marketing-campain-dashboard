@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from "@/shared/data";
+import type { PortfolioKPIs } from "@/shared/portfolio";
 import {
   formatCompactCurrency,
   formatCompactNumber,
@@ -38,7 +38,8 @@ function formatShare(value: number, total: number): string {
         portfolio</MetaItem
       >
       <MetaItem
-        >ROI: <PerformanceIndicator :value="kpis.aggregatedRoi"
+        ><span title="Return on Investment">ROI</span>:
+        <PerformanceIndicator :value="kpis.aggregatedRoi"
       /></MetaItem>
     </KpiCard>
 
@@ -54,12 +55,17 @@ function formatShare(value: number, total: number): string {
         of portfolio</MetaItem
       >
       <MetaItem
-        >CVR: <PerformanceIndicator :value="kpis.aggregatedCvr"
+        ><span title="Conversion Rate">CVR</span>:
+        <PerformanceIndicator :value="kpis.aggregatedCvr"
       /></MetaItem>
     </KpiCard>
 
     <!-- CTR -->
-    <KpiCard label="CTR" :value="formatPercentage(kpis.aggregatedCtr)">
+    <KpiCard
+      label="CTR"
+      label-title="Click-through Rate"
+      :value="formatPercentage(kpis.aggregatedCtr)"
+    >
       <KpiBenchmarkDelta
         v-if="portfolioKpis"
         :current="kpis.aggregatedCtr"
@@ -71,6 +77,7 @@ function formatShare(value: number, total: number): string {
     <!-- CPA -->
     <KpiCard
       label="CPA"
+      label-title="Cost per Acquisition"
       :value="
         kpis.aggregatedCpa !== null
           ? formatCompactCurrency(kpis.aggregatedCpa)

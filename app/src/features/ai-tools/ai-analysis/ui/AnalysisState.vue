@@ -47,7 +47,9 @@ const errorNotification = computed(() => {
       {{ TOKEN_LIMIT_MESSAGE.message }}
     </Notification>
 
-    <slot v-if="status === 'idle' && !tokenLimitReached" name="state" />
+    <div v-if="status === 'idle' && !tokenLimitReached" class="idle">
+      <slot name="idle" />
+    </div>
 
     <Notification
       v-else-if="status === 'error' && error && !tokenLimitReached"
@@ -71,5 +73,11 @@ const errorNotification = computed(() => {
 
 .message-title {
   @apply text-sm font-normal;
+}
+
+.idle {
+  :deep(> p) {
+    @apply py-2 text-sm text-typography-soft leading-5 tracking-wide;
+  }
 }
 </style>

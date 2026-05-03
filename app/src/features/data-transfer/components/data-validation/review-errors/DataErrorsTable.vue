@@ -4,11 +4,11 @@ import { useSort } from "@/shared/composables";
 import { sortByValue } from "@/shared/utils";
 import { Table, TableHeader, Badge } from "@/ui";
 import type { DataTableColumn } from "@/ui";
-import type { CampainDataRowError } from "../../../types";
+import type { CampaignDataRowError } from "../../../types";
 import { getRowErrorMessage } from "../../../utils/error-messages";
 
 const props = defineProps<{
-  errors: CampainDataRowError[];
+  errors: CampaignDataRowError[];
 }>();
 
 const { sortDir, toggleSort } = useSort<string>("row");

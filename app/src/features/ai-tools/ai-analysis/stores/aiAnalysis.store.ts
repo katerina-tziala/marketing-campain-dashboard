@@ -6,8 +6,8 @@ import type {
   AnalysisResponse,
   BudgetOptimizerResponse,
   ExecutiveSummaryResponse,
-  PortfolioContext,
-  AiAnalysisContext,
+  AnalysisPortfolioContext,
+  AiAnalysisRequestContext,
 } from '../types'
 import { useAiConnectionStore } from '../../ai-connection/stores'
 import { runAnalysisPrompt, type CacheEntry, TabState } from '../utils'
@@ -18,7 +18,7 @@ import {
   MIN_OPTIMIZER_CAMPAIGNS,
   OPTIMIZER_MIN_CAMPAIGNS_ERROR,
   type TabDisplay,
-  DEFAULT_STATE,
+  createTabDisplay,
   DEFAULT_PORTFOLIO_CONTEXT,
   ALL_TABS,
   getOtherAnalysisType,
@@ -32,7 +32,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   // ── Shared state ──────────────────────────────────────────────────────
   const activeTab = ref<AiAnalysisType>('executiveSummary')
   const analysisActivated = ref(false)
-  const analysisContext = ref<AiAnalysisContext | null>(null)
+  const analysisContext = ref<AiAnalysisRequestContext | null>(null)
 
   // ── Per-tab internal state ────────────────────────────────────────────
   const tabs = {
@@ -41,8 +41,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   // ── Per-tab reactive display state ────────────────────────────────────
-  const budgetOptimizer = ref<TabDisplay<BudgetOptimizerResponse>>({ ...DEFAULT_STATE } as TabDisplay<BudgetOptimizerResponse>)
-  const executiveSummary = ref<TabDisplay<ExecutiveSummaryResponse>>({ ...DEFAULT_STATE } as TabDisplay<ExecutiveSummaryResponse>)
+  const budgetOptimizer = ref<TabDisplay<BudgetOptimizerResponse>>(createTabDisplay<BudgetOptimizerResponse>())
+  const executiveSummary = ref<TabDisplay<ExecutiveSummaryResponse>>(createTabDisplay<ExecutiveSummaryResponse>())
 
   // ── Derived state ─────────────────────────────────────────────────────
   const tokenLimitReached = computed(() => aiStore.allModelsLimitReached)
@@ -51,7 +51,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     aiStore.evaluationDisabled || !analysisContext.value || analysisContext.value.campaignCount === 0,
   )
 
-  const portfolioContext = computed<PortfolioContext>(() => analysisContext.value ?? DEFAULT_PORTFOLIO_CONTEXT)
+  const portfolioContext = computed<AnalysisPortfolioContext>(() => analysisContext.value ?? DEFAULT_PORTFOLIO_CONTEXT)
 
   const optimizerCanAnalyze = computed(() => {
     if (budgetOptimizer.value.status === 'loading') return false
@@ -185,7 +185,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   async function performAnalysisRequest(
     tab: AiAnalysisType,
-    context: AiAnalysisContext,
+    context: AiAnalysisRequestContext,
     portfolioId: string,
     tabState: TabState,
   ): Promise<void> {
@@ -199,7 +199,12 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     try {
       const result = await runAnalysisPrompt(
         { provider, apiKey, selectedModel },
-        { type: tab, analysis: context.portfolioAnalysis, isFiltered: context.filtersActive },
+        {
+          type: tab,
+          analysis: context.portfolioAnalysis,
+          isFiltered: context.filtersActive,
+          businessContext: context.businessContext,
+        },
         controller.signal,
       )
 
@@ -260,7 +265,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     executeAnalysis(tab, false)
   }
 
-  function setAnalysisContext(context: AiAnalysisContext | null): void {
+  function setAnalysisContext(context: AiAnalysisRequestContext | null): void {
     analysisContext.value = context
   }
 

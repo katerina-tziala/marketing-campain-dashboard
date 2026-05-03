@@ -46,7 +46,7 @@ const props = withDefaults(
     gap-3
     text-sm
     text-typography-muted
-    bg-surface
+    bg-surface-overlay
     border-darker;
 
   h5 {

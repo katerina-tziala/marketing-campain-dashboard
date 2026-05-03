@@ -1,5 +1,9 @@
 <template>
-  <div class="scrollbar-stable scrollbar-on-surface modal-body">
+  <div
+    class="scrollbar-stable scrollbar-on-surface modal-body"
+    data-modal-body
+    tabindex="-1"
+  >
     <slot />
   </div>
 </template>
@@ -18,6 +22,7 @@
   text-typography-soft
   text-sm
   leading-6
+  outline-none
   overflow-auto;
 }
 </style>

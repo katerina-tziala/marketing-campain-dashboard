@@ -1,14 +1,30 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { useAiConnectionStore } from '../ai-connection/stores'
 import { AiConnectionForm, AiConnectedStatus } from '../ai-connection/components'
 import { AiAnalysis } from '../ai-analysis/components'
 
+const props = defineProps<{
+  panelOpen: boolean
+}>()
+
 const store = useAiConnectionStore();
+const connectionFormResetKey = ref(0)
+
+watch(
+  () => props.panelOpen,
+  (open) => {
+    if (!open) connectionFormResetKey.value += 1
+  },
+)
 </script>
 
 <template>
     <!-- Not connected: show connection form -->
-    <AiConnectionForm v-if="!store.isConnected" />
+    <AiConnectionForm
+      v-if="!store.isConnected"
+      :reset-key="connectionFormResetKey"
+    />
     <!-- Connected: status bar + ai-analysis -->
     <template v-else>
       <div class="ai-tools-analysis">
