@@ -3,7 +3,6 @@ import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
 import { parseJsonResponse, toValidModels } from '../utils/shared'
 import { fetchGroqModels, requestGroqChatCompletion } from './api'
 import type { GroqModel } from './types'
-import { GROQ_PROVIDER_RULES } from '../utils/providers-meta'
 
 const BANNED = ['whisper', 'audio', 'guard', 'safeguard', 'moderation', 'orpheus']
 
@@ -30,8 +29,10 @@ function buildValidIds(candidates: GroqModel[]): Set<string> {
 function toAiModelCandidate(m: GroqModel): AiModelCandidate {
   return {
     id: m.id,
+    provider: 'groq',
     contextWindow: m.context_window,
     maxOutputTokens: m.max_completion_tokens,
+    supportsTextGeneration: true,
   }
 }
 
@@ -40,7 +41,7 @@ async function tryWithModel(
   runner: GroqModel,
   candidates: GroqModel[],
 ): Promise<AiModel[]> {
-  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GROQ_PROVIDER_RULES)
+  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate))
   const raw = await requestGroqChatCompletion(apiKey, runner.id, prompt)
   return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
 }
@@ -55,6 +56,7 @@ function evaluateModels(apiKey: string, candidates: GroqModel[]): Promise<AiMode
 export async function connectGroq(apiKey: string): Promise<AiModel[]> {
   const models = await fetchGroqModels(apiKey)
   const filteredModels = filterModels(models)
+  console.log({ models, filteredModels });
   if (filteredModels.length === 0) throw new Error('no-models')
   return evaluateModels(apiKey, getSortedCandidates(filteredModels))
 }

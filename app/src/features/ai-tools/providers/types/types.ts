@@ -1,20 +1,20 @@
 export type AiModelCandidate = {
-  id: string;
-  contextWindow?: number;
-  maxOutputTokens?: number;
-  thinking?: boolean;
-};
+  id: string
+  provider: 'gemini' | 'groq'
+  contextWindow?: number
+  maxOutputTokens?: number
+  supportsTextGeneration?: boolean
+  thinking?: boolean
+}
 
 export type AiModel = {
   id: string;
   displayName: string;
   family: string;
-  strength: string;
   strengthScore: number;
-  reason: string;
   limitReached: boolean;
-};
+}
 
 export type ModelsResponse = {
   models: AiModel[];
-};
+}

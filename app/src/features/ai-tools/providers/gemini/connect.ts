@@ -3,7 +3,6 @@ import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
 import { parseJsonResponse, toValidModels } from '../utils/shared'
 import { fetchGeminiModels, requestGeminiChatCompletion } from './api'
 import type { GeminiModel } from './types'
-import { GEMINI_PROVIDER_RULES } from '../utils/providers-meta'
 
 const BANNED = ['embedding', 'image', 'audio', 'tts', 'veo', 'imagen', 'lyria', 'robotics']
 
@@ -38,8 +37,10 @@ function buildValidIds(candidates: GeminiModel[]): Set<string> {
 function toAiModelCandidate(m: GeminiModel): AiModelCandidate {
   return {
     id: stripPrefix(m.name),
+    provider: 'gemini',
     contextWindow: m.inputTokenLimit,
     maxOutputTokens: m.outputTokenLimit,
+    supportsTextGeneration: m.supportedGenerationMethods?.includes('generateContent') ?? false,
     thinking: m.thinking,
   }
 }
@@ -50,7 +51,7 @@ async function tryWithModel(
   candidates: GeminiModel[],
 ): Promise<AiModel[]> {
   const modelId = stripPrefix(runner.name)
-  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GEMINI_PROVIDER_RULES)
+  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate))
   const raw = await requestGeminiChatCompletion(apiKey, modelId, prompt)
   return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
 }
@@ -65,6 +66,7 @@ function evaluateModels(apiKey: string, candidates: GeminiModel[]): Promise<AiMo
 export async function connectGemini(apiKey: string): Promise<AiModel[]> {
   const models = await fetchGeminiModels(apiKey)
   const filteredModels = filterModels(models)
+  console.log({ models, filteredModels });
   if (filteredModels.length === 0) throw new Error('no-models')
   return evaluateModels(apiKey, getSortedCandidates(filteredModels))
 }

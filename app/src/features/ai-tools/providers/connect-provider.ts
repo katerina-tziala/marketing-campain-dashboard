@@ -29,5 +29,8 @@ export async function connectProvider(
   provider: AiProviderType,
   apiKey: string,
 ): Promise<AiModel[]> {
-  return rankModels(await CONNECTORS[provider](apiKey))
+  const p = await CONNECTORS[provider](apiKey);
+  console.log(p);
+  
+  return rankModels(p)
 }

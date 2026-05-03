@@ -710,3 +710,42 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Animate wrappers, not table rows — `<tr>` height/overflow transitions are unreliable, while inner cell wrappers can animate smoothly.
 - Remove rows after collapse — JS transition hooks let rows leave the DOM after animation, avoiding hidden rows that still affect table semantics or spacing.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
+
+
+## [601] Refactor AI model evaluation prompt and provider candidate inputs
+**Type:** refactor
+
+**Summary:** Reworked the AI model evaluation prompt into a provider-agnostic ranking prompt, simplified the expected model output shape, and moved provider-specific model suitability into structured candidate metadata instead of prompt rule strings.
+
+**Brainstorming:** The model evaluation flow had started to carry provider-specific rule arrays beside the prompt builder. That made the prompt API heavier and split the model-selection logic between provider metadata and the shared prompt. The cleaner shape is for providers to normalize raw API models into a common `AiModelCandidate` contract, then let one shared model-evaluation prompt rank candidates from those fields. This keeps provider connectors responsible for provider facts, while the prompt stays focused on selection criteria, ranking, identifier safety, and JSON output.
+
+**Prompt:** Refactor model evaluation so Gemini and Groq pass structured candidate metadata into one shared prompt. Remove provider rule arrays from the prompt call, simplify the output schema, and make provider mappers include the fields needed for ranking.
+
+**What changed:**
+- `features/ai-tools/prompts/index.ts` — switched the exported model evaluation prompt from `model-evaluation-prompt2` to `model-evaluation-prompt.v1`.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — defines a single provider-agnostic `generateModelEvaluationPrompt(models)` function.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — removed the `providerRules` function input so callers no longer pass provider-specific prompt fragments.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — added explicit ranking signals based on structured candidate fields: `provider`, `contextWindow`, `maxOutputTokens`, `supportsTextGeneration`, and `thinking`.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — added clearer evaluation criteria for executive summaries, budget optimization, business analysis, structured JSON reliability, reasoning quality, repeated-request consistency, and production suitability.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — tightened the selection process so all candidates are evaluated, ranked by `strengthScore`, tie-broken by reasoning/JSON reliability/consistency, and capped at the top 20.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — simplified the response schema to `id`, `displayName`, `family`, and `strengthScore`.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — removed `model`, `provider`, `strength`, and `reason` from the expected model-evaluation response.
+- `features/ai-tools/prompts/model-evaluation-prompt.v1.ts` — added an output requirements rule group through the prompt-rule helper.
+- `features/ai-tools/providers/types/types.ts` — expanded `AiModelCandidate` with required `provider` and optional `supportsTextGeneration`.
+- `features/ai-tools/providers/types/types.ts` — removed `strength` and `reason` from `AiModel` so accepted models match the new evaluation response shape.
+- `features/ai-tools/providers/gemini/connect.ts` — maps Gemini candidates with `provider: 'gemini'`, token limits, `supportsTextGeneration`, and `thinking`.
+- `features/ai-tools/providers/gemini/connect.ts` — calls `generateModelEvaluationPrompt` with only normalized candidates.
+- `features/ai-tools/providers/qroq/connect.ts` — maps Groq candidates with `provider: 'groq'`, token limits, and `supportsTextGeneration: true`.
+- `features/ai-tools/providers/qroq/connect.ts` — calls `generateModelEvaluationPrompt` with only normalized candidates.
+- `features/ai-tools/providers/utils/providers-meta.ts` — removed old `GROQ_PROVIDER_RULES` and `GEMINI_PROVIDER_RULES` constants.
+- `features/ai-tools/providers/types/index.ts` — normalized file formatting while preserving the type barrel export.
+
+**Key decisions & why:**
+- Use one shared model-evaluation prompt — the ranking task is the same regardless of provider once raw models are normalized.
+- Move provider facts into candidate metadata — provider connectors know API-specific fields, while the prompt should consume a consistent app-level model.
+- Remove provider rule arrays — rule fragments made the prompt API harder to reason about and duplicated what structured candidate fields can express.
+- Keep `id` as the only identifier — providers should normalize identifiers before prompting, and the model must return exact candidate ids.
+- Simplify accepted model output — the app needs stable ids, display labels, family, score, and limit state; explanatory prompt-only fields should not leak into the runtime model.
+- Treat missing optional candidate fields as neutral — incomplete metadata should not automatically penalize a model when the provider cannot supply that signal.
+- Keep provider-specific filtering before prompting — banned audio/image/embedding/non-text models are filtered by each connector before evaluation.
+- Build verification is currently blocked by existing sample/dev model objects that still include the removed `strength` field.
