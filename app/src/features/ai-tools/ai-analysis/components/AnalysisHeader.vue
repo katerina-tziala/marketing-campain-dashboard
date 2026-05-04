@@ -67,7 +67,7 @@ const periodLabel = computed(() =>
   @apply w-full grow text-base font-medium tracking-wider m-0 text-primary-light;
 }
 
-// .analysis-header-meta {
-//   @apply flex lg:hidden;
-// }
+.analysis-header-meta {
+  @apply flex sticky-header:hidden;
+}
 </style>

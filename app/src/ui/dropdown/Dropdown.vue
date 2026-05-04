@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 const DROPDOWN_GAP = 6
 const DROPDOWN_MIN_WIDTH = 260
@@ -24,7 +24,9 @@ const panelRef = ref<HTMLElement>()
 
 const close = () => emit('update:open', false)
 
-const dropdownStyle = computed(() => {
+const dropdownStyle = ref<Record<string, string | undefined>>({})
+
+function calculatePosition(): Record<string, string | undefined> {
   if (!props.anchor) return {}
   const rect = props.anchor.getBoundingClientRect()
 
@@ -43,7 +45,7 @@ const dropdownStyle = computed(() => {
     : { left: `${Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)}px` }
 
   return { ...vertical, ...horizontal }
-})
+}
 
 function focusFirstInPanel(): void {
   const focusable = panelRef.value?.querySelector<HTMLElement>(
@@ -55,6 +57,7 @@ function focusFirstInPanel(): void {
 watch(() => props.open, open => {
   document.body.style.overflow = open ? 'hidden' : ''
   if (open) {
+    dropdownStyle.value = calculatePosition()
     nextTick(focusFirstInPanel)
   } else {
     props.anchor?.focus()
@@ -78,13 +81,11 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <div v-if="open" class="fixed inset-0 z-[49]" aria-hidden="true" @click="close" />
-  </Teleport>
-
-  <Teleport to="body">
     <div
       v-if="open"
       ref="panelRef"
-      class="fixed z-50"
+      class="fixed z-50 flex"
+      :class="align === 'right' ? 'flex-row-reverse' : 'flex-row'"
       :style="dropdownStyle"
       @keydown.escape="close"
     >

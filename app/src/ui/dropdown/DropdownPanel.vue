@@ -1,6 +1,6 @@
 <template>
   <div
-    class="bg-surface-raised border rounded-md shadow-lg overflow-hidden"
+    class="bg-surface-active border rounded-md shadow-lg overflow-hidden"
     role="dialog"
   >
     <slot />

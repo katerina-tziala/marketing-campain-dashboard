@@ -40,7 +40,7 @@ const deltaLabel = computed((): string => {
 
 const benchmarkLabel = computed((): string => {
   if (props.benchmark === null) return "";
-  if (props.unit === "pp") return formatPercentage(props.benchmark, "0%", 2);
+  if (props.unit === "pp") return formatPercentage(props.benchmark, "N/a", 2);
   return formatCompactCurrency(props.benchmark);
 });
 

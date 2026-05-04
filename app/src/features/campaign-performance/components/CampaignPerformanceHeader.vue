@@ -13,10 +13,10 @@ import {
 const props = defineProps<{
   title: string;
   businessContext: BusinessContext | null;
-  selectedChannelCount: number;
-  totalChannelCount: number;
-  filteredCampaignCount: number;
-  totalCampaignCount: number;
+  counts: {
+    channels: { selected: number; total: number };
+    campaigns: { filtered: number; total: number };
+  };
   showAiButton: boolean;
   showConnectedDot: boolean;
 }>();
@@ -61,12 +61,12 @@ const periodLabel = computed(() =>
     </MetaRow>
     <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1">
       <MetaItem
-        >{{ selectedChannelCount }} of
-        {{ totalChannelCount }} channels</MetaItem
+        >{{ counts.channels.selected }} of
+        {{ counts.channels.total }} channels</MetaItem
       >
       <MetaItem
-        >{{ filteredCampaignCount }} of
-        {{ totalCampaignCount }} campaigns</MetaItem
+        >{{ counts.campaigns.filtered }} of
+        {{ counts.campaigns.total }} campaigns</MetaItem
       >
       <MetaItem
         >All percentages are based on the current filters</MetaItem

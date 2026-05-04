@@ -81,11 +81,9 @@ export default {
         },
         chart: {
           funnel: {
-            impressions:
-              "rgb(var(--chart-funnel-impressions) / <alpha-value>)",
+            impressions: "rgb(var(--chart-funnel-impressions) / <alpha-value>)",
             clicks: "rgb(var(--chart-funnel-clicks) / <alpha-value>)",
-            conversions:
-              "rgb(var(--chart-funnel-conversions) / <alpha-value>)",
+            conversions: "rgb(var(--chart-funnel-conversions) / <alpha-value>)",
           },
         },
         typography: {
@@ -115,7 +113,7 @@ export default {
         ],
       },
       height: {
-        '29': "464px",
+        29: "464px",
       },
       zIndex: {
         1000: "1000",
@@ -126,6 +124,7 @@ export default {
       },
       screens: {
         xs: "480px",
+        "sticky-header": "1248px",
       },
       borderColor: {
         DEFAULT: "rgb(var(--color-border) / <alpha-value>)",

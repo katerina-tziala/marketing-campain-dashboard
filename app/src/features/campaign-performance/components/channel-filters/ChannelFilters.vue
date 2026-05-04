@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   toggle: [id: string];
   clear: [];
+  apply: [ids: string[]];
 }>();
 
 const MULTI_ROW_BREAKPOINT = 540; // px — parent width at which 2-row strip is allowed
@@ -95,9 +96,9 @@ function toggleFromStrip(id: string): void {
   emit("toggle", id);
 }
 
-function toggleFromDialog(id: string): void {
+function applyFromDialog(ids: string[]): void {
   dialogToggled.value = true;
-  emit("toggle", id);
+  emit("apply", ids);
 }
 
 function clear(): void {
@@ -185,8 +186,7 @@ onUnmounted(() => {
       :selected-ids="selectedIds"
       :overflow-count="overflowCount"
       :hidden-selected-count="hiddenSelectedCount"
-      @toggle="toggleFromDialog"
-      @clear="clear"
+      @apply="applyFromDialog"
     />
   </div>
 </template>

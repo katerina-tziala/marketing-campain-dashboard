@@ -16,7 +16,7 @@ import {
   SplitPaneLayout,
   UploadIcon,
 } from "@/ui";
-import logoUrl from "@/assets/logo.svg";
+import logoUrl from "@/assets/logo-v2.svg";
 const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
@@ -38,7 +38,7 @@ const {
         alt="Marketing Intelligence Dashboard Logo"
         width="69"
         height="auto"
-        class="inline-block -mr-2"
+        class="inline-block -mr-3"
       />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
@@ -125,9 +125,10 @@ const {
     @apply bg-gradient-to-r
 
     from-accent 
-    via-info 
     via-info-light 
-    via-primary 
+    via-info 
+    via-info-darker  
+    via-primary  
     via-primary-light 
     to-secondary
 

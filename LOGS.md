@@ -393,3 +393,159 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `hiddenSelectedCount` computed in parent from `visibleChannels` — the dialog's old slice-from-end assumption broke once non-contiguous channels (extraSelected) appeared in the strip
 - `dialogToggled` flag distinguishes strip vs dialog toggles — selected-first sort only makes sense when the user just picked from the dialog; strip interaction should preserve original order
 - `allowedRows` from parent `clientWidth` — ResizeObserver already observes `rootRef`, so the value updates on every resize without a separate watcher; 540 px threshold matches the layout breakpoint where 2-row strips are comfortable
+
+
+## [#616] Move roiBudgetScalingHighlights into RoiVsBudgetScaling
+**Type:** refactor
+
+**Summary:** Moved highlight computation and medianCampaignRoi derivation from CampaignPerformanceView into RoiVsBudgetScaling, replacing two loose props with a single portfolioAnalysis prop.
+
+**Brainstorming:** Both `roiBudgetScalingHighlights` and `medianCampaignRoi` were computed in the view from `portfolioAnalysis` and passed down. Since `RoiVsBudgetScaling` owns the scatter chart logic, it is the natural place for this domain knowledge. Consolidating into a single `portfolioAnalysis` prop is cleaner than threading multiple derived values.
+
+**Prompt:** roiBudgetScalingHighlights can we move this as responsibility of RoiVsBudgetScaling?
+
+**What changed:**
+- `charts/RoiVsBudgetScaling.vue` — replaced `highlightCampaignsByQuadrant` and `medianCampaignRoi` props with `portfolioAnalysis: PortfolioAnalysis`; added `ROI_SCALING_HIGHLIGHT_LIMIT` constant; added `highlights` computed; derives median roi from `portfolioAnalysis.portfolio.medianCampaignRoi` internally
+- `CampaignPerformanceView.vue` — removed `ROI_SCALING_HIGHLIGHT_LIMIT`, `roiBudgetScalingHighlights` computed, and `RoiBudgetScalingHighlights` type import; simplified `<RoiVsBudgetScaling>` binding to `:portfolio-analysis="store.portfolioAnalysis"`
+
+**Key decisions & why:**
+- Single `portfolioAnalysis` prop rather than individual arrays — both the highlights and the median ROI come from the same source; passing the whole object avoids prop proliferation and keeps the component self-sufficient
+- `RoiBudgetScalingHighlights` type stays in the charts module — it is still used internally by the scatter chart component; no need to export it from the view layer
+
+
+## [#617] Group count props in CampaignPerformanceHeader
+**Type:** refactor
+
+**Summary:** Replaced four individual count props with a single grouped `counts` object to reduce prop surface.
+
+**Brainstorming:** Four flat props (selectedChannelCount, totalChannelCount, filteredCampaignCount, totalCampaignCount) were semantically two pairs. Grouping them as `counts.channels` and `counts.campaigns` makes the structure self-documenting and reduces the prop list from 8 to 5.
+
+**Prompt:** ok do that please (group the four count props into a single object)
+
+**What changed:**
+- `CampaignPerformanceHeader.vue` — replaced four count props with `counts: { channels: { selected, total }, campaigns: { filtered, total } }`; updated template references
+- `CampaignPerformanceView.vue` — updated binding to pass the grouped `counts` object inline
+
+**Key decisions & why:**
+- Inline object literal in the template binding — no extra computed needed; the shape is simple enough to read at a glance
+
+
+## [#618] Replace "Show all" button with "All" chip in ChannelFiltersDialog
+**Type:** fix
+
+**Summary:** Replaced the "Show all" button in the dialog header with an "All" chip as the first item in the chip list, matching the main strip's pattern.
+
+**Brainstorming:** The dialog header had a conditional "Show all" button that was only visible when a selection existed. Replacing it with the "All" chip (via ChannelFilterChips' built-in showAll support) keeps the interaction model consistent with the main filter strip and avoids a secondary clear path. When no selection is active, the chip is read-only.
+
+**Prompt:** In the channel filters dialog remove the show all button and add the all chip. If selected it remains read only, always first item.
+
+**What changed:**
+- `ChannelFiltersDialog.vue` — removed `Button` import and "Show all" conditional button; added `totalCampaigns` computed; passed `:all-active`, `:all-readonly`, `:total-campaigns`, and `@clear` to `ChannelFilterChips`; removed `:show-all="false"` override so the "All" chip renders by default as the first item
+
+**Key decisions & why:**
+- `allReadonly` mirrors `allActive` — when no selection exists (All is active), the chip is both visually active and non-interactive, consistent with main strip behavior
+- `totalCampaigns` computed on the dialog matches what the strip passes, so the count badge on "All" is accurate
+
+
+## [#619] Buffer channel filter dialog selection with Cancel/Apply
+**Type:** update
+
+**Summary:** The dialog now buffers chip interactions locally and only emits the new selection when the user clicks Apply; Cancel (or backdrop/Escape) closes without changing the committed filter.
+
+**Brainstorming:** Immediate emit on every chip click was fine for the strip (always visible, low friction), but feels wrong for a panel that the user opens, explores, and confirms. Buffering in `pendingIds` keeps the committed state stable until Apply and enables a true Cancel. The cleanest propagation path was a new `apply: [ids: string[]]` event chain through `ChannelFilters` up to `CampaignPerformanceView`, leaving the existing `toggle`/`clear` strip path untouched.
+
+**Prompt:** Add cancel apply buttons at the bottom of the panel. Emit new selection only after user clicks Apply. When user clicks Cancel the current selection shall be restored.
+
+**What changed:**
+- `ChannelFiltersDialog.vue` — replaced `toggle`/`clear` emits with `apply: [ids: string[]]`; added `pendingIds` ref synced from `selectedIds` on open; internal `handleToggle`/`handleClear` mutate `pendingIds`; `applySelection` emits and closes, `cancelSelection` just closes; backdrop and Escape both cancel; header count reflects pending state; added Apply/Cancel footer; bumped `max-h` to 300px to accommodate footer
+- `ChannelFilters.vue` — removed `toggleFromDialog`; added `applyFromDialog(ids)` → sets `dialogToggled` + emits `apply`; added `apply: [ids: string[]]` to emits; updated dialog binding to `@apply`
+- `CampaignPerformanceView.vue` — added `applyChannelFilter(ids)` → `store.setChannelFilter(ids)`; wired `@apply` on `<ChannelFilters>`
+
+**Key decisions & why:**
+- New `apply` event rather than reusing `toggle`/`clear` — the dialog now emits a final state snapshot, not incremental mutations; a separate event name makes the contract explicit and keeps strip behavior unchanged
+- Backdrop and Escape cancel (not apply) — discarding unsaved changes is the safe default for an overlay pattern
+- `pendingIds` re-synced on open via watcher — no explicit reset on cancel needed; stale pending state is harmless between open cycles
+
+
+## [#620] Replace custom panel with Dropdown + DropdownPanel in ChannelFiltersDialog
+**Type:** refactor
+
+**Summary:** Replaced the hand-rolled absolute-positioned panel and custom backdrop with the shared `Dropdown` + `DropdownPanel` components, removing duplicated positioning and overlay logic.
+
+**Brainstorming:** The old panel manually managed absolute positioning, backdrop, Escape handling, and z-index. `Dropdown` already provides all of that (teleported to body, boundary-aware fixed positioning, backdrop, Escape + resize close). Since `Chip` exposes no DOM ref, a wrapper `div ref="anchorRef"` serves as the anchor element. Backdrop and Escape close via `Dropdown`'s built-in `update:open` emit, which naturally maps to Cancel behavior since `applySelection` is the only code path that emits.
+
+**Prompt:** use DropdownPanel for channel filters dialog
+
+**What changed:**
+- `ChannelFiltersDialog.vue` — added `Dropdown` + `DropdownPanel` imports; replaced custom backdrop div and `.panel` absolute container with `<Dropdown v-model:open align="right" :max-height="300">` + `<DropdownPanel>`; introduced `anchorRef` wrapper div around the chip trigger; removed `cancelSelection` function and custom backdrop; replaced `.panel` SCSS block with `.panel-inner` (flex-col, size constraints); kept header/content/footer structure intact
+
+**Key decisions & why:**
+- Wrapper `div ref="anchorRef"` as anchor — `Chip` has no `defineExpose`, so its DOM element is inaccessible via template ref; the wrapper is a minimal shim
+- `cancelSelection` removed — closing via `Dropdown`'s backdrop or Escape sets `dropdownOpen = false` via v-model, which is identical to cancel (pending state is stale until next open, when the watcher re-syncs)
+- `align="right"` — matches previous `right-0` positioning of the old panel
+
+
+## [#621] Make Dropdown panelRef flex with direction based on align prop
+**Type:** update
+
+**Summary:** Added `flex` to the `panelRef` wrapper in `Dropdown.vue` with `flex-row` for left-aligned and `flex-row-reverse` for right-aligned dropdowns.
+
+**Brainstorming:** The `panelRef` div is the positioned container that holds the slot content. Making it a flex row (with direction tied to alignment) lets slot children order themselves naturally relative to the anchor side — useful for multi-element panel layouts where reading order should match the open direction.
+
+**Prompt:** Can you make dropdown panelRef flex and have it row or row reverse based on positioning? right or left?
+
+**What changed:**
+- `Dropdown.vue` — added `flex` and `:class="align === 'right' ? 'flex-row-reverse' : 'flex-row'"` to the `panelRef` div
+
+**Key decisions & why:**
+- `flex-row-reverse` for `right` alignment — when the panel opens toward the left from a right-anchored trigger, reversing the row ensures child elements start from the anchor side
+- Default (no `align` or `align="left"`) keeps `flex-row` — natural reading order
+
+
+## [#622] Calculate Dropdown position on open instead of as a computed
+**Type:** refactor
+
+**Summary:** Replaced the reactive `computed` for `dropdownStyle` with a `ref` populated once when the dropdown opens, so positioning is snapshotted at open time rather than recalculated on every prop change.
+
+**Brainstorming:** A `computed` meant the position could silently drift while the dropdown was open if any prop changed. Snapshotting into a `ref` inside the `open` watcher is the correct mental model — position is locked when the user opens the dropdown and only recalculated on the next open.
+
+**Prompt:** Can we calculate positioning when we open the dropdown?
+
+**What changed:**
+- `Dropdown.vue` — removed `computed` import; converted `dropdownStyle` from `computed` to `ref<Record<string, string | undefined>>`; extracted calculation into `calculatePosition()`; call `calculatePosition()` inside the existing `open` watcher branch
+
+**Key decisions & why:**
+- `Record<string, string | undefined>` — the position object uses optional horizontal keys (either `left` or `right`, not both); `undefined` values are ignored by Vue's style binding
+- Single extraction point — `calculatePosition()` is called only in the watcher, so it only runs at open time
+
+
+## [#623] Fix Dropdown double-Teleport warning
+**Type:** fix
+
+**Summary:** Merged the two sibling `<Teleport to="body">` blocks into one, eliminating the Vue warning caused by multiple root-level Teleport elements.
+
+**Prompt:** dropdown complains fix it please
+
+**What changed:**
+- `Dropdown.vue` — combined backdrop div and panel div into a single `<Teleport to="body">` block
+
+**Brainstorming:** Vue warns when a component renders multiple Teleport elements as roots. Both divs target `body` so merging them is semantically identical and follows the correct pattern for multiple teleported children.
+
+**Key decisions & why:**
+- Single Teleport with two `v-if="open"` children — both conditioned on the same flag, behavior unchanged, warning gone
+
+
+## [#624] Fix calculatePosition return type error
+**Type:** fix
+
+**Summary:** Changed `calculatePosition()` return type from `Record<string, string>` to `Record<string, string | undefined>` to match the object produced by spreading two discriminated union shapes.
+
+**Brainstorming:** The function returns `{ ...vertical, ...horizontal }` where `vertical` is `{ top } | { bottom }` and `horizontal` is `{ left } | { right }`. TypeScript infers the spread as an object with all four keys as `string | undefined` — not `string` — because each union branch only carries one of the two keys. The fix aligns the annotation with reality.
+
+**Prompt:** line 47 complains
+
+**What changed:**
+- `Dropdown.vue` — `calculatePosition()` return type changed from `Record<string, string>` to `Record<string, string | undefined>`; consistent with `dropdownStyle` ref type and with Vue's `:style` binding which silently ignores `undefined` values
+
+**Key decisions & why:**
+- `Record<string, string | undefined>` rather than `Partial<Record<...>>` — same semantics, shorter syntax, consistent with the ref declaration above

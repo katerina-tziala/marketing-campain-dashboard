@@ -33,7 +33,11 @@ defineProps<{
 }
 
 .kpi-value {
-  @apply text-3xl font-medium text-on-primary;
+  @apply text-2xl font-medium text-on-primary;
+
+  @include cq-up(cq-540, "kpis") {
+    @apply text-3xl;
+  }
 }
 
 .kpi-meta {

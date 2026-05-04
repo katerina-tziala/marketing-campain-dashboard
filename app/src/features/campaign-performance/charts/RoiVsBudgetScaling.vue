@@ -3,19 +3,18 @@ import { computed } from "vue";
 import type { CampaignPerformance } from "@/shared/data";
 import { formatCurrency, formatPercentage } from "@/shared/utils";
 import { getMedian } from "@/shared/utils";
+import type { PortfolioAnalysis } from "@/shared/portfolio";
 import { Card, Notification, MetaRow, MetaItem } from "@/ui";
 import { RoiVsBudgetScatterChart } from "./components";
 import { ROI_BUDGET_SCALING_MIN_CAMPAIGNS } from "./config";
-import type {
-  RoiBudgetScalingHighlights,
-  RoiBudgetScalingMedians,
-} from "./types";
+import type { RoiBudgetScalingMedians } from "./types";
+
+const ROI_SCALING_HIGHLIGHT_LIMIT = 3;
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
-  highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
+  portfolioAnalysis: PortfolioAnalysis;
   isFiltered?: boolean;
-  medianCampaignRoi?: number | null;
 }>();
 
 const validCampaigns = computed(() =>
@@ -26,6 +25,21 @@ const hasEnoughCampaigns = computed(
   () => validCampaigns.value.length >= ROI_BUDGET_SCALING_MIN_CAMPAIGNS,
 );
 
+const highlights = computed(() => ({
+  scaleUp: props.portfolioAnalysis.derivedSignals.budgetScalingCandidates
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((c) => c.campaign),
+  champions: props.portfolioAnalysis.campaignGroups.top
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((c) => c.campaign),
+  underperforming: props.portfolioAnalysis.campaignGroups.watch
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((c) => c.campaign),
+  overspend: props.portfolioAnalysis.derivedSignals.inefficientCampaigns
+    .slice(0, ROI_SCALING_HIGHLIGHT_LIMIT)
+    .map((c) => c.campaign),
+}));
+
 const medians = computed<RoiBudgetScalingMedians>(() => {
   const roiValues = validCampaigns.value.map(
     (campaign) => campaign.roi as number,
@@ -33,7 +47,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
   const budgetValues = validCampaigns.value.map((campaign) => campaign.budget);
 
   return {
-    roi: props.medianCampaignRoi ?? getMedian(roiValues),
+    roi: props.portfolioAnalysis.portfolio.medianCampaignRoi ?? getMedian(roiValues),
     budget: getMedian(budgetValues),
   };
 });
@@ -61,7 +75,7 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
         :campaigns="validCampaigns"
         :medians="medians"
         class="!h-29"
-        :highlight-campaigns-by-quadrant="highlightCampaignsByQuadrant"
+        :highlight-campaigns-by-quadrant="highlights"
       />
       <MetaRow size="tiny" separator="bullet" class="mt-1.5 mx-auto">
         <MetaItem>
