@@ -150,7 +150,7 @@ function handleSubmit(): void {
             class="form-control"
             type="text"
             placeholder="e.g. Retail, SaaS, Finance"
-            autocomplete="organization"
+            autocomplete="off"
             :disabled="isLoading"
             :aria-describedby="describedBy"
             @input="

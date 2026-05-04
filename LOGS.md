@@ -549,3 +549,66 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `Record<string, string | undefined>` rather than `Partial<Record<...>>` — same semantics, shorter syntax, consistent with the ref declaration above
+
+
+## [#625] Extract shared accessibility composables into ui/accessibility/
+**Type:** refactor
+
+**Summary:** Extracted duplicated focus-trap and ARIA logic from Modal.vue and ResponsiveDrawer.vue into a shared `ui/accessibility/` composable layer, and co-located the existing `useModalAria` there.
+
+**Brainstorming:** Both Modal and ResponsiveDrawer contained identical copies of: `focusableSelector` constant, `getFocusableElements`, `focusInitialTarget`/`focusFirst`, `scheduleInitialFocus`, Tab-cycle trap logic, `previouslyFocusedElement` save/restore, and `document.body.style.overflow` lock/unlock. The duplication was structural — the only differences were the ref name and whether the Modal had an `initialFocus` prop. A single `useFocusTrap(containerRef)` composable covers all the shared behavior; Modal keeps only its `initialFocus`-mode logic on top. `useModalAria` was already shared (Drawer imported it cross-module from `modal/composables/`) so it belongs in `accessibility/` alongside `useFocusTrap`. The `accessibility/` folder is internal to `ui/` — not exported via the public `@/ui` barrel.
+
+**Prompt:** Check Modal and responsive drawer. They have common functionality for handling accessibility. Extract reusable composable if possible otherwise functions. Place them in a folder called accessibility in ui.
+
+**What changed:**
+- `ui/accessibility/useFocusTrap.ts` — new composable; exports `FOCUSABLE_SELECTOR` constant + `useFocusTrap(containerRef)` returning `getFocusableElements`, `focusFirst` ([data-modal-body] → first focusable → container fallback), `scheduleFocusFirst` (nextTick wrapper), `trapTab` (Tab/Shift+Tab cycle), `saveFocus`/`restoreFocus` (previouslyFocusedElement), `lockScroll`/`unlockScroll`
+- `ui/accessibility/useModalAria.ts` — moved from `modal/composables/useModalAria.ts`; no logic change
+- `ui/accessibility/index.ts` — barrel exporting FOCUSABLE_SELECTOR, useFocusTrap, useModalAria
+- `ui/modal/Modal.vue` — removed local focusableSelector, getFocusableElements, previouslyFocusedElement, and inline scroll/focus restore; imports FOCUSABLE_SELECTOR + useFocusTrap + useModalAria from ../accessibility; onKeydown now calls trapTab(e) instead of duplicating Tab logic; keeps getFirstFocusableIn + getInitialFocusTarget + focusInitialTarget for initialFocus prop modes
+- `ui/drawer/ResponsiveDrawer.vue` — removed all duplicated focus/scroll logic; imports useFocusTrap + useModalAria from ../accessibility; onKeydown calls trapTab(e) when modalOpen; watch(modalOpen) calls saveFocus/lockScroll/scheduleFocusFirst on open, unlockScroll/restoreFocus on close
+- `ui/modal/modal.types.ts` — unchanged (already existed, added to CLAUDE.md architecture)
+- `ui/modal/index.ts` — removed `export * from './composables'` (composables moved to accessibility/)
+- `ui/modal/composables/` — deleted (useModalAria.ts + index.ts removed, folder deleted)
+
+**Key decisions & why:**
+- `useFocusTrap` not `useModalAccessibility` — the composable describes its mechanism (focus trap), not its consumer; a future tooltip or popover could use the same trap
+- `FOCUSABLE_SELECTOR` exported as a named constant — Modal's `getFirstFocusableIn` queries sub-containers of the modal (not the whole modal), so it needs the raw selector; exporting avoids a second copy
+- `focusFirst` hardcodes `[data-modal-body]` — both components use this attribute as the initial focus target; it's a stable convention in this codebase, not a leaky assumption
+- Drawer keeps `getInitialFocusTarget`-style logic via `scheduleFocusFirst` — simpler than Modal; no `initialFocus` prop needed
+- `accessibility/` not added to `@/ui` public barrel — these composables are implementation details of the drawer/modal components, not part of the public design-system API
+
+
+## [#626] Add proper accessibility flow to Dropdown
+**Type:** update
+
+**Summary:** Added Tab focus trap, `aria-modal` to the panel, and replaced the duplicated focusable-element logic with `useFocusTrap` from the shared accessibility composable.
+
+**Brainstorming:** The Dropdown already had partial accessibility — Escape closes, anchor gets focus on close, first element is focused on open. What was missing: Tab could escape the panel entirely (no cycle trap); the `focusFirstInPanel` function duplicated selector logic already in `useFocusTrap`; `DropdownPanel` had `role="dialog"` but no `aria-modal="true"` (screen readers need both to suppress background content); the panel container lacked `tabindex="-1"` so the composable's container-fallback focus path was a no-op. Since `useFocusTrap` was just extracted, wiring it in here removes the duplication and fills all the gaps in one pass.
+
+**Prompt:** implement proper accessibility flow in dropdown
+
+**What changed:**
+- `Dropdown.vue` — removed `focusFirstInPanel`; imported `useFocusTrap` from `../accessibility`; panelRef typed as `Ref<HTMLElement | null>`; destructured `focusFirst`, `trapTab`, `lockScroll`, `unlockScroll`; replaced inline `document.body.style.overflow` with `lockScroll`/`unlockScroll`; replaced `@keydown.escape="close"` with `@keydown="onKeydown"` handler that runs `trapTab(e)` for Tab and `close()` for Escape; added `tabindex="-1"` to panel div for focus fallback; removed `computed` import (was already removed)
+- `DropdownPanel.vue` — added `aria-modal="true"` alongside existing `role="dialog"`
+
+**Key decisions & why:**
+- `useFocusTrap(panelRef)` — panelRef is the outer positioning div containing the DropdownPanel slot; `querySelectorAll` inside the composable reaches all descendants, so the trap works across the slot boundary
+- `tabindex="-1"` on panel div — allows `focusFirst()` to fall back to focusing the container itself when no focusable children exist; doesn't affect the tab order
+- `aria-modal="true"` on DropdownPanel — `role="dialog"` alone doesn't suppress background content for screen readers; the two attributes work together
+- Focus restore stays as `props.anchor?.focus()` — the anchor is always the correct restore target for a dropdown; `saveFocus/restoreFocus` from the composable would focus whatever was active at open time, which may differ from the anchor
+
+
+## [#627] Disable autocomplete on industry field
+**Type:** fix
+
+**Summary:** Changed `autocomplete="organization"` to `autocomplete="off"` on the industry input in UploadDataForm.
+
+**Brainstorming:** The `organization` token caused browsers to suggest company names from autofill history, which is unhelpful here — the field expects an industry category (e.g. "Retail", "SaaS"), not an organization name.
+
+**Prompt:** disable autocomplete in campaign industry
+
+**What changed:**
+- `UploadDataForm.vue` — `autocomplete="organization"` → `autocomplete="off"` on the industry input
+
+**Key decisions & why:**
+- `autocomplete="off"` rather than a mismatched token — no existing token maps to "industry category"; `off` is the correct choice when browser suggestions would be wrong or unhelpful

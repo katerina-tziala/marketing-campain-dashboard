@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { useFocusTrap } from '../accessibility'
 
 const DROPDOWN_GAP = 6
 const DROPDOWN_MIN_WIDTH = 260
@@ -20,7 +21,8 @@ const emit = defineEmits<{
   'update:open': [value: boolean]
 }>()
 
-const panelRef = ref<HTMLElement>()
+const panelRef = ref<HTMLElement | null>(null)
+const { focusFirst, trapTab, lockScroll, unlockScroll } = useFocusTrap(panelRef)
 
 const close = () => emit('update:open', false)
 
@@ -47,19 +49,21 @@ function calculatePosition(): Record<string, string | undefined> {
   return { ...vertical, ...horizontal }
 }
 
-function focusFirstInPanel(): void {
-  const focusable = panelRef.value?.querySelector<HTMLElement>(
-    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  )
-  focusable?.focus()
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    close()
+    return
+  }
+  trapTab(e)
 }
 
 watch(() => props.open, open => {
-  document.body.style.overflow = open ? 'hidden' : ''
   if (open) {
     dropdownStyle.value = calculatePosition()
-    nextTick(focusFirstInPanel)
+    lockScroll()
+    nextTick(focusFirst)
   } else {
+    unlockScroll()
     props.anchor?.focus()
   }
 })
@@ -73,7 +77,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
+  unlockScroll()
   window.removeEventListener('resize', onWindowResize)
 })
 </script>
@@ -87,7 +91,8 @@ onUnmounted(() => {
       class="fixed z-50 flex"
       :class="align === 'right' ? 'flex-row-reverse' : 'flex-row'"
       :style="dropdownStyle"
-      @keydown.escape="close"
+      tabindex="-1"
+      @keydown="onKeydown"
     >
       <slot />
     </div>

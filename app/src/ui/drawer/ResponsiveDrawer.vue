@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import ModalHeader from "../modal/ModalHeader.vue";
-import { useModalAria } from "../modal/composables";
+import { useFocusTrap, useModalAria } from "../accessibility";
 
 type DrawerSide = "left" | "right";
 
@@ -24,8 +24,9 @@ const emit = defineEmits<{
 
 const isDesktop = ref(false);
 const drawerModalRef = ref<HTMLElement | null>(null);
-const previouslyFocusedElement = ref<HTMLElement | null>(null);
 const { titleId, dialogAria } = useModalAria();
+const { scheduleFocusFirst, trapTab, saveFocus, restoreFocus, lockScroll, unlockScroll } =
+  useFocusTrap(drawerModalRef);
 let desktopMediaQuery: MediaQueryList | null = null;
 
 const drawerClass = computed(() => ({
@@ -35,42 +36,8 @@ const drawerClass = computed(() => ({
 }));
 const modalOpen = computed(() => props.open && !isDesktop.value);
 
-const focusableSelector = [
-  "a[href]",
-  "button:not([disabled])",
-  "textarea:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "[tabindex]:not([tabindex='-1'])",
-].join(",");
-
 function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
   isDesktop.value = e.matches;
-}
-
-function getFocusableElements(): HTMLElement[] {
-  if (!drawerModalRef.value) return [];
-
-  return Array.from(
-    drawerModalRef.value.querySelectorAll<HTMLElement>(focusableSelector),
-  ).filter((element) => element.offsetParent !== null);
-}
-
-function focusInitialTarget(): void {
-  const drawerModal = drawerModalRef.value;
-  if (!drawerModal) return;
-
-  const target =
-    drawerModal.querySelector<HTMLElement>("[data-modal-body]") ??
-    getFocusableElements()[0] ??
-    drawerModal;
-
-  target.focus();
-}
-
-async function scheduleInitialFocus(): Promise<void> {
-  await nextTick();
-  focusInitialTarget();
 }
 
 function onKeydown(e: KeyboardEvent): void {
@@ -81,29 +48,8 @@ function onKeydown(e: KeyboardEvent): void {
     return;
   }
 
-  if (!modalOpen.value || e.key !== "Tab") return;
-
-  const focusableElements = getFocusableElements();
-  if (focusableElements.length === 0) {
-    e.preventDefault();
-    focusInitialTarget();
-    return;
-  }
-
-  const firstElement = focusableElements[0];
-  const lastElement = focusableElements[focusableElements.length - 1];
-  const activeElement = document.activeElement;
-
-  if (e.shiftKey && activeElement === firstElement) {
-    e.preventDefault();
-    lastElement.focus();
-    return;
-  }
-
-  if (!e.shiftKey && activeElement === lastElement) {
-    e.preventDefault();
-    firstElement.focus();
-  }
+  if (!modalOpen.value) return;
+  trapTab(e);
 }
 
 onMounted(() => {
@@ -119,22 +65,17 @@ onUnmounted(() => {
   desktopMediaQuery?.removeEventListener("change", syncViewport);
 });
 
-watch(
-  modalOpen,
-  (open) => {
-    if (open) {
-      previouslyFocusedElement.value =
-        document.activeElement as HTMLElement | null;
-      document.body.style.overflow = "hidden";
-      void scheduleInitialFocus();
-      return;
-    }
+watch(modalOpen, (open) => {
+  if (open) {
+    saveFocus();
+    lockScroll();
+    void scheduleFocusFirst();
+    return;
+  }
 
-    document.body.style.overflow = "";
-    previouslyFocusedElement.value?.focus();
-    previouslyFocusedElement.value = null;
-  },
-);
+  unlockScroll();
+  restoreFocus();
+});
 </script>
 
 <template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ModalHeader from "./ModalHeader.vue";
-import { useModalAria } from "./composables";
+import { FOCUSABLE_SELECTOR, useFocusTrap, useModalAria } from "../accessibility";
 import type { ModalInitialFocus, ModalSize } from "./modal.types";
 
 const props = withDefaults(
@@ -24,33 +24,20 @@ const emit = defineEmits<{
 }>();
 
 const modalRef = ref<HTMLElement | null>(null);
-const previouslyFocusedElement = ref<HTMLElement | null>(null);
 const { titleId, dialogAria } = useModalAria();
-
-const focusableSelector = [
-  "a[href]",
-  "button:not([disabled])",
-  "textarea:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "[tabindex]:not([tabindex='-1'])",
-].join(",");
-
-function getFocusableElements(): HTMLElement[] {
-  if (!modalRef.value) return [];
-
-  return Array.from(
-    modalRef.value.querySelectorAll<HTMLElement>(focusableSelector),
-  ).filter((element) => element.offsetParent !== null);
-}
+const { getFocusableElements, trapTab, saveFocus, restoreFocus, lockScroll, unlockScroll } =
+  useFocusTrap(modalRef);
 
 function getFirstFocusableIn(containerSelector: string): HTMLElement | null {
-  const container = modalRef.value?.querySelector<HTMLElement>(containerSelector);
+  const container =
+    modalRef.value?.querySelector<HTMLElement>(containerSelector);
   if (!container) return null;
 
-  return Array.from(
-    container.querySelectorAll<HTMLElement>(focusableSelector),
-  ).find((element) => element.offsetParent !== null) ?? null;
+  return (
+    Array.from(
+      container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+    ).find((el) => el.offsetParent !== null) ?? null
+  );
 }
 
 function getInitialFocusTarget(): HTMLElement | null {
@@ -99,43 +86,20 @@ function onKeydown(e: KeyboardEvent): void {
     emit("close");
     return;
   }
-
-  if (e.key !== "Tab") return;
-
-  const focusableElements = getFocusableElements();
-  if (focusableElements.length === 0) {
-    e.preventDefault();
-    focusInitialTarget();
-    return;
-  }
-
-  const firstElement = focusableElements[0];
-  const lastElement = focusableElements[focusableElements.length - 1];
-  const activeElement = document.activeElement;
-
-  if (e.shiftKey && activeElement === firstElement) {
-    e.preventDefault();
-    lastElement.focus();
-    return;
-  }
-
-  if (!e.shiftKey && activeElement === lastElement) {
-    e.preventDefault();
-    firstElement.focus();
-  }
+  trapTab(e);
 }
 
 onMounted(() => {
-  previouslyFocusedElement.value = document.activeElement as HTMLElement | null;
+  saveFocus();
+  lockScroll();
   document.addEventListener("keydown", onKeydown);
-  document.body.style.overflow = "hidden";
   void scheduleInitialFocus();
 });
 
 onUnmounted(() => {
   document.removeEventListener("keydown", onKeydown);
-  document.body.style.overflow = "";
-  previouslyFocusedElement.value?.focus();
+  unlockScroll();
+  restoreFocus();
 });
 
 watch(
@@ -178,7 +142,7 @@ watch(
     border-faint
     outline-none
     flex
-    flex-col 
+    flex-col
     max-h-[98vh]
     max-w-[98vw];
 

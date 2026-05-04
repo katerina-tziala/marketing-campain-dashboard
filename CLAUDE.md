@@ -124,8 +124,12 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── Notification.vue # Inline status notification box — variant?: NotificationVariant (optional); showIcon? (default true); #title named slot; default slot for body; icon auto-selected per variant or BellIcon when undefined; aria role+live region by variant; spacing below notification headers; scoped flat styles
 │   │   │   ├── notification.types.ts # NotificationVariant type — 'success' | 'error' | 'warning' | 'info'
 │   │   │   └── index.ts        # Barrel — exports Notification, NotificationVariant
+│   │   ├── accessibility/      # Shared UI accessibility composables — internal to ui/, not exported via @/ui barrel
+│   │   │   ├── useFocusTrap.ts  # useFocusTrap(containerRef) → { getFocusableElements, focusFirst, scheduleFocusFirst, trapTab, saveFocus, restoreFocus, lockScroll, unlockScroll }; exports FOCUSABLE_SELECTOR constant; focusFirst targets [data-modal-body] then first focusable element then container; trapTab cycles focus within container on Tab/Shift+Tab
+│   │   │   ├── useModalAria.ts  # useModalAria() → { titleId, dialogAria } — generates stable UUID title id + computed dialog/aria-modal/aria-labelledby attrs; was in modal/composables/
+│   │   │   └── index.ts        # Barrel — exports FOCUSABLE_SELECTOR, useFocusTrap, useModalAria
 │   │   ├── drawer/             # Responsive drawer component
-│   │   │   ├── ResponsiveDrawer.vue # Reusable drawer — props: open (v-model:open), title, side? (default 'right'), closeLabel?; emits close; Escape key handling; viewport tracking via matchMedia — renders desktop push drawer content only at lg+, mobile modal content only below lg (prevents duplicate mounting and side-effect bugs); desktop push drawer (position beside main content); modal-style overlay on smaller screens; uses ModalHeader for both desktop and mobile headers; optional #icon slot, #header-actions slot, default content slot; Tailwind-only styles
+│   │   │   ├── ResponsiveDrawer.vue # Reusable drawer — props: open (v-model:open), title, side? (default 'right'), closeLabel?; emits close; uses useFocusTrap + useModalAria from ../accessibility; viewport tracking via matchMedia — renders desktop push drawer only at lg+, mobile modal only below lg; desktop push drawer (position beside main content); modal-style overlay on smaller screens; focus trap + scroll lock + Escape via useFocusTrap, applied only to mobile modal path via modalOpen computed; uses ModalHeader for both headers; optional #icon slot, #header-actions slot, default content slot; Tailwind-only styles
 │   │   │   └── index.ts        # Barrel — exports ResponsiveDrawer
 │   │   ├── charts/             # Chart.js wrapper module — reusable chart primitives only
 │   │   │   ├── register.ts     # registerCharts() function — registers all Chart.js components once; called explicitly in main.ts; includes PointElement (required for Scatter charts)
@@ -206,19 +210,20 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── MetaRow.vue     # <p> flex-wrap row — .bullet / .divider / .tiny / .info.bullet / .info.divider / .small variants; scoped .meta-row
 │   │   │   └── index.ts
 │   │   ├── modal/
-│   │   │   ├── Modal.vue       # Generic modal shell — Teleport to body; z-modal (1010); aria-modal/role="dialog"; Escape to close; backdrop opacity bg-surface-backdrop/70; uses ModalHeader for title + close button; scoped styles
+│   │   │   ├── Modal.vue       # Generic modal shell — Teleport to body; uses useFocusTrap + useModalAria from ../accessibility; initialFocus prop ('content'|'first-control'|'footer-actions'|'close') drives getInitialFocusTarget() + getFirstFocusableIn() which use FOCUSABLE_SELECTOR from composable; Escape to close; backdrop click guards closeOnBackdrop prop; scroll lock + focus save/restore via useFocusTrap on mount/unmount; scoped styles
 │   │   │   ├── ModalHeader.vue # Reusable header for modals and drawers — props: title, closeLabel?; slots: #icon (optional), #header-actions (optional); emits close; flex layout with icon support; used by Modal and ResponsiveDrawer
 │   │   │   ├── ModalBody.vue
 │   │   │   ├── ModalFooter.vue
-│   │   │   └── index.ts
+│   │   │   ├── modal.types.ts  # ModalSize ('default'|'small'|'medium'|'large'), ModalInitialFocus ('content'|'first-control'|'footer-actions'|'close')
+│   │   │   └── index.ts        # Barrel — exports Modal, ModalHeader, ModalBody, ModalFooter, ModalInitialFocus, ModalSize
 │   │   ├── card/
 │   │   │   ├── Card.vue        # Card wrapper — variants: default, secondary (quieter nested cards), raised (elevated surface + border + shadow + heading treatment); class pass-through for modifier classes
 │   │   │   ├── CardHeader.vue
 │   │   │   ├── card.types.ts   # CardVariant type — 'secondary' | 'raised'
 │   │   │   └── index.ts
 │   │   ├── dropdown/
-│   │   │   ├── Dropdown.vue    # Generic floating dropdown shell — props: open (v-model:open), anchor (HTMLElement|null), minWidth?, maxHeight?, gap?, edgeMargin?, align? ('left'|'right'); teleports backdrop (aria-hidden, z-49) + floating panel (z-50, flex row — flex-row for left, flex-row-reverse for right) to body; position snapshotted into dropdownStyle ref at open time (not reactive computed); boundary-aware fixed positioning; locks body scroll; focus management on open/close; closes on backdrop click, Escape, window resize
-│   │   │   ├── DropdownPanel.vue # Dropdown content shell — props: ariaLabel?; role="dialog"; visual container (bg-surface-raised border rounded-md shadow-lg overflow-hidden pb-2); no scroll by default
+│   │   │   ├── Dropdown.vue    # Generic floating dropdown shell — props: open (v-model:open), anchor (HTMLElement|null), minWidth?, maxHeight?, gap?, edgeMargin?, align? ('left'|'right'); teleports backdrop (aria-hidden, z-49) + floating panel (z-50 tabindex="-1", flex row — flex-row for left, flex-row-reverse for right) to body; uses useFocusTrap from ../accessibility for focusFirst (on open), trapTab (Tab/Shift+Tab cycle), lockScroll/unlockScroll; position snapshotted into dropdownStyle ref at open time; focus returns to anchor on close; closes on backdrop click, Escape, window resize
+│   │   │   ├── DropdownPanel.vue # Dropdown content shell — role="dialog" aria-modal="true"; aria-label passed via attr passthrough; visual container (bg-surface-active border rounded-md shadow-lg overflow-hidden); no scroll by default
 │   │   │   └── index.ts
 │   │   ├── table/              # Shared table component module
 │   │   │   ├── Table.vue       # Table wrapper — scrollbar-info-on-surface; striped-odd/striped-even zebra modifiers; vertical-separators opt-in modifier; table-auto on <table>
@@ -226,7 +231,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── TableGroupHeaderRow.vue # Row-only primitive — renders <tr> + projects slot content; for grouped table section headers
 │   │   │   ├── TableSelectableRow.vue  # Row-only selectable primitive — props: selected?; emits select on pointer click; hover/selected row styling; radio inside the row remains the accessible control
 │   │   │   └── index.ts        # Barrel — exports Table, TableHeader, TableGroupHeaderRow, TableSelectableRow, DataTableColumn, SortDir
-│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/*
+│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/* (accessibility/ is internal — not re-exported)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
