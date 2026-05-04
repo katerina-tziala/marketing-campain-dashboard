@@ -7,7 +7,7 @@ import type {
   ConfidenceLevel,
   ExecutionRisk,
 } from "../types";
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 import ExpectedImpactGrid from "./ExpectedImpactGrid.vue";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {

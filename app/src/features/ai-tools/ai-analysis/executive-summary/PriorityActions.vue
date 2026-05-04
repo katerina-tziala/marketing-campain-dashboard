@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardHeader } from "@/ui";
 import type { KeyPriority } from '../types';
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 
 defineProps<{
   priorities: KeyPriority[];

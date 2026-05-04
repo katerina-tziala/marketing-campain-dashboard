@@ -250,10 +250,9 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   │   ├── output.types.ts  # AI response output types — ConfidenceLevel, ExecutionRisk, HealthLabel, InsightType, RiskSeverity, GrowthOutlookLabel, PortfolioScope; Executive Summary shapes (ExecutiveInsight, KeyPriority, KeyRisk, GrowthOutlook, HealthScore, ExecutiveSummaryOutput); Budget Optimizer shapes (ExpectedImpact, BudgetRecommendation, BudgetExpansion, BudgetOptimizerOutput); response envelope types (BudgetOptimizerResponse, ExecutiveSummaryResponse, AnalysisResponse)
 │   │   │   │   │   ├── context.types.ts # Analysis input/context types — BusinessContext, AnalysisContext, AIProviderState, PortfolioContext, AiAnalysisContext
 │   │   │   │   │   └── index.ts    # Barrel — re-exports all types from output.types and context.types; all existing import paths remain valid
-│   │   │   │   ├── components/
-│   │   │   │   │   ├── index.ts                # Barrel — exports AiAnalysis
-│   │   │   │   │   └── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
-│   │   │   │   ├── ui/                         # Shared display primitives — no store reads, props-only
+│   │   │   │   ├── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
+│   │   │   │   ├── index.ts                # Barrel — exports AiAnalysis
+│   │   │   │   ├── components/             # Shared display primitives — no store reads, props-only
 │   │   │   │   │   ├── AnalysisHeader.vue      # Tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext with businessContext); emits: analyze; renders portfolio, channel, campaign metadata + portfolio period/industry (responsive: visible in modal layout only); SectionHeaderLayout + MetaRow (bullet)
 │   │   │   │   │   ├── AnalysisSection.vue     # Section layout — title prop + default slot; scoped .analysis-section
 │   │   │   │   │   ├── AnalysisResponseMeta.vue  # Response footer — props: timestamp, modelDisplayName?, notice?; MetaRow .divider.tiny.info.italic; "Generated at [time] with [model]" + disclaimer + stale-result notice

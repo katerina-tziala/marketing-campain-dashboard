@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type Tab, Tabs, FileTextIcon, SlidersIcon } from "@/ui";
-import { useAiAnalysisStore } from "../stores";
-import type { AiAnalysisType } from "../../types";
-import { BudgetOptimizationAnalysis } from "../budget-optimization";
-import { ExecutiveSummaryAnalysis } from "../executive-summary";
+import { useAiAnalysisStore } from "./stores";
+import type { AiAnalysisType } from "../types";
+import { BudgetOptimizationAnalysis } from "./budget-optimization";
+import { ExecutiveSummaryAnalysis } from "./executive-summary";
 
 const analysisStore = useAiAnalysisStore();
 
@@ -30,8 +30,7 @@ const tabs: Tab[] = [
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply pt-4
-    px-2
+  @apply
     h-full
     overflow-y-auto
     overflow-x-hidden
@@ -39,9 +38,10 @@ const tabs: Tab[] = [
     flex-col
     gap-6
     pb-2
+    pt-4
+    pl-1.5
+    pr-3
     text-sm
     text-typography;
-
-    // container query parent
 }
 </style>

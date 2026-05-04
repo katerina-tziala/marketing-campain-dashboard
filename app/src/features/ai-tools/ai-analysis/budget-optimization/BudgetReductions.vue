@@ -8,7 +8,7 @@ import type {
   ConfidenceLevel,
   ExecutionRisk,
 } from "../types";
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 import CardHeader from "@/ui/card/CardHeader.vue";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {

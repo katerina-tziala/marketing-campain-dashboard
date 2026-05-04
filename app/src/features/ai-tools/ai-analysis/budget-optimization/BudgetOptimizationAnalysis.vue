@@ -8,7 +8,7 @@ import {
   AnalysisHeader,
   AnalysisResponseMeta,
   AnalysisSection,
-} from "../ui";
+} from "../components";
 import BudgetRecommendations from "./BudgetRecommendations.vue";
 import BudgetExpansions from "./BudgetExpansions.vue";
 import BudgetReductions from "./BudgetReductions.vue";
@@ -112,7 +112,7 @@ function handleAnalyze(): void {
       </Card>
       <AnalysisSection v-if="hasNoResults" title="Summary">
         <Notification variant="info" :show-icon="true">
-          <template #title>No Optimization Needed</template>
+          <template #title>No Optimization Opportunities Identified</template>
           {{ noRecommendationMessage }}
         </Notification>
       </AnalysisSection>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import type { Channel } from "@/shared/data";
-import { Badge, Button, Dropdown, DropdownPanel, FunnelIcon } from "@/ui";
+import { Button, Chip } from "@/ui";
 import ChannelFilterChips from "./ChannelFilterChips.vue";
 
 const props = defineProps<{
   channels: Channel[];
   selectedIds: string[];
-  hiddenCount: number;
+  overflowCount: number;
+  hiddenSelectedCount: number;
 }>();
 
 const emit = defineEmits<{
@@ -16,19 +17,12 @@ const emit = defineEmits<{
 }>();
 
 const dropdownOpen = ref(false);
-const triggerButtonRef = ref<InstanceType<typeof Button>>();
-const triggerButtonEl = computed(() => triggerButtonRef.value?.getRootEl());
 
 const hasSelection = computed(() => props.selectedIds.length > 0);
 const selectedChannelCount = computed(() =>
   hasSelection.value ? props.selectedIds.length : props.channels.length,
 );
-const triggerLabel = computed(
-  () =>
-    `Open channel filter${
-      props.hiddenCount > 0 ? `, ${props.hiddenCount} selected not visible` : ""
-    }`,
-);
+const allOverflow = computed(() => props.overflowCount === props.channels.length);
 
 function toggleDropdown(): void {
   dropdownOpen.value = !dropdownOpen.value;
@@ -36,116 +30,96 @@ function toggleDropdown(): void {
 </script>
 
 <template>
-  <div class="relative shrink-0 z-[50]">
-    <Button
-      ref="triggerButtonRef"
-      variant="info-outline" 
-      icon-only
-      class="filter-trigger-button"
-      :class="{ active: dropdownOpen }"
+  <div class="relative shrink-0">
+    <!-- Backdrop -->
+    <div
+      v-if="dropdownOpen"
+      class="fixed inset-0 z-40"
+      aria-hidden="true"
+      @click="dropdownOpen = false"
+    />
+
+    <Chip
+      :active="dropdownOpen || hiddenSelectedCount > 0"
       :aria-expanded="dropdownOpen"
-      :aria-pressed="hasSelection"
-      :aria-label="triggerLabel"
+      :aria-haspopup="true"
+      :aria-label="`${overflowCount} more channels${hiddenSelectedCount > 0 ? `, ${hiddenSelectedCount} selected` : ''}`"
+      class="more-chip"
       @click="toggleDropdown"
       @keydown.escape.prevent="dropdownOpen = false"
     >
-      <span class="icon-wrapper">
-        <FunnelIcon class="!text-lg" />
-      </span>
-    </Button>
+      <template v-if="allOverflow">{{ channels.length }} channels</template><template v-else>+{{ overflowCount }} more</template><template v-if="hiddenSelectedCount > 0"> · {{ hiddenSelectedCount }}</template>
+    </Chip>
 
-    <Badge
-      v-if="hiddenCount > 0 && !dropdownOpen"
-      variant="info"
-      size="small"
-      class="selected-filters-badge"
-      >+{{ hiddenCount }}</Badge
+    <!-- Panel — absolutely positioned relative to the trigger wrapper -->
+    <div
+      v-if="dropdownOpen"
+      class="panel"
+      role="dialog"
+      aria-label="Channel filters"
+      @keydown.escape="dropdownOpen = false"
     >
-
-    <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonEl" :gap="2">
-      <DropdownPanel
-        aria-label="Channel filters"
-        class="min-w-32 max-w-md pb-2.5 mr-6 max-h-[200px]"
-      >
-        <div class="dropdown-header">
-          <p class="dropdown-title">
-            <span class="text-sm">Channels</span>
-            <span class="selection-count"
-              >{{ selectedChannelCount }} / {{ channels.length }} selected</span
-            >
-          </p>
-          <Button
-            v-if="hasSelection"
-            variant="info-text-only"
-            size="small"
-            @click="emit('clear')"
-          >
-            Show all
-          </Button>
-        </div>
-
-        <div
-          class="scrollbar-info-on-surface dropdown-content max-h-full overflow-auto"
+      <div class="panel-header">
+        <p class="panel-title">
+          <span class="text-sm">Channels</span>
+          <span class="selection-count">{{ selectedChannelCount }} / {{ channels.length }} selected</span>
+        </p>
+        <Button
+          v-if="hasSelection"
+          variant="info-text-only"
+          size="small"
+          @click="emit('clear')"
         >
-          <ChannelFilterChips
-            layout="plain"
-            :channels="channels"
-            :total-campaigns="0"
-            :selected-ids="selectedIds"
-            :show-all="false"
-            @toggle="emit('toggle', $event)"
-          />
-        </div>
-      </DropdownPanel>
-    </Dropdown>
+          Show all
+        </Button>
+      </div>
+
+      <div class="scrollbar-info-on-surface panel-content">
+        <ChannelFilterChips
+          layout="plain"
+          :channels="channels"
+          :total-campaigns="0"
+          :selected-ids="selectedIds"
+          :show-all="false"
+          @toggle="emit('toggle', $event)"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.filter-trigger-button {
-  @apply max-h-8 max-w-8 min-h-8 min-w-8 p-0 mt-0.5;
-  > .icon-wrapper {
-    @apply inline-block w-full h-full flex items-center justify-center;
-  }
-
-  &.active {
-    @apply bg-info-darker border-info-darker text-info text-typography drop-shadow-sm;
-  }
+.more-chip {
+  @apply mt-0.5;
 }
 
-.selected-filters-badge {
-  @apply absolute -top-2.5 -right-2.5 min-w-6 max-h-6;
-
-  &:deep(.badge-body) {
-    @apply font-bold;
-  }
+.panel {
+  @apply absolute right-0 top-full mt-1.5 z-50
+    min-w-32 max-w-[89vw] w-max
+    max-h-[240px]
+    flex flex-col
+    bg-surface-raised border rounded-md shadow-lg overflow-hidden;
 }
 
-.dropdown-header {
+.panel-header {
   @apply sticky top-0
     flex items-center justify-between
     px-3 py-2
     bg-surface-elevated
     border-b
-    h-11;
+    h-11
+    shrink-0;
 }
 
-.dropdown-title {
-  @apply flex
-    items-center
-    gap-2
-    text-xs
-    font-semibold
-    text-typography-muted
-    capitalize
-    tracking-wide;
+.panel-title {
+  @apply flex items-center gap-2 text-xs font-semibold text-typography-muted capitalize tracking-wide;
 }
 
 .selection-count {
   @apply text-typography-subtle font-medium normal-case whitespace-nowrap;
 }
 
-// .dropdown-content {
-//   @apply max-h-[320px] overflow-y-auto;
-// }
+.panel-content {
+  @apply flex-1 min-h-0 overflow-y-auto py-1.5 px-1.5;
+}
 </style>

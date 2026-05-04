@@ -343,3 +343,53 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Solid colors for D, gradient for bars — distinguishes the two shapes visually; using the gradient on the D would make the whole mark feel like one undifferentiated blob
 - Bottom-aligned D — matching the bar baseline makes the two shapes read as a single composed mark rather than floating independently
 - Bars grouped in `<g>` — keeps template readable and makes the shared fill intent explicit
+
+
+## [#614] Restructure ai-analysis folder — move AiAnalysis.vue to root, rename ui/ to components/
+**Type:** refactor
+
+**Summary:** Moved `AiAnalysis.vue` from `ai-analysis/components/` to `ai-analysis/` root and renamed `ai-analysis/ui/` to `ai-analysis/components/` to match conventional Vue feature folder naming.
+
+**Brainstorming:** `AiAnalysis.vue` is the public entry point for the entire ai-analysis sub-feature — not a reusable lower-level component — so keeping it in a `components/` subfolder misrepresented its role. Moving it to the root gives it the same prominence as the feature barrel (`index.ts`). The `ui/` folder name was non-standard; `components/` is the conventional name for presentational primitives within a feature. With `AiAnalysis.vue` promoted, `components/` could cleanly hold only the shared display primitives (AnalysisHeader, AnalysisSection, AnalysisResponseMeta, AnalysisState).
+
+**Prompt:** Move AiAnalysis.vue from ai-analysis/components/ to the ai-analysis/ root and rename ai-analysis/ui/ to ai-analysis/components/. Create an index.ts at ai-analysis/ root exporting AiAnalysis. Update all imports across the codebase accordingly. Write the log.
+
+**What changed:**
+- `ai-analysis/AiAnalysis.vue` — created at root; imports updated to use relative `./stores`, `./budget-optimization`, `./executive-summary`
+- `ai-analysis/index.ts` — new barrel exporting `AiAnalysis`
+- `ai-analysis/components/` — renamed from `ui/`; now contains AnalysisHeader, AnalysisSection, AnalysisResponseMeta, AnalysisState + updated index.ts
+- `ai-analysis/components/AiAnalysis.vue` + old `ai-analysis/components/index.ts` (AiAnalysis-only barrel) — deleted
+- `ai-analysis/ui/` folder — deleted entirely
+- `budget-optimization/BudgetOptimizationAnalysis.vue`, `BudgetRecommendations.vue`, `BudgetExpansions.vue`, `BudgetReductions.vue` — `../ui` → `../components`
+- `executive-summary/ExecutiveSummaryAnalysis.vue`, `GrowthOutlook.vue`, `PriorityActions.vue`, `KeyRisks.vue`, `Insights.vue`, `HealthStatus.vue` — `../ui` → `../components`
+- `ai-tools/components/AiTools.vue` — import updated from `../ai-analysis/components` → `../ai-analysis`
+- `CLAUDE.md` — architecture section updated to reflect new structure
+
+**Key decisions & why:**
+- `AiAnalysis.vue` at root + `index.ts` barrel — mirrors the pattern of other sub-features (e.g., `ai-connection/`) where the top-level entry point sits at the folder root, not buried in a `components/` subfolder
+- `ui/` → `components/` rename — `ui/` is ambiguous and conflicts with the top-level `@/ui` design system; `components/` is unambiguous and matches the Vue ecosystem convention for feature-internal presentational building blocks
+
+
+## [#615] Refactor channel filters — inline +N more trigger, smart visibility, multi-row support
+**Type:** refactor
+
+**Summary:** Replaced the funnel-button + badge + teleported Dropdown overflow trigger with an inline `+N more` Chip and absolute-positioned panel; overhauled overflow measurement to support 1 or 2 chip rows based on container width; and refined strip visibility so selected chips from the dialog window are swapped into the strip, with correct `+N more` count and hidden-selection badge at all times.
+
+**Brainstorming:** The original trigger had persistent alignment bugs (teleported fixed panel requires viewport math that diverges from actual panel width). Switching to `absolute right-0 top-full` eliminates this entirely. Probe-based overflow detection was removed in favour of direct `offsetTop` measurement on the visible strip — probes measured full container width and didn't account for the `+N more` chip. Multi-row support was restored by grouping chips into rows by `offsetTop` and comparing to `allowedRows` (1 or 2 based on parent container width ≥ 540 px). Strip visibility was overhauled: instead of sorting selected-first, the strip starts with the first N chips from original order, then swaps in any selected chips from beyond that window (replacing unselected chips from the end of firstN), keeping total count exactly at `maxVisible`. Sorting selected-first only applies when the last toggle came from the dialog. `overflowCount` and `hiddenSelectedCount` are both derived from `visibleChannels` in the parent so the dialog always receives accurate values — the old assumption (last N channels = hidden) broke once non-contiguous channels became visible.
+
+**Prompt:** Replace the funnel button + badge + Dropdown overflow trigger in ChannelFiltersDialog with an inline +N more Chip with an absolute-positioned panel. Fix overflow measurement to use direct offsetTop on the visible strip. Restore 2-row chip support on wider containers. Implement smart strip visibility: first N by original order, swap in selected chips from beyond the window, sort selected-first only when toggled from dialog. Fix +N more count and hidden-selected badge. Write the log.
+
+**What changed:**
+- `ChannelFilters.vue` — removed probe layer; `rootRef` on wrapper div observed by ResizeObserver; `measure()` groups chips by `offsetTop` row, reads `rootRef.clientWidth` to set `allowedRows` (1 or 2, breakpoint 540 px); `hasOverflow` not reset at start (keeps dialog mounted); `maxVisible` set to `visibleChips.length − 1`; `visibleChannels` computed: firstN from original order + extraSelected swapped in for unselected from end of firstN (total stays at `maxVisible`), sorted by original order or selected-first when `dialogToggled`; `overflowCount` and `hiddenSelectedCount` both computed from `visibleChannels`; `toggleFromStrip` clears `dialogToggled`, `toggleFromDialog` sets it; `clear()` + channels watcher also clear `dialogToggled`; `All` chip always visible, `allReadonly="isAllActive"`; `:single-row="hasOverflow && allowedRows === 1"`; `ChannelFiltersDialog` receives original `channels` (no reordering in dialog) and `hiddenSelectedCount` prop
+- `ChannelFiltersDialog.vue` — replaced Button + Badge + Dropdown + DropdownPanel with Chip trigger + `fixed inset-0 z-40` backdrop + `absolute right-0 top-full` panel; `hiddenSelectedCount` now a prop (removed local `hiddenChannels` + computed); `allOverflow` computed (`overflowCount === channels.length`); chip label: "N channels" when allOverflow, "+N more" otherwise; `· M` badge driven by `hiddenSelectedCount` prop; panel: `flex flex-col`, header `shrink-0`, content `flex-1 min-h-0 overflow-y-auto`
+- `ChannelFilterChips.vue` — `maxVisible?: number` prop removed from template usage (parent now passes the exact visible set via `channels`); `allReadonly` threads through to All chip
+- `ChannelFilters2.vue` — simple flat chip strip added as visual comparison reference; commented out in `CampaignPerformanceView`
+- `Dropdown.vue` — added `align?: 'left' | 'right'` prop for future use
+
+**Key decisions & why:**
+- Absolute positioning over teleported fixed — `absolute right-0 top-full` aligns panel right edge to trigger right edge inherently; fixed positioning requires viewport math that diverges once panel width differs from trigger width
+- `hasOverflow` not reset at start of `measure()` — resetting destroys `ChannelFiltersDialog` via `v-if`, closing an open dropdown mid-measurement; only `maxVisible` is reset
+- `visibleChannels` capped at `maxVisible` via swap — adding extra chips without removing would make the strip physically overflow its measured capacity and produce wrong `overflowCount`; swapping unselected-from-end preserves count and original leading order
+- `hiddenSelectedCount` computed in parent from `visibleChannels` — the dialog's old slice-from-end assumption broke once non-contiguous channels (extraSelected) appeared in the strip
+- `dialogToggled` flag distinguishes strip vs dialog toggles — selected-first sort only makes sense when the user just picked from the dialog; strip interaction should preserve original order
+- `allowedRows` from parent `clientWidth` — ResizeObserver already observes `rootRef`, so the value updates on every resize without a separate watcher; 540 px threshold matches the layout breakpoint where 2-row strips are comfortable

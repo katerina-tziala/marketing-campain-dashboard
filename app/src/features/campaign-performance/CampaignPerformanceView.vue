@@ -59,7 +59,7 @@ function clearChannelFilters(): void {
 </script>
 
 <template>
-  <div class="campaign-performance">
+  <div class="scrollbar-on-surface campaign-performance">
     <section class="campaign-performance-header">
       <div class="campaign-performance-header-container">
         <CampaignPerformanceHeader
@@ -74,7 +74,6 @@ function clearChannelFilters(): void {
           @ai-click="emit('aiClick')"
         />
         <ChannelFilters
-          class="mt-1.5"
           :channels="[...store.portfolioChannels.values()]"
           :selected-ids="store.selectedChannelsIds"
           @toggle="toggleChannelFilter"
@@ -84,7 +83,7 @@ function clearChannelFilters(): void {
     </section>
     <div class="scrollbar-on-surface campaign-performance-view">
       <Kpis
-        class="kpi-grid"
+        class="mx-auto max-w-7xl"
         :kpis="store.portfolioAnalysis.portfolio"
         :portfolio-kpis="
           store.selectedChannelsIds.length > 0
@@ -101,14 +100,16 @@ function clearChannelFilters(): void {
       </div>
       <RoiVsBudgetScaling
         :campaigns="store.filteredCampaigns"
-        :median-campaign-roi="store.portfolioAnalysis.portfolio.medianCampaignRoi"
+        :median-campaign-roi="
+          store.portfolioAnalysis.portfolio.medianCampaignRoi
+        "
         :highlight-campaigns-by-quadrant="roiBudgetScalingHighlights"
         :is-filtered="store.selectedChannelsIds.length > 0"
         class="mx-auto max-w-7xl w-full"
       />
-      <Card class="max-h-full mx-auto max-w-7xl w-full"> 
+      <Card class="max-h-full mx-auto max-w-7xl w-full">
         <h3 class="text-base">Campaign Details</h3>
-        <CampaignTable :campaigns="store.filteredCampaigns" /> 
+        <CampaignTable :campaigns="store.filteredCampaigns" />
       </Card>
     </div>
   </div>
@@ -118,67 +119,52 @@ function clearChannelFilters(): void {
 .campaign-performance {
   @apply w-full
     h-full
-    overflow-hidden
+    overflow-x-hidden
+    overflow-y-auto
     grid
     grid-rows-[min-content_1fr]
-    pt-4
+    py-4
+    pl-4
+    pr-2.5
     gap-y-4;
+  scrollbar-gutter: stable;
+
+  @include cq-up(cq-768, "main") {
+    @apply overflow-hidden px-0;
+    scrollbar-gutter: auto;
+  }
 }
 
 .campaign-performance-header {
-  @apply w-full px-6 flex items-center justify-center;
+  @apply w-full flex items-center justify-center;
 
   .campaign-performance-header-container {
     @apply w-full mx-auto max-w-7xl flex flex-col gap-3;
   }
+
+  @include cq-up(cq-768, "main") {
+    @apply px-4;
+  }
 }
 
 .campaign-performance-view {
-  @apply overflow-y-auto w-full flex
+  @apply overflow-y-auto 
+    w-full
+    h-fit
+    flex
     flex-col
     gap-5
-    px-6 
     pb-8;
+  scrollbar-gutter: auto;
+
+  @include cq-up(cq-768, "main") {
+    @apply overflow-y-auto h-full  pl-4
+    pb-0
+    pr-2.5;
+    scrollbar-gutter: stable;
+  }
 
   @include cq-container("campaign-performance-view");
-}
-
-.kpi-grid {
-  @apply w-full mx-auto max-w-7xl grid grid-cols-1 gap-5;
-
-  @include cq-up(cq-540, "campaign-performance-view") {
-    @apply grid-cols-2;
-    :deep(.kpi-card:nth-of-type(3)) {
-      @apply col-span-2;
-    }
-  }
-
-  @include cq-up(cq-640, "campaign-performance-view") {
-    @apply grid-cols-6;
-
-    :deep(.kpi-card:nth-of-type(1)),
-    :deep(.kpi-card:nth-of-type(2)) {
-      @apply col-span-3;
-    }
-
-    :deep(.kpi-card:nth-of-type(3)),
-    :deep(.kpi-card:nth-of-type(4)),
-    :deep(.kpi-card:nth-of-type(5)) {
-      @apply col-span-2;
-    }
-  }
-
-  @include cq-up(cq-1024, "campaign-performance-view") {
-    @apply grid-cols-5;
-
-    :deep(.kpi-card:nth-of-type(1)),
-    :deep(.kpi-card:nth-of-type(2)),
-    :deep(.kpi-card:nth-of-type(3)),
-    :deep(.kpi-card:nth-of-type(4)),
-    :deep(.kpi-card:nth-of-type(5)) {
-      @apply col-span-1;
-    }
-  }
 }
 
 .charts-grid {

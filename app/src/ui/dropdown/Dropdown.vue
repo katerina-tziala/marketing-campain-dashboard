@@ -13,6 +13,7 @@ const props = defineProps<{
   maxHeight?: number
   gap?: number
   edgeMargin?: number
+  align?: 'left' | 'right'
 }>()
 
 const emit = defineEmits<{
@@ -32,13 +33,16 @@ const dropdownStyle = computed(() => {
   const maxHeight = props.maxHeight ?? DROPDOWN_MAX_HEIGHT
   const edgeMargin = props.edgeMargin ?? DROPDOWN_EDGE_MARGIN
 
-  const left = Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)
   const fitsBelow = rect.bottom + gap + maxHeight <= window.innerHeight
+  const vertical = fitsBelow
+    ? { top: `${rect.bottom + gap}px` }
+    : { bottom: `${window.innerHeight - rect.top + gap}px` }
 
-  if (fitsBelow) {
-    return { top: `${rect.bottom + gap}px`, left: `${left}px` }
-  }
-  return { bottom: `${window.innerHeight - rect.top + gap}px`, left: `${left}px` }
+  const horizontal = props.align === 'right'
+    ? { right: `${window.innerWidth - rect.right}px` }
+    : { left: `${Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)}px` }
+
+  return { ...vertical, ...horizontal }
 })
 
 function focusFirstInPanel(): void {

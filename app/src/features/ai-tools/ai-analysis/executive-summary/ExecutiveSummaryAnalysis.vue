@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { Card } from "@/ui";
 import { useAiAnalysisStore } from "../stores";
-import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../ui";
+import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../components";
 import GrowthOutlook from "./GrowthOutlook.vue";
 import HealthStatus from "./HealthStatus.vue";
 import Insights from "./Insights.vue";

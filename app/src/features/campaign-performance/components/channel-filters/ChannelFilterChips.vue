@@ -14,6 +14,7 @@ const props = withDefaults(
     allActive?: boolean;
     allReadonly?: boolean;
     singleRow?: boolean;
+    maxVisible?: number;
   }>(),
   {
     variant: "visible",
@@ -23,6 +24,7 @@ const props = withDefaults(
     allActive: false,
     allReadonly: false,
     singleRow: false,
+    maxVisible: undefined,
   },
 );
 
@@ -34,6 +36,12 @@ const emit = defineEmits<{
 const rootRef = ref<HTMLElement>();
 
 const isProbe = computed(() => props.variant === "probe");
+
+const visibleChannels = computed(() =>
+  props.maxVisible !== undefined
+    ? props.channels.slice(0, props.maxVisible)
+    : props.channels,
+);
 
 function isSelected(id: string): boolean {
   return props.selectedIds.includes(id);
@@ -97,7 +105,7 @@ defineExpose({
       <span class="channel-chip-count">{{ totalCampaigns }}</span>
     </Chip>
     <Chip
-      v-for="channel in channels"
+      v-for="channel in visibleChannels"
       :key="channel.id"
       :data-channel-id="channel.id"
       :active="isSelected(channel.id)"
@@ -121,7 +129,7 @@ defineExpose({
   }
 
   &.plain {
-    @apply gap-2 p-3 max-h-none;
+    @apply gap-2 max-h-none;
   }
 
   max-height: var(--channel-filter-max-height, 4.8rem);

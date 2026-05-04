@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { BadgeVariant } from "@/ui";
 import { Badge, Card } from "@/ui";
 import type { BudgetExpansion, ConfidenceLevel, ExecutionRisk } from "../types";
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 import ExpectedImpactGrid from "./ExpectedImpactGrid.vue";
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {

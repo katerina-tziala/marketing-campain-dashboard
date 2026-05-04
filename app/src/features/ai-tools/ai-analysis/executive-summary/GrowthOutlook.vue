@@ -2,7 +2,7 @@
 import type { BadgeVariant } from "@/ui";
 import { Badge, Card } from "@/ui";
 import type { GrowthOutlook, GrowthOutlookLabel } from "../types";
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 
 defineProps<{
   outlook: GrowthOutlook;

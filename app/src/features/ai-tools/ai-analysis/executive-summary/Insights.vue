@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { BadgeVariant } from "@/ui";
 import { Badge, Card } from "@/ui";
 import type { ExecutiveInsight, InsightType } from "../types";
-import { AnalysisSection } from "../ui";
+import { AnalysisSection } from "../components";
 
 const props = defineProps<{
   insights: ExecutiveInsight[];

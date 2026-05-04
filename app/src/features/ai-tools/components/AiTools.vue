@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useAiConnectionStore } from '../ai-connection/stores'
 import { AiConnectionForm, AiConnectedStatus } from '../ai-connection/components'
-import { AiAnalysis } from '../ai-analysis/components'
+import { AiAnalysis } from '../ai-analysis'
 
 const props = defineProps<{
   panelOpen: boolean
