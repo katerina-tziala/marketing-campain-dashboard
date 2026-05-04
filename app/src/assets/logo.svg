@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 85 48" aria-hidden="true">
+  <defs>
+    <linearGradient id="upload-bars-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="38" y2="0">
+      <stop offset="0%"   stop-color="rgb(20 184 166)" />
+      <stop offset="25%"  stop-color="rgb(2 132 199)" />
+      <stop offset="45%"  stop-color="rgb(56 189 248)" />
+      <stop offset="58%"  stop-color="rgb(99 102 241)" />
+      <stop offset="68%"  stop-color="rgb(129 140 248)" />
+      <stop offset="96%"  stop-color="rgb(79 70 229)" />
+    </linearGradient>
+    <mask id="d-gap">
+      <rect x="0" y="0" width="85" height="48" fill="white" />
+      <rect x="41" y="24.5" width="22" height="3" fill="black" transform="rotate(-45 41 26)" />
+      <rect x="41" y="24.5" width="22" height="3" fill="black" transform="rotate(25 41 26)" />
+    </mask>
+  </defs>
+  <g fill="url(#upload-bars-gradient)">
+    <path d="M0,48 L0,3 Q0,0 3,0 L7,0 Q10,0 10,3 L10,48 Z" />
+    <path d="M14,48 L14,24 Q14,21 17,21 L21,21 Q24,21 24,24 L24,48 Z" />
+    <path d="M28,48 L28,3 Q28,0 31,0 L35,0 Q38,0 38,3 L38,48 Z" />
+  </g>
+  <path d="M41,26 L41,3        A22,22 0 0 1 56.56,10.44 Z" fill="rgb(56 189 248)"  stroke="rgb(56 189 248)"  stroke-width="0.5" mask="url(#d-gap)" />
+  <path d="M41,26 L56.56,10.44 A22,22 0 0 1 60.94,35.30 Z" fill="rgb(230 28 160)" stroke="rgb(230 28 160)" stroke-width="0.5" mask="url(#d-gap)" />
+  <path d="M41,26 L60.94,35.30 A22,22 0 0 1 41,48        Z" fill="rgb(99 102 241)" stroke="rgb(99 102 241)" stroke-width="0.5" mask="url(#d-gap)" />
+</svg>

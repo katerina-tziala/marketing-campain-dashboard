@@ -322,3 +322,24 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `showAmountSign` prop not a computed — the sign is a display decision driven by the parent's intent (expansions = investment, so + is meaningful); the grid itself does not know whether to show it
 - Remove global h5 rule — card h5s are the only use site; scoping prevents accidental bleed onto h5s rendered outside cards (e.g., section headings in other features)
 - `bg-surface-hover` for raised cards — `bg-surface-raised` was visually indistinct from the surrounding surface in practice; `bg-surface-hover` provides a subtle but readable lift
+
+
+## [#613] Add app logo SVG to empty state placeholder
+**Type:** feature
+
+**Summary:** Created an inline SVG logo mark for the empty state — three bottom-aligned gradient bars (representing a bar chart) beside a D-shaped half-pie (representing a donut/pie chart), forming a combined data-analytics identity mark.
+
+**Brainstorming:** The empty state previously used a generic FileTextIcon. The goal was a custom mark that communicates "marketing analytics" at a glance. The natural pairing of a bar chart and a pie chart achieves this. The bar chart uses a continuous left-to-right gradient (accent→info→info-light→primary→primary-light) across all three bars using `gradientUnits="userSpaceOnUse"` so the sweep treats all bars as one shape. The D-shape is a semicircle with its flat edge on the left, split into three unequal pie slices using a `mask` with two rotated gap rectangles — this gives uniform-width gaps from center to arc edge. The D slices use solid colors (primary-light, secondary, primary) rather than the gradient to visually distinguish the two shapes. Several approaches to the pie slices were tried: individual wedge paths with angular gaps (gaps narrowed toward center), clipPath bands (looked striped not pie-like), and background-color overlay rects (cut through bars). The mask approach with a single full D path was the cleanest. Bar spacing reduced from 10px to 6px gaps; D positioned 6px from the last bar; D bottom-aligned to y=48 matching the bars.
+
+**Prompt:** Add an inline SVG logo mark to `UploadDataPlaceholder.vue` above the empty state heading. The mark should show three vertical bars (like a bar chart) with rounded tops and flat bottoms, bottom-aligned, using a left-to-right gradient sweep across all three bars together (accent → info → info-light → primary → primary-light, using gradientUnits="userSpaceOnUse"). Next to the bars, add a D-shape (semicircle with flat left edge) split into three unequal pie slices using a mask — the mask should contain two rotated rectangles starting from the circle center so the gaps are uniform width from center to edge. The D slices should use solid colors: primary-light (top), secondary/pink (middle), primary (bottom). Bottom-align the D to match the bars. Keep bars and D close together. Size the SVG at w-16 via a scoped class. Remove the FileTextIcon that was previously used.
+
+**What changed:**
+- `features/data-transfer/components/UploadDataPlaceholder.vue` — replaced `FileTextIcon` with inline SVG logo mark; SVG viewBox 92×48; three bar paths grouped under shared gradient fill; D-shape rendered as three colored slice paths sharing a `mask` with two rotated gap rects; `linearGradient` uses `gradientUnits="userSpaceOnUse"` spanning x=0→42; bars at x=0-10, x=16-26, x=32-42 (6px gaps); D center at (48,26), r=22, bottom at y=48; gap rects rotate at -20° and +40° around center for unequal slices; `.upload-bars` scoped class sets `w-16 h-auto`
+- `features/data-transfer/components/UploadDataForm.vue` — SVG was briefly added here during exploration then removed; final home is `UploadDataPlaceholder.vue` only
+
+**Key decisions & why:**
+- `gradientUnits="userSpaceOnUse"` — percentage-based gradients apply per element bounding box, restarting the sweep on each bar; userSpaceOnUse makes all bars sample from one continuous coordinate-space sweep
+- Mask over clipPath for D slices — clipPath + horizontal bands produced stripes; mask with rotated rects from center produces proper radiating pie gaps of uniform width
+- Solid colors for D, gradient for bars — distinguishes the two shapes visually; using the gradient on the D would make the whole mark feel like one undifferentiated blob
+- Bottom-aligned D — matching the bar baseline makes the two shapes read as a single composed mark rather than floating independently
+- Bars grouped in `<g>` — keeps template readable and makes the shared fill intent explicit

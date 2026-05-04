@@ -1,4 +1,4 @@
-import type { AiAnalysisContext } from '@/features/ai-tools/ai-analysis/types'
+import type { AiAnalysisContext } from '../../ai-analysis/types'
 
 import { getPromptRuleGroup } from '../utils'
 import { OUTPUT_REQUIREMENTS_RULES } from '../constants'

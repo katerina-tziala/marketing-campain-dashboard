@@ -1,4 +1,4 @@
-import type { AiModelCandidate } from '@/features/ai-tools/providers/types'
+import type { AiModelCandidate } from '../../providers/types'
 import { getPromptRuleGroup } from '../utils'
 import { OUTPUT_REQUIREMENTS_RULES } from '../constants'
 import { ROLE_AND_TASK_RULES, EVALUATION_RULES, OUTPUT_SCHEMA } from './config'

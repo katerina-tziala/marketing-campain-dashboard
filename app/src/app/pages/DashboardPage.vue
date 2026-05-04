@@ -16,7 +16,7 @@ import {
   SplitPaneLayout,
   UploadIcon,
 } from "@/ui";
-
+import logoUrl from "@/assets/logo.svg";
 const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
@@ -33,10 +33,17 @@ const {
 <template>
   <div class="dashboard-shell">
     <header class="dashboard-header">
+      <img
+        :src="logoUrl"
+        alt="Marketing Intelligence Dashboard Logo"
+        width="69"
+        height="auto"
+        class="inline-block -mr-2"
+      />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
-      <div class="shrink-0 mt-1 inline-action-float min-h-9">
+      <div class="shrink-0 mt-1 min-h-9">
         <Button
           v-if="hasCampaigns"
           variant="outline"
@@ -97,8 +104,8 @@ const {
 .dashboard-header {
   @apply flex
     items-center
-    justify-between
-    gap-4
+    justify-start
+    gap-x-2
     shrink-0
     px-6
     py-2.5
@@ -111,6 +118,7 @@ const {
 
 .dashboard-title {
   @apply font-extrabold
+   grow
     m-0;
 
   .title-wrapper {
