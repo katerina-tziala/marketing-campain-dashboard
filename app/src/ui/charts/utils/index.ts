@@ -1,1 +1,1 @@
-export { withHexAlpha } from './color'
+export { withAlpha } from './color'

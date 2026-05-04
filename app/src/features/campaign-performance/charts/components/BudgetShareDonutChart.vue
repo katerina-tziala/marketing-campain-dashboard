@@ -7,7 +7,7 @@ import {
   type DonutLegendLabelFilter,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
-  withHexAlpha,
+  withAlpha,
 } from "@/ui";
 import {
   CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
@@ -43,7 +43,7 @@ function getBudgetShare(budget: number): number {
   return props.kpis.totalBudget > 0 ? budget / props.kpis.totalBudget : 0;
 }
 
-function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
+function getSegmentAlpha(item: BudgetShareDonutItem, index: number): number {
   if (index < CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT) {
     return CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA;
   }
@@ -54,7 +54,7 @@ function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
 }
 
 function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
-  return withHexAlpha(item.color, getSegmentAlpha(item, index));
+  return withAlpha(item.color, getSegmentAlpha(item, index));
 }
 
 function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {

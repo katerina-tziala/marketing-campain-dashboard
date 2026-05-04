@@ -692,3 +692,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `border-white/20` works universally against any colored swatch background and avoids the same-hue-indistinguishable problem entirely
+
+
+## [#633] Unify chart color format to rgb/rgba
+**Type:** refactor
+
+**Summary:** Replaced `withHexAlpha` with a format-aware `withAlpha(color, opacity: number)` utility, converted all campaign-performance chart colors from hex to `rgb()`, standardized all quadrant border colors to `rgb()`, and updated donut alpha constants from hex strings to numeric 0–1 values.
+
+**Brainstorming:** Two problems existed in parallel: (1) the `withHexAlpha` utility was a string-concatenation hack that only worked with 6-digit hex input — passing an `rgb()` value produced invalid CSS; (2) campaign-performance chart colors mixed formats (hex, rgba with no spaces, rgba with spaces, bare rgb, hex borders inside rgba objects). The solution is a single format-aware utility and a consistent `rgb()`/`rgba()` baseline for all colors outside the theme palette. The chart theme palette (51 colors) was left as-is per the user's instruction. The new `withAlpha` handles both hex and rgb input, so the donut chart continues to work with palette hex colors without any change to the theme.
+
+**Prompt:** Leave chart colors in theme as is for now. Proceed with unifying color usage — we should use rgb values only.
+
+**What changed:**
+- `ui/charts/utils/color.ts` — replaced `withHexAlpha(color, alpha: string)` with `withAlpha(color, opacity: number)`; handles `rgb()`/`rgba()` and 6-digit hex input; outputs `rgba(r, g, b, opacity)`
+- `ui/charts/utils/index.ts` — updated barrel export from `withHexAlpha` to `withAlpha`
+- `features/campaign-performance/charts/config/campaign-performance-chart-colors.ts` — converted `CAMPAIGN_PERFORMANCE_CHART_COLORS` values from hex to `rgb()`; normalized all quadrant rgba values to consistent spacing; converted two stray hex border values (`#eab308`, `#6366f1`) to `rgb()`; normalized `rgba(239,68,68,1)` to `rgb(239, 68, 68)`; changed `CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA` from `'bf'` to `0.75`; updated `getCampaignPerformanceChartFillColor` to use `withAlpha`; import changed from `@/ui/charts` to `@/ui`
+- `features/campaign-performance/charts/config/campaign-performance-chart-styles.ts` — converted donut alpha constants from hex strings to numbers: `'ff'` → `1`, `'cc'` → `0.8`, `'85'` → `0.52`
+- `features/campaign-performance/charts/components/BudgetShareDonutChart.vue` — replaced `withHexAlpha` import with `withAlpha`; updated `getSegmentAlpha` return type from `string` to `number`; updated `getSegmentColor` call
+
+**Key decisions & why:**
+- `withAlpha` handles hex input too (not just rgb) — the donut chart uses 51-color palette hex values that we're not changing, so the utility must stay backward-compatible
+- Numeric opacity (0–1) instead of hex strings — cleaner API, standard across CSS and JS color libraries, no mental hex-to-decimal conversion needed
+- `0.75` for fill alpha (`0xbf` = 191/255 ≈ 0.749) — rounded to 2 decimal places, negligible visual difference
+- `0.52` for dim alpha (`0x85` = 133/255 ≈ 0.522) — rounded consistently

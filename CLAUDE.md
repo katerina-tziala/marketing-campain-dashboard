@@ -155,8 +155,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── createQuadrantBackgroundPlugin.ts # Generic quadrant background plugin factory — caller provides backgrounds[] + divider style; no built-in colors
 │   │   │   │   └── index.ts          # Barrel — exports createQuadrantBackgroundPlugin
 │   │   │   ├── utils/          # Shared chart utilities
-│   │   │   │   ├── color.ts          # withHexAlpha(hex, alpha) → rgba string — generic hex-to-rgba composer
-│   │   │   │   └── index.ts          # Barrel — exports withHexAlpha
+│   │   │   │   ├── color.ts          # withAlpha(color, opacity) → rgba string — accepts rgb() or 6-digit hex; applies numeric opacity (0–1)
+│   │   │   │   └── index.ts          # Barrel — exports withAlpha
 │   │   │   └── index.ts        # Barrel — re-exports components/*, composables/*, config/*, types/*, plugins/*, utils/*, register
 │   │   ├── icons/              # Inline SVG icon components
 │   │   │   ├── AlertCircleIcon.vue
@@ -364,7 +364,7 @@ app/                        # Vue 3 + Vite project
 │   │       │   └── useBudgetShareChartItems.ts # useCampaignBudgetShareDonutItems(campaigns, kpis) → BudgetShareDonutItem[] — normalizes campaign budget data with assigned colors
 │   │       ├── config/
 │   │       │   ├── index.ts
-│   │       │   ├── campaign-performance-chart-colors.ts # CAMPAIGN_PERFORMANCE_CHART_COLORS (budget/revenue/positiveGap/negativeGap + DASHBOARD_ROI_BUDGET_SCALING_COLORS for quadrants); CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA; getDashboardChartFillColor(hex, alpha) using withHexAlpha
+│   │       │   ├── campaign-performance-chart-colors.ts # CAMPAIGN_PERFORMANCE_CHART_COLORS (budget/revenue/positiveGap/negativeGap as rgb()); CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS (all rgba/rgb); CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA (0.75); getCampaignPerformanceChartFillColor(color, alpha) using withAlpha
 │   │       │   ├── campaign-performance-chart-styles.ts # CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE (borderWidth:1, borderRadius:2); CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE; donut hierarchy config (highlight limit, dim threshold, highlight/secondary/dim alpha)
 │   │       │   └── roi-budget-scaling-chart.config.ts   # ROI scaling chart config — QUADRANTS (Scale Up/Champions/Monitor/Overspend), radii, MIN_CAMPAIGNS=5, axis rounding, tick values, divider style, quadrant backgrounds
 │   │       ├── types/
