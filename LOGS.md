@@ -612,3 +612,83 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `autocomplete="off"` rather than a mismatched token — no existing token maps to "industry category"; `off` is the correct choice when browser suggestions would be wrong or unhelpful
+
+
+## [#628] Extract RevenueVsBudgetChart as standalone card component
+**Type:** refactor
+
+**Summary:** Extracted the Revenue vs Budget by Channel card from PerformanceCharts into its own `RevenueVsBudgetChart.vue` component at the same file-system level, so it owns its toggle state and sorting internally.
+
+**Brainstorming:** The Revenue vs Budget card was the only chart card in PerformanceCharts that carried local state (the Performance/Efficiency toggle) and a derived sort computed. Extracting it makes each chart card self-contained and keeps PerformanceCharts as a pure layout/grid orchestrator with no toggle state of its own.
+
+**Prompt:** Extract the revenue vs budget chart in PerformanceCharts to a new component at the same level as PerformanceCharts. The new component will be a card responsible for updating the chart view (owns the toggle).
+
+**What changed:**
+- `charts/RevenueVsBudgetChart.vue` (new) — owns `revenueBudgetView` toggle ref, `REVENUE_BUDGET_TOGGLE_OPTIONS`, `channelsByGapImpact` computed, and the full Card/CardHeader/RadioToggle/RevenueVsBudgetBars/EfficiencyGapBars template; props: `channels`, `kpis`
+- `charts/PerformanceCharts.vue` — removed `RevenueBudgetView` type, `REVENUE_BUDGET_TOGGLE_OPTIONS`, `revenueBudgetView`, `channelsByGapImpact`, `sortChannelsByEfficiencyGapImpactDesc`, `CardHeader`, `RadioToggle`, `EfficiencyGapBars`, `RevenueVsBudgetBars` imports; replaced inline card block with `<RevenueVsBudgetChart :channels="channels" :kpis="kpis" />`
+- `charts/index.ts` — added `RevenueVsBudgetChart` export
+
+**Key decisions & why:**
+- Sorting (`sortChannelsByEfficiencyGapImpactDesc`) moved into the new component — it was only ever used for this card, so it belongs with the component rather than being an external concern
+- `channels` prop passed raw (unsorted) — the new component owns the sorting decision, consistent with how it owns all other view state
+
+
+## [#629] Lighten legend indicator border in EfficiencyGapBars
+**Type:** fix
+
+**Summary:** Added a 1px border to the custom legend indicator squares in EfficiencyGapBars, using the 75%-opacity fill version of each gap color so the border is lighter than the solid background — matching how Chart.js renders legend item borders in other charts.
+
+**Brainstorming:** The `.legend-indicator` spans had no border at all. Chart.js built-in legend items (used by other charts) render a box with a border matching the dataset's borderColor. The custom HTML legend in EfficiencyGapBars looked heavier/starker by comparison. Using `getCampaignPerformanceChartFillColor` (already imported) for the borderColor gives the 75%-opacity version of the gap color, making the border visually lighter than the solid fill.
+
+**Prompt:** The border in legend indicators in other charts is a bit lighter — adjust EfficiencyGapBars to match.
+
+**What changed:**
+- `EfficiencyGapBars.vue` — added `border` to `.legend-indicator` SCSS rule; bound `borderColor` via `:style` to `getCampaignPerformanceChartFillColor(color)` (75% alpha) for both positive and negative indicators
+
+
+## [#630] Fix legend indicator colors in EfficiencyGapBars
+**Type:** fix
+
+**Summary:** Swapped background and border colors on the legend indicator to match the chart bars — fill (alpha) as background, solid color as border.
+
+**Brainstorming:** The previous implementation had the colors inverted relative to how the chart bars are styled. Chart bars use `getCampaignPerformanceChartFillColor` (75% alpha) for `backgroundColor` and the solid color for `borderColor`. The legend indicators had it backwards.
+
+**Prompt:** The background is not correct — fix so it matches the chart bar styling.
+
+**What changed:**
+- `EfficiencyGapBars.vue` — `backgroundColor` now uses `getCampaignPerformanceChartFillColor(color)` (alpha fill); `borderColor` now uses the solid gap color
+
+**Key decisions & why:**
+- Mirrors the exact same fill/border split used in `chartData` dataset styling so legend and bars are visually consistent
+
+
+## [#631] Fix legend indicator background in EfficiencyGapBars
+**Type:** fix
+
+**Summary:** Restored solid color as background and alpha version as border on the legend indicator — background must be fully filled, border lighter.
+
+**Brainstorming:** After two incorrect attempts (transparent bg, then inverted), the correct intent is clear: solid gap color for the filled background, 75%-alpha version for the lighter border. This is the correct visual for a legend swatch — opaque fill, subtle border.
+
+**Prompt:** Background must be filled with the color and border must be lighter.
+
+**What changed:**
+- `EfficiencyGapBars.vue` — `backgroundColor` restored to solid gap color; `borderColor` set to `getCampaignPerformanceChartFillColor(color)` (75% alpha)
+
+**Key decisions & why:**
+- Legend swatches should read as solid filled color blocks — transparency on the background makes them look broken against the card surface
+
+
+## [#632] Fix efficiency gap legend indicator border visibility
+**Type:** fix
+
+**Summary:** Replaced hex-alpha border color with `border-white/20` — 75% opacity of the same hue as the fill is indistinguishable from the background; a white/20 border is clearly lighter against any colored fill.
+
+**Brainstorming:** `#10b981bf` (75% opacity green) as border on a solid green background is the same hue, just slightly less saturated — the visual difference is negligible. Using `border-white/20` gives a genuinely lighter border regardless of fill color, with no dependency on hex-alpha parsing.
+
+**Prompt:** Indicators do not have a lighter border — why? Fix it.
+
+**What changed:**
+- `EfficiencyGapBars.vue` — `.legend-indicator` SCSS uses `border-white/20` instead of a same-hue alpha color; removed `borderColor` from both `:style` bindings
+
+**Key decisions & why:**
+- `border-white/20` works universally against any colored swatch background and avoids the same-hue-indistinguishable problem entirely

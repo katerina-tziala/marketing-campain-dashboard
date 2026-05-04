@@ -82,7 +82,9 @@ const chartData = computed<BarChartData>(() => ({
 }));
 
 const isSingleChannelView = computed(() => props.channels.length === 1);
-const showChart = computed(() => !isSingleChannelView.value && hasVisibleGap.value);
+const showChart = computed(
+  () => !isSingleChannelView.value && hasVisibleGap.value,
+);
 
 const valueScaleBounds = computed<{ min?: number; max?: number }>(() => {
   if (isSingleChannelView.value) return { min: -5, max: 5 };
@@ -115,29 +117,25 @@ const chartAriaLabel = computed(() =>
 
 <template>
   <div v-bind="rootAttrs" class="efficiency-gap-bars">
-    <MetaRow size="tiny" class="mx-auto">
+    <MetaRow size="tiny" class="mx-auto -mb-[2px] mt-[3px]">
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{
-            backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap,
-          }"
-        />
+          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap }"
+        ></span>
         <span>Overperforming</span>
       </MetaItem>
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{
-            backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap,
-          }"
-        />
+          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap }"
+        ></span>
         <span>Underperforming</span>
       </MetaItem>
     </MetaRow>
     <BarChart
       v-if="showChart"
-      class="!h-[357px]"
+      class="!h-[356px]"
       :chart-data="chartData"
       :aria-label="chartAriaLabel"
       :tooltip-callbacks="tooltipCallbacks"
@@ -169,7 +167,7 @@ const chartAriaLabel = computed(() =>
 
 <style lang="scss" scoped>
 .efficiency-gap-bars {
-  @apply w-full grid grid-cols-1 grid-rows-[min-content_1fr] min-h-96 pt-4;
+  @apply w-full grid grid-cols-1 grid-rows-[min-content_1fr] min-h-96 pt-3;
 }
 
 .legend-item {
@@ -180,7 +178,7 @@ const chartAriaLabel = computed(() =>
 }
 
 .legend-indicator {
-  @apply size-[0.813rem];
+  @apply size-[0.813rem] border border-white/20;
 }
 
 .efficiency-empty {

@@ -5,13 +5,13 @@ export const CAMPAIGN_PERFORMANCE_CHART_COLORS = {
   revenue: '#34d399',
   positiveGap: '#10b981',
   negativeGap: '#ef4444',
-} as const
- 
+}
+
 export const CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS = {
   scaleUp: {
     color: 'rgba(16,185,129,0.75)',
     dimmedColor: 'rgba(16,185,129,0.60)',
-    border: '#10b981',
+    border: 'rgb(16, 185, 129)',
     backgroundColor: 'rgba(16,185,129,0.12)',
   },
   champions: {
@@ -33,7 +33,7 @@ export const CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS = {
     backgroundColor: 'rgba(239,68,68,0.12)',
   },
   divider: 'rgba(203,213,225,0.38)',
-} as const
+}
 
 export const CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA = 'bf'
 
