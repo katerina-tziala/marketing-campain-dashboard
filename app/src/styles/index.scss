@@ -1,7 +1,6 @@
 @use './themes/dark';
 @use './base';
 @use './utilities/index' as utilities;
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

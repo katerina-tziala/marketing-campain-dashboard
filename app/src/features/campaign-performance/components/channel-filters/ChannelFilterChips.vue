@@ -160,6 +160,7 @@ defineExpose({
   .channel-chip-count {
     @apply bg-surface;
   }
+
   &:not(.readonly) {
     &:hover,
     &:focus-visible {

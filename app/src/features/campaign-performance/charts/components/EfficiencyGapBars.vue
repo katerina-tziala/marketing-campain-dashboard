@@ -185,6 +185,7 @@ const chartAriaLabel = computed(() =>
 
 .legend-item {
   @apply flex flex-nowrap justify-end gap-1.5;
+
   > span {
     @apply inline-block;
   }

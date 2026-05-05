@@ -106,23 +106,24 @@ function applyChannelFilter(ids: string[]): void {
     overflow-y-auto
     grid
     grid-rows-[min-content_1fr]
-    py-4
-    pl-4
-    pr-2.5
+    py-4 
+    pr-1
     gap-y-4;
+
   scrollbar-gutter: stable;
 
   @include cq-up(cq-768, 'main') {
-    @apply overflow-hidden px-0;
+    @apply overflow-hidden;
+
     scrollbar-gutter: auto;
   }
 }
 
 .campaign-performance-header {
-  @apply w-full;
+  @apply w-full px-3.5;
 
-  @include cq-up(cq-768, 'main') {
-    @apply px-4;
+  @include cq-up(cq-640, 'main') {
+    @apply px-6;
   }
 }
 
@@ -133,14 +134,16 @@ function applyChannelFilter(ids: string[]): void {
     flex
     flex-col
     gap-4
-    pb-8;
+    pb-8
+    px-3.5;
+
   scrollbar-gutter: auto;
 
-  @include cq-up(cq-768, 'main') {
+  @include cq-up(cq-640, 'main') {
     @apply overflow-y-auto h-full
-    pl-4
     pb-0
-    pr-2.5;
+    px-6;
+
     scrollbar-gutter: stable;
   }
 }

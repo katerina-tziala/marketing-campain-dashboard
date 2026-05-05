@@ -83,3 +83,28 @@
 - `icon-192x192` / `icon-512x512` naming chosen over `android-chrome-*` to be framework-neutral — these names work for both web manifest `icons` array and generic PWA tooling
 - `og.png` included in `public/` now so it is served as a static asset alongside other icon files, ready for Open Graph meta tags when needed
 - SVG listed first in `<link>` order so modern browsers use it and fall through to `.ico` / PNGs only when SVG is unsupported; `apple-touch-icon` omits `type` attribute per Apple convention
+
+
+## [#4] App tooling cleanup: stylelint setup and app-level configuration
+**Type:** tooling/cleanup
+
+**Summary:** Added the app-local Stylelint setup, ran the SCSS/Vue style fixer across the app, and cleaned up accidental root-level configuration leftovers so frontend tooling lives under `app/`.
+
+**Brainstorming:** The Vue app already owned the frontend build, lint, format, Tailwind, PostCSS, Vite, and TypeScript setup, so Stylelint belongs beside those files in `app/` rather than at the repository root. Running Stylelint with autofix handled mostly formatting-level SCSS issues: rule spacing, nested selector separation, and modern alpha notation. The root `package-lock.json` was an empty accidental lockfile created outside the app package, and the root VS Code settings duplicated app-specific CSS/SCSS editor behavior, so both were removed to keep the repo boundary clean.
+
+**Prompt:** Run and fix all Stylelint issues in the app. Check whether any configuration should live at app level instead of root, then clean them all.
+
+**What changed:**
+- `app/stylelint.config.js` — added Stylelint configuration for SCSS, Vue SFC style blocks, and Tailwind directives
+- `app/package.json` — added `stylelint` and `stylelint:fix` scripts and included Stylelint in the combined `check` workflow
+- `app/package-lock.json` — updated with Stylelint dependencies
+- App Vue/SCSS style blocks — autofixed Stylelint formatting issues, including empty-line separation around nested rules and keyframes
+- `app/src/styles/themes/dark/_charts.scss` — converted decimal alpha values to percentage alpha notation in chart theme tokens
+- Root `package-lock.json` — removed accidental empty root lockfile; the real package lock remains in `app/`
+- Root `.vscode/settings.json` — removed duplicate root editor overrides now covered by `app/.vscode/settings.json`
+
+**Key decisions & why:**
+- Keep frontend tooling app-local — this repository has a dedicated `app/` package, so ESLint, Stylelint, Prettier, Tailwind, Vite, PostCSS, TypeScript, and package-lock files should live there
+- Let Stylelint own SCSS consistency — autofix is enough for the current issues and keeps hand edits focused on actual configuration boundaries
+- Remove accidental root config instead of moving it — the root lockfile had no dependencies and the root VS Code settings only duplicated app-specific behavior
+- Verification: `npm run stylelint` and `npm run lint` pass from `app/`

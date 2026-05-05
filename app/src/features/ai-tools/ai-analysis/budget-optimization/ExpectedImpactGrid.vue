@@ -46,6 +46,7 @@ withDefaults(
   @apply w-full;
   @include cq-container('expected-impact-grid');
 }
+
 .expected-impact-grid {
   @apply w-full
     grid

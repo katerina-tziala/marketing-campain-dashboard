@@ -60,6 +60,7 @@ const props = withDefaults(
 
   &.text-only {
     @apply bg-transparent border-none;
+
     .badge-body {
       @apply bg-transparent border-none;
     }
@@ -93,6 +94,7 @@ const props = withDefaults(
 
   &.rounded {
     @apply rounded-md;
+
     .badge-body {
       @apply rounded-md;
     }
@@ -100,6 +102,7 @@ const props = withDefaults(
 
   &.soft-rounded {
     @apply rounded-sm;
+
     .badge-body {
       @apply rounded-sm;
     }

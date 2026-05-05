@@ -100,12 +100,14 @@ defineExpose({
 /* variant icon-only */
 .btn.icon-only {
   @apply p-0 size-10;
+
   &:deep(svg) {
     @apply text-2xl;
   }
 
   &.btn.small {
     @apply p-0 size-9;
+
     &:deep(svg) {
       @apply text-xl;
     }

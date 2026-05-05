@@ -55,6 +55,7 @@ function handleDisconnect(): void {
 
 .status-provider {
   @apply text-sm font-semibold text-typography-soft grow shrink-0;
+
   flex-grow: 100;
 }
 

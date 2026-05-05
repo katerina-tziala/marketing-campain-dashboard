@@ -96,6 +96,7 @@ function handleProceed(): void {
 .body-content {
   @apply w-full max-w-full grid grid-rows-[min-content_1fr] grid-cols-1 gap-4;
 }
+
 .resolve-indicator {
   @apply flex items-center gap-2 text-sm font-semibold text-typography-subtle -mb-3;
 

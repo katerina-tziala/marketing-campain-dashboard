@@ -113,7 +113,8 @@ const {
     justify-start
     gap-x-2
     shrink-0
-    px-6
+    px-4
+    sm:px-6
     py-2.5
     shadow-md
     border-b
@@ -161,6 +162,7 @@ const {
     items-center
     justify-center
     overflow-visible;
+
   animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -173,6 +175,7 @@ const {
     transform: scale(0);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;

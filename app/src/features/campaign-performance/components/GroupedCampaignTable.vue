@@ -475,6 +475,7 @@ watch(
 
 .group-toggle {
   @apply gap-2 text-left w-full;
+
   justify-content: flex-start;
   padding-inline: 0;
 }
@@ -501,6 +502,7 @@ watch(
 
 .collapse-cell {
   @apply grid opacity-100;
+
   grid-template-rows: 1fr;
 }
 

@@ -108,6 +108,7 @@ function formatShare(value: number, total: number): string {
 
   @include cq-up(cq-540, 'kpis') {
     @apply grid-cols-2;
+
     :deep(.kpi-card:nth-of-type(3)) {
       @apply col-span-2;
     }
