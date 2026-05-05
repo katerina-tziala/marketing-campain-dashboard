@@ -90,7 +90,7 @@ const {
           <template #icon>
             <SparklesIcon class="mt-1" />
           </template>
-          <AiTools :panel-open="dashboard.aiPanelOpen" />
+          <AiTools />
         </ResponsiveDrawer>
       </template>
     </SplitPaneLayout>

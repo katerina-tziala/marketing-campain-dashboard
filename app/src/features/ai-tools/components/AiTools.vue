@@ -4,15 +4,11 @@ import { useAiConnectionStore } from '../ai-connection/stores'
 import { AiConnectionForm, AiConnectedStatus } from '../ai-connection/components'
 import { AiAnalysis } from '../ai-analysis'
 
-const props = defineProps<{
-  panelOpen: boolean
-}>()
-
 const store = useAiConnectionStore();
 const connectionFormResetKey = ref(0)
 
 watch(
-  () => props.panelOpen,
+  () => store.aiPanelOpen,
   (open) => {
     if (!open) connectionFormResetKey.value += 1
   },

@@ -854,3 +854,20 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Slot over props — AI state belongs to the app layer; the feature should not hold references to it
 - #header-action name is specific enough to document intent at the call site without being too verbose
 - Connected dot styles moved with the markup — co-locating styles with the component that owns them prevents orphaned CSS
+
+
+## [#641] Remove panelOpen prop from AiTools — watch store directly
+**Type:** fix
+
+**Summary:** AiTools.vue was receiving panelOpen as a prop only to watch it for a side effect; since aiConnectionStore already exposes aiPanelOpen, the prop was redundant and has been removed.
+
+**Brainstorming:** The prop was passed from DashboardPage → AiTools solely to trigger a connectionFormResetKey increment on panel close. aiConnectionStore.aiPanelOpen is already public state the component can watch directly without crossing a layer boundary (AiTools is in the ai-tools feature, aiConnectionStore is its own store). Removing the prop eliminates the prop-for-side-effect anti-pattern with no functional change.
+
+**Prompt:** Remove panelOpen prop from AiTools and watch aiConnectionStore.aiPanelOpen directly instead. Remove the :panel-open binding from DashboardPage.
+
+**What changed:**
+- `AiTools.vue` — removed defineProps; changed watch source from `() => props.panelOpen` to `() => store.aiPanelOpen`
+- `DashboardPage.vue` — removed `:panel-open="dashboard.aiPanelOpen"` binding from AiTools
+
+**Key decisions & why:**
+- Store watch over prop — the value is already reactive store state; threading it through a prop adds indirection with no benefit

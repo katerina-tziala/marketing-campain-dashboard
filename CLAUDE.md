@@ -235,7 +235,7 @@ app/                        # Vue 3 + Vite project
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
-│   │   │   │   └── AiTools.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
+│   │   │   │   └── AiTools.vue # AI feature content only — shows AiConnectionForm when disconnected; shows status bar + tabs (AiAnalysis) when connected; no props — watches aiConnectionStore.aiPanelOpen directly to reset connectionFormResetKey on panel close; no header/close/drawer chrome; fills drawer height; no dev mode code — dev mode orchestrated from app/dev-mode/
 │   │   │   ├── ai-analysis/
 │   │   │   │   ├── stores/
 │   │   │   │   │   ├── aiAnalysis.store.config.ts # Store-private constants + types — DEBOUNCE_MS, COOLDOWN_MS, MIN_OPTIMIZER_CAMPAIGNS, OPTIMIZER_MIN_CAMPAIGNS_ERROR; TabDisplay<T> type, DEFAULT_STATE, ALL_TABS, DEFAULT_PORTFOLIO_CONTEXT, getOtherAnalysisType(); imported only by aiAnalysis.store.ts
