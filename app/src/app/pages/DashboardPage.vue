@@ -60,7 +60,7 @@ const {
     </main>
 
     <SplitPaneLayout v-else>
-      <!-- TODO: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
+      <!-- Main Dashboard view: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
       <CampaignPerformanceView>
         <template #header-action>
           <div v-if="dashboard.showAiButton" class="relative shrink-0">

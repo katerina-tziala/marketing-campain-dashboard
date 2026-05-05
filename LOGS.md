@@ -1,31 +1,6 @@
 # Vibe Coding Log — Marketing Campaign Dashboard
-
-Development log for the project. Every feature built, bug fixed, refactoring done, and architecture decision made is recorded here.
-
-
-## [#1] Project Setup
-**Type:** architecture
-
-**Summary:** Defined the project scope, tech stack, and development workflow. Created foundational documentation files (README, CLAUDE.md, LOGS.md) before scaffolding begins.
-
-**Brainstorming:** Decided to document the full process from the very start — before any code exists — so the MBA submission captures the entire development journey including planning decisions. CLAUDE.md serves as the living spec and progress tracker; LOGS.md captures reasoning and iterations for each step.
-
-**Prompt:** Create CLAUDE.md and LOGS.md based on the README. Set up ongoing workflow rules for every type of interaction (feature, fix, refactor).
-
-**What was built:**
-- `CLAUDE.md` — project context, tech stack table, full feature checklist with checkboxes, architecture section (to be filled post-scaffold), workflow rules
-- `LOGS.md` — this file; vibe coding log for MBA submission
-
-**Key decisions & why:**
-- Separate CLAUDE.md from LOGS.md — CLAUDE.md is the living spec (state of the project at any moment), LOGS.md is the historical record (how we got there)
-- Feature checklist in CLAUDE.md — makes it easy to track progress at a glance and check off items as they're built
-- Log format distinguishes Full Entry vs Short Entry — keeps the log readable without burying small fixes in the same detail as major features
-
-
-[Entries 2-600 preserved from original log...]
-
-
-## [602] Update Budget Optimizer schema with new recommendation and expansion types
+ 
+## [601] Update Budget Optimizer schema with new recommendation and expansion types
 **Type:** update
 
 **Summary:** Expanded Budget Optimizer schema to include recommendation types (reallocation | reduction), channel information, nullable impact fields, a new expansions array, and noRecommendationReason field. Updated sample responses and component rendering to support the full schema.
@@ -49,7 +24,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Metrics grid: responsive layout (auto-fit minmax 150px) so small screens stack, larger screens show 2-3 per row.
 
 
-## [603] Update Executive Summary schema with new output structure
+## [602] Update Executive Summary schema with new output structure
 **Type:** update
 
 **Summary:** Replaced the Executive Summary output schema with a richer structure: added scope, overview, and growthOutlook fields; renamed insights to executiveInsights and priorityActions to keyPriorities (with new shape); replaced correlations with keyRisks. Updated types, sub-components, orchestrator, sample data, and prompt schema to match.
@@ -75,7 +50,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Correlations.vue repurposed rather than replaced — same card layout pattern works for risks with a severity badge added; avoids creating a new file for a structurally equivalent component.
 
 
-## [604] Raise Budget Optimizer minimum campaign threshold from 2 to 5
+## [603] Raise Budget Optimizer minimum campaign threshold from 2 to 5
 **Type:** update
 
 **Summary:** Increased `MIN_OPTIMIZER_CAMPAIGNS` from 2 to 5 so the Budget Optimizer only runs when there is enough campaign variety to produce meaningful reallocation recommendations.
@@ -94,7 +69,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 
 
-## [#605] Refactor AI prompt system into folder-per-prompt architecture with typed rule groups
+## [#604] Refactor AI prompt system into folder-per-prompt architecture with typed rule groups
 **Type:** refactor
 
 **Summary:** Extracted all inline prompt strings into typed `PromptRuleGroup` constants organized in `config.ts` files, one per prompt folder; each prompt now lives in its own subfolder (`prompt-name/`) with `config.ts`, `prompt.v1.ts`, and `index.ts` barrel; all three prompts (model evaluation, executive summary, budget optimization) build their output via a `promptSections` array with `.join('\n\n').trim()` instead of template literals; both analysis prompts conditionally select full-portfolio vs subset rule arrays based on `portfolioBenchmark` presence.
@@ -122,7 +97,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 
 
-## [#606] Add expansions and reduction samples to budget optimizer; create BudgetExpansions component; fix BudgetRecommendations for mixed types
+## [#605] Add expansions and reduction samples to budget optimizer; create BudgetExpansions component; fix BudgetRecommendations for mixed types
 **Type:** update
 
 **Summary:** Populated all budget optimization mock samples with expansions and `reduction` type recommendations to exercise the full schema in UI, created `BudgetExpansions.vue` matching `BudgetRecommendations.vue` in structure and sort logic, fixed `BudgetRecommendations.vue` to handle `reduction` type (null `toCampaign`, null impact metrics, conditional label, type badge), and rewrote `BudgetOptimizationAnalysis.vue` to use both components.
@@ -144,7 +119,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `BudgetExpansions.vue` as a separate component — expansion shape (`targetChannel`/`targetCampaign`) differs from recommendation shape (`fromCampaign`/`toCampaign`/`type`); merging would require conditionals throughout both card headers.
 
 
-## [#607] Split budget optimization UI into Reallocate / Expand / Reduce sections
+## [#606] Split budget optimization UI into Reallocate / Expand / Reduce sections
 **Type:** update
 
 **Summary:** Restructured the Budget Optimizer result view to render three named sections in order — Reallocate, Expand, Reduce — instead of a single mixed Recommendations section followed by expansions.
@@ -162,7 +137,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Expand section rendered between Reallocate and Reduce — expansions are additive (new budget spend) while reductions are subtractive; grouping the two "spend more/spend differently" actions before the "spend less" action reflects natural decision priority.
 
 
-## [#608] Create BudgetReductions component; sort reallocations by revenue change
+## [#607] Create BudgetReductions component; sort reallocations by revenue change
 **Type:** update
 
 **Summary:** Created a dedicated `BudgetReductions.vue` component for the Reduce section (simplified card without impact metrics), and sorted reallocations by estimated revenue change descending with nulls last.
@@ -181,7 +156,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Dedicated component rather than conditional in `BudgetRecommendations` — eliminates four null-guard rows that are never filled for reductions; the card structure is genuinely different enough to warrant separation.
 
 
-## [#609] Add inferImpactLabel to BudgetReductions cards
+## [#608] Add inferImpactLabel to BudgetReductions cards
 **Type:** update
 
 **Summary:** Added `inferImpactLabel` logic and a dimmed badge to each reduction card showing whether the cut saves budget or eliminates waste.
@@ -198,7 +173,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `inferImpactLabel` called twice per card in template (once for `v-if`, once for value) — acceptable given the function is pure and cheap; avoids introducing a per-item computed or pre-mapped array.
 
 
-## [#610] Polish AI analysis result cards and executive summary sections
+## [#609] Polish AI analysis result cards and executive summary sections
 **Type:** refactor/ui
 
 **Summary:** Refined the AI analysis result layout by adding a raised card variant, anchoring response metadata to the bottom of result panels, replacing the old risk renderer with dedicated executive-summary sections, and tightening badge/card visual hierarchy across the summary and optimizer views.
@@ -241,7 +216,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
 
-## [#611] Refine Budget Optimizer result sections and expected impact cards
+## [#610] Refine Budget Optimizer result sections and expected impact cards
 **Type:** refactor/ui
 
 **Summary:** Split the Budget Optimizer output into clearer Reallocate, Growth Opportunities, and Reduce sections; introduced reusable expected-impact rendering for recommendation and expansion cards; created a dedicated reduction card with plain-language impact copy and compact meta values; kept recommendation channel context visible under each campaign name; and removed the temporary shared header abstraction because projection made it noisier than the markup it replaced.
@@ -296,7 +271,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - A better prompt would be: “Refactor only the Budget Optimizer result cards. Preserve the existing visual structure unless I explicitly say to redesign it. Extract only repeated metric rendering into a reusable component. Keep headers local unless the abstraction reduces markup without heavy slots. Reallocations must show From/To campaign and channel; expansions must show target campaign/channel; reductions must show campaign/channel plus a short reduce-by sentence and compact expected-impact meta. Do not touch executive-summary files, logs, comments, or unrelated styles.”
 
 
-## [#612] Polish Budget Optimizer cards and ExpectedImpactGrid responsive layout
+## [#611] Polish Budget Optimizer cards and ExpectedImpactGrid responsive layout
 **Type:** refactor/ui
 
 **Summary:** Renamed all abbreviated CSS class names across budget optimization cards to full descriptive names; made ExpectedImpactGrid responsive with container-query-driven grid breakpoints and bordered metric cells; added `showAmountSign` prop to ExpectedImpactGrid for expansion cards; aligned card header layout to stack on narrow containers and flow inline at cq-540+; scoped h5 card styling into Card.vue and removed the global h5 rule; updated Card raised variant background and spacing.
@@ -324,7 +299,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `bg-surface-hover` for raised cards — `bg-surface-raised` was visually indistinct from the surrounding surface in practice; `bg-surface-hover` provides a subtle but readable lift
 
 
-## [#613] Add app logo SVG to empty state placeholder
+## [#612] Add app logo SVG to empty state placeholder
 **Type:** feature
 
 **Summary:** Created an inline SVG logo mark for the empty state — three bottom-aligned gradient bars (representing a bar chart) beside a D-shaped half-pie (representing a donut/pie chart), forming a combined data-analytics identity mark.
@@ -345,7 +320,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Bars grouped in `<g>` — keeps template readable and makes the shared fill intent explicit
 
 
-## [#614] Restructure ai-analysis folder — move AiAnalysis.vue to root, rename ui/ to components/
+## [#613] Restructure ai-analysis folder — move AiAnalysis.vue to root, rename ui/ to components/
 **Type:** refactor
 
 **Summary:** Moved `AiAnalysis.vue` from `ai-analysis/components/` to `ai-analysis/` root and renamed `ai-analysis/ui/` to `ai-analysis/components/` to match conventional Vue feature folder naming.
@@ -370,7 +345,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ui/` → `components/` rename — `ui/` is ambiguous and conflicts with the top-level `@/ui` design system; `components/` is unambiguous and matches the Vue ecosystem convention for feature-internal presentational building blocks
 
 
-## [#615] Refactor channel filters — inline +N more trigger, smart visibility, multi-row support
+## [#614] Refactor channel filters — inline +N more trigger, smart visibility, multi-row support
 **Type:** refactor
 
 **Summary:** Replaced the funnel-button + badge + teleported Dropdown overflow trigger with an inline `+N more` Chip and absolute-positioned panel; overhauled overflow measurement to support 1 or 2 chip rows based on container width; and refined strip visibility so selected chips from the dialog window are swapped into the strip, with correct `+N more` count and hidden-selection badge at all times.
@@ -395,7 +370,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `allowedRows` from parent `clientWidth` — ResizeObserver already observes `rootRef`, so the value updates on every resize without a separate watcher; 540 px threshold matches the layout breakpoint where 2-row strips are comfortable
 
 
-## [#616] Move roiBudgetScalingHighlights into RoiVsBudgetScaling
+## [#615] Move roiBudgetScalingHighlights into RoiVsBudgetScaling
 **Type:** refactor
 
 **Summary:** Moved highlight computation and medianCampaignRoi derivation from CampaignPerformanceView into RoiVsBudgetScaling, replacing two loose props with a single portfolioAnalysis prop.
@@ -413,7 +388,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `RoiBudgetScalingHighlights` type stays in the charts module — it is still used internally by the scatter chart component; no need to export it from the view layer
 
 
-## [#617] Group count props in CampaignPerformanceHeader
+## [#616] Group count props in CampaignPerformanceHeader
 **Type:** refactor
 
 **Summary:** Replaced four individual count props with a single grouped `counts` object to reduce prop surface.
@@ -430,7 +405,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Inline object literal in the template binding — no extra computed needed; the shape is simple enough to read at a glance
 
 
-## [#618] Replace "Show all" button with "All" chip in ChannelFiltersDialog
+## [#617] Replace "Show all" button with "All" chip in ChannelFiltersDialog
 **Type:** fix
 
 **Summary:** Replaced the "Show all" button in the dialog header with an "All" chip as the first item in the chip list, matching the main strip's pattern.
@@ -447,7 +422,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `totalCampaigns` computed on the dialog matches what the strip passes, so the count badge on "All" is accurate
 
 
-## [#619] Buffer channel filter dialog selection with Cancel/Apply
+## [#618] Buffer channel filter dialog selection with Cancel/Apply
 **Type:** update
 
 **Summary:** The dialog now buffers chip interactions locally and only emits the new selection when the user clicks Apply; Cancel (or backdrop/Escape) closes without changing the committed filter.
@@ -467,7 +442,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `pendingIds` re-synced on open via watcher — no explicit reset on cancel needed; stale pending state is harmless between open cycles
 
 
-## [#620] Replace custom panel with Dropdown + DropdownPanel in ChannelFiltersDialog
+## [#619] Replace custom panel with Dropdown + DropdownPanel in ChannelFiltersDialog
 **Type:** refactor
 
 **Summary:** Replaced the hand-rolled absolute-positioned panel and custom backdrop with the shared `Dropdown` + `DropdownPanel` components, removing duplicated positioning and overlay logic.
@@ -485,7 +460,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `align="right"` — matches previous `right-0` positioning of the old panel
 
 
-## [#621] Make Dropdown panelRef flex with direction based on align prop
+## [#620] Make Dropdown panelRef flex with direction based on align prop
 **Type:** update
 
 **Summary:** Added `flex` to the `panelRef` wrapper in `Dropdown.vue` with `flex-row` for left-aligned and `flex-row-reverse` for right-aligned dropdowns.
@@ -502,7 +477,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Default (no `align` or `align="left"`) keeps `flex-row` — natural reading order
 
 
-## [#622] Calculate Dropdown position on open instead of as a computed
+## [#621] Calculate Dropdown position on open instead of as a computed
 **Type:** refactor
 
 **Summary:** Replaced the reactive `computed` for `dropdownStyle` with a `ref` populated once when the dropdown opens, so positioning is snapshotted at open time rather than recalculated on every prop change.
@@ -519,7 +494,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Single extraction point — `calculatePosition()` is called only in the watcher, so it only runs at open time
 
 
-## [#623] Fix Dropdown double-Teleport warning
+## [#622] Fix Dropdown double-Teleport warning
 **Type:** fix
 
 **Summary:** Merged the two sibling `<Teleport to="body">` blocks into one, eliminating the Vue warning caused by multiple root-level Teleport elements.
@@ -535,7 +510,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Single Teleport with two `v-if="open"` children — both conditioned on the same flag, behavior unchanged, warning gone
 
 
-## [#624] Fix calculatePosition return type error
+## [#623] Fix calculatePosition return type error
 **Type:** fix
 
 **Summary:** Changed `calculatePosition()` return type from `Record<string, string>` to `Record<string, string | undefined>` to match the object produced by spreading two discriminated union shapes.
@@ -551,7 +526,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `Record<string, string | undefined>` rather than `Partial<Record<...>>` — same semantics, shorter syntax, consistent with the ref declaration above
 
 
-## [#625] Extract shared accessibility composables into ui/accessibility/
+## [#624] Extract shared accessibility composables into ui/accessibility/
 **Type:** refactor
 
 **Summary:** Extracted duplicated focus-trap and ARIA logic from Modal.vue and ResponsiveDrawer.vue into a shared `ui/accessibility/` composable layer, and co-located the existing `useModalAria` there.
@@ -578,7 +553,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `accessibility/` not added to `@/ui` public barrel — these composables are implementation details of the drawer/modal components, not part of the public design-system API
 
 
-## [#626] Add proper accessibility flow to Dropdown
+## [#625] Add proper accessibility flow to Dropdown
 **Type:** update
 
 **Summary:** Added Tab focus trap, `aria-modal` to the panel, and replaced the duplicated focusable-element logic with `useFocusTrap` from the shared accessibility composable.
@@ -598,7 +573,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Focus restore stays as `props.anchor?.focus()` — the anchor is always the correct restore target for a dropdown; `saveFocus/restoreFocus` from the composable would focus whatever was active at open time, which may differ from the anchor
 
 
-## [#627] Disable autocomplete on industry field
+## [#626] Disable autocomplete on industry field
 **Type:** fix
 
 **Summary:** Changed `autocomplete="organization"` to `autocomplete="off"` on the industry input in UploadDataForm.
@@ -614,7 +589,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `autocomplete="off"` rather than a mismatched token — no existing token maps to "industry category"; `off` is the correct choice when browser suggestions would be wrong or unhelpful
 
 
-## [#628] Extract RevenueVsBudgetChart as standalone card component
+## [#627] Extract RevenueVsBudgetChart as standalone card component
 **Type:** refactor
 
 **Summary:** Extracted the Revenue vs Budget by Channel card from PerformanceCharts into its own `RevenueVsBudgetChart.vue` component at the same file-system level, so it owns its toggle state and sorting internally.
@@ -633,7 +608,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `channels` prop passed raw (unsorted) — the new component owns the sorting decision, consistent with how it owns all other view state
 
 
-## [#629] Lighten legend indicator border in EfficiencyGapBars
+## [#628] Lighten legend indicator border in EfficiencyGapBars
 **Type:** fix
 
 **Summary:** Added a 1px border to the custom legend indicator squares in EfficiencyGapBars, using the 75%-opacity fill version of each gap color so the border is lighter than the solid background — matching how Chart.js renders legend item borders in other charts.
@@ -646,7 +621,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `EfficiencyGapBars.vue` — added `border` to `.legend-indicator` SCSS rule; bound `borderColor` via `:style` to `getCampaignPerformanceChartFillColor(color)` (75% alpha) for both positive and negative indicators
 
 
-## [#630] Fix legend indicator colors in EfficiencyGapBars
+## [#629] Fix legend indicator colors in EfficiencyGapBars
 **Type:** fix
 
 **Summary:** Swapped background and border colors on the legend indicator to match the chart bars — fill (alpha) as background, solid color as border.
@@ -662,7 +637,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Mirrors the exact same fill/border split used in `chartData` dataset styling so legend and bars are visually consistent
 
 
-## [#631] Fix legend indicator background in EfficiencyGapBars
+## [#630] Fix legend indicator background in EfficiencyGapBars
 **Type:** fix
 
 **Summary:** Restored solid color as background and alpha version as border on the legend indicator — background must be fully filled, border lighter.
@@ -678,7 +653,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Legend swatches should read as solid filled color blocks — transparency on the background makes them look broken against the card surface
 
 
-## [#632] Fix efficiency gap legend indicator border visibility
+## [#631] Fix efficiency gap legend indicator border visibility
 **Type:** fix
 
 **Summary:** Replaced hex-alpha border color with `border-white/20` — 75% opacity of the same hue as the fill is indistinguishable from the background; a white/20 border is clearly lighter against any colored fill.
@@ -694,7 +669,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `border-white/20` works universally against any colored swatch background and avoids the same-hue-indistinguishable problem entirely
 
 
-## [#633] Unify chart color format to rgb/rgba
+## [#632] Unify chart color format to rgb/rgba
 **Type:** refactor
 
 **Summary:** Replaced `withHexAlpha` with a format-aware `withAlpha(color, opacity: number)` utility, converted all campaign-performance chart colors from hex to `rgb()`, standardized all quadrant border colors to `rgb()`, and updated donut alpha constants from hex strings to numeric 0–1 values.
@@ -717,7 +692,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `0.52` for dim alpha (`0x85` = 133/255 ≈ 0.522) — rounded consistently
 
 
-## [#634] Add useCampaignPerformanceChartColors and useCampaignColorMap composables
+## [#633] Add useCampaignPerformanceChartColors and useCampaignColorMap composables
 **Type:** refactor
 
 **Summary:** Introduced two composables to centralize all chart color decisions for the campaign-performance feature — one for static color definitions, one for reactive campaign-to-color mapping — and updated PerformanceCharts.vue to use them.
@@ -738,7 +713,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - useCampaignPerformanceChartColors not yet consumed by EfficiencyGapBars/RoiVsBudgetScatterChart — those components still import constants directly; migration deferred until CSS var reading lands
 
 
-## [#635] Finalize color composable architecture
+## [#634] Finalize color composable architecture
 **Type:** refactor
 
 **Summary:** Made useCampaignPerformanceChartColors the single color extraction point for the feature by adding useChartTheme palette, renamed chartColors to performanceChartColors, and wired useCampaignColorMap to call useCampaignPerformanceChartColors internally instead of useChartTheme directly.
@@ -756,7 +731,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - paletteColors is a plain array (not reactive) — useChartTheme returns static values; reactivity is not needed here
 
 
-## [#636] Introduce useCampaignPerformanceTheme as feature theme boundary
+## [#635] Introduce useCampaignPerformanceTheme as feature theme boundary
 **Type:** refactor
 
 **Summary:** Renamed useCampaignPerformanceChartColors to useCampaignPerformanceTheme, updated it to read the full ChartTheme (not just colors), and wired EfficiencyGapBars.vue to use the composable instead of importing color constants from config directly.
@@ -777,7 +752,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - getFillColor exposed from the composable so no component needs to import the helper from config
 
 
-## [#637] Remove theme passthrough from useCampaignPerformanceTheme
+## [#636] Remove theme passthrough from useCampaignPerformanceTheme
 **Type:** refactor
 
 **Summary:** Removed the raw theme object from useCampaignPerformanceTheme's return value; composable now destructures only colors from useChartTheme and exposes feature-specific values.
@@ -794,7 +769,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - destructuring at call site keeps the intent explicit — only colors are needed from the theme
 
 
-## [#638] Refactor useCampaignColorMap — stable ID-based color maps with independent ROI-sorted walks
+## [#637] Refactor useCampaignColorMap — stable ID-based color maps with independent ROI-sorted walks
 **Type:** refactor
 
 **Summary:** Refactored useCampaignColorMap to produce two independent color maps (channels and campaigns) keyed by stable IDs, each sorted by ROI descending and walking the palette from index 0, seeded from all portfolio channels for filter stability.
@@ -817,7 +792,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Single computed ref for both maps — one reactive derivation, no duplicated walk
 
 
-## [#639] Dynamic import button label and internal back label in ReviewDuplicatedCampaigns
+## [#638] Dynamic import button label and internal back label in ReviewDuplicatedCampaigns
 **Type:** update
 
 **Summary:** ReviewDuplicatedCampaigns now derives the import button label and back button label internally, replacing the static string prop with a semantic boolean and covering all three import states.
@@ -836,7 +811,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - requiredSelection moved into the component — was already derivable from validCampaigns.length, no reason to compute it in the parent
 
 
-## [#640] Project AI button into CampaignPerformanceHeader via slot
+## [#639] Project AI button into CampaignPerformanceHeader via slot
 **Type:** refactor
 
 **Summary:** Removed showAiButton/showConnectedDot props and aiClick emit from CampaignPerformanceView and CampaignPerformanceHeader; the AI button is now projected from DashboardPage into a #header-action slot, keeping AI concerns out of the campaign-performance feature.
@@ -856,7 +831,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Connected dot styles moved with the markup — co-locating styles with the component that owns them prevents orphaned CSS
 
 
-## [#641] Remove panelOpen prop from AiTools — watch store directly
+## [#640] Remove panelOpen prop from AiTools — watch store directly
 **Type:** fix
 
 **Summary:** AiTools.vue was receiving panelOpen as a prop only to watch it for a side effect; since aiConnectionStore already exposes aiPanelOpen, the prop was redundant and has been removed.
@@ -873,7 +848,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Store watch over prop — the value is already reactive store state; threading it through a prop adds indirection with no benefit
 
 
-## [#642] Rename SectionHeaderLayout to Section
+## [#641] Rename SectionHeaderLayout to Section
 **Type:** refactor
 
 **Summary:** Renamed the SectionHeaderLayout UI component to Section across the file, barrel export, and all consumer files.
@@ -890,3 +865,54 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Section is the right abstraction name — it wraps a content section with a structured header row, not specifically a "section header layout"
+
+
+## [#642] Align chart SCSS tokens to design system tokens
+**Type:** update
+
+**Summary:** Replaced hardcoded `rgb()` values in `_charts.scss` with `var(--color-*)` semantic token references, matching the pattern already used by the funnel section.
+
+**Brainstorming:** The funnel tokens already use `var(--color-primary-dark)` etc. The pre-funnel sections (tooltip, axes, text, legend, bar charts, quadrants) all used hardcoded `rgb()` values even where an exact matching token exists. Aligning them to the token system means future theme changes propagate automatically. For the two alpha values (`tooltip-border`, `grid-line`), a bare `var()` can't carry opacity, so `rgb(var(--token) / alpha)` is used — the palette stores channels in space-separated format which this modern syntax accepts. Seven tokens have no palette match (custom chart hues not in the project color system) and stay hardcoded.
+
+**Prompt:** Replace hardcoded rgb values in the pre-funnel sections of `_charts.scss` with semantic `var(--color-*)` token references, same style as the funnel section. Use `rgb(var(--token) / alpha)` for the two alpha cases. Leave values with no palette match as-is.
+
+**What changed:**
+- `app/src/styles/themes/dark/_charts.scss` — replaced 9 hardcoded values with token references: `--chart-tooltip-body-color`, `--chart-tooltip-border`, `--chart-tick-color`, `--chart-title-color`, `--chart-grid-line`, `--chart-text-color`, `--chart-legend-label-color`, `--chart-revenue`, `--chart-gap-positive`, `--chart-quadrant-scale-up`, `--chart-quadrant-monitor`
+
+**Key decisions & why:**
+- Used semantic tokens (`--color-text-muted`, `--color-success`, `--color-primary`) over palette primitives — consistent with the funnel pattern and the intent of the token system
+- `rgb(var(--surface-border-4) / 0.9)` for tooltip border — `--color-border-strong` chains through two `var()` levels; going one level to the palette token is simpler and still correct
+- `rgb(var(--neutral-0) / 0.07)` for grid line — no semantic token for white, palette primitive is the right level here
+- Kept 7 tokens hardcoded: tooltip-bg, tooltip-title-color, arc-separator, budget (blue not in project palette), gap-negative, quadrant-champions, quadrant-overspend, quadrant-divider
+
+
+## [#643] Token-align tooltip-bg and arc-separator in _charts.scss
+**Type:** update
+
+**Summary:** Replaced the two remaining palette-matchable hardcoded values in `_charts.scss` with variable references.
+
+**Brainstorming:** `--chart-tooltip-bg` matched `--neutral-800` exactly (15 23 42) so `rgb(var(--neutral-800))` is the right form. `--chart-arc-separator` had no exact palette match but the user confirmed to use the primary card background color, which is `bg-surface-elevated` → `var(--color-surface-1)` (13 20 42). The arc separator sits behind donut slice borders; matching the card surface makes it visually "invisible" against the card background — semantically correct.
+
+**Prompt:** Replace `--chart-tooltip-bg` with `rgb(var(--neutral-800))` and `--chart-arc-separator` with `var(--color-surface-1)` (the primary card background token).
+
+**What changed:**
+- `app/src/styles/themes/dark/_charts.scss` — `--chart-tooltip-bg` → `rgb(var(--neutral-800))`; `--chart-arc-separator` → `var(--color-surface-1)`
+
+**Key decisions & why:**
+- `var(--color-surface-1)` for arc separator — primary card uses `bg-surface-elevated` which maps to `color-surface-1`; arc separator should match the card surface so slice gaps appear invisible against the background
+
+
+## [#644] Fix missing tooltip indicators in ROI bar charts
+**Type:** fix
+
+**Summary:** Tooltip color indicators were invisible in ROI bar charts because bar fill colors were constructed by appending a hex alpha suffix to an `rgb()` string, producing an invalid CSS value that rendered as transparent.
+
+**Brainstorming:** The tooltip's `labelColor` callback in `useChartTooltip` reads `item.element.options.backgroundColor` to get the color for the indicator. `RoiBarChart` built fill colors as `` `${item.color}bf` `` — which worked when `item.color` was hex (e.g. `#6366f1bf` is valid 8-digit hex) but broke after the palette was converted to `rgb()` format, producing `rgb(99, 102, 241)bf` — invalid CSS. Canvas silently ignores invalid colors, so the indicator rendered transparent. The fix is to use the existing `getCampaignPerformanceChartFillColor` utility (which calls `withAlpha` correctly) instead of manual string concatenation.
+
+**Prompt:** Fix ROI bar chart tooltip indicators not showing. The cause is `${item.color}bf` producing an invalid color string after the palette was converted from hex to rgb format. Replace with `getCampaignPerformanceChartFillColor(item.color)`.
+
+**What changed:**
+- `RoiBarChart.vue` — replaced `` `${item.color}bf` `` with `getCampaignPerformanceChartFillColor(item.color)`; added import from `../config`
+
+**Key decisions & why:**
+- `getCampaignPerformanceChartFillColor` over `withAlpha` directly — it's the feature-level abstraction for this exact purpose and uses the canonical `CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA` constant (0.75)

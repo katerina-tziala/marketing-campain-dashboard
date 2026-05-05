@@ -8,7 +8,7 @@ import {
   type BarTooltipItem,
 } from '@/ui'
 import type { RoiBarChartItem } from '../types'
-import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config'
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE, getCampaignPerformanceChartFillColor } from '../config'
 import {
   formatRoiAllocationTooltipLines,
 } from '../utils'
@@ -47,7 +47,7 @@ const chartData = computed<BarChartData>(() => ({
     {
       label: 'ROI (%)',
       data: roiValues.value,
-      backgroundColor: props.items.map((item) => `${item.color}bf`),
+      backgroundColor: props.items.map((item) => getCampaignPerformanceChartFillColor(item.color)),
       borderColor: props.items.map((item) => item.color),
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
