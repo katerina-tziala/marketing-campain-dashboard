@@ -815,3 +815,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Campaigns flatMapped globally then sorted — ensures the best campaign across the whole portfolio gets the most prominent color, regardless of which channel it belongs to
 - allChannels as seeding source — decouples color stability from filter state; filtered channels are still passed separately for chart display
 - Single computed ref for both maps — one reactive derivation, no duplicated walk
+
+
+## [#639] Dynamic import button label and internal back label in ReviewDuplicatedCampaigns
+**Type:** update
+
+**Summary:** ReviewDuplicatedCampaigns now derives the import button label and back button label internally, replacing the static string prop with a semantic boolean and covering all three import states.
+
+**Brainstorming:** The previous static label "Import selected rows" was always shown regardless of state. The backLabel string was computed in the parent and passed down as a prop — presentational logic leaking into the orchestrator. Moving both into the component keeps presentation co-located with the UI. hasPreviousErrors (boolean) replaces backLabel — the parent describes context, the component decides the label. Import button covers three states: "Import selected rows (N)" when rows are selected, "Import selected rows" (disabled) when selection is required and nothing is selected, "Import without duplicates" when valid campaigns exist and nothing is selected.
+
+**Prompt:** Update import button label to show count when selected, "Import selected rows" when required and empty, "Import without duplicates" otherwise. Replace backLabel prop with hasPreviousErrors boolean and derive label inside the component.
+
+**What changed:**
+- `ReviewDuplicatedCampaigns.vue` — replaced backLabel prop with hasPreviousErrors: boolean; added requiredSelection, backLabel, importLabel computeds; wired :required-selection and button labels to computed values
+- `UploadDataModal.vue` — replaced :back-label with :has-previous-errors="rowErrors.length > 0"
+
+**Key decisions & why:**
+- hasPreviousErrors is semantic — parent passes intent, component owns presentation
+- importLabel computed covers all three states without inline ternaries in the template
+- requiredSelection moved into the component — was already derivable from validCampaigns.length, no reason to compute it in the parent

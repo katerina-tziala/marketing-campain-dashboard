@@ -189,7 +189,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
       v-else
       :duplicate-groups="duplicateGroups"
       :valid-campaigns="validCampaigns"
-      :back-label="rowErrors.length > 0 ? 'Review errors' : 'Fix file'"
+      :has-previous-errors="rowErrors.length > 0"
       @back="handleBackFromDuplicates"
       @proceed="handleProceedFromDuplicates"
       @close="close"

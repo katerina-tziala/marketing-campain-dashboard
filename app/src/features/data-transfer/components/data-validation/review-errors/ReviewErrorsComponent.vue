@@ -89,7 +89,7 @@ const showProceed = computed(
       >Cancel</Button
     >
     <Button v-if="showProceed" variant="outline" @click="emit('proceed')"
-      >Import {{ validCampaigns.length }} valid rows</Button
+      >Import valid rows ({{ validCampaigns.length }})</Button
     >
 
     <Button variant="primary" class="min-w-24" @click="emit('back')"

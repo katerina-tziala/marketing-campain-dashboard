@@ -17,7 +17,7 @@ const props = withDefaults(
 
 <template>
   <div
-    class="scrollbar-stable-both scrollbar-info-on-surface table-container"
+    class="scrollbar-stable scrollbar-info-on-surface table-container"
     :class="[
       `striped-${props.striped}`,
       `cell-padding-${props.cellPadding}`,
