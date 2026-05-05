@@ -145,26 +145,42 @@ const describedBy = computed(() => {
 
 <style lang="scss" scoped>
 %_theme-transition {
-  @apply transition-colors duration-300 ease-linear;
+  @apply transition-colors
+    duration-300
+    ease-linear;
 }
 
 .field {
-  @apply flex flex-col gap-2;
+  @apply flex
+    flex-col
+    gap-2;
 
   &[as='fieldset'],
   &:is(fieldset) {
-    @apply border-0 p-0 m-0;
+    @apply border-0
+      p-0
+      m-0;
   }
 }
 
 .field-label {
   @extend %_theme-transition;
-  @apply text-sm font-medium text-primary-lighter tracking-wide inline-block w-fit;
+  @apply text-sm
+    font-medium
+    text-primary-lighter
+    tracking-wide
+    inline-block
+    w-fit;
 }
 
 .field-label.is-required::after {
   @extend %_theme-transition;
-  @apply content-["*"] inline-block translate-y-0.5 text-primary-lighter/70 text-xl leading-none;
+  @apply content-["*"]
+    inline-block
+    translate-y-0.5
+    text-primary-lighter/70
+    text-xl
+    leading-none;
 }
 
 :deep(.form-control) {
@@ -192,24 +208,28 @@ const describedBy = computed(() => {
     &:focus,
     &:focus-within,
     &:hover {
-      @apply border-primary-lighter text-primary-lighter;
+      @apply border-primary-lighter
+        text-primary-lighter;
     }
   }
 
   &:disabled {
-    @apply opacity-80 cursor-not-allowed;
+    @apply opacity-80
+      cursor-not-allowed;
   }
 }
 
 :deep(.input-error) {
   @extend %_theme-transition;
-  @apply border-danger text-danger;
+  @apply border-danger
+    text-danger;
 
   &:not(:disabled) {
     &:focus,
     &:focus-within,
     &:hover {
-      @apply border-primary-lighter text-primary-lighter;
+      @apply border-primary-lighter
+        text-primary-lighter;
     }
   }
 }

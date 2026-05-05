@@ -53,26 +53,32 @@ withDefaults(
     grid-cols-1
     grid-rows-4
     gap-y-2.5
-    gap-x-8  
+    gap-x-8
     w-full;
 
   @include cq-up(cq-400, 'expected-impact-grid') {
-    @apply grid-cols-2 grid-rows-2 gap-x-6;
+    @apply grid-cols-2
+      grid-rows-2
+      gap-x-6;
   }
 
   @include cq-up(cq-540, 'expected-impact-grid') {
-    @apply grid-cols-2 grid-rows-2 gap-x-12;
+    @apply grid-cols-2
+      grid-rows-2
+      gap-x-12;
   }
 
   @include cq-up(cq-800, 'expected-impact-grid') {
-    @apply grid-cols-4 grid-rows-1 gap-x-6;
+    @apply grid-cols-4
+      grid-rows-1
+      gap-x-6;
   }
 }
 
 .expected-impact-row {
-  @apply flex 
+  @apply flex
     items-center
-    justify-between  
+    justify-between
     border
     border-subtle
     rounded-md
@@ -81,7 +87,8 @@ withDefaults(
     text-typography-subtle;
 
   > span {
-    @apply inline-block tracking-wide;
+    @apply inline-block
+      tracking-wide;
   }
 }
 </style>

@@ -65,21 +65,30 @@ defineExpose({
     items-center
     justify-center
     whitespace-nowrap
-    transition ease-in-out duration-150
+    transition
+    ease-in-out
+    duration-150
     rounded-md
     opacity-85
     tracking-wide
-    gap-1.5 px-2.5 py-3
-    h-10 
-    border border-transparent
-    text-base font-medium leading-none text-center;
+    gap-1.5
+    px-2.5
+    py-3
+    h-10
+    border
+    border-transparent
+    text-base
+    font-medium
+    leading-none
+    text-center;
 
   &:deep(svg) {
     @apply text-xl;
   }
 
   &:disabled {
-    @apply cursor-not-allowed opacity-50;
+    @apply cursor-not-allowed
+      opacity-50;
   }
 
   &:active {
@@ -88,25 +97,35 @@ defineExpose({
 
   /* variant small */
   &.btn.small {
-    @apply text-sm px-3 h-9 py-0 leading-4;
+    @apply text-sm
+      px-3
+      h-9
+      py-0
+      leading-4;
   }
 
   /* variant smaller */
   &.btn.smaller {
-    @apply text-xs px-2.5 h-7 py-0 leading-none;
+    @apply text-xs
+      px-2.5
+      h-7
+      py-0
+      leading-none;
   }
 }
 
 /* variant icon-only */
 .btn.icon-only {
-  @apply p-0 size-10;
+  @apply p-0
+    size-10;
 
   &:deep(svg) {
     @apply text-2xl;
   }
 
   &.btn.small {
-    @apply p-0 size-9;
+    @apply p-0
+      size-9;
 
     &:deep(svg) {
       @apply text-xl;
@@ -116,64 +135,86 @@ defineExpose({
 
 /* variant primary */
 .btn.primary {
-  @apply bg-primary-darker text-typography-strong;
+  @apply bg-primary-darker
+    text-typography-strong;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-deep text-typography-inverse;
+      @apply bg-primary-deep
+        text-typography-inverse;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-primary-light;
     }
   }
 }
 
 /* variant text-only */
 .btn.text-only {
-  @apply border-transparent text-primary-lighter/80;
+  @apply border-transparent
+    text-primary-lighter/80;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light/[12%] text-primary-light;
+      @apply bg-primary-light/[12%]
+        text-primary-light;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-primary-lighter;
     }
   }
 }
 
 /* variant outline */
 .btn.outline {
-  @apply bg-surface text-primary-light border-primary-light;
+  @apply bg-surface
+    text-primary-light
+    border-primary-light;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply text-primary-lighter border-primary-lighter;
+      @apply text-primary-lighter
+        border-primary-lighter;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-light;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-primary-light;
     }
   }
 }
 
 /* variant accent-outline */
 .btn.accent-outline {
-  @apply bg-surface text-accent-light border-accent-dark;
+  @apply bg-surface
+    text-accent-light
+    border-accent-dark;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply text-accent-lighter border-accent;
+      @apply text-accent-lighter
+        border-accent;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-accent;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-accent;
     }
   }
 }
@@ -188,27 +229,36 @@ defineExpose({
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface text-info;
+      @apply bg-surface
+        text-info;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-info-dark;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-info-dark;
     }
   }
 }
 
 /* variant ghost */
 .btn.ghost {
-  @apply border-transparent text-typography-subtle;
+  @apply border-transparent
+    text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-typography/[8%] text-typography;
+      @apply bg-typography/[8%]
+        text-typography;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-primary-lighter;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-primary-lighter;
     }
   }
 }
@@ -228,32 +278,45 @@ defineExpose({
 
 /* variant info-outline */
 .btn.info-outline {
-  @apply border-info-dark text-info bg-surface;
+  @apply border-info-dark
+    text-info
+    bg-surface;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-info-dark text-info text-primary-ink;
+      @apply bg-info-dark
+        text-info
+        text-primary-ink;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-info;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-info;
     }
   }
 }
 
 /* variant destructive */
 .btn.destructive {
-  @apply border-transparent text-typography-subtle font-normal;
+  @apply border-transparent
+    text-typography-subtle
+    font-normal;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-danger-darker/10 text-danger;
+      @apply bg-danger-darker/10
+        text-danger;
     }
 
     &:not(.no-ring):focus-visible {
-      @apply ring-2 ring-danger/60 ring-offset-1 ring-offset-background;
+      @apply ring-2
+        ring-danger/60
+        ring-offset-1
+        ring-offset-background;
     }
   }
 }

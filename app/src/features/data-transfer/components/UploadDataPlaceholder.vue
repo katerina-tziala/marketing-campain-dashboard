@@ -48,25 +48,40 @@ const { downloadTemplate } = useDownloadTemplate();
 
 <style lang="scss" scoped>
 .empty-state {
-  @apply flex flex-col items-center justify-center text-center p-8 gap-6 m-auto w-full;
+  @apply flex
+    flex-col
+    items-center
+    justify-center
+    text-center
+    p-8
+    gap-6
+    m-auto
+    w-full;
 }
 
 .empty-state-title {
-  @apply text-primary-light text-xl font-semibold leading-6 tracking-wide;
+  @apply text-primary-light
+    text-xl
+    font-semibold
+    leading-6
+    tracking-wide;
 }
 
 .empty-state-description {
-  @apply text-typography-muted text-sm leading-6 tracking-wide;
+  @apply text-typography-muted
+    text-sm
+    leading-6
+    tracking-wide;
 }
 
 .file-actions {
   @apply flex
-  items-center
-  gap-6
-  mt-2
-  w-full
-  flex-col
-  max-w-md
-  xs:flex-row;
+    items-center
+    gap-6
+    mt-2
+    w-full
+    flex-col
+    max-w-md
+    xs:flex-row;
 }
 </style>

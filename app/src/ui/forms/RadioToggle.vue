@@ -48,7 +48,12 @@ defineEmits<{ 'update:modelValue': [value: string] }>();
 
 <style lang="scss" scoped>
 .radio-toggle {
-  @apply grid grid-rows-1 gap-0.5 bg-surface border rounded-md;
+  @apply grid
+    grid-rows-1
+    gap-0.5
+    bg-surface
+    border
+    rounded-md;
 }
 
 .option-label {
@@ -59,10 +64,10 @@ defineEmits<{ 'update:modelValue': [value: string] }>();
     h-full
     text-center
     cursor-pointer
-    font-medium 
+    font-medium
     tracking-wide
     text-sm
-    px-2 
+    px-2
     py-1.5
     min-h-10
     text-primary-lighter
@@ -81,8 +86,8 @@ label {
 
 .radio-toggle.small {
   .option-label {
-    @apply py-1 
-    min-h-9;
+    @apply py-1
+      min-h-9;
   }
 
   label {
@@ -98,8 +103,8 @@ label {
 
 .radio-toggle.tiny {
   .option-label {
-    @apply py-1 
-    min-h-7;
+    @apply py-1
+      min-h-7;
   }
 
   label {
@@ -115,20 +120,29 @@ label {
 
 input[type='radio'] {
   &:checked + .option-label {
-    @apply bg-primary-dark text-typography-strong;
+    @apply bg-primary-dark
+      text-typography-strong;
   }
 
   &:disabled + .option-label {
-    @apply opacity-50 cursor-not-allowed text-on-primary;
+    @apply opacity-50
+      cursor-not-allowed
+      text-on-primary;
   }
 
   &:not(:disabled) {
     &:hover + .option-label {
-      @apply bg-primary-light text-primary-ink;
+      @apply bg-primary-light
+        text-primary-ink;
     }
 
     &:focus-visible + .option-label {
-      @apply bg-primary text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+      @apply bg-primary
+        text-on-primary
+        ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-primary-dark;
     }
   }
 }
@@ -142,16 +156,23 @@ input[type='radio'] {
     }
 
     &:checked + .option-label {
-      @apply bg-primary-light text-primary-ink;
+      @apply bg-primary-light
+        text-primary-ink;
     }
 
     &:not(:disabled) {
       &:hover + .option-label {
-        @apply bg-primary-dark text-typography-strong;
+        @apply bg-primary-dark
+          text-typography-strong;
       }
 
       &:focus-visible + .option-label {
-        @apply bg-primary text-on-primary ring-2 ring-offset-1 ring-offset-background ring-primary-dark;
+        @apply bg-primary
+          text-on-primary
+          ring-2
+          ring-offset-1
+          ring-offset-background
+          ring-primary-dark;
       }
     }
   }

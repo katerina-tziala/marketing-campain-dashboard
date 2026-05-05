@@ -1,0 +1,35 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+STAGED_FILES="$(mktemp)"
+
+cleanup() {
+  rm -f "$STAGED_FILES"
+}
+
+trap cleanup EXIT
+
+git diff --cached --name-only --diff-filter=ACMR > "$STAGED_FILES"
+
+cd "$ROOT_DIR/app"
+
+npm run lint:fix
+npm run stylelint:fix
+npm run format
+
+cd "$ROOT_DIR"
+
+while IFS= read -r file; do
+  case "$file" in
+    app/*)
+      if [ -e "$file" ]; then
+        git add "$file"
+      fi
+      ;;
+  esac
+done < "$STAGED_FILES"
+
+cd "$ROOT_DIR/app"
+
+npm run check

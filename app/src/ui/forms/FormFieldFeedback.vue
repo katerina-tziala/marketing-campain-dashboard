@@ -100,44 +100,63 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 <style lang="scss" scoped>
 %_theme-transition {
-  @apply transition-colors duration-300 ease-linear;
+  @apply transition-colors
+    duration-300
+    ease-linear;
 }
 
 .field-error {
   @extend %_theme-transition;
-  @apply text-sm text-danger m-0;
+  @apply text-sm
+    text-danger
+    m-0;
 }
 
 .field-error-hint {
   @extend %_theme-transition;
-  @apply text-sm text-typography-subtle;
+  @apply text-sm
+    text-typography-subtle;
 }
 
 :slotted(.field-error) {
   @extend %_theme-transition;
-  @apply text-sm text-danger m-0;
+  @apply text-sm
+    text-danger
+    m-0;
 }
 
 :slotted(.field-error-hint) {
   @extend %_theme-transition;
-  @apply text-sm text-typography-subtle;
+  @apply text-sm
+    text-typography-subtle;
 }
 
 .field-message {
-  @apply flex flex-col gap-1;
+  @apply flex
+    flex-col
+    gap-1;
 }
 
 .field-message-animated {
-  @apply grid overflow-hidden [grid-template-rows:1fr];
+  @apply grid
+    overflow-hidden
+    [grid-template-rows:1fr];
 }
 
 .field-message-content {
-  @apply flex min-h-0 flex-col gap-1 overflow-hidden;
+  @apply flex
+    min-h-0
+    flex-col
+    gap-1
+    overflow-hidden;
 }
 
 .field-message-enter-active,
 .field-message-leave-active {
-  @apply transition-[grid-template-rows] duration-300 ease-out will-change-[grid-template-rows];
+  @apply transition-[grid-template-rows]
+    duration-300
+    ease-out
+    will-change-[grid-template-rows];
 }
 
 .field-message-leave-active {
@@ -151,7 +170,10 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 .field-message-enter-active .field-message-content,
 .field-message-leave-active .field-message-content {
-  @apply transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform];
+  @apply transition-[opacity,transform]
+    duration-300
+    ease-out
+    will-change-[opacity,transform];
 }
 
 .field-message-leave-active .field-message-content {
@@ -160,6 +182,8 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 .field-message-enter-from .field-message-content,
 .field-message-leave-to .field-message-content {
-  @apply -translate-y-1 scale-[0.98] opacity-0;
+  @apply -translate-y-1
+    scale-[0.98]
+    opacity-0;
 }
 </style>

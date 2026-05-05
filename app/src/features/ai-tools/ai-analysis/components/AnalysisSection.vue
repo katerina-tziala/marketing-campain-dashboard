@@ -13,10 +13,17 @@ defineProps<{
 
 <style lang="scss" scoped>
 .analysis-section {
-  @apply flex flex-col gap-3 text-sm;
+  @apply flex
+    flex-col
+    gap-3
+    text-sm;
 }
 
 .section-title {
-  @apply text-sm font-semibold tracking-wider m-0 text-primary-lighter;
+  @apply text-sm
+    font-semibold
+    tracking-wider
+    m-0
+    text-primary-lighter;
 }
 </style>

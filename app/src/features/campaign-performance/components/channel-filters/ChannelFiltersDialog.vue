@@ -127,7 +127,7 @@ function applySelection(): void {
 }
 
 .filters-panel {
-  @apply min-w-32  
+  @apply min-w-32
     w-full
     max-w-[90%]
     max-h-96
@@ -146,23 +146,37 @@ function applySelection(): void {
     h-11;
 
   .panel-title {
-    @apply text-sm font-semibold text-typography-muted capitalize tracking-wide;
+    @apply text-sm
+      font-semibold
+      text-typography-muted
+      capitalize
+      tracking-wide;
   }
 
   .selection-count {
-    @apply text-xs text-typography-subtle font-medium normal-case whitespace-nowrap;
+    @apply text-xs
+      text-typography-subtle
+      font-medium
+      normal-case
+      whitespace-nowrap;
   }
 }
 
 .panel-content {
-  @apply w-full h-full overflow-y-auto py-2 px-0;
+  @apply w-full
+    h-full
+    overflow-y-auto
+    py-2
+    px-0;
 }
 
 .panel-footer {
   @apply flex
-  items-center
-  justify-end gap-6
-  px-3 py-2 
-  border-t;
+    items-center
+    justify-end
+    gap-6
+    px-3
+    py-2
+    border-t;
 }
 </style>

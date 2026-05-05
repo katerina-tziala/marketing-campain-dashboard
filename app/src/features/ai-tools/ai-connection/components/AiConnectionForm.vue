@@ -145,13 +145,20 @@ function handleApiKeyBlur(): void {
 
 <style lang="scss" scoped>
 .conn-form {
-  @apply flex flex-col gap-5 h-full overflow-auto pt-4
+  @apply flex
+    flex-col
+    gap-5
+    h-full
+    overflow-auto
+    pt-4
     px-2
     min-h-[50vh];
 }
 
 .conn-intro {
-  @apply text-sm text-typography-soft leading-5;
+  @apply text-sm
+    text-typography-soft
+    leading-5;
 }
 
 .conn-fieldset {

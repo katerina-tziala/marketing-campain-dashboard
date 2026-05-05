@@ -161,15 +161,18 @@ watch(
     max-w-[98vw];
 
   &.small {
-    @apply w-full max-w-2xl;
+    @apply w-full
+      max-w-2xl;
   }
 
   &.medium {
-    @apply w-full max-w-3xl;
+    @apply w-full
+      max-w-3xl;
   }
 
   &.large {
-    @apply w-full max-w-5xl;
+    @apply w-full
+      max-w-5xl;
   }
 }
 </style>

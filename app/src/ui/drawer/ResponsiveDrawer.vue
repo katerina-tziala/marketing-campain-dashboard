@@ -159,22 +159,32 @@ watch(modalOpen, (open) => {
 <style lang="scss" scoped>
 .responsive-drawer {
   @apply hidden
-  lg:block lg:relative lg:overflow-hidden lg:shrink-0 w-0 lg:ease-in-out lg:duration-300 lg:transition-[width];
+    lg:block
+    lg:relative
+    lg:overflow-hidden
+    lg:shrink-0
+    w-0
+    lg:ease-in-out
+    lg:duration-300
+    lg:transition-[width];
 
   &.open {
     @apply lg:w-[30rem];
   }
 
   &.left .responsive-drawer-panel {
-    @apply lg:left-0 lg:-translate-x-full;
+    @apply lg:left-0
+      lg:-translate-x-full;
   }
 
   &.right .responsive-drawer-panel {
-    @apply lg:right-0 lg:translate-x-full;
+    @apply lg:right-0
+      lg:translate-x-full;
   }
 
   &.open .responsive-drawer-panel {
-    @apply lg:opacity-100 lg:translate-x-0;
+    @apply lg:opacity-100
+      lg:translate-x-0;
   }
 }
 
@@ -206,10 +216,14 @@ watch(modalOpen, (open) => {
 }
 
 .responsive-drawer-modal {
-  @apply rounded-md max-h-[92vh] max-w-[92vw];
+  @apply rounded-md
+    max-h-[92vh]
+    max-w-[92vw];
 }
 
 .responsive-drawer-content {
-  @apply min-h-0 overflow-hidden pb-4;
+  @apply min-h-0
+    overflow-hidden
+    pb-4;
 }
 </style>

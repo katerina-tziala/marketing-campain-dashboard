@@ -209,6 +209,9 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .channel-filters {
-  @apply relative flex items-start gap-2;
+  @apply relative
+    flex
+    items-start
+    gap-2;
 }
 </style>

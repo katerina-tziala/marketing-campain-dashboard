@@ -99,6 +99,11 @@ const showProceed = computed(
 
 <style lang="scss" scoped>
 .body-content {
-  @apply w-full max-w-full grid grid-rows-[min-content_1fr] grid-cols-1 gap-4;
+  @apply w-full
+    max-w-full
+    grid
+    grid-rows-[min-content_1fr]
+    grid-cols-1
+    gap-4;
 }
 </style>

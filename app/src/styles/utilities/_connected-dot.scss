@@ -1,11 +1,11 @@
 @layer utilities {
   .connected-dot::before {
     @apply inline-block
-    content-['']
+      content-['']
       w-2
       h-2
       rounded-full
-      bg-success 
+      bg-success
       shadow-connection;
   }
 }

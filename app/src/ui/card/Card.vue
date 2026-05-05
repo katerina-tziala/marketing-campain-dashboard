@@ -37,7 +37,11 @@ const props = withDefaults(
     border-faint;
 
   h3 {
-    @apply text-base font-medium tracking-wider m-0 text-primary-lighter;
+    @apply text-base
+      font-medium
+      tracking-wider
+      m-0
+      text-primary-lighter;
   }
 }
 
@@ -57,7 +61,11 @@ const props = withDefaults(
     border-darker;
 
   h5 {
-    @apply w-full font-semibold text-primary-lighter leading-5 tracking-wide;
+    @apply w-full
+      font-semibold
+      text-primary-lighter
+      leading-5
+      tracking-wide;
   }
 }
 
@@ -73,7 +81,9 @@ const props = withDefaults(
     border-faint;
 
   h4 {
-    @apply font-medium text-typography-primary leading-5;
+    @apply font-medium
+      text-typography-primary
+      leading-5;
   }
 }
 </style>

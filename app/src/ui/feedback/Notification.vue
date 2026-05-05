@@ -92,7 +92,11 @@ const ariaLive = computed(() => {
   @apply rounded-md;
 
   .notification-body {
-    @apply p-3 rounded-md border bg-primary/10 border-primary/25;
+    @apply p-3
+      rounded-md
+      border
+      bg-primary/10
+      border-primary/25;
 
     .notification-icon,
     .notification-title {
@@ -102,7 +106,8 @@ const ariaLive = computed(() => {
 
   &.success {
     .notification-body {
-      @apply bg-success/10 border-success/25;
+      @apply bg-success/10
+        border-success/25;
 
       .notification-icon,
       .notification-title {
@@ -113,7 +118,8 @@ const ariaLive = computed(() => {
 
   &.error {
     .notification-body {
-      @apply bg-danger/10 border-danger/25;
+      @apply bg-danger/10
+        border-danger/25;
 
       .notification-icon,
       .notification-title {
@@ -124,7 +130,8 @@ const ariaLive = computed(() => {
 
   &.warning {
     .notification-body {
-      @apply bg-warning/10 border-warning/25;
+      @apply bg-warning/10
+        border-warning/25;
 
       .notification-icon,
       .notification-title {
@@ -135,7 +142,8 @@ const ariaLive = computed(() => {
 
   &.info {
     .notification-body {
-      @apply bg-info/10 border-info/25;
+      @apply bg-info/10
+        border-info/25;
 
       .notification-icon,
       .notification-title {
@@ -146,19 +154,32 @@ const ariaLive = computed(() => {
 }
 
 .notification-body {
-  @apply flex-1 flex flex-col gap-0.5;
+  @apply flex-1
+    flex
+    flex-col
+    gap-0.5;
 }
 
 .notification-icon {
-  @apply leading-none shrink-0 text-lg text-typography-subtle;
+  @apply leading-none
+    shrink-0
+    text-lg
+    text-typography-subtle;
 }
 
 .notification-head {
-  @apply flex items-start justify-start gap-2;
+  @apply flex
+    items-start
+    justify-start
+    gap-2;
 }
 
 .notification-title {
-  @apply grow leading-5 tracking-wide text-base font-medium;
+  @apply grow
+    leading-5
+    tracking-wide
+    text-base
+    font-medium;
 }
 
 .notification-action {

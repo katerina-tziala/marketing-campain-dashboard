@@ -57,10 +57,16 @@ const emit = defineEmits<{ clear: [] }>();
 
 <style lang="scss" scoped>
 .group-title-row {
-  @apply flex flex-wrap items-center gap-2 min-h-9 px-0.5;
+  @apply flex
+    flex-wrap
+    items-center
+    gap-2
+    min-h-9
+    px-0.5;
 }
 
 .group-title-text {
-  @apply min-w-0 break-words;
+  @apply min-w-0
+    break-words;
 }
 </style>

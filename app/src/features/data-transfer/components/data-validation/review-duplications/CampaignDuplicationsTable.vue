@@ -167,7 +167,8 @@ defineExpose({ reset });
 <style lang="scss" scoped>
 .table-selectable-row:hover {
   :deep(.radio-item.info > input[type='radio']:not(:disabled) + .radio-indicator) {
-    @apply bg-surface-active border-info;
+    @apply bg-surface-active
+      border-info;
   }
 
   :deep(.radio-item.info > input[type='radio']:checked:not(:disabled) + .radio-indicator::before) {

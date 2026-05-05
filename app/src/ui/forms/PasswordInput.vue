@@ -93,12 +93,16 @@ function handleToggleClick(): void {
 
 <style lang="scss" scoped>
 .password-input {
-  @apply relative flex items-center overflow-hidden;
+  @apply relative
+    flex
+    items-center
+    overflow-hidden;
 
   &:not(.disabled) {
     &:hover > .form-control,
     &:focus-within > .form-control {
-      @apply border-primary-lighter text-primary-lighter;
+      @apply border-primary-lighter
+        text-primary-lighter;
     }
   }
 }

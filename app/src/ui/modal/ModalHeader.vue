@@ -44,22 +44,44 @@ const finalCloseLabel = props.closeLabel ?? 'Close';
 
 <style lang="scss" scoped>
 .modal-header {
-  @apply flex items-start gap-2 border-b py-3.5 px-4;
+  @apply flex
+    items-start
+    gap-2
+    border-b
+    py-3.5
+    px-4;
 }
 
 .modal-header-content {
-  @apply grow flex items-start gap-2 pt-1.5;
+  @apply grow
+    flex
+    items-start
+    gap-2
+    pt-1.5;
 }
 
 .modal-header-icon {
-  @apply text-primary-lighter shrink-0 p-0 text-lg leading-5;
+  @apply text-primary-lighter
+    shrink-0
+    p-0
+    text-lg
+    leading-5;
 }
 
 .modal-header-content > h2 {
-  @apply m-0 tracking-wider text-primary-lighter font-medium text-lg grow;
+  @apply m-0
+    tracking-wider
+    text-primary-lighter
+    font-medium
+    text-lg
+    grow;
 }
 
 .modal-header-actions {
-  @apply flex items-center justify-end gap-2 shrink-0;
+  @apply flex
+    items-center
+    justify-end
+    gap-2
+    shrink-0;
 }
 </style>

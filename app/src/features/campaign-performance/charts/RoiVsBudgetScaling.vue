@@ -106,8 +106,10 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
 }
 
 .scatter-legend-dash {
-  @apply inline-block mr-2 w-3
-    border-t 
+  @apply inline-block
+    mr-2
+    w-3
+    border-t
     border-dashed
     border-typography-soft
     mb-1;

@@ -54,13 +54,21 @@ function handleDisconnect(): void {
 }
 
 .status-provider {
-  @apply text-sm font-semibold text-typography-soft grow shrink-0;
+  @apply text-sm
+    font-semibold
+    text-typography-soft
+    grow
+    shrink-0;
 
   flex-grow: 100;
 }
 
 .status-connected {
-  @apply text-xs font-semibold text-success relative whitespace-nowrap;
+  @apply text-xs
+    font-semibold
+    text-success
+    relative
+    whitespace-nowrap;
 
   &::before {
     @apply mr-1.5;

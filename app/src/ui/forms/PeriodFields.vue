@@ -210,11 +210,19 @@ defineExpose({
 
 <style lang="scss" scoped>
 .period-fieldset {
-  @apply border-0 p-0 m-0 flex flex-col gap-1.5;
+  @apply border-0
+    p-0
+    m-0
+    flex
+    flex-col
+    gap-1.5;
 }
 
 .period-fields {
-  @apply grid grid-cols-1 gap-x-8 gap-y-4;
+  @apply grid
+    grid-cols-1
+    gap-x-8
+    gap-y-4;
 
   @include cq-up(cq-320, 'form') {
     @apply grid-cols-2;

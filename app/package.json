@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "prepare": "cd .. && git rev-parse --git-dir >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "typecheck": "vue-tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "stylelint": "stylelint \"src/**/*.{vue,scss,css}\"",
     "stylelint:fix": "stylelint \"src/**/*.{vue,scss,css}\" --fix",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check",
+    "format:tailwind-apply": "node scripts/format-tailwind-apply.mjs --write",
+    "format:tailwind-apply:check": "node scripts/format-tailwind-apply.mjs --check",
+    "format": "prettier . --write && npm run format:tailwind-apply",
+    "format:check": "node scripts/check-format.mjs",
     "check": "npm run typecheck && npm run lint && npm run stylelint && npm run format:check",
     "preview": "vite preview"
   },

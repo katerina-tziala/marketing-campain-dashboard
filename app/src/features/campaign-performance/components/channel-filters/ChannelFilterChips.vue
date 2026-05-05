@@ -123,20 +123,31 @@ defineExpose({
 
 <style lang="scss" scoped>
 .channel-filter-chips {
-  @apply flex flex-wrap gap-2.5 py-1;
+  @apply flex
+    flex-wrap
+    gap-2.5
+    py-1;
 
   &:not(.plain) {
-    @apply flex-1 overflow-hidden;
+    @apply flex-1
+      overflow-hidden;
   }
 
   &.plain {
-    @apply gap-2 max-h-none;
+    @apply gap-2
+      max-h-none;
   }
 
   max-height: var(--channel-filter-max-height, 4.8rem);
 
   &.probe {
-    @apply absolute inset-x-0 top-0 invisible pointer-events-none select-none pr-9;
+    @apply absolute
+      inset-x-0
+      top-0
+      invisible
+      pointer-events-none
+      select-none
+      pr-9;
   }
 
   &.single-row {
@@ -150,7 +161,8 @@ defineExpose({
     justify-center
     rounded-full
     px-1.5
-    min-w-[1.25rem] h-5
+    min-w-[1.25rem]
+    h-5
     text-xs
     -mr-0.5
     bg-line;

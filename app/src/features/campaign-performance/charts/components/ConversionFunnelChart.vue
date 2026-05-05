@@ -112,17 +112,28 @@ const chartAriaLabel = computed(() =>
 }
 
 .funnel-row {
-  @apply flex flex-row justify-start items-start min-h-[28%];
+  @apply flex
+    flex-row
+    justify-start
+    items-start
+    min-h-[28%];
 
   .funnel-region-1 {
-    @apply grow relative h-full;
+    @apply grow
+      relative
+      h-full;
 
     .bar-percentage {
-      @apply min-w-16 h-full w-full rounded-r-md duration-500 transition-[width];
+      @apply min-w-16
+        h-full
+        w-full
+        rounded-r-md
+        duration-500
+        transition-[width];
     }
 
     .bar-label {
-      @apply flex 
+      @apply flex
         flex-col
         gap-0
         justify-center
@@ -134,17 +145,31 @@ const chartAriaLabel = computed(() =>
         left-6;
 
       > .value {
-        @apply min-w-0 text-lg font-semibold leading-tight text-typography-inverse drop-shadow-sm;
+        @apply min-w-0
+          text-lg
+          font-semibold
+          leading-tight
+          text-typography-inverse
+          drop-shadow-sm;
       }
 
       > .label {
-        @apply min-w-0 text-sm font-medium leading-tight text-typography-inverse drop-shadow-sm;
+        @apply min-w-0
+          text-sm
+          font-medium
+          leading-tight
+          text-typography-inverse
+          drop-shadow-sm;
       }
     }
   }
 
   .funnel-region-2 {
-    @apply shrink-0 flex h-full items-center justify-end;
+    @apply shrink-0
+      flex
+      h-full
+      items-center
+      justify-end;
 
     .funnel-rate {
       @apply inline-flex
@@ -154,7 +179,7 @@ const chartAriaLabel = computed(() =>
         gap-y-0
         justify-end
         content-center
-        items-center 
+        items-center
         max-w-full
         text-right
         leading-tight

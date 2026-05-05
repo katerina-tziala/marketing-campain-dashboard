@@ -77,7 +77,11 @@ const arrowState = computed(() => {
 
 <style lang="scss" scoped>
 .delta-value {
-  @apply inline-flex items-center gap-1 font-semibold text-typography-soft;
+  @apply inline-flex
+    items-center
+    gap-1
+    font-semibold
+    text-typography-soft;
 
   &.positive {
     @apply text-success;
@@ -89,7 +93,8 @@ const arrowState = computed(() => {
 }
 
 .delta-arrow {
-  @apply text-[0.85em] transition-transform;
+  @apply text-[0.85em]
+    transition-transform;
 
   &.down {
     @apply rotate-180;

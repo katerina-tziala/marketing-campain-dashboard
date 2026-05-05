@@ -454,15 +454,20 @@ watch(
 
 <style lang="scss" scoped>
 .grouped-campaign-table {
-  @apply flex flex-col gap-2 min-h-0;
+  @apply flex
+    flex-col
+    gap-2
+    min-h-0;
 }
 
 .table-actions {
-  @apply flex justify-start;
+  @apply flex
+    justify-start;
 }
 
 .table-cell-content {
-  @apply p-2.5 text-center;
+  @apply p-2.5
+    text-center;
 }
 
 .left-alignment .table-cell-content {
@@ -470,18 +475,23 @@ watch(
 }
 
 .group-cell-content {
-  @apply py-3 px-4;
+  @apply py-3
+    px-4;
 }
 
 .group-toggle {
-  @apply gap-2 text-left w-full;
+  @apply gap-2
+    text-left
+    w-full;
 
   justify-content: flex-start;
   padding-inline: 0;
 }
 
 .group-toggle-icon {
-  @apply shrink-0 transition-transform duration-150;
+  @apply shrink-0
+    transition-transform
+    duration-150;
 
   &.expanded {
     @apply rotate-180;
@@ -489,7 +499,9 @@ watch(
 }
 
 .campaign-count {
-  @apply text-xs text-typography-subtle font-normal;
+  @apply text-xs
+    text-typography-subtle
+    font-normal;
 }
 
 .campaign-name .collapse-cell-content {
@@ -497,11 +509,14 @@ watch(
 }
 
 .campaign-row > td {
-  @apply transition-colors duration-300 ease-out;
+  @apply transition-colors
+    duration-300
+    ease-out;
 }
 
 .collapse-cell {
-  @apply grid opacity-100;
+  @apply grid
+    opacity-100;
 
   grid-template-rows: 1fr;
 }
@@ -511,6 +526,7 @@ watch(
 }
 
 .collapse-cell-inner {
-  @apply overflow-hidden min-h-0;
+  @apply overflow-hidden
+    min-h-0;
 }
 </style>

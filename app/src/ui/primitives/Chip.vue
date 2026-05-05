@@ -30,38 +30,49 @@ defineProps<{
     rounded-full
     border
     bg-surface
-
     bg-primary-ink
     text-typography-subtle;
 
   .chip-content {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1;
+    @apply inline-flex
+      items-center
+      gap-1.5
+      rounded-full
+      px-2
+      py-1;
   }
 
   &[aria-pressed='true'] {
     @apply border-info-darker;
 
     > .chip-content {
-      @apply bg-info-dark/10 text-info/90;
+      @apply bg-info-dark/10
+        text-info/90;
     }
   }
 
   &.readonly {
-    @apply cursor-default pointer-events-none;
+    @apply cursor-default
+      pointer-events-none;
   }
 
   &:not(.readonly) {
     &:hover,
     &:focus-visible {
-      @apply bg-surface border-info;
+      @apply bg-surface
+        border-info;
 
       > .chip-content {
-        @apply bg-transparent text-info-light;
+        @apply bg-transparent
+          text-info-light;
       }
     }
 
     &:focus-visible {
-      @apply ring-2 ring-offset-1 ring-offset-background ring-info;
+      @apply ring-2
+        ring-offset-1
+        ring-offset-background
+        ring-info;
     }
   }
 }

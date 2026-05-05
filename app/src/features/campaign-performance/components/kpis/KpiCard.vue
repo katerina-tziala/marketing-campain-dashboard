@@ -30,15 +30,22 @@ defineProps<{
 
 <style lang="scss" scoped>
 .kpi-card {
-  @apply py-3 px-3.5 w-full gap-1;
+  @apply py-3
+    px-3.5
+    w-full
+    gap-1;
 }
 
 .kpi-label {
-  @apply text-xs font-medium text-primary-lighter;
+  @apply text-xs
+    font-medium
+    text-primary-lighter;
 }
 
 .kpi-value {
-  @apply text-2xl font-medium text-on-primary;
+  @apply text-2xl
+    font-medium
+    text-on-primary;
 
   @include cq-up(cq-540, 'kpis') {
     @apply text-3xl;
@@ -46,6 +53,7 @@ defineProps<{
 }
 
 .kpi-meta {
-  @apply text-xs text-typography-muted;
+  @apply text-xs
+    text-typography-muted;
 }
 </style>

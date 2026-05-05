@@ -22,7 +22,10 @@ withDefaults(
 
 <style lang="scss" scoped>
 .form {
-  @apply w-full h-fit flex flex-col;
+  @apply w-full
+    h-fit
+    flex
+    flex-col;
   @include cq-container('form');
 }
 

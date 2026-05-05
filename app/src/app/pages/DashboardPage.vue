@@ -104,7 +104,12 @@ const {
 
 <style lang="scss" scoped>
 .dashboard-shell {
-  @apply h-screen w-screen grid grid-cols-1 grid-rows-[min-content_1fr] overflow-hidden;
+  @apply h-screen
+    w-screen
+    grid
+    grid-cols-1
+    grid-rows-[min-content_1fr]
+    overflow-hidden;
 }
 
 .dashboard-header {
@@ -124,29 +129,39 @@ const {
 }
 
 .dashboard-title {
-  @apply font-semibold grow;
+  @apply font-semibold
+    grow;
 
   .title-wrapper {
-    @apply bg-gradient-to-r 
-    from-accent 
-    via-info-light 
-    via-info 
-    via-info-darker  
-    via-primary  
-    via-primary-light 
-    to-secondary 
-    bg-clip-text
-    text-transparent
-    text-lg
-    leading-6
-    sm:text-xl
-    md:text-2xl md:tracking-wide
-    sr-only sm:not-sr-only;
+    @apply bg-gradient-to-r
+      from-accent
+      via-info-light
+      via-info
+      via-info-darker
+      via-primary
+      via-primary-light
+      to-secondary
+      bg-clip-text
+      text-transparent
+      text-lg
+      leading-6
+      sm:text-xl
+      md:text-2xl
+      md:tracking-wide
+      sr-only
+      sm:not-sr-only;
   }
 }
 
 .dashboard-main {
-  @apply flex flex-col justify-center items-center w-full mx-auto overflow-x-hidden overflow-y-hidden;
+  @apply flex
+    flex-col
+    justify-center
+    items-center
+    w-full
+    mx-auto
+    overflow-x-hidden
+    overflow-y-hidden;
 }
 
 .connected-status {
@@ -167,7 +182,12 @@ const {
 }
 
 .connected-status-dot {
-  @apply block w-2 h-2 rounded-full bg-success shadow-connection;
+  @apply block
+    w-2
+    h-2
+    rounded-full
+    bg-success
+    shadow-connection;
 }
 
 @keyframes dot-pop {

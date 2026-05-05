@@ -109,7 +109,13 @@ const sortedExpansions = computed(() =>
 }
 
 .expansion-header {
-  @apply w-full flex flex-col gap-x-2 gap-y-2 items-start justify-between;
+  @apply w-full
+    flex
+    flex-col
+    gap-x-2
+    gap-y-2
+    items-start
+    justify-between;
 
   @include cq-up(cq-540, 'expansion-card') {
     @apply flex-row;
@@ -117,14 +123,27 @@ const sortedExpansions = computed(() =>
 }
 
 .expansion-title {
-  @apply flex flex-col gap-0.5 flex-1 min-w-[50%];
+  @apply flex
+    flex-col
+    gap-0.5
+    flex-1
+    min-w-[50%];
 }
 
 .expansion-badges {
-  @apply flex flex-nowrap gap-x-4 gap-y-2 items-center justify-start w-fit;
+  @apply flex
+    flex-nowrap
+    gap-x-4
+    gap-y-2
+    items-center
+    justify-start
+    w-fit;
 }
 
 .expansion-channel {
-  @apply inline-block text-xs text-typography-muted font-medium;
+  @apply inline-block
+    text-xs
+    text-typography-muted
+    font-medium;
 }
 </style>
