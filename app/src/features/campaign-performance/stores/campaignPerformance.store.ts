@@ -36,8 +36,10 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
 
   // ── Getters ───────────────────────────────────────────────────────────
 
+  const allChannels = computed<Channel[]>(() => [...portfolioChannels.value.values()])
+
   const campaigns = computed<CampaignPerformance[]>(() =>
-    [...portfolioChannels.value.values()].flatMap(channel => channel.campaigns),
+    allChannels.value.flatMap(channel => channel.campaigns),
   )
 
   function getChannelsByIds(ids: string[]): Channel[] {
@@ -109,6 +111,7 @@ export const useCampaignPerformanceStore = defineStore('campaignPerformance', ()
     businessContext,
     activePortfolioId,
     portfolioChannels,
+    allChannels,
     campaigns,
     selectedChannels,
     selectedChannelsIds,

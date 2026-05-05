@@ -155,11 +155,11 @@ const ariaLive = computed(() => {
 }
 
 .notification-head {
-  @apply flex items-start justify-between gap-2;
+  @apply flex items-start justify-start gap-2;
 }
 
 .notification-title {
-  @apply leading-5 tracking-wide text-base font-medium;
+  @apply grow leading-5 tracking-wide text-base font-medium;
 }
 
 .notification-action {

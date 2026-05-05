@@ -3,7 +3,7 @@ import { computed } from "vue";
 import type { CampaignPerformance } from "@/shared/data";
 import type { PortfolioKPIs } from "@/shared/portfolio";
 import type { Channel } from "@/shared/data";
-import { Card, useChartTheme } from "@/ui";
+import { Card } from "@/ui";
 import {
   BudgetShareDonutChart,
   ConversionFunnelChart,
@@ -11,6 +11,7 @@ import {
 } from "./components";
 import {
   useCampaignBudgetShareDonutItems,
+  useCampaignColorMap,
   useCampaignRoiChartItems,
   useChannelRoiChartItems,
 } from "./composables";
@@ -24,20 +25,11 @@ import RevenueVsBudgetChart from "./RevenueVsBudgetChart.vue";
 const props = defineProps<{
   campaigns: CampaignPerformance[];
   channels: Channel[];
+  allChannels: Channel[];
   kpis: PortfolioKPIs;
 }>();
 
-const chartTheme = useChartTheme();
-const chartColors = chartTheme.colors;
-
-const campaignColorMap = computed<Record<string, string>>(() =>
-  Object.fromEntries(
-    props.campaigns.map((c, i) => [
-      c.campaign,
-      chartColors[i % chartColors.length],
-    ]),
-  ),
-);
+const colorMaps = useCampaignColorMap(() => props.allChannels);
 
 const campaignsByRoi = computed(() => sortCampaignsByRoiDesc(props.campaigns));
 const campaignsByBudget = computed(() =>
@@ -47,17 +39,17 @@ const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
 
 const roiCampaignItems = useCampaignRoiChartItems(
   campaignsByRoi,
-  (campaign) => campaignColorMap.value[campaign.campaign],
+  (campaign) => colorMaps.value.campaignColorMap[String(campaign.rowId)],
 );
 
 const roiChannelItems = useChannelRoiChartItems(
   channelsByRoi,
-  (_, index) => chartColors[index % chartColors.length],
+  (channel) => colorMaps.value.channelColorMap[channel.id],
 );
 
 const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   campaignsByBudget,
-  (campaign) => campaignColorMap.value[campaign.campaign],
+  (campaign) => colorMaps.value.campaignColorMap[String(campaign.rowId)],
 );
 </script>
 

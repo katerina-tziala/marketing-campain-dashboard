@@ -11,16 +11,15 @@ import {
   Notification,
 } from "@/ui";
 import { formatCurrency, formatDecimal } from "@/shared/utils";
-import {
-  CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
-  CAMPAIGN_PERFORMANCE_CHART_COLORS,
-  getCampaignPerformanceChartFillColor,
-} from "../config";
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from "../config";
+import { useCampaignPerformanceTheme } from "../composables";
 import {
   getChannelEfficiencyGapPercent,
   getEfficiencyGapColor,
   getEfficiencyGapSignedAmount,
 } from "../utils";
+
+const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
 
 const props = defineProps<{
   channels: Channel[];
@@ -71,7 +70,7 @@ const chartData = computed<BarChartData>(() => ({
     {
       data: gapValues.value,
       backgroundColor: gapValues.value.map((gapPercent) =>
-        getCampaignPerformanceChartFillColor(getEfficiencyGapColor(gapPercent)),
+        getFillColor(getEfficiencyGapColor(gapPercent)),
       ),
       borderColor: gapValues.value.map((gapPercent) =>
         getEfficiencyGapColor(gapPercent),
@@ -121,14 +120,14 @@ const chartAriaLabel = computed(() =>
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap }"
+          :style="{ backgroundColor: performanceChartColors.positiveGap }"
         ></span>
         <span>Overperforming</span>
       </MetaItem>
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
-          :style="{ backgroundColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap }"
+          :style="{ backgroundColor: performanceChartColors.negativeGap }"
         ></span>
         <span>Underperforming</span>
       </MetaItem>

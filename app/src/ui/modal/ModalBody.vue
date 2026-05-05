@@ -14,9 +14,8 @@
   flex
   flex-col
   justify-stretch
-  gap-3
-  py-4
-  px-1.5
+  gap-3 
+  p-4
   w-full
   max-w-full
   text-typography-soft

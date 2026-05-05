@@ -54,13 +54,13 @@ export const DEFAULT_CHART_THEME = {
     '#ef4444', // red-500
     '#14b8a6', // teal-500
     '#a855f7', // purple-500
-    '#84cc16', // lime-500
-    '#3b82f6', // blue-500 
     '#22c55e', // green-500
+    '#3b82f6', // blue-500 
+    '#eab308', // yellow-500
     '#d946ef', // fuchsia-500
     '#0ea5e9', // sky-500
+    '#84cc16', // lime-500
     '#f43f5e', // rose-500
-    '#eab308', // yellow-500
     // lighter
     '#818cf8', // indigo-400
     '#f472b6', // pink-400
@@ -72,13 +72,13 @@ export const DEFAULT_CHART_THEME = {
     '#f87171', // red-400
     '#2dd4bf', // teal-400
     '#c084fc', // purple-400
-    '#a3e635', // lime-400
-    '#60a5fa', // blue-400
     '#4ade80', // green-400
+    '#60a5fa', // blue-400
+    '#facc15', // yellow-400 
     '#e879f9', // fuchsia-400
     '#38bdf8', // sky-400
+    '#a3e635', // lime-400
     '#fb7185', // rose-400
-    '#facc15', // yellow-400 
     // darker
     '#4f46e5', // indigo-600
     '#db2777', // pink-600
@@ -90,13 +90,13 @@ export const DEFAULT_CHART_THEME = {
     '#dc2626', // red-600
     '#0d9488', // teal-600
     '#9333ea', // purple-600
-    '#65a30d', // lime-600
-    '#2563eb', // blue-600
     '#16a34a', // green-600
+    '#2563eb', // blue-600
+    '#ca8a04', // yellow-600 
     '#c026d3', // fuchsia-600
     '#0284c7', // sky-600
+    '#65a30d', // lime-600
     '#e11d48', // rose-600
-    '#ca8a04', // yellow-600 
   ],
   textColor: TYPOGRAPHY_MUTED,
   arc: {

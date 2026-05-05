@@ -715,3 +715,103 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Numeric opacity (0–1) instead of hex strings — cleaner API, standard across CSS and JS color libraries, no mental hex-to-decimal conversion needed
 - `0.75` for fill alpha (`0xbf` = 191/255 ≈ 0.749) — rounded to 2 decimal places, negligible visual difference
 - `0.52` for dim alpha (`0x85` = 133/255 ≈ 0.522) — rounded consistently
+
+
+## [#634] Add useCampaignPerformanceChartColors and useCampaignColorMap composables
+**Type:** refactor
+
+**Summary:** Introduced two composables to centralize all chart color decisions for the campaign-performance feature — one for static color definitions, one for reactive campaign-to-color mapping — and updated PerformanceCharts.vue to use them.
+
+**Brainstorming:** Color definitions (what the colors are) and color assignment (which campaign/channel gets which color) change for different reasons, so they belong in separate composables. useCampaignPerformanceChartColors is a stable interface over the current constants — its internals will swap to CSS var reads when the design system migrates, with zero impact on consumers. useCampaignColorMap accepts campaigns as MaybeRefOrGetter, returns a reactive computed map plus a getColor(index) primitive that covers both campaign map and channel color cycling. Both live in charts/composables/ alongside the existing item-normalizing composables.
+
+**Prompt:** Create useCampaignPerformanceChartColors (static color definitions, no input, plain objects for now, prepared for CSS var migration) and useCampaignColorMap (reactive campaign→color map, accepts MaybeRefOrGetter<CampaignPerformance[]>, returns campaignColorMap computed + getColor(index) primitive). Update PerformanceCharts.vue to use useCampaignColorMap instead of useChartTheme directly.
+
+**What was built:**
+- `charts/composables/useCampaignPerformanceChartColors.ts` — wraps CAMPAIGN_PERFORMANCE_CHART_COLORS and CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS; stable public interface for future CSS var migration
+- `charts/composables/useCampaignColorMap.ts` — accepts MaybeRefOrGetter<CampaignPerformance[]>; returns campaignColorMap (computed Record<name, color>) and getColor(index) (palette cycling primitive)
+- `charts/composables/index.ts` — added exports for both new composables
+- `charts/PerformanceCharts.vue` — replaced useChartTheme + manual campaignColorMap computed with useCampaignColorMap; channel color cycling now uses getColor(index) from the same composable
+
+**Key decisions & why:**
+- Two composables instead of one — color definitions and color assignment change for different reasons; splitting honors that boundary and makes the CSS var migration path obvious
+- getColor(index) exposed from useCampaignColorMap — channel items are also palette-cycled by index; keeping both in the same composable avoids a second useChartTheme call in PerformanceCharts.vue
+- useCampaignPerformanceChartColors not yet consumed by EfficiencyGapBars/RoiVsBudgetScatterChart — those components still import constants directly; migration deferred until CSS var reading lands
+
+
+## [#635] Finalize color composable architecture
+**Type:** refactor
+
+**Summary:** Made useCampaignPerformanceChartColors the single color extraction point for the feature by adding useChartTheme palette, renamed chartColors to performanceChartColors, and wired useCampaignColorMap to call useCampaignPerformanceChartColors internally instead of useChartTheme directly.
+
+**Brainstorming:** The previous design had useCampaignColorMap calling useChartTheme directly, which meant color extraction was split across two composables. The correct architecture has one extraction layer (useCampaignPerformanceChartColors owns all color sources: feature constants + theme palette) and one mapping layer (useCampaignColorMap depends on the extraction layer). When CSS vars land, only useCampaignPerformanceChartColors changes. useCampaignColorMap becomes purely about mapping — it has no knowledge of where colors come from.
+
+**Prompt:** useCampaignColorMap should use useCampaignPerformanceChartColors to map colors to campaigns — one composable for all colors mapped. Rename chartColors to performanceChartColors.
+
+**What changed:**
+- `charts/composables/useCampaignPerformanceChartColors.ts` — added useChartTheme import; exposes paletteColors alongside performanceChartColors (renamed from chartColors) and scalingColors
+- `charts/composables/useCampaignColorMap.ts` — removed useChartTheme import; now calls useCampaignPerformanceChartColors() internally to get paletteColors
+
+**Key decisions & why:**
+- useCampaignColorMap imports useCampaignPerformanceChartColors via relative path — within-feature import, consistent with project rules
+- paletteColors is a plain array (not reactive) — useChartTheme returns static values; reactivity is not needed here
+
+
+## [#636] Introduce useCampaignPerformanceTheme as feature theme boundary
+**Type:** refactor
+
+**Summary:** Renamed useCampaignPerformanceChartColors to useCampaignPerformanceTheme, updated it to read the full ChartTheme (not just colors), and wired EfficiencyGapBars.vue to use the composable instead of importing color constants from config directly.
+
+**Brainstorming:** The previous composable destructured only `colors` from useChartTheme, which meant the feature was ignoring the rest of the theme and the composable name didn't reflect its purpose. Renaming to useCampaignPerformanceTheme makes the intent clear: this is the single theme boundary for the campaign-performance feature. Reading the full ChartTheme object means consumers can access any theme value through the composable, not just colors. For the CSS var migration, only this composable changes. EfficiencyGapBars.vue was the one component still importing CAMPAIGN_PERFORMANCE_CHART_COLORS and getCampaignPerformanceChartFillColor directly from config — it now goes through the composable, completing the pattern.
+
+**Prompt:** useCampaignPerformanceTheme should use the complete theme from useChartTheme, not just colors. Rename from useCampaignPerformanceChartColors. Update all consumers.
+
+**What changed:**
+- `charts/composables/useCampaignPerformanceChartColors.ts` → renamed to `useCampaignPerformanceTheme.ts`; function renamed to useCampaignPerformanceTheme; reads full ChartTheme via useChartTheme(); exposes theme + performanceChartColors + scalingColors + paletteColors (alias for theme.colors) + getFillColor
+- `charts/composables/useCampaignColorMap.ts` — import updated to useCampaignPerformanceTheme (logic unchanged)
+- `charts/composables/index.ts` — barrel updated to export useCampaignPerformanceTheme
+- `charts/components/EfficiencyGapBars.vue` — removed CAMPAIGN_PERFORMANCE_CHART_COLORS and getCampaignPerformanceChartFillColor imports from config; uses useCampaignPerformanceTheme() instead
+
+**Key decisions & why:**
+- paletteColors kept as a convenience alias (theme.colors) so useCampaignColorMap requires no logic changes — only import path update
+- RoiVsBudgetScatterChart.vue left unchanged — it imports structural quadrant config objects (key/label/colors as a unit); this is a chart config concern, not a theme boundary concern
+- getFillColor exposed from the composable so no component needs to import the helper from config
+
+
+## [#637] Remove theme passthrough from useCampaignPerformanceTheme
+**Type:** refactor
+
+**Summary:** Removed the raw theme object from useCampaignPerformanceTheme's return value; composable now destructures only colors from useChartTheme and exposes feature-specific values.
+
+**Brainstorming:** Exposing the full ChartTheme object encouraged feature components to read tooltip/axis/legend values directly — those are the ui library's concern and are handled by useChartConfig/useChartTooltip internally. The composable should expose only what the campaign-performance feature actually needs. Destructuring colors at the call site makes the intent explicit.
+
+**Prompt:** useCampaignPerformanceTheme should not expose the whole theme — use object destructuring to take only what's needed from useChartTheme.
+
+**What changed:**
+- `charts/composables/useCampaignPerformanceTheme.ts` — replaced `const theme = useChartTheme()` with `const { colors: paletteColors } = useChartTheme()`; removed theme from return value
+
+**Key decisions & why:**
+- theme removed from return: tooltip/axis/legend values are handled by ui library composables internally — feature components should not read them directly
+- destructuring at call site keeps the intent explicit — only colors are needed from the theme
+
+
+## [#638] Refactor useCampaignColorMap — stable ID-based color maps with independent ROI-sorted walks
+**Type:** refactor
+
+**Summary:** Refactored useCampaignColorMap to produce two independent color maps (channels and campaigns) keyed by stable IDs, each sorted by ROI descending and walking the palette from index 0, seeded from all portfolio channels for filter stability.
+
+**Brainstorming:** The original composable took a flat CampaignPerformance[] and keyed colors by campaign name — fragile (name collisions, no channel colors). The refactor moves to Channel[] as input, derives both channelColorMap and campaignColorMap in one computed ref. After exploring a single interleaved palette walk (channel → its campaigns → next channel), a per-channel reset approach, and various ROI-sort combinations, the settled design uses two fully independent sequential counters: one walks all channels sorted ROI-desc, the other walks all campaigns (flatMapped across channels) sorted ROI-desc globally — both start from palette[0]. The color map is seeded from allChannels (full portfolio, unfiltered) so filter changes never reassign colors.
+
+**Prompt:** Refactor useCampaignColorMap: use Channel[] input, key by stable IDs (channel.id, String(campaign.rowId)), produce independent channelColorMap and campaignColorMap each sorted ROI-desc starting from palette[0], seed from all portfolio channels for stable assignment under filters.
+
+**What changed:**
+- `charts/composables/useCampaignColorMap.ts` — takes MaybeRefOrGetter<Channel[]>; two independent walks: sortChannelsByRoiDesc for channelColorMap (keyed by channel.id), flatMap + sortCampaignsByRoiDesc for campaignColorMap (keyed by String(campaign.rowId)); returns single computed ref with both maps
+- `charts/PerformanceCharts.vue` — added allChannels: Channel[] prop; useCampaignColorMap seeded from allChannels; color lookups use colorMaps.value.channelColorMap[channel.id] and colorMaps.value.campaignColorMap[String(campaign.rowId)]
+- `stores/campaignPerformance.store.ts` — added allChannels computed (Channel[] from portfolioChannels Map); campaigns computed reuses it; allChannels exposed from store return
+- `CampaignPerformanceView.vue` — passes :all-channels="store.allChannels" to PerformanceCharts
+
+**Key decisions & why:**
+- Two independent counters (not one shared index) — channel and campaign palettes are semantically separate; interleaving them made campaign colors depend on channel count and position
+- Both sorted ROI-desc — highest-performing channel and highest-performing campaign each get palette[0] in their respective sequence
+- Campaigns flatMapped globally then sorted — ensures the best campaign across the whole portfolio gets the most prominent color, regardless of which channel it belongs to
+- allChannels as seeding source — decouples color stability from filter state; filtered channels are still passed separately for chart display
+- Single computed ref for both maps — one reactive derivation, no duplicated walk

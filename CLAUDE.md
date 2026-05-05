@@ -324,7 +324,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── index.ts                # Barrel — exports CampaignPerformanceView
 │   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; receives showAiButton/showConnectedDot/aiClick from DashboardPage; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)
 │   │   │   ├── stores/
-│   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; core functions: getChannelsByIds(ids) → Channel[] (lookup filtered channels), getSelectedChannels() → Channel[] (return all or filtered), onPendingSelection(id) (watch handler), onPortfolioEvicted(id) (watch handler); watchers: pendingSelectionId (immediate) → onPendingSelection, lastEvictedId → onPortfolioEvicted; setChannelFilter(ids) action
+│   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels (Map)/allChannels (Channel[])/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; core functions: getChannelsByIds(ids) → Channel[] (lookup filtered channels), getSelectedChannels() → Channel[] (return all or filtered), onPendingSelection(id) (watch handler), onPortfolioEvicted(id) (watch handler); watchers: pendingSelectionId (immediate) → onPendingSelection, lastEvictedId → onPortfolioEvicted; setChannelFilter(ids) action
 │   │   │   │   └── index.ts        # Barrel — exports useCampaignPerformanceStore
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable
@@ -348,7 +348,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   └── kpi-benchmark-delta.ts  # getKpiBenchmarkRawDelta(current, benchmark, unit, lowerIsBetter?) → { rawDelta, direction }; KpiBenchmarkDeltaUnit type
 │   │   └── charts/                 # Campaign-performance chart compositions
 │   │       ├── index.ts            # Barrel — exports PerformanceCharts, RoiVsBudgetScaling, RoiBudgetScalingHighlights
-│   │       ├── PerformanceCharts.vue # Chart section composition (was DashboardCharts) — owns card layout, RadioToggle toggle state (Performance/Efficiency), chart grid, height classes (!min-h-96, !h-29); renders RoiBarChart, BudgetShareDonutChart, RevenueVsBudgetBars/EfficiencyGapBars, ConversionFunnelChart; chart height from parent layout classes
+│   │       ├── PerformanceCharts.vue # Chart section composition (was DashboardCharts) — props: campaigns (filtered), channels (filtered), allChannels (all portfolio channels for stable color mapping), kpis; owns card layout, RadioToggle toggle state (Performance/Efficiency), chart grid, height classes (!min-h-96, !h-29); renders RoiBarChart, BudgetShareDonutChart, RevenueVsBudgetBars/EfficiencyGapBars, ConversionFunnelChart
 │   │       ├── RoiVsBudgetScaling.vue # ROI vs Budget scaling card — owns card shell, title, "Based on selected channels" subtitle, median summary (MetaRow), limited-data info state (Notification when < MIN_CAMPAIGNS); passes data and highlights into RoiVsBudgetScatterChart; default chart height from !h-29
 │   │       ├── components/         # Internal chart renderers — props-only, no store reads
 │   │       │   ├── index.ts
@@ -360,8 +360,10 @@ app/                        # Vue 3 + Vite project
 │   │       │   └── RoiVsBudgetScatterChart.vue # ROI vs Budget bubble renderer — props: campaigns, medians, highlights (RoiBudgetScalingHighlights), ariaLabel?; uses shared BubbleChart; quadrant backgrounds via createQuadrantBackgroundPlugin; log ROI transform; analysis-driven highlight sizing; circular legend markers
 │   │       ├── composables/
 │   │       │   ├── index.ts
-│   │       │   ├── useRoiChartItems.ts     # useRoiChartItems(items) → RoiBarChartItem[] — normalizes campaigns/channels into shared ROI chart format with color assignment
-│   │       │   └── useBudgetShareChartItems.ts # useCampaignBudgetShareDonutItems(campaigns, kpis) → BudgetShareDonutItem[] — normalizes campaign budget data with assigned colors
+│   │       │   ├── useCampaignPerformanceTheme.ts # useCampaignPerformanceTheme() → { performanceChartColors, scalingColors, paletteColors, getFillColor } — single theme/color entry point for the feature; destructures colors from useChartTheme(); exposes feature constants + paletteColors + getFillColor helper; CSS var migration happens only here
+│   │       │   ├── useCampaignColorMap.ts  # useCampaignColorMap(channels) → computed { channelColorMap, campaignColorMap } — calls useCampaignPerformanceTheme internally; single sequential palette walk: channel → its campaigns → next channel → …; channelColorMap keyed by channel.id, campaignColorMap keyed by String(campaign.rowId)
+│   │       │   ├── useRoiChartItems.ts     # useCampaignRoiChartItems / useChannelRoiChartItems — normalize campaigns/channels into RoiBarChartItem[] with color assignment
+│   │       │   └── useBudgetShareChartItems.ts # useCampaignBudgetShareDonutItems — normalizes campaign budget data with assigned colors
 │   │       ├── config/
 │   │       │   ├── index.ts
 │   │       │   ├── campaign-performance-chart-colors.ts # CAMPAIGN_PERFORMANCE_CHART_COLORS (budget/revenue/positiveGap/negativeGap as rgb()); CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS (all rgba/rgb); CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA (0.75); getCampaignPerformanceChartFillColor(color, alpha) using withAlpha

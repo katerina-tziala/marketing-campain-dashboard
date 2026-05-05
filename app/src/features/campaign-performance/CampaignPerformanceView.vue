@@ -85,6 +85,7 @@ function applyChannelFilter(ids: string[]): void {
         class="section-wrapper"
         :campaigns="store.filteredCampaigns"
         :channels="store.selectedChannels"
+        :all-channels="store.allChannels"
         :kpis="store.portfolioAnalysis.portfolio"
       >
         <RoiVsBudgetScaling
