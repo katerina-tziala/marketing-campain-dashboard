@@ -14,8 +14,8 @@ export function useCampaignColorMap(channels: MaybeRefOrGetter<Channel[]>): Comp
 }> {
   const { paletteColors } = useCampaignPerformanceTheme();
 
-  function getColor(index: number): string {
-    return paletteColors[index % paletteColors.length];
+  function getColor(index: number, colors: string[]): string {
+    return colors[index % colors.length];
   }
 
   const colorMaps = computed(() => {
@@ -24,11 +24,13 @@ export function useCampaignColorMap(channels: MaybeRefOrGetter<Channel[]>): Comp
 
     const allCampaigns = toValue(channels).flatMap((channel) => channel.campaigns);
     sortCampaignsByRoiDesc(allCampaigns).forEach((campaign, i) => {
-      campaignColorMap[String(campaign.rowId)] = getColor(i);
+      campaignColorMap[String(campaign.rowId)] = getColor(i, paletteColors);
     });
 
+    const channelColors = paletteColors.reverse();
+
     sortChannelsByRoiDesc(toValue(channels)).forEach((channel, i) => {
-      channelColorMap[channel.id] = getColor(i);
+      channelColorMap[channel.id] = getColor(i, channelColors);
     });
 
     return { channelColorMap, campaignColorMap };
