@@ -15715,3 +15715,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Environment flags default to false — production safety should not rely on remembering to turn off a local/demo switch
 - GitHub Pages base path passed during build — Vite assets and Vue Router both need the repository path when the app is hosted under `/{repo-name}/`
 - `version.json` as the live deployment source of truth — the latest GitHub Release and latest deployed release can differ, so the deployed site should expose exactly what is live
+
+## [#663] Chart axis label color alignment
+**Type:** ui/fix
+
+**Summary:** Muted chart axis title labels so they match the axis tick labels across dashboard charts, including the Efficiency Gap chart and the ROI vs Budget bubble chart.
+
+**Brainstorming:** The chart theme intentionally separates tick color from title color, but the axis titles were reading too bright in dense dashboard cards. This was most visible on the Efficiency Gap Y-axis label and the Bubble chart X/Y labels. Rather than patching individual chart components, the fix belongs in the shared chart theme tokens so every cartesian chart consumes the same axis-label contrast.
+
+**Prompt:** Fix colors for chart labels. The Efficiency Gap chart label on the Y axis seems brighter; same for labels on the X and Y axes of the bubble chart in the dashboard.
+
+**What changed:**
+- `app/src/styles/themes/dark/_charts.scss` — changed `--chart-title-color` to match `--chart-tick-color`
+- `app/src/ui/charts/config/chart-theme.config.ts` — updated the fallback `DEFAULT_CHART_THEME.scales.titleColor` to use the same muted color as tick labels
+- `app/src/ui/charts/config/chart-theme.config.ts` — removed the now-unused brighter typography fallback constant
+
+**Key decisions & why:**
+- Fixed the shared chart theme instead of individual charts — `BarChart`, `GroupedBarChart`, and `BubbleChart` all resolve axis titles through the same scale factory, so the token is the right source of truth
+- Axis titles and ticks now share one muted color — keeps labels readable without competing with data marks, legends, or card headings
+- Fallback theme kept in sync with CSS tokens — avoids a visual mismatch if CSS variables are unavailable during tests or early runtime resolution
+- Verification: `npm run check` and `npm run build -- --base "/marketing-campain-dashboard/"` pass from `app/`

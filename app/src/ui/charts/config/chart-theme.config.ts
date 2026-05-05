@@ -34,7 +34,6 @@ export type ChartTheme = {
 };
 
 const TYPOGRAPHY_MUTED = 'rgb(170, 188, 212)';
-const TYPOGRAPHY = 'rgb(221, 228, 238)';
 const BORDER_STRONG = 'rgba(38, 52, 92, 0.9)';
 const GRID_LINE_COLOR = 'rgba(255, 255, 255, 0.07)';
 
@@ -104,7 +103,7 @@ export const DEFAULT_CHART_THEME = {
   },
   scales: {
     tickColor: TYPOGRAPHY_MUTED,
-    titleColor: TYPOGRAPHY,
+    titleColor: TYPOGRAPHY_MUTED,
     gridColor: GRID_LINE_COLOR,
     borderColor: GRID_LINE_COLOR,
     tickFontSize: 11,
