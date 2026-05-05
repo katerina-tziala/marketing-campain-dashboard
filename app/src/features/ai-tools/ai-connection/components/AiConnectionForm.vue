@@ -23,7 +23,7 @@ const props = defineProps<{
 }>();
 
 const store = useAiConnectionStore();
-const defaultProvider: AiProviderType = 'groq';
+const defaultProvider: AiProviderType = 'gemini';
 
 const selectedProvider = ref<AiProviderType>(defaultProvider);
 const apiKey = ref('');

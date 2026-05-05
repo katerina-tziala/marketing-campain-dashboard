@@ -15685,3 +15685,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Let Stylelint own SCSS consistency — autofix is enough for the current issues and keeps hand edits focused on actual configuration boundaries
 - Remove accidental root config instead of moving it — the root lockfile had no dependencies and the root VS Code settings only duplicated app-specific behavior
 - Verification: `npm run stylelint` and `npm run lint` pass from `app/`
+
+## [#662] CI/CD release and deployment workflows
+**Type:** tooling/ci-cd
+
+**Summary:** Added the app's CI/CD foundation: app checks on pushes and pull requests, manual release creation, manual GitHub Pages deployment from a selected tag, safe dev-mode environment defaults, and deployment metadata for confirming which release is live.
+
+**Brainstorming:** The deployment process needed to be simple enough for a public portfolio project while still protecting production behavior. Automatic deploy-on-merge was considered, but manual release and deploy buttons gave clearer control: first create an official version, then deploy a chosen release tag. Because the repository is public, workflow jobs were guarded so only the repository owner can run release/deploy operations. Dev-mode behavior also moved behind environment flags so local demo cycles can stay convenient without leaking mock data or fake AI cycles into production builds.
+
+**Prompt:** Brainstorm and set up GitHub Actions workflows for releases and GitHub Pages deployment. Make release and deploy workflows manually invoked, restrict them to the repository owner, make deployed builds force dev flags off, support deploying a selected release tag, and document the CI/CD process.
+
+**What changed:**
+- `.github/workflows/app-check.yml` — existing check workflow validates the app on pushes and pull requests by installing dependencies and running `npm run check`
+- `.github/workflows/create-release.yml` — manual workflow that accepts a semver version, checks the app, creates a release commit/tag, and publishes a GitHub Release
+- `.github/workflows/create-release.yml` — uses `github.event.repository.default_branch` instead of hardcoding `main`, so it works with this repository's `master` default branch
+- `.github/workflows/deploy-release.yml` — manual workflow that accepts a release tag such as `v0.1.0`, checks out that exact tag, runs checks, builds the app with the GitHub Pages base path, uploads the Pages artifact, and deploys it
+- `.github/workflows/deploy-release.yml` — restricts deployment jobs to `github.actor == 'katerina-tziala'`
+- `.github/workflows/deploy-release.yml` — forces `VITE_DEV_MODE`, `VITE_DEV_SEED_MOCK_CAMPAIGNS`, `VITE_DEV_AI_ANALYSIS_CYCLE`, and `VITE_DEV_AI_CONNECTION_CYCLE` to `false` for deployed builds
+- `.github/workflows/deploy-release.yml` — writes `dist/version.json` containing the deployed version, tag, commit SHA, and deployment timestamp so the live site can report what release is actually deployed
+- `app/src/app/dev-mode/config.ts` — moved dev-mode switches behind Vite env flags that default to `false`
+- `app/.env.example` — documents safe false defaults for all dev-mode flags
+- `app/.env.local` — local ignored env file preserves the previous local demo behavior with mock campaigns and the AI analysis cycle enabled
+- `app/src/app/router/index.ts` — uses `createWebHistory(import.meta.env.BASE_URL)` so the app routes correctly when served from the GitHub Pages repository path
+
+**Key decisions & why:**
+- Manual release and deploy workflows over automatic deployment — keeps version creation and publishing as explicit actions, which is clearer for a portfolio/demo app
+- Deploy by tag — makes it possible to redeploy an older release by entering its tag in the manual workflow
+- Owner-only job guards — public repository visitors cannot run workflows, but the actor guard adds another safety layer for release and deploy jobs
+- Environment flags default to false — production safety should not rely on remembering to turn off a local/demo switch
+- GitHub Pages base path passed during build — Vite assets and Vue Router both need the repository path when the app is hosted under `/{repo-name}/`
+- `version.json` as the live deployment source of truth — the latest GitHub Release and latest deployed release can differ, so the deployed site should expose exactly what is live

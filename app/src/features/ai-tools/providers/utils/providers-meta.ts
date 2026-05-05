@@ -31,6 +31,6 @@ export const PROVIDER_HELP: Record<
 };
 
 export const PROVIDER_OPTIONS = [
-  { value: 'groq', label: PROVIDER_LABELS.groq },
   { value: 'gemini', label: PROVIDER_LABELS.gemini },
+  { value: 'groq', label: PROVIDER_LABELS.groq },
 ];
