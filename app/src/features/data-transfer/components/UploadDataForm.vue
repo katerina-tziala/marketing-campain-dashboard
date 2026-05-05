@@ -1,20 +1,23 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import type { PortfolioDetails } from "@/shared/portfolio";
+import { ref } from 'vue';
+
+import type { PortfolioDetails } from '@/shared/portfolio';
 import {
   Button,
   DownloadIcon,
-  UploadIcon,
   FileDropzone,
   Form,
   FormControl,
   ModalBody,
   ModalFooter,
   PeriodFields,
-} from "@/ui";
-import type { FileFieldErrorKey, FileFieldValidation } from "@/ui";
-import { validateRequired } from "@/ui";
-import { MAX_CSV_FILE_SIZE_BYTES } from "../utils";
+  UploadIcon,
+  validateRequired,
+} from '@/ui';
+
+import { MAX_CSV_FILE_SIZE_BYTES } from '../utils';
+
+import type { FileFieldErrorKey, FileFieldValidation } from '@/ui';
 
 const props = defineProps<{
   title: string;
@@ -27,29 +30,29 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:title": [value: string];
-  "update:periodFrom": [value: string];
-  "update:periodTo": [value: string];
-  "update:industry": [value: string];
-  "update:file": [value: File | null];
+  'update:title': [value: string];
+  'update:periodFrom': [value: string];
+  'update:periodTo': [value: string];
+  'update:industry': [value: string];
+  'update:file': [value: File | null];
   submit: [details: PortfolioDetails];
   close: [];
   downloadTemplate: [];
 }>();
 
-const titleError = ref("");
+const titleError = ref('');
 const fileErrorKey = ref<FileFieldErrorKey | null>(null);
 const periodFieldsRef = ref<InstanceType<typeof PeriodFields> | null>(null);
 const fileDropzoneRef = ref<InstanceType<typeof FileDropzone> | null>(null);
 
 const fileErrorMessages: Record<FileFieldErrorKey, string> = {
-  required: "CSV file is required",
-  "file-type": "Only CSV files are accepted",
-  "file-size": "File exceeds the 2 MB size limit",
+  required: 'CSV file is required',
+  'file-type': 'Only CSV files are accepted',
+  'file-size': 'File exceeds the 2 MB size limit',
 };
 
 function getRequiredFieldError(value: string, label: string): string {
-  return validateRequired(value).errorKey ? `${label} is required` : "";
+  return validateRequired(value).errorKey ? `${label} is required` : '';
 }
 
 function handleFileValidate(result: FileFieldValidation): void {
@@ -57,35 +60,39 @@ function handleFileValidate(result: FileFieldValidation): void {
 }
 
 function handleTitleInput(value: string): void {
-  titleError.value = "";
-  emit("update:title", value);
+  titleError.value = '';
+  emit('update:title', value);
 }
 
 function handleTitleValidate(): void {
-  titleError.value = getRequiredFieldError(props.title, "Report name");
+  titleError.value = getRequiredFieldError(props.title, 'Report name');
 }
 
 function handleSubmit(): void {
-  titleError.value = "";
+  titleError.value = '';
   fileErrorKey.value = null;
   let valid = true;
   const period = periodFieldsRef.value?.validate() ?? null;
   const fileResult = fileDropzoneRef.value?.validate() ?? null;
 
-  titleError.value = getRequiredFieldError(props.title, "Report name");
+  titleError.value = getRequiredFieldError(props.title, 'Report name');
   if (titleError.value) {
     valid = false;
   }
 
-  if (!period) valid = false;
+  if (!period) {
+    valid = false;
+  }
 
   if (!fileResult || !fileResult.valid) {
-    if (fileResult) fileErrorKey.value = fileResult.errorKey;
+    if (fileResult) {
+      fileErrorKey.value = fileResult.errorKey;
+    }
     valid = false;
   }
 
   if (valid && period) {
-    emit("submit", {
+    emit('submit', {
       name: props.title.trim(),
       period,
       industry: props.industry.trim() || undefined,
@@ -96,7 +103,10 @@ function handleSubmit(): void {
 
 <template>
   <ModalBody>
-    <Form class="form-body" @submit.prevent="handleSubmit">
+    <Form
+      class="form-body"
+      @submit.prevent="handleSubmit"
+    >
       <FormControl
         id="campaign-title"
         label="Campaign Report Name"
@@ -153,9 +163,7 @@ function handleSubmit(): void {
             autocomplete="off"
             :disabled="isLoading"
             :aria-describedby="describedBy"
-            @input="
-              emit('update:industry', ($event.target as HTMLInputElement).value)
-            "
+            @input="emit('update:industry', ($event.target as HTMLInputElement).value)"
           />
         </template>
       </FormControl>
@@ -199,12 +207,19 @@ function handleSubmit(): void {
       <DownloadIcon />
       Download Template
     </Button>
-    <Button variant="outline" class="min-w-24" @click="emit('close')"
+    <Button
+      variant="outline"
+      class="min-w-24"
+      @click="emit('close')"
       >Cancel</Button
     >
-    <Button variant="primary" :disabled="isLoading" @click="handleSubmit">
+    <Button
+      variant="primary"
+      :disabled="isLoading"
+      @click="handleSubmit"
+    >
       <UploadIcon />
-      {{ isLoading ? "Uploading data…" : "Upload data" }}
+      {{ isLoading ? 'Uploading data…' : 'Upload data' }}
     </Button>
   </ModalFooter>
 </template>

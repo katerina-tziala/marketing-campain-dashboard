@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ArrowUpIcon } from "../icons";
-import type { TableHeaderPosition } from "./table.types";
+import { ArrowUpIcon } from '../icons';
+import type { TableHeaderPosition } from './table.types';
 
-export type SortDir = "asc" | "desc";
+export type SortDir = 'asc' | 'desc';
 
 export type DataTableColumn = {
   key: string;
@@ -22,8 +22,9 @@ const props = withDefaults(
     verticalSeparators?: boolean;
   }>(),
   {
-    sortDir: "asc",
-    position: "static",
+    sortKey: undefined,
+    sortDir: 'asc',
+    position: 'static',
     verticalSeparators: false,
   },
 );
@@ -32,39 +33,33 @@ const emit = defineEmits<{
   sort: [key: string];
 }>();
 
-function sortIconClass(key: string) {
-  if (props.sortKey !== key) return {};
-  return { asc: props.sortDir === "asc", desc: props.sortDir === "desc" };
+function sortIconClass(key: string): Record<string, boolean> {
+  if (props.sortKey !== key) {
+    return {};
+  }
+  return { asc: props.sortDir === 'asc', desc: props.sortDir === 'desc' };
 }
 
 function sortAriaLabel(col: DataTableColumn): string {
   const next =
     props.sortKey === col.key
-      ? props.sortDir === "asc"
-        ? "descending"
-        : "ascending"
-      : "ascending";
+      ? props.sortDir === 'asc'
+        ? 'descending'
+        : 'ascending'
+      : 'ascending';
   return `Sort by ${(col.ariaLabel ?? col.label).toLowerCase()} ${next}`;
 }
 </script>
 
 <template>
-  <thead
-    :class="[
-      `is-${props.position}`,
-      { 'vertical-separators': props.verticalSeparators },
-    ]"
-  >
+  <thead :class="[`is-${props.position}`, { 'vertical-separators': props.verticalSeparators }]">
     <tr>
       <th
         v-for="col in columns"
         :key="col.key"
         :title="col.title"
         :aria-label="!col.sortable && col.ariaLabel ? col.ariaLabel : undefined"
-        :class="[
-          col.sortable ? 'table-sortable-header' : 'table-header',
-          col.class ?? '',
-        ]"
+        :class="[col.sortable ? 'table-sortable-header' : 'table-header', col.class ?? '']"
       >
         <button
           v-if="col.sortable"
@@ -76,7 +71,9 @@ function sortAriaLabel(col: DataTableColumn): string {
         >
           <span class="button-content">
             {{ col.label }}
-            <ArrowUpIcon class="sort-icon" :class="sortIconClass(col.key)"
+            <ArrowUpIcon
+              class="sort-icon"
+              :class="sortIconClass(col.key)"
           /></span>
         </button>
         <template v-else>{{ col.label }}</template>

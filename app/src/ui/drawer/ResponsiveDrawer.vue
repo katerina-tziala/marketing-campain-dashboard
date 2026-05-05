@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
-import ModalHeader from "../modal/ModalHeader.vue";
-import { useFocusTrap, useModalAria } from "../accessibility";
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
-type DrawerSide = "left" | "right";
+import { useFocusTrap, useModalAria } from '../accessibility';
+import ModalHeader from '../modal/ModalHeader.vue';
+
+type DrawerSide = 'left' | 'right';
 
 const props = withDefaults(
   defineProps<{
@@ -13,8 +14,8 @@ const props = withDefaults(
     closeLabel?: string;
   }>(),
   {
-    side: "right",
-    closeLabel: "Close drawer",
+    side: 'right',
+    closeLabel: 'Close drawer',
   },
 );
 
@@ -31,8 +32,8 @@ let desktopMediaQuery: MediaQueryList | null = null;
 
 const drawerClass = computed(() => ({
   open: props.open,
-  left: props.side === "left",
-  right: props.side === "right",
+  left: props.side === 'left',
+  right: props.side === 'right',
 }));
 const modalOpen = computed(() => props.open && !isDesktop.value);
 
@@ -41,28 +42,32 @@ function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
 }
 
 function onKeydown(e: KeyboardEvent): void {
-  if (!props.open) return;
-
-  if (e.key === "Escape") {
-    emit("close");
+  if (!props.open) {
     return;
   }
 
-  if (!modalOpen.value) return;
+  if (e.key === 'Escape') {
+    emit('close');
+    return;
+  }
+
+  if (!modalOpen.value) {
+    return;
+  }
   trapTab(e);
 }
 
 onMounted(() => {
-  document.addEventListener("keydown", onKeydown);
+  document.addEventListener('keydown', onKeydown);
 
-  desktopMediaQuery = window.matchMedia("(min-width: 1024px)");
+  desktopMediaQuery = window.matchMedia('(min-width: 1024px)');
   syncViewport(desktopMediaQuery);
-  desktopMediaQuery.addEventListener("change", syncViewport);
+  desktopMediaQuery.addEventListener('change', syncViewport);
 });
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", onKeydown);
-  desktopMediaQuery?.removeEventListener("change", syncViewport);
+  document.removeEventListener('keydown', onKeydown);
+  desktopMediaQuery?.removeEventListener('change', syncViewport);
 });
 
 watch(modalOpen, (open) => {
@@ -79,15 +84,26 @@ watch(modalOpen, (open) => {
 </script>
 
 <template>
-  <div class="responsive-drawer" :class="drawerClass" :aria-hidden="!open">
-    <aside v-if="isDesktop" class="responsive-drawer-panel" :aria-label="title">
+  <div
+    class="responsive-drawer"
+    :class="drawerClass"
+    :aria-hidden="!open"
+  >
+    <aside
+      v-if="isDesktop"
+      class="responsive-drawer-panel"
+      :aria-label="title"
+    >
       <ModalHeader
         :title="title"
         :title-id="titleId"
         :close-label="closeLabel"
         @close="emit('close')"
       >
-        <template v-if="$slots.icon" #icon>
+        <template
+          v-if="$slots.icon"
+          #icon
+        >
           <slot name="icon" />
         </template>
         <template #header-actions>
@@ -118,14 +134,21 @@ watch(modalOpen, (open) => {
           :close-label="closeLabel"
           @close="emit('close')"
         >
-          <template v-if="$slots.icon" #icon>
+          <template
+            v-if="$slots.icon"
+            #icon
+          >
             <slot name="icon" />
           </template>
           <template #header-actions>
             <slot name="header-actions" />
           </template>
         </ModalHeader>
-        <div class="responsive-drawer-content" data-modal-body tabindex="-1">
+        <div
+          class="responsive-drawer-content"
+          data-modal-body
+          tabindex="-1"
+        >
           <slot />
         </div>
       </section>

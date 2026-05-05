@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RadioItemVariant } from './form.types'
+import type { RadioItemVariant } from './form.types';
 
 const props = withDefaults(
   defineProps<{
@@ -12,6 +12,9 @@ const props = withDefaults(
     variant?: RadioItemVariant;
   }>(),
   {
+    ariaLabel: undefined,
+    error: false,
+    disabled: false,
     variant: 'primary',
   },
 );
@@ -20,7 +23,10 @@ defineEmits<{ change: [value: string | number] }>();
 </script>
 
 <template>
-  <label class="radio-item" :class="[props.variant, { error, disabled }]">
+  <label
+    class="radio-item"
+    :class="[props.variant, { error, disabled }]"
+  >
     <input
       type="radio"
       :name="name"
@@ -49,7 +55,7 @@ defineEmits<{ change: [value: string | number] }>();
 }
 
 /* variant primary */
-input[type="radio"] {
+input[type='radio'] {
   /* not checked */
   + .radio-indicator {
     @apply border-primary-dark;
@@ -80,7 +86,7 @@ input[type="radio"] {
 }
 
 /* variant info-dimmed */
-.radio-item.info > input[type="radio"] {
+.radio-item.info > input[type='radio'] {
   /* not checked */
   + .radio-indicator {
     @apply border-info-dark;

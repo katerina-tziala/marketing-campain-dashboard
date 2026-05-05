@@ -15546,3 +15546,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Removed margin hacks instead of tuning them — grid rows make the legend/chart relationship explicit and avoid fragile visual offsets
 - `gap-1` chosen for legend spacing — close enough to feel connected to the chart without making the legend look attached to the plot
 - Build check: `npm run build` still stops on existing unrelated TypeScript errors in `BudgetReductions.vue`, `RoiVsBudgetScatterChart.vue`, and `useDownloadTemplate.ts`
+
+
+## [#658] Add strict ESLint and Prettier project setup
+**Type:** tooling/refactor
+
+**Summary:** Added a project-local ESLint flat config and Prettier setup for the Vue app, formatted the full codebase, and cleaned up the remaining strict lint/type errors so the combined project check now passes.
+
+**Brainstorming:** The setup needed to match Vue 3 best practices while preserving the repo's existing layered architecture. Prettier owns formatting, while ESLint owns correctness, Vue SFC conventions, import ordering, object destructuring, and source-boundary rules. The first strict pass exposed a large formatting diff plus real code issues: missing return types, unused imports, non-null assertions, a chart tuple typing mismatch, and optional Vue props without defaults. Some rules also needed calibration: base UI primitives such as `Button`, `Card`, and `Modal` are intentionally single-word components, and feature-local folders named `ui`/`shared` should remain valid relative imports inside the same feature boundary.
+
+**Prompt:** Set up Prettier and ESLint for the Vue project using strict Vue/TypeScript best practices: single quotes, semicolons, object destructuring, import ordering, explicit return types, Vue SFC block order, script setup, no `any`, no debugger, console warnings, format on save, and relative imports only within the same boundary. Then format the whole app and fix all lint/typecheck issues.
+
+**What changed:**
+- `app/eslint.config.js` — added ESLint flat config with Vue 3 recommended rules, TypeScript strict rules, import sorting, type-import consistency, object destructuring, SFC block order, script-setup enforcement, macro order, no `v-html`, no `any`, explicit return types, console warnings, and source-boundary import restrictions
+- `app/prettier.config.js` — added Prettier config with `printWidth: 100`, single quotes, semicolons, trailing commas, 2-space tabs, bracket spacing, LF endings, Vue script/style non-indentation, and single attributes per line
+- `app/.prettierignore` — ignored build output, dependencies, logs, lockfile, and generated platform asset folders
+- `app/.editorconfig` — added shared editor whitespace/line-ending defaults
+- `app/.vscode/settings.json` and `app/.vscode/extensions.json` — added project editor settings for Prettier format-on-save, ESLint fixes, and Vue tooling recommendations
+- `.gitignore` and `app/.gitignore` — allowed the app-level VS Code settings/recommendations to be committed while keeping other editor files ignored
+- `app/package.json` and `app/package-lock.json` — installed ESLint/Prettier dependencies and added `lint`, `lint:fix`, `format`, `format:check`, `typecheck`, and `check` scripts
+- `app/tsconfig.app.json` and `app/vite.config.ts` — added `@app`, `@features`, `@shared`, and `@ui` aliases alongside the existing `@` alias
+- App source files — formatted with Prettier and ESLint autofix across Vue, TypeScript, SCSS, HTML, JSON, and config files
+- App source files — fixed strict lint/typecheck issues including unused imports, missing return types, optional prop defaults, non-null assertions, chart typing, feature-internal import false positives, and intentional underscore-prefixed unused values
+
+**Key decisions & why:**
+- Prettier handles layout, ESLint handles behavior and architecture — this avoids rule overlap while still enforcing the style choices that matter
+- Flat config over legacy `.eslintrc` — matches current ESLint direction and keeps overrides explicit
+- Domain aliases are available for cross-boundary imports — `@app`, `@features`, `@shared`, and `@ui` make architecture visible at call sites
+- Relative imports remain allowed inside a feature boundary — feature-local `ui` and `shared` folders are part of the same feature and should not be forced through global aliases
+- Single-word base UI components are allowed — names like `Button`, `Card`, `Modal`, and `Table` are conventional in a design-system layer
+- Underscore-prefixed unused values are allowed — supports intentional unused callback parameters/destructured values without disabling unused-variable checks globally
+- Full verification: `npm run check` passes (`vue-tsc -b`, `eslint .`, and `prettier . --check`)

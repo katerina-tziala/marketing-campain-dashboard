@@ -1,11 +1,11 @@
-import { withAlpha } from '@/ui'
+import { withAlpha } from '@/ui';
 
 export const CAMPAIGN_PERFORMANCE_CHART_COLORS = {
   budget: 'rgb(59, 130, 246)',
   revenue: 'rgb(52, 211, 153)',
   positiveGap: 'rgb(16, 185, 129)',
   negativeGap: 'rgb(239, 68, 68)',
-}
+};
 
 export const CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS = {
   scaleUp: {
@@ -33,13 +33,13 @@ export const CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS = {
     backgroundColor: 'rgba(239, 68, 68, 0.12)',
   },
   divider: 'rgba(203, 213, 225, 0.38)',
-}
+};
 
-export const CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA = 0.75
+export const CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA = 0.75;
 
 export function getCampaignPerformanceChartFillColor(
   color: string,
   alpha = CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA,
 ): string {
-  return withAlpha(color, alpha)
+  return withAlpha(color, alpha);
 }

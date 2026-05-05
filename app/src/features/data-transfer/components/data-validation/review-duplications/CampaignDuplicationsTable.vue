@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import type { Campaign } from "@/shared/data";
-import { formatCurrency, formatNumber, sortByValue } from "@/shared/utils";
-import { useSort } from "@/shared/composables";
+import { computed, ref } from 'vue';
+
+import { useSort } from '@/shared/composables';
+import type { Campaign } from '@/shared/data';
+import { formatCurrency, formatNumber, sortByValue } from '@/shared/utils';
 import {
-  Table,
-  TableHeader,
-  TableGroupHeaderRow,
-  TableSelectableRow,
   Badge,
+  type DataTableColumn,
   RadioItem,
-  type DataTableColumn
-} from "@/ui";
-import type { CampaignDataDuplicateGroup } from "../../../types";
-import DuplicationsHeader from "./DuplicationsHeader.vue";
+  Table,
+  TableGroupHeaderRow,
+  TableHeader,
+  TableSelectableRow,
+} from '@/ui';
+
+import type { CampaignDataDuplicateGroup } from '../../../types';
+import DuplicationsHeader from './DuplicationsHeader.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -27,23 +29,23 @@ const emit = defineEmits<{
   change: [selectedCampaigns: Campaign[]];
 }>();
 
-type SortKey = "rowId" | "conversions" | "revenue";
+type SortKey = 'rowId' | 'conversions' | 'revenue';
 
-const { sortKey, sortDir, toggleSort } = useSort<SortKey>("rowId");
+const { sortKey, sortDir, toggleSort } = useSort<SortKey>('rowId');
 
 function handleSort(key: string): void {
   toggleSort(key as SortKey);
 }
 
 const COLUMNS: DataTableColumn[] = [
-  { key: "select", label: "", ariaLabel: "Select", class: "w-9" },
-  { key: "rowId", label: "Row", sortable: true },
-  { key: "channel", label: "Channel" },
-  { key: "budget", label: "Budget" },
-  { key: "clicks", label: "Clicks" },
-  { key: "impressions", label: "Impressions" },
-  { key: "conversions", label: "Conversions", sortable: true },
-  { key: "revenue", label: "Revenue", sortable: true },
+  { key: 'select', label: '', ariaLabel: 'Select', class: 'w-9' },
+  { key: 'rowId', label: 'Row', sortable: true },
+  { key: 'channel', label: 'Channel' },
+  { key: 'budget', label: 'Budget' },
+  { key: 'clicks', label: 'Clicks' },
+  { key: 'impressions', label: 'Impressions' },
+  { key: 'conversions', label: 'Conversions', sortable: true },
+  { key: 'revenue', label: 'Revenue', sortable: true },
 ];
 
 const sortedGroups = computed(() =>
@@ -73,10 +75,12 @@ function emitSelections(map: Map<string, number>): void {
     const selectedRowId = map.get(group.campaignName);
     if (selectedRowId !== undefined) {
       const entry = group.rows.find((r) => r.rowId === selectedRowId);
-      if (entry) selected.push(entry);
+      if (entry) {
+        selected.push(entry);
+      }
     }
   }
-  emit("change", selected);
+  emit('change', selected);
 }
 
 function selectRow(campaignName: string, rowId: number): void {
@@ -110,7 +114,10 @@ defineExpose({ reset });
       @sort="handleSort"
     />
     <tbody>
-      <template v-for="group in sortedGroups" :key="group.campaignName">
+      <template
+        v-for="group in sortedGroups"
+        :key="group.campaignName"
+      >
         <TableGroupHeaderRow>
           <td colspan="8">
             <DuplicationsHeader
@@ -140,7 +147,11 @@ defineExpose({ reset });
           </td>
           <td>{{ entry.rowId }}</td>
           <td>
-            <Badge variant="info" tone="dimmed">{{ entry.channel }}</Badge>
+            <Badge
+              variant="info"
+              tone="dimmed"
+              >{{ entry.channel }}</Badge
+            >
           </td>
           <td>{{ formatCurrency(entry.budget) }}</td>
           <td>{{ formatNumber(entry.clicks) }}</td>
@@ -155,11 +166,11 @@ defineExpose({ reset });
 
 <style lang="scss" scoped>
 .table-selectable-row:hover {
-  :deep(.radio-item.info > input[type="radio"]:not(:disabled) + .radio-indicator) {
+  :deep(.radio-item.info > input[type='radio']:not(:disabled) + .radio-indicator) {
     @apply bg-surface-active border-info;
   }
 
-  :deep(.radio-item.info > input[type="radio"]:checked:not(:disabled) + .radio-indicator::before) {
+  :deep(.radio-item.info > input[type='radio']:checked:not(:disabled) + .radio-indicator::before) {
     @apply bg-info;
   }
 }

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
-import FormFieldFeedback from "./FormFieldFeedback.vue";
-import type { FormControlElement } from "./form.types";
+import { computed, useSlots } from 'vue';
 
-const slots = useSlots();
+import type { FormControlElement } from './form.types';
+import FormFieldFeedback from './FormFieldFeedback.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -17,14 +16,16 @@ const props = withDefaults(
     errorHintText?: string;
   }>(),
   {
-    as: "div",
+    as: 'div',
     required: false,
     invalid: undefined,
-    hintText: "",
-    errorText: "",
-    errorHintText: "",
+    hintText: '',
+    errorText: '',
+    errorHintText: '',
   },
 );
+
+const slots = useSlots();
 
 const invalid = computed(() => props.invalid ?? Boolean(props.errorText));
 const errorId = computed(() => `${props.id}-error`);
@@ -40,21 +41,15 @@ const feedbackProps = computed(() => ({
   errorHintText: props.errorHintText,
 }));
 const hasError = computed(
-  () =>
-    invalid.value &&
-    Boolean(props.errorText || slots.error || slots["error-content"]),
+  () => invalid.value && Boolean(props.errorText || slots.error || slots['error-content']),
 );
 const hasHint = computed(
-  () =>
-    !invalid.value &&
-    Boolean(props.hintText || slots.hint || slots["hint-content"]),
+  () => !invalid.value && Boolean(props.hintText || slots.hint || slots['hint-content']),
 );
 const hasErrorHint = computed(
   () =>
     invalid.value &&
-    Boolean(
-      props.errorHintText || slots["error-hint"] || slots["error-hint-content"],
-    ),
+    Boolean(props.errorHintText || slots['error-hint'] || slots['error-hint-content']),
 );
 const describedBy = computed(() => {
   const ids = [
@@ -63,12 +58,15 @@ const describedBy = computed(() => {
     hasErrorHint.value ? errorHintId.value : null,
   ].filter(Boolean);
 
-  return ids.length ? ids.join(" ") : undefined;
+  return ids.length ? ids.join(' ') : undefined;
 });
 </script>
 
 <template>
-  <component :is="as" class="field">
+  <component
+    :is="as"
+    class="field"
+  >
     <legend
       v-if="as === 'fieldset'"
       class="field-label"
@@ -95,10 +93,19 @@ const describedBy = computed(() => {
       :error-hint-id="errorHintId"
     />
     <FormFieldFeedback v-bind="feedbackProps">
-      <template v-if="$slots.hint" #hint="{ hintId: slotHintId }">
-        <slot name="hint" :hint-id="slotHintId" />
+      <template
+        v-if="$slots.hint"
+        #hint="{ hintId: slotHintId }"
+      >
+        <slot
+          name="hint"
+          :hint-id="slotHintId"
+        />
       </template>
-      <template v-if="$slots['hint-content']" #hint-content>
+      <template
+        v-if="$slots['hint-content']"
+        #hint-content
+      >
         <slot name="hint-content" />
       </template>
       <template
@@ -111,16 +118,25 @@ const describedBy = computed(() => {
           :error-text="slotErrorText"
         />
       </template>
-      <template v-if="$slots['error-content']" #error-content>
+      <template
+        v-if="$slots['error-content']"
+        #error-content
+      >
         <slot name="error-content" />
       </template>
       <template
         v-if="$slots['error-hint']"
         #error-hint="{ errorHintId: slotErrorHintId }"
       >
-        <slot name="error-hint" :error-hint-id="slotErrorHintId" />
+        <slot
+          name="error-hint"
+          :error-hint-id="slotErrorHintId"
+        />
       </template>
-      <template v-if="$slots['error-hint-content']" #error-hint-content>
+      <template
+        v-if="$slots['error-hint-content']"
+        #error-hint-content
+      >
         <slot name="error-hint-content" />
       </template>
     </FormFieldFeedback>
@@ -135,7 +151,7 @@ const describedBy = computed(() => {
 .field {
   @apply flex flex-col gap-2;
 
-  &[as="fieldset"],
+  &[as='fieldset'],
   &:is(fieldset) {
     @apply border-0 p-0 m-0;
   }

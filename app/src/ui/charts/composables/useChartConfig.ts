@@ -1,22 +1,38 @@
-import type { ChartType } from 'chart.js'
-import { useChartScales } from './useChartScales'
-import { useChartTheme } from './useChartTheme'
-import { useChartTooltip } from './useChartTooltip'
+import type { ChartType } from 'chart.js';
 
-export function useChartConfig<TType extends ChartType = ChartType>() {
+import { useChartScales } from './useChartScales';
+import { useChartTheme } from './useChartTheme';
+import { useChartTooltip } from './useChartTooltip';
+
+type UseChartConfigReturn<TType extends ChartType> = {
+  baseOptions: ReturnType<typeof useChartTheme>['value']['baseOptions'];
+  baseScales: ReturnType<typeof useChartScales>['baseScales'];
+  basePlugins: {
+    legend: {
+      onClick: () => void;
+      onHover: () => void;
+      labels: {
+        color: string;
+        padding: number;
+        font: { size: number };
+        usePointStyle: boolean;
+        borderRadius: number;
+        boxWidth: number;
+        boxHeight: number;
+      };
+    };
+    tooltip: ReturnType<typeof useChartTooltip<TType>>;
+  };
+  createScale: ReturnType<typeof useChartScales>['createScale'];
+};
+
+const createChartConfig = <TType extends ChartType = ChartType>(): UseChartConfigReturn<TType> => {
   const {
     baseOptions,
-    legend: {
-      labelColor,
-      labelPadding,
-      labelFontSize,
-      borderRadius,
-      boxWidth,
-      boxHeight,
-    },
-  } = useChartTheme().value
-  const { baseScales, createScale } = useChartScales()
-  const tooltip = useChartTooltip<TType>()
+    legend: { labelColor, labelPadding, labelFontSize, borderRadius, boxWidth, boxHeight },
+  } = useChartTheme().value;
+  const { baseScales, createScale } = useChartScales();
+  const tooltip = useChartTooltip<TType>();
 
   const basePlugins = {
     legend: {
@@ -33,7 +49,13 @@ export function useChartConfig<TType extends ChartType = ChartType>() {
       },
     },
     tooltip,
-  }
+  };
 
-  return { baseOptions, baseScales, basePlugins, createScale }
+  return { baseOptions, baseScales, basePlugins, createScale };
+};
+
+export function useChartConfig<TType extends ChartType = ChartType>(): ReturnType<
+  typeof createChartConfig<TType>
+> {
+  return createChartConfig<TType>();
 }

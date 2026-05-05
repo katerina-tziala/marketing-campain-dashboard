@@ -1,28 +1,32 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card } from "@/ui";
-import type { BudgetExpansion, ConfidenceLevel, ExecutionRisk } from "../types";
-import { AnalysisSection } from "../components";
-import ExpectedImpactGrid from "./ExpectedImpactGrid.vue";
+import { computed } from 'vue';
+
+import { Badge, Card } from '@/ui';
+
+import { AnalysisSection } from '../components';
+import type { BudgetExpansion, ConfidenceLevel, ExecutionRisk } from '../types';
+import ExpectedImpactGrid from './ExpectedImpactGrid.vue';
+
+import type { BadgeVariant } from '@/ui';
+
+const props = defineProps<{
+  expansions: BudgetExpansion[];
+}>();
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
-  high: "success",
-  medium: "warning",
-  low: "danger",
+  high: 'success',
+  medium: 'warning',
+  low: 'danger',
 };
 
 const EXECUTION_RISK_MAP: Record<string, BadgeVariant> = {
-  low: "success",
-  medium: "warning",
-  high: "danger",
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
 };
 
-function badgeVariant(
-  map: Record<string, BadgeVariant>,
-  key: string,
-): BadgeVariant {
-  return map[key.toLowerCase()] ?? "info";
+function badgeVariant(map: Record<string, BadgeVariant>, key: string): BadgeVariant {
+  return map[key.toLowerCase()] ?? 'info';
 }
 
 function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
@@ -32,10 +36,6 @@ function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
 function executionRiskVariant(risk: ExecutionRisk): BadgeVariant {
   return badgeVariant(EXECUTION_RISK_MAP, risk);
 }
-
-const props = defineProps<{
-  expansions: BudgetExpansion[];
-}>();
 
 const CONFIDENCE_ORDER: Record<ConfidenceLevel, number> = {
   High: 0,
@@ -51,19 +51,20 @@ const EXECUTION_RISK_ORDER: Record<ExecutionRisk, number> = {
 
 const sortedExpansions = computed(() =>
   [...props.expansions].sort((a, b) => {
-    const cDiff =
-      CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
-    if (cDiff !== 0) return cDiff;
-    return (
-      EXECUTION_RISK_ORDER[a.executionRisk] -
-      EXECUTION_RISK_ORDER[b.executionRisk]
-    );
+    const cDiff = CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
+    if (cDiff !== 0) {
+      return cDiff;
+    }
+    return EXECUTION_RISK_ORDER[a.executionRisk] - EXECUTION_RISK_ORDER[b.executionRisk];
   }),
 );
 </script>
 
 <template>
-  <AnalysisSection v-if="sortedExpansions.length" title="Growth Opportunities">
+  <AnalysisSection
+    v-if="sortedExpansions.length"
+    title="Growth Opportunities"
+  >
     <Card
       v-for="(exp, i) in sortedExpansions"
       :key="i"
@@ -104,13 +105,13 @@ const sortedExpansions = computed(() =>
 
 <style lang="scss" scoped>
 .expansion-card {
-  @include cq-container("expansion-card");
+  @include cq-container('expansion-card');
 }
 
 .expansion-header {
   @apply w-full flex flex-col gap-x-2 gap-y-2 items-start justify-between;
 
-  @include cq-up(cq-540, "expansion-card") {
+  @include cq-up(cq-540, 'expansion-card') {
     @apply flex-row;
   }
 }

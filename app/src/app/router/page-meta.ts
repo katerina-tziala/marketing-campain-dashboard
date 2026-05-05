@@ -1,37 +1,36 @@
-import type { RouteLocationNormalizedLoaded } from 'vue-router'
+import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
-const DEFAULT_PAGE_TITLE = 'Marketing Campaign Dashboard'
+const DEFAULT_PAGE_TITLE = 'Marketing Campaign Dashboard';
 const DEFAULT_PAGE_DESCRIPTION =
-  'AI-powered marketing intelligence platform for performance analysis, budget optimization, and scenario planning.'
+  'AI-powered marketing intelligence platform for performance analysis, budget optimization, and scenario planning.';
 
 type PageMeta = {
-  title?: string
-  description?: string
-}
+  title?: string;
+  description?: string;
+};
 
 type PageRouteMeta = {
-  page?: PageMeta
-}
+  page?: PageMeta;
+};
 
 function getNamedMeta(name: string): HTMLMetaElement {
-  const existingMeta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)
+  const existingMeta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
 
   if (existingMeta) {
-    return existingMeta
+    return existingMeta;
   }
 
-  const meta = document.createElement('meta')
-  meta.name = name
-  document.head.appendChild(meta)
+  const meta = document.createElement('meta');
+  meta.name = name;
+  document.head.appendChild(meta);
 
-  return meta
+  return meta;
 }
 
 export function applyPageMeta(route: RouteLocationNormalizedLoaded): void {
-  const meta = route.meta as PageRouteMeta
-  const pageMeta = meta.page
+  const meta = route.meta as PageRouteMeta;
+  const pageMeta = meta.page;
 
-  document.title = pageMeta?.title ?? DEFAULT_PAGE_TITLE
-  getNamedMeta('description').content =
-    pageMeta?.description ?? DEFAULT_PAGE_DESCRIPTION
+  document.title = pageMeta?.title ?? DEFAULT_PAGE_TITLE;
+  getNamedMeta('description').content = pageMeta?.description ?? DEFAULT_PAGE_DESCRIPTION;
 }

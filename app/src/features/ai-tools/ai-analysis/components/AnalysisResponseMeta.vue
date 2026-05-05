@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { formatTimestamp } from "@/shared/utils";
-import { MetaRow, MetaItem } from "@/ui";
+import { computed } from 'vue';
+
+import { formatTimestamp } from '@/shared/utils';
+import { MetaItem, MetaRow } from '@/ui';
+
 import type { AiAnalysisNotice } from '../types';
 
 const props = defineProps<{
@@ -10,9 +12,7 @@ const props = defineProps<{
   notice?: AiAnalysisNotice | null;
 }>();
 
-const formattedTime = computed(() =>
-  props.timestamp ? formatTimestamp(props.timestamp) : null,
-);
+const formattedTime = computed(() => (props.timestamp ? formatTimestamp(props.timestamp) : null));
 </script>
 
 <template>

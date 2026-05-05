@@ -1,6 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import DashboardPage from '@/app/pages/DashboardPage.vue'
-import { applyPageMeta } from './page-meta'
+import { createRouter, createWebHistory } from 'vue-router';
+
+import DashboardPage from '@/app/pages/DashboardPage.vue';
+
+import { applyPageMeta } from './page-meta';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -18,8 +20,8 @@ export const router = createRouter({
       },
     },
   ],
-})
+});
 
 router.afterEach((to) => {
-  applyPageMeta(to)
-})
+  applyPageMeta(to);
+});

@@ -1,10 +1,10 @@
-import type { AiModelCandidate } from '../../types'
-import type { GeminiModel } from '../types'
-import { getAllowedCandidates } from './allowed-candidates'
-import { getSortedCandidates } from './sort-candidates'
+import type { AiModelCandidate } from '../../types';
+import type { GeminiModel } from '../types';
+import { getAllowedCandidates } from './allowed-candidates';
+import { getSortedCandidates } from './sort-candidates';
 
 function stripPrefix(name: string): string {
-  return name.replace(/^models\//, '')
+  return name.replace(/^models\//, '');
 }
 
 function toAiModelCandidate(m: GeminiModel): AiModelCandidate {
@@ -15,11 +15,11 @@ function toAiModelCandidate(m: GeminiModel): AiModelCandidate {
     maxOutputTokens: m.outputTokenLimit,
     supportsTextGeneration: true,
     thinking: m.thinking,
-  }
+  };
 }
 
 export function extractCandidates(models: GeminiModel[]): AiModelCandidate[] {
-  const allowed = getAllowedCandidates(models)
-  const sorted = getSortedCandidates(allowed)
-  return sorted.map(toAiModelCandidate)
+  const allowed = getAllowedCandidates(models);
+  const sorted = getSortedCandidates(allowed);
+  return sorted.map(toAiModelCandidate);
 }

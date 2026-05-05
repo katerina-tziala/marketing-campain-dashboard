@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { computed, useSlots } from "vue";
-
-const slots = useSlots();
+import { computed, useSlots } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -14,49 +12,66 @@ const props = withDefaults(
     errorHintText?: string;
   }>(),
   {
-    errorHintId: "",
+    errorHintId: '',
     invalid: false,
-    hintText: "",
-    errorText: "",
-    errorHintText: "",
+    hintText: '',
+    errorText: '',
+    errorHintText: '',
   },
 );
 
+const slots = useSlots();
+
 const hasError = computed(
-  () =>
-    props.invalid &&
-    Boolean(props.errorText || slots.error || slots["error-content"]),
+  () => props.invalid && Boolean(props.errorText || slots.error || slots['error-content']),
 );
 const hasHint = computed(
-  () =>
-    !props.invalid &&
-    Boolean(props.hintText || slots.hint || slots["hint-content"]),
+  () => !props.invalid && Boolean(props.hintText || slots.hint || slots['hint-content']),
 );
 const hasErrorHint = computed(
   () =>
     props.invalid &&
-    Boolean(
-      props.errorHintText || slots["error-hint"] || slots["error-hint-content"],
-    ),
+    Boolean(props.errorHintText || slots['error-hint'] || slots['error-hint-content']),
 );
 const hasFeedback = computed(() => hasHint.value || hasError.value);
 </script>
 
 <template>
-  <div v-if="hasFeedback" class="field-message">
+  <div
+    v-if="hasFeedback"
+    class="field-message"
+  >
     <div class="field-message-content">
-      <slot v-if="hasHint" name="hint" :hint-id="hintId">
-        <p :id="hintId" class="field-error-hint">
+      <slot
+        v-if="hasHint"
+        name="hint"
+        :hint-id="hintId"
+      >
+        <p
+          :id="hintId"
+          class="field-error-hint"
+        >
           <slot name="hint-content">
             {{ hintText }}
           </slot>
         </p>
       </slot>
       <Transition name="field-message">
-        <div v-if="hasError" class="field-message-animated">
+        <div
+          v-if="hasError"
+          class="field-message-animated"
+        >
           <div class="field-message-content">
-            <slot name="error" :error-id="errorId" :error-text="errorText">
-              <p :id="errorId" class="field-error" role="alert">
+            <slot
+              name="error"
+              :error-id="errorId"
+              :error-text="errorText"
+            >
+              <p
+                :id="errorId"
+                class="field-error"
+                role="alert"
+              >
                 <slot name="error-content">
                   {{ errorText }}
                 </slot>
@@ -67,7 +82,10 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
               name="error-hint"
               :error-hint-id="errorHintId"
             >
-              <p :id="errorHintId" class="field-error-hint">
+              <p
+                :id="errorHintId"
+                class="field-error-hint"
+              >
                 <slot name="error-hint-content">
                   {{ errorHintText }}
                 </slot>

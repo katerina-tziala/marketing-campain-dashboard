@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import type {
-  BadgeShape,
-  BadgeSize,
-  BadgeTone,
-  BadgeVariant,
-} from "./badge.types";
+import type { BadgeShape, BadgeSize, BadgeTone, BadgeVariant } from './badge.types';
 
 const props = withDefaults(
   defineProps<{
@@ -14,10 +9,10 @@ const props = withDefaults(
     size?: BadgeSize;
   }>(),
   {
-    variant: "primary",
-    tone: "solid",
-    shape: "pill",
-    size: "default",
+    variant: 'primary',
+    tone: 'solid',
+    shape: 'pill',
+    size: 'default',
   },
 );
 </script>

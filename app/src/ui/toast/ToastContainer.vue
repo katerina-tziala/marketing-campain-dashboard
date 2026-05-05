@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { useToastStore } from "@/app/stores";
-import ToastNotification from "./ToastNotification.vue";
+import { useToastStore } from '@/app/stores';
+
+import ToastNotification from './ToastNotification.vue';
 
 const toastStore = useToastStore();
 </script>
@@ -8,7 +9,11 @@ const toastStore = useToastStore();
 <template>
   <Teleport to="body">
     <div class="toast-container">
-      <TransitionGroup name="toast" tag="div" class="toast-list">
+      <TransitionGroup
+        name="toast"
+        tag="div"
+        class="toast-list"
+      >
         <ToastNotification
           v-for="toast in toastStore.toasts"
           :key="toast.id"

@@ -34,9 +34,9 @@
 
   .scrollbar-info-on-surface {
     @include scrollbar-colors(
-      rgb(var(--color-info) / 0.60),
+      rgb(var(--color-info) / 0.6),
       rgb(var(--color-surface-0h) / 0.8),
-      rgb(var(--color-info-light) / 0.80)
+      rgb(var(--color-info-light) / 0.8)
     );
   }
 }

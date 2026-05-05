@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import type { Campaign } from "@/shared/data";
-import { Button, ModalBody, ModalFooter } from "@/ui";
-import type { CampaignDataDuplicateGroup } from "../../../types";
-import { DuplicateSummary } from "../shared";
-import CampaignDuplicationsTable from "./CampaignDuplicationsTable.vue";
+import { computed, ref } from 'vue';
+
+import type { Campaign } from '@/shared/data';
+import { Button, ModalBody, ModalFooter } from '@/ui';
+
+import type { CampaignDataDuplicateGroup } from '../../../types';
+import { DuplicateSummary } from '../shared';
+import CampaignDuplicationsTable from './CampaignDuplicationsTable.vue';
 
 const props = defineProps<{
   duplicateGroups: CampaignDataDuplicateGroup[];
@@ -22,17 +24,16 @@ const selectedCampaigns = ref<Campaign[]>([]);
 
 const requiredSelection = computed(() => props.validCampaigns.length === 0);
 const resolvedCount = computed(() => selectedCampaigns.value.length);
-const allResolved = computed(
-  () => resolvedCount.value === props.duplicateGroups.length,
-);
-const backLabel = computed(() =>
-  props.hasPreviousErrors ? "Review errors" : "Fix file",
-);
+const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length);
+const backLabel = computed(() => (props.hasPreviousErrors ? 'Review errors' : 'Fix file'));
 const importLabel = computed(() => {
-  if (selectedCampaigns.value.length > 0)
+  if (selectedCampaigns.value.length > 0) {
     return `Import selected rows (${selectedCampaigns.value.length})`;
-  if (requiredSelection.value) return "Import selected rows";
-  return "Import without duplicates";
+  }
+  if (requiredSelection.value) {
+    return 'Import selected rows';
+  }
+  return 'Import without duplicates';
 });
 
 const canProceed = computed(
@@ -44,7 +45,7 @@ function onSelectionChange(campaigns: Campaign[]): void {
 }
 
 function handleProceed(): void {
-  emit("proceed", selectedCampaigns.value);
+  emit('proceed', selectedCampaigns.value);
 }
 </script>
 
@@ -56,12 +57,11 @@ function handleProceed(): void {
         variant="resolve"
         :has-valid-campaigns="validCampaigns.length > 0"
       />
-      <p class="resolve-indicator" :class="{ resolved: allResolved }">
-        <span
-          >Resolve duplicates ({{ resolvedCount }}/{{
-            duplicateGroups.length
-          }})</span
-        >
+      <p
+        class="resolve-indicator"
+        :class="{ resolved: allResolved }"
+      >
+        <span>Resolve duplicates ({{ resolvedCount }}/{{ duplicateGroups.length }})</span>
       </p>
       <CampaignDuplicationsTable
         :duplicate-groups="duplicateGroups"
@@ -71,11 +71,24 @@ function handleProceed(): void {
     </div>
   </ModalBody>
   <ModalFooter>
-    <Button variant="outline" class="min-w-24 sm:mr-auto" @click="emit('close')"
+    <Button
+      variant="outline"
+      class="min-w-24 sm:mr-auto"
+      @click="emit('close')"
       >Cancel</Button
     >
-    <Button variant="outline" :disabled="!canProceed" @click="handleProceed">{{ importLabel }}</Button>
-    <Button variant="primary" class="min-w-24" @click="emit('back')">{{ backLabel }}</Button>
+    <Button
+      variant="outline"
+      :disabled="!canProceed"
+      @click="handleProceed"
+      >{{ importLabel }}</Button
+    >
+    <Button
+      variant="primary"
+      class="min-w-24"
+      @click="emit('back')"
+      >{{ backLabel }}</Button
+    >
   </ModalFooter>
 </template>
 

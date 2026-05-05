@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { PortfolioKPIs } from "@/shared/portfolio";
+import { computed } from 'vue';
+
+import type { PortfolioKPIs } from '@/shared/portfolio';
 import {
   DonutChart,
   type DonutChartData,
@@ -8,7 +9,8 @@ import {
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
   withAlpha,
-} from "@/ui";
+} from '@/ui';
+
 import {
   CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_DONUT_DIM_ALPHA,
@@ -16,9 +18,9 @@ import {
   CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA,
   CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT,
   CAMPAIGN_PERFORMANCE_DONUT_SECONDARY_ALPHA,
-} from "../config";
-import type { BudgetShareDonutItem } from "../types";
-import { formatBudgetTooltipLines } from "../utils";
+} from '../config';
+import type { BudgetShareDonutItem } from '../types';
+import { formatBudgetTooltipLines } from '../utils';
 
 const props = defineProps<{
   items: BudgetShareDonutItem[];
@@ -30,10 +32,12 @@ function getTooltipDataIndex(ctx: DonutTooltipItem): number {
 }
 
 const tooltipCallbacks: DonutTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
+  title: (items) => items[0]?.label ?? '',
   label: (ctx) => {
     const item = props.items[getTooltipDataIndex(ctx)];
-    if (!item) return [];
+    if (!item) {
+      return [];
+    }
 
     return formatBudgetTooltipLines(item.budget, props.kpis.totalBudget);
   },
@@ -66,7 +70,9 @@ function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
 
 const legendLabelFilter: DonutLegendLabelFilter = (legendItem) => {
   const itemIndex = legendItem.index;
-  if (itemIndex === undefined) return true;
+  if (itemIndex === undefined) {
+    return true;
+  }
 
   const item = props.items[itemIndex];
   return item ? !isDimmedSegment(item, itemIndex) : true;

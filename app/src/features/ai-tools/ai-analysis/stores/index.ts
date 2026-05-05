@@ -1,1 +1,1 @@
-export { useAiAnalysisStore } from './aiAnalysis.store'
+export { useAiAnalysisStore } from './aiAnalysis.store';

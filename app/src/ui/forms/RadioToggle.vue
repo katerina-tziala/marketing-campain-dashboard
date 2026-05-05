@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FormControlVariant, RadioToggleSize } from './form.types'
+import type { FormControlVariant, RadioToggleSize } from './form.types';
 
 const props = withDefaults(
   defineProps<{
@@ -11,12 +11,14 @@ const props = withDefaults(
     size?: RadioToggleSize;
   }>(),
   {
+    name: undefined,
+    disabled: false,
     variant: 'primary',
     size: 'default',
   },
 );
 
-defineEmits<{ "update:modelValue": [value: string] }>();
+defineEmits<{ 'update:modelValue': [value: string] }>();
 </script>
 
 <template>
@@ -25,7 +27,11 @@ defineEmits<{ "update:modelValue": [value: string] }>();
     :class="[props.variant, props.size]"
     :style="{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }"
   >
-    <label v-for="option in options" :key="option.value" class="block">
+    <label
+      v-for="option in options"
+      :key="option.value"
+      class="block"
+    >
       <input
         type="radio"
         :name="name"
@@ -107,8 +113,7 @@ label {
   }
 }
 
-
-input[type="radio"] {
+input[type='radio'] {
   &:checked + .option-label {
     @apply bg-primary-dark text-typography-strong;
   }
@@ -131,7 +136,7 @@ input[type="radio"] {
 .radio-toggle.secondary {
   @apply border-primary-light/60;
 
-  input[type="radio"] {
+  input[type='radio'] {
     + .option-label {
       @apply text-primary-lighter/75;
     }

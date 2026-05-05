@@ -1,1 +1,1 @@
-export { default as BudgetOptimizationAnalysis } from './BudgetOptimizationAnalysis.vue'
+export { default as BudgetOptimizationAnalysis } from './BudgetOptimizationAnalysis.vue';

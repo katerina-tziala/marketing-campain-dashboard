@@ -1,30 +1,23 @@
-import type { GroqModel, GroqModelsResponse } from './types'
-import {
-  assertChatResponseOk,
-  assertResponseOk,
-  normalizeConnectionError,
-} from '../utils'
+import { assertChatResponseOk, assertResponseOk, normalizeConnectionError } from '../utils';
+import type { GroqModel, GroqModelsResponse } from './types';
 
-const API_BASE_URL = 'https://api.groq.com/openai/v1'
+const API_BASE_URL = 'https://api.groq.com/openai/v1';
 
-export async function fetchGroqModels(
-  apiKey: string,
-  signal?: AbortSignal,
-): Promise<GroqModel[]> {
+export async function fetchGroqModels(apiKey: string, signal?: AbortSignal): Promise<GroqModel[]> {
   try {
     const response = await fetch(`${API_BASE_URL}/models`, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },
       signal,
-    })
+    });
 
-    await assertResponseOk(response)
+    await assertResponseOk(response);
 
-    const json: GroqModelsResponse = await response.json()
-    return json.data
+    const json: GroqModelsResponse = await response.json();
+    return json.data;
   } catch (error) {
-    throw normalizeConnectionError(error)
+    throw normalizeConnectionError(error);
   }
 }
 
@@ -50,13 +43,13 @@ export async function requestGroqChatCompletion(
         presence_penalty: 0,
       }),
       signal,
-    })
+    });
 
-    await assertChatResponseOk(response)
+    await assertChatResponseOk(response);
 
-    const json = await response.json()
-    return json.choices?.[0]?.message?.content ?? ''
+    const json = await response.json();
+    return json.choices?.[0]?.message?.content ?? '';
   } catch (error) {
-    throw normalizeConnectionError(error)
+    throw normalizeConnectionError(error);
   }
 }

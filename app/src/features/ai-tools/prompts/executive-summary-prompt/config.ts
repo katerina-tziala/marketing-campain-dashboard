@@ -1,4 +1,4 @@
-import type { PromptRuleGroup } from '../types'
+import type { PromptRuleGroup } from '../types';
 
 export const ROLE_TASK_OBJECTIVE_RULES: PromptRuleGroup[] = [
   {
@@ -24,7 +24,7 @@ export const ROLE_TASK_OBJECTIVE_RULES: PromptRuleGroup[] = [
       'Summarize performance health, strategic priorities, key risks, and growth outlook without tactical budget instructions.',
     ],
   },
-]
+];
 
 export const OUTPUT_SCHEMA = `{
   "scope": "fullPortfolio | selectedSubset",
@@ -64,7 +64,7 @@ export const OUTPUT_SCHEMA = `{
     "label": "High | Moderate | Limited",
     "reasoning": "string — one to two sentences explaining scaling potential"
   }
-}`
+}`;
 
 export const FULL_PORTFOLIO_ANALYSIS_RULES: PromptRuleGroup[] = [
   {
@@ -168,7 +168,7 @@ export const FULL_PORTFOLIO_ANALYSIS_RULES: PromptRuleGroup[] = [
       'Keep only insights that add decision-making value.',
     ],
   },
-]
+];
 
 export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
   {
@@ -277,4 +277,4 @@ export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
       'Keep only insights that add decision-making value.',
     ],
   },
-]
+];

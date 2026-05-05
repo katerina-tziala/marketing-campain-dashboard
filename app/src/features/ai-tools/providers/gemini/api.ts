@@ -1,24 +1,24 @@
-import { assertResponseOk, normalizeConnectionError, assertChatResponseOk } from '../utils'
-import type { GeminiModel, GeminiModelsResponse } from "./types"
+import { assertChatResponseOk, assertResponseOk, normalizeConnectionError } from '../utils';
+import type { GeminiModel, GeminiModelsResponse } from './types';
 
-const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+const API_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-export async function fetchGeminiModels(apiKey: string, signal?: AbortSignal): Promise<GeminiModel[]> {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}?key=${encodeURIComponent(apiKey)}`,
-            { signal },
-        )
+export async function fetchGeminiModels(
+  apiKey: string,
+  signal?: AbortSignal,
+): Promise<GeminiModel[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}?key=${encodeURIComponent(apiKey)}`, { signal });
 
-        await assertResponseOk(response)
+    await assertResponseOk(response);
 
-        const json: GeminiModelsResponse = await response.json()
-        return json.models
-    } catch (error) {
-        throw normalizeConnectionError(error)
-    }
+    const json: GeminiModelsResponse = await response.json();
+    return json.models;
+  } catch (error) {
+    throw normalizeConnectionError(error);
+  }
 }
- 
+
 export async function requestGeminiChatCompletion(
   apiKey: string,
   model: string,
@@ -39,13 +39,13 @@ export async function requestGeminiChatCompletion(
         }),
         signal,
       },
-    )
+    );
 
-    await assertChatResponseOk(response)
+    await assertChatResponseOk(response);
 
-    const json = await response.json()
-    return json.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+    const json = await response.json();
+    return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
   } catch (error) {
-    throw normalizeConnectionError(error)
+    throw normalizeConnectionError(error);
   }
 }

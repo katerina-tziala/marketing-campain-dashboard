@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import ModalHeader from "./ModalHeader.vue";
-import { FOCUSABLE_SELECTOR, useFocusTrap, useModalAria } from "../accessibility";
-import type { ModalInitialFocus, ModalSize } from "./modal.types";
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+
+import { FOCUSABLE_SELECTOR, useFocusTrap, useModalAria } from '../accessibility';
+import type { ModalInitialFocus, ModalSize } from './modal.types';
+import ModalHeader from './ModalHeader.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -13,8 +14,9 @@ const props = withDefaults(
     closeOnBackdrop?: boolean;
   }>(),
   {
-    size: "default",
-    initialFocus: "content",
+    closeLabel: undefined,
+    size: 'default',
+    initialFocus: 'content',
     closeOnBackdrop: true,
   },
 );
@@ -29,42 +31,47 @@ const { getFocusableElements, trapTab, saveFocus, restoreFocus, lockScroll, unlo
   useFocusTrap(modalRef);
 
 function getFirstFocusableIn(containerSelector: string): HTMLElement | null {
-  const container =
-    modalRef.value?.querySelector<HTMLElement>(containerSelector);
-  if (!container) return null;
+  const container = modalRef.value?.querySelector<HTMLElement>(containerSelector);
+  if (!container) {
+    return null;
+  }
 
   return (
-    Array.from(
-      container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-    ).find((el) => el.offsetParent !== null) ?? null
+    Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(
+      (el) => el.offsetParent !== null,
+    ) ?? null
   );
 }
 
 function getInitialFocusTarget(): HTMLElement | null {
-  if (!modalRef.value) return null;
-
-  if (props.initialFocus === "first-control") {
-    return getFirstFocusableIn("[data-modal-body]");
+  if (!modalRef.value) {
+    return null;
   }
 
-  if (props.initialFocus === "footer-actions") {
-    return getFirstFocusableIn("[data-modal-footer]");
+  if (props.initialFocus === 'first-control') {
+    return getFirstFocusableIn('[data-modal-body]');
   }
 
-  if (props.initialFocus === "close") {
-    return modalRef.value.querySelector<HTMLElement>("[data-modal-close]");
+  if (props.initialFocus === 'footer-actions') {
+    return getFirstFocusableIn('[data-modal-footer]');
   }
 
-  return modalRef.value.querySelector<HTMLElement>("[data-modal-body]");
+  if (props.initialFocus === 'close') {
+    return modalRef.value.querySelector<HTMLElement>('[data-modal-close]');
+  }
+
+  return modalRef.value.querySelector<HTMLElement>('[data-modal-body]');
 }
 
 function focusInitialTarget(): void {
   const modal = modalRef.value;
-  if (!modal) return;
+  if (!modal) {
+    return;
+  }
 
   const target =
     getInitialFocusTarget() ??
-    modal.querySelector<HTMLElement>("[data-modal-body]") ??
+    modal.querySelector<HTMLElement>('[data-modal-body]') ??
     getFocusableElements()[0] ??
     modal;
 
@@ -77,13 +84,15 @@ async function scheduleInitialFocus(): Promise<void> {
 }
 
 function handleBackdropClick(): void {
-  if (!props.closeOnBackdrop) return;
-  emit("close");
+  if (!props.closeOnBackdrop) {
+    return;
+  }
+  emit('close');
 }
 
 function onKeydown(e: KeyboardEvent): void {
-  if (e.key === "Escape") {
-    emit("close");
+  if (e.key === 'Escape') {
+    emit('close');
     return;
   }
   trapTab(e);
@@ -92,12 +101,12 @@ function onKeydown(e: KeyboardEvent): void {
 onMounted(() => {
   saveFocus();
   lockScroll();
-  document.addEventListener("keydown", onKeydown);
+  document.addEventListener('keydown', onKeydown);
   void scheduleInitialFocus();
 });
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", onKeydown);
+  document.removeEventListener('keydown', onKeydown);
   unlockScroll();
   restoreFocus();
 });
@@ -117,7 +126,12 @@ watch(
       class="overlay"
       @click.self="handleBackdropClick"
     >
-      <div ref="modalRef" class="modal" :class="props.size" tabindex="-1">
+      <div
+        ref="modalRef"
+        class="modal"
+        :class="props.size"
+        tabindex="-1"
+      >
         <ModalHeader
           :title="title"
           :title-id="titleId"

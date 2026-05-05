@@ -1,11 +1,21 @@
-import type { ChartTheme } from '../config/chart-theme.config'
-import type {
-  CartesianChartScaleOptions,
-  CreateChartScaleOptions,
-} from '../types'
-import { useChartTheme } from './useChartTheme'
+import type { ChartTheme } from '../config/chart-theme.config';
+import type { CartesianChartScaleOptions, CreateChartScaleOptions } from '../types';
+import { useChartTheme } from './useChartTheme';
 
-function mapChartScaleTheme(chartTheme: ChartTheme) {
+function mapChartScaleTheme(chartTheme: ChartTheme): {
+  baseScale: CartesianChartScaleOptions;
+  adaptiveTicks: {
+    autoSkip: boolean;
+    maxRotation: number;
+    minRotation: number;
+  };
+  createTitle: (title: string) => {
+    display: boolean;
+    text: string;
+    color: string;
+    font: { size: number };
+  };
+} {
   const {
     tickColor,
     tickFontSize,
@@ -14,7 +24,7 @@ function mapChartScaleTheme(chartTheme: ChartTheme) {
     titleColor,
     titleFontSize,
     maxTickRotation,
-  } = chartTheme.scales
+  } = chartTheme.scales;
 
   const baseScale = {
     ticks: {
@@ -23,7 +33,7 @@ function mapChartScaleTheme(chartTheme: ChartTheme) {
     },
     grid: { color: gridColor },
     border: { color: borderColor },
-  }
+  };
 
   return {
     baseScale,
@@ -38,13 +48,15 @@ function mapChartScaleTheme(chartTheme: ChartTheme) {
       color: titleColor,
       font: { size: titleFontSize },
     }),
-  }
+  };
 }
 
-export function createChartScale(options: CreateChartScaleOptions = {}): CartesianChartScaleOptions {
-  const chartTheme = useChartTheme().value
-  const { baseScale, adaptiveTicks, createTitle } = mapChartScaleTheme(chartTheme)
-  const { title, adaptiveTickRotation = false, ticks, ...scaleOptions } = options
+export function createChartScale(
+  options: CreateChartScaleOptions = {},
+): CartesianChartScaleOptions {
+  const chartTheme = useChartTheme().value;
+  const { baseScale, adaptiveTicks, createTitle } = mapChartScaleTheme(chartTheme);
+  const { title, adaptiveTickRotation = false, ticks, ...scaleOptions } = options;
 
   const scale = {
     ...baseScale,
@@ -59,18 +71,24 @@ export function createChartScale(options: CreateChartScaleOptions = {}): Cartesi
       ...(adaptiveTickRotation ? adaptiveTicks : {}),
       ...ticks,
     },
-  }
+  };
 
-  return scale as CartesianChartScaleOptions
+  return scale as CartesianChartScaleOptions;
 }
 
-export function useChartScales() {
-  const chartTheme = useChartTheme().value
-  const { baseScale } = mapChartScaleTheme(chartTheme)
+export function useChartScales(): {
+  baseScales: {
+    x: CartesianChartScaleOptions;
+    y: CartesianChartScaleOptions;
+  };
+  createScale: typeof createChartScale;
+} {
+  const chartTheme = useChartTheme().value;
+  const { baseScale } = mapChartScaleTheme(chartTheme);
   const baseScales = {
     x: baseScale,
     y: baseScale,
-  }
+  };
 
-  return { baseScales, createScale: createChartScale }
+  return { baseScales, createScale: createChartScale };
 }

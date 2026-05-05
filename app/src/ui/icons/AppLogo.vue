@@ -14,22 +14,47 @@
         x2="38"
         y2="0"
       >
-      <stop offset="0%"    stop-color="rgb(30, 64, 175)" />
-      <stop offset="13.2%" stop-color="rgb(14 165 233)" />
-      <stop offset="26.3%" stop-color="rgb(30, 64, 175)" />
-      <stop offset="35.5%" stop-color="rgb(17, 94, 89)" />
-      <stop offset="48.7%" stop-color="rgb(45 212 191)" />
-      <stop offset="61.8%" stop-color="rgb(17, 94, 89)" />
-      <stop offset="71.1%" stop-color="rgb(55 48 163)" />
-      <stop offset="84.2%" stop-color="rgb(129 140 248)" />
-      <stop offset="97.4%" stop-color="rgb(55 48 163)" />
+        <stop
+          offset="0%"
+          stop-color="rgb(30, 64, 175)"
+        />
+        <stop
+          offset="13.2%"
+          stop-color="rgb(14 165 233)"
+        />
+        <stop
+          offset="26.3%"
+          stop-color="rgb(30, 64, 175)"
+        />
+        <stop
+          offset="35.5%"
+          stop-color="rgb(17, 94, 89)"
+        />
+        <stop
+          offset="48.7%"
+          stop-color="rgb(45 212 191)"
+        />
+        <stop
+          offset="61.8%"
+          stop-color="rgb(17, 94, 89)"
+        />
+        <stop
+          offset="71.1%"
+          stop-color="rgb(55 48 163)"
+        />
+        <stop
+          offset="84.2%"
+          stop-color="rgb(129 140 248)"
+        />
+        <stop
+          offset="97.4%"
+          stop-color="rgb(55 48 163)"
+        />
       </linearGradient>
     </defs>
     <g fill="url(#upload-bars-gradient)">
       <path d="M0,48 L0,2 Q0,0 2,0 L8,0 Q10,0 10,2 L10,48 Z" />
-      <path
-        d="M13.5,48 L13.5,23 Q13.5,21 15.5,21 L21.5,21 Q23.5,21 23.5,23 L23.5,48 Z"
-      />
+      <path d="M13.5,48 L13.5,23 Q13.5,21 15.5,21 L21.5,21 Q23.5,21 23.5,23 L23.5,48 Z" />
       <path d="M27,48 L27,2 Q27,0 29,0 L35,0 Q37,0 37,2 L37,48 Z" />
     </g>
     <path

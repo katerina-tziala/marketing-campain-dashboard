@@ -1,15 +1,17 @@
-import type { AiAnalysisContext } from '../../ai-analysis/types'
+import type { AiAnalysisContext } from '../../ai-analysis/types';
+import { OUTPUT_REQUIREMENTS_RULES } from '../constants';
+import { getPromptRuleGroup } from '../utils';
+import {
+  FULL_PORTFOLIO_OPTIMIZATION_RULES,
+  OUTPUT_SCHEMA,
+  ROLE_TASK_OBJECTIVE_RULES,
+  SELECTION_ANALYSIS_RULES,
+} from './config';
 
-import { getPromptRuleGroup } from '../utils'
-import { OUTPUT_REQUIREMENTS_RULES } from '../constants'
-import { ROLE_TASK_OBJECTIVE_RULES, FULL_PORTFOLIO_OPTIMIZATION_RULES, SELECTION_ANALYSIS_RULES, OUTPUT_SCHEMA } from './config'
-
-
-export function generateBudgetOptimizationPrompt(
-  context: AiAnalysisContext,
-): string {
-  const { analysis, businessContext, portfolioBenchmark } = context
-  const { portfolio, campaignGroups, channels, channelContext, channelGroups, derivedSignals } = analysis
+export function generateBudgetOptimizationPrompt(context: AiAnalysisContext): string {
+  const { analysis, businessContext, portfolioBenchmark } = context;
+  const { portfolio, campaignGroups, channels, channelContext, channelGroups, derivedSignals } =
+    analysis;
 
   const promptInput = {
     portfolio,
@@ -19,9 +21,11 @@ export function generateBudgetOptimizationPrompt(
     channelGroups,
     derivedSignals,
     portfolioBenchmark, // full portfolio benchmark when filtered
-  }
+  };
 
-  const analysisRules = portfolioBenchmark ? SELECTION_ANALYSIS_RULES : FULL_PORTFOLIO_OPTIMIZATION_RULES
+  const analysisRules = portfolioBenchmark
+    ? SELECTION_ANALYSIS_RULES
+    : FULL_PORTFOLIO_OPTIMIZATION_RULES;
 
   const promptSections = [
     ...ROLE_TASK_OBJECTIVE_RULES.map(getPromptRuleGroup),
@@ -30,8 +34,7 @@ export function generateBudgetOptimizationPrompt(
     ...analysisRules.map(getPromptRuleGroup),
     getPromptRuleGroup(OUTPUT_REQUIREMENTS_RULES),
     `RESPONSE SCHEMA:\n${OUTPUT_SCHEMA}`,
-  ]
+  ];
 
-  return promptSections.join('\n\n').trim()
+  return promptSections.join('\n\n').trim();
 }
-

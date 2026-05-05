@@ -1,1 +1,1 @@
-export { default as ReviewDuplicatedCampaigns } from './ReviewDuplicatedCampaigns.vue'
+export { default as ReviewDuplicatedCampaigns } from './ReviewDuplicatedCampaigns.vue';

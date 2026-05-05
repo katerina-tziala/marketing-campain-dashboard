@@ -1,7 +1,3 @@
-export type ModalSize = "default" | "small" | "medium" | "large";
+export type ModalSize = 'default' | 'small' | 'medium' | 'large';
 
-export type ModalInitialFocus =
-  | "content"
-  | "first-control"
-  | "footer-actions"
-  | "close";
+export type ModalInitialFocus = 'content' | 'first-control' | 'footer-actions' | 'close';

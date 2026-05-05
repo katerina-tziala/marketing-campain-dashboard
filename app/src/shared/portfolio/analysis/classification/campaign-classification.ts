@@ -1,23 +1,22 @@
-import type { CampaignClassificationThresholds, CampaignSummary } from '../../types'
-import type { CampaignGroups } from '../../types'
-import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking'
-import {
-  hasBudgetShareLead,
-  hasMinimumBudgetShare,
-  hasRoiBelowPortfolio,
-} from '../checkers'
+import type {
+  CampaignClassificationThresholds,
+  CampaignGroups,
+  CampaignSummary,
+} from '../../types';
+import { hasBudgetShareLead, hasMinimumBudgetShare, hasRoiBelowPortfolio } from '../checkers';
+import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking';
 import {
   hasFunnelLeak,
   hasPositiveUnderperformingRoi,
   hasRoiAbovePortfolioFactor,
-} from './classification-checkers'
-import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from './constants'
-import { getDynamicThresholds, getFunnelMedians } from './classification-utils'
+} from './classification-checkers';
+import { getDynamicThresholds, getFunnelMedians } from './classification-utils';
+import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from './constants';
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
 /**
- * 
+ *
  * Requires both strong ROI relative to the portfolio and sufficient absolute size.
  * The dynamic size gate (minRevenue, minConversions) prevents micro-campaigns
  * with small denominators inflating their ROI ratio from being mistaken for
@@ -30,31 +29,26 @@ function isTop(
   minConversions: number,
   thresholds: CampaignClassificationThresholds,
 ): boolean {
-
   return (
     c.budget > 0 &&
     c.revenue >= minRevenue &&
     c.conversions >= minConversions &&
     hasRoiAbovePortfolioFactor(c, portfolioRoi, thresholds.topRoiFactor)
-  )
+  );
 }
 
 /**
- * 
+ *
  * Revenue share meets or exceeds budget share — the campaign already delivers
  * efficiently for what it receives. ROI at or above the portfolio average confirms
  * genuine performance. Not reaching the Top threshold typically means the campaign
  * is under-invested rather than weak: increasing its budget allocation is likely
  * to return proportionate gains.
  */
-function isOpportunity(
-  c: CampaignSummary,
-  portfolioRoi: number | null,
-): boolean {
-
-  const roi = c.roi ?? 0
-  const refRoi = portfolioRoi ?? 0
-  return c.budget > 0 && roi >= refRoi && c.revenueShare >= c.budgetShare
+function isOpportunity(c: CampaignSummary, portfolioRoi: number | null): boolean {
+  const roi = c.roi ?? 0;
+  const refRoi = portfolioRoi ?? 0;
+  return c.budget > 0 && roi >= refRoi && c.revenueShare >= c.budgetShare;
 }
 
 /**
@@ -68,13 +62,12 @@ function isBottom(
   portfolioRoi: number | null,
   thresholds: CampaignClassificationThresholds,
 ): boolean {
-
   return (
     c.budget > 0 &&
     hasMinimumBudgetShare(c, thresholds.minBudgetShare) &&
     hasBudgetShareLead(c, thresholds.gapThreshold) &&
     hasRoiBelowPortfolio(c, portfolioRoi ?? 0)
-  )
+  );
 }
 
 /**
@@ -89,13 +82,14 @@ function isWatch(
   medianCvr: number | null,
   thresholds: CampaignClassificationThresholds,
 ): boolean {
-  if (c.budget <= 0 || c.budgetShare < thresholds.minBudgetShare) return false
-
+  if (c.budget <= 0 || c.budgetShare < thresholds.minBudgetShare) {
+    return false;
+  }
 
   return (
     hasFunnelLeak(c, medianCtr, medianCvr, thresholds) ||
     hasPositiveUnderperformingRoi(c, portfolioRoi, thresholds)
-  )
+  );
 }
 
 // ── Classifier ────────────────────────────────────────────────────────────────
@@ -113,23 +107,23 @@ export function classifyCampaigns(
   portfolioRoi: number | null,
   thresholds: CampaignClassificationThresholds = DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS,
 ): CampaignGroups {
-  const { medianCtr, medianCvr } = getFunnelMedians(campaigns)
-  const { minRevenue, minConversions } = getDynamicThresholds(campaigns, thresholds)
+  const { medianCtr, medianCvr } = getFunnelMedians(campaigns);
+  const { minRevenue, minConversions } = getDynamicThresholds(campaigns, thresholds);
 
-  const top: CampaignSummary[] = []
-  const opportunity: CampaignSummary[] = []
-  const bottom: CampaignSummary[] = []
-  const watch: CampaignSummary[] = []
+  const top: CampaignSummary[] = [];
+  const opportunity: CampaignSummary[] = [];
+  const bottom: CampaignSummary[] = [];
+  const watch: CampaignSummary[] = [];
 
   for (const c of campaigns) {
     if (isTop(c, portfolioRoi, minRevenue, minConversions, thresholds)) {
-      top.push(c)
+      top.push(c);
     } else if (isOpportunity(c, portfolioRoi)) {
-      opportunity.push(c)
+      opportunity.push(c);
     } else if (isBottom(c, portfolioRoi, thresholds)) {
-      bottom.push(c)
+      bottom.push(c);
     } else if (isWatch(c, portfolioRoi, medianCtr, medianCvr, thresholds)) {
-      watch.push(c)
+      watch.push(c);
     }
   }
 
@@ -138,5 +132,5 @@ export function classifyCampaigns(
     opportunity: rankByRoiDesc(opportunity),
     bottom: rankByAllocationGapDesc(bottom),
     watch: rankByBudgetShareDesc(watch),
-  }
+  };
 }

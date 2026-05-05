@@ -1,4 +1,4 @@
-import type { PromptRuleGroup } from '../types'
+import type { PromptRuleGroup } from '../types';
 
 export const ROLE_AND_TASK_RULES: PromptRuleGroup[] = [
   {
@@ -16,7 +16,7 @@ export const ROLE_AND_TASK_RULES: PromptRuleGroup[] = [
       'Return the strongest models for analytical reasoning, summarization, budget optimization, and structured JSON generation.',
     ],
   },
-]
+];
 
 const EVALUATION_CRITERIA: PromptRuleGroup = {
   title: 'EVALUATION CRITERIA',
@@ -31,7 +31,7 @@ const EVALUATION_CRITERIA: PromptRuleGroup = {
     'Consistency across repeated requests',
     'Production suitability, including stable identifiers and expected usage sustainability',
   ],
-}
+};
 
 const RANKING_SIGNALS: PromptRuleGroup = {
   title: 'RANKING SIGNALS',
@@ -39,7 +39,7 @@ const RANKING_SIGNALS: PromptRuleGroup = {
   type: 'unordered',
   list: ['provider', 'contextWindow', 'maxOutputTokens', 'supportsTextGeneration', 'thinking'],
   notes: ['Treat missing optional fields as neutral, not negative.'],
-}
+};
 
 const SELECTION_PROCESS: PromptRuleGroup = {
   title: 'SELECTION PROCESS',
@@ -53,7 +53,7 @@ const SELECTION_PROCESS: PromptRuleGroup = {
     'If fewer than 20 models are provided, return all identifiable models ranked.',
     'Do not duplicate models.',
   ],
-}
+};
 
 const SCORING_SCALE: PromptRuleGroup = {
   title: 'SCORING SCALE',
@@ -67,7 +67,7 @@ const SCORING_SCALE: PromptRuleGroup = {
     '5 = marginal fit; return only if needed to fill the top 20',
     'below 5 = unsuitable; exclude unless fewer than 20 identifiable models exist',
   ],
-}
+};
 
 const IDENTIFIER_RULES: PromptRuleGroup = {
   title: 'IDENTIFIER RULES',
@@ -78,7 +78,7 @@ const IDENTIFIER_RULES: PromptRuleGroup = {
     'Do not modify, normalize, rename, or infer identifiers.',
     'Only return models from the input list.',
   ],
-}
+};
 
 const METADATA_RULES: PromptRuleGroup = {
   title: 'METADATA RULES',
@@ -90,7 +90,7 @@ const METADATA_RULES: PromptRuleGroup = {
     'If family cannot be clearly inferred, use "Other".',
     'Do not use marketing language.',
   ],
-}
+};
 
 const FINAL_VALIDATION_CHECK: PromptRuleGroup = {
   title: 'FINAL VALIDATION CHECK',
@@ -102,7 +102,7 @@ const FINAL_VALIDATION_CHECK: PromptRuleGroup = {
     'Every strengthScore is between 1 and 10.',
     'Output matches the schema exactly.',
   ],
-}
+};
 
 export const EVALUATION_RULES: PromptRuleGroup[] = [
   EVALUATION_CRITERIA,
@@ -112,7 +112,7 @@ export const EVALUATION_RULES: PromptRuleGroup[] = [
   IDENTIFIER_RULES,
   METADATA_RULES,
   FINAL_VALIDATION_CHECK,
-]
+];
 
 export const OUTPUT_SCHEMA = `{
   "models": [
@@ -123,4 +123,4 @@ export const OUTPUT_SCHEMA = `{
       "strengthScore": 9
     }
   ]
-}`
+}`;

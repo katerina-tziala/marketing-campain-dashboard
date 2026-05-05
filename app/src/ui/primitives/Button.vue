@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, useAttrs } from "vue";
-import type { ButtonSize, ButtonVariant } from "./button.types";
+import { computed, ref, useAttrs } from 'vue';
+
+import type { ButtonSize, ButtonVariant } from './button.types';
 
 const props = withDefaults(
   defineProps<{
@@ -10,8 +11,8 @@ const props = withDefaults(
     noRing?: boolean;
   }>(),
   {
-    variant: "primary",
-    size: "default",
+    variant: 'primary',
+    size: 'default',
     iconOnly: false,
     noRing: false,
   },
@@ -22,15 +23,15 @@ const buttonRef = ref<HTMLButtonElement>();
 const buttonClasses = computed(() => [
   props.variant,
   props.size,
-  props.iconOnly ? "icon-only" : undefined,
-  props.noRing ? "no-ring" : undefined,
+  props.iconOnly ? 'icon-only' : undefined,
+  props.noRing ? 'no-ring' : undefined,
 ]);
 const buttonTitle = computed(() => {
-  if (typeof attrs.title === "string") return attrs.title;
-  const ariaLabel = attrs["aria-label"];
-  return props.iconOnly && typeof ariaLabel === "string"
-    ? ariaLabel
-    : undefined;
+  if (typeof attrs.title === 'string') {
+    return attrs.title;
+  }
+  const ariaLabel = attrs['aria-label'];
+  return props.iconOnly && typeof ariaLabel === 'string' ? ariaLabel : undefined;
 });
 
 function getRootEl(): HTMLButtonElement | undefined {

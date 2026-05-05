@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { computed, useAttrs } from "vue";
-import type { PortfolioKPIs } from "@/shared/portfolio";
-import type { Channel } from "@/shared/data";
+import { computed, useAttrs } from 'vue';
+
+import type { Channel } from '@/shared/data';
+import type { PortfolioKPIs } from '@/shared/portfolio';
+import { formatCurrency, formatDecimal } from '@/shared/utils';
 import {
   BarChart,
-  MetaItem,
-  MetaRow,
   type BarChartData,
   type BarTooltipCallbacks,
+  MetaItem,
+  MetaRow,
   Notification,
-} from "@/ui";
-import { formatCurrency, formatDecimal } from "@/shared/utils";
-import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from "../config";
-import { useCampaignPerformanceTheme } from "../composables";
+} from '@/ui';
+
+import { useCampaignPerformanceTheme } from '../composables';
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config';
 import {
   getChannelEfficiencyGapPercent,
   getEfficiencyGapColor,
   getEfficiencyGapSignedAmount,
-} from "../utils";
-
-const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
+} from '../utils';
 
 const props = defineProps<{
   channels: Channel[];
@@ -30,9 +30,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
+
 const attrs = useAttrs();
 const rootAttrs = computed(() => {
-  const { "aria-label": _ariaLabel, ...rest } = attrs;
+  const { 'aria-label': _ariaLabel, ...rest } = attrs;
   return rest;
 });
 
@@ -41,28 +43,28 @@ function getGapPercent(channel: Channel): number {
 }
 
 function getGapLabel(value: number): string {
-  return value >= 0 ? "Overperforming" : "Underperforming";
+  return value >= 0 ? 'Overperforming' : 'Underperforming';
 }
 
 const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
-    const value = typeof ctx.raw === "number" ? ctx.raw : 0;
+    const value = typeof ctx.raw === 'number' ? ctx.raw : 0;
     return `${getGapLabel(value)}: ${formatDecimal(value)}pp`;
   },
   afterLabel: (ctx) => {
     const channel = props.channels[ctx.dataIndex];
-    if (!channel) return "";
+    if (!channel) {
+      return '';
+    }
 
     const gapPercent = getGapPercent(channel);
     const signedAmount = getEfficiencyGapSignedAmount(channel, gapPercent);
-    return `Gap: ${gapPercent > 0 ? "+" : ""}${formatCurrency(signedAmount)}`;
+    return `Gap: ${gapPercent > 0 ? '+' : ''}${formatCurrency(signedAmount)}`;
   },
 };
 
 const gapValues = computed(() => props.channels.map((ch) => getGapPercent(ch)));
-const hasVisibleGap = computed(() =>
-  gapValues.value.some((value) => Math.abs(value) > 0.01),
-);
+const hasVisibleGap = computed(() => gapValues.value.some((value) => Math.abs(value) > 0.01));
 
 const chartData = computed<BarChartData>(() => ({
   labels: props.channels.map((ch) => ch.name),
@@ -81,24 +83,25 @@ const chartData = computed<BarChartData>(() => ({
 }));
 
 const isSingleChannelView = computed(() => props.channels.length === 1);
-const showChart = computed(
-  () => !isSingleChannelView.value && hasVisibleGap.value,
-);
+const showChart = computed(() => !isSingleChannelView.value && hasVisibleGap.value);
 
 const valueScaleBounds = computed<{ min?: number; max?: number }>(() => {
-  if (isSingleChannelView.value) return { min: -5, max: 5 };
+  if (isSingleChannelView.value) {
+    return { min: -5, max: 5 };
+  }
 
   const values = gapValues.value;
-  if (values.length === 0) return {};
+  if (values.length === 0) {
+    return {};
+  }
 
   const allNegative = values.every((value) => value < 0);
   const allPositive = values.every((value) => value > 0);
-  if (!allNegative && !allPositive) return {};
+  if (!allNegative && !allPositive) {
+    return {};
+  }
 
-  const range = Math.max(
-    Math.ceil(Math.max(...values.map((value) => Math.abs(value)))),
-    5,
-  );
+  const range = Math.max(Math.ceil(Math.max(...values.map((value) => Math.abs(value)))), 5);
 
   return { min: -range, max: range };
 });
@@ -108,27 +111,31 @@ function formatValueTick(value: string | number): string {
 }
 
 const chartAriaLabel = computed(() =>
-  typeof attrs["aria-label"] === "string"
-    ? attrs["aria-label"]
-    : "Efficiency Gap by Channel",
+  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : 'Efficiency Gap by Channel',
 );
 </script>
 
 <template>
-  <div v-bind="rootAttrs" class="efficiency-gap-bars">
-    <MetaRow size="tiny" class="mx-auto -mb-0.5">
+  <div
+    v-bind="rootAttrs"
+    class="efficiency-gap-bars"
+  >
+    <MetaRow
+      size="tiny"
+      class="mx-auto -mb-0.5"
+    >
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
           :style="{ backgroundColor: performanceChartColors.positiveGap }"
-        ></span>
+        />
         <span>Overperforming</span>
       </MetaItem>
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
           :style="{ backgroundColor: performanceChartColors.negativeGap }"
-        ></span>
+        />
         <span>Underperforming</span>
       </MetaItem>
     </MetaRow>
@@ -143,21 +150,28 @@ const chartAriaLabel = computed(() =>
       :value-scale-max="valueScaleBounds.max"
       y-label="Gap (%)"
     />
-    <div v-else class="p-4 flex items-center justify-center">
-      <Notification class="text-sm" variant="info" :show-icon="true">
+    <div
+      v-else
+      class="p-4 flex items-center justify-center"
+    >
+      <Notification
+        class="text-sm"
+        variant="info"
+        :show-icon="true"
+      >
         <template #title>
           <span>
             {{
               isSingleChannelView
-                ? "Share efficiency needs comparison"
-                : "No share efficiency difference"
+                ? 'Share efficiency needs comparison'
+                : 'No share efficiency difference'
             }}
           </span>
         </template>
         {{
           isSingleChannelView
-            ? "Select at least two channels to compare revenue share against budget share."
-            : "These channels have the same revenue-to-budget balance in the current selection."
+            ? 'Select at least two channels to compare revenue share against budget share.'
+            : 'These channels have the same revenue-to-budget balance in the current selection.'
         }}
       </Notification>
     </div>

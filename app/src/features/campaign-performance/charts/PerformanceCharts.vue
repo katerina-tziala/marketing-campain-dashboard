@@ -1,26 +1,23 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/data";
-import type { PortfolioKPIs } from "@/shared/portfolio";
-import type { Channel } from "@/shared/data";
-import { Card } from "@/ui";
+import { computed } from 'vue';
+
+import type { CampaignPerformance, Channel } from '@/shared/data';
+import type { PortfolioKPIs } from '@/shared/portfolio';
+import { Card } from '@/ui';
+
 import {
-  BudgetShareDonutChart,
-  ConversionFunnelChart,
-  RoiBarChart,
-} from "./components";
+  sortCampaignsByBudgetDesc,
+  sortCampaignsByRoiDesc,
+  sortChannelsByRoiDesc,
+} from '../utils/campaign-performance-sorting';
+import { BudgetShareDonutChart, ConversionFunnelChart, RoiBarChart } from './components';
 import {
   useCampaignBudgetShareDonutItems,
   useCampaignColorMap,
   useCampaignRoiChartItems,
   useChannelRoiChartItems,
-} from "./composables";
-import {
-  sortCampaignsByBudgetDesc,
-  sortCampaignsByRoiDesc,
-  sortChannelsByRoiDesc,
-} from "../utils/campaign-performance-sorting";
-import RevenueVsBudgetChart from "./RevenueVsBudgetChart.vue";
+} from './composables';
+import RevenueVsBudgetChart from './RevenueVsBudgetChart.vue';
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
@@ -32,9 +29,7 @@ const props = defineProps<{
 const colorMaps = useCampaignColorMap(() => props.allChannels);
 
 const campaignsByRoi = computed(() => sortCampaignsByRoiDesc(props.campaigns));
-const campaignsByBudget = computed(() =>
-  sortCampaignsByBudgetDesc(props.campaigns),
-);
+const campaignsByBudget = computed(() => sortCampaignsByBudgetDesc(props.campaigns));
 const channelsByRoi = computed(() => sortChannelsByRoiDesc(props.channels));
 
 const roiCampaignItems = useCampaignRoiChartItems(
@@ -71,7 +66,10 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
         />
       </Card>
       <!-- Revenue vs Budget by Channel -->
-      <RevenueVsBudgetChart :channels="channels" :kpis="kpis" />
+      <RevenueVsBudgetChart
+        :channels="channels"
+        :kpis="kpis"
+      />
       <!-- ROI by Campaign -->
       <Card>
         <h3 class="text-base">ROI by Campaign</h3>
@@ -108,7 +106,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 <style lang="scss" scoped>
 .chards-wrapper {
   @apply w-full;
-  @include cq-container("performance-charts");
+  @include cq-container('performance-charts');
 }
 .charts-grid {
   @apply w-full 
@@ -119,7 +117,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
   mx-auto
   max-w-7xl;
 
-  @include cq-up(cq-1024, "performance-charts") {
+  @include cq-up(cq-1024, 'performance-charts') {
     @apply grid-cols-2;
 
     :deep(.full-row-chart) {

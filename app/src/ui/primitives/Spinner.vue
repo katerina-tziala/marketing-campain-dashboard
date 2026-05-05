@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { SpinnerSize, SpinnerTone } from './spinner.types'
+import type { SpinnerSize, SpinnerTone } from './spinner.types';
 
 const props = withDefaults(
   defineProps<{
-    size?: SpinnerSize
-    tone?: SpinnerTone
+    size?: SpinnerSize;
+    tone?: SpinnerTone;
   }>(),
   {
     size: 'default',
     tone: 'default',
   },
-)
+);
 </script>
 
 <template>
@@ -68,7 +68,7 @@ const props = withDefaults(
 
 .spinner.inverse {
   .spinner-track {
-    @apply  text-typography-strong/30;
+    @apply text-typography-strong/30;
   }
 
   .spinner-arc {

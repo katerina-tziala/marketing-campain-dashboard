@@ -38,7 +38,7 @@ defineProps<{
     @apply inline-flex items-center gap-1.5 rounded-full px-2 py-1;
   }
 
-  &[aria-pressed="true"] {
+  &[aria-pressed='true'] {
     @apply border-info-darker;
 
     > .chip-content {

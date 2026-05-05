@@ -1,1 +1,5 @@
-export { resolveChartsThemeTokens, resolvePaletteColors, toChartColorPalette } from './chart-theme-tokens'
+export {
+  resolveChartsThemeTokens,
+  resolvePaletteColors,
+  toChartColorPalette,
+} from './chart-theme-tokens';

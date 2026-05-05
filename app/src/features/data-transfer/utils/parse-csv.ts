@@ -1,11 +1,12 @@
-import Papa from 'papaparse'
-import type { CampaignDataParseResult } from '../types'
-import { validateCampaignData } from './validate-campaign-data'
+import Papa from 'papaparse';
 
-export const MAX_CSV_FILE_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
+import type { CampaignDataParseResult } from '../types';
+import { validateCampaignData } from './validate-campaign-data';
+
+export const MAX_CSV_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
 
 export function isValidCsvFile(file: File): boolean {
-  return file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv'
+  return file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
 }
 
 export function parseCsv(file: File): Promise<CampaignDataParseResult> {
@@ -13,14 +14,14 @@ export function parseCsv(file: File): Promise<CampaignDataParseResult> {
     return Promise.resolve({
       campaigns: [],
       errors: [{ type: 'file_type' }],
-    })
+    });
   }
 
   if (file.size > MAX_CSV_FILE_SIZE_BYTES) {
     return Promise.resolve({
       campaigns: [],
       errors: [{ type: 'file_size' }],
-    })
+    });
   }
 
   return new Promise((resolve) => {
@@ -28,14 +29,14 @@ export function parseCsv(file: File): Promise<CampaignDataParseResult> {
       header: true,
       skipEmptyLines: true,
       complete({ data, meta }) {
-        resolve(validateCampaignData(data, meta.fields ?? []))
+        resolve(validateCampaignData(data, meta.fields ?? []));
       },
       error(err) {
         resolve({
           campaigns: [],
           errors: [{ type: 'parse_error', detail: err.message }],
-        })
+        });
       },
-    })
-  })
+    });
+  });
 }

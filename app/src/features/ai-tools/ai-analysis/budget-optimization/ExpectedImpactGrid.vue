@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { formatCurrency } from "@/shared/utils";
-import type { ExpectedImpact } from "../types";
+import { formatCurrency } from '@/shared/utils';
+
+import type { ExpectedImpact } from '../types';
 
 withDefaults(
   defineProps<{
@@ -21,27 +22,20 @@ withDefaults(
       <p class="expected-impact-row">
         <span>{{ amountLabel }}</span>
         <span class="text-typography">
-          <template v-if="showAmountSign">+</template
-          >{{ formatCurrency(amount) }}
+          <template v-if="showAmountSign">+</template>{{ formatCurrency(amount) }}
         </span>
       </p>
       <p class="expected-impact-row">
         <span>Est. ROI</span>
-        <span class="text-typography">
-          {{ impact.roiEstimate?.toFixed(1) ?? "N/A" }}x
-        </span>
+        <span class="text-typography"> {{ impact.roiEstimate?.toFixed(1) ?? 'N/A' }}x </span>
       </p>
       <p class="expected-impact-row">
         <span>Est. Revenue</span>
-        <span class="text-success">
-          +{{ formatCurrency(impact.revenueChange, 0) }}
-        </span>
+        <span class="text-success"> +{{ formatCurrency(impact.revenueChange, 0) }} </span>
       </p>
       <p class="expected-impact-row">
         <span>Est. Conversions</span>
-        <span class="text-success">
-          +{{ impact.conversionChange ?? "N/A" }}
-        </span>
+        <span class="text-success"> +{{ impact.conversionChange ?? 'N/A' }} </span>
       </p>
     </div>
   </div>
@@ -50,7 +44,7 @@ withDefaults(
 <style lang="scss" scoped>
 .expected-impact-grid-wrapper {
   @apply w-full;
-  @include cq-container("expected-impact-grid");
+  @include cq-container('expected-impact-grid');
 }
 .expected-impact-grid {
   @apply w-full
@@ -61,15 +55,15 @@ withDefaults(
     gap-x-8  
     w-full;
 
-  @include cq-up(cq-400, "expected-impact-grid") {
+  @include cq-up(cq-400, 'expected-impact-grid') {
     @apply grid-cols-2 grid-rows-2 gap-x-6;
   }
 
-  @include cq-up(cq-540, "expected-impact-grid") {
+  @include cq-up(cq-540, 'expected-impact-grid') {
     @apply grid-cols-2 grid-rows-2 gap-x-12;
   }
 
-  @include cq-up(cq-800, "expected-impact-grid") {
+  @include cq-up(cq-800, 'expected-impact-grid') {
     @apply grid-cols-4 grid-rows-1 gap-x-6;
   }
 }

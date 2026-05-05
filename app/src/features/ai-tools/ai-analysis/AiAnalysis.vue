@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { type Tab, Tabs, FileTextIcon, SlidersIcon } from "@/ui";
-import { useAiAnalysisStore } from "./stores";
-import type { AiAnalysisType } from "../types";
-import { BudgetOptimizationAnalysis } from "./budget-optimization";
-import { ExecutiveSummaryAnalysis } from "./executive-summary";
+import { FileTextIcon, SlidersIcon, type Tab, Tabs } from '@/ui';
+
+import type { AiAnalysisType } from '../types';
+import { BudgetOptimizationAnalysis } from './budget-optimization';
+import { ExecutiveSummaryAnalysis } from './executive-summary';
+import { useAiAnalysisStore } from './stores';
 
 const analysisStore = useAiAnalysisStore();
 
 const tabs: Tab[] = [
-  { id: "executiveSummary", label: "Summary", icon: FileTextIcon },
-  { id: "budgetOptimizer", label: "Optimizer", icon: SlidersIcon },
+  { id: 'executiveSummary', label: 'Summary', icon: FileTextIcon },
+  { id: 'budgetOptimizer', label: 'Optimizer', icon: SlidersIcon },
 ];
 </script>
 
@@ -21,17 +22,14 @@ const tabs: Tab[] = [
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
   <div class="scrollbar-stable-both scrollbar-on-surface panel-container">
-    <BudgetOptimizationAnalysis
-      v-if="analysisStore.activeTab === 'budgetOptimizer'"
-    />
+    <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
     <ExecutiveSummaryAnalysis v-else />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply
-    h-full
+  @apply h-full
     overflow-y-auto
     overflow-x-hidden
     flex

@@ -1,5 +1,5 @@
-import { CAMPAIGNS_SAMPLE } from '@/shared/data'
-import { usePortfolioStore } from '@/shared/portfolio'
+import { CAMPAIGNS_SAMPLE } from '@/shared/data';
+import { usePortfolioStore } from '@/shared/portfolio';
 
 const DEV_PORTFOLIO_INPUT = {
   name: 'Sample Campaign Data (Dev)',
@@ -9,11 +9,13 @@ const DEV_PORTFOLIO_INPUT = {
   },
   industry: 'Retail',
   campaigns: CAMPAIGNS_SAMPLE,
-}
+};
 
 export function activateDevPortfolio(): void {
-  const portfolioStore = usePortfolioStore()
-  if (portfolioStore.portfolios.length > 0) return
+  const portfolioStore = usePortfolioStore();
+  if (portfolioStore.portfolios.length > 0) {
+    return;
+  }
 
-  portfolioStore.addPortfolio(DEV_PORTFOLIO_INPUT)
+  portfolioStore.addPortfolio(DEV_PORTFOLIO_INPUT);
 }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import type { Channel } from "@/shared/data";
-import { Button, Chip, Dropdown, DropdownPanel } from "@/ui";
-import ChannelFilterChips from "./ChannelFilterChips.vue";
+import { computed, ref, watch } from 'vue';
+
+import type { Channel } from '@/shared/data';
+import { Button, Chip, Dropdown, DropdownPanel } from '@/ui';
+
+import ChannelFilterChips from './ChannelFilterChips.vue';
 
 const props = defineProps<{
   channels: Channel[];
@@ -20,7 +22,9 @@ const dropdownOpen = ref(false);
 const pendingIds = ref<string[]>([]);
 
 watch(dropdownOpen, (open) => {
-  if (open) pendingIds.value = [...props.selectedIds];
+  if (open) {
+    pendingIds.value = [...props.selectedIds];
+  }
 });
 
 const pendingHasSelection = computed(() => pendingIds.value.length > 0);
@@ -28,12 +32,8 @@ const pendingAllActive = computed(() => !pendingHasSelection.value);
 const pendingSelectedCount = computed(() =>
   pendingHasSelection.value ? pendingIds.value.length : props.channels.length,
 );
-const allOverflow = computed(
-  () => props.overflowCount === props.channels.length,
-);
-const totalCampaigns = computed(() =>
-  props.channels.reduce((s, c) => s + c.campaigns.length, 0),
-);
+const allOverflow = computed(() => props.overflowCount === props.channels.length);
+const totalCampaigns = computed(() => props.channels.reduce((s, c) => s + c.campaigns.length, 0));
 
 function toggleDropdown(): void {
   dropdownOpen.value = !dropdownOpen.value;
@@ -51,13 +51,16 @@ function handleClear(): void {
 }
 
 function applySelection(): void {
-  emit("apply", pendingIds.value);
+  emit('apply', pendingIds.value);
   dropdownOpen.value = false;
 }
 </script>
 
 <template>
-  <div ref="anchorRef" class="shrink-0">
+  <div
+    ref="anchorRef"
+    class="shrink-0"
+  >
     <Chip
       :active="dropdownOpen || hiddenSelectedCount > 0"
       :aria-expanded="dropdownOpen"
@@ -69,9 +72,7 @@ function applySelection(): void {
     >
       <template v-if="allOverflow">{{ channels.length }} channels</template
       ><template v-else>+{{ overflowCount }} more</template
-      ><template v-if="hiddenSelectedCount > 0">
-        · {{ hiddenSelectedCount }}</template
-      >
+      ><template v-if="hiddenSelectedCount > 0"> · {{ hiddenSelectedCount }}</template>
     </Chip>
     <Dropdown
       v-model:open="dropdownOpen"
@@ -79,7 +80,10 @@ function applySelection(): void {
       :align="'right'"
       :max-height="300"
     >
-      <DropdownPanel aria-label="Channel filters" class="filters-panel">
+      <DropdownPanel
+        aria-label="Channel filters"
+        class="filters-panel"
+      >
         <p class="panel-header">
           <span class="panel-title">Channels</span>
           <span class="selection-count"
@@ -99,10 +103,16 @@ function applySelection(): void {
           />
         </div>
         <div class="panel-footer">
-          <Button variant="outline" size="smaller" @click="dropdownOpen = false"
+          <Button
+            variant="outline"
+            size="smaller"
+            @click="dropdownOpen = false"
             >Cancel</Button
           >
-          <Button variant="primary" size="smaller" @click="applySelection"
+          <Button
+            variant="primary"
+            size="smaller"
+            @click="applySelection"
             >Apply</Button
           >
         </div>

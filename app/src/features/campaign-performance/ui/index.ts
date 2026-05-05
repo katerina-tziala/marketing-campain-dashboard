@@ -1,1 +1,1 @@
-export { default as PerformanceIndicator } from './PerformanceIndicator.vue'
+export { default as PerformanceIndicator } from './PerformanceIndicator.vue';

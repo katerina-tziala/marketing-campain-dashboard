@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import CloseIcon from "../icons/CloseIcon.vue";
-import Button from "../primitives/Button.vue";
+import CloseIcon from '../icons/CloseIcon.vue';
+import Button from '../primitives/Button.vue';
 
 const props = defineProps<{
   title: string;
@@ -12,13 +12,16 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const finalCloseLabel = props.closeLabel ?? "Close";
+const finalCloseLabel = props.closeLabel ?? 'Close';
 </script>
 
 <template>
   <div class="modal-header">
     <div class="modal-header-content">
-      <div v-if="$slots.icon" class="modal-header-icon">
+      <div
+        v-if="$slots.icon"
+        class="modal-header-icon"
+      >
         <slot name="icon" />
       </div>
       <h2 :id="titleId">{{ title }}</h2>

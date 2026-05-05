@@ -1,4 +1,4 @@
-import type { CampaignGroups, ChannelGroups } from './groups'
+import type { CampaignGroups, ChannelGroups } from './groups';
 import type {
   BudgetScalingCandidate,
   ConcentrationFlagSignal,
@@ -7,33 +7,33 @@ import type {
   InefficientChannelSignal,
   ScalingCandidateSignal,
   TransferCandidate,
-} from './signals'
-import type { ChannelSummary, PortfolioSummary } from './summary'
+} from './signals';
+import type { ChannelSummary, PortfolioSummary } from './summary';
 
 export interface DerivedSignals {
-  inefficientChannels: InefficientChannelSignal[]
-  inefficientCampaigns: InefficientCampaignSignal[]
-  scalingOpportunities: ScalingCandidateSignal[]
-  budgetScalingCandidates: BudgetScalingCandidate[]
-  transferCandidates: TransferCandidate[]
-  concentrationFlag: ConcentrationFlagSignal
-  correlations?: CorrelationSignal[]
+  inefficientChannels: InefficientChannelSignal[];
+  inefficientCampaigns: InefficientCampaignSignal[];
+  scalingOpportunities: ScalingCandidateSignal[];
+  budgetScalingCandidates: BudgetScalingCandidate[];
+  transferCandidates: TransferCandidate[];
+  concentrationFlag: ConcentrationFlagSignal;
+  correlations?: CorrelationSignal[];
 }
 
 export interface ChannelContext {
-  topByBudget: ChannelSummary[]
-  topByRevenue: ChannelSummary[]
+  topByBudget: ChannelSummary[];
+  topByRevenue: ChannelSummary[];
 }
 
 export interface PortfolioAnalysis {
-  portfolio: PortfolioSummary
+  portfolio: PortfolioSummary;
   /** Flat list of all channel summaries — use for tables and raw enumeration. */
-  channels: ChannelSummary[]
+  channels: ChannelSummary[];
   /** Compact ranked channel context for analysis and prompts. */
-  channelContext: ChannelContext
+  channelContext: ChannelContext;
   /** Mutually exclusive campaign classification groups. */
-  campaignGroups: CampaignGroups
+  campaignGroups: CampaignGroups;
   /** Mutually exclusive channel classification groups. */
-  channelGroups: ChannelGroups
-  derivedSignals: DerivedSignals
+  channelGroups: ChannelGroups;
+  derivedSignals: DerivedSignals;
 }

@@ -1,4 +1,4 @@
-import type { PromptRuleGroup } from './types'
+import type { PromptRuleGroup } from './types';
 
 export const OUTPUT_REQUIREMENTS_RULES: PromptRuleGroup = {
   title: 'OUTPUT REQUIREMENTS',
@@ -9,5 +9,4 @@ export const OUTPUT_REQUIREMENTS_RULES: PromptRuleGroup = {
     'Use double quotes for all keys and string values.',
     'Do not add, remove, rename, or change field types or structure.',
   ],
-}
-
+};

@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
-import { Button, DownloadIcon, FileTextIcon, UploadIcon } from "@/ui";
-import { useDownloadTemplate } from "../composables";
+import { onMounted, onUnmounted } from 'vue';
 
-onMounted(() => {
-  document.body.style.overflow = "hidden";
-});
-onUnmounted(() => {
-  document.body.style.overflow = "";
-});
+import { Button, DownloadIcon, FileTextIcon, UploadIcon } from '@/ui';
+
+import { useDownloadTemplate } from '../composables';
 
 const emit = defineEmits<{ upload: [] }>();
+onMounted(() => {
+  document.body.style.overflow = 'hidden';
+});
+onUnmounted(() => {
+  document.body.style.overflow = '';
+});
+
 const { downloadTemplate } = useDownloadTemplate();
 </script>
 
@@ -24,11 +26,19 @@ const { downloadTemplate } = useDownloadTemplate();
     </p>
 
     <div class="file-actions">
-      <Button variant="outline" class="grow w-full" @click="downloadTemplate">
+      <Button
+        variant="outline"
+        class="grow w-full"
+        @click="downloadTemplate"
+      >
         <DownloadIcon />
         Download Template
       </Button>
-      <Button variant="primary" class="grow w-full" @click="emit('upload')">
+      <Button
+        variant="primary"
+        class="grow w-full"
+        @click="emit('upload')"
+      >
         <UploadIcon />
         Upload data
       </Button>

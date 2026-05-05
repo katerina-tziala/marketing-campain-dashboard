@@ -1,1 +1,1 @@
-export { default as ExecutiveSummaryAnalysis } from './ExecutiveSummaryAnalysis.vue'
+export { default as ExecutiveSummaryAnalysis } from './ExecutiveSummaryAnalysis.vue';

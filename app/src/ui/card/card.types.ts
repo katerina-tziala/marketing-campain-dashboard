@@ -1,1 +1,1 @@
-export type CardVariant = 'primary' | 'secondary' | 'raised'
+export type CardVariant = 'primary' | 'secondary' | 'raised';

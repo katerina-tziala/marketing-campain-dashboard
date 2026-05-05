@@ -1,16 +1,22 @@
-import type { CampaignDataFieldIssue, CampaignDataRowIssueType, CampaignDataValidationError, CampaignDataValidationErrorType, RowErrorSummaryWords } from '../types'
+import type {
+  CampaignDataFieldIssue,
+  CampaignDataRowIssueType,
+  CampaignDataValidationError,
+  CampaignDataValidationErrorType,
+  RowErrorSummaryWords,
+} from '../types';
 
 const SINGULAR_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'wasWord'> = {
   rowWord: 'row',
   verb: 'contains',
   wasWord: 'was',
-}
+};
 
 const PLURAL_INVALID_WORDS: Pick<RowErrorSummaryWords, 'rowWord' | 'verb' | 'wasWord'> = {
   rowWord: 'rows',
   verb: 'contain',
   wasWord: 'were',
-}
+};
 
 const ROW_ISSUE_MESSAGES: Record<CampaignDataRowIssueType, string> = {
   empty: 'Cannot be empty',
@@ -18,7 +24,7 @@ const ROW_ISSUE_MESSAGES: Record<CampaignDataRowIssueType, string> = {
   non_negative_number: 'Must be a non-negative number',
   non_negative_integer: 'Must be a non-negative integer',
   exceeds: 'Cannot exceed',
-}
+};
 
 const VALIDATION_ERROR_MESSAGES: Record<CampaignDataValidationErrorType, string> = {
   file_type: 'Only CSV files are accepted.',
@@ -28,44 +34,50 @@ const VALIDATION_ERROR_MESSAGES: Record<CampaignDataValidationErrorType, string>
   invalid_rows: '{count} {rows} failed validation.',
   parse_error: 'Failed to parse file: {detail}.',
   duplicate_campaigns: 'Some campaign names appear more than once in the file.',
-}
+};
 
 function replacePlaceholders(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, placeholderKey) => values[placeholderKey] ?? '')
+  return template.replace(/\{(\w+)\}/g, (_, placeholderKey) => values[placeholderKey] ?? '');
 }
 
 export function getRowErrorMessage(error: CampaignDataFieldIssue): string {
-  const base = ROW_ISSUE_MESSAGES[error.issue]
-  return error.details ? `${base} ${error.details}` : base
+  const base = ROW_ISSUE_MESSAGES[error.issue];
+  return error.details ? `${base} ${error.details}` : base;
 }
 
-export function getRowErrorSummaryWords(invalidCount: number, validCount: number): RowErrorSummaryWords {
-  const totalCount = invalidCount + validCount
+export function getRowErrorSummaryWords(
+  invalidCount: number,
+  validCount: number,
+): RowErrorSummaryWords {
+  const totalCount = invalidCount + validCount;
 
-  const invalidWords = invalidCount === 1 ? SINGULAR_INVALID_WORDS : PLURAL_INVALID_WORDS
+  const invalidWords = invalidCount === 1 ? SINGULAR_INVALID_WORDS : PLURAL_INVALID_WORDS;
 
   return {
     ...invalidWords,
     totalRowWord: totalCount === 1 ? 'row' : 'rows',
     validRowWord: validCount === 1 ? 'row' : 'rows',
-  }
+  };
 }
 
 export function getValidationErrorMessage(error: CampaignDataValidationError): string {
-  const template = VALIDATION_ERROR_MESSAGES[error.type]
+  const template = VALIDATION_ERROR_MESSAGES[error.type];
 
   if (error.type === 'missing_columns') {
-    return replacePlaceholders(template, { cols: (error.missingColumns ?? []).join(', ') })
+    return replacePlaceholders(template, { cols: (error.missingColumns ?? []).join(', ') });
   }
 
   if (error.type === 'invalid_rows') {
-    const count = (error.rowErrors ?? []).length
-    return replacePlaceholders(template, { count: String(count), rows: count > 1 ? 'rows' : 'row' })
+    const count = (error.rowErrors ?? []).length;
+    return replacePlaceholders(template, {
+      count: String(count),
+      rows: count > 1 ? 'rows' : 'row',
+    });
   }
 
   if (error.type === 'parse_error') {
-    return replacePlaceholders(template, { detail: error.detail ?? 'Unknown error.' })
+    return replacePlaceholders(template, { detail: error.detail ?? 'Unknown error.' });
   }
 
-  return template
+  return template;
 }

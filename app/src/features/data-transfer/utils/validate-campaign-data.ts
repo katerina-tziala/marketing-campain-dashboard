@@ -1,7 +1,13 @@
-import type { Campaign } from '@/shared/data'
-import type { CampaignDataParseResult, CampaignDataProcessRowsResult, CampaignDataRowError, CampaignDataValidationError } from '../types'
-import { validateRow } from './validate-row-data'
-import { detectCampaignDuplication } from './detect-campaign-duplication'
+import type { Campaign } from '@/shared/data';
+
+import type {
+  CampaignDataParseResult,
+  CampaignDataProcessRowsResult,
+  CampaignDataRowError,
+  CampaignDataValidationError,
+} from '../types';
+import { detectCampaignDuplication } from './detect-campaign-duplication';
+import { validateRow } from './validate-row-data';
 
 const EXPECTED_HEADERS: (keyof Campaign)[] = [
   'campaign',
@@ -11,13 +17,13 @@ const EXPECTED_HEADERS: (keyof Campaign)[] = [
   'clicks',
   'conversions',
   'revenue',
-]
+];
 
 function buildHeaderMap(fields: string[]): Record<string, string> {
   return fields.reduce<Record<string, string>>((map, header) => {
-    map[header.toLowerCase().trim()] = header
-    return map
-  }, {})
+    map[header.toLowerCase().trim()] = header;
+    return map;
+  }, {});
 }
 
 function extractCampaignFields(
@@ -25,7 +31,7 @@ function extractCampaignFields(
   headerMap: Record<string, string>,
   rowId: number,
 ): Campaign {
-  const get = (key: keyof Campaign): string => (row[headerMap[key]] ?? '').trim()
+  const get = (key: keyof Campaign): string => (row[headerMap[key]] ?? '').trim();
   return {
     rowId,
     campaign: get('campaign'),
@@ -35,29 +41,29 @@ function extractCampaignFields(
     clicks: Number(get('clicks')),
     conversions: Number(get('conversions')),
     revenue: Number(get('revenue')),
-  }
+  };
 }
 
 function processRows(
   data: Record<string, string>[],
   headerMap: Record<string, string>,
 ): CampaignDataProcessRowsResult {
-  const campaigns: Campaign[] = []
-  const errors: CampaignDataRowError[] = []
+  const campaigns: Campaign[] = [];
+  const errors: CampaignDataRowError[] = [];
 
   data.forEach((row, index) => {
-    const rowNum = index + 2 // +2: 1-based index + header row
-    const fields = extractCampaignFields(row, headerMap, rowNum)
-    const rowErrors = validateRow(fields, rowNum)
+    const rowNum = index + 2; // +2: 1-based index + header row
+    const fields = extractCampaignFields(row, headerMap, rowNum);
+    const rowErrors = validateRow(fields, rowNum);
 
     if (rowErrors.length > 0) {
-      errors.push(...rowErrors)
+      errors.push(...rowErrors);
     } else {
-      campaigns.push(fields)
+      campaigns.push(fields);
     }
-  })
+  });
 
-  return { campaigns, errors }
+  return { campaigns, errors };
 }
 
 export function validateCampaignData(
@@ -65,28 +71,34 @@ export function validateCampaignData(
   fields: string[],
 ): CampaignDataParseResult {
   // ── Column validation ──────────────────────────────────────────────────────
-  const headerMap = buildHeaderMap(fields)
-  const actualHeaders = Object.values(headerMap)
-  const missingColumns = EXPECTED_HEADERS.filter((header) => !actualHeaders.includes(header.toLowerCase()))
+  const headerMap = buildHeaderMap(fields);
+  const actualHeaders = Object.values(headerMap);
+  const missingColumns = EXPECTED_HEADERS.filter(
+    (header) => !actualHeaders.includes(header.toLowerCase()),
+  );
 
   if (missingColumns.length > 0) {
-    return { campaigns: [], errors: [{ type: 'missing_columns', missingColumns }] }
+    return { campaigns: [], errors: [{ type: 'missing_columns', missingColumns }] };
   }
 
   // ── Empty file ─────────────────────────────────────────────────────────────
   if (data.length === 0) {
-    return { campaigns: [], errors: [{ type: 'empty_file' }] }
+    return { campaigns: [], errors: [{ type: 'empty_file' }] };
   }
 
   // ── Row validation ─────────────────────────────────────────────────────────
-  const { campaigns: validCampaigns, errors: rowErrors } = processRows(data, headerMap)
+  const { campaigns: validCampaigns, errors: rowErrors } = processRows(data, headerMap);
 
   // ── Duplicate detection ────────────────────────────────────────────────────
-  const { unique, groups } = detectCampaignDuplication(validCampaigns)
+  const { unique, groups } = detectCampaignDuplication(validCampaigns);
 
-  const errors: CampaignDataValidationError[] = []
-  if (rowErrors.length > 0) errors.push({ type: 'invalid_rows', rowErrors })
-  if (groups.length > 0) errors.push({ type: 'duplicate_campaigns', duplicateGroups: groups })
+  const errors: CampaignDataValidationError[] = [];
+  if (rowErrors.length > 0) {
+    errors.push({ type: 'invalid_rows', rowErrors });
+  }
+  if (groups.length > 0) {
+    errors.push({ type: 'duplicate_campaigns', duplicateGroups: groups });
+  }
 
-  return { campaigns: unique, errors }
+  return { campaigns: unique, errors };
 }

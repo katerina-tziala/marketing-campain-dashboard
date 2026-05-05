@@ -1,6 +1,7 @@
-import { parseLocaleDate } from '@/shared/utils'
-import type { DateFieldValidation } from '../form.types'
-import { validateRequired } from './required.validation'
+import { parseLocaleDate } from '@/shared/utils';
+
+import type { DateFieldValidation } from '../form.types';
+import { validateRequired } from './required.validation';
 
 const DEFAULT_DATE_VALIDATION = {
   value: null,
@@ -8,21 +9,21 @@ const DEFAULT_DATE_VALIDATION = {
   isoDate: null,
   errorKey: null,
   valid: false,
-}
+};
 
 export function validateDateField(
   value: string,
   options: { required?: boolean } = {},
 ): DateFieldValidation {
-  const trimmedValue = value.trim()
-  const requiredResult = validateRequired(value)
+  const trimmedValue = value.trim();
+  const requiredResult = validateRequired(value);
 
   if (options.required && !requiredResult.valid) {
     return {
       ...DEFAULT_DATE_VALIDATION,
       value,
       errorKey: requiredResult.errorKey,
-    }
+    };
   }
 
   if (!trimmedValue) {
@@ -30,10 +31,10 @@ export function validateDateField(
       ...DEFAULT_DATE_VALIDATION,
       value,
       valid: true,
-    }
+    };
   }
 
-  const { date, isoDate, errorKey } = parseLocaleDate(trimmedValue)
+  const { date, isoDate, errorKey } = parseLocaleDate(trimmedValue);
 
   return {
     value,
@@ -41,5 +42,5 @@ export function validateDateField(
     isoDate,
     errorKey,
     valid: errorKey === null,
-  }
+  };
 }

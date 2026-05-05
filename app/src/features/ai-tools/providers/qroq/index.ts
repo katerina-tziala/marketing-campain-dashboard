@@ -1,2 +1,2 @@
-export { connectGroq } from './connect'
-export { requestGroqChatCompletion } from './api'
+export { requestGroqChatCompletion } from './api';
+export { connectGroq } from './connect';

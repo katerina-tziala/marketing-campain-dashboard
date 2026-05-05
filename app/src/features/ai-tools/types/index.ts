@@ -13,7 +13,7 @@ export type AiErrorCode =
   | 'min-campaigns'
   | 'unknown';
 
-export type AiConnectionErrorCode = Exclude<AiErrorCode, 'min-campaigns'>
+export type AiConnectionErrorCode = Exclude<AiErrorCode, 'min-campaigns'>;
 
 export type AiConnectionError = {
   code: AiConnectionErrorCode;
@@ -21,9 +21,9 @@ export type AiConnectionError = {
 };
 
 export interface AiConnectionEvent {
-  id: number
-  status: 'success' | 'error'
-  provider: AiProviderType
+  id: number;
+  status: 'success' | 'error';
+  provider: AiProviderType;
 }
 
 export type AiAnalysisType = 'budgetOptimizer' | 'executiveSummary';

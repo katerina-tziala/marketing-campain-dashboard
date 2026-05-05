@@ -1,4 +1,4 @@
-import type { DevModeConfig } from './types'
+import type { DevModeConfig } from './types';
 
 // Central switchboard for local/demo behavior.
 // Set enabled to false before wiring a production build path.
@@ -11,4 +11,4 @@ export const DEV_MODE_CONFIG: DevModeConfig = {
     analysisCycle: true,
     connectionCycle: false,
   },
-}
+};

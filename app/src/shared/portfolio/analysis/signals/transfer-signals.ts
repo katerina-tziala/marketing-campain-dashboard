@@ -3,21 +3,15 @@ import type {
   InefficientCampaignSignal,
   PortfolioSignalThresholds,
   TransferCandidate,
-} from '../../types'
-import { rankByMaxShiftDesc } from '../ranking'
-import {
-  DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,
-  SIGNAL_REASONS,
-} from './constants'
+} from '../../types';
+import { rankByMaxShiftDesc } from '../ranking';
+import { DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS, SIGNAL_REASONS } from './constants';
 
 function getMinShiftBudget(
   maxReducibleBudget: number,
   thresholds: PortfolioSignalThresholds,
 ): number {
-  return Math.max(
-    thresholds.minShiftFloor,
-    maxReducibleBudget * thresholds.minShiftFraction,
-  )
+  return Math.max(thresholds.minShiftFloor, maxReducibleBudget * thresholds.minShiftFraction);
 }
 
 function toTransferCandidatesForTarget(
@@ -26,11 +20,15 @@ function toTransferCandidatesForTarget(
   thresholds: PortfolioSignalThresholds,
 ): TransferCandidate[] {
   return inefficient.flatMap(({ campaign, maxReducibleBudget }) => {
-    if (campaign === target.campaign) return []
+    if (campaign === target.campaign) {
+      return [];
+    }
 
-    const minShift = getMinShiftBudget(maxReducibleBudget, thresholds)
-    const maxShift = Math.min(maxReducibleBudget, target.maxAdditionalBudget)
-    if (maxShift <= minShift) return []
+    const minShift = getMinShiftBudget(maxReducibleBudget, thresholds);
+    const maxShift = Math.min(maxReducibleBudget, target.maxAdditionalBudget);
+    if (maxShift <= minShift) {
+      return [];
+    }
 
     return {
       fromCampaign: campaign,
@@ -38,12 +36,9 @@ function toTransferCandidatesForTarget(
       minShift: Math.round(minShift),
       maxShift: Math.round(maxShift),
       expectedRoiRetention: target.expectedRoiRetention,
-      reason: SIGNAL_REASONS.portfolio.transferCandidate(
-        campaign,
-        target.campaign,
-      ),
-    }
-  })
+      reason: SIGNAL_REASONS.portfolio.transferCandidate(campaign, target.campaign),
+    };
+  });
 }
 
 export function getTransferCandidates(
@@ -53,7 +48,7 @@ export function getTransferCandidates(
 ): TransferCandidate[] {
   const candidates = scaling.flatMap((target) =>
     toTransferCandidatesForTarget(target, inefficient, thresholds),
-  )
+  );
 
-  return rankByMaxShiftDesc(candidates).slice(0, thresholds.maxTransferCandidates)
+  return rankByMaxShiftDesc(candidates).slice(0, thresholds.maxTransferCandidates);
 }

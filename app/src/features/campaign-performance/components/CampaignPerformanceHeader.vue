@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BusinessContext } from "@/shared/portfolio";
-import { formatIsoDateRange } from "@/shared/utils";
-import { MetaRow, MetaItem, Section } from "@/ui";
+import { computed } from 'vue';
+
+import type { BusinessContext } from '@/shared/portfolio';
+import { formatIsoDateRange } from '@/shared/utils';
+import { MetaItem, MetaRow, Section } from '@/ui';
 
 const props = defineProps<{
   title: string;
@@ -15,11 +16,8 @@ const props = defineProps<{
 
 const periodLabel = computed(() =>
   props.businessContext
-    ? formatIsoDateRange(
-        props.businessContext.period.from,
-        props.businessContext.period.to,
-      )
-    : "",
+    ? formatIsoDateRange(props.businessContext.period.from, props.businessContext.period.to)
+    : '',
 );
 </script>
 
@@ -30,26 +28,26 @@ const periodLabel = computed(() =>
     </template>
     <template #action>
       <slot name="action" />
-    </template> 
-    <MetaRow separator="bullet" size="base" class="text-typography-subtle pt-0.5">
+    </template>
+    <MetaRow
+      separator="bullet"
+      size="base"
+      class="text-typography-subtle pt-0.5"
+    >
       <MetaItem>{{ title }}</MetaItem>
       <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
       <MetaItem v-if="businessContext?.industry">
         {{ businessContext.industry }}
       </MetaItem>
     </MetaRow>
-    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1 mb-3">
-      <MetaItem
-        >{{ counts.channels.selected }} of
-        {{ counts.channels.total }} channels</MetaItem
-      >
-      <MetaItem
-        >{{ counts.campaigns.filtered }} of
-        {{ counts.campaigns.total }} campaigns</MetaItem
-      >
-      <MetaItem
-        >All percentages are based on the current filters</MetaItem
-      ></MetaRow
+    <MetaRow
+      separator="bullet"
+      tone="info"
+      class="text-typography-subtle pt-1 mb-3"
+    >
+      <MetaItem>{{ counts.channels.selected }} of {{ counts.channels.total }} channels</MetaItem>
+      <MetaItem>{{ counts.campaigns.filtered }} of {{ counts.campaigns.total }} campaigns</MetaItem>
+      <MetaItem>All percentages are based on the current filters</MetaItem></MetaRow
     >
     <slot />
   </Section>

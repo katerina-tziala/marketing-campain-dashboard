@@ -1,17 +1,23 @@
-import type { AiAnalysisContext } from '../../ai-analysis/types'
-import { getPromptRuleGroup } from '../utils'
-import { OUTPUT_REQUIREMENTS_RULES } from '../constants'
-import { ROLE_TASK_OBJECTIVE_RULES, FULL_PORTFOLIO_ANALYSIS_RULES, SELECTION_ANALYSIS_RULES, OUTPUT_SCHEMA } from './config'
+import type { AiAnalysisContext } from '../../ai-analysis/types';
+import { OUTPUT_REQUIREMENTS_RULES } from '../constants';
+import { getPromptRuleGroup } from '../utils';
+import {
+  FULL_PORTFOLIO_ANALYSIS_RULES,
+  OUTPUT_SCHEMA,
+  ROLE_TASK_OBJECTIVE_RULES,
+  SELECTION_ANALYSIS_RULES,
+} from './config';
 
-export function generateExecutiveSummaryPrompt(
-  context: AiAnalysisContext,
-): string {
-  const { analysis, businessContext, portfolioBenchmark } = context
+export function generateExecutiveSummaryPrompt(context: AiAnalysisContext): string {
+  const { analysis, businessContext, portfolioBenchmark } = context;
 
-
-  const { portfolio, campaignGroups, channels, channelGroups,
-    derivedSignals: { inefficientChannels, scalingOpportunities, concentrationFlag, correlations }
-  } = analysis
+  const {
+    portfolio,
+    campaignGroups,
+    channels,
+    channelGroups,
+    derivedSignals: { inefficientChannels, scalingOpportunities, concentrationFlag, correlations },
+  } = analysis;
 
   // remove noise
   const promptInput = {
@@ -26,9 +32,11 @@ export function generateExecutiveSummaryPrompt(
       concentrationFlag,
       correlations,
     },
-  }
+  };
 
-  const analysisRules = portfolioBenchmark ? SELECTION_ANALYSIS_RULES : FULL_PORTFOLIO_ANALYSIS_RULES
+  const analysisRules = portfolioBenchmark
+    ? SELECTION_ANALYSIS_RULES
+    : FULL_PORTFOLIO_ANALYSIS_RULES;
 
   const promptSections = [
     ...ROLE_TASK_OBJECTIVE_RULES.map(getPromptRuleGroup),
@@ -37,8 +45,7 @@ export function generateExecutiveSummaryPrompt(
     ...analysisRules.map(getPromptRuleGroup),
     getPromptRuleGroup(OUTPUT_REQUIREMENTS_RULES),
     `RESPONSE SCHEMA:\n${OUTPUT_SCHEMA}`,
-  ]
+  ];
 
-  return promptSections.join('\n\n').trim()
+  return promptSections.join('\n\n').trim();
 }
-

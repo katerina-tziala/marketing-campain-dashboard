@@ -1,7 +1,7 @@
-export * from './components'
-export * from './composables'
-export * from './config'
-export * from './plugins'
-export * from './utils'
-export type * from './types'
-export { registerCharts } from './register'
+export * from './components';
+export * from './composables';
+export * from './config';
+export * from './plugins';
+export { registerCharts } from './register';
+export type * from './types';
+export * from './utils';

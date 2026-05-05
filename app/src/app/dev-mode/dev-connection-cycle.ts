@@ -1,6 +1,6 @@
-import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types'
-import type { AiModel } from '@/features/ai-tools/providers/types'
-import { setConnectProviderOverride } from '@/features/ai-tools/ai-connection/stores'
+import { setConnectProviderOverride } from '@/features/ai-tools/ai-connection/stores';
+import type { AiModel } from '@/features/ai-tools/providers/types';
+import type { AiErrorCode, AiProviderType } from '@/features/ai-tools/types';
 
 // ── Sequence ──────────────────────────────────────────────────────────────────
 //
@@ -18,40 +18,43 @@ const CONNECTION_SEQUENCE: AiErrorCode[] = [
   'no-models',
   'invalid-response',
   'unknown',
-]
+];
 
 // ── Counter (module-level, resets on activate) ────────────────────────────────
 
-let counter = 0
+let counter = 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ── Override function (replaces connectProvider in aiConnection.store) ─────────
 
 async function runDevConnect(_provider: AiProviderType): Promise<AiModel[]> {
-  await sleep(1500) // simulate network latency — spinner visible during this time
+  await sleep(1500); // simulate network latency — spinner visible during this time
 
-  const code = CONNECTION_SEQUENCE[counter]
-  counter = (counter + 1) % CONNECTION_SEQUENCE.length
+  const code = CONNECTION_SEQUENCE[counter];
+  counter = (counter + 1) % CONNECTION_SEQUENCE.length;
 
-  throw new Error(code)
+  throw new Error(code);
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function useDevConnectionCycle() {
+export function useDevConnectionCycle(): {
+  activate: () => void;
+  deactivate: () => void;
+} {
   function activate(): void {
-    counter = 0
-    setConnectProviderOverride(runDevConnect)
+    counter = 0;
+    setConnectProviderOverride(runDevConnect);
   }
 
   function deactivate(): void {
-    setConnectProviderOverride(null)
+    setConnectProviderOverride(null);
   }
 
-  return { activate, deactivate }
+  return { activate, deactivate };
 }

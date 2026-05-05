@@ -1,32 +1,33 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card } from "@/ui";
-import type {
-  BudgetRecommendation,
-  ConfidenceLevel,
-  ExecutionRisk,
-} from "../types";
-import { AnalysisSection } from "../components";
-import ExpectedImpactGrid from "./ExpectedImpactGrid.vue";
+import { computed } from 'vue';
+
+import { Badge, Card } from '@/ui';
+
+import { AnalysisSection } from '../components';
+import type { BudgetRecommendation, ConfidenceLevel, ExecutionRisk } from '../types';
+import ExpectedImpactGrid from './ExpectedImpactGrid.vue';
+
+import type { BadgeVariant } from '@/ui';
+
+const props = defineProps<{
+  title: string;
+  recommendations: BudgetRecommendation[];
+}>();
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
-  high: "success",
-  medium: "warning",
-  low: "danger",
+  high: 'success',
+  medium: 'warning',
+  low: 'danger',
 };
 
 const EXECUTION_RISK_MAP: Record<string, BadgeVariant> = {
-  low: "success",
-  medium: "warning",
-  high: "danger",
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
 };
 
-function badgeVariant(
-  map: Record<string, BadgeVariant>,
-  key: string,
-): BadgeVariant {
-  return map[key.toLowerCase()] ?? "info";
+function badgeVariant(map: Record<string, BadgeVariant>, key: string): BadgeVariant {
+  return map[key.toLowerCase()] ?? 'info';
 }
 
 function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
@@ -36,11 +37,6 @@ function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
 function executionRiskVariant(risk: ExecutionRisk): BadgeVariant {
   return badgeVariant(EXECUTION_RISK_MAP, risk);
 }
-
-const props = defineProps<{
-  title: string;
-  recommendations: BudgetRecommendation[];
-}>();
 
 const CONFIDENCE_ORDER: Record<ConfidenceLevel, number> = {
   High: 0,
@@ -56,19 +52,20 @@ const EXECUTION_RISK_ORDER: Record<ExecutionRisk, number> = {
 
 const sortedRecommendations = computed(() =>
   [...props.recommendations].sort((a, b) => {
-    const cDiff =
-      CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
-    if (cDiff !== 0) return cDiff;
-    return (
-      EXECUTION_RISK_ORDER[a.executionRisk] -
-      EXECUTION_RISK_ORDER[b.executionRisk]
-    );
+    const cDiff = CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
+    if (cDiff !== 0) {
+      return cDiff;
+    }
+    return EXECUTION_RISK_ORDER[a.executionRisk] - EXECUTION_RISK_ORDER[b.executionRisk];
   }),
 );
 </script>
 
 <template>
-  <AnalysisSection v-if="sortedRecommendations.length" :title="title">
+  <AnalysisSection
+    v-if="sortedRecommendations.length"
+    :title="title"
+  >
     <Card
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
@@ -84,7 +81,10 @@ const sortedRecommendations = computed(() =>
             }}</span>
             <span class="recommendation-channel">{{ rec.fromChannel }}</span>
           </span>
-          <span v-if="rec.toCampaign" class="recommendation-route-item">
+          <span
+            v-if="rec.toCampaign"
+            class="recommendation-route-item"
+          >
             <span class="recommendation-label">To</span>
             <span class="font-semibold text-typography-primary-lighter leading-5">{{
               rec.toCampaign

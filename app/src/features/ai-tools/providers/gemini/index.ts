@@ -1,2 +1,2 @@
-export { connectGemini } from './connect'
-export { requestGeminiChatCompletion } from './api'
+export { requestGeminiChatCompletion } from './api';
+export { connectGemini } from './connect';

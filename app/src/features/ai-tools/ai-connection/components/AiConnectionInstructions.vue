@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Card, Disclosure, Button, ChevronIcon } from "@/ui";
+import { Button, Card, ChevronIcon, Disclosure } from '@/ui';
 
 defineProps<{
   instructions: { title: string; steps: string[]; note?: string };
@@ -17,19 +17,30 @@ defineProps<{
         :aria-controls="contentId"
         @click="toggle"
       >
-        <ChevronIcon class="chevron" :class="{ 'chevron-open': open }" />
+        <ChevronIcon
+          class="chevron"
+          :class="{ 'chevron-open': open }"
+        />
         How to get your key?
       </Button>
     </template>
     <Card variant="secondary">
       <h5 class="card-title text-primary-lighter">{{ instructions.title }}</h5>
       <ol class="help-steps">
-        <li v-for="step in instructions.steps" :key="step">{{ step }}</li>
+        <li
+          v-for="step in instructions.steps"
+          :key="step"
+        >
+          {{ step }}
+        </li>
       </ol>
-      <p v-if="instructions.note" class="help-note">{{ instructions.note }}</p>
-      <p class="text-sm">
-        Keep your API key private and never share it publicly
+      <p
+        v-if="instructions.note"
+        class="help-note"
+      >
+        {{ instructions.note }}
       </p>
+      <p class="text-sm">Keep your API key private and never share it publicly</p>
     </Card>
   </Disclosure>
 </template>

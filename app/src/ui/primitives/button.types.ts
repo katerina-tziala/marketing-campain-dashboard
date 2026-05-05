@@ -7,6 +7,6 @@ export type ButtonVariant =
   | 'ghost'
   | 'ghost-outline'
   | 'info-outline'
-  | 'destructive'
+  | 'destructive';
 
-export type ButtonSize = 'default' | 'small' | 'smaller'
+export type ButtonSize = 'default' | 'small' | 'smaller';

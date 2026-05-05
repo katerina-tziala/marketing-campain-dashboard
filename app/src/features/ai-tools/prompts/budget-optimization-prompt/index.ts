@@ -1,1 +1,1 @@
-export { generateBudgetOptimizationPrompt } from './budget-optimization-prompt.v1'
+export { generateBudgetOptimizationPrompt } from './budget-optimization-prompt.v1';

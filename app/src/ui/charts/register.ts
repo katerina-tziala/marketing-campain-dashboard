@@ -8,9 +8,9 @@ import {
   PointElement,
   Title,
   Tooltip,
-} from 'chart.js'
+} from 'chart.js';
 
-export function registerCharts() {
+export function registerCharts(): void {
   ChartJS.register(
     ArcElement,
     BarElement,
@@ -20,5 +20,5 @@ export function registerCharts() {
     PointElement,
     Title,
     Tooltip,
-  )
+  );
 }

@@ -1,21 +1,18 @@
-import type {
-  CampaignRawMetrics,
-  CampaignPerformance,
-  PerformanceMetrics,
-} from '@/shared/data'
-import type { PortfolioKPIs } from './portfolio'
+import type { CampaignPerformance, CampaignRawMetrics, PerformanceMetrics } from '@/shared/data';
+
+import type { PortfolioKPIs } from './portfolio';
 
 export interface ShareEfficiency {
   /** Decimal — item budget / total budget */
-  budgetShare: number
+  budgetShare: number;
   /** Decimal — item revenue / total revenue */
-  revenueShare: number
+  revenueShare: number;
   /** Decimal — budgetShare - revenueShare; positive means budget is over-allocated */
-  allocationGap: number
+  allocationGap: number;
   /** Decimal — revenueShare - budgetShare; positive means revenue outperforms budget weight */
-  efficiencyGap: number
+  efficiencyGap: number;
   /** Currency (EUR) — revenue - budget; positive means profitable */
-  gapAmount: number
+  gapAmount: number;
 }
 
 export interface PortfolioSummary extends PortfolioKPIs {
@@ -34,4 +31,4 @@ export interface ChannelSummary extends CampaignRawMetrics, PerformanceMetrics, 
   status: SummaryMetricStatus;
 }
 
-export interface CampaignSummary extends CampaignPerformance, ShareEfficiency { }
+export interface CampaignSummary extends CampaignPerformance, ShareEfficiency {}

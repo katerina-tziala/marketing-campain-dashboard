@@ -1,16 +1,8 @@
 <script setup lang="ts">
-import { computed, type Component } from "vue";
-import type {
-  NotificationSurface,
-  NotificationVariant,
-} from "./notification.types";
-import {
-  AlertTriangleIcon,
-  BellIcon,
-  CheckCircleIcon,
-  InfoIcon,
-  XPolygonIcon,
-} from "../icons";
+import { type Component, computed } from 'vue';
+
+import { AlertTriangleIcon, BellIcon, CheckCircleIcon, InfoIcon, XPolygonIcon } from '../icons';
+import type { NotificationSurface, NotificationVariant } from './notification.types';
 
 const props = withDefaults(
   defineProps<{
@@ -19,7 +11,8 @@ const props = withDefaults(
     showIcon?: boolean;
   }>(),
   {
-    surface: "default",
+    variant: undefined,
+    surface: 'default',
     showIcon: true,
   },
 );
@@ -31,29 +24,25 @@ const ICON_MAP: Record<NotificationVariant, Component> = {
   info: InfoIcon,
 };
 
-const iconComponent = computed(() =>
-  props.variant ? ICON_MAP[props.variant] : BellIcon,
-);
+const iconComponent = computed(() => (props.variant ? ICON_MAP[props.variant] : BellIcon));
 
 const ariaRole = computed(() => {
-  if (props.variant === "error") return "alert";
-  if (
-    props.variant === "success" ||
-    props.variant === "warning" ||
-    props.variant === "info"
-  )
-    return "status";
+  if (props.variant === 'error') {
+    return 'alert';
+  }
+  if (props.variant === 'success' || props.variant === 'warning' || props.variant === 'info') {
+    return 'status';
+  }
   return undefined;
 });
 
 const ariaLive = computed(() => {
-  if (props.variant === "error") return "assertive";
-  if (
-    props.variant === "success" ||
-    props.variant === "warning" ||
-    props.variant === "info"
-  )
-    return "polite";
+  if (props.variant === 'error') {
+    return 'assertive';
+  }
+  if (props.variant === 'success' || props.variant === 'warning' || props.variant === 'info') {
+    return 'polite';
+  }
   return undefined;
 });
 </script>
@@ -71,13 +60,23 @@ const ariaLive = computed(() => {
         class="notification-head"
         :class="{ 'has-action': $slots.action }"
       >
-        <span v-if="showIcon" class="notification-icon" aria-hidden="true">
+        <span
+          v-if="showIcon"
+          class="notification-icon"
+          aria-hidden="true"
+        >
           <component :is="iconComponent" />
         </span>
-        <h5 v-if="$slots.title" class="notification-title">
+        <h5
+          v-if="$slots.title"
+          class="notification-title"
+        >
           <slot name="title" />
         </h5>
-        <div v-if="$slots.action" class="notification-action">
+        <div
+          v-if="$slots.action"
+          class="notification-action"
+        >
           <slot name="action" />
         </div>
       </div>

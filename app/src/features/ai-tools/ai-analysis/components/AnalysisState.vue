@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Spinner, Notification } from "@/ui";
-import type { AsyncStatus } from "@/shared/types";
-import type { AiAnalysisError } from "../types";
-import { ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE } from "../utils";
-import { computed } from "vue";
+import { computed } from 'vue';
+
+import type { AsyncStatus } from '@/shared/types';
+import { Notification, Spinner } from '@/ui';
+
+import type { AiAnalysisError } from '../types';
+import { ANALYSIS_ERROR_MESSAGES, TOKEN_LIMIT_MESSAGE } from '../utils';
 
 const props = defineProps<{
   status: AsyncStatus;
@@ -13,24 +15,27 @@ const props = defineProps<{
 }>();
 
 const errorNotification = computed(() => {
-  if (!props.error) return null;
-  const entry =
-    ANALYSIS_ERROR_MESSAGES[props.error.code] ??
-    ANALYSIS_ERROR_MESSAGES.unknown;
+  if (!props.error) {
+    return null;
+  }
+  const entry = ANALYSIS_ERROR_MESSAGES[props.error.code] ?? ANALYSIS_ERROR_MESSAGES.unknown;
   return {
-    title:
-      entry.title ??
-      props.error.rawMessage ??
-      ANALYSIS_ERROR_MESSAGES.unknown.title,
+    title: entry.title ?? props.error.rawMessage ?? ANALYSIS_ERROR_MESSAGES.unknown.title,
     message: entry.message ?? null,
   };
 });
 </script>
 
 <template>
-  <div v-if="status === 'loading'" class="loader">
+  <div
+    v-if="status === 'loading'"
+    class="loader"
+  >
     <Spinner size="xxl" />
-    <p role="status" class="text-typography-muted tracking-wide">
+    <p
+      role="status"
+      class="text-typography-muted tracking-wide"
+    >
       <slot name="loading" />
     </p>
   </div>
@@ -47,7 +52,10 @@ const errorNotification = computed(() => {
       {{ TOKEN_LIMIT_MESSAGE.message }}
     </Notification>
 
-    <div v-if="status === 'idle' && !tokenLimitReached" class="idle">
+    <div
+      v-if="status === 'idle' && !tokenLimitReached"
+      class="idle"
+    >
       <slot name="idle" />
     </div>
 
@@ -62,7 +70,10 @@ const errorNotification = computed(() => {
       {{ errorNotification?.message }}
     </Notification>
 
-    <div v-else-if="hasResult" class="result">
+    <div
+      v-else-if="hasResult"
+      class="result"
+    >
       <slot />
     </div>
   </template>

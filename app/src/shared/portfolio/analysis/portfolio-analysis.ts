@@ -1,32 +1,35 @@
-import type { CampaignPerformance, Channel } from '@/shared/data'
-import type { PortfolioSummary, CampaignSummary, ChannelSummary } from '../types'
+import type { CampaignPerformance, Channel } from '@/shared/data';
+import { computedMedianOrNull, roundTo } from '@/shared/utils';
+
 import type {
   AnalysisClassificationThresholds,
   AnalysisSignalThresholds,
+  CampaignSummary,
   ChannelContext,
+  ChannelSummary,
+  ConcentrationFlagSignal,
   DerivedSignals,
   PortfolioAnalysis,
-} from '../types'
-import type { ConcentrationFlagSignal } from '../types'
-import {
-  toCampaignSummary,
-  toChannelSummary,
-  getInefficientChannels,
-  getInefficientCampaigns,
-  getScalingOpportunities,
-  getBudgetScalingCandidates,
-  getTransferCandidates,
-  getConcentrationFlag,
-  getCorrelations,
-  DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
-} from './signals'
-import { computedMedianOrNull, roundTo } from '@/shared/utils'
+  PortfolioSummary,
+} from '../types';
 import {
   classifyCampaigns,
   classifyChannels,
   DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS,
-} from './classification'
-import { computePortfolioKPIs } from './metrics'
+} from './classification';
+import { computePortfolioKPIs } from './metrics';
+import {
+  DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS,
+  getBudgetScalingCandidates,
+  getConcentrationFlag,
+  getCorrelations,
+  getInefficientCampaigns,
+  getInefficientChannels,
+  getScalingOpportunities,
+  getTransferCandidates,
+  toCampaignSummary,
+  toChannelSummary,
+} from './signals';
 
 const DEFAULT_EMPTY_ANALYSIS_STATE = {
   channels: [],
@@ -48,31 +51,30 @@ const DEFAULT_EMPTY_ANALYSIS_STATE = {
     },
     correlations: [],
   },
-}
+};
 
-const CHANNEL_CONTEXT_LIMIT = 5
+const CHANNEL_CONTEXT_LIMIT = 5;
 
-function getCampaignRoiBaselines(campaignSummaries: CampaignSummary[]): Pick<
-  PortfolioSummary,
-  'averageCampaignRoi' | 'medianCampaignRoi'
-> {
+function getCampaignRoiBaselines(
+  campaignSummaries: CampaignSummary[],
+): Pick<PortfolioSummary, 'averageCampaignRoi' | 'medianCampaignRoi'> {
   const campaignRois = campaignSummaries
     .map((campaign) => campaign.roi)
-    .filter((roi): roi is number => roi !== null && Number.isFinite(roi))
+    .filter((roi): roi is number => roi !== null && Number.isFinite(roi));
 
   if (campaignRois.length === 0) {
     return {
       averageCampaignRoi: null,
       medianCampaignRoi: null,
-    }
+    };
   }
 
-  const totalRoi = campaignRois.reduce((total, roi) => total + roi, 0)
+  const totalRoi = campaignRois.reduce((total, roi) => total + roi, 0);
 
   return {
     averageCampaignRoi: roundTo(totalRoi / campaignRois.length, 4),
     medianCampaignRoi: computedMedianOrNull(campaignRois),
-  }
+  };
 }
 
 function getChannelContext(channelSummaries: ChannelSummary[]): ChannelContext {
@@ -83,7 +85,7 @@ function getChannelContext(channelSummaries: ChannelSummary[]): ChannelContext {
     topByRevenue: [...channelSummaries]
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, CHANNEL_CONTEXT_LIMIT),
-  }
+  };
 }
 
 function getClassificationGroups(
@@ -103,7 +105,7 @@ function getClassificationGroups(
       aggregatedRoi,
       classificationThresholds.channels,
     ),
-  }
+  };
 }
 
 function getDerivedSignals(
@@ -117,12 +119,12 @@ function getDerivedSignals(
     campaignSummaries,
     aggregatedRoi,
     thresholds.campaignSignals,
-  )
+  );
   const budgetScalingCandidates = getBudgetScalingCandidates(
     campaignSummaries,
     aggregatedRoi,
     thresholds.campaignSignals,
-  )
+  );
 
   return {
     inefficientChannels: getInefficientChannels(
@@ -145,12 +147,9 @@ function getDerivedSignals(
       budgetScalingCandidates,
       thresholds.portfolioSignals,
     ),
-    concentrationFlag: getConcentrationFlag(
-      campaignSummaries,
-      thresholds.portfolioSignals,
-    ),
+    concentrationFlag: getConcentrationFlag(campaignSummaries, thresholds.portfolioSignals),
     correlations: getCorrelations(campaignSummaries, thresholds.portfolioSignals),
-  }
+  };
 }
 
 export function computePortfolioAnalysis(
@@ -160,9 +159,9 @@ export function computePortfolioAnalysis(
 ): PortfolioAnalysis {
   const filteredCampaigns: CampaignPerformance[] = selectedChannels.flatMap(
     (channel) => channel.campaigns,
-  )
+  );
 
-  const kpis = computePortfolioKPIs(selectedChannels)
+  const kpis = computePortfolioKPIs(selectedChannels);
 
   const portfolio: PortfolioSummary = {
     ...kpis,
@@ -170,44 +169,38 @@ export function computePortfolioAnalysis(
     channelCount: selectedChannels.length,
     averageCampaignRoi: null,
     medianCampaignRoi: null,
-  }
+  };
 
   if (filteredCampaigns.length === 0) {
     return {
       portfolio,
       ...DEFAULT_EMPTY_ANALYSIS_STATE,
-    }
+    };
   }
 
-  const { totalBudget, totalRevenue, aggregatedRoi } = kpis
+  const { totalBudget, totalRevenue, aggregatedRoi } = kpis;
 
   const campaignSummaries = filteredCampaigns.map((campaign) =>
     toCampaignSummary(campaign, totalBudget, totalRevenue),
-  )
+  );
 
   // Campaign-level ROI baselines require per-campaign summaries, so they are populated after summary mapping.
-  const { averageCampaignRoi, medianCampaignRoi } = getCampaignRoiBaselines(campaignSummaries)
-  portfolio.averageCampaignRoi = averageCampaignRoi
-  portfolio.medianCampaignRoi = medianCampaignRoi
+  const { averageCampaignRoi, medianCampaignRoi } = getCampaignRoiBaselines(campaignSummaries);
+  portfolio.averageCampaignRoi = averageCampaignRoi;
+  portfolio.medianCampaignRoi = medianCampaignRoi;
 
   const channelSummaries = selectedChannels.map((channel) =>
-    toChannelSummary(
-      channel,
-      totalBudget,
-      totalRevenue,
-      aggregatedRoi,
-      thresholds.channelStatus,
-    ),
-  )
+    toChannelSummary(channel, totalBudget, totalRevenue, aggregatedRoi, thresholds.channelStatus),
+  );
 
-  const channelContext = getChannelContext(channelSummaries)
+  const channelContext = getChannelContext(channelSummaries);
 
   const { campaignGroups, channelGroups } = getClassificationGroups(
     campaignSummaries,
     channelSummaries,
     aggregatedRoi,
     classificationThresholds,
-  )
+  );
 
   const derivedSignals = getDerivedSignals(
     campaignSummaries,
@@ -215,7 +208,7 @@ export function computePortfolioAnalysis(
     aggregatedRoi,
     thresholds,
     classificationThresholds,
-  )
+  );
 
   return {
     portfolio,
@@ -224,5 +217,5 @@ export function computePortfolioAnalysis(
     campaignGroups,
     channelGroups,
     derivedSignals,
-  }
+  };
 }

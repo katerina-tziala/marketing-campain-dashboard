@@ -2,7 +2,7 @@ import type {
   AnalysisClassificationThresholds,
   CampaignClassificationThresholds,
   ChannelClassificationThresholds,
-} from '../../types'
+} from '../../types';
 
 /**
  * Classification thresholds are descriptive UI buckets, not action signals.
@@ -31,7 +31,7 @@ export const DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS: CampaignClassificationT
   minRevenueFloor: 50,
   minConversionShare: 0.02,
   minConversionFloor: 2,
-}
+};
 
 export const DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS: ChannelClassificationThresholds = {
   // 10% above portfolio ROI is meaningful channel-level outperformance.
@@ -46,9 +46,9 @@ export const DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS: ChannelClassificationThr
 
   // Budget share exceeds revenue share by 5 percentage points.
   gapThreshold: 0.05,
-}
+};
 
 export const DEFAULT_ANALYSIS_CLASSIFICATION_THRESHOLDS: AnalysisClassificationThresholds = {
   campaigns: DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS,
   channels: DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS,
-}
+};

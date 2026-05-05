@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "typecheck": "vue-tsc -b",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "check": "npm run typecheck && npm run lint && npm run format:check",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,17 +25,26 @@
     "xxhashjs": "^0.2.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.0",
     "@types/papaparse": "^5.5.2",
     "@types/xxhashjs": "^0.2.4",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/tsconfig": "^0.9.0",
     "autoprefixer": "^10.4.27",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
+    "eslint-plugin-vue": "^10.9.1",
     "postcss": "^8.5.8",
+    "prettier": "^3.8.3",
     "sass": "^1.98.0",
     "tailwindcss": "^3.4.19",
     "typescript": "~5.9.3",
+    "typescript-eslint": "^8.59.2",
     "vite": "^8.0.1",
+    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^3.2.5"
   }
 }

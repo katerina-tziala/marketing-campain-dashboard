@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { TableCellPadding, TableStriped } from './table.types'
+import type { TableCellPadding, TableStriped } from './table.types';
 
 const props = withDefaults(
   defineProps<{
-    striped?: TableStriped
-    verticalSeparators?: boolean
-    cellPadding?: TableCellPadding
+    striped?: TableStriped;
+    verticalSeparators?: boolean;
+    cellPadding?: TableCellPadding;
   }>(),
   {
     striped: 'none',
     verticalSeparators: false,
     cellPadding: 'default',
   },
-)
+);
 </script>
 
 <template>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useCampaignPerformanceStore } from "./stores";
-import { PerformanceCharts, RoiVsBudgetScaling } from "./charts";
-import CampaignTable from "./components/CampaignTable.vue";
-import { CampaignPerformanceHeader, ChannelFilters, Kpis } from "./components";
-import { Card } from "@/ui";
+import { computed } from 'vue';
+
+import { Card } from '@/ui';
+
+import { PerformanceCharts, RoiVsBudgetScaling } from './charts';
+import { CampaignPerformanceHeader, ChannelFilters, Kpis } from './components';
+import CampaignTable from './components/CampaignTable.vue';
+import { useCampaignPerformanceStore } from './stores';
 
 const store = useCampaignPerformanceStore();
 
@@ -20,9 +22,7 @@ function toggleChannelFilter(id: string): void {
     ? current.filter((selectedId) => selectedId !== id)
     : [...current, id];
 
-  store.setChannelFilter(
-    next.length === store.portfolioChannels.size ? [] : next,
-  );
+  store.setChannelFilter(next.length === store.portfolioChannels.size ? [] : next);
 }
 
 function clearChannelFilters(): void {
@@ -69,9 +69,7 @@ function applyChannelFilter(ids: string[]): void {
         class="section-wrapper"
         :kpis="store.portfolioAnalysis.portfolio"
         :portfolio-kpis="
-          store.selectedChannelsIds.length > 0
-            ? store.portfolioBenchmark
-            : undefined
+          store.selectedChannelsIds.length > 0 ? store.portfolioBenchmark : undefined
         "
       />
       <PerformanceCharts
@@ -114,7 +112,7 @@ function applyChannelFilter(ids: string[]): void {
     gap-y-4;
   scrollbar-gutter: stable;
 
-  @include cq-up(cq-768, "main") {
+  @include cq-up(cq-768, 'main') {
     @apply overflow-hidden px-0;
     scrollbar-gutter: auto;
   }
@@ -123,7 +121,7 @@ function applyChannelFilter(ids: string[]): void {
 .campaign-performance-header {
   @apply w-full;
 
-  @include cq-up(cq-768, "main") {
+  @include cq-up(cq-768, 'main') {
     @apply px-4;
   }
 }
@@ -138,7 +136,7 @@ function applyChannelFilter(ids: string[]): void {
     pb-8;
   scrollbar-gutter: auto;
 
-  @include cq-up(cq-768, "main") {
+  @include cq-up(cq-768, 'main') {
     @apply overflow-y-auto h-full
     pl-4
     pb-0

@@ -1,2 +1,2 @@
-export { FOCUSABLE_SELECTOR, useFocusTrap } from "./useFocusTrap";
-export { useModalAria } from "./useModalAria";
+export { FOCUSABLE_SELECTOR, useFocusTrap } from './useFocusTrap';
+export { useModalAria } from './useModalAria';

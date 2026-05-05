@@ -1,1 +1,1 @@
-export type { AppTheme, ChartThemeTokens } from './theme.types'
+export type { AppTheme, ChartThemeTokens } from './theme.types';

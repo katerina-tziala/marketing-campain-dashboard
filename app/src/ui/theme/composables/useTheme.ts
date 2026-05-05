@@ -1,33 +1,36 @@
-import { ref, onMounted, onUnmounted } from 'vue'
-import type { AppTheme } from '../types'
+import { onMounted, onUnmounted, type Ref, ref } from 'vue';
 
-const THEME_ATTRIBUTE = 'data-theme'
-const DEFAULT_THEME: AppTheme = 'dark'
+import type { AppTheme } from '../types';
+
+const THEME_ATTRIBUTE = 'data-theme';
+const DEFAULT_THEME: AppTheme = 'dark';
 
 function readTheme(): AppTheme {
-  const value = document.documentElement.getAttribute(THEME_ATTRIBUTE)
-  return (value as AppTheme) ?? DEFAULT_THEME
+  const value = document.documentElement.getAttribute(THEME_ATTRIBUTE);
+  return (value as AppTheme) ?? DEFAULT_THEME;
 }
 
-export function useTheme() {
-  const currentTheme = ref<AppTheme>(readTheme())
+export function useTheme(): {
+  currentTheme: Ref<AppTheme>;
+} {
+  const currentTheme = ref<AppTheme>(readTheme());
 
-  let observer: MutationObserver | null = null
+  let observer: MutationObserver | null = null;
 
   onMounted(() => {
     observer = new MutationObserver(() => {
-      currentTheme.value = readTheme()
-    })
+      currentTheme.value = readTheme();
+    });
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: [THEME_ATTRIBUTE],
-    })
-  })
+    });
+  });
 
   onUnmounted(() => {
-    observer?.disconnect()
-    observer = null
-  })
+    observer?.disconnect();
+    observer = null;
+  });
 
-  return { currentTheme }
+  return { currentTheme };
 }

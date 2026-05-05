@@ -1,7 +1,7 @@
-import type { AiModelCandidate } from '../../types'
-import type { GroqModel } from '../types'
-import { getAllowedCandidates } from './allowed-candidates'
-import { getSortedCandidates } from './sort-candidates'
+import type { AiModelCandidate } from '../../types';
+import type { GroqModel } from '../types';
+import { getAllowedCandidates } from './allowed-candidates';
+import { getSortedCandidates } from './sort-candidates';
 
 function toAiModelCandidate(m: GroqModel): AiModelCandidate {
   return {
@@ -10,11 +10,11 @@ function toAiModelCandidate(m: GroqModel): AiModelCandidate {
     contextWindow: m.context_window,
     maxOutputTokens: m.max_completion_tokens,
     supportsTextGeneration: true,
-  }
+  };
 }
 
 export function extractCandidates(models: GroqModel[]): AiModelCandidate[] {
-  const allowed = getAllowedCandidates(models)
-  const sorted = getSortedCandidates(allowed)
-  return sorted.map(toAiModelCandidate)
+  const allowed = getAllowedCandidates(models);
+  const sorted = getSortedCandidates(allowed);
+  return sorted.map(toAiModelCandidate);
 }

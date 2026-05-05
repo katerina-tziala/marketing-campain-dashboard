@@ -1,1 +1,1 @@
-export { default as AiAnalysis } from './AiAnalysis.vue'
+export { default as AiAnalysis } from './AiAnalysis.vue';

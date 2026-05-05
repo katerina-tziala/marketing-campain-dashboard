@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
-import type { Channel } from "@/shared/data";
-import ChannelFilterChips from "./ChannelFilterChips.vue";
-import ChannelFiltersDialog from "./ChannelFiltersDialog.vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+
+import type { Channel } from '@/shared/data';
+
+import ChannelFilterChips from './ChannelFilterChips.vue';
+import ChannelFiltersDialog from './ChannelFiltersDialog.vue';
 
 const props = defineProps<{
   channels: Channel[];
@@ -25,9 +27,7 @@ const allowedRows = ref(1);
 const dialogToggled = ref(false);
 
 const isAllActive = computed(() => props.selectedIds.length === 0);
-const totalCampaigns = computed(() =>
-  props.channels.reduce((s, c) => s + c.campaigns.length, 0),
-);
+const totalCampaigns = computed(() => props.channels.reduce((s, c) => s + c.campaigns.length, 0));
 
 // maxVisible: undefined = render all (measurement mode); number = chip capacity from measurement.
 const maxVisible = ref<number | undefined>(undefined);
@@ -37,7 +37,9 @@ const maxVisible = ref<number | undefined>(undefined);
 // chips from the end of that window (preserving total count = maxVisible).
 // Sorted by original order normally; selected-first after a dialog toggle.
 const visibleChannels = computed((): Channel[] => {
-  if (!hasOverflow.value || maxVisible.value === undefined) return props.channels;
+  if (!hasOverflow.value || maxVisible.value === undefined) {
+    return props.channels;
+  }
 
   const capacity = maxVisible.value;
   const firstN = props.channels.slice(0, capacity);
@@ -50,17 +52,13 @@ const visibleChannels = computed((): Channel[] => {
   if (!extraSelected.length) {
     combined = firstN;
   } else {
-    const unselectedInFirstN = firstN.filter(
-      (c) => !props.selectedIds.includes(c.id),
-    );
+    const unselectedInFirstN = firstN.filter((c) => !props.selectedIds.includes(c.id));
     const slotsToFree = Math.min(extraSelected.length, unselectedInFirstN.length);
 
     if (!slotsToFree) {
       combined = firstN;
     } else {
-      const toRemoveIds = new Set(
-        unselectedInFirstN.slice(-slotsToFree).map((c) => c.id),
-      );
+      const toRemoveIds = new Set(unselectedInFirstN.slice(-slotsToFree).map((c) => c.id));
       combined = [
         ...firstN.filter((c) => !toRemoveIds.has(c.id)),
         ...extraSelected.slice(0, slotsToFree),
@@ -77,7 +75,7 @@ const visibleChannels = computed((): Channel[] => {
   }
 
   const indexMap = new Map(props.channels.map((c, i) => [c.id, i]));
-  return [...combined].sort((a, b) => indexMap.get(a.id)! - indexMap.get(b.id)!);
+  return [...combined].sort((a, b) => (indexMap.get(a.id) ?? 0) - (indexMap.get(b.id) ?? 0));
 });
 
 const overflowCount = computed(() =>
@@ -86,24 +84,26 @@ const overflowCount = computed(() =>
 
 // Which selected channels are hidden in the dialog (not present in the strip).
 const hiddenSelectedCount = computed(() => {
-  if (!hasOverflow.value) return 0;
+  if (!hasOverflow.value) {
+    return 0;
+  }
   const visibleIds = new Set(visibleChannels.value.map((c) => c.id));
   return props.selectedIds.filter((id) => !visibleIds.has(id)).length;
 });
 
 function toggleFromStrip(id: string): void {
   dialogToggled.value = false;
-  emit("toggle", id);
+  emit('toggle', id);
 }
 
 function applyFromDialog(ids: string[]): void {
   dialogToggled.value = true;
-  emit("apply", ids);
+  emit('apply', ids);
 }
 
 function clear(): void {
   dialogToggled.value = false;
-  emit("clear");
+  emit('clear');
 }
 
 // ── Overflow measurement ───────────────────────────────────────────────────
@@ -150,8 +150,17 @@ async function measure(): Promise<void> {
   hasOverflow.value = true;
 }
 
-watch(() => props.channels, () => { dialogToggled.value = false; nextTick(measure); });
-watch(() => props.selectedIds, () => nextTick(measure));
+watch(
+  () => props.channels,
+  () => {
+    dialogToggled.value = false;
+    nextTick(measure);
+  },
+);
+watch(
+  () => props.selectedIds,
+  () => nextTick(measure),
+);
 
 let resizeObserver: ResizeObserver | null = null;
 
@@ -159,7 +168,9 @@ onMounted(() => {
   nextTick(measure);
 
   resizeObserver = new ResizeObserver(() => nextTick(measure));
-  if (rootRef.value) resizeObserver.observe(rootRef.value);
+  if (rootRef.value) {
+    resizeObserver.observe(rootRef.value);
+  }
 });
 
 onUnmounted(() => {
@@ -168,7 +179,12 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="rootRef" class="channel-filters" role="group" aria-label="Filter by channel">
+  <div
+    ref="rootRef"
+    class="channel-filters"
+    role="group"
+    aria-label="Filter by channel"
+  >
     <ChannelFilterChips
       ref="chipsRef"
       :channels="visibleChannels"

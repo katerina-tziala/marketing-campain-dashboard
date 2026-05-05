@@ -1,22 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useDashboardOrchestratorStore } from "@/app/stores";
-import { CampaignPerformanceView } from "@/features/campaign-performance";
-import {
-  ReplaceDataModal,
-  UploadDataModal,
-  UploadDataPlaceholder,
-} from "@/features/data-transfer";
-import { useUploadModal } from "@/app/composables/useUploadModal";
-import AiTools from "@/features/ai-tools/components/AiTools.vue";
-import {
-  Button,
-  ResponsiveDrawer,
-  SparklesIcon,
-  SplitPaneLayout,
-  UploadIcon,
-  AppLogo,
-} from "@/ui";
+import { ref } from 'vue';
+
+import { useUploadModal } from '@/app/composables/useUploadModal';
+import { useDashboardOrchestratorStore } from '@/app/stores';
+
+import AiTools from '@/features/ai-tools/components/AiTools.vue';
+import { CampaignPerformanceView } from '@/features/campaign-performance';
+import { ReplaceDataModal, UploadDataModal, UploadDataPlaceholder } from '@/features/data-transfer';
+import { AppLogo, Button, ResponsiveDrawer, SparklesIcon, SplitPaneLayout, UploadIcon } from '@/ui';
+
 const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
@@ -49,7 +41,10 @@ const {
       </Button>
     </header>
 
-    <main v-if="!dashboard.hasCampaigns" class="dashboard-main">
+    <main
+      v-if="!dashboard.hasCampaigns"
+      class="dashboard-main"
+    >
       <UploadDataPlaceholder @upload="requestUpload" />
     </main>
 
@@ -57,7 +52,10 @@ const {
       <!-- Main Dashboard view: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
       <CampaignPerformanceView>
         <template #header-action>
-          <div v-if="dashboard.showAiButton" class="relative shrink-0">
+          <div
+            v-if="dashboard.showAiButton"
+            class="relative shrink-0"
+          >
             <Button
               variant="primary"
               size="small"

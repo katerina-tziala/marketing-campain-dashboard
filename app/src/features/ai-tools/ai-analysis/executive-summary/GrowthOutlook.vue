@@ -1,27 +1,35 @@
 <script setup lang="ts">
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card } from "@/ui";
-import type { GrowthOutlook, GrowthOutlookLabel } from "../types";
-import { AnalysisSection } from "../components";
+import { Badge, Card } from '@/ui';
+
+import { AnalysisSection } from '../components';
+import type { GrowthOutlook, GrowthOutlookLabel } from '../types';
+
+import type { BadgeVariant } from '@/ui';
 
 defineProps<{
   outlook: GrowthOutlook;
 }>();
 
 const GROWTH_OUTLOOK_VARIANT_MAP: Record<GrowthOutlookLabel, BadgeVariant> = {
-  High: "success",
-  Moderate: "opportunity",
-  Limited: "warning",
+  High: 'success',
+  Moderate: 'opportunity',
+  Limited: 'warning',
 };
 
 function growthOutlookVariant(label: GrowthOutlookLabel): BadgeVariant {
-  return GROWTH_OUTLOOK_VARIANT_MAP[label] ?? "info";
+  return GROWTH_OUTLOOK_VARIANT_MAP[label] ?? 'info';
 }
 </script>
 
 <template>
-  <AnalysisSection v-if="outlook" title="Growth Outlook">
-    <Card variant="raised" class="growth-outlook-card">
+  <AnalysisSection
+    v-if="outlook"
+    title="Growth Outlook"
+  >
+    <Card
+      variant="raised"
+      class="growth-outlook-card"
+    >
       <h5 class="pt-0.5">
         <Badge
           class="inline-action-float -mt-1"

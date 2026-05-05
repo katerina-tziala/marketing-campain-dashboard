@@ -1,1 +1,1 @@
-export { default as ResponsiveDrawer } from './ResponsiveDrawer.vue'
+export { default as ResponsiveDrawer } from './ResponsiveDrawer.vue';

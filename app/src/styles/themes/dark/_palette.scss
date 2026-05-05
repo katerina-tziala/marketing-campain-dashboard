@@ -5,7 +5,7 @@
   tokens from _tokens.scss through Tailwind utilities, not these primitive values.
 */
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Brand */
   --primary-50: 238 242 255;
   --primary-100: 224 231 255;
@@ -57,7 +57,7 @@
   --info-600: 2 132 199;
   --info-700: 3 105 161;
 
-  /* Surface border scale */ 
+  /* Surface border scale */
   --surface-border-0: 14 16 34;
   --surface-border-1: 20 30 58;
   --surface-border-2: 26 38 68;

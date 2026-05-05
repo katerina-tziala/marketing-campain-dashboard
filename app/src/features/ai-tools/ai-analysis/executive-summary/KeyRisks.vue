@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BadgeVariant } from "@/ui";
-import { Badge, Card } from "@/ui";
-import type { KeyRisk, RiskSeverity } from "../types";
-import { AnalysisSection } from "../components";
+import { computed } from 'vue';
+
+import { Badge, Card } from '@/ui';
+
+import { AnalysisSection } from '../components';
+import type { KeyRisk, RiskSeverity } from '../types';
+
+import type { BadgeVariant } from '@/ui';
 
 const props = defineProps<{
   risks: KeyRisk[];
@@ -16,13 +19,13 @@ const RISK_SEVERITY_ORDER: Record<RiskSeverity, number> = {
 };
 
 const RISK_SEVERITY_VARIANT_MAP: Record<RiskSeverity, BadgeVariant> = {
-  Low: "primary",
-  Medium: "warning",
-  High: "danger",
+  Low: 'primary',
+  Medium: 'warning',
+  High: 'danger',
 };
 
 function riskSeverityVariant(severity: RiskSeverity): BadgeVariant {
-  return RISK_SEVERITY_VARIANT_MAP[severity] ?? "info";
+  return RISK_SEVERITY_VARIANT_MAP[severity] ?? 'info';
 }
 
 function riskSeverityClass(severity: RiskSeverity): string {
@@ -37,7 +40,10 @@ const sortedRisks = computed(() =>
 </script>
 
 <template>
-  <AnalysisSection v-if="sortedRisks.length" title="Key Risks">
+  <AnalysisSection
+    v-if="sortedRisks.length"
+    title="Key Risks"
+  >
     <Card
       v-for="(risk, i) in sortedRisks"
       :key="i"

@@ -1,4 +1,4 @@
-import type { PromptRuleGroup } from '../types'
+import type { PromptRuleGroup } from '../types';
 
 export const ROLE_TASK_OBJECTIVE_RULES: PromptRuleGroup[] = [
   {
@@ -21,11 +21,9 @@ export const ROLE_TASK_OBJECTIVE_RULES: PromptRuleGroup[] = [
   {
     title: 'OBJECTIVE',
     type: 'none',
-    list: [
-      'Improve ROI and budget efficiency while preserving conversion potential.',
-    ],
+    list: ['Improve ROI and budget efficiency while preserving conversion potential.'],
   },
-]
+];
 
 export const FULL_PORTFOLIO_OPTIMIZATION_RULES: PromptRuleGroup[] = [
   {
@@ -116,7 +114,7 @@ export const FULL_PORTFOLIO_OPTIMIZATION_RULES: PromptRuleGroup[] = [
       'Remove weak, redundant, or speculative suggestions.',
     ],
   },
-]
+];
 
 export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
   {
@@ -213,7 +211,7 @@ export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
       'Remove any recommendation involving entities outside the selected subset.',
     ],
   },
-]
+];
 
 export const OUTPUT_SCHEMA = `{
   "summary": "string — one to two sentences describing the main optimization opportunity or why no strong action is recommended",
@@ -251,4 +249,4 @@ export const OUTPUT_SCHEMA = `{
     }
   ],
   "noRecommendationReason": "string | null"
-}`
+}`;

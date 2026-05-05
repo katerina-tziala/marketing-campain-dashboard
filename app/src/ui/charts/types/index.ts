@@ -19,9 +19,9 @@ export type {
   ChartTooltipOptions,
   CreateChartScaleOptions,
   DonutChartData,
-  DonutLegendLabelFilter,
   DonutChartOptions,
+  DonutLegendLabelFilter,
   DonutTooltipCallbacks,
   DonutTooltipItem,
   UseChartTooltipOptions,
-} from './chart.types'
+} from './chart.types';

@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { computed, useAttrs } from "vue";
-import { Doughnut } from "vue-chartjs";
-import { useChartConfig, useChartTheme, useChartTooltip } from "../composables";
+import { computed, useAttrs } from 'vue';
+
+import { Doughnut } from 'vue-chartjs';
+
+import { formatCompactNumber } from '@/shared/utils';
+
+import { useChartConfig, useChartTheme, useChartTooltip } from '../composables';
 import type {
   DonutChartData,
   DonutChartOptions,
   DonutLegendLabelFilter,
   DonutTooltipCallbacks,
-} from "../types";
-import { formatCompactNumber } from "@/shared/utils";
+} from '../types';
 
 const props = withDefaults(
   defineProps<{
@@ -19,6 +22,8 @@ const props = withDefaults(
   }>(),
   {
     showLegend: true,
+    legendLabelFilter: undefined,
+    tooltipCallbacks: undefined,
   },
 );
 
@@ -28,16 +33,14 @@ defineOptions({
 
 const attrs = useAttrs();
 const chartTheme = useChartTheme().value;
-const { baseOptions, basePlugins } = useChartConfig<"doughnut">();
+const { baseOptions, basePlugins } = useChartConfig<'doughnut'>();
 
 const defaultTooltipCallbacks: DonutTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
+  title: (items) => items[0]?.label ?? '',
   label: (ctx) => formatCompactNumber(Number(ctx.parsed)),
 };
 
-const donutTooltip = useChartTooltip<"doughnut">(
-  props.tooltipCallbacks ?? defaultTooltipCallbacks,
-);
+const donutTooltip = useChartTooltip<'doughnut'>(props.tooltipCallbacks ?? defaultTooltipCallbacks);
 
 function hasVisibleBorderWidth(borderWidth: unknown): boolean {
   if (Array.isArray(borderWidth)) {
@@ -63,31 +66,31 @@ const chartDataWithDefaultBorders = computed<DonutChartData>(() => ({
 
 const options: DonutChartOptions = {
   ...baseOptions,
-  cutout: "62%",
+  cutout: '62%',
   plugins: {
     ...basePlugins,
     tooltip: donutTooltip,
     legend: {
       ...basePlugins.legend,
       display: props.showLegend,
-      position: "bottom",
+      position: 'bottom',
       labels: {
         ...basePlugins.legend.labels,
         borderRadius: 0,
         padding: 10,
         generateLabels: (chart) => {
           const { labels = [], datasets } = chart.data;
-          if (!datasets.length) return [];
+          if (!datasets.length) {
+            return [];
+          }
           const legendLabels = (labels as string[]).map((text, i) => {
             const bg = datasets[0].backgroundColor;
-            const segColor = Array.isArray(bg)
-              ? (bg[i] as string)
-              : (bg as string);
+            const segColor = Array.isArray(bg) ? (bg[i] as string) : (bg as string);
             const hidden = !chart.getDataVisibility(i);
             return {
               text,
               fillStyle: segColor,
-              strokeStyle: "transparent",
+              strokeStyle: 'transparent',
               lineWidth: 0,
               fontColor: chartTheme.textColor,
               hidden,
@@ -105,9 +108,7 @@ const options: DonutChartOptions = {
 };
 
 const chartAriaLabel = computed(() =>
-  typeof attrs["aria-label"] === "string"
-    ? attrs["aria-label"]
-    : "Donut chart",
+  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : 'Donut chart',
 );
 </script>
 
@@ -118,6 +119,9 @@ const chartAriaLabel = computed(() =>
     role="img"
     :aria-label="chartAriaLabel"
   >
-    <Doughnut :data="chartDataWithDefaultBorders" :options="options" />
+    <Doughnut
+      :data="chartDataWithDefaultBorders"
+      :options="options"
+    />
   </div>
 </template>

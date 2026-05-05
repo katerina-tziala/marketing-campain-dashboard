@@ -1,8 +1,10 @@
 <script setup lang="ts" generic="TPoint extends BubbleDataPoint">
-import { computed, useAttrs } from "vue";
-import type { BubbleDataPoint } from "chart.js";
-import { Bubble } from "vue-chartjs";
-import { useChartConfig, useChartTooltip } from "../composables";
+import { computed, useAttrs } from 'vue';
+
+import type { BubbleDataPoint } from 'chart.js';
+import { Bubble } from 'vue-chartjs';
+
+import { useChartConfig, useChartTooltip } from '../composables';
 import type {
   BubbleChartData,
   BubbleChartOptions,
@@ -10,7 +12,8 @@ import type {
   BubbleTooltipCallbacks,
   ChartLegendPosition,
   ChartTickFormatter,
-} from "../types";
+  CreateChartScaleOptions,
+} from '../types';
 
 const props = withDefaults(
   defineProps<{
@@ -27,10 +30,25 @@ const props = withDefaults(
     yTickValues?: number[];
     tooltipCallbacks?: BubbleTooltipCallbacks;
     plugins?: BubbleChartPlugin[];
-    legendPosition?: ChartLegendPosition<"bubble">;
+    legendPosition?: ChartLegendPosition<'bubble'>;
     usePointLegend?: boolean;
   }>(),
-  { plugins: () => [], legendPosition: "top", usePointLegend: false },
+  {
+    xLabel: undefined,
+    yLabel: undefined,
+    xMin: undefined,
+    xMax: undefined,
+    yMin: undefined,
+    yMax: undefined,
+    xTickFormatter: undefined,
+    yTickFormatter: undefined,
+    xTickValues: undefined,
+    yTickValues: undefined,
+    tooltipCallbacks: undefined,
+    plugins: () => [],
+    legendPosition: 'top',
+    usePointLegend: false,
+  },
 );
 
 defineOptions({
@@ -38,8 +56,8 @@ defineOptions({
 });
 
 const attrs = useAttrs();
-const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
-const bubbleTooltip = useChartTooltip<"bubble">(props.tooltipCallbacks, { marker: "circle" });
+const { baseOptions, basePlugins, createScale } = useChartConfig<'bubble'>();
+const bubbleTooltip = useChartTooltip<'bubble'>(props.tooltipCallbacks, { marker: 'circle' });
 
 function createScaleOptions(
   label?: string,
@@ -47,7 +65,7 @@ function createScaleOptions(
   max?: number,
   formatter?: ChartTickFormatter,
   tickValues?: number[],
-) {
+): CreateChartScaleOptions {
   return {
     min,
     max,
@@ -71,9 +89,14 @@ const options = computed<BubbleChartOptions>(() => ({
       ...basePlugins.legend,
       position: props.legendPosition,
       labels: (() => {
-        const { boxWidth: _bw, boxHeight: _bh, borderRadius: _br, ...rest } = basePlugins.legend.labels;
+        const {
+          boxWidth: _bw,
+          boxHeight: _bh,
+          borderRadius: _br,
+          ...rest
+        } = basePlugins.legend.labels;
         return props.usePointLegend
-          ? { ...rest, usePointStyle: true, pointStyle: "circle" }
+          ? { ...rest, usePointStyle: true, pointStyle: 'circle' }
           : basePlugins.legend.labels;
       })(),
     },
@@ -102,11 +125,10 @@ const options = computed<BubbleChartOptions>(() => ({
 }));
 
 const chartAriaLabel = computed(() =>
-  typeof attrs["aria-label"] === "string"
-    ? attrs["aria-label"]
-    : props.yLabel ?? props.xLabel ?? "Bubble chart",
+  typeof attrs['aria-label'] === 'string'
+    ? attrs['aria-label']
+    : (props.yLabel ?? props.xLabel ?? 'Bubble chart'),
 );
-
 </script>
 
 <template>
@@ -116,6 +138,10 @@ const chartAriaLabel = computed(() =>
     role="img"
     :aria-label="chartAriaLabel"
   >
-    <Bubble :data="chartData" :options="options" :plugins="plugins" />
+    <Bubble
+      :data="chartData"
+      :options="options"
+      :plugins="plugins"
+    />
   </div>
 </template>

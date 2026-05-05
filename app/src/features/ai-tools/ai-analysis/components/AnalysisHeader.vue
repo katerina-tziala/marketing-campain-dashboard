@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import {
-  MagicWandIcon,
-  MetaRow,
-  MetaItem,
-  Button,
-  Section,
-} from "@/ui";
-import { formatIsoDateRange } from "@/shared/utils";
-import type { AnalysisPortfolioContext } from "../types";
+import { computed } from 'vue';
+
+import { formatIsoDateRange } from '@/shared/utils';
+import { Button, MagicWandIcon, MetaItem, MetaRow, Section } from '@/ui';
+
+import type { AnalysisPortfolioContext } from '../types';
 
 const props = defineProps<{
   title: string;
@@ -25,7 +21,7 @@ const periodLabel = computed(() =>
         props.context.businessContext.period.from,
         props.context.businessContext.period.to,
       )
-    : "",
+    : '',
 );
 </script>
 

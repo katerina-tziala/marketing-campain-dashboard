@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useAiConnectionStore } from '../stores'
-import { useAiAnalysisStore } from '../../ai-analysis/stores'
-import { PROVIDER_LABELS } from '../../providers/utils'
-import { Button } from "@/ui";
+import { computed } from 'vue';
+
+import { Button } from '@/ui';
+
+import { useAiAnalysisStore } from '../../ai-analysis/stores';
+import { PROVIDER_LABELS } from '../../providers/utils';
+import { useAiConnectionStore } from '../stores';
 
 const store = useAiConnectionStore();
 const analysisStore = useAiAnalysisStore();
-const providerLabel = computed(() =>
-  store.provider ? PROVIDER_LABELS[store.provider] : "",
-);
+const providerLabel = computed(() => (store.provider ? PROVIDER_LABELS[store.provider] : ''));
 
 function handleDisconnect(): void {
   analysisStore.clearStateForDisconnect();
@@ -21,8 +21,16 @@ function handleDisconnect(): void {
   <div class="ai-status">
     <p class="status-provider">{{ providerLabel }}</p>
     <div class="flex flex-wrap items-center justify-between grow shrink gap-x-4 gap-y-2">
-      <p role="status" class="connected-dot status-connected">Connected</p>
-      <Button variant="destructive" size="smaller" @click="handleDisconnect"
+      <p
+        role="status"
+        class="connected-dot status-connected"
+      >
+        Connected
+      </p>
+      <Button
+        variant="destructive"
+        size="smaller"
+        @click="handleDisconnect"
         >Disconnect</Button
       >
     </div>

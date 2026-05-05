@@ -1,7 +1,7 @@
-export { createQuadrantBackgroundPlugin } from './createQuadrantBackgroundPlugin'
+export { createQuadrantBackgroundPlugin } from './createQuadrantBackgroundPlugin';
 export type {
   CreateQuadrantBackgroundPluginOptions,
   QuadrantBackground,
   QuadrantBackgrounds,
   QuadrantDividerStyle,
-} from './createQuadrantBackgroundPlugin.types'
+} from './createQuadrantBackgroundPlugin.types';

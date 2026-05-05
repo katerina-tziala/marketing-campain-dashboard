@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { Card } from "@/ui";
-import { useAiAnalysisStore } from "../stores";
-import { AnalysisState, AnalysisHeader, AnalysisResponseMeta } from "../components";
-import GrowthOutlook from "./GrowthOutlook.vue";
-import HealthStatus from "./HealthStatus.vue";
-import Insights from "./Insights.vue";
-import KeyRisks from "./KeyRisks.vue";
-import PriorityActions from "./PriorityActions.vue";
+import { computed } from 'vue';
+
+import { Card } from '@/ui';
+
+import { AnalysisHeader, AnalysisResponseMeta, AnalysisState } from '../components';
+import { useAiAnalysisStore } from '../stores';
+import GrowthOutlook from './GrowthOutlook.vue';
+import HealthStatus from './HealthStatus.vue';
+import Insights from './Insights.vue';
+import KeyRisks from './KeyRisks.vue';
+import PriorityActions from './PriorityActions.vue';
 
 const analysisStore = useAiAnalysisStore();
 
@@ -19,21 +21,15 @@ const canAnalyze = computed(() => analysisStore.summaryCanAnalyze);
 const analysisActivated = computed(() => analysisStore.analysisActivated);
 
 const headerTitle = computed(() =>
-  analysisStore.portfolioContext.filtersActive
-    ? "Performance Summary"
-    : "Portfolio Summary",
+  analysisStore.portfolioContext.filtersActive ? 'Performance Summary' : 'Portfolio Summary',
 );
 
-const actionLabel = computed(() =>
-  analysisActivated.value ? "Re-Summarize" : "Summarize",
-);
+const actionLabel = computed(() => (analysisActivated.value ? 'Re-Summarize' : 'Summarize'));
 
-const isButtonDisabled = computed(
-  () => status.value === "loading" || !canAnalyze.value,
-);
+const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyze.value);
 
 function handleSummarize(): void {
-  analysisStore.analyze("executiveSummary");
+  analysisStore.analyze('executiveSummary');
 }
 </script>
 
@@ -55,8 +51,8 @@ function handleSummarize(): void {
 
     <template #idle>
       <p>
-        Generate an AI summary for the current portfolio view, including
-        performance context and recommended next actions
+        Generate an AI summary for the current portfolio view, including performance context and
+        recommended next actions
       </p>
     </template>
 

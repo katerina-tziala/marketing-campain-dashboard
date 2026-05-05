@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { Channel } from "@/shared/data";
-import type { PortfolioKPIs } from "@/shared/portfolio";
-import { Card, CardHeader, RadioToggle } from "@/ui";
-import { EfficiencyGapBars, RevenueVsBudgetBars } from "./components";
-import { sortChannelsByEfficiencyGapImpactDesc } from "../utils/campaign-performance-sorting";
+import { computed, ref } from 'vue';
 
-type RevenueBudgetView = "budgetVsRevenue" | "efficiencyGap";
+import type { Channel } from '@/shared/data';
+import type { PortfolioKPIs } from '@/shared/portfolio';
+import { Card, CardHeader, RadioToggle } from '@/ui';
 
-const REVENUE_BUDGET_TOGGLE_OPTIONS = [
-  { value: "budgetVsRevenue" as RevenueBudgetView, label: "Performance" },
-  { value: "efficiencyGap" as RevenueBudgetView, label: "Efficiency" },
-];
+import { sortChannelsByEfficiencyGapImpactDesc } from '../utils/campaign-performance-sorting';
+import { EfficiencyGapBars, RevenueVsBudgetBars } from './components';
+
+type RevenueBudgetView = 'budgetVsRevenue' | 'efficiencyGap';
 
 const props = defineProps<{
   channels: Channel[];
   kpis: PortfolioKPIs;
 }>();
 
-const revenueBudgetView = ref<RevenueBudgetView>("budgetVsRevenue");
+const REVENUE_BUDGET_TOGGLE_OPTIONS = [
+  { value: 'budgetVsRevenue' as RevenueBudgetView, label: 'Performance' },
+  { value: 'efficiencyGap' as RevenueBudgetView, label: 'Efficiency' },
+];
+
+const revenueBudgetView = ref<RevenueBudgetView>('budgetVsRevenue');
 
 const channelsByGapImpact = computed(() =>
   sortChannelsByEfficiencyGapImpactDesc(props.channels, props.kpis),
@@ -32,8 +34,8 @@ const channelsByGapImpact = computed(() =>
         Revenue vs Budget by Channel
       </h3>
       <RadioToggle
-        class="mx-auto"
         v-model="revenueBudgetView"
+        class="mx-auto"
         :options="REVENUE_BUDGET_TOGGLE_OPTIONS"
         name="revenue-budget-view"
         variant="secondary"

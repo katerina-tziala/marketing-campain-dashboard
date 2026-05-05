@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import type { PortfolioKPIs } from "@/shared/portfolio";
-import {
-  formatCompactCurrency,
-  formatCompactNumber,
-  formatPercentage,
-} from "@/shared/utils";
-import { MetaItem } from "@/ui";
-import KpiCard from "./KpiCard.vue";
-import KpiBenchmarkDelta from "./KpiBenchmarkDelta.vue";
-import { PerformanceIndicator } from "../../ui";
+import type { PortfolioKPIs } from '@/shared/portfolio';
+import { formatCompactCurrency, formatCompactNumber, formatPercentage } from '@/shared/utils';
+import { MetaItem } from '@/ui';
+
+import { PerformanceIndicator } from '../../ui';
+import KpiBenchmarkDelta from './KpiBenchmarkDelta.vue';
+import KpiCard from './KpiCard.vue';
 
 defineProps<{
   kpis: PortfolioKPIs;
@@ -16,19 +13,27 @@ defineProps<{
 }>();
 
 function formatShare(value: number, total: number): string {
-  if (total === 0) return "0%";
-  return formatPercentage(value / total, "N/A", 1);
+  if (total === 0) {
+    return '0%';
+  }
+  return formatPercentage(value / total, 'N/A', 1);
 }
 </script>
 
 <template>
   <div class="kpis-wrapper">
-    <section class="kpis-grid" role="region" aria-label="KPIs">
+    <section
+      class="kpis-grid"
+      role="region"
+      aria-label="KPIs"
+    >
       <!-- Budget -->
-      <KpiCard label="Budget" :value="formatCompactCurrency(kpis.totalBudget)">
+      <KpiCard
+        label="Budget"
+        :value="formatCompactCurrency(kpis.totalBudget)"
+      >
         <MetaItem v-if="portfolioKpis"
-          >{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of
-          portfolio</MetaItem
+          >{{ formatShare(kpis.totalBudget, portfolioKpis.totalBudget) }} of portfolio</MetaItem
         >
       </KpiCard>
 
@@ -38,8 +43,7 @@ function formatShare(value: number, total: number): string {
         :value="formatCompactCurrency(kpis.totalRevenue)"
       >
         <MetaItem v-if="portfolioKpis"
-          >{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of
-          portfolio</MetaItem
+          >{{ formatShare(kpis.totalRevenue, portfolioKpis.totalRevenue) }} of portfolio</MetaItem
         >
         <MetaItem
           ><span title="Return on Investment">ROI</span>:
@@ -53,10 +57,8 @@ function formatShare(value: number, total: number): string {
         :value="formatCompactNumber(kpis.totalConversions)"
       >
         <MetaItem v-if="portfolioKpis"
-          >{{
-            formatShare(kpis.totalConversions, portfolioKpis.totalConversions)
-          }}
-          of portfolio</MetaItem
+          >{{ formatShare(kpis.totalConversions, portfolioKpis.totalConversions) }} of
+          portfolio</MetaItem
         >
         <MetaItem
           ><span title="Conversion Rate">CVR</span>:
@@ -82,11 +84,7 @@ function formatShare(value: number, total: number): string {
       <KpiCard
         label="CPA"
         label-title="Cost per Acquisition"
-        :value="
-          kpis.aggregatedCpa !== null
-            ? formatCompactCurrency(kpis.aggregatedCpa)
-            : null
-        "
+        :value="kpis.aggregatedCpa !== null ? formatCompactCurrency(kpis.aggregatedCpa) : null"
       >
         <KpiBenchmarkDelta
           v-if="portfolioKpis && portfolioKpis.aggregatedCpa !== null"
@@ -102,20 +100,20 @@ function formatShare(value: number, total: number): string {
 <style lang="scss" scoped>
 .kpis-wrapper {
   @apply w-full;
-  @include cq-container("kpis");
+  @include cq-container('kpis');
 }
 
 .kpis-grid {
   @apply w-full grid grid-cols-1 gap-4;
 
-  @include cq-up(cq-540, "kpis") {
+  @include cq-up(cq-540, 'kpis') {
     @apply grid-cols-2;
     :deep(.kpi-card:nth-of-type(3)) {
       @apply col-span-2;
     }
   }
 
-  @include cq-up(cq-640, "kpis") {
+  @include cq-up(cq-640, 'kpis') {
     @apply grid-cols-6;
 
     :deep(.kpi-card:nth-of-type(1)),
@@ -130,7 +128,7 @@ function formatShare(value: number, total: number): string {
     }
   }
 
-  @include cq-up(cq-1024, "kpis") {
+  @include cq-up(cq-1024, 'kpis') {
     @apply grid-cols-5;
 
     :deep(.kpi-card:nth-of-type(1)),

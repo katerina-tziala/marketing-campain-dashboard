@@ -1,2 +1,2 @@
-export type SpinnerSize = 'default' | 'sm' | 'xxl'
-export type SpinnerTone = 'default' | 'inverse'
+export type SpinnerSize = 'default' | 'sm' | 'xxl';
+export type SpinnerTone = 'default' | 'inverse';

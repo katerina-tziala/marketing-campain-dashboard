@@ -1,45 +1,35 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import type {
-  CampaignPerformance,
-  CampaignRawMetrics,
-  PerformanceMetrics,
-} from "@/shared/data";
-import {
-  aggregateCampaignMetrics,
-  computePerformanceMetrics,
-} from "@/shared/portfolio";
-import { useSort } from "@/shared/composables";
+import { computed, ref, watch } from 'vue';
+
+import { useSort } from '@/shared/composables';
+import type { CampaignPerformance, CampaignRawMetrics, PerformanceMetrics } from '@/shared/data';
+import { aggregateCampaignMetrics, computePerformanceMetrics } from '@/shared/portfolio';
 import {
   formatCompactNumber,
   formatCurrency,
   formatNumber,
   formatPercentage,
   sortByValue,
-} from "@/shared/utils";
-import {
-  Button,
-  ChevronIcon,
-  Table,
-  TableGroupHeaderRow,
-  TableHeader,
-} from "@/ui";
-import type { DataTableColumn } from "@/ui";
-import { PerformanceIndicator } from "../ui";
+} from '@/shared/utils';
+import { Button, ChevronIcon, Table, TableGroupHeaderRow, TableHeader } from '@/ui';
+
+import { PerformanceIndicator } from '../ui';
+
+import type { DataTableColumn } from '@/ui';
 
 const props = defineProps<{ campaigns: CampaignPerformance[] }>();
 
 type SortField =
-  | "campaign"
-  | "budget"
-  | "clicks"
-  | "impressions"
-  | "ctr"
-  | "conversions"
-  | "cvr"
-  | "revenue"
-  | "cpa"
-  | "roi";
+  | 'campaign'
+  | 'budget'
+  | 'clicks'
+  | 'impressions'
+  | 'ctr'
+  | 'conversions'
+  | 'cvr'
+  | 'revenue'
+  | 'cpa'
+  | 'roi';
 
 type GroupTotals = CampaignRawMetrics & PerformanceMetrics;
 
@@ -50,58 +40,54 @@ type CampaignGroup = {
   totals: GroupTotals;
 };
 
-const {
-  sortKey: sortField,
-  sortDir,
-  toggleSort,
-} = useSort<SortField>("revenue", "desc");
+const { sortKey: sortField, sortDir, toggleSort } = useSort<SortField>('revenue', 'desc');
 
 const expandedGroupIds = ref<Set<string>>(new Set());
 
 const COLUMNS: DataTableColumn[] = [
   {
-    key: "campaign",
-    label: "Campaign",
+    key: 'campaign',
+    label: 'Campaign',
     sortable: true,
-    class: "left-alignment",
+    class: 'left-alignment',
   },
-  { key: "budget", label: "Budget", sortable: true },
-  { key: "clicks", label: "Clicks", sortable: true },
-  { key: "impressions", label: "Impressions", sortable: true },
+  { key: 'budget', label: 'Budget', sortable: true },
+  { key: 'clicks', label: 'Clicks', sortable: true },
+  { key: 'impressions', label: 'Impressions', sortable: true },
   {
-    key: "ctr",
-    label: "CTR",
-    title: "Click-through Rate",
-    ariaLabel: "Click-through rate",
-    sortable: true,
-  },
-  { key: "conversions", label: "Conversions", sortable: true },
-  {
-    key: "cvr",
-    label: "CVR",
-    title: "Conversion Rate",
-    ariaLabel: "Conversion rate",
+    key: 'ctr',
+    label: 'CTR',
+    title: 'Click-through Rate',
+    ariaLabel: 'Click-through rate',
     sortable: true,
   },
-  { key: "revenue", label: "Revenue", sortable: true },
+  { key: 'conversions', label: 'Conversions', sortable: true },
   {
-    key: "cpa",
-    label: "CPA",
-    title: "Cost per Acquisition",
-    ariaLabel: "Cost per acquisition",
+    key: 'cvr',
+    label: 'CVR',
+    title: 'Conversion Rate',
+    ariaLabel: 'Conversion rate',
+    sortable: true,
+  },
+  { key: 'revenue', label: 'Revenue', sortable: true },
+  {
+    key: 'cpa',
+    label: 'CPA',
+    title: 'Cost per Acquisition',
+    ariaLabel: 'Cost per acquisition',
     sortable: true,
   },
   {
-    key: "roi",
-    label: "ROI",
-    title: "Return on Investment",
-    ariaLabel: "Return on investment",
+    key: 'roi',
+    label: 'ROI',
+    title: 'Return on Investment',
+    ariaLabel: 'Return on investment',
     sortable: true,
   },
 ];
 
 function toChannelId(channel: string): string {
-  return channel.trim().toLowerCase().replace(/\s+/g, "-");
+  return channel.trim().toLowerCase().replace(/\s+/g, '-');
 }
 
 function handleSort(key: string): void {
@@ -131,11 +117,10 @@ function getCampaignFieldValue(
   return campaign[field] as number | string | null;
 }
 
-function getGroupFieldValue(
-  group: CampaignGroup,
-  field: SortField,
-): number | string | null {
-  if (field === "campaign") return group.channel;
+function getGroupFieldValue(group: CampaignGroup, field: SortField): number | string | null {
+  if (field === 'campaign') {
+    return group.channel;
+  }
   return group.totals[field];
 }
 
@@ -187,14 +172,10 @@ function toggleAllGroups(): void {
 }
 
 function getCollapseCells(row: Element): HTMLElement[] {
-  return Array.from(row.querySelectorAll<HTMLElement>(".collapse-cell"));
+  return Array.from(row.querySelectorAll<HTMLElement>('.collapse-cell'));
 }
 
-function transitionCollapseCells(
-  cells: HTMLElement[],
-  expanded: boolean,
-  done: () => void,
-): void {
+function transitionCollapseCells(cells: HTMLElement[], expanded: boolean, done: () => void): void {
   let remaining = cells.length;
 
   if (remaining === 0) {
@@ -203,28 +184,29 @@ function transitionCollapseCells(
   }
 
   function onTransitionEnd(cell: HTMLElement): void {
-    cell.style.gridTemplateRows = "";
-    cell.style.opacity = "";
-    cell.style.transition = "";
+    cell.style.gridTemplateRows = '';
+    cell.style.opacity = '';
+    cell.style.transition = '';
     remaining -= 1;
 
-    if (remaining === 0) done();
+    if (remaining === 0) {
+      done();
+    }
   }
 
   for (const cell of cells) {
-    cell.style.gridTemplateRows = expanded ? "0fr" : "1fr";
-    cell.style.opacity = expanded ? "0" : "1";
-    cell.style.transition = "none";
+    cell.style.gridTemplateRows = expanded ? '0fr' : '1fr';
+    cell.style.opacity = expanded ? '0' : '1';
+    cell.style.transition = 'none';
   }
 
-  cells[0].offsetHeight;
+  void cells[0].offsetHeight;
 
   for (const cell of cells) {
-    cell.style.transition =
-      "grid-template-rows 300ms ease, opacity 300ms ease";
-    cell.style.gridTemplateRows = expanded ? "1fr" : "0fr";
-    cell.style.opacity = expanded ? "1" : "0";
-    cell.addEventListener("transitionend", () => onTransitionEnd(cell), {
+    cell.style.transition = 'grid-template-rows 300ms ease, opacity 300ms ease';
+    cell.style.gridTemplateRows = expanded ? '1fr' : '0fr';
+    cell.style.opacity = expanded ? '1' : '0';
+    cell.addEventListener('transitionend', () => onTransitionEnd(cell), {
       once: true,
     });
   }
@@ -242,9 +224,7 @@ watch(
   () => campaignGroups.value.map((group) => group.id),
   (groupIds) => {
     const next = new Set(
-      [...expandedGroupIds.value].filter((groupId) =>
-        groupIds.includes(groupId),
-      ),
+      [...expandedGroupIds.value].filter((groupId) => groupIds.includes(groupId)),
     );
 
     for (const groupId of groupIds) {
@@ -266,7 +246,7 @@ watch(
         :disabled="campaignGroups.length === 0"
         @click="toggleAllGroups"
       >
-        {{ hasExpandedGroups ? "Collapse all" : "Expand all" }}
+        {{ hasExpandedGroups ? 'Collapse all' : 'Expand all' }}
       </Button>
     </div>
     <Table cell-padding="none">
@@ -278,7 +258,10 @@ watch(
         @sort="handleSort"
       />
       <tbody>
-        <template v-for="group in sortedGroups" :key="group.id">
+        <template
+          v-for="group in sortedGroups"
+          :key="group.id"
+        >
           <TableGroupHeaderRow>
             <td class="left-alignment">
               <div class="table-cell-content group-cell-content">
@@ -295,9 +278,7 @@ watch(
                     :class="{ expanded: isExpanded(group.id) }"
                   />
                   <span>{{ group.channel }}</span>
-                  <span class="campaign-count">
-                    {{ group.campaigns.length }} campaigns
-                  </span>
+                  <span class="campaign-count"> {{ group.campaigns.length }} campaigns </span>
                 </Button>
               </div>
             </td>
@@ -328,7 +309,10 @@ watch(
             </td>
             <td>
               <div class="table-cell-content">
-                <PerformanceIndicator :value="group.totals.cvr" class="dimmed" />
+                <PerformanceIndicator
+                  :value="group.totals.cvr"
+                  class="dimmed"
+                />
               </div>
             </td>
             <td>
@@ -527,5 +511,4 @@ watch(
 .collapse-cell-inner {
   @apply overflow-hidden min-h-0;
 }
-
 </style>
