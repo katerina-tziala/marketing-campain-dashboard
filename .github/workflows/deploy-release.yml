@@ -1,0 +1,100 @@
+name: Deploy Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to deploy, for example v1.2.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy-release:
+    name: Deploy release to GitHub Pages
+    if: github.actor == 'katerina-tziala'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    env:
+      VITE_DEV_MODE: "false"
+      VITE_DEV_SEED_MOCK_CAMPAIGNS: "false"
+      VITE_DEV_AI_ANALYSIS_CYCLE: "false"
+      VITE_DEV_AI_CONNECTION_CYCLE: "false"
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Validate release tag
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must look like v1.2.0."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run checks
+        run: npm run check
+
+      - name: Build app
+        run: npm run build -- --base "/${{ github.event.repository.name }}/"
+
+      - name: Write deployment metadata
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          DEPLOYED_SHA="$(git rev-parse HEAD)" node -e 'import { readFileSync, writeFileSync } from "node:fs"; const pkg = JSON.parse(readFileSync("package.json", "utf8")); const metadata = { version: pkg.version, tag: process.env.RELEASE_TAG, sha: process.env.DEPLOYED_SHA, deployedAt: new Date().toISOString() }; writeFileSync("dist/version.json", JSON.stringify(metadata, null, 2) + "\n");'
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Add deployment summary
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          {
+            echo "### Deployed release"
+            echo
+            echo "- Tag: $RELEASE_TAG"
+            echo "- URL: $PAGE_URL"
+            echo "- Metadata: ${PAGE_URL}version.json"
+          } >> "$GITHUB_STEP_SUMMARY"
