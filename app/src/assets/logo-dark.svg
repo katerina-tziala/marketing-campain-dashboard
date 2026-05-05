@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" aria-hidden="true">
+  <rect width="72" height="72" fill="rgb(7, 10, 21)" />
   <defs>
     <linearGradient id="upload-bars-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="38" y2="0">
       <stop offset="0%"    stop-color="rgb(30, 64, 175)" />
@@ -12,7 +13,7 @@
       <stop offset="97.4%" stop-color="rgb(55 48 163)" />
     </linearGradient>
   </defs>
-<g transform="translate(4.33, 12)">
+  <g transform="translate(4.33, 12)">
     <g fill="url(#upload-bars-gradient)">
       <path d="M0,48 L0,2 Q0,0 2,0 L8,0 Q10,0 10,2 L10,48 Z" />
       <path d="M13.5,48 L13.5,23 Q13.5,21 15.5,21 L21.5,21 Q23.5,21 23.5,23 L23.5,48 Z" />

@@ -15,8 +15,8 @@ import {
   SparklesIcon,
   SplitPaneLayout,
   UploadIcon,
+  AppLogo,
 } from "@/ui";
-import logoUrl from "@/assets/logo-v2.svg";
 const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
@@ -33,13 +33,7 @@ const {
 <template>
   <div class="dashboard-shell">
     <header class="dashboard-header">
-      <img
-        :src="logoUrl"
-        alt=""
-        width="69"
-        height="auto"
-        class="inline-block -mr-3"
-      />
+      <AppLogo class="w-14" />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
