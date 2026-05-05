@@ -1,4 +1,27 @@
  
+## [#0] Logo SVG: create marketing intelligence chart logo
+**Type:** design/update
+
+**Summary:** Created the app's core logo mark: a compact analytics symbol combining three vertical performance bars with an exploded semicircle chart. The mark establishes the product identity around marketing intelligence, campaign mix, allocation, and optimization.
+
+**Brainstorming:** The logo needed to feel native to a marketing intelligence dashboard rather than like a generic SaaS badge. The bars provide the stable reporting/readout side of the product, while the separated semicircle pieces suggest budget allocation, channel mix, and insight extraction. Several slice-balance directions were explored: perfectly even pie pieces felt too generic, while overly separated pieces felt broken. The chosen direction keeps uneven pieces so the mark reads as real portfolio allocation, with the pink slice acting as the energetic optimization/accent piece and the blue/purple pieces anchoring the chart shape.
+
+**Prompt:** Create and refine a logo for the marketing dashboard using bars plus chart/pie pieces. Make the chart pieces larger, tune the spacing between pieces, align the top blue piece with the third bar radius and the bottom purple piece with the bar bottom, balance the slice proportions, and keep the final logo expressive but still recognizable as a chart mark.
+
+**What changed:**
+- `app/src/assets/logo.svg` — created/refined as the primary app logo SVG with three rounded vertical bars and four semicircle chart slices
+- `app/src/assets/logo.svg` — tuned bar spacing so the three columns sit as a compact chart group
+- `app/src/assets/logo.svg` — enlarged the semicircle chart pieces and adjusted their positions so the top blue piece aligns with the third bar's rounded top area and the bottom purple piece aligns with the bar baseline
+- `app/src/assets/logo.svg` — balanced slice proportions so blue is larger than the bottom purple piece and the pink accent piece has more visual energy than the light-purple supporting piece
+- `app/src/assets/logo.svg` — used a teal/blue/indigo gradient for bars and distinct cyan, pink, light purple, and deep purple fills for the chart pieces
+
+**Key decisions & why:**
+- Bars plus pie pieces instead of an abstract symbol — directly communicates dashboards, performance metrics, spend mix, and campaign analysis
+- Uneven pie pieces over equal segments — real marketing portfolios are not evenly distributed; uneven slices make the logo feel analytical and product-specific
+- Pink as the expressive accent — gives the logo a sense of movement/optimization without overwhelming the calmer blue and purple data colors
+- Keep geometry SVG-native — direct path coordinates keep the mark crisp at favicon/app-icon sizes and avoid raster dependencies for the core identity
+
+
 ## [#1] Logo SVG: equal padding, square viewBox, and gradient stop precision
 **Type:** update
 
