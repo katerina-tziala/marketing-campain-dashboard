@@ -1,2 +1,2 @@
-export * from './types'
-export * from './samples'
+export * from './samples';
+export * from './types';

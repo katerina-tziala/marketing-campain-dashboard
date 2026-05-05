@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Modal, ModalBody, ModalFooter, Button } from "@/ui";
+import { Button, Modal, ModalBody, ModalFooter } from '@/ui';
 
 const emit = defineEmits<{
   confirm: [];
@@ -16,16 +16,23 @@ const emit = defineEmits<{
   >
     <ModalBody>
       <p class="w-full">
-        Uploading new data will replace your current dataset and reset any
-        active analysis. This action cannot be undone.
+        Uploading new data will replace your current dataset and reset any active analysis. This
+        action cannot be undone.
       </p>
-      <p class="text-sm font-semibold text-primary-lighter">
-        Do you want to continue?
-      </p>
+      <p class="text-sm font-semibold text-primary-lighter">Do you want to continue?</p>
     </ModalBody>
     <ModalFooter>
-      <Button variant="outline" class="sm:mr-auto" @click="emit('close')">Cancel</Button>
-      <Button variant="primary" @click="emit('confirm')">Replace data</Button>
+      <Button
+        variant="outline"
+        class="sm:mr-auto"
+        @click="emit('close')"
+        >Cancel</Button
+      >
+      <Button
+        variant="primary"
+        @click="emit('confirm')"
+        >Replace data</Button
+      >
     </ModalFooter>
   </Modal>
 </template>

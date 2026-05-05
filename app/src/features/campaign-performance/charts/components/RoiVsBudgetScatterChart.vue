@@ -1,29 +1,31 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { CampaignPerformance } from "@/shared/data";
+import { computed } from 'vue';
+
+import type { CampaignPerformance } from '@/shared/data';
+import { formatCompactNumber, formatDecimal } from '@/shared/utils';
 import {
   BubbleChart,
-  createQuadrantBackgroundPlugin,
   type BubbleChartData,
   type BubbleChartPlugin,
-  type BubbleTooltipCallbacks, 
-} from "@/ui";
-import { formatCompactNumber, formatDecimal } from "@/shared/utils";
+  type BubbleTooltipCallbacks,
+  createQuadrantBackgroundPlugin,
+  type QuadrantBackgrounds,
+} from '@/ui';
+
+import { useCampaignPerformanceTheme } from '../composables';
 import {
   ROI_BUDGET_SCALING_BUDGET_AXIS_ROUNDING,
-  ROI_BUDGET_SCALING_DIVIDER_STYLE,
   ROI_BUDGET_SCALING_HIGHLIGHTED_POINT_RADIUS,
   ROI_BUDGET_SCALING_POINT_RADIUS,
-  ROI_BUDGET_SCALING_QUADRANTS,
   ROI_BUDGET_SCALING_TICK_VALUES,
-} from "../config";
+} from '../config';
 import type {
   RoiBudgetScalingHighlights,
   RoiBudgetScalingMedians,
+  RoiBudgetScalingQuadrantConfig,
   RoiBudgetScalingQuadrantKey,
-} from "../types";
-import { formatRoiBudgetScalingTooltipLines } from "../utils";
-import { QUADRANT_BACKGROUNDS } from "../config/roi-budget-scaling-chart.config";
+} from '../types';
+import { formatRoiBudgetScalingTooltipLines } from '../utils';
 
 type BubblePoint = {
   x: number;
@@ -37,6 +39,12 @@ type BubblePoint = {
   isHighlighted: boolean;
 };
 
+const props = defineProps<{
+  campaigns: CampaignPerformance[];
+  medians: RoiBudgetScalingMedians;
+  highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
+}>();
+
 function scaleRoi(roi: number): number {
   return Math.sign(roi) * Math.log1p(Math.abs(roi));
 }
@@ -47,31 +55,48 @@ function unscaleRoi(value: number): number {
 
 const ROI_TICKS = ROI_BUDGET_SCALING_TICK_VALUES.map(scaleRoi);
 
-const props = defineProps<{
-  campaigns: CampaignPerformance[];
-  medians: RoiBudgetScalingMedians;
-  highlightCampaignsByQuadrant?: RoiBudgetScalingHighlights;
-}>();
+const { scalingColors } = useCampaignPerformanceTheme();
+
+const quadrants = computed<readonly RoiBudgetScalingQuadrantConfig[]>(() => [
+  { key: 'scaleUp', label: 'Scale', ...scalingColors.scaleUp },
+  { key: 'champions', label: 'Maximize', ...scalingColors.champions },
+  { key: 'underperforming', label: 'Monitor', ...scalingColors.underperforming },
+  { key: 'overspend', label: 'Reduce', ...scalingColors.overspend },
+]);
+
+const dividerStyle = computed(() => ({
+  color: scalingColors.divider,
+  width: 1,
+  dash: [5, 5],
+}));
+
+const quadrantBackgrounds = computed<QuadrantBackgrounds>(() => [
+  { backgroundColor: quadrants.value[0].backgroundColor },
+  { backgroundColor: quadrants.value[1].backgroundColor },
+  { backgroundColor: quadrants.value[2].backgroundColor },
+  { backgroundColor: quadrants.value[3].backgroundColor },
+]);
 
 const scatterTooltipCallbacks: BubbleTooltipCallbacks = {
   title: (items) => {
     const p = items[0]?.raw as BubblePoint | undefined;
-    return p?.campaign ?? "";
+    return p?.campaign ?? '';
   },
   label: (ctx) => formatRoiBudgetScalingTooltipLines(ctx.raw as BubblePoint),
 };
 
-function quadrantIndex(
-  roi: number,
-  budget: number,
-  medRoi: number,
-  medBudget: number,
-): number {
+function quadrantIndex(roi: number, budget: number, medRoi: number, medBudget: number): number {
   const highRoi = roi >= medRoi;
   const lowBudget = budget <= medBudget;
-  if (highRoi && lowBudget) return 0;
-  if (highRoi && !lowBudget) return 1;
-  if (!highRoi && lowBudget) return 2;
+  if (highRoi && lowBudget) {
+    return 0;
+  }
+  if (highRoi && !lowBudget) {
+    return 1;
+  }
+  if (!highRoi && lowBudget) {
+    return 2;
+  }
   return 3;
 }
 
@@ -79,21 +104,19 @@ function getHighlightedIndexes(
   bucket: BubblePoint[],
   quadrantKey: RoiBudgetScalingQuadrantKey,
 ): number[] {
-  const highlightedCampaigns =
-    props.highlightCampaignsByQuadrant?.[quadrantKey] ?? [];
+  const highlightedCampaigns = props.highlightCampaignsByQuadrant?.[quadrantKey] ?? [];
   return highlightedCampaigns
     .map((campaign) => bucket.findIndex((point) => point.campaign === campaign))
     .filter((index) => index >= 0);
 }
 
-const validCampaigns = computed(() =>
-  props.campaigns.filter((c) => c.roi !== null),
-);
+const validCampaigns = computed(() => props.campaigns.filter((c) => c.roi !== null));
 
 const axisBounds = computed(() => {
   const campaigns = validCampaigns.value;
-  if (!campaigns.length)
+  if (!campaigns.length) {
     return { xMin: 0, xMax: 1000, yMin: scaleRoi(-0.5), yMax: scaleRoi(2) };
+  }
 
   const xs = campaigns.map((c) => c.budget);
   const ys = campaigns.map((c) => scaleRoi(c.roi as number));
@@ -148,39 +171,37 @@ const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
   }
 
   buckets.forEach((bucket, quadrantIndex) => {
-    getHighlightedIndexes(
-      bucket,
-      ROI_BUDGET_SCALING_QUADRANTS[quadrantIndex].key,
-    ).forEach((index) => {
+    getHighlightedIndexes(bucket, quadrants.value[quadrantIndex].key).forEach((index) => {
       bucket[index].isHighlighted = true;
       bucket[index].r = ROI_BUDGET_SCALING_HIGHLIGHTED_POINT_RADIUS;
     });
   });
 
   return {
-    datasets: ROI_BUDGET_SCALING_QUADRANTS.map((q, i) => ({
+    datasets: quadrants.value.map((q, i) => ({
       label: q.label,
       data: buckets[i],
-      backgroundColor: buckets[i].map((point) =>
-        point.isHighlighted ? q.color : q.dimmedColor,
-      ),
-      borderColor: buckets[i].map((point) =>
-        point.isHighlighted ? q.border : q.dimmedColor,
-      ),
+      backgroundColor: buckets[i].length
+        ? buckets[i].map((point) => (point.isHighlighted ? q.color : q.dimmedColor))
+        : q.dimmedColor,
+      borderColor: buckets[i].length
+        ? buckets[i].map((point) => (point.isHighlighted ? q.border : q.dimmedColor))
+        : q.dimmedColor,
       borderWidth: 1,
       hoverRadius: 2,
     })),
   };
 });
 
-const quadrantBackgroundPlugin: BubbleChartPlugin =
-  createQuadrantBackgroundPlugin<"bubble">({
-    id: "roiBudgetQuadrantBackgroundPlugin",
+const quadrantBackgroundPlugin = computed<BubbleChartPlugin>(() =>
+  createQuadrantBackgroundPlugin<'bubble'>({
+    id: 'roiBudgetQuadrantBackgroundPlugin',
     getXThreshold: () => props.medians.budget,
     getYThreshold: () => scaleRoi(props.medians.roi),
-    quadrants: QUADRANT_BACKGROUNDS,
-    dividerStyle: ROI_BUDGET_SCALING_DIVIDER_STYLE,
-  });
+    quadrants: quadrantBackgrounds.value,
+    dividerStyle: dividerStyle.value,
+  }),
+);
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import type { Component } from "vue";
+import { onMounted } from 'vue';
+
+import type { Component } from 'vue';
 
 export type Tab<T = string> = {
   id: T;
@@ -19,13 +20,16 @@ const emit = defineEmits<{
 
 onMounted(() => {
   if (!props.activeTab && props.tabs.length) {
-    emit("change", props.tabs[0].id);
+    emit('change', props.tabs[0].id);
   }
 });
 </script>
 
 <template>
-  <div class="tabs" role="tablist">
+  <div
+    class="tabs"
+    role="tablist"
+  >
     <button
       v-for="tab in tabs"
       :key="tab.id"
@@ -35,7 +39,10 @@ onMounted(() => {
       :aria-selected="activeTab === tab.id"
       @click="emit('change', tab.id)"
     >
-      <component :is="tab.icon" class="tab-icon" />
+      <component
+        :is="tab.icon"
+        class="tab-icon"
+      />
       {{ tab.label }}
     </button>
   </div>

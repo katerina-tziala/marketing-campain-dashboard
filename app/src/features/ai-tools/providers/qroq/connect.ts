@@ -1,60 +1,32 @@
-import { generateModelEvaluationPrompt } from '../../prompts'
-import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
-import { parseJsonResponse, toValidModels } from '../utils/shared'
-import { fetchGroqModels, requestGroqChatCompletion } from './api'
-import type { GroqModel } from './types'
-import { GROQ_PROVIDER_RULES } from '../utils/providers-meta'
-
-const BANNED = ['whisper', 'audio', 'guard', 'safeguard', 'moderation', 'orpheus']
-
-function isAllowed(m: GroqModel): boolean {
-  return m.active === true && !BANNED.some((x) => (m.id || '').toLowerCase().includes(x))
-}
-
-function filterModels(models: GroqModel[]): GroqModel[] {
-  return models.filter(isAllowed)
-}
-
-function byCreatedDesc(a: GroqModel, b: GroqModel): number {
-  return b.created - a.created
-}
-
-function getSortedCandidates(models: GroqModel[]): GroqModel[] {
-  return [...models].sort(byCreatedDesc)
-}
-
-function buildValidIds(candidates: GroqModel[]): Set<string> {
-  return new Set(candidates.map((c) => c.id))
-}
-
-function toAiModelCandidate(m: GroqModel): AiModelCandidate {
-  return {
-    id: m.id,
-    contextWindow: m.context_window,
-    maxOutputTokens: m.max_completion_tokens,
-  }
-}
+import { generateModelEvaluationPrompt } from '../../prompts';
+import type { AiModel, AiModelCandidate, ModelsResponse } from '../types';
+import { parseJsonResponse, toValidModels } from '../utils/shared';
+import { fetchGroqModels, requestGroqChatCompletion } from './api';
+import { extractCandidates } from './extract-candidates/index';
 
 async function tryWithModel(
   apiKey: string,
-  runner: GroqModel,
-  candidates: GroqModel[],
+  runner: AiModelCandidate,
+  candidates: AiModelCandidate[],
 ): Promise<AiModel[]> {
-  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GROQ_PROVIDER_RULES)
-  const raw = await requestGroqChatCompletion(apiKey, runner.id, prompt)
-  return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
+  const prompt = generateModelEvaluationPrompt(candidates);
+  const raw = await requestGroqChatCompletion(apiKey, runner.id, prompt);
+  return toValidModels(
+    new Set(candidates.map((c) => c.id)),
+    parseJsonResponse<ModelsResponse>(raw).models,
+  );
 }
 
-function evaluateModels(apiKey: string, candidates: GroqModel[]): Promise<AiModel[]> {
-  if (candidates.length === 0) throw new Error('no-models')
-  const [runner, ...remaining] = candidates
-  return tryWithModel(apiKey, runner, candidates)
-    .catch(() => evaluateModels(apiKey, remaining))
+function evaluateModels(apiKey: string, candidates: AiModelCandidate[]): Promise<AiModel[]> {
+  if (candidates.length === 0) {
+    throw new Error('no-models');
+  }
+  const [runner, ...remaining] = candidates;
+  return tryWithModel(apiKey, runner, candidates).catch(() => evaluateModels(apiKey, remaining));
 }
 
 export async function connectGroq(apiKey: string): Promise<AiModel[]> {
-  const models = await fetchGroqModels(apiKey)
-  const filteredModels = filterModels(models)
-  if (filteredModels.length === 0) throw new Error('no-models')
-  return evaluateModels(apiKey, getSortedCandidates(filteredModels))
+  const models = await fetchGroqModels(apiKey);
+  const candidates = extractCandidates(models);
+  return evaluateModels(apiKey, candidates);
 }

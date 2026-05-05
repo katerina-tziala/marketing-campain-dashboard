@@ -1,2 +1,2 @@
-export { ReviewErrorsComponent } from './review-errors'
-export { ReviewDuplicatedCampaigns } from './review-duplications'
+export { ReviewDuplicatedCampaigns } from './review-duplications';
+export { ReviewErrorsComponent } from './review-errors';

@@ -2,32 +2,29 @@ import type {
   CampaignSummary,
   ConcentrationFlagSignal,
   PortfolioSignalThresholds,
-} from '../../types'
-import { rankByRevenueDesc } from '../ranking'
-import {
-  DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,
-  SIGNAL_REASONS,
-} from './constants'
+} from '../../types';
+import { rankByRevenueDesc } from '../ranking';
+import { DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS, SIGNAL_REASONS } from './constants';
 
 function hasEnoughCampaignsForConcentration(
   campaigns: CampaignSummary[],
   thresholds: PortfolioSignalThresholds,
 ): boolean {
-  return campaigns.length >= thresholds.minCampaignsForConcentration
+  return campaigns.length >= thresholds.minCampaignsForConcentration;
 }
 
 function getTopRevenueShares(
   campaigns: CampaignSummary[],
   thresholds: PortfolioSignalThresholds,
 ): Pick<ConcentrationFlagSignal, 'top1RevenueShare' | 'top3RevenueShare'> {
-  const sorted = rankByRevenueDesc(campaigns)
+  const sorted = rankByRevenueDesc(campaigns);
 
   return {
     top1RevenueShare: sorted[0]?.revenueShare ?? 0,
     top3RevenueShare: sorted
       .slice(0, thresholds.topRevenueCampaignCount)
       .reduce((sum, campaign) => sum + campaign.revenueShare, 0),
-  }
+  };
 }
 
 function isHighlyConcentrated(
@@ -37,7 +34,7 @@ function isHighlyConcentrated(
   return (
     shares.top1RevenueShare > thresholds.highTop1RevenueShare ||
     shares.top3RevenueShare > thresholds.highTop3RevenueShare
-  )
+  );
 }
 
 function isModeratelyConcentrated(
@@ -47,14 +44,14 @@ function isModeratelyConcentrated(
   return (
     shares.top1RevenueShare > thresholds.moderateTop1RevenueShare ||
     shares.top3RevenueShare > thresholds.moderateTop3RevenueShare
-  )
+  );
 }
 
 export function getConcentrationFlag(
   campaigns: CampaignSummary[],
   thresholds: PortfolioSignalThresholds = DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,
 ): ConcentrationFlagSignal {
-  const shares = getTopRevenueShares(campaigns, thresholds)
+  const shares = getTopRevenueShares(campaigns, thresholds);
 
   if (!hasEnoughCampaignsForConcentration(campaigns, thresholds)) {
     return {
@@ -62,7 +59,7 @@ export function getConcentrationFlag(
       level: 'Low',
       ...shares,
       reason: SIGNAL_REASONS.portfolio.concentrationUnavailable,
-    }
+    };
   }
 
   if (isHighlyConcentrated(shares, thresholds)) {
@@ -71,7 +68,7 @@ export function getConcentrationFlag(
       level: 'High',
       ...shares,
       reason: SIGNAL_REASONS.portfolio.highConcentration,
-    }
+    };
   }
 
   if (isModeratelyConcentrated(shares, thresholds)) {
@@ -80,7 +77,7 @@ export function getConcentrationFlag(
       level: 'Moderate',
       ...shares,
       reason: SIGNAL_REASONS.portfolio.moderateConcentration,
-    }
+    };
   }
 
   return {
@@ -88,5 +85,5 @@ export function getConcentrationFlag(
     level: 'Low',
     ...shares,
     reason: SIGNAL_REASONS.portfolio.lowConcentration,
-  }
+  };
 }

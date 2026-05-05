@@ -1,70 +1,46 @@
+import type { ChartType, Color, PointStyle, TooltipItem, TooltipLabelStyle } from 'chart.js';
+
 import type {
-  ChartType,
-  Color,
-  PointStyle,
-  TooltipCallbacks,
-  TooltipItem,
-  TooltipLabelStyle,
-  TooltipOptions,
-} from 'chart.js'
-import { useChartTheme } from './useChartTheme'
-
-type ChartTooltipContentCallbackName =
-  | 'beforeTitle'
-  | 'title'
-  | 'afterTitle'
-  | 'beforeBody'
-  | 'afterBody'
-  | 'beforeLabel'
-  | 'label'
-  | 'afterLabel'
-  | 'beforeFooter'
-  | 'footer'
-  | 'afterFooter'
-
-export type ChartTooltipContentCallbacks<TType extends ChartType> = Partial<
-  Pick<TooltipCallbacks<TType>, ChartTooltipContentCallbackName>
->
-
-export type ChartTooltipMarker = 'rounded-block' | 'circle' | 'square'
-
-type UseChartTooltipOptions = {
-  marker?: ChartTooltipMarker
-}
-
-type ChartTooltipOptions<TType extends ChartType> = Omit<
-  Partial<TooltipOptions<TType>>,
-  'callbacks'
-> & {
-  callbacks: Partial<TooltipCallbacks<TType>>
-}
+  ChartTooltipContentCallbacks,
+  ChartTooltipItemColors,
+  ChartTooltipMarker,
+  ChartTooltipOptions,
+  UseChartTooltipOptions,
+} from '../types';
+import { useChartTheme } from './useChartTheme';
 
 const MARKER_POINT_STYLES: Record<ChartTooltipMarker, PointStyle> = {
   'rounded-block': 'rectRounded',
   circle: 'circle',
   square: 'rect',
-}
+};
 
 function getTooltipItemColor<TType extends ChartType>(
   item: TooltipItem<TType>,
-): Color {
-  const chartTheme = useChartTheme()
-  const options = item.element.options as { backgroundColor?: Color }
-  return options.backgroundColor ?? chartTheme.tooltip.bodyColor
+): ChartTooltipItemColors {
+  const {
+    tooltip: { bodyColor },
+  } = useChartTheme().value;
+  const options = item.element.options as { backgroundColor?: Color; borderColor?: Color };
+  const background = options.backgroundColor ?? bodyColor;
+  const border = options.borderColor ?? background;
+  return { background, border };
 }
 
 export function useChartTooltip<TType extends ChartType = ChartType>(
   callbacks: ChartTooltipContentCallbacks<TType> = {},
   options: UseChartTooltipOptions = {},
 ): ChartTooltipOptions<TType> {
-  const chartTheme = useChartTheme()
-  const marker = options.marker ?? 'square'
+  const {
+    tooltip: { backgroundColor, titleColor, bodyColor, borderColor },
+  } = useChartTheme().value;
+  const marker = options.marker ?? 'square';
 
   return {
-    backgroundColor: chartTheme.tooltip.backgroundColor,
-    titleColor: chartTheme.tooltip.titleColor,
-    bodyColor: chartTheme.tooltip.bodyColor,
-    borderColor: chartTheme.tooltip.borderColor,
+    backgroundColor,
+    titleColor,
+    bodyColor,
+    borderColor,
     borderWidth: 1,
     cornerRadius: 2,
     padding: 10,
@@ -76,17 +52,17 @@ export function useChartTooltip<TType extends ChartType = ChartType>(
     callbacks: {
       ...callbacks,
       labelColor: (item): TooltipLabelStyle => {
-        const color = getTooltipItemColor(item)
+        const { background, border } = getTooltipItemColor(item);
         return {
-          backgroundColor: color,
-          borderColor: color,
+          backgroundColor: background,
+          borderColor: border,
           borderWidth: 1,
-        }
+        };
       },
       labelPointStyle: () => ({
         pointStyle: MARKER_POINT_STYLES[marker],
         rotation: 0,
       }),
     },
-  }
+  };
 }

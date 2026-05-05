@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import type {
-  BadgeShape,
-  BadgeSize,
-  BadgeTone,
-  BadgeVariant,
-} from "./badge.types";
+import type { BadgeShape, BadgeSize, BadgeTone, BadgeVariant } from './badge.types';
 
 const props = withDefaults(
   defineProps<{
@@ -14,10 +9,10 @@ const props = withDefaults(
     size?: BadgeSize;
   }>(),
   {
-    variant: "primary",
-    tone: "solid",
-    shape: "pill",
-    size: "default",
+    variant: 'primary',
+    tone: 'solid',
+    shape: 'pill',
+    size: 'default',
   },
 );
 </script>
@@ -40,7 +35,7 @@ const props = withDefaults(
   .badge-body {
     @apply w-full border flex items-center justify-center text-center capitalize gap-1
       py-1 px-2 text-xs font-semibold leading-4 rounded-full
-      text-primary-lighter bg-primary/10 border-primary-lighter/25;
+      text-primary-lighter bg-primary-lighter/10 border-primary-lighter/25;
   }
 
   &.success .badge-body {
@@ -60,11 +55,12 @@ const props = withDefaults(
   }
 
   &.opportunity .badge-body {
-    @apply bg-primary-lighter/10 border-primary-lighter/25 text-primary-lighter;
+    @apply bg-primary/10 border-primary-lighter/25 text-primary-lighter;
   }
 
   &.text-only {
     @apply bg-transparent border-none;
+
     .badge-body {
       @apply bg-transparent border-none;
     }
@@ -88,16 +84,17 @@ const props = withDefaults(
     }
 
     &.opportunity .badge-body {
-      @apply bg-primary-light/10 border-primary-light/25 text-primary-light/90;
+      @apply bg-primary/10 border-primary-lighter/25 text-primary-lighter/90;
     }
   }
 
   &.small > .badge-body {
-    @apply py-0.5 px-1 text-xs;
+    @apply py-0.5 px-1.5 text-xs;
   }
 
   &.rounded {
     @apply rounded-md;
+
     .badge-body {
       @apply rounded-md;
     }
@@ -105,6 +102,7 @@ const props = withDefaults(
 
   &.soft-rounded {
     @apply rounded-sm;
+
     .badge-body {
       @apply rounded-sm;
     }

@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { PortfolioKPIs } from "@/shared/portfolio";
+import { computed } from 'vue';
+
+import type { PortfolioKPIs } from '@/shared/portfolio';
 import {
   DonutChart,
   type DonutChartData,
   type DonutLegendLabelFilter,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
-  withHexAlpha,
-} from "@/ui";
+  withAlpha,
+} from '@/ui';
+
 import {
   CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_DONUT_DIM_ALPHA,
@@ -16,9 +18,9 @@ import {
   CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA,
   CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT,
   CAMPAIGN_PERFORMANCE_DONUT_SECONDARY_ALPHA,
-} from "../config";
-import type { BudgetShareDonutItem } from "../types";
-import { formatBudgetTooltipLines } from "../utils";
+} from '../config';
+import type { BudgetShareDonutItem } from '../types';
+import { formatBudgetTooltipLines } from '../utils';
 
 const props = defineProps<{
   items: BudgetShareDonutItem[];
@@ -30,10 +32,12 @@ function getTooltipDataIndex(ctx: DonutTooltipItem): number {
 }
 
 const tooltipCallbacks: DonutTooltipCallbacks = {
-  title: (items) => items[0]?.label ?? "",
+  title: (items) => items[0]?.label ?? '',
   label: (ctx) => {
     const item = props.items[getTooltipDataIndex(ctx)];
-    if (!item) return [];
+    if (!item) {
+      return [];
+    }
 
     return formatBudgetTooltipLines(item.budget, props.kpis.totalBudget);
   },
@@ -43,7 +47,7 @@ function getBudgetShare(budget: number): number {
   return props.kpis.totalBudget > 0 ? budget / props.kpis.totalBudget : 0;
 }
 
-function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
+function getSegmentAlpha(item: BudgetShareDonutItem, index: number): number {
   if (index < CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_LIMIT) {
     return CAMPAIGN_PERFORMANCE_DONUT_HIGHLIGHT_ALPHA;
   }
@@ -54,7 +58,7 @@ function getSegmentAlpha(item: BudgetShareDonutItem, index: number): string {
 }
 
 function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
-  return withHexAlpha(item.color, getSegmentAlpha(item, index));
+  return withAlpha(item.color, getSegmentAlpha(item, index));
 }
 
 function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
@@ -66,7 +70,9 @@ function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {
 
 const legendLabelFilter: DonutLegendLabelFilter = (legendItem) => {
   const itemIndex = legendItem.index;
-  if (itemIndex === undefined) return true;
+  if (itemIndex === undefined) {
+    return true;
+  }
 
   const item = props.items[itemIndex];
   return item ? !isDimmedSegment(item, itemIndex) : true;

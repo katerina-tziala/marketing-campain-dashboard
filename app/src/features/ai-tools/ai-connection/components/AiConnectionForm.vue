@@ -1,46 +1,46 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { computed, ref, watch } from 'vue';
 
 import {
-  Spinner,
-  PasswordInput,
-  RadioToggle,
   Button,
-  PlugIcon,
   Form,
   FormControl,
+  PasswordInput,
+  PlugIcon,
+  RadioToggle,
+  Spinner,
   validateRequired,
-} from "@/ui";
+} from '@/ui';
 
-import { useAiConnectionStore } from "../stores";
-import type { AiProviderType } from "../../types";
-import { PROVIDER_OPTIONS, PROVIDER_HELP } from "../../providers/utils";
-import { CONNECTION_ERRORS } from "../utils/error-handling";
-import AiConnectionInstructions from "./AiConnectionInstructions.vue";
+import { PROVIDER_HELP, PROVIDER_OPTIONS } from '../../providers/utils';
+import type { AiProviderType } from '../../types';
+import { useAiConnectionStore } from '../stores';
+import { CONNECTION_ERRORS } from '../utils/error-handling';
+import AiConnectionInstructions from './AiConnectionInstructions.vue';
 
 const props = defineProps<{
   resetKey?: number;
 }>();
 
 const store = useAiConnectionStore();
-const defaultProvider: AiProviderType = "groq";
+const defaultProvider: AiProviderType = 'groq';
 
 const selectedProvider = ref<AiProviderType>(defaultProvider);
-const apiKey = ref("");
-const apiKeyError = ref("");
+const apiKey = ref('');
+const apiKeyError = ref('');
 
 watch(selectedProvider, () => {
   store.connectionError = null;
-  apiKeyError.value = "";
-  apiKey.value = "";
+  apiKeyError.value = '';
+  apiKey.value = '';
 });
 
 watch(
   () => props.resetKey,
   () => {
     selectedProvider.value = defaultProvider;
-    apiKey.value = "";
-    apiKeyError.value = "";
+    apiKey.value = '';
+    apiKeyError.value = '';
     store.connectionError = null;
   },
 );
@@ -51,42 +51,41 @@ const connectionErrorDisplay = computed(() => {
   if (apiKeyError.value) {
     return {
       message: apiKeyError.value,
-      hint: "Paste your API key before connecting",
+      hint: 'Paste your API key before connecting',
     };
   }
 
-  if (!store.connectionError) return null;
+  if (!store.connectionError) {
+    return null;
+  }
   const { message, hint } = CONNECTION_ERRORS[store.connectionError.code];
   return { message: message(store.connectionError.provider), hint };
 });
 
 async function handleConnect(): Promise<void> {
-  apiKeyError.value = validateRequired(apiKey.value).errorKey
-    ? "API key is required"
-    : "";
-  if (apiKeyError.value) return;
+  apiKeyError.value = validateRequired(apiKey.value).errorKey ? 'API key is required' : '';
+  if (apiKeyError.value) {
+    return;
+  }
 
   await store.connect(selectedProvider.value, apiKey.value.trim());
 }
 
 function handleApiKeyUpdate(value: string): void {
   store.connectionError = null;
-  apiKeyError.value = "";
+  apiKeyError.value = '';
   apiKey.value = value;
 }
 
 function handleApiKeyBlur(): void {
-  apiKeyError.value = validateRequired(apiKey.value).errorKey
-    ? "API key is required"
-    : "";
+  apiKeyError.value = validateRequired(apiKey.value).errorKey ? 'API key is required' : '';
 }
 </script>
 
 <template>
   <div class="scrollbar-stable-both scrollbar-on-surface conn-form">
     <p class="conn-intro">
-      Connect your AI API key to enable Executive Summary and Budget Optimizer
-      features
+      Connect your AI API key to enable Executive Summary and Budget Optimizer features
     </p>
     <Form @submit.prevent="handleConnect">
       <!-- Provider -->
@@ -130,9 +129,13 @@ function handleApiKeyBlur(): void {
         type="submit"
         :disabled="store.isConnecting"
       >
-        <Spinner v-if="store.isConnecting" size="sm" tone="inverse" />
+        <Spinner
+          v-if="store.isConnecting"
+          size="sm"
+          tone="inverse"
+        />
         <PlugIcon v-else />
-        {{ store.isConnecting ? "Connecting…" : "Connect" }}
+        {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
       </Button>
       <!-- Instructions -->
       <AiConnectionInstructions :instructions="providerHelp" />

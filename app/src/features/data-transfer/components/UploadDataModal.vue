@@ -1,25 +1,21 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import type { Campaign } from "@/shared/data";
-import type { PortfolioDetails, PortfolioInput } from "@/shared/portfolio";
-import { Modal } from "@/ui";
-import type {
-  CampaignDataDuplicateGroup,
-  CampaignDataRowError,
-} from "../types";
-import { parseCsv, getValidationErrorMessage } from "../utils";
-import { useDownloadTemplate } from "../composables";
-import {
-  ReviewErrorsComponent,
-  ReviewDuplicatedCampaigns,
-} from "./data-validation";
-import UploadDataForm from "./UploadDataForm.vue";
+import { ref, watch } from 'vue';
 
-const { downloadTemplate } = useDownloadTemplate();
+import type { Campaign } from '@/shared/data';
+import type { PortfolioDetails, PortfolioInput } from '@/shared/portfolio';
+import { Modal } from '@/ui';
+
+import { useDownloadTemplate } from '../composables';
+import type { CampaignDataDuplicateGroup, CampaignDataRowError } from '../types';
+import { getValidationErrorMessage, parseCsv } from '../utils';
+import { ReviewDuplicatedCampaigns, ReviewErrorsComponent } from './data-validation';
+import UploadDataForm from './UploadDataForm.vue';
 
 const emit = defineEmits<{
-  "upload-complete": [portfolio: PortfolioInput];
+  'upload-complete': [portfolio: PortfolioInput];
 }>();
+
+const { downloadTemplate } = useDownloadTemplate();
 
 // ── Open / close ───────────────────────────────────────────────────────────────
 
@@ -31,13 +27,13 @@ function open(): void {
 
 function close(): void {
   isOpen.value = false;
-  view.value = "form";
-  title.value = "";
-  periodFrom.value = "";
-  periodTo.value = "";
-  industry.value = "";
+  view.value = 'form';
+  title.value = '';
+  periodFrom.value = '';
+  periodTo.value = '';
+  industry.value = '';
   file.value = null;
-  parseError.value = "";
+  parseError.value = '';
   rowErrors.value = [];
   validCampaigns.value = [];
   duplicateGroups.value = [];
@@ -48,21 +44,21 @@ defineExpose({ open });
 
 // ── Form state (lifted so it survives view switches) ───────────────────────────
 
-const title = ref("");
-const periodFrom = ref("");
-const periodTo = ref("");
-const industry = ref("");
+const title = ref('');
+const periodFrom = ref('');
+const periodTo = ref('');
+const industry = ref('');
 const file = ref<File | null>(null);
-const parseError = ref("");
+const parseError = ref('');
 const isLoading = ref(false);
 
 watch(file, () => {
-  parseError.value = "";
+  parseError.value = '';
 });
 
 // ── View state ─────────────────────────────────────────────────────────────────
 
-const view = ref<"form" | "row-errors" | "duplicate-rows">("form");
+const view = ref<'form' | 'row-errors' | 'duplicate-rows'>('form');
 const pendingPortfolioDetails = ref<PortfolioDetails | null>(null);
 const validCampaigns = ref<Campaign[]>([]);
 const rowErrors = ref<CampaignDataRowError[]>([]);
@@ -78,23 +74,27 @@ function toPortfolioInput(campaigns: Campaign[], details: PortfolioDetails): Por
 }
 
 async function handleSubmit(details: PortfolioDetails): Promise<void> {
-  parseError.value = "";
+  parseError.value = '';
   pendingPortfolioDetails.value = details;
   isLoading.value = true;
-  const result = await parseCsv(file.value!);
+  if (!file.value) {
+    parseError.value = 'Please select a file to upload.';
+    isLoading.value = false;
+    return;
+  }
+
+  const result = await parseCsv(file.value);
   isLoading.value = false;
 
-  const invalidRowsError = result.errors.find((e) => e.type === "invalid_rows");
-  const duplicateError = result.errors.find(
-    (e) => e.type === "duplicate_campaigns",
-  );
+  const invalidRowsError = result.errors.find((e) => e.type === 'invalid_rows');
+  const duplicateError = result.errors.find((e) => e.type === 'duplicate_campaigns');
 
   if (!invalidRowsError && !duplicateError) {
     if (result.errors.length > 0) {
       parseError.value = getValidationErrorMessage(result.errors[0]);
       return;
     }
-    emit("upload-complete", toPortfolioInput(result.campaigns, details));
+    emit('upload-complete', toPortfolioInput(result.campaigns, details));
     close();
     return;
   }
@@ -104,51 +104,49 @@ async function handleSubmit(details: PortfolioDetails): Promise<void> {
 
   if (invalidRowsError) {
     rowErrors.value = invalidRowsError.rowErrors ?? [];
-    view.value = "row-errors";
+    view.value = 'row-errors';
     return;
   }
 
-  view.value = "duplicate-rows";
+  view.value = 'duplicate-rows';
 }
 
 function handleBackFromErrors(): void {
-  view.value = "form";
+  view.value = 'form';
   rowErrors.value = [];
   validCampaigns.value = [];
   duplicateGroups.value = [];
 }
 
 function handleProceedFromErrors(): void {
-  if (!pendingPortfolioDetails.value) return;
-
-  if (duplicateGroups.value.length > 0) {
-    view.value = "duplicate-rows";
+  if (!pendingPortfolioDetails.value) {
     return;
   }
-  emit(
-    "upload-complete",
-    toPortfolioInput(validCampaigns.value, pendingPortfolioDetails.value),
-  );
+
+  if (duplicateGroups.value.length > 0) {
+    view.value = 'duplicate-rows';
+    return;
+  }
+  emit('upload-complete', toPortfolioInput(validCampaigns.value, pendingPortfolioDetails.value));
   close();
 }
 
 function handleBackFromDuplicates(): void {
   if (rowErrors.value.length > 0) {
-    view.value = "row-errors";
+    view.value = 'row-errors';
     return;
   }
   handleBackFromErrors();
 }
 
 function handleProceedFromDuplicates(selected: Campaign[]): void {
-  if (!pendingPortfolioDetails.value) return;
+  if (!pendingPortfolioDetails.value) {
+    return;
+  }
 
   emit(
-    "upload-complete",
-    toPortfolioInput(
-      [...validCampaigns.value, ...selected],
-      pendingPortfolioDetails.value,
-    ),
+    'upload-complete',
+    toPortfolioInput([...validCampaigns.value, ...selected], pendingPortfolioDetails.value),
   );
   close();
 }
@@ -189,7 +187,7 @@ function handleProceedFromDuplicates(selected: Campaign[]): void {
       v-else
       :duplicate-groups="duplicateGroups"
       :valid-campaigns="validCampaigns"
-      :back-label="rowErrors.length > 0 ? 'Review errors' : 'Fix file'"
+      :has-previous-errors="rowErrors.length > 0"
       @back="handleBackFromDuplicates"
       @proceed="handleProceedFromDuplicates"
       @close="close"

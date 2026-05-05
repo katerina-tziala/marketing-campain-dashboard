@@ -1,29 +1,32 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { HealthScore, HealthLabel } from '../types';
-import type { BadgeVariant } from "@/ui";
-import { Badge } from "@/ui";
+import { computed } from 'vue';
+
+import { Badge } from '@/ui';
+
+import type { HealthLabel, HealthScore } from '../types';
+
+import type { BadgeVariant } from '@/ui';
 
 const props = defineProps<{
   healthScore: HealthScore;
 }>();
 
 const HEALTH_SCORE_MAP: Record<string, BadgeVariant> = {
-  excellent: "success",
-  good: "info",
-  needsattention: "warning",
-  critical: "danger",
+  excellent: 'success',
+  good: 'info',
+  needsattention: 'warning',
+  critical: 'danger',
 };
 
 const HEALTH_LABEL_MAP: Record<HealthLabel, string> = {
-  Excellent: "Excellent",
-  Good: "Good",
-  NeedsAttention: "Needs Attention",
-  Critical: "Critical",
+  Excellent: 'Excellent',
+  Good: 'Good',
+  NeedsAttention: 'Needs Attention',
+  Critical: 'Critical',
 };
 
 const variant = computed<BadgeVariant>(
-  () => HEALTH_SCORE_MAP[props.healthScore.label.toLowerCase()] ?? "info",
+  () => HEALTH_SCORE_MAP[props.healthScore.label.toLowerCase()] ?? 'info',
 );
 
 const readableLabel = computed(
@@ -33,11 +36,18 @@ const readableLabel = computed(
 
 <template>
   <div class="health-container">
-    <Badge shape="rounded" :variant="variant">
+    <Badge
+      shape="rounded"
+      :variant="variant"
+    >
       <span class="text-lg font-extrabold leading-none">{{ healthScore.score }}</span>
       <span class="leading-none">&nbsp;/&nbsp;100</span>
     </Badge>
-    <Badge tone="text-only" :variant="variant">{{ readableLabel }}</Badge>
+    <Badge
+      tone="text-only"
+      :variant="variant"
+      >{{ readableLabel }}</Badge
+    >
   </div>
 </template>
 

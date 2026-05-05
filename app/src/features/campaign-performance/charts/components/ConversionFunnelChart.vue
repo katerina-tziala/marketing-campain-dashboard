@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { computed, useAttrs } from "vue";
-import { formatCompactNumber } from "@/shared/utils";
-import { PerformanceIndicator } from "../../ui";
-import type { PortfolioKPIs } from "@/shared/portfolio";
+import { computed, useAttrs } from 'vue';
+
+import type { PortfolioKPIs } from '@/shared/portfolio';
+import { formatCompactNumber } from '@/shared/utils';
+
+import { PerformanceIndicator } from '../../ui';
+
+const props = defineProps<{
+  kpis: PortfolioKPIs;
+}>();
+
+defineOptions({
+  inheritAttrs: false,
+});
 
 const MIN_WIDTH_BAR = 12;
 
@@ -14,41 +24,31 @@ export interface FunnelItem {
   styles?: string;
 }
 
-const props = defineProps<{
-  kpis: PortfolioKPIs;
-}>();
-
-defineOptions({
-  inheritAttrs: false,
-});
-
 const attrs = useAttrs();
 const funnelItems = computed(() => [
   {
-    label: "Impressions",
+    label: 'Impressions',
     value: props.kpis.totalImpressions,
     rate: null,
-    styles: "bg-chart-funnel-impressions",
+    styles: 'bg-chart-funnel-impressions',
   },
   {
-    label: "Clicks",
+    label: 'Clicks',
     value: props.kpis.totalClicks,
-    rateLabel: "CTR",
+    rateLabel: 'CTR',
     rate: props.kpis.aggregatedCtr,
-    styles: "bg-chart-funnel-clicks",
+    styles: 'bg-chart-funnel-clicks',
   },
   {
-    label: "Conversions",
+    label: 'Conversions',
     value: props.kpis.totalConversions,
-    rateLabel: "CVR",
+    rateLabel: 'CVR',
     rate: props.kpis.aggregatedCvr,
-    styles: "bg-chart-funnel-conversions",
+    styles: 'bg-chart-funnel-conversions',
   },
 ]);
 
-const maxValue = computed(() =>
-  Math.max(...funnelItems.value.map((item) => item.value)),
-);
+const maxValue = computed(() => Math.max(...funnelItems.value.map((item) => item.value)));
 
 // Cube-root scaling so small values (conversions) remain visible
 function scaledWidth(val: number | null): number {
@@ -57,9 +57,7 @@ function scaledWidth(val: number | null): number {
 }
 
 const chartAriaLabel = computed(() =>
-  typeof attrs["aria-label"] === "string"
-    ? attrs["aria-label"]
-    : "Conversions funnel chart",
+  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : 'Conversions funnel chart',
 );
 </script>
 
@@ -70,7 +68,11 @@ const chartAriaLabel = computed(() =>
     role="img"
     :aria-label="chartAriaLabel"
   >
-    <div v-for="item in funnelItems" :key="item.label" class="funnel-row">
+    <div
+      v-for="item in funnelItems"
+      :key="item.label"
+      class="funnel-row"
+    >
       <div class="funnel-region-1">
         <div
           class="bar-percentage"
@@ -78,14 +80,17 @@ const chartAriaLabel = computed(() =>
           :style="{
             width: `${scaledWidth(item.value)}%`,
           }"
-        ></div>
+        />
         <div class="bar-label">
           <span class="value">{{ formatCompactNumber(item.value) }}</span>
           <span class="label">{{ item.label }}</span>
         </div>
       </div>
       <div class="funnel-region-2">
-        <span v-if="item.rateLabel" class="funnel-rate">
+        <span
+          v-if="item.rateLabel"
+          class="funnel-rate"
+        >
           <span>{{ item.rateLabel }}:</span>
           <PerformanceIndicator :value="item.rate" />
         </span>
@@ -139,7 +144,7 @@ const chartAriaLabel = computed(() =>
   }
 
   .funnel-region-2 {
-    @apply shrink-0 flex h-full items-center justify-end; 
+    @apply shrink-0 flex h-full items-center justify-end;
 
     .funnel-rate {
       @apply inline-flex
@@ -153,7 +158,7 @@ const chartAriaLabel = computed(() =>
         max-w-full
         text-right
         leading-tight
-        px-2; 
+        px-2;
     }
   }
 }

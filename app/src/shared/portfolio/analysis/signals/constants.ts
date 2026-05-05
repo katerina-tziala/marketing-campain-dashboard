@@ -4,14 +4,14 @@ import type {
   ChannelSignalThresholds,
   ChannelStatusThresholds,
   PortfolioSignalThresholds,
-} from '../../types'
+} from '../../types';
 
 // Channel status uses a narrow ROI band around the portfolio average so the
 // summary label stays stable unless a channel is meaningfully above or below it.
 export const DEFAULT_CHANNEL_STATUS_THRESHOLDS: ChannelStatusThresholds = {
   strongStatusRoiFactor: 1.1,
   weakStatusRoiFactor: 0.9,
-}
+};
 
 // Channel inefficiency is only actionable once budget/revenue imbalance is large
 // enough to matter at portfolio level.
@@ -23,7 +23,7 @@ export const DEFAULT_CHANNEL_SIGNAL_THRESHOLDS: ChannelSignalThresholds = {
   // Ignore tiny channel allocations where share-based ratios are too noisy to act on.
   minBudgetShareSignal: 0.03,
   minRevenueShareSignal: 0.03,
-}
+};
 
 export const DEFAULT_CAMPAIGN_SIGNAL_THRESHOLDS: CampaignSignalThresholds = {
   // Campaign inefficiency ignores tiny allocations to avoid overreacting to small
@@ -38,7 +38,7 @@ export const DEFAULT_CAMPAIGN_SIGNAL_THRESHOLDS: CampaignSignalThresholds = {
   maxAdditionalFraction: 2.0,
   // Expected retention assumes ROI decays slightly when extra budget is added.
   baseRoiRetention: 0.85,
-}
+};
 
 export const DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS: PortfolioSignalThresholds = {
   // Transfer ranges start with a small meaningful shift, but never below the floor.
@@ -57,14 +57,14 @@ export const DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS: PortfolioSignalThresholds = {
   maxTransferCandidates: 5,
   // Correlation signals need enough observations to avoid reporting coincidence.
   minCampaignsForCorrelations: 3,
-}
+};
 
 export const DEFAULT_ANALYSIS_SIGNAL_THRESHOLDS: AnalysisSignalThresholds = {
   channelStatus: DEFAULT_CHANNEL_STATUS_THRESHOLDS,
   channelSignals: DEFAULT_CHANNEL_SIGNAL_THRESHOLDS,
   campaignSignals: DEFAULT_CAMPAIGN_SIGNAL_THRESHOLDS,
   portfolioSignals: DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,
-}
+};
 
 export const SIGNAL_REASONS = {
   campaign: {
@@ -80,10 +80,9 @@ export const SIGNAL_REASONS = {
     concentrationUnavailable:
       'Concentration is not evaluated for datasets with fewer than 3 campaigns.',
     highConcentration: 'Revenue is highly concentrated in a small number of campaigns.',
-    moderateConcentration:
-      'Revenue is moderately concentrated in a limited number of campaigns.',
+    moderateConcentration: 'Revenue is moderately concentrated in a limited number of campaigns.',
     lowConcentration: 'Revenue is reasonably distributed across campaigns.',
     transferCandidate: (sourceCampaign: string, targetCampaign: string) =>
       `Shift from ${sourceCampaign} (inefficient) to ${targetCampaign} (strong efficiency).`,
   },
-} as const
+} as const;

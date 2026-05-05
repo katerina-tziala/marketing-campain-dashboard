@@ -1,1 +1,1 @@
-export { default as ChannelFilters } from './ChannelFilters.vue'
+export { default as ChannelFilters } from './ChannelFilters.vue';

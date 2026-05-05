@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { Channel } from "@/shared/data";
-import { Chip } from "@/ui";
+import { computed, ref } from 'vue';
+
+import type { Channel } from '@/shared/data';
+import { Chip } from '@/ui';
 
 const props = withDefaults(
   defineProps<{
-    variant?: "visible" | "probe";
-    layout?: "strip" | "plain";
+    variant?: 'visible' | 'probe';
+    layout?: 'strip' | 'plain';
     channels: Channel[];
     totalCampaigns: number;
     selectedIds?: string[];
@@ -14,15 +15,17 @@ const props = withDefaults(
     allActive?: boolean;
     allReadonly?: boolean;
     singleRow?: boolean;
+    maxVisible?: number;
   }>(),
   {
-    variant: "visible",
-    layout: "strip",
+    variant: 'visible',
+    layout: 'strip',
     selectedIds: () => [],
     showAll: true,
     allActive: false,
     allReadonly: false,
     singleRow: false,
+    maxVisible: undefined,
   },
 );
 
@@ -33,7 +36,11 @@ const emit = defineEmits<{
 
 const rootRef = ref<HTMLElement>();
 
-const isProbe = computed(() => props.variant === "probe");
+const isProbe = computed(() => props.variant === 'probe');
+
+const visibleChannels = computed(() =>
+  props.maxVisible !== undefined ? props.channels.slice(0, props.maxVisible) : props.channels,
+);
 
 function isSelected(id: string): boolean {
   return props.selectedIds.includes(id);
@@ -41,13 +48,13 @@ function isSelected(id: string): boolean {
 
 function onClear(): void {
   if (!props.allReadonly && !isProbe.value) {
-    emit("clear");
+    emit('clear');
   }
 }
 
 function onToggle(id: string): void {
   if (!isProbe.value) {
-    emit("toggle", id);
+    emit('toggle', id);
   }
 }
 
@@ -56,14 +63,16 @@ function getRootEl(): HTMLElement | undefined {
 }
 
 function getChannelChipEls(): HTMLElement[] {
-  if (!rootRef.value) return [];
-  return Array.from(
-    rootRef.value.querySelectorAll<HTMLElement>("[data-channel-id]"),
-  );
+  if (!rootRef.value) {
+    return [];
+  }
+  return Array.from(rootRef.value.querySelectorAll<HTMLElement>('[data-channel-id]'));
 }
 
 function hasOverflow(): boolean {
-  if (!rootRef.value) return false;
+  if (!rootRef.value) {
+    return false;
+  }
   return rootRef.value.scrollHeight > rootRef.value.clientHeight + 1;
 }
 
@@ -97,7 +106,7 @@ defineExpose({
       <span class="channel-chip-count">{{ totalCampaigns }}</span>
     </Chip>
     <Chip
-      v-for="channel in channels"
+      v-for="channel in visibleChannels"
       :key="channel.id"
       :data-channel-id="channel.id"
       :active="isSelected(channel.id)"
@@ -121,7 +130,7 @@ defineExpose({
   }
 
   &.plain {
-    @apply gap-2 p-3 max-h-none;
+    @apply gap-2 max-h-none;
   }
 
   max-height: var(--channel-filter-max-height, 4.8rem);
@@ -147,10 +156,11 @@ defineExpose({
     bg-line;
 }
 
-.channel-filter-chips :deep(.chip[aria-pressed="true"]) {
+.channel-filter-chips :deep(.chip[aria-pressed='true']) {
   .channel-chip-count {
     @apply bg-surface;
   }
+
   &:not(.readonly) {
     &:hover,
     &:focus-visible {

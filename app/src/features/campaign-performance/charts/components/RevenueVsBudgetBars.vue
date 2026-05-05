@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { Channel } from "@/shared/data";
-import {
-  GroupedBarChart,
-  type BarChartData,
-  type BarTooltipCallbacks,
-} from "@/ui";
-import { formatCompactNumber } from "@/shared/utils";
+import { computed } from 'vue';
+
+import type { Channel } from '@/shared/data';
+import { formatCompactNumber } from '@/shared/utils';
+import { type BarChartData, type BarTooltipCallbacks, GroupedBarChart } from '@/ui';
+
 import {
   CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_CHART_COLORS,
   getCampaignPerformanceChartFillColor,
-} from "../config";
-import { formatBudgetTooltip, formatRevenueTooltip } from "../utils";
+} from '../config';
+import { formatBudgetTooltip, formatRevenueTooltip } from '../utils';
 
 const props = defineProps<{
   channels: Channel[];
@@ -20,11 +18,9 @@ const props = defineProps<{
 
 const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
-    const value = typeof ctx.raw === "number" ? ctx.raw : 0;
+    const value = typeof ctx.raw === 'number' ? ctx.raw : 0;
 
-    return ctx.datasetIndex === 0
-      ? formatBudgetTooltip(value)
-      : formatRevenueTooltip(value);
+    return ctx.datasetIndex === 0 ? formatBudgetTooltip(value) : formatRevenueTooltip(value);
   },
 };
 
@@ -32,7 +28,7 @@ const chartData = computed<BarChartData>(() => ({
   labels: props.channels.map((ch) => ch.name),
   datasets: [
     {
-      label: "Budget (€)",
+      label: 'Budget (€)',
       data: props.channels.map((ch) => ch.budget),
       backgroundColor: getCampaignPerformanceChartFillColor(
         CAMPAIGN_PERFORMANCE_CHART_COLORS.budget,
@@ -41,7 +37,7 @@ const chartData = computed<BarChartData>(() => ({
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
     {
-      label: "Revenue (€)",
+      label: 'Revenue (€)',
       data: props.channels.map((ch) => ch.revenue),
       backgroundColor: getCampaignPerformanceChartFillColor(
         CAMPAIGN_PERFORMANCE_CHART_COLORS.revenue,

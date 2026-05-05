@@ -1,21 +1,13 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useDashboardOrchestratorStore } from "@/app/stores";
-import { CampaignPerformanceView } from "@/features/campaign-performance";
-import {
-  ReplaceDataModal,
-  UploadDataModal,
-  UploadDataPlaceholder,
-} from "@/features/data-transfer";
-import { useUploadModal } from "@/app/composables/useUploadModal";
-import AiTools from "@/features/ai-tools/components/AiTools.vue";
-import {
-  Button,
-  ResponsiveDrawer,
-  SparklesIcon,
-  SplitPaneLayout,
-  UploadIcon,
-} from "@/ui";
+import { ref } from 'vue';
+
+import { useUploadModal } from '@/app/composables/useUploadModal';
+import { useDashboardOrchestratorStore } from '@/app/stores';
+
+import AiTools from '@/features/ai-tools/components/AiTools.vue';
+import { CampaignPerformanceView } from '@/features/campaign-performance';
+import { ReplaceDataModal, UploadDataModal, UploadDataPlaceholder } from '@/features/data-transfer';
+import { AppLogo, Button, ResponsiveDrawer, SparklesIcon, SplitPaneLayout, UploadIcon } from '@/ui';
 
 const dashboard = useDashboardOrchestratorStore();
 
@@ -33,34 +25,55 @@ const {
 <template>
   <div class="dashboard-shell">
     <header class="dashboard-header">
+      <AppLogo class="w-14" />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
-      <div class="shrink-0 mt-1 inline-action-float min-h-9">
-        <Button
-          v-if="hasCampaigns"
-          variant="outline"
-          size="small"
-          @click="requestUpload"
-        >
-          <UploadIcon />
-          Upload data
-        </Button>
-      </div>
+      <Button
+        v-if="hasCampaigns"
+        variant="outline"
+        size="small"
+        class="shrink-0"
+        @click="requestUpload"
+      >
+        <UploadIcon />
+        Upload data
+      </Button>
     </header>
 
-    <main v-if="!dashboard.hasCampaigns" class="dashboard-main">
+    <main
+      v-if="!dashboard.hasCampaigns"
+      class="dashboard-main"
+    >
       <UploadDataPlaceholder @upload="requestUpload" />
     </main>
 
     <SplitPaneLayout v-else>
-      <!-- TODO: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
-      <CampaignPerformanceView
-        :show-ai-button="dashboard.showAiButton"
-        :show-connected-dot="dashboard.showConnectedDot"
-        @ai-click="dashboard.openAiPanel"
-      />
-
+      <!-- Main Dashboard view: Add overview / period comparison / what-if simulator switching here when the comparison view is introduced. -->
+      <CampaignPerformanceView>
+        <template #header-action>
+          <div
+            v-if="dashboard.showAiButton"
+            class="relative shrink-0"
+          >
+            <Button
+              variant="primary"
+              size="small"
+              @click="dashboard.openAiPanel"
+            >
+              <SparklesIcon />AI
+            </Button>
+            <span
+              v-if="dashboard.showConnectedDot"
+              class="connected-status"
+              aria-hidden="true"
+            >
+              <span class="connected-status-dot" />
+            </span>
+          </div>
+        </template>
+      </CampaignPerformanceView>
+      <!-- AI Tools -->
       <template #aside>
         <ResponsiveDrawer
           :open="dashboard.aiPanelOpen"
@@ -72,7 +85,7 @@ const {
           <template #icon>
             <SparklesIcon class="mt-1" />
           </template>
-          <AiTools :panel-open="dashboard.aiPanelOpen" />
+          <AiTools />
         </ResponsiveDrawer>
       </template>
     </SplitPaneLayout>
@@ -97,10 +110,11 @@ const {
 .dashboard-header {
   @apply flex
     items-center
-    justify-between
-    gap-4
+    justify-start
+    gap-x-2
     shrink-0
-    px-6
+    px-4
+    sm:px-6
     py-2.5
     shadow-md
     border-b
@@ -110,28 +124,61 @@ const {
 }
 
 .dashboard-title {
-  @apply font-extrabold
-    m-0;
+  @apply font-semibold grow;
 
   .title-wrapper {
-    @apply bg-gradient-to-r
-
+    @apply bg-gradient-to-r 
     from-accent 
-    via-info 
     via-info-light 
-    via-primary 
+    via-info 
+    via-info-darker  
+    via-primary  
     via-primary-light 
-    to-secondary
-
+    to-secondary 
     bg-clip-text
     text-transparent
     text-lg
     leading-6
-    xs:text-2xl;
+    sm:text-xl
+    md:text-2xl md:tracking-wide
+    sr-only sm:not-sr-only;
   }
 }
 
 .dashboard-main {
   @apply flex flex-col justify-center items-center w-full mx-auto overflow-x-hidden overflow-y-hidden;
+}
+
+.connected-status {
+  @apply absolute
+    -top-1.5
+    -right-1.5
+    z-10
+    w-3.5
+    h-3.5
+    rounded-full
+    bg-surface
+    flex
+    items-center
+    justify-center
+    overflow-visible;
+
+  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.connected-status-dot {
+  @apply block w-2 h-2 rounded-full bg-success shadow-connection;
+}
+
+@keyframes dot-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

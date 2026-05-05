@@ -1,100 +1,120 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { Channel } from "@/shared/data";
-import { Badge, Button, Dropdown, DropdownPanel, FunnelIcon } from "@/ui";
-import ChannelFilterChips from "./ChannelFilterChips.vue";
+import { computed, ref, watch } from 'vue';
+
+import type { Channel } from '@/shared/data';
+import { Button, Chip, Dropdown, DropdownPanel } from '@/ui';
+
+import ChannelFilterChips from './ChannelFilterChips.vue';
 
 const props = defineProps<{
   channels: Channel[];
   selectedIds: string[];
-  hiddenCount: number;
+  overflowCount: number;
+  hiddenSelectedCount: number;
 }>();
 
 const emit = defineEmits<{
-  toggle: [id: string];
-  clear: [];
+  apply: [ids: string[]];
 }>();
 
+const anchorRef = ref<HTMLElement>();
 const dropdownOpen = ref(false);
-const triggerButtonRef = ref<InstanceType<typeof Button>>();
-const triggerButtonEl = computed(() => triggerButtonRef.value?.getRootEl());
+const pendingIds = ref<string[]>([]);
 
-const hasSelection = computed(() => props.selectedIds.length > 0);
-const selectedChannelCount = computed(() =>
-  hasSelection.value ? props.selectedIds.length : props.channels.length,
+watch(dropdownOpen, (open) => {
+  if (open) {
+    pendingIds.value = [...props.selectedIds];
+  }
+});
+
+const pendingHasSelection = computed(() => pendingIds.value.length > 0);
+const pendingAllActive = computed(() => !pendingHasSelection.value);
+const pendingSelectedCount = computed(() =>
+  pendingHasSelection.value ? pendingIds.value.length : props.channels.length,
 );
-const triggerLabel = computed(
-  () =>
-    `Open channel filter${
-      props.hiddenCount > 0 ? `, ${props.hiddenCount} selected not visible` : ""
-    }`,
-);
+const allOverflow = computed(() => props.overflowCount === props.channels.length);
+const totalCampaigns = computed(() => props.channels.reduce((s, c) => s + c.campaigns.length, 0));
 
 function toggleDropdown(): void {
   dropdownOpen.value = !dropdownOpen.value;
 }
+
+function handleToggle(id: string): void {
+  const next = pendingIds.value.includes(id)
+    ? pendingIds.value.filter((i) => i !== id)
+    : [...pendingIds.value, id];
+  pendingIds.value = next.length === props.channels.length ? [] : next;
+}
+
+function handleClear(): void {
+  pendingIds.value = [];
+}
+
+function applySelection(): void {
+  emit('apply', pendingIds.value);
+  dropdownOpen.value = false;
+}
 </script>
 
 <template>
-  <div class="relative shrink-0 z-[50]">
-    <Button
-      ref="triggerButtonRef"
-      variant="info-outline" 
-      icon-only
-      class="filter-trigger-button"
-      :class="{ active: dropdownOpen }"
+  <div
+    ref="anchorRef"
+    class="shrink-0"
+  >
+    <Chip
+      :active="dropdownOpen || hiddenSelectedCount > 0"
       :aria-expanded="dropdownOpen"
-      :aria-pressed="hasSelection"
-      :aria-label="triggerLabel"
+      :aria-haspopup="true"
+      :aria-label="`${overflowCount} more channels${hiddenSelectedCount > 0 ? `, ${hiddenSelectedCount} selected` : ''}`"
+      class="more-chip"
       @click="toggleDropdown"
       @keydown.escape.prevent="dropdownOpen = false"
     >
-      <span class="icon-wrapper">
-        <FunnelIcon class="!text-lg" />
-      </span>
-    </Button>
-
-    <Badge
-      v-if="hiddenCount > 0 && !dropdownOpen"
-      variant="info"
-      size="small"
-      class="selected-filters-badge"
-      >+{{ hiddenCount }}</Badge
+      <template v-if="allOverflow">{{ channels.length }} channels</template
+      ><template v-else>+{{ overflowCount }} more</template
+      ><template v-if="hiddenSelectedCount > 0"> · {{ hiddenSelectedCount }}</template>
+    </Chip>
+    <Dropdown
+      v-model:open="dropdownOpen"
+      :anchor="anchorRef"
+      :align="'right'"
+      :max-height="300"
     >
-
-    <Dropdown v-model:open="dropdownOpen" :anchor="triggerButtonEl" :gap="2">
       <DropdownPanel
         aria-label="Channel filters"
-        class="min-w-32 max-w-md pb-2.5 mr-6 max-h-[200px]"
+        class="filters-panel"
       >
-        <div class="dropdown-header">
-          <p class="dropdown-title">
-            <span class="text-sm">Channels</span>
-            <span class="selection-count"
-              >{{ selectedChannelCount }} / {{ channels.length }} selected</span
-            >
-          </p>
-          <Button
-            v-if="hasSelection"
-            variant="info-text-only"
-            size="small"
-            @click="emit('clear')"
+        <p class="panel-header">
+          <span class="panel-title">Channels</span>
+          <span class="selection-count"
+            >{{ pendingSelectedCount }} / {{ channels.length }} selected</span
           >
-            Show all
-          </Button>
-        </div>
-
-        <div
-          class="scrollbar-info-on-surface dropdown-content max-h-full overflow-auto"
-        >
+        </p>
+        <div class="scrollbar-stable-both scrollbar-on-surface panel-content">
           <ChannelFilterChips
             layout="plain"
             :channels="channels"
-            :total-campaigns="0"
-            :selected-ids="selectedIds"
-            :show-all="false"
-            @toggle="emit('toggle', $event)"
+            :total-campaigns="totalCampaigns"
+            :selected-ids="pendingIds"
+            :all-active="pendingAllActive"
+            :all-readonly="pendingAllActive"
+            @clear="handleClear"
+            @toggle="handleToggle"
           />
+        </div>
+        <div class="panel-footer">
+          <Button
+            variant="outline"
+            size="smaller"
+            @click="dropdownOpen = false"
+            >Cancel</Button
+          >
+          <Button
+            variant="primary"
+            size="smaller"
+            @click="applySelection"
+            >Apply</Button
+          >
         </div>
       </DropdownPanel>
     </Dropdown>
@@ -102,50 +122,47 @@ function toggleDropdown(): void {
 </template>
 
 <style lang="scss" scoped>
-.filter-trigger-button {
-  @apply max-h-8 max-w-8 min-h-8 min-w-8 p-0 mt-0.5;
-  > .icon-wrapper {
-    @apply inline-block w-full h-full flex items-center justify-center;
-  }
-
-  &.active {
-    @apply bg-info-darker border-info-darker text-info text-typography drop-shadow-sm;
-  }
+.more-chip {
+  @apply mt-0.5;
 }
 
-.selected-filters-badge {
-  @apply absolute -top-2.5 -right-2.5 min-w-6 max-h-6;
-
-  &:deep(.badge-body) {
-    @apply font-bold;
-  }
+.filters-panel {
+  @apply min-w-32  
+    w-full
+    max-w-[90%]
+    max-h-96
+    grid
+    grid-cols-1
+    grid-rows-[min-content_minmax(0,1fr)_min-content];
 }
 
-.dropdown-header {
-  @apply sticky top-0
-    flex items-center justify-between
-    px-3 py-2
-    bg-surface-elevated
-    border-b
-    h-11;
-}
-
-.dropdown-title {
+.panel-header {
   @apply flex
     items-center
-    gap-2
-    text-xs
-    font-semibold
-    text-typography-muted
-    capitalize
-    tracking-wide;
+    justify-between
+    px-3
+    py-2
+    border-b
+    h-11;
+
+  .panel-title {
+    @apply text-sm font-semibold text-typography-muted capitalize tracking-wide;
+  }
+
+  .selection-count {
+    @apply text-xs text-typography-subtle font-medium normal-case whitespace-nowrap;
+  }
 }
 
-.selection-count {
-  @apply text-typography-subtle font-medium normal-case whitespace-nowrap;
+.panel-content {
+  @apply w-full h-full overflow-y-auto py-2 px-0;
 }
 
-// .dropdown-content {
-//   @apply max-h-[320px] overflow-y-auto;
-// }
+.panel-footer {
+  @apply flex
+  items-center
+  justify-end gap-6
+  px-3 py-2 
+  border-t;
+}
 </style>

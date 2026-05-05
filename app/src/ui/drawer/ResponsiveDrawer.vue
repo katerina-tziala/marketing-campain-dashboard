@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
-import ModalHeader from "../modal/ModalHeader.vue";
-import { useModalAria } from "../modal/composables";
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
-type DrawerSide = "left" | "right";
+import { useFocusTrap, useModalAria } from '../accessibility';
+import ModalHeader from '../modal/ModalHeader.vue';
+
+type DrawerSide = 'left' | 'right';
 
 const props = withDefaults(
   defineProps<{
@@ -13,8 +14,8 @@ const props = withDefaults(
     closeLabel?: string;
   }>(),
   {
-    side: "right",
-    closeLabel: "Close drawer",
+    side: 'right',
+    closeLabel: 'Close drawer',
   },
 );
 
@@ -24,129 +25,85 @@ const emit = defineEmits<{
 
 const isDesktop = ref(false);
 const drawerModalRef = ref<HTMLElement | null>(null);
-const previouslyFocusedElement = ref<HTMLElement | null>(null);
 const { titleId, dialogAria } = useModalAria();
+const { scheduleFocusFirst, trapTab, saveFocus, restoreFocus, lockScroll, unlockScroll } =
+  useFocusTrap(drawerModalRef);
 let desktopMediaQuery: MediaQueryList | null = null;
 
 const drawerClass = computed(() => ({
   open: props.open,
-  left: props.side === "left",
-  right: props.side === "right",
+  left: props.side === 'left',
+  right: props.side === 'right',
 }));
 const modalOpen = computed(() => props.open && !isDesktop.value);
-
-const focusableSelector = [
-  "a[href]",
-  "button:not([disabled])",
-  "textarea:not([disabled])",
-  "input:not([disabled])",
-  "select:not([disabled])",
-  "[tabindex]:not([tabindex='-1'])",
-].join(",");
 
 function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
   isDesktop.value = e.matches;
 }
 
-function getFocusableElements(): HTMLElement[] {
-  if (!drawerModalRef.value) return [];
-
-  return Array.from(
-    drawerModalRef.value.querySelectorAll<HTMLElement>(focusableSelector),
-  ).filter((element) => element.offsetParent !== null);
-}
-
-function focusInitialTarget(): void {
-  const drawerModal = drawerModalRef.value;
-  if (!drawerModal) return;
-
-  const target =
-    drawerModal.querySelector<HTMLElement>("[data-modal-body]") ??
-    getFocusableElements()[0] ??
-    drawerModal;
-
-  target.focus();
-}
-
-async function scheduleInitialFocus(): Promise<void> {
-  await nextTick();
-  focusInitialTarget();
-}
-
 function onKeydown(e: KeyboardEvent): void {
-  if (!props.open) return;
-
-  if (e.key === "Escape") {
-    emit("close");
+  if (!props.open) {
     return;
   }
 
-  if (!modalOpen.value || e.key !== "Tab") return;
-
-  const focusableElements = getFocusableElements();
-  if (focusableElements.length === 0) {
-    e.preventDefault();
-    focusInitialTarget();
+  if (e.key === 'Escape') {
+    emit('close');
     return;
   }
 
-  const firstElement = focusableElements[0];
-  const lastElement = focusableElements[focusableElements.length - 1];
-  const activeElement = document.activeElement;
-
-  if (e.shiftKey && activeElement === firstElement) {
-    e.preventDefault();
-    lastElement.focus();
+  if (!modalOpen.value) {
     return;
   }
-
-  if (!e.shiftKey && activeElement === lastElement) {
-    e.preventDefault();
-    firstElement.focus();
-  }
+  trapTab(e);
 }
 
 onMounted(() => {
-  document.addEventListener("keydown", onKeydown);
+  document.addEventListener('keydown', onKeydown);
 
-  desktopMediaQuery = window.matchMedia("(min-width: 1024px)");
+  desktopMediaQuery = window.matchMedia('(min-width: 1024px)');
   syncViewport(desktopMediaQuery);
-  desktopMediaQuery.addEventListener("change", syncViewport);
+  desktopMediaQuery.addEventListener('change', syncViewport);
 });
 
 onUnmounted(() => {
-  document.removeEventListener("keydown", onKeydown);
-  desktopMediaQuery?.removeEventListener("change", syncViewport);
+  document.removeEventListener('keydown', onKeydown);
+  desktopMediaQuery?.removeEventListener('change', syncViewport);
 });
 
-watch(
-  modalOpen,
-  (open) => {
-    if (open) {
-      previouslyFocusedElement.value =
-        document.activeElement as HTMLElement | null;
-      document.body.style.overflow = "hidden";
-      void scheduleInitialFocus();
-      return;
-    }
+watch(modalOpen, (open) => {
+  if (open) {
+    saveFocus();
+    lockScroll();
+    void scheduleFocusFirst();
+    return;
+  }
 
-    document.body.style.overflow = "";
-    previouslyFocusedElement.value?.focus();
-    previouslyFocusedElement.value = null;
-  },
-);
+  unlockScroll();
+  restoreFocus();
+});
 </script>
 
 <template>
-  <div class="responsive-drawer" :class="drawerClass" :aria-hidden="!open">
-    <aside v-if="isDesktop" class="responsive-drawer-panel" :aria-label="title">
+  <div
+    class="responsive-drawer"
+    :class="drawerClass"
+    :aria-hidden="!open"
+  >
+    <aside
+      v-if="isDesktop"
+      class="responsive-drawer-panel"
+      :aria-label="title"
+    >
       <ModalHeader
         :title="title"
         :title-id="titleId"
         :close-label="closeLabel"
         @close="emit('close')"
       >
-        <template v-if="$slots.icon" #icon>
+        <template
+          v-if="$slots.icon"
+          #icon
+        >
           <slot name="icon" />
         </template>
         <template #header-actions>
@@ -177,14 +134,21 @@ watch(
           :close-label="closeLabel"
           @close="emit('close')"
         >
-          <template v-if="$slots.icon" #icon>
+          <template
+            v-if="$slots.icon"
+            #icon
+          >
             <slot name="icon" />
           </template>
           <template #header-actions>
             <slot name="header-actions" />
           </template>
         </ModalHeader>
-        <div class="responsive-drawer-content" data-modal-body tabindex="-1">
+        <div
+          class="responsive-drawer-content"
+          data-modal-body
+          tabindex="-1"
+        >
           <slot />
         </div>
       </section>

@@ -1,26 +1,21 @@
-import { toFinite } from '@/shared/utils'
+import { toFinite } from '@/shared/utils';
+
 import type {
   ChannelSignalThresholds,
   ChannelSummary,
   InefficientChannelSignal,
   ScalingCandidateSignal,
-} from '../../types'
-import { rankByAllocationGapDesc } from '../ranking'
-import {
-  DEFAULT_CHANNEL_SIGNAL_THRESHOLDS,
-  SIGNAL_REASONS,
-} from './constants'
-import {
-  isOverfundedUnderperformer,
-  isUnderfundedOutperformer,
-} from '../checkers'
+} from '../../types';
+import { isOverfundedUnderperformer, isUnderfundedOutperformer } from '../checkers';
+import { rankByAllocationGapDesc } from '../ranking';
+import { DEFAULT_CHANNEL_SIGNAL_THRESHOLDS, SIGNAL_REASONS } from './constants';
 
 function isInefficientChannel(
   channel: ChannelSummary,
   portfolioRoi: number | null,
   thresholds: ChannelSignalThresholds,
 ): boolean {
-  return isOverfundedUnderperformer(channel, portfolioRoi, thresholds)
+  return isOverfundedUnderperformer(channel, portfolioRoi, thresholds);
 }
 
 function isChannelScalingOpportunity(
@@ -28,7 +23,7 @@ function isChannelScalingOpportunity(
   portfolioRoi: number | null,
   thresholds: ChannelSignalThresholds,
 ): boolean {
-  return isUnderfundedOutperformer(channel, portfolioRoi, thresholds)
+  return isUnderfundedOutperformer(channel, portfolioRoi, thresholds);
 }
 
 export function getInefficientChannels(
@@ -37,19 +32,21 @@ export function getInefficientChannels(
   thresholds: ChannelSignalThresholds = DEFAULT_CHANNEL_SIGNAL_THRESHOLDS,
 ): InefficientChannelSignal[] {
   const inefficientChannels = channels
-    .filter(channel => isInefficientChannel(channel, portfolioRoi, thresholds))
-    .map(({ channel, budgetShare, revenueShare, allocationGap, efficiencyGap, gapAmount, roi }) => ({
-      channel,
-      budgetShare,
-      revenueShare,
-      allocationGap,
-      efficiencyGap,
-      gapAmount,
-      roi: toFinite(roi),
-      reason: SIGNAL_REASONS.channel.inefficient,
-    }))
+    .filter((channel) => isInefficientChannel(channel, portfolioRoi, thresholds))
+    .map(
+      ({ channel, budgetShare, revenueShare, allocationGap, efficiencyGap, gapAmount, roi }) => ({
+        channel,
+        budgetShare,
+        revenueShare,
+        allocationGap,
+        efficiencyGap,
+        gapAmount,
+        roi: toFinite(roi),
+        reason: SIGNAL_REASONS.channel.inefficient,
+      }),
+    );
 
-  return rankByAllocationGapDesc(inefficientChannels)
+  return rankByAllocationGapDesc(inefficientChannels);
 }
 
 export function toChannelScalingSignals(
@@ -58,16 +55,18 @@ export function toChannelScalingSignals(
   thresholds: ChannelSignalThresholds = DEFAULT_CHANNEL_SIGNAL_THRESHOLDS,
 ): ScalingCandidateSignal[] {
   return channels
-    .filter(channel => isChannelScalingOpportunity(channel, portfolioRoi, thresholds))
-    .map(({ channel, roi, budgetShare, revenueShare, allocationGap, efficiencyGap, gapAmount }) => ({
-      name: channel,
-      type: 'channel' as const,
-      roi: roi!,
-      budgetShare,
-      revenueShare,
-      allocationGap,
-      efficiencyGap,
-      gapAmount,
-      reason: SIGNAL_REASONS.channel.scalingOpportunity,
-    }))
+    .filter((channel) => isChannelScalingOpportunity(channel, portfolioRoi, thresholds))
+    .map(
+      ({ channel, roi, budgetShare, revenueShare, allocationGap, efficiencyGap, gapAmount }) => ({
+        name: channel,
+        type: 'channel' as const,
+        roi: roi ?? 0,
+        budgetShare,
+        revenueShare,
+        allocationGap,
+        efficiencyGap,
+        gapAmount,
+        reason: SIGNAL_REASONS.channel.scalingOpportunity,
+      }),
+    );
 }

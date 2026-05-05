@@ -1,19 +1,18 @@
-import type { ChannelClassificationThresholds, ChannelSummary } from '../../types'
-import type { ChannelGroups } from '../../types'
-import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking'
-import { hasBudgetShareLead, hasRoiBelowPortfolio } from '../checkers'
+import type { ChannelClassificationThresholds, ChannelGroups, ChannelSummary } from '../../types';
+import { hasBudgetShareLead, hasRoiBelowPortfolio } from '../checkers';
+import { rankByAllocationGapDesc, rankByBudgetShareDesc, rankByRoiDesc } from '../ranking';
 import {
   hasFunnelLeak,
   hasPositiveUnderperformingRoi,
   hasRoiAbovePortfolioFactor,
-} from './classification-checkers'
-import { DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS } from './constants'
-import { getFunnelMedians } from './classification-utils'
+} from './classification-checkers';
+import { getFunnelMedians } from './classification-utils';
+import { DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS } from './constants';
 
 // ── Classification predicates ─────────────────────────────────────────────────
 
 function hasRevenueShareAtLeastBudgetShare(channel: ChannelSummary): boolean {
-  return channel.efficiencyGap >= 0
+  return channel.efficiencyGap >= 0;
 }
 
 /**
@@ -29,7 +28,7 @@ function isStrong(
   return (
     hasRoiAbovePortfolioFactor(channel, portfolioRoi, thresholds.topRoiFactor) &&
     hasRevenueShareAtLeastBudgetShare(channel)
-  )
+  );
 }
 
 /**
@@ -39,9 +38,11 @@ function isStrong(
  * under-investment rather than weakness.
  */
 function isOpportunity(channel: ChannelSummary, portfolioRoi: number | null): boolean {
-  if (channel.roi === null) return false
-  const refRoi = portfolioRoi ?? 0
-  return channel.roi >= refRoi && hasRevenueShareAtLeastBudgetShare(channel)
+  if (channel.roi === null) {
+    return false;
+  }
+  const refRoi = portfolioRoi ?? 0;
+  return channel.roi >= refRoi && hasRevenueShareAtLeastBudgetShare(channel);
 }
 
 /**
@@ -57,7 +58,7 @@ function isWeak(
   return (
     hasBudgetShareLead(channel, thresholds.gapThreshold) &&
     hasRoiBelowPortfolio(channel, portfolioRoi ?? 0)
-  )
+  );
 }
 
 /**
@@ -75,7 +76,7 @@ function isWatch(
   return (
     hasFunnelLeak(channel, medianCtr, medianCvr, thresholds) ||
     hasPositiveUnderperformingRoi(channel, portfolioRoi, thresholds)
-  )
+  );
 }
 
 // ── Classifier ────────────────────────────────────────────────────────────────
@@ -93,22 +94,22 @@ export function classifyChannels(
   portfolioRoi: number | null,
   thresholds: ChannelClassificationThresholds = DEFAULT_CHANNEL_CLASSIFICATION_THRESHOLDS,
 ): ChannelGroups {
-  const { medianCtr, medianCvr } = getFunnelMedians(channels)
+  const { medianCtr, medianCvr } = getFunnelMedians(channels);
 
-  const strong: ChannelSummary[] = []
-  const opportunity: ChannelSummary[] = []
-  const weak: ChannelSummary[] = []
-  const watch: ChannelSummary[] = []
+  const strong: ChannelSummary[] = [];
+  const opportunity: ChannelSummary[] = [];
+  const weak: ChannelSummary[] = [];
+  const watch: ChannelSummary[] = [];
 
   for (const channel of channels) {
     if (isStrong(channel, portfolioRoi, thresholds)) {
-      strong.push(channel)
+      strong.push(channel);
     } else if (isOpportunity(channel, portfolioRoi)) {
-      opportunity.push(channel)
+      opportunity.push(channel);
     } else if (isWeak(channel, portfolioRoi, thresholds)) {
-      weak.push(channel)
+      weak.push(channel);
     } else if (isWatch(channel, portfolioRoi, medianCtr, medianCvr, thresholds)) {
-      watch.push(channel)
+      watch.push(channel);
     }
   }
 
@@ -117,5 +118,5 @@ export function classifyChannels(
     opportunity: rankByRoiDesc(opportunity),
     weak: rankByAllocationGapDesc(weak),
     watch: rankByBudgetShareDesc(watch),
-  }
+  };
 }

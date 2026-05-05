@@ -1,2 +1,2 @@
-export * from './campaign'
-export * from './channel'
+export * from './campaign';
+export * from './channel';

@@ -14,5 +14,6 @@
 
 .split-pane-main {
   @apply flex flex-col w-full mx-auto overflow-x-hidden overflow-y-hidden;
+  @include cq-container('main');
 }
 </style>

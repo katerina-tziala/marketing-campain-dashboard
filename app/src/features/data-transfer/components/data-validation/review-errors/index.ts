@@ -1,1 +1,1 @@
-export { default as ReviewErrorsComponent } from './ReviewErrorsComponent.vue'
+export { default as ReviewErrorsComponent } from './ReviewErrorsComponent.vue';

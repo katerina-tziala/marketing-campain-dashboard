@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import type { FileFieldValidation } from "./form.types";
-import { validateFile } from "./validation";
-import UploadIcon from "../icons/UploadIcon.vue";
+import { computed, ref } from 'vue';
+
+import UploadIcon from '../icons/UploadIcon.vue';
+import type { FileFieldValidation } from './form.types';
+import { validateFile } from './validation';
 
 const props = defineProps<{
   modelValue: File | null;
@@ -17,19 +18,21 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  "update:modelValue": [value: File | null];
+  'update:modelValue': [value: File | null];
   validate: [result: FileFieldValidation];
 }>();
 
 const dropzoneRef = ref<HTMLButtonElement | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const rejectedFileName = ref("");
+const rejectedFileName = ref('');
 const touched = ref(false);
 const skipNextBlurValidation = ref(false);
 const displayFileName = computed(() => props.modelValue?.name ?? rejectedFileName.value);
 
 function open(): void {
-  if (props.disabled) return;
+  if (props.disabled) {
+    return;
+  }
   fileInputRef.value?.click();
 }
 
@@ -39,7 +42,7 @@ function validate(value = props.modelValue): FileFieldValidation {
     required: props.required,
     maxSizeBytes: props.maxSizeBytes,
   });
-  emit("validate", result);
+  emit('validate', result);
   return result;
 }
 
@@ -47,8 +50,8 @@ function selectFile(file: File): void {
   const result = validate(file);
   touched.value = true;
   skipNextBlurValidation.value = true;
-  rejectedFileName.value = result.valid ? "" : file.name;
-  emit("update:modelValue", result.valid ? file : null);
+  rejectedFileName.value = result.valid ? '' : file.name;
+  emit('update:modelValue', result.valid ? file : null);
   dropzoneRef.value?.blur();
 }
 
@@ -67,15 +70,21 @@ function handleBlur(): void {
 }
 
 function onDrop(e: DragEvent): void {
-  if (props.disabled) return;
+  if (props.disabled) {
+    return;
+  }
   const f = e.dataTransfer?.files[0];
-  if (f) selectFile(f);
+  if (f) {
+    selectFile(f);
+  }
 }
 
 function onChange(e: Event): void {
   const input = e.target as HTMLInputElement;
-  if (input.files?.[0]) selectFile(input.files[0]);
-  input.value = "";
+  if (input.files?.[0]) {
+    selectFile(input.files[0]);
+  }
+  input.value = '';
 }
 
 defineExpose({
@@ -102,11 +111,16 @@ defineExpose({
     @blur="handleBlur"
   >
     <UploadIcon class="text-xl mb-2" />
-    <span v-if="displayFileName" class="block text-sm font-medium break-words">{{
-      displayFileName
-    }}</span>
-    <span v-else class="block text-sm">
-      {{ hint ?? "Drag & drop a file here or browse" }}
+    <span
+      v-if="displayFileName"
+      class="block text-sm font-medium break-words"
+      >{{ displayFileName }}</span
+    >
+    <span
+      v-else
+      class="block text-sm"
+    >
+      {{ hint ?? 'Drag & drop a file here or browse' }}
     </span>
   </button>
   <input

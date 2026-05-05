@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Card, MetaRow } from "@/ui";
+import { Card, MetaRow } from '@/ui';
 
 defineProps<{
   label: string;
@@ -10,8 +10,13 @@ defineProps<{
 
 <template>
   <Card class="kpi-card">
-    <h3 class="kpi-label" :title="labelTitle">{{ label }}</h3>
-    <p class="kpi-value">{{ value ?? "N/A" }}</p>
+    <h3
+      class="kpi-label"
+      :title="labelTitle"
+    >
+      {{ label }}
+    </h3>
+    <p class="kpi-value">{{ value ?? 'N/A' }}</p>
     <MetaRow
       v-if="$slots.default"
       separator="divider"
@@ -33,7 +38,11 @@ defineProps<{
 }
 
 .kpi-value {
-  @apply text-3xl font-medium text-on-primary;
+  @apply text-2xl font-medium text-on-primary;
+
+  @include cq-up(cq-540, 'kpis') {
+    @apply text-3xl;
+  }
 }
 
 .kpi-meta {

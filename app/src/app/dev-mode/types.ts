@@ -1,10 +1,10 @@
 export type DevModeConfig = {
-  enabled: boolean
+  enabled: boolean;
   portfolio: {
-    seedMockCampaigns: boolean
-  }
+    seedMockCampaigns: boolean;
+  };
   aiTools: {
-    analysisCycle: boolean
-    connectionCycle: boolean
-  }
-}
+    analysisCycle: boolean;
+    connectionCycle: boolean;
+  };
+};

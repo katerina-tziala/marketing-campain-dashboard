@@ -1,15 +1,13 @@
 import type {
   Campaign,
-  CampaignRawMetrics,
   CampaignPerformance,
+  CampaignRawMetrics,
   Channel,
   PerformanceMetrics,
-} from '@/shared/data'
-import type {
-  PortfolioKPIs,
-  ShareEfficiency,
-} from '../types'
-import { computeRoundedRatioOrNull, safeDivide } from '@/shared/utils'
+} from '@/shared/data';
+import { computeRoundedRatioOrNull, safeDivide } from '@/shared/utils';
+
+import type { PortfolioKPIs, ShareEfficiency } from '../types';
 
 export function computePerformanceMetrics(campaign: CampaignRawMetrics): PerformanceMetrics {
   const { budget, revenue, impressions, clicks, conversions } = campaign;
@@ -19,7 +17,7 @@ export function computePerformanceMetrics(campaign: CampaignRawMetrics): Perform
     ctr: computeRoundedRatioOrNull(clicks, impressions),
     cvr: computeRoundedRatioOrNull(conversions, clicks),
     cpa: computeRoundedRatioOrNull(budget, conversions, 2),
-  }
+  };
 }
 
 export function computeShareEfficiency(
@@ -27,9 +25,9 @@ export function computeShareEfficiency(
   totalBudget: number,
   totalRevenue: number,
 ): ShareEfficiency {
-  const budgetShare = safeDivide(item.budget, totalBudget)
-  const revenueShare = safeDivide(item.revenue, totalRevenue)
-  const allocationGap = budgetShare - revenueShare
+  const budgetShare = safeDivide(item.budget, totalBudget);
+  const revenueShare = safeDivide(item.revenue, totalRevenue);
+  const allocationGap = budgetShare - revenueShare;
 
   return {
     budgetShare,
@@ -37,11 +35,11 @@ export function computeShareEfficiency(
     allocationGap,
     efficiencyGap: -allocationGap,
     gapAmount: item.revenue - item.budget,
-  }
+  };
 }
 
 export function toCampaignPerformance(campaign: Campaign): CampaignPerformance {
-  return { ...campaign, ...computePerformanceMetrics(campaign) }
+  return { ...campaign, ...computePerformanceMetrics(campaign) };
 }
 
 export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): CampaignRawMetrics {
@@ -54,7 +52,7 @@ export function aggregateCampaignMetrics(campaigns: Campaign[] | Channel[]): Cam
       conversions: acc.conversions + campaign.conversions,
     }),
     { budget: 0, revenue: 0, impressions: 0, clicks: 0, conversions: 0 },
-  )
+  );
 }
 
 export function aggregateCampaignOutcomes(
@@ -66,12 +64,18 @@ export function aggregateCampaignOutcomes(
       conversions: totals.conversions + campaign.conversions,
     }),
     { revenue: 0, conversions: 0 },
-  )
+  );
 }
 
 export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
-  const { budget, revenue, impressions, clicks, conversions } = aggregateCampaignMetrics(channels)
-  const { roi, ctr, cvr, cpa } = computePerformanceMetrics({ budget, revenue, impressions, clicks, conversions })
+  const { budget, revenue, impressions, clicks, conversions } = aggregateCampaignMetrics(channels);
+  const { roi, ctr, cvr, cpa } = computePerformanceMetrics({
+    budget,
+    revenue,
+    impressions,
+    clicks,
+    conversions,
+  });
   return {
     totalBudget: budget,
     totalRevenue: revenue,
@@ -82,5 +86,5 @@ export function computePortfolioKPIs(channels: Channel[]): PortfolioKPIs {
     aggregatedCtr: ctr,
     aggregatedCvr: cvr,
     aggregatedCpa: cpa,
-  }
+  };
 }

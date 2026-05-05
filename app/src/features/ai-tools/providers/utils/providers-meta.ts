@@ -1,11 +1,14 @@
-import type { AiProviderType } from '../../types'
+import type { AiProviderType } from '../../types';
 
 export const PROVIDER_LABELS: Record<AiProviderType, string> = {
   gemini: 'Google Gemini',
   groq: 'Groq',
-}
+};
 
-export const PROVIDER_HELP: Record<AiProviderType, { title: string; steps: string[]; note?: string }> = {
+export const PROVIDER_HELP: Record<
+  AiProviderType,
+  { title: string; steps: string[]; note?: string }
+> = {
   groq: {
     title: 'How to get your Groq API key',
     steps: [
@@ -25,29 +28,9 @@ export const PROVIDER_HELP: Record<AiProviderType, { title: string; steps: strin
       'Copy the key and paste it into the API key field above',
     ],
   },
-}
+};
 
 export const PROVIDER_OPTIONS = [
   { value: 'groq', label: PROVIDER_LABELS.groq },
   { value: 'gemini', label: PROVIDER_LABELS.gemini },
-]
-
-export const GROQ_PROVIDER_RULES: string[] = [
-  'Provider is Groq.',
-  'Infer displayName from the model identifier only.',
-  'Infer family from the model identifier only.',
-  'Use short, standardized family names such as "Llama", "Gemma", "Qwen", "Mixtral", or "Other".',
-  'If family cannot be clearly inferred, return "Other".',
-  'Generate concise, readable display names suitable for UI display.',
-  'Do not use marketing language.',
-  'Do not modify the id.',
-]
-
-export const GEMINI_PROVIDER_RULES: string[] = [
-  'Provider is Gemini.',
-  'Infer displayName from the model identifier only.',
-  'Infer family as "Gemini".',
-  'Generate concise, readable display names suitable for UI display.',
-  'Do not use marketing language.',
-  'Do not modify the id.',
-]
+];

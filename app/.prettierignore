@@ -1,0 +1,12 @@
+dist
+coverage
+node_modules
+package-lock.json
+*.log
+
+src/assets/Android
+src/assets/Chrome_Extension
+src/assets/iOS
+src/assets/macOS
+src/assets/tvOS
+src/assets/watchOS

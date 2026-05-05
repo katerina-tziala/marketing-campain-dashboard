@@ -1,17 +1,17 @@
+import { computedMedianOrNull } from '@/shared/utils';
+
 import type {
   CampaignClassificationThresholds,
   CampaignSummary,
   DynamicClassificationThresholds,
-} from '../../types'
-import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from './constants'
-import { computedMedianOrNull } from '@/shared/utils'
-import { aggregateCampaignOutcomes } from '../metrics'
+} from '../../types';
+import { aggregateCampaignOutcomes } from '../metrics';
+import { DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS } from './constants';
 
 // ── Shared math helpers ───────────────────────────────────────────────────────
 
-
 function filterOutNullish(values: Array<number | null>): number[] {
-  return values.filter((value): value is number => value !== null)
+  return values.filter((value): value is number => value !== null);
 }
 
 /**
@@ -20,15 +20,15 @@ function filterOutNullish(values: Array<number | null>): number[] {
  * for funnel-leak detection. Returns null for each metric when no non-null values exist.
  */
 export function getFunnelMedians(items: Array<{ ctr: number | null; cvr: number | null }>): {
-  medianCtr: number | null
-  medianCvr: number | null
+  medianCtr: number | null;
+  medianCvr: number | null;
 } {
-  const ctrs = filterOutNullish(items.map(item => item.ctr))
-  const cvrs = filterOutNullish(items.map(item => item.cvr))
+  const ctrs = filterOutNullish(items.map((item) => item.ctr));
+  const cvrs = filterOutNullish(items.map((item) => item.cvr));
   return {
     medianCtr: computedMedianOrNull(ctrs),
     medianCvr: computedMedianOrNull(cvrs),
-  }
+  };
 }
 
 /**
@@ -41,7 +41,7 @@ export function getDynamicThresholds(
   campaigns: CampaignSummary[],
   thresholds: CampaignClassificationThresholds = DEFAULT_CAMPAIGN_CLASSIFICATION_THRESHOLDS,
 ): DynamicClassificationThresholds {
-  const { revenue, conversions } = aggregateCampaignOutcomes(campaigns)
+  const { revenue, conversions } = aggregateCampaignOutcomes(campaigns);
 
   return {
     minRevenue: Math.max(revenue * thresholds.minRevenueShare, thresholds.minRevenueFloor),
@@ -49,5 +49,5 @@ export function getDynamicThresholds(
       conversions * thresholds.minConversionShare,
       thresholds.minConversionFloor,
     ),
-  }
+  };
 }

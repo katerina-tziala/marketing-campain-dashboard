@@ -8,7 +8,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
-    style="width: 1em; height: 1em; display: inline-block;"
+    style="width: 1em; height: 1em; display: inline-block"
   >
     <polyline points="20 6 9 17 4 12" />
   </svg>

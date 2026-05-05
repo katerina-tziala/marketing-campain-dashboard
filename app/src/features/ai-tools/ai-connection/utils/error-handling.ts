@@ -1,21 +1,21 @@
-import type { AiConnectionErrorCode, AiProviderType } from '../../types'
-import { PROVIDER_LABELS, normalizeConnectionError } from '../../providers/utils'
+import { normalizeConnectionError, PROVIDER_LABELS } from '../../providers/utils';
+import type { AiConnectionErrorCode, AiProviderType } from '../../types';
 
 type ConnectionErrorEntry = {
-  message: (provider: AiProviderType) => string
-  hint: string
-}
+  message: (provider: AiProviderType) => string;
+  hint: string;
+};
 
 export const CONNECTION_ERRORS: Record<AiConnectionErrorCode, ConnectionErrorEntry> = {
   'invalid-key': {
     message: (p) => `Your ${PROVIDER_LABELS[p]} API key doesn't seem to be working`,
     hint: "Make sure you copied the full key and that it hasn't expired or been revoked",
   },
-  'network': {
+  network: {
     message: () => "We couldn't reach the server",
     hint: 'Check your internet connection and try again',
   },
-  'timeout': {
+  timeout: {
     message: () => 'The connection took too long',
     hint: 'This can happen on slow connections. Try again in a moment',
   },
@@ -43,14 +43,14 @@ export const CONNECTION_ERRORS: Record<AiConnectionErrorCode, ConnectionErrorEnt
     message: () => 'Something unexpected came back from the provider',
     hint: 'Please try again. If it keeps happening, switch to a different provider',
   },
-  'unknown': {
+  unknown: {
     message: (p) => `Something went wrong while connecting to ${PROVIDER_LABELS[p]}`,
     hint: 'Please try again. If the problem continues, switch to a different provider',
   },
-}
+};
 
 export function getErrorCode(error: unknown): AiConnectionErrorCode {
-  const normalized = normalizeConnectionError(error)
-  const code = normalized.message
-  return code in CONNECTION_ERRORS ? (code as AiConnectionErrorCode) : 'unknown'
+  const normalized = normalizeConnectionError(error);
+  const code = normalized.message;
+  return code in CONNECTION_ERRORS ? (code as AiConnectionErrorCode) : 'unknown';
 }

@@ -1,4 +1,4 @@
-export * from './types'
-export * from './utils'
-export { runProviderPrompt } from './run-provider-prompt'
-export { connectProvider } from './connect-provider'
+export { connectProvider } from './connect-provider';
+export { runProviderPrompt } from './run-provider-prompt';
+export * from './types';
+export * from './utils';

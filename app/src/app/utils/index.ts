@@ -1,1 +1,1 @@
-export { mapAnalysisContext } from './map-analysis-context'
+export { mapAnalysisContext } from './map-analysis-context';

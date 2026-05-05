@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import Button from "../primitives/Button.vue";
-import EyeIcon from "../icons/EyeIcon.vue";
-import EyeOffIcon from "../icons/EyeOffIcon.vue";
+import { ref } from 'vue';
 
-const props = withDefaults(
+import EyeIcon from '../icons/EyeIcon.vue';
+import EyeOffIcon from '../icons/EyeOffIcon.vue';
+import Button from '../primitives/Button.vue';
+
+withDefaults(
   defineProps<{
     modelValue: string;
     id?: string;
@@ -15,14 +16,16 @@ const props = withDefaults(
     describedBy?: string;
   }>(),
   {
-    autocomplete: "off",
+    id: undefined,
+    placeholder: undefined,
+    autocomplete: 'off',
     invalid: false,
     describedBy: undefined,
   },
 );
 
 defineEmits<{
-  "update:modelValue": [value: string];
+  'update:modelValue': [value: string];
   blur: [];
 }>();
 
@@ -61,9 +64,7 @@ function handleToggleClick(): void {
       spellcheck="false"
       :aria-invalid="invalid ? 'true' : undefined"
       :aria-describedby="describedBy"
-      @input="
-        $emit('update:modelValue', ($event.target as HTMLInputElement).value)
-      "
+      @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @blur="$emit('blur')"
     />
     <Button
@@ -78,8 +79,14 @@ function handleToggleClick(): void {
       @pointerdown="handleTogglePointerDown"
       @click="handleToggleClick"
     >
-      <EyeOffIcon v-if="visible" class="!text-xl" />
-      <EyeIcon class="!text-xl" v-else />
+      <EyeOffIcon
+        v-if="visible"
+        class="!text-xl"
+      />
+      <EyeIcon
+        v-else
+        class="!text-xl"
+      />
     </Button>
   </div>
 </template>

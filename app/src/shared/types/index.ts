@@ -1,1 +1,1 @@
-export * from './async-status'
+export * from './async-status';

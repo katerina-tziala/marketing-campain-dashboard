@@ -3,7 +3,7 @@ import type {
   FunnelLeakThresholds,
   RoiComparable,
   UnderperformingRoiThresholds,
-} from '../../types'
+} from '../../types';
 
 export function hasFunnelLeak(
   item: FunnelComparable,
@@ -18,7 +18,7 @@ export function hasFunnelLeak(
     item.cvr !== null &&
     item.ctr > medianCtr * thresholds.watchCtrFactor &&
     item.cvr < medianCvr * thresholds.watchCvrFactor
-  )
+  );
 }
 
 export function hasPositiveUnderperformingRoi(
@@ -26,9 +26,9 @@ export function hasPositiveUnderperformingRoi(
   portfolioRoi: number | null,
   thresholds: UnderperformingRoiThresholds,
 ): boolean {
-  const roi = item.roi !== null ? item.roi : -1
-  const refRoi = portfolioRoi ?? 0
-  return roi >= 0 && roi < refRoi * thresholds.watchRoiFactor
+  const roi = item.roi !== null ? item.roi : -1;
+  const refRoi = portfolioRoi ?? 0;
+  return roi >= 0 && roi < refRoi * thresholds.watchRoiFactor;
 }
 
 export function hasRoiAbovePortfolioFactor(
@@ -36,5 +36,5 @@ export function hasRoiAbovePortfolioFactor(
   portfolioRoi: number | null,
   factor: number,
 ): boolean {
-  return item.roi !== null && portfolioRoi !== null && item.roi > portfolioRoi * factor
+  return item.roi !== null && portfolioRoi !== null && item.roi > portfolioRoi * factor;
 }

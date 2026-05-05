@@ -8,9 +8,13 @@
     stroke-linecap="round"
     stroke-linejoin="round"
     aria-hidden="true"
-    style="width: 1em; height: 1em; display: inline-block;"
+    style="width: 1em; height: 1em; display: inline-block"
   >
-    <circle cx="12" cy="12" r="10" />
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+    />
     <polyline points="12 6 12 12 16 14" />
   </svg>
 </template>

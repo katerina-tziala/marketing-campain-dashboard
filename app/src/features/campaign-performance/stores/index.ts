@@ -1,1 +1,1 @@
-export { useCampaignPerformanceStore } from './campaignPerformance.store'
+export { useCampaignPerformanceStore } from './campaignPerformance.store';

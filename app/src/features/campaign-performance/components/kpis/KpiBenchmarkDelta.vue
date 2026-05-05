@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { ArrowUpIcon, MetaItem } from "@/ui";
+import { computed } from 'vue';
+
+import { formatCompactCurrency, formatDecimal, formatPercentage } from '@/shared/utils';
+import { ArrowUpIcon, MetaItem } from '@/ui';
+
 import {
   getKpiBenchmarkRawDelta,
   type KpiBenchmarkDeltaUnit,
-} from "../../utils/kpi-benchmark-delta";
-import {
-  formatCompactCurrency,
-  formatDecimal,
-  formatPercentage,
-} from "@/shared/utils";
+} from '../../utils/kpi-benchmark-delta';
 
 const props = defineProps<{
   current: number | null;
@@ -23,36 +21,49 @@ const props = defineProps<{
 const rawDelta = computed(() => getKpiBenchmarkRawDelta(props));
 
 const stateClass = computed((): string => {
-  if (rawDelta.value === null || rawDelta.value === 0) return "neutral";
+  if (rawDelta.value === null || rawDelta.value === 0) {
+    return 'neutral';
+  }
   const isPositive = rawDelta.value > 0;
   const isGood = props.lowerIsBetter ? !isPositive : isPositive;
-  return isGood ? "positive" : "negative";
+  return isGood ? 'positive' : 'negative';
 });
 
 const deltaLabel = computed((): string => {
-  if (rawDelta.value === null) return "";
+  if (rawDelta.value === null) {
+    return '';
+  }
   const abs = Math.abs(rawDelta.value);
-  const sign = rawDelta.value > 0 ? "+" : "−";
-  return props.unit === "pp"
+  const sign = rawDelta.value > 0 ? '+' : '−';
+  return props.unit === 'pp'
     ? `${sign}${formatDecimal(abs, 2)} pp`
-    : `${sign}${formatPercentage(abs, "0%", 2)}`;
+    : `${sign}${formatPercentage(abs, '0%', 2)}`;
 });
 
 const benchmarkLabel = computed((): string => {
-  if (props.benchmark === null) return "";
-  if (props.unit === "pp") return formatPercentage(props.benchmark, "0%", 2);
+  if (props.benchmark === null) {
+    return '';
+  }
+  if (props.unit === 'pp') {
+    return formatPercentage(props.benchmark, 'N/a', 2);
+  }
   return formatCompactCurrency(props.benchmark);
 });
 
 const arrowState = computed(() => {
-  if (rawDelta.value === null || rawDelta.value === 0) return null;
+  if (rawDelta.value === null || rawDelta.value === 0) {
+    return null;
+  }
   return { down: rawDelta.value < 0 };
 });
 </script>
 
 <template>
   <template v-if="deltaLabel && benchmarkLabel">
-    <MetaItem class="delta-value" :class="stateClass">
+    <MetaItem
+      class="delta-value"
+      :class="stateClass"
+    >
       <ArrowUpIcon
         v-if="arrowState"
         class="delta-arrow"

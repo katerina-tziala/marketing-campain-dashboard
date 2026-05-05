@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import type { SpinnerSize, SpinnerTone } from './spinner.types'
+import type { SpinnerSize, SpinnerTone } from './spinner.types';
 
 const props = withDefaults(
   defineProps<{
-    size?: SpinnerSize
-    tone?: SpinnerTone
+    size?: SpinnerSize;
+    tone?: SpinnerTone;
   }>(),
   {
     size: 'default',
     tone: 'default',
   },
-)
+);
 </script>
 
 <template>
@@ -44,6 +44,7 @@ const props = withDefaults(
 <style lang="scss" scoped>
 .spinner {
   @apply block shrink-0 w-24 h-24;
+
   animation: spinner-rotate 1.8s linear infinite;
 
   .spinner-track {
@@ -54,6 +55,7 @@ const props = withDefaults(
     stroke-dasharray: 1 60;
     stroke-dashoffset: 0;
     animation: spinner-dash 1.8s ease-in-out infinite;
+
     @apply text-primary-light;
   }
 }
@@ -68,7 +70,7 @@ const props = withDefaults(
 
 .spinner.inverse {
   .spinner-track {
-    @apply  text-typography-strong/30;
+    @apply text-typography-strong/30;
   }
 
   .spinner-arc {
@@ -87,10 +89,12 @@ const props = withDefaults(
     stroke-dasharray: 1 60;
     stroke-dashoffset: 0;
   }
+
   50% {
     stroke-dasharray: 45 60;
     stroke-dashoffset: -16;
   }
+
   100% {
     stroke-dasharray: 45 60;
     stroke-dashoffset: -62;

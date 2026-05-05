@@ -1,114 +1,60 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BusinessContext } from "@/shared/portfolio";
-import { formatIsoDateRange } from "@/shared/utils";
-import {
-  SparklesIcon,
-  MetaRow,
-  MetaItem,
-  Button,
-  SectionHeaderLayout,
-} from "@/ui";
+import { computed } from 'vue';
+
+import type { BusinessContext } from '@/shared/portfolio';
+import { formatIsoDateRange } from '@/shared/utils';
+import { MetaItem, MetaRow, Section } from '@/ui';
 
 const props = defineProps<{
   title: string;
   businessContext: BusinessContext | null;
-  selectedChannelCount: number;
-  totalChannelCount: number;
-  filteredCampaignCount: number;
-  totalCampaignCount: number;
-  showAiButton: boolean;
-  showConnectedDot: boolean;
+  counts: {
+    channels: { selected: number; total: number };
+    campaigns: { filtered: number; total: number };
+  };
 }>();
-
-const emit = defineEmits<{ aiClick: [] }>();
 
 const periodLabel = computed(() =>
   props.businessContext
-    ? formatIsoDateRange(
-        props.businessContext.period.from,
-        props.businessContext.period.to,
-      )
-    : "",
+    ? formatIsoDateRange(props.businessContext.period.from, props.businessContext.period.to)
+    : '',
 );
 </script>
 
 <template>
-  <SectionHeaderLayout class="!gap-0">
+  <Section class="!gap-0">
     <template #header>
-      <h2 class="w-full grow text-xl min-h-9">Campaign Performance</h2>
+      <h2 class="performance-header">Campaign Performance</h2>
     </template>
     <template #action>
-      <div v-if="showAiButton" class="relative shrink-0">
-        <Button variant="primary" size="small" @click="emit('aiClick')">
-          <SparklesIcon />AI
-        </Button>
-        <span
-          v-if="showConnectedDot"
-          class="connected-status"
-          aria-hidden="true"
-        >
-          <span class="connected-status-dot" />
-        </span>
-      </div>
+      <slot name="action" />
     </template>
-    <MetaRow separator="bullet" size="base" class="text-typography-subtle">
+    <MetaRow
+      separator="bullet"
+      size="base"
+      class="text-typography-subtle pt-0.5"
+    >
       <MetaItem>{{ title }}</MetaItem>
       <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
       <MetaItem v-if="businessContext?.industry">
         {{ businessContext.industry }}
       </MetaItem>
     </MetaRow>
-    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1">
-      <MetaItem
-        >{{ selectedChannelCount }} of
-        {{ totalChannelCount }} channels</MetaItem
-      >
-      <MetaItem
-        >{{ filteredCampaignCount }} of
-        {{ totalCampaignCount }} campaigns</MetaItem
-      >
-      <MetaItem
-        >All percentages are based on the current filters</MetaItem
-      ></MetaRow
+    <MetaRow
+      separator="bullet"
+      tone="info"
+      class="text-typography-subtle pt-1 mb-3"
     >
-  </SectionHeaderLayout>
+      <MetaItem>{{ counts.channels.selected }} of {{ counts.channels.total }} channels</MetaItem>
+      <MetaItem>{{ counts.campaigns.filtered }} of {{ counts.campaigns.total }} campaigns</MetaItem>
+      <MetaItem>All percentages are based on the current filters</MetaItem></MetaRow
+    >
+    <slot />
+  </Section>
 </template>
 
 <style lang="scss" scoped>
-.connected-status {
-  @apply absolute
-    -top-1.5
-    -right-1.5
-    z-10
-    w-3.5
-    h-3.5
-    rounded-full
-    bg-surface
-    flex
-    items-center
-    justify-center
-    overflow-visible;
-  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.connected-status-dot {
-  @apply block
-    w-2
-    h-2
-    rounded-full
-    bg-success
-    shadow-connection;
-}
-
-@keyframes dot-pop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+.performance-header {
+  @apply w-full grow text-xl min-h-9 font-medium pt-1 tracking-wider text-typography-primary;
 }
 </style>

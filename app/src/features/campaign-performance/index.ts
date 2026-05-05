@@ -1,1 +1,1 @@
-export { default as CampaignPerformanceView } from "./CampaignPerformanceView.vue";
+export { default as CampaignPerformanceView } from './CampaignPerformanceView.vue';

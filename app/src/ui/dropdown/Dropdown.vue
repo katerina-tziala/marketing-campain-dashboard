@@ -1,88 +1,110 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
-const DROPDOWN_GAP = 6
-const DROPDOWN_MIN_WIDTH = 260
-const DROPDOWN_MAX_HEIGHT = 300
-const DROPDOWN_EDGE_MARGIN = 8
+import { useFocusTrap } from '../accessibility';
 
 const props = defineProps<{
-  open: boolean
-  anchor: HTMLElement | null | undefined
-  minWidth?: number
-  maxHeight?: number
-  gap?: number
-  edgeMargin?: number
-}>()
-
+  open: boolean;
+  anchor: HTMLElement | null | undefined;
+  minWidth?: number;
+  maxHeight?: number;
+  gap?: number;
+  edgeMargin?: number;
+  align?: 'left' | 'right';
+}>();
 const emit = defineEmits<{
-  'update:open': [value: boolean]
-}>()
+  'update:open': [value: boolean];
+}>();
+const DROPDOWN_GAP = 6;
+const DROPDOWN_MIN_WIDTH = 260;
+const DROPDOWN_MAX_HEIGHT = 300;
+const DROPDOWN_EDGE_MARGIN = 8;
 
-const panelRef = ref<HTMLElement>()
+const panelRef = ref<HTMLElement | null>(null);
+const { focusFirst, trapTab, lockScroll, unlockScroll } = useFocusTrap(panelRef);
 
-const close = () => emit('update:open', false)
+const close = (): void => emit('update:open', false);
 
-const dropdownStyle = computed(() => {
-  if (!props.anchor) return {}
-  const rect = props.anchor.getBoundingClientRect()
+const dropdownStyle = ref<Record<string, string | undefined>>({});
 
-  const gap = props.gap ?? DROPDOWN_GAP
-  const minWidth = props.minWidth ?? DROPDOWN_MIN_WIDTH
-  const maxHeight = props.maxHeight ?? DROPDOWN_MAX_HEIGHT
-  const edgeMargin = props.edgeMargin ?? DROPDOWN_EDGE_MARGIN
-
-  const left = Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)
-  const fitsBelow = rect.bottom + gap + maxHeight <= window.innerHeight
-
-  if (fitsBelow) {
-    return { top: `${rect.bottom + gap}px`, left: `${left}px` }
+function calculatePosition(): Record<string, string | undefined> {
+  if (!props.anchor) {
+    return {};
   }
-  return { bottom: `${window.innerHeight - rect.top + gap}px`, left: `${left}px` }
-})
+  const rect = props.anchor.getBoundingClientRect();
 
-function focusFirstInPanel(): void {
-  const focusable = panelRef.value?.querySelector<HTMLElement>(
-    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  )
-  focusable?.focus()
+  const gap = props.gap ?? DROPDOWN_GAP;
+  const minWidth = props.minWidth ?? DROPDOWN_MIN_WIDTH;
+  const maxHeight = props.maxHeight ?? DROPDOWN_MAX_HEIGHT;
+  const edgeMargin = props.edgeMargin ?? DROPDOWN_EDGE_MARGIN;
+
+  const fitsBelow = rect.bottom + gap + maxHeight <= window.innerHeight;
+  const vertical = fitsBelow
+    ? { top: `${rect.bottom + gap}px` }
+    : { bottom: `${window.innerHeight - rect.top + gap}px` };
+
+  const horizontal =
+    props.align === 'right'
+      ? { right: `${window.innerWidth - rect.right}px` }
+      : { left: `${Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)}px` };
+
+  return { ...vertical, ...horizontal };
 }
 
-watch(() => props.open, open => {
-  document.body.style.overflow = open ? 'hidden' : ''
-  if (open) {
-    nextTick(focusFirstInPanel)
-  } else {
-    props.anchor?.focus()
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    close();
+    return;
   }
-})
+  trapTab(e);
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      dropdownStyle.value = calculatePosition();
+      lockScroll();
+      nextTick(focusFirst);
+    } else {
+      unlockScroll();
+      props.anchor?.focus();
+    }
+  },
+);
 
 function onWindowResize(): void {
-  if (props.open) close()
+  if (props.open) {
+    close();
+  }
 }
 
 onMounted(() => {
-  window.addEventListener('resize', onWindowResize)
-})
+  window.addEventListener('resize', onWindowResize);
+});
 
 onUnmounted(() => {
-  document.body.style.overflow = ''
-  window.removeEventListener('resize', onWindowResize)
-})
+  unlockScroll();
+  window.removeEventListener('resize', onWindowResize);
+});
 </script>
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="fixed inset-0 z-[49]" aria-hidden="true" @click="close" />
-  </Teleport>
-
-  <Teleport to="body">
+    <div
+      v-if="open"
+      class="fixed inset-0 z-[49]"
+      aria-hidden="true"
+      @click="close"
+    />
     <div
       v-if="open"
       ref="panelRef"
-      class="fixed z-50"
+      class="fixed z-50 flex"
+      :class="align === 'right' ? 'flex-row-reverse' : 'flex-row'"
       :style="dropdownStyle"
-      @keydown.escape="close"
+      tabindex="-1"
+      @keydown="onKeydown"
     >
       <slot />
     </div>

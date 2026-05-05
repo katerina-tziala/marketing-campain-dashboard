@@ -1,7 +1,7 @@
-export {
-  createQuadrantBackgroundPlugin,
-  type CreateQuadrantBackgroundPluginOptions,
-  type QuadrantBackground,
-  type QuadrantBackgrounds,
-  type QuadrantDividerStyle,
-} from './createQuadrantBackgroundPlugin'
+export { createQuadrantBackgroundPlugin } from './createQuadrantBackgroundPlugin';
+export type {
+  CreateQuadrantBackgroundPluginOptions,
+  QuadrantBackground,
+  QuadrantBackgrounds,
+  QuadrantDividerStyle,
+} from './createQuadrantBackgroundPlugin.types';

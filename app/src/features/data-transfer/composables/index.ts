@@ -1,1 +1,1 @@
-export { useDownloadTemplate } from './useDownloadTemplate'
+export { useDownloadTemplate } from './useDownloadTemplate';

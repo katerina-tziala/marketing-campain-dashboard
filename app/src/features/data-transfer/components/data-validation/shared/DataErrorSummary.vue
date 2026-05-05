@@ -1,7 +1,7 @@
 <template>
   <section class="flex flex-col gap-0.5">
     <!-- header -->
-    <h3 class="grow font-semibold text-primary-lighter">
+    <h3 class="grow font-semibold text-primary-lighter text- tracking-wider">
       <span class="inline-action-float">
         <slot name="badge" />
       </span>

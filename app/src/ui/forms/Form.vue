@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import type { FormSpacing } from "./form.types";
+import type { FormSpacing } from './form.types';
 
 withDefaults(
   defineProps<{
     spacing?: FormSpacing;
   }>(),
   {
-    spacing: "md",
+    spacing: 'md',
   },
 );
 </script>
 
 <template>
-  <form class="form" :class="`spacing-${spacing}`">
+  <form
+    class="form"
+    :class="`spacing-${spacing}`"
+  >
     <slot />
   </form>
 </template>
@@ -20,7 +23,7 @@ withDefaults(
 <style lang="scss" scoped>
 .form {
   @apply w-full h-fit flex flex-col;
-  @include cq-container("form"); 
+  @include cq-container('form');
 }
 
 .spacing-sm {

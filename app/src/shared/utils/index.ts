@@ -1,5 +1,5 @@
-export * from './formatters'
-export * from './date-format'
-export * from './math'
-export * from './sorting'
-export type { SortableValue, SortDirection } from './sorting'
+export * from './date-format';
+export * from './formatters';
+export * from './math';
+export type { SortableValue, SortDirection } from './sorting';
+export * from './sorting';

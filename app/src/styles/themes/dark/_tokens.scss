@@ -1,4 +1,5 @@
-@use "./palette";
+@use './palette';
+
 /*
     Dark theme semantics.
 
@@ -8,7 +9,7 @@
   */
 
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   /* Background and surfaces */
   --color-background: var(--neutral-900);
 
@@ -94,6 +95,11 @@
   --color-info-dark: var(--info-600);
   --color-info-darker: var(--info-700);
 
+  /* Conversion funnel chart — consumed by Tailwind, not the JS theme resolver */
+  --chart-funnel-impressions: var(--primary-600);
+  --chart-funnel-clicks: var(--secondary-700);
+  --chart-funnel-conversions: var(--warning-700);
+
   /* Text on filled semantic colors */
   --color-on-primary: var(--neutral-50);
   --color-on-secondary: var(--neutral-50);
@@ -102,5 +108,4 @@
   --color-on-warning: var(--neutral-900);
   --color-on-danger: var(--neutral-50);
   --color-on-info: var(--neutral-900);
-
 }

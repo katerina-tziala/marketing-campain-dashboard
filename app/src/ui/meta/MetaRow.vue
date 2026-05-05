@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MetaRowSeparator, MetaRowSize, MetaRowTone } from "./meta.types";
+import type { MetaRowSeparator, MetaRowSize, MetaRowTone } from './meta.types';
 
 const props = withDefaults(
   defineProps<{
@@ -8,9 +8,9 @@ const props = withDefaults(
     tone?: MetaRowTone;
   }>(),
   {
-    separator: "none",
-    size: "small",
-    tone: "none",
+    separator: 'none',
+    size: 'small',
+    tone: 'none',
   },
 );
 </script>
@@ -18,11 +18,7 @@ const props = withDefaults(
 <template>
   <p
     class="meta-row"
-    :class="[
-      props.separator,
-      props.size,
-      props.tone === 'none' ? undefined : props.tone,
-    ]"
+    :class="[props.separator, props.size, props.tone === 'none' ? undefined : props.tone]"
   >
     <slot />
   </p>
@@ -35,7 +31,6 @@ const props = withDefaults(
   &.meta-row.divider {
     @apply gap-x-2;
   }
-
 
   &.meta-row.base {
     @apply text-base;

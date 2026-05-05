@@ -1,6 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import DashboardPage from '@/app/pages/DashboardPage.vue'
-import { applyPageMeta } from './page-meta'
+import { createRouter, createWebHistory } from 'vue-router';
+
+import DashboardPage from '@/app/pages/DashboardPage.vue';
+
+import { applyPageMeta } from './page-meta';
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -11,15 +13,15 @@ export const router = createRouter({
       component: DashboardPage,
       meta: {
         page: {
-          title: 'Marketing Campaign Dashboard | Campaign Performance',
+          title: 'Marketing Intelligence Dashboard | Campaign Performance',
           description:
-            'Marketing campaign dashboard for performance analysis, budget optimization, and AI-powered insights including recommendations and executive summaries.',
+            'Marketing intelligence dashboard for performance analysis, budget optimization, and AI-powered insights including recommendations and executive summaries.',
         },
       },
     },
   ],
-})
+});
 
 router.afterEach((to) => {
-  applyPageMeta(to)
-})
+  applyPageMeta(to);
+});

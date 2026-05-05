@@ -1,4 +1,4 @@
-import type { CampaignSummary, ChannelSummary } from './summary'
+import type { CampaignSummary, ChannelSummary } from './summary';
 
 /**
  * Four mutually exclusive campaign performance buckets.
@@ -7,13 +7,13 @@ import type { CampaignSummary, ChannelSummary } from './summary'
  */
 export interface CampaignGroups {
   /** ROI significantly above portfolio average; meets size thresholds. */
-  top: CampaignSummary[]
+  top: CampaignSummary[];
   /** ROI at or above portfolio average, revenue share ≥ budget share — under-invested. */
-  opportunity: CampaignSummary[]
+  opportunity: CampaignSummary[];
   /** Budget share significantly exceeds revenue share; ROI below portfolio average. */
-  bottom: CampaignSummary[]
+  bottom: CampaignSummary[];
   /** Contradictory signals: funnel leak or positive-but-underperforming ROI. */
-  watch: CampaignSummary[]
+  watch: CampaignSummary[];
 }
 
 /**
@@ -23,11 +23,11 @@ export interface CampaignGroups {
  */
 export interface ChannelGroups {
   /** ROI significantly above portfolio average; revenue share ≥ budget share. */
-  strong: ChannelSummary[]
+  strong: ChannelSummary[];
   /** ROI at or above portfolio average, revenue share ≥ budget share — under-invested. */
-  opportunity: ChannelSummary[]
+  opportunity: ChannelSummary[];
   /** Budget share significantly exceeds revenue share; ROI below portfolio average. */
-  weak: ChannelSummary[]
+  weak: ChannelSummary[];
   /** Contradictory signals: funnel leak or positive-but-underperforming ROI. */
-  watch: ChannelSummary[]
+  watch: ChannelSummary[];
 }

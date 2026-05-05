@@ -1,70 +1,32 @@
-import { generateModelEvaluationPrompt } from '../../prompts'
-import type { AiModel, AiModelCandidate, ModelsResponse } from '../types'
-import { parseJsonResponse, toValidModels } from '../utils/shared'
-import { fetchGeminiModels, requestGeminiChatCompletion } from './api'
-import type { GeminiModel } from './types'
-import { GEMINI_PROVIDER_RULES } from '../utils/providers-meta'
-
-const BANNED = ['embedding', 'image', 'audio', 'tts', 'veo', 'imagen', 'lyria', 'robotics']
-
-function isAllowed(m: GeminiModel): boolean {
-  const name = (m.name || '').toLowerCase()
-  return !!(m.supportedGenerationMethods?.includes('generateContent')) && !BANNED.some((x) => name.includes(x))
-}
-
-function filterModels(models: GeminiModel[]): GeminiModel[] {
-  return models.filter(isAllowed)
-}
-
-function flashPriority(name: string): number {
-  return name.toLowerCase().includes('flash') ? 1 : 0
-}
-
-function getSortedCandidates(models: GeminiModel[]): GeminiModel[] {
-  return [...models].sort((a, b) => {
-    const flashDiff = flashPriority(b.name) - flashPriority(a.name)
-    return flashDiff !== 0 ? flashDiff : b.version.localeCompare(a.version)
-  })
-}
-
-function stripPrefix(name: string): string {
-  return name.replace(/^models\//, '')
-}
-
-function buildValidIds(candidates: GeminiModel[]): Set<string> {
-  return new Set(candidates.map((c) => stripPrefix(c.name)))
-}
-
-function toAiModelCandidate(m: GeminiModel): AiModelCandidate {
-  return {
-    id: stripPrefix(m.name),
-    contextWindow: m.inputTokenLimit,
-    maxOutputTokens: m.outputTokenLimit,
-    thinking: m.thinking,
-  }
-}
+import { generateModelEvaluationPrompt } from '../../prompts';
+import type { AiModel, AiModelCandidate, ModelsResponse } from '../types';
+import { parseJsonResponse, toValidModels } from '../utils/shared';
+import { fetchGeminiModels, requestGeminiChatCompletion } from './api';
+import { extractCandidates } from './extract-candidates/index';
 
 async function tryWithModel(
   apiKey: string,
-  runner: GeminiModel,
-  candidates: GeminiModel[],
+  runner: AiModelCandidate,
+  candidates: AiModelCandidate[],
 ): Promise<AiModel[]> {
-  const modelId = stripPrefix(runner.name)
-  const prompt = generateModelEvaluationPrompt(candidates.map(toAiModelCandidate), GEMINI_PROVIDER_RULES)
-  const raw = await requestGeminiChatCompletion(apiKey, modelId, prompt)
-  return toValidModels(buildValidIds(candidates), parseJsonResponse<ModelsResponse>(raw).models)
+  const prompt = generateModelEvaluationPrompt(candidates);
+  const raw = await requestGeminiChatCompletion(apiKey, runner.id, prompt);
+  return toValidModels(
+    new Set(candidates.map((c) => c.id)),
+    parseJsonResponse<ModelsResponse>(raw).models,
+  );
 }
 
-function evaluateModels(apiKey: string, candidates: GeminiModel[]): Promise<AiModel[]> {
-  if (candidates.length === 0) throw new Error('no-models')
-  const [runner, ...remaining] = candidates
-  return tryWithModel(apiKey, runner, candidates)
-    .catch(() => evaluateModels(apiKey, remaining))
+function evaluateModels(apiKey: string, candidates: AiModelCandidate[]): Promise<AiModel[]> {
+  if (candidates.length === 0) {
+    throw new Error('no-models');
+  }
+  const [runner, ...remaining] = candidates;
+  return tryWithModel(apiKey, runner, candidates).catch(() => evaluateModels(apiKey, remaining));
 }
 
 export async function connectGemini(apiKey: string): Promise<AiModel[]> {
-  const models = await fetchGeminiModels(apiKey)
-  const filteredModels = filterModels(models)
-  if (filteredModels.length === 0) throw new Error('no-models')
-  return evaluateModels(apiKey, getSortedCandidates(filteredModels))
+  const models = await fetchGeminiModels(apiKey);
+  const candidates = extractCandidates(models);
+  return evaluateModels(apiKey, candidates);
 }

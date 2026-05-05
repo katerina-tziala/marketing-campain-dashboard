@@ -1,23 +1,9 @@
-export type PromptList = {
+export type PromptRuleListType = 'ordered' | 'unordered' | 'none';
+
+export interface PromptRuleGroup {
   title: string;
+  preamble?: string;
   list: string[];
-};
-
-export type PromptInstructions = {
-  role: string[];
-  task: string[];
-  objectives: PromptList;
-};
-
-export type PromptInstructionStep = {
-  title: string;
-  bullets?: string[];
+  type: PromptRuleListType;
   notes?: string[];
-};
-
-export type PromptScopeConfig = {
-  label: string;
-  filteredDescription: string[];
-  unfilteredDescription: string[];
-  filteredConstraints: string[];
-};
+}

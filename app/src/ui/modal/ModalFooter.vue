@@ -1,5 +1,8 @@
 <template>
-  <div class="modal-footer" data-modal-footer>
+  <div
+    class="modal-footer"
+    data-modal-footer
+  >
     <slot />
   </div>
 </template>

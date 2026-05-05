@@ -1,2 +1,2 @@
-export * from './useSort'
-export * from './useCooldown'
+export * from './useCooldown';
+export * from './useSort';

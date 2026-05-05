@@ -1,4 +1,1 @@
-export {
-  DEFAULT_CHART_THEME,
-  type ChartTheme,
-} from './chart-theme.config'
+export { type ChartTheme, DEFAULT_CHART_THEME } from './chart-theme.config';

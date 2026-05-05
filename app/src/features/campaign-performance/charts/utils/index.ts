@@ -1,14 +1,14 @@
 export {
-  formatChannelTooltip,
   formatBudgetTooltip,
   formatBudgetTooltipLines,
+  formatChannelTooltip,
   formatRevenueTooltip,
   formatRoiAllocationTooltipLines,
   formatRoiBudgetScalingTooltipLines,
   formatRoiTooltip,
-} from './chart-tooltip-formatters'
+} from './chart-tooltip-formatters';
 export {
   getChannelEfficiencyGapPercent,
   getEfficiencyGapColor,
   getEfficiencyGapSignedAmount,
-} from './efficiency-gap'
+} from './efficiency-gap';

@@ -1,29 +1,33 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { BadgeVariant } from "@/ui";
-import { formatCurrency, formatPercentage } from "@/shared/utils";
-import { Badge, Card } from "@/ui";
-import type {
-  BudgetRecommendation,
-  ConfidenceLevel,
-  ExecutionRisk,
-} from '../types';
-import { AnalysisSection } from "../ui";
+import { computed } from 'vue';
+
+import { Badge, Card } from '@/ui';
+
+import { AnalysisSection } from '../components';
+import type { BudgetRecommendation, ConfidenceLevel, ExecutionRisk } from '../types';
+import ExpectedImpactGrid from './ExpectedImpactGrid.vue';
+
+import type { BadgeVariant } from '@/ui';
+
+const props = defineProps<{
+  title: string;
+  recommendations: BudgetRecommendation[];
+}>();
 
 const CONFIDENCE_MAP: Record<string, BadgeVariant> = {
-  high: "success",
-  medium: "warning",
-  low: "danger",
+  high: 'success',
+  medium: 'warning',
+  low: 'danger',
 };
 
 const EXECUTION_RISK_MAP: Record<string, BadgeVariant> = {
-  low: "success",
-  medium: "warning",
-  high: "danger",
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
 };
 
 function badgeVariant(map: Record<string, BadgeVariant>, key: string): BadgeVariant {
-  return map[key.toLowerCase()] ?? "info";
+  return map[key.toLowerCase()] ?? 'info';
 }
 
 function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
@@ -33,10 +37,6 @@ function confidenceVariant(level: ConfidenceLevel): BadgeVariant {
 function executionRiskVariant(risk: ExecutionRisk): BadgeVariant {
   return badgeVariant(EXECUTION_RISK_MAP, risk);
 }
-
-const props = defineProps<{
-  recommendations: BudgetRecommendation[];
-}>();
 
 const CONFIDENCE_ORDER: Record<ConfidenceLevel, number> = {
   High: 0,
@@ -52,13 +52,11 @@ const EXECUTION_RISK_ORDER: Record<ExecutionRisk, number> = {
 
 const sortedRecommendations = computed(() =>
   [...props.recommendations].sort((a, b) => {
-    const cDiff =
-      CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
-    if (cDiff !== 0) return cDiff;
-    return (
-      EXECUTION_RISK_ORDER[a.executionRisk] -
-      EXECUTION_RISK_ORDER[b.executionRisk]
-    );
+    const cDiff = CONFIDENCE_ORDER[a.confidence] - CONFIDENCE_ORDER[b.confidence];
+    if (cDiff !== 0) {
+      return cDiff;
+    }
+    return EXECUTION_RISK_ORDER[a.executionRisk] - EXECUTION_RISK_ORDER[b.executionRisk];
   }),
 );
 </script>
@@ -66,91 +64,83 @@ const sortedRecommendations = computed(() =>
 <template>
   <AnalysisSection
     v-if="sortedRecommendations.length"
-    title="Reallocation Recommendations"
+    :title="title"
   >
     <Card
       v-for="(rec, i) in sortedRecommendations"
       :key="i"
       variant="secondary"
-      class="rec-card"
+      class="recommendation-card"
     >
-      <h5 class="card-title rec-route">
-        <div class="shrink flex flex-wrap gap-x-8 gap-y-2 justify-between">
-          <div class="flex flex-col gap-0.5">
-            <span class="text-xs text-typography-subtle">From</span>
-            <span>{{ rec.fromCampaign }}</span>
-          </div>
-          <div class="flex flex-col gap-0.5">
-            <span class="text-xs text-typography-subtle">To</span>
-            <span class="text-typography-inverse">{{ rec.toCampaign }}</span>
-          </div>
-        </div>
-        <div class="rec-badges">
-          <Badge :variant="confidenceVariant(rec.confidence)"
+      <div class="recommendation-route">
+        <h5 class="recommendation-route">
+          <span class="recommendation-route-item">
+            <span class="recommendation-label">From</span>
+            <span class="font-medium text-typography-primary leading-5">{{
+              rec.fromCampaign
+            }}</span>
+            <span class="recommendation-channel">{{ rec.fromChannel }}</span>
+          </span>
+          <span
+            v-if="rec.toCampaign"
+            class="recommendation-route-item"
+          >
+            <span class="recommendation-label">To</span>
+            <span class="font-semibold text-typography-primary-lighter leading-5">{{
+              rec.toCampaign
+            }}</span>
+            <span class="recommendation-channel">{{ rec.toChannel }}</span>
+          </span>
+        </h5>
+        <div class="recommendation-badges">
+          <Badge
+            :variant="confidenceVariant(rec.confidence)"
+            size="small"
+            tone="dimmed"
             >{{ rec.confidence }} confidence</Badge
           >
-          <Badge :variant="executionRiskVariant(rec.executionRisk)"
+          <Badge
+            :variant="executionRiskVariant(rec.executionRisk)"
+            size="small"
+            tone="dimmed"
             >{{ rec.executionRisk }} risk</Badge
           >
         </div>
-      </h5>
-      <div class="rec-details">
-        <p class="rec-row">
-          <span class="rec-label">Reallocate</span>
-          <span class="text-typography">{{
-            formatCurrency(rec.budgetShift)
-          }}</span>
-        </p>
-        <p class="rec-row">
-          <span class="rec-label">Est. ROI</span>
-          <span class="text-typography">{{
-            formatPercentage(rec.expectedImpact.roiEstimate)
-          }}</span>
-        </p>
-        <p class="rec-row">
-          <span class="rec-label">Est. Revenue</span>
-          <span class="text-success"
-            >+{{ formatCurrency(rec.expectedImpact.revenueChange) }}</span
-          >
-        </p>
-        <p class="rec-row">
-          <span class="rec-label">Est. Conversions</span>
-          <span class="text-success"
-            >+{{ rec.expectedImpact.conversionChange }}</span
-          >
-        </p>
       </div>
+      <ExpectedImpactGrid
+        :amount-label="rec.type === 'reduction' ? 'Reduce' : 'Reallocate'"
+        :amount="rec.budgetShift"
+        :impact="rec.expectedImpact"
+      />
       <p class="card-content">{{ rec.reason }}</p>
     </Card>
   </AnalysisSection>
 </template>
 
 <style lang="scss" scoped>
-.rec-card {
-  @include cq-container("rec-card");
+.recommendation-route {
+  @apply w-full 
+  flex
+  flex-wrap
+  gap-x-6
+  gap-y-3 
+  items-center
+  justify-between;
 }
 
-.rec-route {
-  @apply w-full flex flex-wrap  gap-x-4 gap-y-3 items-center justify-between;
+.recommendation-route-item {
+  @apply grow flex flex-col gap-0.5;
 }
 
-.rec-badges {
-  @apply shrink flex flex-wrap gap-x-4 gap-y-2 items-center justify-start  w-fit;
+.recommendation-badges {
+  @apply shrink flex flex-wrap gap-x-4 gap-y-2 items-center justify-start w-fit;
 }
 
-.rec-details {
-  @apply grid grid-cols-1 grid-rows-4 gap-y-2 gap-x-8 pt-2 px-1 w-full;
-
-  @include cq-up(cq-400, "rec-card") {
-    @apply grid-cols-2 grid-rows-2;
-  }
+.recommendation-label {
+  @apply text-xs text-typography-subtle font-normal;
 }
 
-.rec-row {
-  @apply flex items-center justify-between font-semibold;
-
-  > span {
-    @apply inline-block;
-  }
+.recommendation-channel {
+  @apply text-xs text-typography-muted font-medium;
 }
 </style>

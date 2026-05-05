@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
-import { ToastContainer } from '@/ui'
+import { RouterView } from 'vue-router';
+
+import { ToastContainer } from '@/ui';
 </script>
 
 <template>
