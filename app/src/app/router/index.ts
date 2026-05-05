@@ -5,7 +5,7 @@ import DashboardPage from '@/app/pages/DashboardPage.vue';
 import { applyPageMeta } from './page-meta';
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
