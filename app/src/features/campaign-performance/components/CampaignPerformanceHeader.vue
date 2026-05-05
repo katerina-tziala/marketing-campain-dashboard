@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import type { BusinessContext } from "@/shared/portfolio";
 import { formatIsoDateRange } from "@/shared/utils";
-import { MetaRow, MetaItem, SectionHeaderLayout } from "@/ui";
+import { MetaRow, MetaItem, Section } from "@/ui";
 
 const props = defineProps<{
   title: string;
@@ -24,21 +24,21 @@ const periodLabel = computed(() =>
 </script>
 
 <template>
-  <SectionHeaderLayout class="!gap-0">
+  <Section class="!gap-0">
     <template #header>
       <h2 class="performance-header">Campaign Performance</h2>
     </template>
     <template #action>
       <slot name="action" />
-    </template>
-    <MetaRow separator="bullet" size="base" class="text-typography-subtle">
+    </template> 
+    <MetaRow separator="bullet" size="base" class="text-typography-subtle pt-0.5">
       <MetaItem>{{ title }}</MetaItem>
       <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
       <MetaItem v-if="businessContext?.industry">
         {{ businessContext.industry }}
       </MetaItem>
     </MetaRow>
-    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1">
+    <MetaRow separator="bullet" tone="info" class="text-typography-subtle pt-1 mb-3">
       <MetaItem
         >{{ counts.channels.selected }} of
         {{ counts.channels.total }} channels</MetaItem
@@ -51,7 +51,8 @@ const periodLabel = computed(() =>
         >All percentages are based on the current filters</MetaItem
       ></MetaRow
     >
-  </SectionHeaderLayout>
+    <slot />
+  </Section>
 </template>
 
 <style lang="scss" scoped>

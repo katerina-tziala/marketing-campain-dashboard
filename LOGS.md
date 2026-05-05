@@ -871,3 +871,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - Store watch over prop — the value is already reactive store state; threading it through a prop adds indirection with no benefit
+
+
+## [#642] Rename SectionHeaderLayout to Section
+**Type:** refactor
+
+**Summary:** Renamed the SectionHeaderLayout UI component to Section across the file, barrel export, and all consumer files.
+
+**Brainstorming:** The name SectionHeaderLayout was verbose and redundant — "Layout" is implied by being in the ui/layout/ folder, and "Header" described only one use pattern. Section is shorter, more general, and accurate to what the component does: it provides a structural section shell with header/action/default slots.
+
+**Prompt:** Rename SectionHeaderLayout to Section and replace all instances.
+
+**What changed:**
+- `ui/layout/SectionHeaderLayout.vue` → renamed to `Section.vue`
+- `ui/layout/index.ts` — updated export to `Section`
+- `AnalysisHeader.vue` — updated import and template usage
+- `CampaignPerformanceHeader.vue` — updated import and template usage
+
+**Key decisions & why:**
+- Section is the right abstraction name — it wraps a content section with a structured header row, not specifically a "section header layout"

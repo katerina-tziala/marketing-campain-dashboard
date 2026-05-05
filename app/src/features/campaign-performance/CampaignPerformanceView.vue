@@ -36,26 +36,25 @@ function applyChannelFilter(ids: string[]): void {
 
 <template>
   <div class="scrollbar-on-surface campaign-performance">
-    <section class="campaign-performance-header">
-      <div class="campaign-performance-header-container">
-        <CampaignPerformanceHeader
-          :title="store.title"
-          :business-context="store.businessContext"
-          :counts="{
-            channels: {
-              selected: selectedChannelCount,
-              total: store.portfolioChannels.size,
-            },
-            campaigns: {
-              filtered: store.filteredCampaigns.length,
-              total: store.campaigns.length,
-            },
-          }"
-        >
-          <template #action>
-            <slot name="header-action" />
-          </template>
-        </CampaignPerformanceHeader>
+    <div class="campaign-performance-header">
+      <CampaignPerformanceHeader
+        class="section-wrapper"
+        :title="store.title"
+        :business-context="store.businessContext"
+        :counts="{
+          channels: {
+            selected: selectedChannelCount,
+            total: store.portfolioChannels.size,
+          },
+          campaigns: {
+            filtered: store.filteredCampaigns.length,
+            total: store.campaigns.length,
+          },
+        }"
+      >
+        <template #action>
+          <slot name="header-action" />
+        </template>
         <ChannelFilters
           :channels="[...store.portfolioChannels.values()]"
           :selected-ids="store.selectedChannelsIds"
@@ -63,8 +62,8 @@ function applyChannelFilter(ids: string[]): void {
           @clear="clearChannelFilters"
           @apply="applyChannelFilter"
         />
-      </div>
-    </section>
+      </CampaignPerformanceHeader>
+    </div>
     <div class="scrollbar-on-surface campaign-performance-view">
       <Kpis
         class="section-wrapper"
@@ -122,12 +121,7 @@ function applyChannelFilter(ids: string[]): void {
 }
 
 .campaign-performance-header {
-  @apply w-full flex items-center justify-center;
-
-  .campaign-performance-header-container {
-    @extend .section-wrapper;
-    @apply w-full flex flex-col gap-3;
-  }
+  @apply w-full;
 
   @include cq-up(cq-768, "main") {
     @apply px-4;

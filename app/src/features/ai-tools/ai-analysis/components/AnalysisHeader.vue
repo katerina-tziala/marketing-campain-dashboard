@@ -5,7 +5,7 @@ import {
   MetaRow,
   MetaItem,
   Button,
-  SectionHeaderLayout,
+  Section,
 } from "@/ui";
 import { formatIsoDateRange } from "@/shared/utils";
 import type { AnalysisPortfolioContext } from "../types";
@@ -30,7 +30,7 @@ const periodLabel = computed(() =>
 </script>
 
 <template>
-  <SectionHeaderLayout>
+  <Section>
     <template #header>
       <h3 class="analysis-header">{{ title }}</h3>
     </template>
@@ -59,7 +59,7 @@ const periodLabel = computed(() =>
       <MetaItem>{{ context.channelCount }} channels</MetaItem>
       <MetaItem>{{ context.campaignCount }} campaigns</MetaItem>
     </MetaRow>
-  </SectionHeaderLayout>
+  </Section>
 </template>
 
 <style lang="scss" scoped>

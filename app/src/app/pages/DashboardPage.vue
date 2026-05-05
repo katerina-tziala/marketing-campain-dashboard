@@ -35,7 +35,7 @@ const {
     <header class="dashboard-header">
       <img
         :src="logoUrl"
-        alt="Marketing Intelligence Dashboard Logo"
+        alt=""
         width="69"
         height="auto"
         class="inline-block -mr-3"
@@ -43,17 +43,16 @@ const {
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
-      <div class="shrink-0 mt-1 min-h-9">
-        <Button
-          v-if="hasCampaigns"
-          variant="outline"
-          size="small"
-          @click="requestUpload"
-        >
-          <UploadIcon />
-          Upload data
-        </Button>
-      </div>
+      <Button
+        v-if="hasCampaigns"
+        variant="outline"
+        size="small"
+        class="shrink-0"
+        @click="requestUpload"
+      >
+        <UploadIcon />
+        Upload data
+      </Button>
     </header>
 
     <main v-if="!dashboard.hasCampaigns" class="dashboard-main">
@@ -65,7 +64,11 @@ const {
       <CampaignPerformanceView>
         <template #header-action>
           <div v-if="dashboard.showAiButton" class="relative shrink-0">
-            <Button variant="primary" size="small" @click="dashboard.openAiPanel">
+            <Button
+              variant="primary"
+              size="small"
+              @click="dashboard.openAiPanel"
+            >
               <SparklesIcon />AI
             </Button>
             <span
@@ -78,7 +81,7 @@ const {
           </div>
         </template>
       </CampaignPerformanceView>
-
+      <!-- AI Tools -->
       <template #aside>
         <ResponsiveDrawer
           :open="dashboard.aiPanelOpen"
@@ -128,26 +131,24 @@ const {
 }
 
 .dashboard-title {
-  @apply font-extrabold
-   grow
-    m-0;
+  @apply font-semibold grow;
 
   .title-wrapper {
-    @apply bg-gradient-to-r
-
+    @apply bg-gradient-to-r 
     from-accent 
     via-info-light 
     via-info 
     via-info-darker  
     via-primary  
     via-primary-light 
-    to-secondary
-
+    to-secondary 
     bg-clip-text
     text-transparent
     text-lg
     leading-6
-    xs:text-2xl;
+    sm:text-xl
+    md:text-2xl md:tracking-wide
+    sr-only sm:not-sr-only;
   }
 }
 

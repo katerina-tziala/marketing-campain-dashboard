@@ -123,8 +123,8 @@ export default {
         connection: "0 0 4px rgb(var(--color-success) / 0.6)",
       },
       screens: {
-        xs: "480px",
-        "sticky-header": "1248px",
+        xs: "30rem", 
+        "sticky-header": "78rem", // 1248px
       },
       borderColor: {
         DEFAULT: "rgb(var(--color-border) / <alpha-value>)",

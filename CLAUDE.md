@@ -118,8 +118,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── Tabs.vue        # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
 │   │   │   └── index.ts        # Barrel — exports Button, Badge, BadgeVariant, Chip, Disclosure, Spinner, Tabs, Tab
 │   │   ├── layout/             # Reusable structural layout shells
-│   │   │   ├── SectionHeaderLayout.vue # Flex layout shell — header slot (grows, centered) + action slot (shrinks) in nowrap row; default slot below; no props, no scoped styles
-│   │   │   └── index.ts        # Barrel — exports SectionHeaderLayout
+│   │   │   ├── Section.vue # Flex layout shell — header slot (grows, centered) + action slot (shrinks) in nowrap row; default slot below; no props, no scoped styles
+│   │   │   └── index.ts        # Barrel — exports Section
 │   │   ├── feedback/           # Notification and feedback UI
 │   │   │   ├── Notification.vue # Inline status notification box — variant?: NotificationVariant (optional); showIcon? (default true); #title named slot; default slot for body; icon auto-selected per variant or BellIcon when undefined; aria role+live region by variant; spacing below notification headers; scoped flat styles
 │   │   │   ├── notification.types.ts # NotificationVariant type — 'success' | 'error' | 'warning' | 'info'
@@ -258,7 +258,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── AiAnalysis.vue          # Tab switcher — Tabs order: Summary first, Optimizer second; scrollable .panel-container; reads aiAnalysis.store activeTab only; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
 │   │   │   │   ├── index.ts                # Barrel — exports AiAnalysis
 │   │   │   │   ├── components/             # Shared display primitives — no store reads, props-only
-│   │   │   │   │   ├── AnalysisHeader.vue      # Tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext with businessContext); emits: analyze; renders portfolio, channel, campaign metadata + portfolio period/industry (responsive: visible in modal layout only); SectionHeaderLayout + MetaRow (bullet)
+│   │   │   │   │   ├── AnalysisHeader.vue      # Tab header — props: title, actionLabel, isButtonDisabled, context (PortfolioContext with businessContext); emits: analyze; renders portfolio, channel, campaign metadata + portfolio period/industry (responsive: visible in modal layout only); Section + MetaRow (bullet)
 │   │   │   │   │   ├── AnalysisSection.vue     # Section layout — title prop + default slot; scoped .analysis-section
 │   │   │   │   │   ├── AnalysisResponseMeta.vue  # Response footer — props: timestamp, modelDisplayName?, notice?; MetaRow .divider.tiny.info.italic; "Generated at [time] with [model]" + disclaimer + stale-result notice
 │   │   │   │   │   ├── AnalysisState.vue       # Analysis wrapper — props: status, error, tokenLimitReached, hasResult; #loading/#idle/default slots; #idle renders common idle container with scoped deep styling for paragraphs; resolves error text via ANALYSIS_ERROR_MESSAGES
@@ -328,7 +328,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   └── index.ts        # Barrel — exports useCampaignPerformanceStore
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable
-│   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, businessContext, counts; exposes #action slot (passed to SectionHeaderLayout #action); no AI-specific props or emits — callers project action content via slot
+│   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, businessContext, counts; exposes #action slot (passed to Section #action); no AI-specific props or emits — callers project action content via slot
 │   │   │   │   ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; sort via useSort / sortByValue(); PerformanceIndicator for Revenue (roi-colored) and CVR (dimmed); channel cell uses .badge.info.dimmed
 │   │   │   │   ├── channel-filters/    # ChannelFilters module — props-only, no store reads
 │   │   │   │   │   ├── index.ts        # Barrel — exports ChannelFilters

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
-  title: string
-}>()
+  title: string;
+}>();
 </script>
 
 <template>
@@ -14,10 +14,6 @@ defineProps<{
 <style lang="scss" scoped>
 .analysis-section {
   @apply flex flex-col gap-3 text-sm;
-
-  :deep(p > strong) {
-    @apply font-semibold text-primary-lighter;
-  }
 }
 
 .section-title {
