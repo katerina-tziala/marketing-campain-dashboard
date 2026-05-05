@@ -1,6 +1,6 @@
 <template>
   <div
-    class="modal-footer"
+    class="modal-footer mt-4"
     data-modal-footer
   >
     <slot />

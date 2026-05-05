@@ -16,7 +16,7 @@ const emit = defineEmits<{
   >
     <ModalBody>
       <p class="w-full">
-        Uploading new data will replace your current dataset and reset any active analysis. This
+        Uploading new data will replace your current dataset and reset any active analysis.<br />This
         action cannot be undone.
       </p>
       <p class="text-sm font-semibold text-primary-lighter">Do you want to continue?</p>

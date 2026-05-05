@@ -27,10 +27,7 @@ const resolvedCount = computed(() => selectedCampaigns.value.length);
 const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length);
 const backLabel = computed(() => (props.hasPreviousErrors ? 'Review errors' : 'Fix file'));
 const importLabel = computed(() => {
-  if (selectedCampaigns.value.length > 0) {
-    return `Import selected rows (${selectedCampaigns.value.length})`;
-  }
-  if (requiredSelection.value) {
+  if (requiredSelection.value || selectedCampaigns.value.length > 0) {
     return 'Import selected rows';
   }
   return 'Import without duplicates';

@@ -15,7 +15,7 @@ export const router = createRouter({
         page: {
           title: 'Marketing Intelligence Dashboard | Campaign Performance',
           description:
-            'Marketing intelligence dashboard for performance analysis, budget optimization, and AI-powered insights including recommendations and executive summaries.',
+            'Marketing intelligence dashboard for performance analysis, budget optimization, and AI-powered insights including recommendations and executive summaries',
         },
       },
     },

@@ -27,13 +27,13 @@ const ROW_ISSUE_MESSAGES: Record<CampaignDataRowIssueType, string> = {
 };
 
 const VALIDATION_ERROR_MESSAGES: Record<CampaignDataValidationErrorType, string> = {
-  file_type: 'Only CSV files are accepted.',
-  file_size: 'File exceeds the 2 MB size limit.',
-  empty_file: 'The CSV file contains no data rows.',
-  missing_columns: 'CSV file headers are missing: {cols}. Please consult the template.',
-  invalid_rows: '{count} {rows} failed validation.',
-  parse_error: 'Failed to parse file: {detail}.',
-  duplicate_campaigns: 'Some campaign names appear more than once in the file.',
+  file_type: 'Only CSV files are accepted',
+  file_size: 'File exceeds the 2 MB size limit',
+  empty_file: 'The CSV file contains no data rows',
+  missing_columns: 'CSV file headers are missing: {cols}. Please consult the template',
+  invalid_rows: '{count} {rows} failed validation',
+  parse_error: 'Failed to parse file: {detail}',
+  duplicate_campaigns: 'Some campaign names appear more than once in the file',
 };
 
 function replacePlaceholders(template: string, values: Record<string, string>): string {
@@ -76,7 +76,7 @@ export function getValidationErrorMessage(error: CampaignDataValidationError): s
   }
 
   if (error.type === 'parse_error') {
-    return replacePlaceholders(template, { detail: error.detail ?? 'Unknown error.' });
+    return replacePlaceholders(template, { detail: error.detail ?? 'Unknown error' });
   }
 
   return template;

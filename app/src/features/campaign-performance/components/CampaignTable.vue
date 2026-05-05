@@ -83,7 +83,7 @@ const COLUMNS: DataTableColumn[] = [
 </script>
 
 <template>
-  <Table class="campaign-table">
+  <Table class="scrollbar-stable campaign-table">
     <TableHeader
       :columns="COLUMNS"
       position="sticky"

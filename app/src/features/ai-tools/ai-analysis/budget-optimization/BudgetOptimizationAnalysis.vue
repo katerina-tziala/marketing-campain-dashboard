@@ -40,7 +40,7 @@ const isButtonDisabled = computed(() => status.value === 'loading' || !canAnalyz
 const noRecommendationMessage = computed(
   () =>
     response.value?.noRecommendationReason ??
-    'No optimization opportunities identified at this time.',
+    'No optimization opportunities identified at this time',
 );
 
 const reallocations = computed(() =>

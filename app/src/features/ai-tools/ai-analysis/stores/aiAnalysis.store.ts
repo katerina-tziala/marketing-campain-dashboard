@@ -238,7 +238,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const { provider, selectedModel } = aiStore;
     const { apiKey } = aiStore;
     if (!provider || !selectedModel) {
-      setError(tab, 'unknown', 'AI provider or model is not selected.');
+      setError(tab, 'unknown', 'AI provider or model is not selected');
       return;
     }
 

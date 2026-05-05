@@ -85,7 +85,7 @@ const showProceed = computed(
       v-if="showProceed"
       variant="outline"
       @click="emit('proceed')"
-      >Import valid rows ({{ validCampaigns.length }})</Button
+      >Import valid rows</Button
     >
 
     <Button

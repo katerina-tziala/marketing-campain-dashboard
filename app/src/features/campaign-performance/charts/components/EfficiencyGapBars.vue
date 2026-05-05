@@ -170,8 +170,8 @@ const chartAriaLabel = computed(() =>
         </template>
         {{
           isSingleChannelView
-            ? 'Select at least two channels to compare revenue share against budget share.'
-            : 'These channels have the same revenue-to-budget balance in the current selection.'
+            ? 'Select at least two channels to compare revenue share against budget share'
+            : 'These channels have the same revenue-to-budget balance in the current selection'
         }}
       </Notification>
     </div>

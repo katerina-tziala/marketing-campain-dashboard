@@ -78,7 +78,7 @@ async function handleSubmit(details: PortfolioDetails): Promise<void> {
   pendingPortfolioDetails.value = details;
   isLoading.value = true;
   if (!file.value) {
-    parseError.value = 'Please select a file to upload.';
+    parseError.value = 'Please select a file to upload';
     isLoading.value = false;
     return;
   }
