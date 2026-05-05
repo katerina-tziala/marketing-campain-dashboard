@@ -2,13 +2,7 @@
 import { computed } from "vue";
 import type { BusinessContext } from "@/shared/portfolio";
 import { formatIsoDateRange } from "@/shared/utils";
-import {
-  SparklesIcon,
-  MetaRow,
-  MetaItem,
-  Button,
-  SectionHeaderLayout,
-} from "@/ui";
+import { MetaRow, MetaItem, SectionHeaderLayout } from "@/ui";
 
 const props = defineProps<{
   title: string;
@@ -17,11 +11,7 @@ const props = defineProps<{
     channels: { selected: number; total: number };
     campaigns: { filtered: number; total: number };
   };
-  showAiButton: boolean;
-  showConnectedDot: boolean;
 }>();
-
-const emit = defineEmits<{ aiClick: [] }>();
 
 const periodLabel = computed(() =>
   props.businessContext
@@ -39,18 +29,7 @@ const periodLabel = computed(() =>
       <h2 class="performance-header">Campaign Performance</h2>
     </template>
     <template #action>
-      <div v-if="showAiButton" class="relative shrink-0">
-        <Button variant="primary" size="small" @click="emit('aiClick')">
-          <SparklesIcon />AI
-        </Button>
-        <span
-          v-if="showConnectedDot"
-          class="connected-status"
-          aria-hidden="true"
-        >
-          <span class="connected-status-dot" />
-        </span>
-      </div>
+      <slot name="action" />
     </template>
     <MetaRow separator="bullet" size="base" class="text-typography-subtle">
       <MetaItem>{{ title }}</MetaItem>
@@ -78,41 +57,5 @@ const periodLabel = computed(() =>
 <style lang="scss" scoped>
 .performance-header {
   @apply w-full grow text-xl min-h-9 font-medium pt-1 tracking-wider text-typography-primary;
-}
-
-.connected-status {
-  @apply absolute
-    -top-1.5
-    -right-1.5
-    z-10
-    w-3.5
-    h-3.5
-    rounded-full
-    bg-surface
-    flex
-    items-center
-    justify-center
-    overflow-visible;
-  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.connected-status-dot {
-  @apply block
-    w-2
-    h-2
-    rounded-full
-    bg-success
-    shadow-connection;
-}
-
-@keyframes dot-pop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 </style>

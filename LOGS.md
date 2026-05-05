@@ -834,3 +834,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - hasPreviousErrors is semantic — parent passes intent, component owns presentation
 - importLabel computed covers all three states without inline ternaries in the template
 - requiredSelection moved into the component — was already derivable from validCampaigns.length, no reason to compute it in the parent
+
+
+## [#640] Project AI button into CampaignPerformanceHeader via slot
+**Type:** refactor
+
+**Summary:** Removed showAiButton/showConnectedDot props and aiClick emit from CampaignPerformanceView and CampaignPerformanceHeader; the AI button is now projected from DashboardPage into a #header-action slot, keeping AI concerns out of the campaign-performance feature.
+
+**Brainstorming:** The AI button belonged to the app layer — it opens a panel controlled by the orchestrator store. Passing it down as props (showAiButton, showConnectedDot, aiClick) forced the campaign-performance feature to be aware of AI panel state, which is not its concern. A named slot cleanly decouples this: CampaignPerformanceHeader exposes #action (passed to SectionHeaderLayout), CampaignPerformanceView exposes #header-action and passes it through, DashboardPage projects the button + connected dot as slot content. The connected dot styles (scoped SCSS + dot-pop keyframe) moved from CampaignPerformanceHeader into DashboardPage, which now owns them alongside the button markup.
+
+**Prompt:** Add a header action slot for campaign performance. Project the AI button from DashboardPage. Remove showAiButton/showConnectedDot props and aiClick emit from CampaignPerformanceView and CampaignPerformanceHeader.
+
+**What changed:**
+- `CampaignPerformanceHeader.vue` — removed showAiButton/showConnectedDot props and aiClick emit; replaced hardcoded AI button in #action with `<slot name="action" />`; removed connected dot scoped styles and dot-pop keyframe
+- `CampaignPerformanceView.vue` — removed showAiButton/showConnectedDot props and aiClick emit; passes #header-action slot through to CampaignPerformanceHeader's #action slot
+- `DashboardPage.vue` — projects AI button + connected dot span into CampaignPerformanceView's #header-action slot; added connected dot scoped styles (connected-status, connected-status-dot, dot-pop keyframe)
+
+**Key decisions & why:**
+- Slot over props — AI state belongs to the app layer; the feature should not hold references to it
+- #header-action name is specific enough to document intent at the call site without being too verbose
+- Connected dot styles moved with the markup — co-locating styles with the component that owns them prevents orphaned CSS

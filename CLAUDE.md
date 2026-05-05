@@ -34,7 +34,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── index.ts        # Vue Router — single route: / → DashboardPage; imports applyPageMeta; router.afterEach() applies page metadata on navigation; route meta.page: { title, description }
 │   │   │   └── page-meta.ts    # applyPageMeta(route) — updates document.title (format: "Marketing Campaign Dashboard | Page Title") and creates/updates <meta name="description"> at runtime; reads route.meta.page; defines fallback defaults
 │   │   ├── pages/
-│   │   │   └── DashboardPage.vue # Page-level orchestrator — owns dashboard shell structure: header (title + Upload CTA in floated action container), content area (EmptyState or CampaignPerformanceView), AI drawer (ResponsiveDrawer + AiTools), upload modal, replace confirmation modal; reads dashboardOrchestrator.store; switches between EmptyState (from @/features/data-transfer) and CampaignPerformanceView based on hasCampaigns; renders ResponsiveDrawer alongside dashboard content (push drawer at lg+, modal overlay at <lg); passes AI button state from orchestrator; wires openAiPanel through orchestrator; manages upload modal via useUploadModal(uploadModal)
+│   │   │   └── DashboardPage.vue # Page-level orchestrator — owns dashboard shell structure: header (title + Upload CTA in floated action container), content area (EmptyState or CampaignPerformanceView), AI drawer (ResponsiveDrawer + AiTools), upload modal, replace confirmation modal; reads dashboardOrchestrator.store; switches between EmptyState (from @/features/data-transfer) and CampaignPerformanceView based on hasCampaigns; renders ResponsiveDrawer alongside dashboard content (push drawer at lg+, modal overlay at <lg); projects AI button (SparklesIcon + connected dot) into CampaignPerformanceView #header-action slot — button visibility/dot driven by orchestrator state; wires openAiPanel through orchestrator; manages upload modal via useUploadModal(uploadModal)
 │   │   ├── composables/
 │   │   │   └── useUploadModal.ts # App-level upload orchestration — manages modal open/close, replacement confirmation, hasCampaigns gate; handles upload completion via handleUploadComplete (calls portfolioData.loadPortfolio); provides openUploadModal via inject
 │   │   ├── utils/
@@ -322,13 +322,13 @@ app/                        # Vue 3 + Vite project
 │   │   │       └── index.ts            # Barrel — exports BUDGET_OPTIMIZATION_SAMPLES, EXECUTIVE_SUMMARY_SAMPLES
 │   │   ├── campaign-performance/       # Campaign performance feature — filters, KPIs, charts, table
 │   │   │   ├── index.ts                # Barrel — exports CampaignPerformanceView
-│   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; receives showAiButton/showConnectedDot/aiClick from DashboardPage; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)
+│   │   │   ├── CampaignPerformanceView.vue # Main campaign performance view — owns feature-level grid container, header section, scrollable body, KPI grid, charts grid, scaling chart, and campaign table layout; exposes #header-action slot (passed through to CampaignPerformanceHeader's #action slot); no AI-specific props — DashboardPage projects the AI button via slot; dumb toward store (reads via useCampaignPerformanceStore directly for its own feature state)
 │   │   │   ├── stores/
 │   │   │   │   ├── campaignPerformance.store.ts # Pinia store (id: 'campaignPerformance') — selection + filter layer on top of portfolioData.store; activePortfolioId, selectedChannelsIds; portfolioChannels (Map)/allChannels (Channel[])/title/campaigns/selectedChannels/filteredCampaigns/portfolioScope/portfolioAnalysis computeds; core functions: getChannelsByIds(ids) → Channel[] (lookup filtered channels), getSelectedChannels() → Channel[] (return all or filtered), onPendingSelection(id) (watch handler), onPortfolioEvicted(id) (watch handler); watchers: pendingSelectionId (immediate) → onPendingSelection, lastEvictedId → onPortfolioEvicted; setChannelFilter(ids) action
 │   │   │   │   └── index.ts        # Barrel — exports useCampaignPerformanceStore
 │   │   │   ├── components/
 │   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis, CampaignTable
-│   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, channelCounts, campaignCounts, showAiButton, showConnectedDot; emits aiClick; multi-root (title-row + MetaRow bullet); AI button v-if !showAiButton hidden; connected dot rendered as explicit child element with success color + z-index (not a pseudo-element on an empty span) + dot-pop animation
+│   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, businessContext, counts; exposes #action slot (passed to SectionHeaderLayout #action); no AI-specific props or emits — callers project action content via slot
 │   │   │   │   ├── CampaignTable.vue   # Sortable campaign data table — prop: CampaignPerformance[]; sort via useSort / sortByValue(); PerformanceIndicator for Revenue (roi-colored) and CVR (dimmed); channel cell uses .badge.info.dimmed
 │   │   │   │   ├── channel-filters/    # ChannelFilters module — props-only, no store reads
 │   │   │   │   │   ├── index.ts        # Barrel — exports ChannelFilters
@@ -486,7 +486,7 @@ app/                        # Vue 3 + Vite project
 - [x] Channel filters — dynamic from data, overflow-aware two-state strip (all chips / dialog trigger + selected chips), real-time updates across all charts and table
 
 ### AI Tools
-- [x] AI button in campaign performance header (SparklesIcon + "AI" label, primary variant, v-if hidden when panel open)
+- [x] AI button in campaign performance header (SparklesIcon + "AI" label, primary variant, v-if hidden when panel open; projected from DashboardPage via #header-action slot)
 - [x] Push drawer at lg+ (slides in from right, compresses dashboard; 400px wide) via ResponsiveDrawer
 - [x] Fixed overlay at <lg (on top of dashboard; max 90vw/90vh; backdrop + slide-in transition) via ResponsiveDrawer
 - [x] Escape key or backdrop click closes panel

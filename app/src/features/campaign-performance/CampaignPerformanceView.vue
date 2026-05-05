@@ -6,13 +6,6 @@ import CampaignTable from "./components/CampaignTable.vue";
 import { CampaignPerformanceHeader, ChannelFilters, Kpis } from "./components";
 import { Card } from "@/ui";
 
-defineProps<{
-  showAiButton: boolean;
-  showConnectedDot: boolean;
-}>();
-
-const emit = defineEmits<{ aiClick: [] }>();
-
 const store = useCampaignPerformanceStore();
 
 const selectedChannelCount = computed(() =>
@@ -58,10 +51,11 @@ function applyChannelFilter(ids: string[]): void {
               total: store.campaigns.length,
             },
           }"
-          :show-ai-button="showAiButton"
-          :show-connected-dot="showConnectedDot"
-          @ai-click="emit('aiClick')"
-        />
+        >
+          <template #action>
+            <slot name="header-action" />
+          </template>
+        </CampaignPerformanceHeader>
         <ChannelFilters
           :channels="[...store.portfolioChannels.values()]"
           :selected-ids="store.selectedChannelsIds"
