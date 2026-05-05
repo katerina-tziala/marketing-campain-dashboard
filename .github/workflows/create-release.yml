@@ -26,10 +26,10 @@ jobs:
         working-directory: app
 
     steps:
-      - name: Checkout main
+      - name: Checkout default branch
         uses: actions/checkout@v5
         with:
-          ref: main
+          ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
 
       - name: Setup Node
@@ -71,12 +71,13 @@ jobs:
 
       - name: Commit and tag release
         env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           git add package.json package-lock.json
           git commit -m "Release v$RELEASE_VERSION"
           git tag "v$RELEASE_VERSION"
-          git push origin main
+          git push origin "HEAD:$DEFAULT_BRANCH"
           git push origin "v$RELEASE_VERSION"
 
       - name: Create GitHub release
