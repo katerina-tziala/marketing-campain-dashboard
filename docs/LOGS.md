@@ -4004,7 +4004,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Mapper lives only in `UploadModal` — it is the single boundary between CSV parsing and the store; no other file needs to know about the mapping
 - `detect-campaign-duplication.ts` as a standalone file — single responsibility; testable in isolation; keeps `validate-campaign-data.ts` as an orchestrator
 
-## [178] Create DataErrorsTable dumb component
+## [#178] Create DataErrorsTable dumb component
 
 **Type:** feature
 
@@ -4024,7 +4024,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `validation/` subfolder — signals intent to group validation-related rendering components separately from the parent modal's multi-root components
 - Flat `@apply` only — aligns with the project-wide move away from BEM
 
-## [179] Use DataErrorsTable in CsvErrorTable
+## [#179] Use DataErrorsTable in CsvErrorTable
 
 **Type:** update
 
@@ -4043,7 +4043,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Removed `getRowErrorMessage` import entirely — it was only used inside the now-extracted table rows
 - Deleted all table-related scoped styles — they are now owned by `DataErrorsTable`
 
-## [180] Scrollable tbody only in DataErrorsTable
+## [#180] Scrollable tbody only in DataErrorsTable
 
 **Type:** fix
 
@@ -4063,7 +4063,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `bg-surface` on `thead` — ensures the header has a solid background so it visually separates from the scrolling rows beneath
 - Removed sticky — no longer needed since the header is naturally above the scroll container
 
-## [181] Fix column alignment in DataErrorsTable
+## [#181] Fix column alignment in DataErrorsTable
 
 **Type:** fix
 
@@ -4081,7 +4081,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Mirror widths on td classes rather than inline styles — keeps sizing in one place per column and consistent with the Tailwind @apply approach
 
-## [182] Revert DataErrorsTable to sticky header approach
+## [#182] Revert DataErrorsTable to sticky header approach
 
 **Type:** fix
 
@@ -4100,7 +4100,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Sticky header on the wrapper scroll is the standard, alignment-safe solution — no width synchronization needed
 - `bg-surface` on `thead th` prevents row content from bleeding through the header when scrolling
 
-## [183] Add ArrowUpIcon to sort button in DataErrorsTable
+## [#183] Add ArrowUpIcon to sort button in DataErrorsTable
 
 **Type:** update
 
@@ -4120,7 +4120,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Reused the rotate-180 class for descending — the icon is an up arrow that flips, consistent with the existing sort-icon--desc pattern
 
-## [184] Thicker stroke on ArrowUpIcon
+## [#184] Thicker stroke on ArrowUpIcon
 
 **Type:** fix
 
@@ -4270,7 +4270,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Green (`text-primary-400`) for resolved indicator state — clear positive signal without introducing a new color token
 - Grid row added for indicator — keeps the table's `1fr` row intact so it still fills available height
 
-## [#192] Extract format helpers to common/utils/formatters
+## [#191] Extract format helpers to common/utils/formatters
 
 **Type:** refactor
 
@@ -4289,7 +4289,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Placed in `common/utils/` not `csv-file/utils/` — no CSV-specific logic; available to dashboard, AI panels, or any future component that formats currency or counts
 
-## [#193] Extract duplicate table into CampainDuplicationsTable
+## [#192] Extract duplicate table into CampainDuplicationsTable
 
 **Type:** refactor
 
@@ -4309,7 +4309,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `change` emit carries the full `CsvCampaign[]` snapshot on every selection — parent needs the array for both the counter and the proceed payload; avoids exposing internal Map state
 - `allResolved` drives the indicator `.resolved` class in the parent (was `resolvedCount > 0` before — corrected to `allResolved` for accurate green state)
 
-## [#194] Extract DuplicateSummary component shared by CsvErrorTable and CsvDuplicateTable
+## [#193] Extract DuplicateSummary component shared by CsvErrorTable and CsvDuplicateTable
 
 **Type:** refactor
 
@@ -4330,7 +4330,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `variant` prop over two separate components — the two modes share enough structure (DataErrorSummary wrapper, count-based grammar) that a single component with a variant is simpler than two separate files
 - Default `variant='notice'` — the notice use case (CsvErrorTable) is the simpler one and the more likely reuse path; resolve is the explicit opt-in
 
-## [#195] Rename CsvDuplicateTable to ResolveDuplicationsStep
+## [#194] Rename CsvDuplicateTable to ResolveDuplicationsStep
 
 **Type:** refactor
 
@@ -4350,7 +4350,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - No logic changes — pure rename; component interface (props/emits) unchanged
 
-## [#196] Rename CsvErrorTable to DisplayUploadErrorsStep
+## [#195] Rename CsvErrorTable to DisplayUploadErrorsStep
 
 **Type:** refactor
 
@@ -4370,7 +4370,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - No logic changes — pure rename; component interface (props/emits) unchanged
 
-## [#197] Rename CsvUploadForm to UploadCampainData
+## [#196] Rename CsvUploadForm to UploadCampainData
 
 **Type:** refactor
 
@@ -4391,7 +4391,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - No logic changes — pure rename; component interface (props/emits) unchanged
 
-## [#198] Extract isValidCsvFile and create csv-file barrel index
+## [#197] Extract isValidCsvFile and create csv-file barrel index
 
 **Type:** refactor
 
@@ -4415,7 +4415,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `isValidCsvFile` lives in `parse-csv.ts` (not a separate util) because CSV file validation is the entry-point concern of that module
 - Barrel only exports what external code actually imports — internal components (`UploadCampainData`, `DisplayUploadErrorsStep`, `ResolveDuplicationsStep`) are not exported
 
-## [#199] Rename csv-file feature folder to data-transfer
+## [#198] Rename csv-file feature folder to data-transfer
 
 **Type:** refactor
 
@@ -4436,7 +4436,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Only two import paths needed updating because the barrel from #198 isolated all external consumers from the internal folder structure
 
-## [#200] UI polish — extract .detail-item, de-BEM components, accessibility improvements
+## [#199] UI polish — extract .detail-item, de-BEM components, accessibility improvements
 
 **Type:** update
 
@@ -4469,7 +4469,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Native `<button>` for FileDropzone — removes need for manual `role`, `tabindex`, and keyboard handling; browsers provide these for free; hidden input stays outside so it is not a descendant of the button (invalid HTML)
 - `.tab-active` flat name — consistent with `.tab-icon` already on the same component and with the project no-BEM rule
 
-## [#201] Extract DashboardHeader component
+## [#200] Extract DashboardHeader component
 
 **Type:** refactor
 
@@ -4490,7 +4490,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Store read inside component — consistent with how other dashboard components (KpiCard, CampaignTable) receive or read data; avoids threading props through DashboardView for data it no longer needs
 - emit ai-click, not inject openAiPanel — keeps the panel-open concern in DashboardView where the inject already lives; DashboardHeader has no knowledge of the panel system
 
-## [#202] DashboardHeader enhancements — channels detail, disabled AI button, connected dot, camelCase emit
+## [#201] DashboardHeader enhancements — channels detail, disabled AI button, connected dot, camelCase emit
 
 **Type:** update
 
@@ -4513,7 +4513,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Connected dot hidden when panel open — the dot signals "click here to open the AI panel"; when the panel is already open the signal is redundant and clutters the disabled button
 - camelCase emit convention — going forward all emits in this project use camelCase
 
-## [#203] Refactor KpiCard — flat styles, slot projection, formatters, N/A fallback, roiClass coloring
+## [#202] Refactor KpiCard — flat styles, slot projection, formatters, N/A fallback, roiClass coloring
 
 **Type:** refactor
 
@@ -4537,7 +4537,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - accentColor removed without replacement — var(--accent) was unused after the style refactor; removing it entirely is cleaner than keeping a prop with no consumer
 - formatCompactCurrency/formatCompactNumber separate from formatCurrency/formatNumber — compact variants use different precision rules; existing simple formatters must not change signature
 
-## [#204] Extract DashboardKpis component; move totalConversions into CampaignKPIs
+## [#203] Extract DashboardKpis component; move totalConversions into CampaignKPIs
 
 **Type:** refactor
 
@@ -4560,7 +4560,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - totalConversions kept on store root as well — funnel chart in DashboardView still needs store.totalConversions, totalImpressions, totalClicks directly
 - Formatting logic moves into DashboardKpis, not left in DashboardView — DashboardView should not know the display format of KPIs; that knowledge belongs in the component that renders them
 
-## [#205] Extract groupByChannel utility; expose channelTotals from campaignStore
+## [#204] Extract groupByChannel utility; expose channelTotals from campaignStore
 
 **Type:** refactor
 
@@ -4582,7 +4582,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Exposed via store computed rather than requiring feature components to import the util directly — store is already the data layer; channelTotals fits naturally alongside kpis and filteredCampaigns
 - AI tools files left unchanged — scoped to common and stores only for this pass
 
-## [#206] Extract DashboardCharts component; consolidate funnel totals into CampaignKPIs
+## [#205] Extract DashboardCharts component; consolidate funnel totals into CampaignKPIs
 
 **Type:** refactor
 
@@ -4605,7 +4605,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - revVsBudgetData uses channelTotals prop instead of inline loop — free win from the prior groupByChannel extraction; eliminates the last inline channel accumulation in the dashboard feature
 - Three props rather than one flat object — campaigns is a list (variable length, drives color mapping), channelTotals is a map keyed by channel name, kpis is a fixed-shape aggregate; splitting them by semantic type makes it clear what each chart computation depends on
 
-## [#207] UI polish: table styles, responsive charts grid, dashboard layout, formatter and modal updates
+## [#206] UI polish: table styles, responsive charts grid, dashboard layout, formatter and modal updates
 
 **Type:** update
 
@@ -4633,7 +4633,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `@container` query for charts grid instead of `@media` — charts grid width is determined by the available container (which shrinks when the AI drawer opens), not the viewport; media queries would not respond to drawer state
 - `data-visualization` as the scroll zone — header and channel filter stay sticky, only the chart/table area scrolls; max-width on the inner wrapper keeps content aligned with the rest of the page
 
-## [#208] Refactor toast notifications: variants, icons, flat styles, typed store helpers
+## [#207] Refactor toast notifications: variants, icons, flat styles, typed store helpers
 
 **Type:** refactor
 
@@ -4663,7 +4663,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - ICON_MAP as a static Record rather than a switch/computed — resolves the icon component in one lookup; static so Vue can tree-shake unused icons if needed
 - flat modifier classes (.success etc.) on .toast rather than separate component per variant — variant is data, not structure; one component handles all four cases
 
-## [#209] Toast visual polish — solid background, larger icon, btn-icon-secondary close
+## [#208] Toast visual polish — solid background, larger icon, btn-icon-secondary close
 
 **Type:** update
 
@@ -4683,7 +4683,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Border opacity `/50` instead of full — full opacity borders felt too heavy against the solid background; `/50` keeps the color signal readable without overpowering the card
 - `.btn-icon-secondary` applied directly in template — it is a global class; applying it in template is cleaner than duplicating its rules in scoped SCSS
 
-## [#210] Remove all BEM class names from the codebase
+## [#209] Remove all BEM class names from the codebase
 
 **Type:** refactor
 
@@ -4703,7 +4703,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Flat hyphenated names instead of BEM — consistent with every other component in the project; scoped styles prevent collisions so the block prefix alone is sufficient
 - SCSS rules unnested — the `&__` nesting was the BEM-specific pattern; flat rules are more readable and make the no-BEM intent explicit
 
-## [#211] Disable upload form during submission; fix FileDropzone hasError detection
+## [#210] Disable upload form during submission; fix FileDropzone hasError detection
 
 **Type:** fix
 
@@ -4724,7 +4724,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Cancel and Download Template buttons left enabled — user should always be able to cancel an in-progress upload or download the template; only data-entry fields are locked
 - Guard in `open()` and `onDrop()` in addition to `:disabled` on the button — the native `disabled` attribute stops click and keyboard, but drag-and-drop events fire independently of it
 
-## [#212] Fix FileDropzone hasError — plain function instead of computed
+## [#211] Fix FileDropzone hasError — plain function instead of computed
 
 **Type:** fix
 
@@ -4742,7 +4742,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Plain function over computed — slot calls are not reactive dependencies; computed caching breaks the detection; a plain function in the template runs in the render tracking context and sees the correct slot nodes on every update
 
-## [#213] Extract ui/forms/ module — FileDropzone, PasswordInput, RadioToggle
+## [#212] Extract ui/forms/ module — FileDropzone, PasswordInput, RadioToggle
 
 **Type:** refactor
 
@@ -4766,7 +4766,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Barrel re-export via `export * from './forms'` in ui/index.ts — all consumers import from the top-level ui barrel; no consumer files needed updating
 - Only relative path to fix was UploadIcon in FileDropzone — the other two components had no relative sibling imports
 
-## [#214] Move toast notifications to bottom-left
+## [#213] Move toast notifications to bottom-left
 
 **Type:** fix
 
@@ -4784,7 +4784,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Flipped leave translation to `-translate-x-4` so toasts slide out to the left, consistent with their anchor position
 
-## [#215] Pre-calculate campaign metrics in store
+## [#214] Pre-calculate campaign metrics in store
 
 **Type:** refactor
 
@@ -4808,7 +4808,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `CampaignPerformance extends Campaign` means all existing consumers typed as `Campaign[]` (charts, AI data builders) remain valid without changes
 - KPI aggregations in the store are untouched — they operate on filtered totals, not per-row derived values
 
-## [#216] Sort null campaign metrics last
+## [#215] Sort null campaign metrics last
 
 **Type:** fix
 
@@ -4826,7 +4826,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Null always last regardless of direction: null means no data, not a metric value — it should never compete with real values in either direction
 
-## [#217] Extract sort helpers into common/utils/sorting.ts
+## [#216] Extract sort helpers into common/utils/sorting.ts
 
 **Type:** refactor
 
@@ -4845,7 +4845,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `compareNullsLast` returns `null` (not a number) when both values are non-null — signals "no null decision made", allowing `??` composition in `sortWithNullsLast`
 
-## [#218] Fix formatNumber locale
+## [#217] Fix formatNumber locale
 
 **Type:** fix
 
@@ -4863,7 +4863,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Used `'en'` to be consistent with all other formatters in the same file rather than introducing a new locale
 
-## [#219] Move null fallback into formatPercentage and formatCurrency
+## [#218] Move null fallback into formatPercentage and formatCurrency
 
 **Type:** refactor
 
@@ -4882,7 +4882,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `fallback` defaults to `'N/A'` so all existing call sites are unaffected; callers can override if needed
 
-## [#220] Use formatPercentage for ROI in CampaignTable
+## [#219] Use formatPercentage for ROI in CampaignTable
 
 **Type:** fix
 
@@ -4900,7 +4900,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `formatPercentage` already handles null, so no ternary needed
 
-## [#221] Pre-calculate percentageClass on CampaignPerformance
+## [#220] Pre-calculate percentageClass on CampaignPerformance
 
 **Type:** refactor
 
@@ -4922,7 +4922,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `percentageClassMap` derived from `sortedCampaigns` (not `props.campaigns`) so it stays in sync with the rendered rows
 - `roiClass` returns `''` for null so bindings are clean with no ternary guards
 
-## [#222] Remove percentageClassMap — read c.percentageClass directly
+## [#221] Remove percentageClassMap — read c.percentageClass directly
 
 **Type:** fix
 
@@ -4938,7 +4938,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `percentageClass` is already on the model so a Map lookup adds no value — direct property access is simpler and just as efficient
 
-## [#223] Move percentageClass function to campaign-performance.ts
+## [#222] Move percentageClass function to campaign-performance.ts
 
 **Type:** refactor
 
@@ -4960,7 +4960,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Function lives in `campaign-performance.ts` rather than the model — CSS class derivation is view concern, not domain data
 - `roi.ts` left in place for now; `roiValue` and `formatROI` remain but are unused — full deletion is a follow-up
 
-## [#224] Use formatNumber for conversions in CampaignTable
+## [#223] Use formatNumber for conversions in CampaignTable
 
 **Type:** fix
 
@@ -4976,7 +4976,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `formatCurrency` was not appropriate — conversions is a count, not a monetary value
 
-## [#225] Use pre-calculated roi in DashboardCharts
+## [#224] Use pre-calculated roi in DashboardCharts
 
 **Type:** refactor
 
@@ -4994,7 +4994,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `c.roi ?? 0` falls back to `0` when ROI is null (zero-budget campaign) — consistent with the previous inline behaviour which also returned 0 in that case
 
-## [#226] Delete roi.ts
+## [#225] Delete roi.ts
 
 **Type:** fix
 
@@ -5013,7 +5013,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - No replacement needed — `percentageClass` in `campaign-performance.ts` covers the class derivation use case; `roiValue` and `formatROI` had no callers
 
-## [#227] Use PerformanceMetrics in CampaignPerformance
+## [#226] Use PerformanceMetrics in CampaignPerformance
 
 **Type:** fix
 
@@ -5031,7 +5031,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `CampaignKPIs` was not changed — its metric fields are non-nullable (except `cac`) and represent aggregated portfolio values, not per-campaign calculated metrics, so `PerformanceMetrics` does not apply
 
-## [#228] Refactor campaign type hierarchy and metric calculation pipeline
+## [#227] Refactor campaign type hierarchy and metric calculation pipeline
 
 **Type:** refactor
 
@@ -5058,7 +5058,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `buildExecutiveSummaryData.ts` / `buildBudgetOptimizerData.ts` not touched — their `totalX` locals are internal variables; they operate on raw `Campaign[]` with deliberate `Infinity`-based CAC for comparison logic and are not consumers of `CampaignKPIs`
 - Explicit `: CampaignKPIs` return type on `kpis` computed — catches shape mismatches at the store boundary
 
-## [#235] Add rowId to Campaign and wire through data transfer
+## [#228] Add rowId to Campaign and wire through data transfer
 
 **Type:** update
 
@@ -5080,7 +5080,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `EXPECTED_HEADERS` / `CSV_HEADERS` unchanged — `rowId` is system-assigned, never user-supplied or exported
 - `map-campaign.ts` unchanged — rest-spread already keeps all `Campaign` fields including `rowId` after stripping `rowNum`
 
-## [#236] Rename Csv* types to CampainData* and remove CsvCampaign
+## [#229] Rename Csv* types to CampainData* and remove CsvCampaign
 
 **Type:** refactor
 
@@ -5112,7 +5112,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `map-campaign.ts` deleted — once `CsvCampaign` was gone, `toCampaigns` became `(c: Campaign[]) => c`; dead code deleted rather than left as dead weight
 - `rowNum` local variable kept in `processRows` for the `+2` calculation clarity, but no longer spread onto the campaign object
 
-## [#237] Add Channel type, campainChannels store ref, and buildChannelMap utility
+## [#230] Add Channel type, campainChannels store ref, and buildChannelMap utility
 
 **Type:** feature
 
@@ -5136,7 +5136,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `aggregateCampaignMetrics(updatedCampaigns)` on collision — reuses the already-computed `CampaignPerformance[]` list; keeps campaigns as the single source of truth for totals
 - two-phase split — grouping and sorting are separate concerns; the sort phase never touches `groupCampaignsByChannel` output after creation
 
-## [#238] Refactor channel filter to use portfolioChannels and selectedChannelsIds
+## [#231] Refactor channel filter to use portfolioChannels and selectedChannelsIds
 
 **Type:** refactor
 
@@ -5162,7 +5162,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `filteredCampaigns` flatMaps from selected Channel objects — O(selected channels × campaigns per channel) instead of O(all campaigns); order changes (grouped by channel) but table is sortable so it doesn't matter
 - `availableChannels` computed removed — redundant once ChannelFilter accepts `Channel[]`; `portfolioChannels.size` replaces `.length` for the header count
 
-## [#239] Replace channelTotals with selectedChannels Channel array in store and charts
+## [#232] Replace channelTotals with selectedChannels Channel array in store and charts
 
 **Type:** refactor
 
@@ -5184,7 +5184,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `Channel[]` instead of `Record<string, ChannelTotals>` — Channel already carries all needed fields; a flat array is simpler to map over in chart computeds
 - File deleted rather than emptied — `ChannelTotals` type and `groupByChannel` function had no other consumers; keeping an empty file would be misleading
 
-## [#240] Derive filteredCampaigns from selectedChannels; campaignScope.campaigns from portfolioChannels
+## [#233] Derive filteredCampaigns from selectedChannels; campaignScope.campaigns from portfolioChannels
 
 **Type:** refactor
 
@@ -5203,7 +5203,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `selectedChannels` declared before `filteredCampaigns` — `filteredCampaigns` now depends on it, order matters in the setup function
 - `portfolioChannels` as source for `campaignScope.campaigns` — portfolioChannels is already the canonical sorted structure; raw `campaigns` ref is now an internal implementation detail only needed for loadCampaigns and empty-state checks
 
-## [#241] Derive campaigns computed from portfolioChannels; remove campaigns ref
+## [#234] Derive campaigns computed from portfolioChannels; remove campaigns ref
 
 **Type:** refactor
 
@@ -5222,7 +5222,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `campaigns` as computed not ref — portfolioChannels is already the authoritative structure built by `buildChannelMap`; a separate ref was a copy that had to be kept in sync manually
 - `toCampaignPerformance` removed from store imports — conversion now happens exclusively inside `buildChannelMap`; the store no longer needs to know about it
 
-## [#242] Show campaign count pill in channel filter chips
+## [#235] Show campaign count pill in channel filter chips
 
 **Type:** update
 
@@ -5240,7 +5240,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `bg-white/10` for the pill background — semi-transparent white works on both the active primary-500 and inactive surface backgrounds without needing per-state color overrides
 
-## [#243] Extract provider implementations into dedicated providers/ module
+## [#236] Extract provider implementations into dedicated providers/ module
 
 **Type:** refactor
 
@@ -5286,7 +5286,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `rankModels.ts` in `ai-tools/utils/` kept for now — still referenced by existing code; removal deferred until the full migration to `providers/utils/shared.ts` is complete
 - `errorCodeFromStatus` now maps 400/401/403 → `invalid-key` — the old version only mapped 429 and 500+; this means auth errors from the connection endpoint now produce the correct user-facing message rather than 'unknown'
 
-## [#244] Wire aiStore to providers/connectProvider; move error mapping into store; delete old ai-connection wrappers
+## [#237] Wire aiStore to providers/connectProvider; move error mapping into store; delete old ai-connection wrappers
 
 **Type:** refactor
 
@@ -5309,7 +5309,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `isConnectionError` guard removed — with `connectProvider` returning `Promise<AiModel[]>` and throwing on failure, a union return type and its guard are no longer needed
 - `invalid-response` added to `ERROR_CODES` — it was missing from the old set and is now a valid `AiConnectionErrorCode`
 
-## [#245] Retry model evaluation across candidates; fix swapped args and wrong provider label
+## [#238] Retry model evaluation across candidates; fix swapped args and wrong provider label
 
 **Type:** refactor
 
@@ -5332,7 +5332,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `null` return from `attemptEvaluation` rather than throwing — makes the retry loop a simple `if (result) return result` without any additional try/catch at the call site
 - Fallback returned only when all candidates are exhausted — connection still succeeds with the optimal model as a baseline; the AI evaluation is a best-effort ranking, not a hard requirement
 
-## [#246] Replace fallback model with recursive evaluation; throw on exhaustion; filter ranked output against candidates
+## [#239] Replace fallback model with recursive evaluation; throw on exhaustion; filter ranked output against candidates
 
 **Type:** refactor
 
@@ -5357,7 +5357,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `toRankedModels` validates output against `validIds` — prevents the AI from returning hallucinated model identifiers; an empty validation result triggers a retry rather than a silent empty connection
 - `buildFallbackModel` / `rankModels` removed from `providers/utils/shared.ts` — both were only used by the connect files and are now fully superseded by the per-provider `toRankedModels` implementations
 
-## [#247] Move shared ranking logic (strength filter, sort, limitReset, no-models throw) to connect-provider
+## [#240] Move shared ranking logic (strength filter, sort, limitReset, no-models throw) to connect-provider
 
 **Type:** refactor
 
@@ -5379,7 +5379,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `toRankedModels` in each provider retains the validIds throw — this is what drives the retry recursion; if the AI hallucinated all model IDs the loop still tries the next candidate; only the universal quality bar (strength, sort, reset) moved up
 - Named function references in Groq file — the linter reports cumulative file complexity and was hitting the threshold at `toRankedModels`; extracting `isAllowed` and `byCreatedDesc` as named functions (used by reference, not as inline arrows) removes their branch cost from the calling functions, bringing cumulative complexity to 4
 
-## [#248] Extract toValidModels into shared utils; remove toRankedModels from provider connect files
+## [#241] Extract toValidModels into shared utils; remove toRankedModels from provider connect files
 
 **Type:** refactor
 
@@ -5400,7 +5400,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Signature is `(validIds, parsed)` not `(parsed, candidates)` — the caller already has `validIds` from `buildValidIds`; passing the set directly keeps the function decoupled from provider-specific model shapes
 - `buildValidIds` stays in each provider — it handles provider-specific ID formats (Gemini `models/` prefix stripping vs Groq plain IDs); only the generic filter step is shared
 
-## [#249] Align Gemini filterModels architecture with Groq
+## [#242] Align Gemini filterModels architecture with Groq
 
 **Type:** refactor
 
@@ -5418,7 +5418,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `!!` on `m.supportedGenerationMethods?.includes('generateContent')` — the optional chain returns `boolean | undefined`; `!!` coerces to `boolean` so the named function satisfies its declared return type without needing `=== true` or a broader signature
 
-## [#250] Wire runProviderPrompt into aiAnalysisStore; delete unused callProvider and rankModels files
+## [#243] Wire runProviderPrompt into aiAnalysisStore; delete unused callProvider and rankModels files
 
 **Type:** refactor
 
@@ -5442,7 +5442,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - No error-handling changes in the store — `runProviderPrompt` surfaces the same error codes (`'token-limit'`, `'network'`, `'timeout'`, `'server-error'`, `'unknown'`) that `handleRequestError` already handles; `'invalid-response'` on parse failure falls through to the `?? ERROR_MESSAGES.unknown` fallback
 - Deleted `ai-analysis/index.ts` rather than leaving an empty barrel — an empty barrel is dead weight
 
-## [#251] Unify error codes, extract AsyncStatus, move AiModel to providers
+## [#244] Unify error codes, extract AsyncStatus, move AiModel to providers
 
 **Type:** refactor
 
@@ -5478,7 +5478,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `Record<AiErrorCode, ...>` for all error maps — TypeScript enforces exhaustiveness, preventing silent gaps when a new code is added
 - `parse-error` added to `ai-connection/utils/index.ts` error records even though it's an analysis-only code — exhaustiveness requires all 10 entries everywhere the record type is used
 
-## [#252] Refactor AiModel DTO, add AiModelCandidate mapping, providers-meta rules
+## [#245] Refactor AiModel DTO, add AiModelCandidate mapping, providers-meta rules
 
 **Type:** refactor
 
@@ -5513,7 +5513,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - providerRules as string[] rather than derived from provider enum — keeps the prompt function free of provider knowledge and makes rules independently testable
 - prompt2 files left untouched — user explicitly excluded them
 
-## [#253] Split provider metadata and error messages to correct feature boundaries
+## [#246] Split provider metadata and error messages to correct feature boundaries
 
 **Type:** refactor
 
@@ -5539,7 +5539,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Two separate error message constants (`ERROR_MESSAGES` vs `ANALYSIS_ERROR_MESSAGES`) kept intentionally separate — connection form messages are provider-aware functions; analysis panel messages are plain strings; merging them would require artificial branching or overloading
 - `ai-connection/utils` retained (not deleted) — it still owns the connection-form error display constants, which are specific to the connection UI and not reusable elsewhere
 
-## [#254] Move analysis-error-messages to ai-analysis/utils/
+## [#247] Move analysis-error-messages to ai-analysis/utils/
 
 **Type:** fix
 
@@ -5559,7 +5559,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - New `ai-analysis/utils/` subfolder created — `ai-analysis/` had only `components/`; utils is the natural parallel for non-component module-level code scoped to this feature
 
-## [#255] Add PerformanceMetrics to Channel type
+## [#248] Add PerformanceMetrics to Channel type
 
 **Type:** update
 
@@ -5579,7 +5579,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Performance metrics re-computed on every campaign addition (update branch) — channel aggregates change with each new campaign, so metrics must be derived from the final aggregated totals, not accumulated incrementally
 - `computePerformanceMetrics` called on the extracted `metrics` object (not on the full channel) — avoids passing extra fields and matches the function's `CampaignMetrics` parameter contract exactly
 
-## [#256] Move computePerformanceMetrics call to buildChannelMap sort phase
+## [#249] Move computePerformanceMetrics call to buildChannelMap sort phase
 
 **Type:** fix
 
@@ -5597,7 +5597,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `ChannelAccumulator = Omit<Channel, keyof PerformanceMetrics>` — ties the type to `PerformanceMetrics` structurally; if new performance fields are added later, the omit stays correct without manual updates
 
-## [#257] Move aggregateCampaignMetrics to buildChannelMap sort phase
+## [#250] Move aggregateCampaignMetrics to buildChannelMap sort phase
 
 **Type:** fix
 
@@ -5615,7 +5615,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Accumulator reduced to the minimum needed for grouping — raw metrics and performance metrics are all derived; keeping them out of the loop makes the separation of concerns explicit
 
-## [#258] Replace 12 individual refs with two reactive display objects in aiAnalysisStore
+## [#251] Replace 12 individual refs with two reactive display objects in aiAnalysisStore
 
 **Type:** refactor
 
@@ -5638,7 +5638,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Internal state kept as plain objects — AbortController, Map, setTimeout timers should not be reactive; separating them is also clearer about intent
 - `firstAnalyzeCompleted` moved to internal state only — nothing outside the store used the exposed refs; `analysisActivated` (shared ref) serves the same role for the UI
 
-## [#259] Fix unsafe response casts in aiAnalysisStore
+## [#252] Fix unsafe response casts in aiAnalysisStore
 
 **Type:** fix
 
@@ -5656,7 +5656,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `as unknown as T` rather than a different typing approach — the union return type of `getDisplay` is correct; the unsafe cast is a deliberate trade-off to avoid duplicating response-assignment logic per tab
 
-## [#260] Consolidate per-tab cache maps into a single CacheEntry map
+## [#253] Consolidate per-tab cache maps into a single CacheEntry map
 
 **Type:** refactor
 
@@ -5675,7 +5675,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `dataCache` kept separate — uses a label-only key (no provider/model); merging would cause unnecessary data rebuilds per model switch
 - `cooldownUntil` instead of `cooldownStart` — storing expiry rather than start time makes the check a direct comparison with no arithmetic
 
-## [#261] Remove model from response cache key
+## [#254] Remove model from response cache key
 
 **Type:** refactor
 
@@ -5695,7 +5695,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Model removed, provider kept — provider determines response structure; model within a provider is an implementation detail the user never controls
 - Token-limit fallback unaffected — it calls `executeAnalysis(tab, false)` which skips the cache check, so a fresh response is always fetched on the first call after model switch
 
-## [#262] Move cacheTimestamp into response — stamp timestamp on TabResponse
+## [#255] Move cacheTimestamp into response — stamp timestamp on TabResponse
 
 **Type:** refactor
 
@@ -5718,7 +5718,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Pattern follows `model` stamp — `model` was already an infrastructure field on the response; `timestamp` is consistent with that precedent
 - No cache-restore sites need changing — `d.response = entry.response` implicitly carries `response.timestamp` already set at write time; all restore paths just work
 
-## [#263] Executive Summary — full refactor to camelCase schema, derivedSignals-first prompt, and new builder
+## [#256] Executive Summary — full refactor to camelCase schema, derivedSignals-first prompt, and new builder
 
 **Type:** refactor
 
@@ -13361,7 +13361,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Tab folders at `ai-analysis/` root not inside `components/` — same pattern as `charts/` in campaign-performance; `components/` becomes a thin shell that only owns the orchestrator.
 - Barrel per tab folder — consistent with campaign-performance; consumers import the public tab component without knowing its internal structure.
 
-## [574] Extract store-private utils from aiAnalysis.store.ts
+## [#574] Extract store-private utils from aiAnalysis.store.ts
 
 **Type:** refactor
 
@@ -13382,7 +13382,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Store-private only — neither file is exported from `stores/index.ts`; consumers never need these internal shapes directly.
 - `getOtherAnalysisType` stays store-private (in utils, not `ai-analysis/utils/`) — it has exactly one call site inside the store and no external consumers.
 
-## [575] Extract AnalysisCache class from aiAnalysis store
+## [#575] Extract AnalysisCache class from aiAnalysis store
 
 **Type:** refactor
 
@@ -13409,7 +13409,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - CacheEntry lives in AnalysisCache.ts not store.utils.ts — it is a cache data shape, not a store display shape; co-locating with the class that owns it is more coherent.
 - cache-key.ts stays internal to response-cache/ — nothing outside the module needs to generate a cache key directly.
 
-## [576] Internalize lastVisibleCacheKey tracking in AnalysisCache
+## [#576] Internalize lastVisibleCacheKey tracking in AnalysisCache
 
 **Type:** refactor
 
@@ -13429,7 +13429,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - getByKey() does not update lastVisibleCacheKey — it is a targeted lookup for revertTab, not a display-path call.
 - clear() already resets lastVisibleCacheKey — onPortfolioSwitch null-reset removed from store as a result.
 
-## [577] Remove getter injection from AnalysisCache — pass context at call time
+## [#577] Remove getter injection from AnalysisCache — pass context at call time
 
 **Type:** refactor
 
@@ -13450,7 +13450,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - getChannelIds() store helper added — avoids repeating the null-coalesce inline at every call site.
 - In executeAnalysis, context.selectedChannelIds and provider are passed directly since both are already destructured from context/aiStore at that point.
 
-## [578] Rename TabState to TabRequestState and merge AnalysisCache into it
+## [#578] Rename TabState to TabRequestState and merge AnalysisCache into it
 
 **Type:** refactor
 
@@ -13471,7 +13471,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `reset()` still only clears request state fields — cache lifetime is longer and controlled separately via `clearCache()` and `deletePortfolioCache()`.
 - `clearStateForDisconnect` loop now declares a local `tabRequestState` to avoid double lookup per iteration.
 
-## [579] Extract typed display-state helpers in aiAnalysis store
+## [#579] Extract typed display-state helpers in aiAnalysis store
 
 **Type:** refactor
 
@@ -13491,7 +13491,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `analyze()` still uses `display.value = { ...display.value, notice: null }` directly — it clears only the notice without touching status, which doesn't map to any of the new helpers.
 - `revertTab` ternary replaced with explicit `if/else` to avoid passing `null` as a response to `setDone`.
 
-## [580] Restructure stores: move cooldown to shared, extract constants, split async logic
+## [#580] Restructure stores: move cooldown to shared, extract constants, split async logic
 
 **Type:** refactor
 
@@ -13523,7 +13523,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - campaignPerformance watch handlers extracted as named functions — watchers become thin adapters instead of inline logic; functions are easier to test and reuse.
 - All within-feature imports updated to use relative paths (e.g., `./utils` instead of config-to-store cross-imports); shared imports continue to use @/ alias.
 
-## [581] Consolidate modal and drawer headers into ModalHeader
+## [#581] Consolidate modal and drawer headers into ModalHeader
 
 **Type:** refactor
 
@@ -13550,7 +13550,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Kept closeLabel as an optional prop with fallback "Close" — Modal doesn't use it, ResponsiveDrawer passes "Close drawer" for more context.
 - SheetHeader removed entirely — it was a generic layout primitive that had exactly one usage pattern and wasn't general enough to justify existence; consolidating into ModalHeader removed the abstraction gap.
 
-## [582] Extract watcher callbacks and analysis context mapper
+## [#582] Extract watcher callbacks and analysis context mapper
 
 **Type:** refactor
 
@@ -13574,7 +13574,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - mapAnalysisContext takes campaignPerformance store, not individual fields — single dependency, easier to mock for tests, clear input contract.
 - Proper typing on onConnectionEventChange — AiConnectionEvent type prevents accidental bugs when accessing event properties, replaces the previous `any` type.
 
-## [583] Flatten shell into DashboardPage and move toasts to App
+## [#583] Flatten shell into DashboardPage and move toasts to App
 
 **Type:** refactor
 
@@ -13609,7 +13609,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep `ui/layout` generic — reusable layout primitives can live there, but dashboard/auth/product-aware layouts should not be promoted into the UI library.
 - Build verification surfaced unrelated existing TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` export missing and `CampaignPerformanceStore` type name mismatch); the shell/toast refactor itself left no stale shell imports.
 
-## [584] UI polish: drawer motion, channel filters, controls, and upload placeholder rename
+## [#584] UI polish: drawer motion, channel filters, controls, and upload placeholder rename
 
 **Type:** refactor
 
@@ -13655,7 +13655,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep temporary UI playground work out of production components — the EmptyState/placeholder component was used as a visual workbench for controls, then cleaned back to its product role.
 - Build verification currently still stops on TypeScript errors outside this polish batch: missing `AiAnalysisContext`/`CampaignPerformanceStore` exports in `app/utils/map-analysis-context.ts`, plus an unused `ModalBody` import in `ui/drawer/ResponsiveDrawer.vue`.
 
-## [585] Restore connected status dot and formalize modal size variants
+## [#585] Restore connected status dot and formalize modal size variants
 
 **Type:** fix/refactor
 
@@ -13686,7 +13686,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Restore dot locally in the header — the store and prop flow were already correct; only the header action template lost the dot markup.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
 
-## [586] Extract SplitPaneLayout and only mount it for loaded dashboards
+## [#586] Extract SplitPaneLayout and only mount it for loaded dashboards
 
 **Type:** refactor
 
@@ -13716,7 +13716,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep page composition in `DashboardPage` — the page still decides which feature components render for empty vs loaded state.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
 
-## [587] Add chart funnel tokens and align chart text theme
+## [#587] Add chart funnel tokens and align chart text theme
 
 **Type:** refactor
 
@@ -13747,7 +13747,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Do not add tooltip shadow yet — Chart.js built-in tooltips are canvas-rendered, so CSS `box-shadow` is not directly available without an external HTML tooltip or a custom drawing plugin.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
 
-## [588] Type UI variant APIs across shared components
+## [#588] Type UI variant APIs across shared components
 
 **Type:** refactor
 
@@ -13806,7 +13806,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Move Button class generation into a computed — Vue template parsing did not like an inline class object with quoted kebab-case keys, and the computed keeps class generation easier to read.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches); the UI variant refactor itself passed the targeted scans for leftover old class-based variant APIs.
 
-## [590] Tighten analysis typing and refine campaign performance chart layout
+## [#589] Tighten analysis typing and refine campaign performance chart layout
 
 **Type:** refactor
 
@@ -13849,7 +13849,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Do not repeat acronym titles everywhere — chart titles and axis labels keep using the product terminology without extra title wiring; KPI cards and dense table headers are the useful glossary surfaces.
 - Build verification still stops on existing unrelated TypeScript errors in `app/utils/map-analysis-context.ts` (`AiAnalysisContext` and `CampaignPerformanceStore` export/type mismatches).
 
-## [591] Add upload period and industry business context
+## [#590] Add upload period and industry business context
 
 **Type:** feature/refactor
 
@@ -13890,7 +13890,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep `BusinessContext` in shared portfolio types — AI analysis consumes it, but does not own the business metadata model.
 - Preserve upload validation flow — row-error and duplicate-review screens keep using the same pending portfolio details instead of dropping the newly entered context.
 
-## [592] Consolidate portfolio domain types and remove remaining type smells
+## [#591] Consolidate portfolio domain types and remove remaining type smells
 
 **Type:** refactor
 
@@ -13941,7 +13941,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Type Chart.js wrappers with Chart.js types — the chart scale helper still abstracts theme defaults, but its public options now follow the chart library rather than an arbitrary unknown record.
 - Verify by scanning, then building — targeted scans excluding prompts showed no remaining concrete type smells, and `npm run build` passes with only the existing Vite chunk-size warning.
 
-## [593] Move chip counts to channel filters and expose line color utilities
+## [#592] Move chip counts to channel filters and expose line color utilities
 
 **Type:** refactor
 
@@ -13974,7 +13974,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Avoid applying new utilities globally in the same pass — Tailwind tokens were added as system capability, while component restyling stays deliberate and local.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [594] Build reusable upload form controls and improve modal accessibility
+## [#593] Build reusable upload form controls and improve modal accessibility
 
 **Type:** feature/refactor
 
@@ -14045,7 +14045,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep placeholder production-focused — temporary form-preview markup was removed once visual work moved back into the modal form.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [595] Surface portfolio context and tighten modal/chart accessibility
+## [#594] Surface portfolio context and tighten modal/chart accessibility
 
 **Type:** feature/refactor
 
@@ -14104,7 +14104,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Use clearer import language in validation flows — “Import selected rows” and “Import N valid rows” explain the consequence better than generic proceed labels.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [597] Polish AI panel forms, idle states, and analysis context metadata
+## [#595] Polish AI panel forms, idle states, and analysis context metadata
 
 **Type:** feature/refactor
 
@@ -14166,7 +14166,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Let invalid controls still react to interaction — error styling should communicate the problem, not prevent hover/focus affordances.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [598] Bring modal accessibility behavior to responsive drawer dialogs
+## [#596] Bring modal accessibility behavior to responsive drawer dialogs
 
 **Type:** refactor/accessibility
 
@@ -14202,7 +14202,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Restore focus on close — returning focus to the opener keeps keyboard navigation predictable after the mobile dialog disappears.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [599] Tighten campaign table surface and reusable table controls
+## [#597] Tighten campaign table surface and reusable table controls
 
 **Type:** refactor
 
@@ -14234,7 +14234,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Balance KPI cards before desktop width — intermediate container widths should look intentional, not like a temporary broken grid.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [600] Prototype grouped campaign table and decide against adoption
+## [#598] Prototype grouped campaign table and decide against adoption
 
 **Type:** experiment
 
@@ -14271,7 +14271,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove rows after collapse — JS transition hooks let rows leave the DOM after animation, avoiding hidden rows that still affect table semantics or spacing.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [601] Update Budget Optimizer schema with new recommendation and expansion types
+## [#599] Update Budget Optimizer schema with new recommendation and expansion types
 
 **Type:** update
 
@@ -14297,7 +14297,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Type badge colors: info for reallocation (neutral move), warning for reduction (caution), success for expansion (growth).
 - Metrics grid: responsive layout (auto-fit minmax 150px) so small screens stack, larger screens show 2-3 per row.
 
-## [602] Update Executive Summary schema with new output structure
+## [#600] Update Executive Summary schema with new output structure
 
 **Type:** update
 
@@ -14325,7 +14325,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - scope as a top-level field — allows the response itself to declare whether it covers the full portfolio or a subset, which is more reliable than inferring it from the UI state at render time.
 - Correlations.vue repurposed rather than replaced — same card layout pattern works for risks with a severity badge added; avoids creating a new file for a structurally equivalent component.
 
-## [603] Raise Budget Optimizer minimum campaign threshold from 2 to 5
+## [#601] Raise Budget Optimizer minimum campaign threshold from 2 to 5
 
 **Type:** update
 
@@ -14345,7 +14345,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - 5 chosen to match the ROI vs Budget Scaling chart's `MIN_CAMPAIGNS` constant — consistent reasoning across features (need sufficient sample for pattern detection) and avoids introducing a new arbitrary number.
 
-## [#604] Refactor AI prompt system into folder-per-prompt architecture with typed rule groups
+## [#602] Refactor AI prompt system into folder-per-prompt architecture with typed rule groups
 
 **Type:** refactor
 
@@ -14374,7 +14374,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `OUTPUT_SCHEMA` moved to `config.ts` — it is static prose, not logic; co-locating it with the rule groups makes `config.ts` the single file to open when changing either the rules or the expected response shape.
 - `promptSections` array pattern (no template literals) — each section is independently readable and reorderable; joining with `\n\n` is explicit and consistent across all three prompts.
 
-## [#605] Add expansions and reduction samples to budget optimizer; create BudgetExpansions component; fix BudgetRecommendations for mixed types
+## [#603] Add expansions and reduction samples to budget optimizer; create BudgetExpansions component; fix BudgetRecommendations for mixed types
 
 **Type:** update
 
@@ -14398,7 +14398,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Section title changed to "Recommendations" — the section now covers both reallocations and reductions; "Reallocation Recommendations" was no longer accurate.
 - `BudgetExpansions.vue` as a separate component — expansion shape (`targetChannel`/`targetCampaign`) differs from recommendation shape (`fromCampaign`/`toCampaign`/`type`); merging would require conditionals throughout both card headers.
 
-## [#606] Split budget optimization UI into Reallocate / Expand / Reduce sections
+## [#604] Split budget optimization UI into Reallocate / Expand / Reduce sections
 
 **Type:** update
 
@@ -14418,7 +14418,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Type badge removed from cards — once recommendations are split into titled sections, the badge repeats information already conveyed by the section heading; removing it reduces visual noise.
 - Expand section rendered between Reallocate and Reduce — expansions are additive (new budget spend) while reductions are subtractive; grouping the two "spend more/spend differently" actions before the "spend less" action reflects natural decision priority.
 
-## [#607] Create BudgetReductions component; sort reallocations by revenue change
+## [#605] Create BudgetReductions component; sort reallocations by revenue change
 
 **Type:** update
 
@@ -14439,7 +14439,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `BudgetReductions` sorts by confidence/risk (same as expansions) rather than revenue — reductions have no revenue impact so confidence is the right primary sort.
 - Dedicated component rather than conditional in `BudgetRecommendations` — eliminates four null-guard rows that are never filled for reductions; the card structure is genuinely different enough to warrant separation.
 
-## [#608] Add inferImpactLabel to BudgetReductions cards
+## [#606] Add inferImpactLabel to BudgetReductions cards
 
 **Type:** update
 
@@ -14458,7 +14458,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `rounded-rectangle-sm` badge variant — keeps the impact label visually lighter than the confidence/risk badges in the header; small pill shape reads as a qualifier rather than a status.
 - `inferImpactLabel` called twice per card in template (once for `v-if`, once for value) — acceptable given the function is pure and cheap; avoids introducing a per-item computed or pre-mapped array.
 
-## [#609] Polish AI analysis result cards and executive summary sections
+## [#607] Polish AI analysis result cards and executive summary sections
 
 **Type:** refactor/ui
 
@@ -14503,7 +14503,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preserve commented code/imports unless asked — exploratory/commented blocks are treated as user-owned context and should not be removed during unrelated refactors.
 - Verified with `npm run build` — the app builds successfully with only the existing Vite chunk-size warning.
 
-## [#610] Refine Budget Optimizer result sections and expected impact cards
+## [#608] Refine Budget Optimizer result sections and expected impact cards
 
 **Type:** refactor/ui
 
@@ -14561,7 +14561,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - A better prompt would be: “Refactor only the Budget Optimizer result cards. Preserve the existing visual structure unless I explicitly say to redesign it. Extract only repeated metric rendering into a reusable component. Keep headers local unless the abstraction reduces markup without heavy slots. Reallocations must show From/To campaign and channel; expansions must show target campaign/channel; reductions must show campaign/channel plus a short reduce-by sentence and compact expected-impact meta. Do not touch executive-summary files, logs, comments, or unrelated styles.”
 
-## [#611] Polish Budget Optimizer cards and ExpectedImpactGrid responsive layout
+## [#609] Polish Budget Optimizer cards and ExpectedImpactGrid responsive layout
 
 **Type:** refactor/ui
 
@@ -14591,7 +14591,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Remove global h5 rule — card h5s are the only use site; scoping prevents accidental bleed onto h5s rendered outside cards (e.g., section headings in other features)
 - `bg-surface-hover` for raised cards — `bg-surface-raised` was visually indistinct from the surrounding surface in practice; `bg-surface-hover` provides a subtle but readable lift
 
-## [#612] Add app logo SVG to empty state placeholder
+## [#610] Add app logo SVG to empty state placeholder
 
 **Type:** feature
 
@@ -14614,7 +14614,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Bottom-aligned D — matching the bar baseline makes the two shapes read as a single composed mark rather than floating independently
 - Bars grouped in `<g>` — keeps template readable and makes the shared fill intent explicit
 
-## [#613] Restructure ai-analysis folder — move AiAnalysis.vue to root, rename ui/ to components/
+## [#611] Restructure ai-analysis folder — move AiAnalysis.vue to root, rename ui/ to components/
 
 **Type:** refactor
 
@@ -14641,7 +14641,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `AiAnalysis.vue` at root + `index.ts` barrel — mirrors the pattern of other sub-features (e.g., `ai-connection/`) where the top-level entry point sits at the folder root, not buried in a `components/` subfolder
 - `ui/` → `components/` rename — `ui/` is ambiguous and conflicts with the top-level `@/ui` design system; `components/` is unambiguous and matches the Vue ecosystem convention for feature-internal presentational building blocks
 
-## [#614] Refactor channel filters — inline +N more trigger, smart visibility, multi-row support
+## [#612] Refactor channel filters — inline +N more trigger, smart visibility, multi-row support
 
 **Type:** refactor
 
@@ -14668,7 +14668,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `dialogToggled` flag distinguishes strip vs dialog toggles — selected-first sort only makes sense when the user just picked from the dialog; strip interaction should preserve original order
 - `allowedRows` from parent `clientWidth` — ResizeObserver already observes `rootRef`, so the value updates on every resize without a separate watcher; 540 px threshold matches the layout breakpoint where 2-row strips are comfortable
 
-## [#615] Move roiBudgetScalingHighlights into RoiVsBudgetScaling
+## [#613] Move roiBudgetScalingHighlights into RoiVsBudgetScaling
 
 **Type:** refactor
 
@@ -14688,7 +14688,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Single `portfolioAnalysis` prop rather than individual arrays — both the highlights and the median ROI come from the same source; passing the whole object avoids prop proliferation and keeps the component self-sufficient
 - `RoiBudgetScalingHighlights` type stays in the charts module — it is still used internally by the scatter chart component; no need to export it from the view layer
 
-## [#616] Group count props in CampaignPerformanceHeader
+## [#614] Group count props in CampaignPerformanceHeader
 
 **Type:** refactor
 
@@ -14707,7 +14707,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Inline object literal in the template binding — no extra computed needed; the shape is simple enough to read at a glance
 
-## [#617] Replace "Show all" button with "All" chip in ChannelFiltersDialog
+## [#615] Replace "Show all" button with "All" chip in ChannelFiltersDialog
 
 **Type:** fix
 
@@ -14726,7 +14726,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `allReadonly` mirrors `allActive` — when no selection exists (All is active), the chip is both visually active and non-interactive, consistent with main strip behavior
 - `totalCampaigns` computed on the dialog matches what the strip passes, so the count badge on "All" is accurate
 
-## [#618] Buffer channel filter dialog selection with Cancel/Apply
+## [#616] Buffer channel filter dialog selection with Cancel/Apply
 
 **Type:** update
 
@@ -14748,7 +14748,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Backdrop and Escape cancel (not apply) — discarding unsaved changes is the safe default for an overlay pattern
 - `pendingIds` re-synced on open via watcher — no explicit reset on cancel needed; stale pending state is harmless between open cycles
 
-## [#619] Replace custom panel with Dropdown + DropdownPanel in ChannelFiltersDialog
+## [#617] Replace custom panel with Dropdown + DropdownPanel in ChannelFiltersDialog
 
 **Type:** refactor
 
@@ -14768,7 +14768,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `cancelSelection` removed — closing via `Dropdown`'s backdrop or Escape sets `dropdownOpen = false` via v-model, which is identical to cancel (pending state is stale until next open, when the watcher re-syncs)
 - `align="right"` — matches previous `right-0` positioning of the old panel
 
-## [#620] Make Dropdown panelRef flex with direction based on align prop
+## [#618] Make Dropdown panelRef flex with direction based on align prop
 
 **Type:** update
 
@@ -14787,7 +14787,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `flex-row-reverse` for `right` alignment — when the panel opens toward the left from a right-anchored trigger, reversing the row ensures child elements start from the anchor side
 - Default (no `align` or `align="left"`) keeps `flex-row` — natural reading order
 
-## [#621] Calculate Dropdown position on open instead of as a computed
+## [#619] Calculate Dropdown position on open instead of as a computed
 
 **Type:** refactor
 
@@ -14806,7 +14806,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `Record<string, string | undefined>` — the position object uses optional horizontal keys (either `left` or `right`, not both); `undefined` values are ignored by Vue's style binding
 - Single extraction point — `calculatePosition()` is called only in the watcher, so it only runs at open time
 
-## [#622] Fix Dropdown double-Teleport warning
+## [#620] Fix Dropdown double-Teleport warning
 
 **Type:** fix
 
@@ -14824,7 +14824,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Single Teleport with two `v-if="open"` children — both conditioned on the same flag, behavior unchanged, warning gone
 
-## [#623] Fix calculatePosition return type error
+## [#621] Fix calculatePosition return type error
 
 **Type:** fix
 
@@ -14842,7 +14842,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `Record<string, string | undefined>` rather than `Partial<Record<...>>` — same semantics, shorter syntax, consistent with the ref declaration above
 
-## [#624] Extract shared accessibility composables into ui/accessibility/
+## [#622] Extract shared accessibility composables into ui/accessibility/
 
 **Type:** refactor
 
@@ -14871,7 +14871,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Drawer keeps `getInitialFocusTarget`-style logic via `scheduleFocusFirst` — simpler than Modal; no `initialFocus` prop needed
 - `accessibility/` not added to `@/ui` public barrel — these composables are implementation details of the drawer/modal components, not part of the public design-system API
 
-## [#625] Add proper accessibility flow to Dropdown
+## [#623] Add proper accessibility flow to Dropdown
 
 **Type:** update
 
@@ -14893,7 +14893,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `aria-modal="true"` on DropdownPanel — `role="dialog"` alone doesn't suppress background content for screen readers; the two attributes work together
 - Focus restore stays as `props.anchor?.focus()` — the anchor is always the correct restore target for a dropdown; `saveFocus/restoreFocus` from the composable would focus whatever was active at open time, which may differ from the anchor
 
-## [#626] Disable autocomplete on industry field
+## [#624] Disable autocomplete on industry field
 
 **Type:** fix
 
@@ -14911,7 +14911,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `autocomplete="off"` rather than a mismatched token — no existing token maps to "industry category"; `off` is the correct choice when browser suggestions would be wrong or unhelpful
 
-## [#627] Extract RevenueVsBudgetChart as standalone card component
+## [#625] Extract RevenueVsBudgetChart as standalone card component
 
 **Type:** refactor
 
@@ -14932,7 +14932,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Sorting (`sortChannelsByEfficiencyGapImpactDesc`) moved into the new component — it was only ever used for this card, so it belongs with the component rather than being an external concern
 - `channels` prop passed raw (unsorted) — the new component owns the sorting decision, consistent with how it owns all other view state
 
-## [#628] Lighten legend indicator border in EfficiencyGapBars
+## [#626] Lighten legend indicator border in EfficiencyGapBars
 
 **Type:** fix
 
@@ -14946,7 +14946,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `EfficiencyGapBars.vue` — added `border` to `.legend-indicator` SCSS rule; bound `borderColor` via `:style` to `getCampaignPerformanceChartFillColor(color)` (75% alpha) for both positive and negative indicators
 
-## [#629] Fix legend indicator colors in EfficiencyGapBars
+## [#627] Fix legend indicator colors in EfficiencyGapBars
 
 **Type:** fix
 
@@ -14964,7 +14964,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Mirrors the exact same fill/border split used in `chartData` dataset styling so legend and bars are visually consistent
 
-## [#630] Fix legend indicator background in EfficiencyGapBars
+## [#628] Fix legend indicator background in EfficiencyGapBars
 
 **Type:** fix
 
@@ -14982,7 +14982,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Legend swatches should read as solid filled color blocks — transparency on the background makes them look broken against the card surface
 
-## [#631] Fix efficiency gap legend indicator border visibility
+## [#629] Fix efficiency gap legend indicator border visibility
 
 **Type:** fix
 
@@ -15000,7 +15000,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `border-white/20` works universally against any colored swatch background and avoids the same-hue-indistinguishable problem entirely
 
-## [#632] Unify chart color format to rgb/rgba
+## [#630] Unify chart color format to rgb/rgba
 
 **Type:** refactor
 
@@ -15025,7 +15025,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `0.75` for fill alpha (`0xbf` = 191/255 ≈ 0.749) — rounded to 2 decimal places, negligible visual difference
 - `0.52` for dim alpha (`0x85` = 133/255 ≈ 0.522) — rounded consistently
 
-## [#633] Add useCampaignPerformanceChartColors and useCampaignColorMap composables
+## [#631] Add useCampaignPerformanceChartColors and useCampaignColorMap composables
 
 **Type:** refactor
 
@@ -15048,7 +15048,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - getColor(index) exposed from useCampaignColorMap — channel items are also palette-cycled by index; keeping both in the same composable avoids a second useChartTheme call in PerformanceCharts.vue
 - useCampaignPerformanceChartColors not yet consumed by EfficiencyGapBars/RoiVsBudgetScatterChart — those components still import constants directly; migration deferred until CSS var reading lands
 
-## [#634] Finalize color composable architecture
+## [#632] Finalize color composable architecture
 
 **Type:** refactor
 
@@ -15068,7 +15068,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - useCampaignColorMap imports useCampaignPerformanceChartColors via relative path — within-feature import, consistent with project rules
 - paletteColors is a plain array (not reactive) — useChartTheme returns static values; reactivity is not needed here
 
-## [#635] Introduce useCampaignPerformanceTheme as feature theme boundary
+## [#633] Introduce useCampaignPerformanceTheme as feature theme boundary
 
 **Type:** refactor
 
@@ -15091,7 +15091,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - RoiVsBudgetScatterChart.vue left unchanged — it imports structural quadrant config objects (key/label/colors as a unit); this is a chart config concern, not a theme boundary concern
 - getFillColor exposed from the composable so no component needs to import the helper from config
 
-## [#636] Remove theme passthrough from useCampaignPerformanceTheme
+## [#634] Remove theme passthrough from useCampaignPerformanceTheme
 
 **Type:** refactor
 
@@ -15110,7 +15110,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - theme removed from return: tooltip/axis/legend values are handled by ui library composables internally — feature components should not read them directly
 - destructuring at call site keeps the intent explicit — only colors are needed from the theme
 
-## [#637] Refactor useCampaignColorMap — stable ID-based color maps with independent ROI-sorted walks
+## [#635] Refactor useCampaignColorMap — stable ID-based color maps with independent ROI-sorted walks
 
 **Type:** refactor
 
@@ -15135,7 +15135,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - allChannels as seeding source — decouples color stability from filter state; filtered channels are still passed separately for chart display
 - Single computed ref for both maps — one reactive derivation, no duplicated walk
 
-## [#638] Dynamic import button label and internal back label in ReviewDuplicatedCampaigns
+## [#636] Dynamic import button label and internal back label in ReviewDuplicatedCampaigns
 
 **Type:** update
 
@@ -15156,7 +15156,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - importLabel computed covers all three states without inline ternaries in the template
 - requiredSelection moved into the component — was already derivable from validCampaigns.length, no reason to compute it in the parent
 
-## [#639] Project AI button into CampaignPerformanceHeader via slot
+## [#637] Project AI button into CampaignPerformanceHeader via slot
 
 **Type:** refactor
 
@@ -15178,7 +15178,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - #header-action name is specific enough to document intent at the call site without being too verbose
 - Connected dot styles moved with the markup — co-locating styles with the component that owns them prevents orphaned CSS
 
-## [#640] Remove panelOpen prop from AiTools — watch store directly
+## [#638] Remove panelOpen prop from AiTools — watch store directly
 
 **Type:** fix
 
@@ -15197,7 +15197,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Store watch over prop — the value is already reactive store state; threading it through a prop adds indirection with no benefit
 
-## [#641] Rename SectionHeaderLayout to Section
+## [#639] Rename SectionHeaderLayout to Section
 
 **Type:** refactor
 
@@ -15218,7 +15218,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - Section is the right abstraction name — it wraps a content section with a structured header row, not specifically a "section header layout"
 
-## [#642] Align chart SCSS tokens to design system tokens
+## [#640] Align chart SCSS tokens to design system tokens
 
 **Type:** update
 
@@ -15239,7 +15239,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `rgb(var(--neutral-0) / 0.07)` for grid line — no semantic token for white, palette primitive is the right level here
 - Kept 7 tokens hardcoded: tooltip-bg, tooltip-title-color, arc-separator, budget (blue not in project palette), gap-negative, quadrant-champions, quadrant-overspend, quadrant-divider
 
-## [#643] Token-align tooltip-bg and arc-separator in \_charts.scss
+## [#641] Token-align tooltip-bg and arc-separator in \_charts.scss
 
 **Type:** update
 
@@ -15257,7 +15257,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `var(--color-surface-1)` for arc separator — primary card uses `bg-surface-elevated` which maps to `color-surface-1`; arc separator should match the card surface so slice gaps appear invisible against the background
 
-## [#644] Fix missing tooltip indicators in ROI bar charts
+## [#642] Fix missing tooltip indicators in ROI bar charts
 
 **Type:** fix
 
@@ -15275,7 +15275,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 - `getCampaignPerformanceChartFillColor` over `withAlpha` directly — it's the feature-level abstraction for this exact purpose and uses the canonical `CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA` constant (0.75)
 
-## [#645] Introduce ui/theme layer — CSS var resolver, useTheme, reactive chart theme mappers
+## [#643] Introduce ui/theme layer — CSS var resolver, useTheme, reactive chart theme mappers
 **Type:** refactor
 
 **Summary:** Replaced hardcoded color constants in chart composables with a runtime CSS var resolver (`resolveChartsThemeTokens`) living in a new `ui/theme/` layer, with `useTheme` providing reactive theme tracking for light-mode readiness; added size tokens to `_charts.scss` to complete the token surface.
@@ -15304,7 +15304,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Size tokens added to `_charts.scss` — centralizes all chart theming in CSS; a future light-mode override only touches SCSS
 
 
-## [#646] Fix black chart labels — replace var() references with literal rgb() values in _charts.scss
+## [#644] Fix black chart labels — replace var() references with literal rgb() values in _charts.scss
 **Type:** fix
 
 **Summary:** All chart labels, ticks, legend text, and tooltip colors rendered black because `getComputedStyle().getPropertyValue()` does not resolve nested `var()` references — it returns the raw `var(--token)` string, which Chart.js cannot interpret and falls back to black.
@@ -15322,7 +15322,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Values cross-checked against `_palette.scss` to ensure exact color parity with semantic tokens
 
 
-## [#647] Revert resolver to readVar — keep literal values in _charts.scss
+## [#645] Revert resolver to readVar — keep literal values in _charts.scss
 **Type:** fix
 
 **Summary:** Reverted `resolveChartsThemeTokens.ts` back to the simple `readVar` approach after exploring and rejecting the `readColor`/`readSize` element-mutation strategy.
@@ -15339,7 +15339,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `readColor`/`readSize` via element mutation works but is too costly (~120 style recalcs per call) for a display-only concern
 
 
-## [#648] Fix funnel chart colors — restore var() references, remove funnel tokens from resolver
+## [#646] Fix funnel chart colors — restore var() references, remove funnel tokens from resolver
 **Type:** fix
 
 **Summary:** Funnel chart bars broke because the three funnel CSS tokens were changed to `rgb()` literals, but Tailwind wraps them as `rgb(var(--chart-funnel-*) / alpha)` — requiring raw channel values, not `rgb()` wrappers.
@@ -15357,7 +15357,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Removing them from the resolver eliminates the mismatch — the resolver only owns tokens consumed in JS/Chart.js context
 
 
-## [#649] Wire efficiency gap bar colors through theme — remove static constant dependency
+## [#647] Wire efficiency gap bar colors through theme — remove static constant dependency
 **Type:** fix
 
 **Summary:** Changing `--chart-gap-negative` in `_charts.scss` had no effect on bar colors because `getEfficiencyGapColor` read from the static `CAMPAIGN_PERFORMANCE_CHART_COLORS` constant instead of the theme.
@@ -15375,7 +15375,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Parameter injection over module-level constant — keeps the function pure and theme-source-agnostic; the component already owns the theme reference
 
 
-## [#650] Wire scatter chart quadrant colors through theme — remove static config dependency
+## [#648] Wire scatter chart quadrant colors through theme — remove static config dependency
 **Type:** fix
 
 **Summary:** Changing `--chart-quadrant-*` tokens had no effect because `RoiVsBudgetScatterChart.vue` used the static `ROI_BUDGET_SCALING_QUADRANTS` and `QUADRANT_BACKGROUNDS` constants built from hardcoded colors at module load time.
@@ -15392,7 +15392,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Static constants in `roi-budget-scaling-chart.config.ts` left in place — they may still be used elsewhere; unused imports will be cleaned up naturally
 
 
-## [#651] Extract resolvePaletteColors() — remove palette duplication between resolver and theme composable
+## [#649] Extract resolvePaletteColors() — remove palette duplication between resolver and theme composable
 **Type:** refactor
 
 **Summary:** The 51-color palette list was duplicated: once in `resolveChartsThemeTokens.ts` as named token fields, and again in `useCampaignPerformanceTheme.ts` as a manual `t.colorXxx` enumeration; extracted into a shared `resolvePaletteColors()` helper so both places use the same source.
@@ -15412,7 +15412,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `ChartThemeTokens` interface left unchanged — mixing a `string[]` into a flat named record would break its shape
 
 
-## [#652] Fix scatter chart legend indicators — render as circles not rectangles
+## [#650] Fix scatter chart legend indicators — render as circles not rectangles
 **Type:** fix
 
 **Summary:** The bubble chart legend rendered square boxes instead of circles because spreading `basePlugins.legend.labels` carried over `boxWidth`, `boxHeight`, and `borderRadius` even when `usePointStyle: true` was set — clearing those lets Chart.js render the point circle natively.
@@ -15430,7 +15430,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 
 
-## [#653] Fix scatter chart tooltip marker — render as circle not square
+## [#651] Fix scatter chart tooltip marker — render as circle not square
 **Type:** fix
 
 **Summary:** The bubble chart tooltip marker was rendering as a square because `useChartTooltip` defaults to `'square'` marker; passing `{ marker: 'circle' }` switches the `labelPointStyle` callback to return `pointStyle: 'circle'`.
@@ -15446,7 +15446,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - One-line change using the existing `marker` API in `useChartTooltip` — no new logic needed
 
 
-## [#654] Fix tooltip marker color — read per-element borderColor separately from backgroundColor
+## [#652] Fix tooltip marker color — read per-element borderColor separately from backgroundColor
 **Type:** fix
 
 **Summary:** Tooltip markers did not match point colors because `getTooltipItemColor` returned only `backgroundColor` and used it for both fill and stroke; now it reads `borderColor` separately from the element options so the marker's fill and border match the actual point exactly.
@@ -15463,7 +15463,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Change is in the shared `useChartTooltip` composable so all chart types benefit from accurate marker colors, not just the bubble chart
 
 
-## [#655] Fix empty-dataset legend color — fallback color when quadrant bucket is empty
+## [#653] Fix empty-dataset legend color — fallback color when quadrant bucket is empty
 **Type:** fix
 
 **Summary:** When a quadrant had no campaigns, its `backgroundColor`/`borderColor` were empty arrays, leaving Chart.js with no color to assign to the legend item and falling back to gray; now an empty bucket uses the quadrant's `dimmedColor` as a scalar fallback so the legend always shows the correct color.
@@ -15479,7 +15479,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `dimmedColor` chosen for the fallback (not `color` or `border`) — consistent with how non-highlighted points appear; the legend item should look the same as a typical point in that quadrant
 
 
-## [#656] Restructure theme and chart wrappers — barrels, kebab-case utils, typed chart APIs
+## [#654] Restructure theme and chart wrappers — barrels, kebab-case utils, typed chart APIs
 **Type:** refactor
 
 **Summary:** Restructured the new `ui/theme/` layer into `composables/`, `utils/`, and `types/` folders with barrels; folded the kebab-case util rename into that same cleanup; then continued the wrapper cleanup across chart composables, chart plugin types, and campaign-performance chart theme types.
@@ -15524,7 +15524,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Build check: `npm run build` still stops on existing unrelated TypeScript errors in `BudgetReductions.vue`, `RoiVsBudgetScatterChart.vue`, and `useDownloadTemplate.ts`; no new export/type errors were introduced by this cleanup
 
 
-## [#657] Stabilize Revenue vs Budget toggle height and tighten efficiency legend spacing
+## [#655] Stabilize Revenue vs Budget toggle height and tighten efficiency legend spacing
 **Type:** fix/ui
 
 **Summary:** The Revenue vs Budget card changed height when toggling between the Performance and Efficiency views because the two child charts owned different height contracts and the Efficiency view had an external legend plus spacing hacks. The card now owns one stable chart area shared by both views, and the Efficiency legend sits inside that area without adding height.
@@ -15547,7 +15547,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `gap-1` chosen for legend spacing — close enough to feel connected to the chart without making the legend look attached to the plot
 - Build check: `npm run build` still stops on existing unrelated TypeScript errors in `BudgetReductions.vue`, `RoiVsBudgetScatterChart.vue`, and `useDownloadTemplate.ts`
 
-## [#658] Logo SVG: create marketing intelligence chart logo
+## [#656] Logo SVG: create marketing intelligence chart logo
 **Type:** design/update
 
 **Summary:** Created the app's core logo mark: a compact analytics symbol combining three vertical performance bars with an exploded semicircle chart. The mark establishes the product identity around marketing intelligence, campaign mix, allocation, and optimization.
@@ -15570,7 +15570,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep geometry SVG-native — direct path coordinates keep the mark crisp at favicon/app-icon sizes and avoid raster dependencies for the core identity
 
 
-## [#659] Logo SVG: equal padding, square viewBox, and gradient stop precision
+## [#657] Logo SVG: equal padding, square viewBox, and gradient stop precision
 **Type:** update
 
 **Summary:** Reworked the logo SVG to have equal horizontal padding (2.66 units each side), a square 68.66×68.66 viewBox with content centered vertically, and corrected gradient stops so the light color falls precisely at each bar's midpoint.
@@ -15588,7 +15588,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Removed a transparent `<rect>` that was added during iteration — `fill="none"` is invisible and the viewBox itself defines the canvas, so the rect served no purpose
 
 
-## [#670] Logo SVG: resize viewBox to 72×72 and create dark-background preview
+## [#658] Logo SVG: resize viewBox to 72×72 and create dark-background preview
 **Type:** update
 
 **Summary:** Updated the logo viewBox to 72×72 with content re-centered, and created a preview copy that fills the viewBox with the app's background color for accurate visual review.
@@ -15606,7 +15606,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Preview file kept as a sibling in `assets/` rather than a separate folder; the `.preview.svg` suffix makes it clear it is not a production asset
 
 
-## [#671] PWA icon assets: copy to public, wire favicon in HTML
+## [#659] PWA icon assets: copy to public, wire favicon in HTML
 **Type:** update
 
 **Summary:** Copied all icon sizes needed for browser tab, iOS home screen, and future PWA manifest from `assets/Web/` to `public/` with standard naming conventions; replaced `public/favicon.svg` with the app logo on a dark background; wired all icons in `index.html` via `<link>` tags.
@@ -15632,7 +15632,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `og.png` included in `public/` now so it is served as a static asset alongside other icon files, ready for Open Graph meta tags when needed
 - SVG listed first in `<link>` order so modern browsers use it and fall through to `.ico` / PNGs only when SVG is unsupported; `apple-touch-icon` omits `type` attribute per Apple convention
 
-## [#672] Add strict ESLint and Prettier project setup
+## [#660] Add strict ESLint and Prettier project setup
 **Type:** tooling/refactor
 
 **Summary:** Added a project-local ESLint flat config and Prettier setup for the Vue app, formatted the full codebase, and cleaned up the remaining strict lint/type errors so the combined project check now passes.
@@ -15662,7 +15662,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Underscore-prefixed unused values are allowed — supports intentional unused callback parameters/destructured values without disabling unused-variable checks globally
 - Full verification: `npm run check` passes (`vue-tsc -b`, `eslint .`, and `prettier . --check`)
 
-## [#673] App tooling cleanup: stylelint setup and app-level configuration
+## [#661] App tooling cleanup: stylelint setup and app-level configuration
 **Type:** tooling/cleanup
 
 **Summary:** Added the app-local Stylelint setup, ran the SCSS/Vue style fixer across the app, and cleaned up accidental root-level configuration leftovers so frontend tooling lives under `app/`.
