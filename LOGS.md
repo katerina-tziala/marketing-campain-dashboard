@@ -916,3 +916,252 @@
 
 **Key decisions & why:**
 - `getCampaignPerformanceChartFillColor` over `withAlpha` directly — it's the feature-level abstraction for this exact purpose and uses the canonical `CAMPAIGN_PERFORMANCE_CHART_FILL_ALPHA` constant (0.75)
+
+
+
+
+## [#645] Introduce ui/theme layer — CSS var resolver, useTheme, reactive chart theme mappers
+**Type:** refactor
+
+**Summary:** Replaced hardcoded color constants in chart composables with a runtime CSS var resolver (`resolveChartsThemeTokens`) living in a new `ui/theme/` layer, with `useTheme` providing reactive theme tracking for light-mode readiness; added size tokens to `_charts.scss` to complete the token surface.
+
+**Brainstorming:** The goal was to make chart colors driven entirely by CSS custom properties so a future light mode only requires a new `_charts.scss` override block — no TypeScript changes. The resolver is a pure function (reads `getComputedStyle` at call time); reactivity is layered on top via a `MutationObserver`-based `useTheme` composable. `useChartTheme` returns a `ComputedRef<ChartTheme>` that re-evaluates on theme change; `useCampaignPerformanceTheme` does the same for feature-specific colors. `resolveChartsThemeTokens` and `useTheme` live in `ui/theme/` (not `shared/`) because theme switching is a design system concern, not a business logic concern. Internal chart composables (`useChartConfig`, `useChartScales`, `useChartTooltip`) updated to unwrap via `.value`. `CampaignPerformanceChartColors`, `ScalingQuadrantColors`, and `CampaignPerformanceScalingColors` interfaces added with JSDoc comments mapping each field back to its CSS var for visibility. Size tokens (`border-radius`, `padding`, `marker-size`, `font-size`, `max-tick-rotation`, `legend-*`) added to `_charts.scss` to centralize all chart theming in CSS.
+
+**Prompt:** Create `ui/theme/` with a flat `resolveChartsThemeTokens()` resolver reading all `--chart-*` CSS vars, a `useTheme()` MutationObserver composable for reactive theme tracking, and a barrel. Update `useChartTheme` to return `ComputedRef<ChartTheme>` mapped from resolved tokens, falling back to `DEFAULT_CHART_THEME`. Update `useCampaignPerformanceTheme` to map tokens into typed interfaces (with JSDoc comments). Add size tokens to `_charts.scss`. Export `theme/` from `@/ui` barrel.
+
+**What was built:**
+- `app/src/ui/theme/resolveChartsThemeTokens.ts` — pure resolver + `ChartThemeTokens` interface with JSDoc on every field
+- `app/src/ui/theme/useTheme.ts` — `MutationObserver`-based `useTheme()` composable; returns reactive `currentTheme` ref
+- `app/src/ui/theme/index.ts` — barrel
+- `app/src/ui/index.ts` — added `export * from './theme'`
+- `app/src/styles/themes/dark/_charts.scss` — added size token group (tooltip border-radius/padding/marker-size, tick/title font-size, max-tick-rotation, legend font-size/padding/box-size/border-radius)
+- `app/src/ui/charts/composables/useChartTheme.ts` — now returns `ComputedRef<ChartTheme>`; maps tokens via resolver; fallback to `DEFAULT_CHART_THEME`
+- `app/src/ui/charts/composables/useChartConfig.ts` — unwraps theme via `.value`
+- `app/src/ui/charts/composables/useChartScales.ts` — unwraps theme via `.value` in both `createChartScale` and `useChartScales`
+- `app/src/ui/charts/composables/useChartTooltip.ts` — unwraps theme via `.value` in both `getTooltipItemColor` and `useChartTooltip`
+- `app/src/features/campaign-performance/charts/composables/useCampaignPerformanceTheme.ts` — maps tokens into typed interfaces; `getFillColor` delegates to `withAlpha`
+
+**Key decisions & why:**
+- `ui/theme/` over `shared/composables/` — theme switching is a design system responsibility; chart composables in `ui/` and feature composables both import from `@/ui`
+- `resolveChartsThemeTokens` is a pure function — reactivity is the composable's concern, not the resolver's; makes it testable in isolation
+- `useChartTheme` returns `ComputedRef<ChartTheme>` — callers use `.value`; this makes the reactive contract explicit at the type level
+- `DEFAULT_CHART_THEME` kept — serves as SSR/test fallback and visual reference for expected values
+- Size tokens added to `_charts.scss` — centralizes all chart theming in CSS; a future light-mode override only touches SCSS
+
+
+## [#646] Fix black chart labels — replace var() references with literal rgb() values in _charts.scss
+**Type:** fix
+
+**Summary:** All chart labels, ticks, legend text, and tooltip colors rendered black because `getComputedStyle().getPropertyValue()` does not resolve nested `var()` references — it returns the raw `var(--token)` string, which Chart.js cannot interpret and falls back to black.
+
+**Brainstorming:** The resolver reads CSS custom properties at call time using `getComputedStyle`. This works fine for literal values (`rgb(...)`, `rgba(...)`) but not for chained `var()` references. Tokens like `--chart-tick-color: var(--color-text-muted)` return the string `"var(--color-text-muted)"` — unresolved. The fix is to inline all literal values directly in `_charts.scss` so the resolver always gets a usable string. A second bug was also caught: `DonutChart.vue` called `useChartTheme()` without `.value`, causing a `Cannot read properties of undefined (reading 'separatorColor')` error, since the composable now returns `ComputedRef<ChartTheme>`.
+
+**Prompt:** All chart labels are black. The CSS var resolver reads raw `var()` strings from `getComputedStyle` — replace all `var()` references in `_charts.scss` with literal `rgb()`/`rgba()` values derived from the palette. Also fix `DonutChart.vue` which calls `useChartTheme()` without `.value`.
+
+**What changed:**
+- `app/src/styles/themes/dark/_charts.scss` — replaced all `var(--color-*)`, `rgb(var(...))`, and `rgba(var(...))` references with literal `rgb()`/`rgba()` values matching the dark palette
+- `app/src/ui/charts/components/DonutChart.vue` — changed `useChartTheme()` to `useChartTheme().value` to unwrap the `ComputedRef`
+
+**Key decisions & why:**
+- Literal values in `_charts.scss` are intentional, not a shortcut — `getComputedStyle` cannot resolve chained `var()` references; the resolver is the resolution boundary
+- Values cross-checked against `_palette.scss` to ensure exact color parity with semantic tokens
+
+
+## [#647] Revert resolver to readVar — keep literal values in _charts.scss
+**Type:** fix
+
+**Summary:** Reverted `resolveChartsThemeTokens.ts` back to the simple `readVar` approach after exploring and rejecting the `readColor`/`readSize` element-mutation strategy.
+
+**Brainstorming:** The `readColor`/`readSize` approach using `#app` as a resolution target would resolve `var()` chains but at the cost of ~120 style mutations and forced style recalcs per theme read. The duplication in `_charts.scss` is a deliberate semantic layer — chart tokens are intentionally decoupled from app tokens. Literal values keep the resolver simple and predictable.
+
+**Prompt:** Revert resolveChartsThemeTokens.ts back to the simple readVar implementation and keep literal rgb() values in _charts.scss.
+
+**What changed:**
+- `app/src/ui/theme/resolveChartsThemeTokens.ts` — removed `appEl`, `readColor`, `readSize` helpers; restored all token reads to `readVar`
+
+**Key decisions & why:**
+- Literal values in `_charts.scss` are intentional — `getComputedStyle` cannot resolve chained `var()` references; the chart token layer is the resolution boundary
+- `readColor`/`readSize` via element mutation works but is too costly (~120 style recalcs per call) for a display-only concern
+
+
+## [#648] Fix funnel chart colors — restore var() references, remove funnel tokens from resolver
+**Type:** fix
+
+**Summary:** Funnel chart bars broke because the three funnel CSS tokens were changed to `rgb()` literals, but Tailwind wraps them as `rgb(var(--chart-funnel-*) / alpha)` — requiring raw channel values, not `rgb()` wrappers.
+
+**Brainstorming:** The funnel chart reads colors via Tailwind utility classes (`bg-chart-funnel-impressions` etc.), not via `resolveChartsThemeTokens`. Tailwind resolves the tokens at the CSS level using `rgb(var(...) / alpha)` syntax, which expects raw space-separated channel values. Restoring the tokens to `var(--primary-600)` etc. works because Tailwind resolves those at build/runtime in CSS — not in JS via `getComputedStyle`. The funnel tokens have no business being in the resolver at all.
+
+**Prompt:** Funnel chart is broken. Restore funnel tokens in _charts.scss to var() references (raw channel values for Tailwind compatibility) and remove funnelImpressions/Clicks/Conversions from ChartThemeTokens interface and resolver body.
+
+**What changed:**
+- `app/src/styles/themes/dark/_charts.scss` — funnel tokens restored to `var(--primary-600)`, `var(--secondary-700)`, `var(--warning-700)`
+- `app/src/ui/theme/resolveChartsThemeTokens.ts` — removed `funnelImpressions`, `funnelClicks`, `funnelConversions` from `ChartThemeTokens` interface and resolver body
+
+**Key decisions & why:**
+- Funnel tokens use `var()` references because they are consumed by Tailwind CSS (resolved in CSS pipeline), not by the JS resolver (which cannot resolve chained `var()`)
+- Removing them from the resolver eliminates the mismatch — the resolver only owns tokens consumed in JS/Chart.js context
+
+
+## [#649] Wire efficiency gap bar colors through theme — remove static constant dependency
+**Type:** fix
+
+**Summary:** Changing `--chart-gap-negative` in `_charts.scss` had no effect on bar colors because `getEfficiencyGapColor` read from the static `CAMPAIGN_PERFORMANCE_CHART_COLORS` constant instead of the theme.
+
+**Brainstorming:** The legend squares in `EfficiencyGapBars.vue` correctly used `performanceChartColors` from `useCampaignPerformanceTheme`, but the bar `backgroundColor`/`borderColor` arrays called `getEfficiencyGapColor` which was hardcoded to the static config. The fix is to make `getEfficiencyGapColor` accept the colors as a parameter so the caller controls the source.
+
+**Prompt:** Changing --chart-gap-negative has no effect on bar colors. getEfficiencyGapColor reads from static CAMPAIGN_PERFORMANCE_CHART_COLORS — make it accept colors as a parameter and pass performanceChartColors from the component.
+
+**What changed:**
+- `app/src/features/campaign-performance/charts/utils/efficiency-gap.ts` — `getEfficiencyGapColor` now accepts `colors: Pick<CampaignPerformanceChartColors, 'positiveGap' | 'negativeGap'>` as second param; removed `CAMPAIGN_PERFORMANCE_CHART_COLORS` import
+- `app/src/features/campaign-performance/charts/composables/index.ts` — exports `CampaignPerformanceChartColors` type
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — passes `performanceChartColors` to both `getEfficiencyGapColor` call sites
+
+**Key decisions & why:**
+- Parameter injection over module-level constant — keeps the function pure and theme-source-agnostic; the component already owns the theme reference
+
+
+## [#650] Wire scatter chart quadrant colors through theme — remove static config dependency
+**Type:** fix
+
+**Summary:** Changing `--chart-quadrant-*` tokens had no effect because `RoiVsBudgetScatterChart.vue` used the static `ROI_BUDGET_SCALING_QUADRANTS` and `QUADRANT_BACKGROUNDS` constants built from hardcoded colors at module load time.
+
+**Brainstorming:** Same pattern as the efficiency gap fix — the chart used static module-level constants instead of reading from `useCampaignPerformanceTheme`. The quadrant config (colors, dimmed colors, borders, backgrounds), divider style, and quadrant backgrounds all needed to be computed reactively from `scalingColors`. The plugin also needed to become a computed ref so it rebuilds when colors change.
+
+**Prompt:** --chart-quadrant-monitor change has no effect. RoiVsBudgetScatterChart reads from static CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS — wire useCampaignPerformanceTheme into the scatter chart and make quadrant config, divider style, backgrounds, and plugin all reactive computed values.
+
+**What changed:**
+- `app/src/features/campaign-performance/charts/components/RoiVsBudgetScatterChart.vue` — replaced static `ROI_BUDGET_SCALING_QUADRANTS`/`QUADRANT_BACKGROUNDS`/`ROI_BUDGET_SCALING_DIVIDER_STYLE` imports with `useCampaignPerformanceTheme`; added reactive `quadrants`, `dividerStyle`, `quadrantBackgrounds`, and `quadrantBackgroundPlugin` computeds
+
+**Key decisions & why:**
+- `quadrantBackgroundPlugin` made a computed ref so it rebuilds with fresh colors on theme change — plugin instances capture colors at creation time
+- Static constants in `roi-budget-scaling-chart.config.ts` left in place — they may still be used elsewhere; unused imports will be cleaned up naturally
+
+
+## [#651] Extract resolvePaletteColors() — remove palette duplication between resolver and theme composable
+**Type:** refactor
+
+**Summary:** The 51-color palette list was duplicated: once in `resolveChartsThemeTokens.ts` as named token fields, and again in `useCampaignPerformanceTheme.ts` as a manual `t.colorXxx` enumeration; extracted into a shared `resolvePaletteColors()` helper so both places use the same source.
+
+**Brainstorming:** `useCampaignPerformanceTheme` built `paletteColors` by manually listing all 51 `t.colorXxx` fields in the correct 500→400→600 order — a repetition of knowledge already in the resolver. The right fix is a `resolvePaletteColors()` function in the resolver module that reads the CSS tokens directly in canonical order, exported through the `@/ui` barrel so `useCampaignPerformanceTheme` can call it. No interface shape changes needed — `ChartThemeTokens` stays a flat named record; only a parallel helper function is added.
+
+**Prompt:** The palette list in useCampaignPerformanceTheme is a duplicate of the resolver token order. Add resolvePaletteColors() to resolveChartsThemeTokens.ts, export it from the @/ui barrel, and replace the manual enumeration in useCampaignPerformanceTheme with a call to it.
+
+**What changed:**
+- `app/src/ui/theme/resolveChartsThemeTokens.ts` — added `resolvePaletteColors(): string[]` that reads all 51 `--chart-color-*` tokens in 500→400→600 order
+- `app/src/ui/theme/index.ts` — added `resolvePaletteColors` to the barrel export
+- `app/src/features/campaign-performance/charts/composables/useCampaignPerformanceTheme.ts` — replaced 16-line manual palette enumeration with `resolvePaletteColors()`
+
+**Key decisions & why:**
+- Helper lives in the resolver module (not a separate file) — it uses the same private `readVar` helper and belongs in the same domain
+- Called inside the `computed()` in `useCampaignPerformanceTheme` so it re-runs on theme switch alongside `resolveChartsThemeTokens()`
+- `ChartThemeTokens` interface left unchanged — mixing a `string[]` into a flat named record would break its shape
+
+
+## [#652] Fix scatter chart legend indicators — render as circles not rectangles
+**Type:** fix
+
+**Summary:** The bubble chart legend rendered square boxes instead of circles because spreading `basePlugins.legend.labels` carried over `boxWidth`, `boxHeight`, and `borderRadius` even when `usePointStyle: true` was set — clearing those lets Chart.js render the point circle natively.
+
+**Brainstorming:** Chart.js uses `boxWidth`/`boxHeight`/`borderRadius` for the rectangle legend swatch. When `usePointStyle: true` + `pointStyle: 'circle'` are set, Chart.js is supposed to draw a circle instead, but the lingering box dimension props interfere. The fix is to omit those three properties when `usePointLegend` is active so Chart.js handles circle sizing on its own.
+
+**Prompt:** Legend indicator in scatter chart must be rounded — fix BubbleChart.vue so usePointLegend renders circle legend items correctly.
+
+**What changed:**
+- `app/src/ui/charts/components/BubbleChart.vue` — when `usePointLegend` is true, destructures `boxWidth`, `boxHeight`, `borderRadius` out of `basePlugins.legend.labels` (truly removing those keys), then spreads the rest with `usePointStyle: true` and `pointStyle: 'circle'`
+
+**Key decisions & why:**
+- `basePlugins.legend.labels` has `usePointStyle: false` baked in — a simple spread-and-override sets the key to `true` but leaves `boxWidth`/`boxHeight`/`borderRadius` present, causing Chart.js to take the rect path; destructuring them out removes the keys entirely
+- Setting keys to `undefined` does not remove them from a spread object — Chart.js still sees them and falls back to rect rendering; destructuring is the only way to truly omit them
+
+
+
+## [#653] Fix scatter chart tooltip marker — render as circle not square
+**Type:** fix
+
+**Summary:** The bubble chart tooltip marker was rendering as a square because `useChartTooltip` defaults to `'square'` marker; passing `{ marker: 'circle' }` switches the `labelPointStyle` callback to return `pointStyle: 'circle'`.
+
+**Brainstorming:** `useChartTooltip` accepts an options object with a `marker` key that maps to a `PointStyle` via `MARKER_POINT_STYLES`. The default is `'square'` (`'rect'` point style). The bubble chart called it without options, so tooltips used the square marker. Passing `{ marker: 'circle' }` is the intended API — no changes to the composable needed.
+
+**Prompt:** In the scatterplot the indicator in the tooltip must be rounded too. Fix BubbleChart.vue to pass { marker: 'circle' } to useChartTooltip.
+
+**What changed:**
+- `app/src/ui/charts/components/BubbleChart.vue` — added `{ marker: 'circle' }` as second argument to `useChartTooltip`
+
+**Key decisions & why:**
+- One-line change using the existing `marker` API in `useChartTooltip` — no new logic needed
+
+
+## [#654] Fix tooltip marker color — read per-element borderColor separately from backgroundColor
+**Type:** fix
+
+**Summary:** Tooltip markers did not match point colors because `getTooltipItemColor` returned only `backgroundColor` and used it for both fill and stroke; now it reads `borderColor` separately from the element options so the marker's fill and border match the actual point exactly.
+
+**Brainstorming:** Chart.js renders the tooltip color swatch using `fillStyle = labelColor.backgroundColor` and `strokeStyle = labelColor.borderColor`. The old code set both to `options.backgroundColor`, so for highlighted points (where `borderColor` is full-alpha and `backgroundColor` is 0.75-alpha) the border would be drawn in the dimmed fill color instead of the point's actual border. More importantly, for any point where the element resolves distinct backgroundColor and borderColor values, the marker wouldn't faithfully represent the point. Reading both properties independently and only falling back to `background` when `borderColor` is absent gives the most accurate result.
+
+**Prompt:** Marker style in legend tooltips do not match colors of the item. Fix useChartTooltip so labelColor reads borderColor from the element options separately instead of reusing backgroundColor for both fill and stroke.
+
+**What changed:**
+- `app/src/ui/charts/composables/useChartTooltip.ts` — `getTooltipItemColor` now returns `{ background, border }` (reads `options.borderColor` separately, falls back to `background`); `labelColor` callback uses `background` for `backgroundColor` and `border` for `borderColor`
+
+**Key decisions & why:**
+- `borderColor` fallback is `background` (not a theme default) — if an element has no explicit border color, matching the fill is the right visual outcome
+- Change is in the shared `useChartTooltip` composable so all chart types benefit from accurate marker colors, not just the bubble chart
+
+
+## [#655] Fix empty-dataset legend color — fallback color when quadrant bucket is empty
+**Type:** fix
+
+**Summary:** When a quadrant had no campaigns, its `backgroundColor`/`borderColor` were empty arrays, leaving Chart.js with no color to assign to the legend item and falling back to gray; now an empty bucket uses the quadrant's `dimmedColor` as a scalar fallback so the legend always shows the correct color.
+
+**Brainstorming:** Chart.js picks legend item color from the dataset's `backgroundColor`/`borderColor`. When those are arrays, it reads index 0 — but an empty array means index 0 is undefined, so Chart.js falls back to its internal default (gray). The fix is to supply a scalar color (the quadrant's `dimmedColor`) when the bucket is empty so Chart.js always has a valid color reference for the legend, without affecting any rendering of actual points.
+
+**Prompt:** When no dataset matches a quadrant (e.g. Maximize or Monitor are empty), the legend item stays gray. Fix RoiVsBudgetScatterChart so empty buckets still have a color for the legend.
+
+**What changed:**
+- `app/src/features/campaign-performance/charts/components/RoiVsBudgetScatterChart.vue` — `backgroundColor` and `borderColor` now use a ternary: array map when bucket has points, scalar `q.dimmedColor` when empty
+
+**Key decisions & why:**
+- `dimmedColor` chosen for the fallback (not `color` or `border`) — consistent with how non-highlighted points appear; the legend item should look the same as a typical point in that quadrant
+
+
+## [#656] Restructure ui/theme folder — composables / utils / types with barrel files
+**Type:** refactor
+
+**Summary:** The flat `ui/theme/` folder (two files + barrel) was restructured into `composables/`, `utils/`, and `types/` subfolders each with an `index.ts` barrel, matching the conventions used elsewhere in the codebase.
+
+**Brainstorming:** `useTheme.ts` is a composable, `resolveChartsThemeTokens.ts` is a utility module, and `AppTheme`/`ChartThemeTokens` are types — keeping them flat in one folder made the distinction implicit. Moving each to its proper subfolder makes responsibilities immediately clear. The types are now the dependency root: utils imports `ChartThemeTokens` from types, composables imports `AppTheme` from types. The top-level `index.ts` re-exports everything so the public API via `@/ui` is unchanged. The only internal path change is in `ui/charts/composables/useChartTheme.ts`, which imported from the old flat paths.
+
+**Prompt:** Structure the theme folder properly: composables/, utils/, types/ subfolders with index barrel files.
+
+**What was built:**
+- `app/src/ui/theme/types/theme.types.ts` — `AppTheme` + `ChartThemeTokens` (moved from resolveChartsThemeTokens.ts)
+- `app/src/ui/theme/types/index.ts` — barrel
+- `app/src/ui/theme/utils/resolveChartsThemeTokens.ts` — `resolveChartsThemeTokens` + `resolvePaletteColors` (moved from root); imports `ChartThemeTokens` from `../types`
+- `app/src/ui/theme/utils/index.ts` — barrel
+- `app/src/ui/theme/composables/useTheme.ts` — `useTheme` (moved from root); imports `AppTheme` from `../types`
+- `app/src/ui/theme/composables/index.ts` — barrel
+- `app/src/ui/theme/index.ts` — updated to re-export from composables/, utils/, types/
+- `app/src/ui/charts/composables/useChartTheme.ts` — updated imports to `../../theme/utils` and `../../theme/composables`
+- Deleted: `app/src/ui/theme/resolveChartsThemeTokens.ts`, `app/src/ui/theme/useTheme.ts`
+
+**Key decisions & why:**
+- Types subfolder is the dependency root — utils and composables import from it, not the other way around; avoids circular deps
+- Top-level `index.ts` re-exports from subfolders rather than re-exporting from flat files — barrel chain is clean and public API via `@/ui` is unchanged
+- No `utils/` needed in ui/theme beyond what exists — no standalone math or formatting helpers here
+
+
+## [#657] Rename resolveChartsThemeTokens.ts to chart-theme-tokens.ts — kebab-case util file naming
+**Type:** fix
+
+**Summary:** `resolveChartsThemeTokens.ts` was named after the function it exports, violating the kebab-case util file naming rule; renamed to `chart-theme-tokens.ts`.
+
+**Brainstorming:** Util files must use kebab-case and describe what the file contains, not mirror the exported function name. The barrel in `utils/index.ts` re-exports the same public names so no consumers are affected.
+
+**Prompt:** Util files must use kebab-case, not be named like composables or after their exported function. Rename resolveChartsThemeTokens.ts to chart-theme-tokens.ts.
+
+**What changed:**
+- `app/src/ui/theme/utils/resolveChartsThemeTokens.ts` → renamed to `chart-theme-tokens.ts`
+- `app/src/ui/theme/utils/index.ts` — updated import path to `./chart-theme-tokens`
+
+**Key decisions & why:**
+- `chart-theme-tokens.ts` describes the file content (CSS token resolution for chart theme) without coupling the filename to a specific exported symbol

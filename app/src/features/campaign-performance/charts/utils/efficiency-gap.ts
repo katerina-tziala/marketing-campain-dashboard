@@ -1,7 +1,7 @@
 import type { PortfolioKPIs } from '@/shared/portfolio'
 import type { Channel } from '@/shared/data'
 import { computeShareEfficiency } from '@/shared/portfolio'
-import { CAMPAIGN_PERFORMANCE_CHART_COLORS } from '../config'
+import type { CampaignPerformanceChartColors } from '../types'
 
 export function getChannelEfficiencyGapPercent(
   channel: Channel,
@@ -15,10 +15,11 @@ export function getChannelEfficiencyGapPercent(
   return efficiencyGap * 100
 }
 
-export function getEfficiencyGapColor(gapPercent: number): string {
-  return gapPercent >= 0
-    ? CAMPAIGN_PERFORMANCE_CHART_COLORS.positiveGap
-    : CAMPAIGN_PERFORMANCE_CHART_COLORS.negativeGap
+export function getEfficiencyGapColor(
+  gapPercent: number,
+  colors: Pick<CampaignPerformanceChartColors, 'positiveGap' | 'negativeGap'>,
+): string {
+  return gapPercent >= 0 ? colors.positiveGap : colors.negativeGap
 }
 
 export function getEfficiencyGapSignedAmount(

@@ -4,23 +4,32 @@ import { useChartTheme } from './useChartTheme'
 import { useChartTooltip } from './useChartTooltip'
 
 export function useChartConfig<TType extends ChartType = ChartType>() {
-  const chartTheme = useChartTheme()
+  const {
+    baseOptions,
+    legend: {
+      labelColor,
+      labelPadding,
+      labelFontSize,
+      borderRadius,
+      boxWidth,
+      boxHeight,
+    },
+  } = useChartTheme().value
   const { baseScales, createScale } = useChartScales()
   const tooltip = useChartTooltip<TType>()
-  const baseOptions = chartTheme.baseOptions
 
   const basePlugins = {
     legend: {
       onClick: () => {},
       onHover: () => {},
       labels: {
-        color: chartTheme.legend.labelColor,
-        padding: chartTheme.legend.labelPadding,
-        font: { size: chartTheme.legend.labelFontSize },
+        color: labelColor,
+        padding: labelPadding,
+        font: { size: labelFontSize },
         usePointStyle: false,
-        borderRadius: chartTheme.legend.borderRadius,
-        boxWidth: chartTheme.legend.boxWidth,
-        boxHeight: chartTheme.legend.boxHeight,
+        borderRadius,
+        boxWidth,
+        boxHeight,
       },
     },
     tooltip,

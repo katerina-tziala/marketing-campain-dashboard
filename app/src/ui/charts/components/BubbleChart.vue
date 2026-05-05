@@ -39,7 +39,7 @@ defineOptions({
 
 const attrs = useAttrs();
 const { baseOptions, basePlugins, createScale } = useChartConfig<"bubble">();
-const bubbleTooltip = useChartTooltip<"bubble">(props.tooltipCallbacks);
+const bubbleTooltip = useChartTooltip<"bubble">(props.tooltipCallbacks, { marker: "circle" });
 
 function createScaleOptions(
   label?: string,
@@ -70,11 +70,12 @@ const options = computed<BubbleChartOptions>(() => ({
     legend: {
       ...basePlugins.legend,
       position: props.legendPosition,
-      labels: {
-        ...basePlugins.legend.labels,
-        usePointStyle: props.usePointLegend,
-        pointStyle: props.usePointLegend ? "circle" : undefined,
-      },
+      labels: (() => {
+        const { boxWidth: _bw, boxHeight: _bh, borderRadius: _br, ...rest } = basePlugins.legend.labels;
+        return props.usePointLegend
+          ? { ...rest, usePointStyle: true, pointStyle: "circle" }
+          : basePlugins.legend.labels;
+      })(),
     },
     tooltip: bubbleTooltip,
   },

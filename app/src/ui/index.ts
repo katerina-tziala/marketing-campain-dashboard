@@ -1,4 +1,5 @@
 export * from './charts'
+export * from './theme'
 export * from './card'
 export * from './dropdown'
 export * from './drawer'

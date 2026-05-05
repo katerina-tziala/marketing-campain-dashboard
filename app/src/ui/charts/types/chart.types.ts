@@ -2,16 +2,56 @@ import type {
   ChartData,
   ChartOptions,
   ChartType,
+  Color,
   LegendItem,
   LegendOptions,
   Plugin,
+  ScaleOptions,
   TooltipCallbacks,
   TooltipItem,
+  TooltipOptions,
 } from 'chart.js'
 
 export type ChartTickFormatter = (value: string | number) => string
 export type ChartLegendPosition<TType extends ChartType> =
   LegendOptions<TType>['position']
+export type CartesianChartScaleOptions = ScaleOptions<'category' | 'linear'>
+export type ChartScaleTicks = NonNullable<CartesianChartScaleOptions['ticks']>
+export type CreateChartScaleOptions =
+  Omit<CartesianChartScaleOptions, 'ticks' | 'title'> & {
+    title?: string
+    adaptiveTickRotation?: boolean
+    ticks?: Partial<ChartScaleTicks>
+  }
+export type ChartTooltipContentCallbackName =
+  | 'beforeTitle'
+  | 'title'
+  | 'afterTitle'
+  | 'beforeBody'
+  | 'afterBody'
+  | 'beforeLabel'
+  | 'label'
+  | 'afterLabel'
+  | 'beforeFooter'
+  | 'footer'
+  | 'afterFooter'
+export type ChartTooltipContentCallbacks<TType extends ChartType> = Partial<
+  Pick<TooltipCallbacks<TType>, ChartTooltipContentCallbackName>
+>
+export type ChartTooltipMarker = 'rounded-block' | 'circle' | 'square'
+export type UseChartTooltipOptions = {
+  marker?: ChartTooltipMarker
+}
+export type ChartTooltipItemColors = {
+  background: Color
+  border: Color
+}
+export type ChartTooltipOptions<TType extends ChartType> = Omit<
+  Partial<TooltipOptions<TType>>,
+  'callbacks'
+> & {
+  callbacks: Partial<TooltipCallbacks<TType>>
+}
 
 export type BarChartData = ChartData<'bar'>
 export type BarChartOptions = ChartOptions<'bar'>

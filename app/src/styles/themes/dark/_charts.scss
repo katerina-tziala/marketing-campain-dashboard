@@ -7,42 +7,53 @@
 :root,
 [data-theme="dark"] {
   /* Tooltip */
-  --chart-tooltip-bg:           rgb(var(--neutral-800));
+  --chart-tooltip-bg:           rgb(15, 23, 42);
   --chart-tooltip-title-color:  rgb(248, 250, 252);
-  --chart-tooltip-body-color:   var(--color-text-muted);
-  --chart-tooltip-border:       rgb(var(--surface-border-4) / 0.9);
+  --chart-tooltip-body-color:   rgb(170, 188, 212);
+  --chart-tooltip-border:       rgba(255, 255, 255, 0.19);
 
   /* Axes / grid */
-  --chart-tick-color:           var(--color-text-muted);
-  --chart-title-color:          var(--color-text);
-  --chart-grid-line:            rgb(var(--neutral-0) / 0.07);
+  --chart-tick-color:           rgb(170, 188, 212);
+  --chart-title-color:          rgb(221, 228, 238);
+  --chart-grid-line:            rgba(255, 255, 255, 0.07);
 
   /* Arc (donut separator) */
-  --chart-arc-separator:        var(--color-surface-1);
+  --chart-arc-separator:        rgb(13, 20, 42);
 
   /* Text */
-  --chart-text-color:           var(--color-text-muted);
+  --chart-text-color:           rgb(170, 188, 212);
+
+  /* Tooltip sizes */
+  --chart-tooltip-border-radius: 2px;
+  --chart-tooltip-padding:       10px;
+  --chart-tooltip-marker-size:   12px;
+
+  /* Axes / grid sizes */
+  --chart-tick-font-size:        11px;
+  --chart-title-font-size:       11px;
+  --chart-max-tick-rotation:     45;
+
+  /* Legend sizes */
+  --chart-legend-font-size:      12px;
+  --chart-legend-padding:        16px;
+  --chart-legend-box-size:       12px;
+  --chart-legend-border-radius:  4px;
 
   /* Legend */
-  --chart-legend-label-color:   var(--color-text-muted);
+  --chart-legend-label-color:   rgb(170, 188, 212);
 
   /* Campaign performance bar charts */
   --chart-budget:               rgb(59, 130, 246);
-  --chart-revenue:              var(--color-success-light);
-  --chart-gap-positive:         var(--color-success);
+  --chart-revenue:              rgb(52, 211, 153);
+  --chart-gap-positive:         rgb(6, 185, 129);
   --chart-gap-negative:         rgb(239, 68, 68);
 
   /* ROI vs Budget scaling quadrants */
-  --chart-quadrant-scale-up:    var(--color-success);
-  --chart-quadrant-champions:   rgb(234, 179, 8);
-  --chart-quadrant-monitor:     var(--color-primary);
+  --chart-quadrant-scale-up:    rgb(6, 185, 129);
+  --chart-quadrant-champions:   rgb(245, 158, 11);
+  --chart-quadrant-monitor:     rgb(14, 165, 233);
   --chart-quadrant-overspend:   rgb(239, 68, 68);
   --chart-quadrant-divider:     rgba(203, 213, 225, 0.38);
-
-  /* Funnel */
-  --chart-funnel-impressions:   var(--color-primary-dark);
-  --chart-funnel-clicks:        var(--color-secondary-darker);
-  --chart-funnel-conversions:   var(--color-warning-darker);
 
   /* Palette — 500 (base) */
   --chart-color-indigo:         rgb(99, 102, 241);

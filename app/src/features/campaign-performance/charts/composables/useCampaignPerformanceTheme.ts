@@ -1,17 +1,62 @@
-import { useChartTheme } from '@/ui'
-import {
-  CAMPAIGN_PERFORMANCE_CHART_COLORS,
-  CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS,
-  getCampaignPerformanceChartFillColor,
-} from '../config'
+import { computed } from 'vue'
+import { resolveChartsThemeTokens, resolvePaletteColors, useTheme, withAlpha } from '@/ui'
+import type {
+  CampaignPerformanceChartColors,
+  CampaignPerformanceScalingColors,
+  ScalingQuadrantColors,
+} from '../types'
+
+function toQuadrantColors(base: string): ScalingQuadrantColors {
+  return {
+    color:           withAlpha(base, 0.75),
+    dimmedColor:     withAlpha(base, 0.60),
+    border:          base,
+    backgroundColor: withAlpha(base, 0.12),
+  }
+}
 
 export function useCampaignPerformanceTheme() {
-  const { colors: paletteColors } = useChartTheme()
+  const { currentTheme } = useTheme()
+
+  const theme = computed(() => {
+    // currentTheme read here so computed invalidates on theme switch
+    void currentTheme.value
+    const {
+      budget,
+      revenue,
+      gapPositive,
+      gapNegative,
+      quadrantScaleUp,
+      quadrantChampions,
+      quadrantMonitor,
+      quadrantOverspend,
+      quadrantDivider,
+    } = resolveChartsThemeTokens()
+
+    const performanceChartColors: CampaignPerformanceChartColors = {
+      budget,
+      revenue,
+      positiveGap: gapPositive,
+      negativeGap: gapNegative,
+    }
+
+    const scalingColors: CampaignPerformanceScalingColors = {
+      scaleUp:         toQuadrantColors(quadrantScaleUp),
+      champions:       toQuadrantColors(quadrantChampions),
+      underperforming: toQuadrantColors(quadrantMonitor),
+      overspend:       toQuadrantColors(quadrantOverspend),
+      divider:         quadrantDivider,
+    }
+
+    const paletteColors: string[] = resolvePaletteColors()
+
+    return { performanceChartColors, scalingColors, paletteColors }
+  })
 
   return {
-    performanceChartColors: CAMPAIGN_PERFORMANCE_CHART_COLORS,
-    scalingColors: CAMPAIGN_PERFORMANCE_ROI_BUDGET_SCALING_COLORS,
-    paletteColors,
-    getFillColor: getCampaignPerformanceChartFillColor,
+    get performanceChartColors() { return theme.value.performanceChartColors },
+    get scalingColors()          { return theme.value.scalingColors },
+    get paletteColors()          { return theme.value.paletteColors },
+    getFillColor: (color: string, alpha = 0.75) => withAlpha(color, alpha),
   }
 }

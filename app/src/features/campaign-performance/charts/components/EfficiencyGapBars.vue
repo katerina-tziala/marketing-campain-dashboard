@@ -70,10 +70,10 @@ const chartData = computed<BarChartData>(() => ({
     {
       data: gapValues.value,
       backgroundColor: gapValues.value.map((gapPercent) =>
-        getFillColor(getEfficiencyGapColor(gapPercent)),
+        getFillColor(getEfficiencyGapColor(gapPercent, performanceChartColors)),
       ),
       borderColor: gapValues.value.map((gapPercent) =>
-        getEfficiencyGapColor(gapPercent),
+        getEfficiencyGapColor(gapPercent, performanceChartColors),
       ),
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },

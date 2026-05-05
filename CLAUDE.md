@@ -140,7 +140,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── BubbleChart.vue   # Bubble chart wrapper — props: chartData, ariaLabel?, axisLabels?, axisMinMax?, tickFormatters?, tickValues?, tooltipCallbacks?, plugins?, legendPosition?, usePointLegend?; w-full + min-h-80 chart container
 │   │   │   │   └── index.ts          # Barrel — exports BarChart, DonutChart, GroupedBarChart, BubbleChart
 │   │   │   ├── composables/    # Chart composables
-│   │   │   │   ├── useChartTheme.ts  # Runtime chart theme resolution boundary — currently returns DEFAULT_CHART_THEME; prepared for future CSS variable extraction
+│   │   │   │   ├── useChartTheme.ts  # Runtime theme mapper — returns ComputedRef<ChartTheme> mapped from resolveChartsThemeTokens(); re-evaluates on theme switch via useTheme(); falls back to DEFAULT_CHART_THEME when CSS vars unavailable
 │   │   │   │   ├── useChartConfig.ts # Chart.js configuration composition — base options, plugins, tooltips, scales
 │   │   │   │   ├── useChartScales.ts # Chart scale composable — exposes baseScales + createScale(ChartScaleOptions) helper for typed axis config
 │   │   │   │   ├── useChartTooltip.ts # useChartTooltip<TType>(callbacks, options?) → TooltipOptions; owns tooltip panel colors, border, corner radius, padding, marker sizing, marker shape, normalized marker fill/border behavior
@@ -231,7 +231,18 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── TableGroupHeaderRow.vue # Row-only primitive — renders <tr> + projects slot content; for grouped table section headers
 │   │   │   ├── TableSelectableRow.vue  # Row-only selectable primitive — props: selected?; emits select on pointer click; hover/selected row styling; radio inside the row remains the accessible control
 │   │   │   └── index.ts        # Barrel — exports Table, TableHeader, TableGroupHeaderRow, TableSelectableRow, DataTableColumn, SortDir
-│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/* (accessibility/ is internal — not re-exported)
+│   │   ├── theme/              # Design system theme layer — CSS var resolver + reactive theme composable; exported via @/ui barrel
+│   │   │   ├── composables/
+│   │   │   │   ├── useTheme.ts     # useTheme() → { currentTheme } — MutationObserver on data-theme attribute; currentTheme is a reactive ref<AppTheme>; composables read currentTheme.value inside computed() to trigger re-evaluation on theme switch; imports AppTheme from ../types
+│   │   │   │   └── index.ts        # Barrel — exports useTheme
+│   │   │   ├── utils/
+│   │   │   │   ├── chart-theme-tokens.ts # Pure resolvers — resolveChartsThemeTokens() reads all --chart-* CSS custom properties via getComputedStyle and returns flat ChartThemeTokens; resolvePaletteColors() returns 51-color string[] in 500→600→400 order; imports ChartThemeTokens from ../types
+│   │   │   │   └── index.ts        # Barrel — exports resolveChartsThemeTokens, resolvePaletteColors
+│   │   │   ├── types/
+│   │   │   │   ├── theme.types.ts  # AppTheme ('dark'|'light') + ChartThemeTokens interface with JSDoc on every field grouping tooltip/axes/arc/text/legend/performance/quadrant/palette sections
+│   │   │   │   └── index.ts        # Barrel — exports AppTheme, ChartThemeTokens
+│   │   │   └── index.ts        # Barrel — re-exports from composables/, utils/, types/
+│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/*, theme/* (accessibility/ is internal — not re-exported)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
@@ -360,7 +371,7 @@ app/                        # Vue 3 + Vite project
 │   │       │   └── RoiVsBudgetScatterChart.vue # ROI vs Budget bubble renderer — props: campaigns, medians, highlights (RoiBudgetScalingHighlights), ariaLabel?; uses shared BubbleChart; quadrant backgrounds via createQuadrantBackgroundPlugin; log ROI transform; analysis-driven highlight sizing; circular legend markers
 │   │       ├── composables/
 │   │       │   ├── index.ts
-│   │       │   ├── useCampaignPerformanceTheme.ts # useCampaignPerformanceTheme() → { performanceChartColors, scalingColors, paletteColors, getFillColor } — single theme/color entry point for the feature; destructures colors from useChartTheme(); exposes feature constants + paletteColors + getFillColor helper; CSS var migration happens only here
+│   │       │   ├── useCampaignPerformanceTheme.ts # useCampaignPerformanceTheme() → { performanceChartColors, scalingColors, paletteColors, getFillColor } — maps resolveChartsThemeTokens() into typed interfaces (CampaignPerformanceChartColors, CampaignPerformanceScalingColors, ScalingQuadrantColors) with JSDoc comments; reactive via useTheme(); getFillColor delegates to withAlpha
 │   │       │   ├── useCampaignColorMap.ts  # useCampaignColorMap(channels) → computed { channelColorMap, campaignColorMap } — calls useCampaignPerformanceTheme internally; single sequential palette walk: channel → its campaigns → next channel → …; channelColorMap keyed by channel.id, campaignColorMap keyed by String(campaign.rowId)
 │   │       │   ├── useRoiChartItems.ts     # useCampaignRoiChartItems / useChannelRoiChartItems — normalize campaigns/channels into RoiBarChartItem[] with color assignment
 │   │       │   └── useBudgetShareChartItems.ts # useCampaignBudgetShareDonutItems — normalizes campaign budget data with assigned colors

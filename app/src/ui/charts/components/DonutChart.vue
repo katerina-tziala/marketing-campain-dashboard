@@ -27,7 +27,7 @@ defineOptions({
 });
 
 const attrs = useAttrs();
-const chartTheme = useChartTheme();
+const chartTheme = useChartTheme().value;
 const { baseOptions, basePlugins } = useChartConfig<"doughnut">();
 
 const defaultTooltipCallbacks: DonutTooltipCallbacks = {

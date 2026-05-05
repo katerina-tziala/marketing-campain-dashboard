@@ -6,24 +6,23 @@ import {
   createQuadrantBackgroundPlugin,
   type BubbleChartData,
   type BubbleChartPlugin,
-  type BubbleTooltipCallbacks, 
+  type BubbleTooltipCallbacks,
 } from "@/ui";
 import { formatCompactNumber, formatDecimal } from "@/shared/utils";
 import {
   ROI_BUDGET_SCALING_BUDGET_AXIS_ROUNDING,
-  ROI_BUDGET_SCALING_DIVIDER_STYLE,
   ROI_BUDGET_SCALING_HIGHLIGHTED_POINT_RADIUS,
   ROI_BUDGET_SCALING_POINT_RADIUS,
-  ROI_BUDGET_SCALING_QUADRANTS,
   ROI_BUDGET_SCALING_TICK_VALUES,
 } from "../config";
 import type {
   RoiBudgetScalingHighlights,
   RoiBudgetScalingMedians,
+  RoiBudgetScalingQuadrantConfig,
   RoiBudgetScalingQuadrantKey,
 } from "../types";
 import { formatRoiBudgetScalingTooltipLines } from "../utils";
-import { QUADRANT_BACKGROUNDS } from "../config/roi-budget-scaling-chart.config";
+import { useCampaignPerformanceTheme } from "../composables";
 
 type BubblePoint = {
   x: number;
@@ -46,6 +45,25 @@ function unscaleRoi(value: number): number {
 }
 
 const ROI_TICKS = ROI_BUDGET_SCALING_TICK_VALUES.map(scaleRoi);
+
+const { scalingColors } = useCampaignPerformanceTheme();
+
+const quadrants = computed<readonly RoiBudgetScalingQuadrantConfig[]>(() => [
+  { key: 'scaleUp',         label: 'Scale',    ...scalingColors.scaleUp },
+  { key: 'champions',       label: 'Maximize', ...scalingColors.champions },
+  { key: 'underperforming', label: 'Monitor',  ...scalingColors.underperforming },
+  { key: 'overspend',       label: 'Reduce',   ...scalingColors.overspend },
+]);
+
+const dividerStyle = computed(() => ({
+  color: scalingColors.divider,
+  width: 1,
+  dash: [5, 5],
+}));
+
+const quadrantBackgrounds = computed(() =>
+  quadrants.value.map((q) => ({ backgroundColor: q.backgroundColor })),
+);
 
 const props = defineProps<{
   campaigns: CampaignPerformance[];
@@ -150,7 +168,7 @@ const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
   buckets.forEach((bucket, quadrantIndex) => {
     getHighlightedIndexes(
       bucket,
-      ROI_BUDGET_SCALING_QUADRANTS[quadrantIndex].key,
+      quadrants.value[quadrantIndex].key,
     ).forEach((index) => {
       bucket[index].isHighlighted = true;
       bucket[index].r = ROI_BUDGET_SCALING_HIGHLIGHTED_POINT_RADIUS;
@@ -158,29 +176,30 @@ const bubbleData = computed<BubbleChartData<BubblePoint>>(() => {
   });
 
   return {
-    datasets: ROI_BUDGET_SCALING_QUADRANTS.map((q, i) => ({
+    datasets: quadrants.value.map((q, i) => ({
       label: q.label,
       data: buckets[i],
-      backgroundColor: buckets[i].map((point) =>
-        point.isHighlighted ? q.color : q.dimmedColor,
-      ),
-      borderColor: buckets[i].map((point) =>
-        point.isHighlighted ? q.border : q.dimmedColor,
-      ),
+      backgroundColor: buckets[i].length
+        ? buckets[i].map((point) => (point.isHighlighted ? q.color : q.dimmedColor))
+        : q.dimmedColor,
+      borderColor: buckets[i].length
+        ? buckets[i].map((point) => (point.isHighlighted ? q.border : q.dimmedColor))
+        : q.dimmedColor,
       borderWidth: 1,
       hoverRadius: 2,
     })),
   };
 });
 
-const quadrantBackgroundPlugin: BubbleChartPlugin =
+const quadrantBackgroundPlugin = computed<BubbleChartPlugin>(() =>
   createQuadrantBackgroundPlugin<"bubble">({
     id: "roiBudgetQuadrantBackgroundPlugin",
     getXThreshold: () => props.medians.budget,
     getYThreshold: () => scaleRoi(props.medians.roi),
-    quadrants: QUADRANT_BACKGROUNDS,
-    dividerStyle: ROI_BUDGET_SCALING_DIVIDER_STYLE,
-  });
+    quadrants: quadrantBackgrounds.value,
+    dividerStyle: dividerStyle.value,
+  }),
+);
 </script>
 
 <template>
