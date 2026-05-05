@@ -15522,3 +15522,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Feature-specific theme types live in the feature chart type folder — campaign performance color shapes are not generic UI chart types
 - Object destructuring was preferred in theme consumers — it makes the specific token dependencies visible at the top of each mapper and reduces repeated `chartTheme.*` / `t.*` access
 - Build check: `npm run build` still stops on existing unrelated TypeScript errors in `BudgetReductions.vue`, `RoiVsBudgetScatterChart.vue`, and `useDownloadTemplate.ts`; no new export/type errors were introduced by this cleanup
+
+
+## [#657] Stabilize Revenue vs Budget toggle height and tighten efficiency legend spacing
+**Type:** fix/ui
+
+**Summary:** The Revenue vs Budget card changed height when toggling between the Performance and Efficiency views because the two child charts owned different height contracts and the Efficiency view had an external legend plus spacing hacks. The card now owns one stable chart area shared by both views, and the Efficiency legend sits inside that area without adding height.
+
+**Brainstorming:** The Performance chart filled its chart component area directly, while the Efficiency chart rendered an external legend above the chart and used small/negative margins plus its own `min-h`/fixed inner chart height. That made the card recalculate to a different height after toggling. The fix is to move height ownership up to `RevenueVsBudgetChart.vue`: both views render inside the same fixed chart-area slot. Inside `EfficiencyGapBars.vue`, the legend and chart are arranged as a two-row grid (`auto` legend + `minmax(0, 1fr)` chart) so the legend consumes part of the stable area rather than expanding the parent card.
+
+**Prompt:** RevenueVsBudgetChart initially renders with the correct height, but when toggled the height changes. Keep the chart grid area the same height for both views, account for the Efficiency chart's external legend, remove negative/additional spacing hacks, and keep the legend close to the chart.
+
+**What changed:**
+- `app/src/features/campaign-performance/charts/RevenueVsBudgetChart.vue` — wraps both `RevenueVsBudgetBars` and `EfficiencyGapBars` in a shared `.revenue-budget-chart-area` with `h-96`, `min-h-0`, and `min-w-0`
+- `app/src/features/campaign-performance/charts/RevenueVsBudgetChart.vue` — replaces per-child `min-h`/`max-h` overrides with a shared `.chart-fill` class so both toggle views fill the same parent slot
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — removes the `MetaRow` negative bottom margin and tiny top margin
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — changes the root layout to `h-full min-h-0 grid grid-rows-[auto_minmax(0,1fr)] gap-1`, keeping the legend close to the chart while preserving the outer chart area height
+- `app/src/features/campaign-performance/charts/components/EfficiencyGapBars.vue` — changes the inner `BarChart` from a fixed `!h-[356px]` to `h-full min-h-0`
+
+**Key decisions & why:**
+- Parent-owned height over child-owned heights — the toggle card is the stable layout boundary, so it should define the chart area height once
+- Efficiency legend stays inside the chart area — the legend is part of that view, but it should reduce available plot space rather than increase card height
+- Removed margin hacks instead of tuning them — grid rows make the legend/chart relationship explicit and avoid fragile visual offsets
+- `gap-1` chosen for legend spacing — close enough to feel connected to the chart without making the legend look attached to the plot
+- Build check: `npm run build` still stops on existing unrelated TypeScript errors in `BudgetReductions.vue`, `RoiVsBudgetScatterChart.vue`, and `useDownloadTemplate.ts`

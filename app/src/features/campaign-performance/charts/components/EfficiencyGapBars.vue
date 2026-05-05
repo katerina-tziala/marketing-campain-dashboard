@@ -116,7 +116,7 @@ const chartAriaLabel = computed(() =>
 
 <template>
   <div v-bind="rootAttrs" class="efficiency-gap-bars">
-    <MetaRow size="tiny" class="mx-auto -mb-[2px] mt-[3px]">
+    <MetaRow size="tiny" class="mx-auto -mb-0.5">
       <MetaItem class="legend-item">
         <span
           class="legend-indicator"
@@ -134,7 +134,7 @@ const chartAriaLabel = computed(() =>
     </MetaRow>
     <BarChart
       v-if="showChart"
-      class="!h-[356px]"
+      class="h-full min-h-0"
       :chart-data="chartData"
       :aria-label="chartAriaLabel"
       :tooltip-callbacks="tooltipCallbacks"
@@ -166,7 +166,7 @@ const chartAriaLabel = computed(() =>
 
 <style lang="scss" scoped>
 .efficiency-gap-bars {
-  @apply w-full grid grid-cols-1 grid-rows-[min-content_1fr] min-h-96 pt-3;
+  @apply w-full h-full min-h-0 grid grid-cols-1 grid-rows-[auto_minmax(0,1fr)] gap-0 pt-3.5;
 }
 
 .legend-item {

@@ -40,18 +40,30 @@ const channelsByGapImpact = computed(() =>
         size="tiny"
       />
     </CardHeader>
-    <RevenueVsBudgetBars
-      v-if="revenueBudgetView === 'budgetVsRevenue'"
-      class="!min-h-80 max-h-[390px]"
-      :channels="channelsByGapImpact"
-      aria-label="Revenue vs budget by channel bar chart"
-    />
-    <EfficiencyGapBars
-      v-else
-      class="!min-h-80 !max-h-96"
-      :channels="channelsByGapImpact"
-      :kpis="kpis"
-      aria-label="Efficiency gap by channel bar chart"
-    />
+    <div class="revenue-budget-chart-area">
+      <RevenueVsBudgetBars
+        v-if="revenueBudgetView === 'budgetVsRevenue'"
+        class="chart-fill"
+        :channels="channelsByGapImpact"
+        aria-label="Revenue vs budget by channel bar chart"
+      />
+      <EfficiencyGapBars
+        v-else
+        class="chart-fill"
+        :channels="channelsByGapImpact"
+        :kpis="kpis"
+        aria-label="Efficiency gap by channel bar chart"
+      />
+    </div>
   </Card>
 </template>
+
+<style lang="scss" scoped>
+.revenue-budget-chart-area {
+  @apply w-full h-96 min-h-0 min-w-0;
+}
+
+.chart-fill {
+  @apply h-full min-h-0 max-h-none;
+}
+</style>
