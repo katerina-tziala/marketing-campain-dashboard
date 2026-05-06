@@ -13,6 +13,8 @@ The system supports:
 
 The architecture is frontend-centered, with deterministic analytics and AI orchestration executed in the client. The frontend owns CSV ingestion, validation feedback, portfolio analytics state, interactive exploration, session-scoped AI connection state, AI request orchestration, and rendering of fresh, cached, stale, and error states. External AI providers remain outside the application boundary.
 
+![Marketing Intelligence Dashboard software architecture](../assets/system-architecture.svg)
+
 ## Overview
 
 The application turns uploaded campaign performance reports into a portfolio analysis workspace. Raw campaign rows are accepted only after client-side parsing and validation. Accepted data is converted into domain state, analyzed deterministically, and then rendered through campaign performance views.

@@ -346,3 +346,69 @@
 - Product name kept consistent — all current README wording uses `Marketing Intelligence Dashboard`
 - Logo in the title — gives the page a more polished portfolio feel without adding new assets
 - Product Preview kept as a TODO comment — preserves a clear future placement for screenshots without showing placeholder copy or a mismatched image
+
+## [#213] Documentation SVG diagrams added
+
+**Type:** documentation
+
+**Summary:** Added SVG documentation assets for the system architecture, user flow, and use-case flows. The new diagrams provide visual support for the written architecture and feature documentation, including the end-to-end system structure, import-to-analysis user flow, and individual product use cases.
+
+**Brainstorming:** The documentation had become strong in prose, but hiring reviewers and future maintainers also benefit from quick visual maps. The diagrams were created as plain SVG files so they remain versionable, readable, and easy to embed in Markdown without relying on external diagram tools. The first pass prioritized coverage over final polish: system architecture, a full user flow, a UML-style use-case diagram, and smaller step-by-step use-case flow diagrams. The user-flow and use-case diagrams are intentionally marked as areas to revisit later because their layout and semantics need more refinement.
+
+**Prompt:** Create SVG diagrams in the docs folder: a system architecture diagram, use-case diagrams based on the provided example, and a correct English user-flow diagram for the system.
+
+**What changed:**
+
+- `docs/assets/logo.svg` — moved logo asset into docs assets for documentation usage
+- `docs/assets/system-architecture.svg` — added the system architecture asset used by the Software Architecture document
+- `docs/system-architecture.svg` — added and refined the main editable system architecture diagram
+- `docs/architecture/software-architecture.md` — embedded the system architecture image from `docs/assets`
+- `README.md` — updated the title logo to use `docs/assets/logo.svg`
+- `docs/user-flow-diagram.svg` — added an English user-flow diagram covering CSV import, validation, portfolio analytics, campaign exploration, AI connection, AI analysis, cache/provider checks, and result rendering
+- `docs/use-cases/system-use-case-diagram.svg` — added a UML-style system use-case diagram
+- `docs/use-cases/*.svg` — added smaller use-case flow diagrams for data import, campaign exploration, AI connection, executive summary, budget optimization, and AI refresh/cache behavior
+
+**Key decisions & why:**
+
+- SVG over screenshots or generated images — diagrams stay editable, diffable, and embeddable in Markdown
+- Docs assets folder — README and architecture docs should depend on stable documentation assets rather than app runtime asset paths
+- System architecture embedded in the Software Architecture doc — the diagram supports the written architecture instead of living as an orphaned asset
+- Use-case and user-flow diagrams kept separate — use cases describe system capability boundaries, while user flow describes ordered user/system progression
+- Future refinement acknowledged — use-case and user-flow diagrams need additional layout and semantic polishing, so they are useful drafts rather than final polished artifacts
+
+## [#214] System Architecture SVG refinement
+
+**Type:** documentation
+
+**Summary:** Refined `docs/system-architecture.svg` through multiple visual and semantic passes so the architecture diagram better communicates the Marketing Intelligence Dashboard system boundary, deterministic analytics flow, AI runtime layer, and external provider boundary.
+
+**Brainstorming:** The system architecture diagram started as a broad flow from CSV import through provider-backed AI output. Iteration focused on making the diagram precise enough for engineering review: removing misleading broad ownership boundaries, separating external providers visually, tightening connector paths, improving labels, distinguishing portfolio analysis context as the bridge between deterministic analytics and AI prompts, and grouping the lower AI internals under an `AI Runtime Layer`. Small layout refinements, including shadows, badge placement, dashed boundaries, and connector routing, were necessary because the diagram is meant to be presentation-quality documentation.
+
+**Prompt:** Refine the system architecture SVG: fix misplaced boundaries and labels, use straight arrows, improve subtitle and copy, avoid connector overlap, visually separate external AI providers, rename vague boxes, emphasize the analysis context bridge, split prompt generation from response validation, add an AI runtime boundary, and polish badge placement and shadows.
+
+**What changed:**
+
+- `docs/system-architecture.svg` — changed the title to `Marketing Intelligence Dashboard — Software Architecture`
+- Replaced curved connector paths with straight orthogonal arrows
+- Removed misleading broad `Client-owned` and AI-orchestration dashed boundaries
+- Added a distinct dashed `External boundary` only around the external provider area
+- Renamed `External Providers` to `External AI Providers`
+- Renamed `Application Orchestration` to `Feature State Coordination`
+- Renamed the AI bridge box to `Portfolio Analysis Context`
+- Added stronger bridge styling for `Portfolio Analysis Context`
+- Split `Prompt Generation and Response Validation` into `Prompt Generation` plus `Runtime Safeguards`
+- Updated Runtime Safeguards to own response validation, cache keys, cooldowns, cancellation, and fallback
+- Added a purple `AI Runtime Layer` boundary around provider normalization, prompt generation, and runtime safeguards
+- Tightened subtitle copy and made it larger and bolder
+- Reduced card shadow size and opacity
+- Adjusted connector endpoints to avoid crossing text
+- Fine-tuned runtime and external boundary badge size, alignment, and placement
+
+**Key decisions & why:**
+
+- Deterministic analytics remain visually upstream — AI consumes portfolio analysis context rather than raw upload data
+- `Portfolio Analysis Context` is emphasized — this is the architectural bridge between computed analytics and provider-backed interpretation
+- Runtime validation moved out of prompt generation — prompt construction and response acceptance are separate responsibilities
+- External provider boundary is explicit — Gemini and Groq are outside the application and should not visually appear as internal runtime code
+- AI Runtime Layer groups dense lower-level AI behavior — provider normalization, prompt construction, caching, cancellation, fallback, and validation scan as one subsystem
+- Visual polish matters — this diagram is part of the portfolio presentation, so small spacing, shadow, and label decisions affect readability

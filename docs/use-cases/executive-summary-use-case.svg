@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="420" viewBox="0 0 1600 420" role="img" aria-labelledby="title desc">
+  <title id="title">Executive summary use case</title>
+  <desc id="desc">Marketing analyst requests an AI-assisted executive summary from the active portfolio or selected channel context.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#111827" />
+    </marker>
+    <style>
+      .line { fill: none; stroke: #111827; stroke-width: 2; marker-end: url("#arrow"); }
+      .stroke { fill: none; stroke: #111827; stroke-width: 2; }
+      .oval { fill: #ffffff; stroke: #111827; stroke-width: 2; }
+      .title { fill: #111827; font-family: Arial, sans-serif; font-size: 24px; font-weight: 700; }
+      .actor { fill: #111827; font-family: Arial, sans-serif; font-size: 15px; font-weight: 700; }
+      .label { fill: #111827; font-family: Arial, sans-serif; font-size: 15px; text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="420" fill="#ffffff" />
+  <text class="title" x="48" y="52">Use Case: Generate Executive Summary</text>
+
+  <g transform="translate(78 144)">
+    <circle class="stroke" cx="28" cy="18" r="12" />
+    <path class="stroke" d="M 28 30 V 78 M 4 48 H 52 M 28 78 L 8 116 M 28 78 L 48 116" />
+    <rect class="stroke" x="-22" y="128" width="100" height="24" rx="2" />
+    <text class="actor" x="-10" y="176">MARKETING</text>
+    <text class="actor" x="-6" y="196">ANALYST</text>
+  </g>
+
+  <g transform="translate(226 126)">
+    <ellipse class="oval" cx="116" cy="78" rx="116" ry="58" />
+    <text class="label" x="116" y="66">Open Executive</text>
+    <text class="label" x="116" y="86">Summary tab</text>
+  </g>
+
+  <g transform="translate(502 116)">
+    <ellipse class="oval" cx="130" cy="88" rx="130" ry="64" />
+    <text class="label" x="130" y="76">Manually request</text>
+    <text class="label" x="130" y="96">first summary</text>
+  </g>
+
+  <g transform="translate(828 112)">
+    <ellipse class="oval" cx="128" cy="92" rx="128" ry="66" />
+    <text class="label" x="128" y="78">Build prompt from</text>
+    <text class="label" x="128" y="98">derived analytics</text>
+    <text class="label" x="128" y="118">context</text>
+  </g>
+
+  <g transform="translate(1144 112)">
+    <ellipse class="oval" cx="124" cy="92" rx="124" ry="66" />
+    <text class="label" x="124" y="78">Validate and cache</text>
+    <text class="label" x="124" y="98">AI response</text>
+  </g>
+
+  <g transform="translate(1400 126)">
+    <ellipse class="oval" cx="98" cy="78" rx="98" ry="58" />
+    <text class="label" x="98" y="66">Render executive</text>
+    <text class="label" x="98" y="86">insights</text>
+  </g>
+
+  <path class="line" d="M 160 204 H 216" />
+  <path class="line" d="M 458 204 H 492" />
+  <path class="line" d="M 762 204 H 818" />
+  <path class="line" d="M 1086 204 H 1134" />
+  <path class="line" d="M 1392 204 H 1400" />
+</svg>

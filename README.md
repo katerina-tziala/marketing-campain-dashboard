@@ -1,5 +1,5 @@
 <h1>
-  <img src="./app/src/assets/logo-long.svg" alt="" width="32" />
+  <img src="./docs/assets/logo.svg" alt="" width="32" />
   Marketing Intelligence Dashboard
 </h1>
 
