@@ -20,26 +20,26 @@ defineProps<{
 
 <style lang="scss" scoped>
 .chip {
-  @apply inline-block
-    text-sm
+  @apply bg-primary-ink
+    bg-surface
+    border
     font-medium
     font-semibold
-    tracking-wide
+    inline-block
     outline-none
-    shrink-0
     rounded-full
-    border
-    bg-surface
-    bg-primary-ink
-    text-typography-subtle;
+    shrink-0
+    text-sm
+    text-typography-subtle
+    tracking-wide;
 
   .chip-content {
-    @apply inline-flex
+    @apply gap-1.5
+      inline-flex
       items-center
-      gap-1.5
-      rounded-full
       px-2
-      py-1;
+      py-1
+      rounded-full;
   }
 
   &[aria-pressed='true'] {
@@ -70,9 +70,9 @@ defineProps<{
 
     &:focus-visible {
       @apply ring-2
+        ring-info
         ring-offset-1
-        ring-offset-background
-        ring-info;
+        ring-offset-background;
     }
   }
 }

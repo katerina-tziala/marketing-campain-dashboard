@@ -50,36 +50,36 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .tabs {
-  @apply flex
-    w-full
-    border-b;
+  @apply border-b
+    flex
+    w-full;
 }
 
 .tab {
-  @apply flex
-    items-center
-    justify-center
-    flex-wrap
-    gap-2
-    grow
-    px-4
-    py-3
-    text-typography-subtle
+  @apply -mb-[1px]
     border-b-2
-    cursor-pointer
-    text-sm
-    font-medium
-    tracking-wider
     border-transparent
-    -mb-[1px]
-    transition-colors
+    cursor-pointer
     duration-150
     ease-in-out
-    outline-none;
+    flex
+    flex-wrap
+    font-medium
+    gap-2
+    grow
+    items-center
+    justify-center
+    outline-none
+    px-4
+    py-3
+    text-sm
+    text-typography-subtle
+    tracking-wider
+    transition-colors;
 
   &.tab-active {
-    @apply text-primary-light
-      border-primary;
+    @apply border-primary
+      text-primary-light;
   }
 
   .tab-icon {

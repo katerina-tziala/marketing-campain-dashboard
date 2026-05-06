@@ -143,11 +143,11 @@ defineExpose({
   &.probe {
     @apply absolute
       inset-x-0
-      top-0
       invisible
       pointer-events-none
+      pr-9
       select-none
-      pr-9;
+      top-0;
   }
 
   &.single-row {
@@ -156,16 +156,16 @@ defineExpose({
 }
 
 .channel-chip-count {
-  @apply inline-flex
+  @apply -mr-0.5
+    bg-line
+    h-5
+    inline-flex
     items-center
     justify-center
-    rounded-full
-    px-1.5
     min-w-[1.25rem]
-    h-5
-    text-xs
-    -mr-0.5
-    bg-line;
+    px-1.5
+    rounded-full
+    text-xs;
 }
 
 .channel-filter-chips :deep(.chip[aria-pressed='true']) {

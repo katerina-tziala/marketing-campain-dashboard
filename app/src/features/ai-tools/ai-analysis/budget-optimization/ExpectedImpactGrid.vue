@@ -48,42 +48,42 @@ withDefaults(
 }
 
 .expected-impact-grid {
-  @apply w-full
+  @apply gap-x-8
+    gap-y-2.5
     grid
     grid-cols-1
     grid-rows-4
-    gap-y-2.5
-    gap-x-8
+    w-full
     w-full;
 
   @include cq-up(cq-400, 'expected-impact-grid') {
-    @apply grid-cols-2
-      grid-rows-2
-      gap-x-6;
+    @apply gap-x-6
+      grid-cols-2
+      grid-rows-2;
   }
 
   @include cq-up(cq-540, 'expected-impact-grid') {
-    @apply grid-cols-2
-      grid-rows-2
-      gap-x-12;
+    @apply gap-x-12
+      grid-cols-2
+      grid-rows-2;
   }
 
   @include cq-up(cq-800, 'expected-impact-grid') {
-    @apply grid-cols-4
-      grid-rows-1
-      gap-x-6;
+    @apply gap-x-6
+      grid-cols-4
+      grid-rows-1;
   }
 }
 
 .expected-impact-row {
-  @apply flex
+  @apply border
+    border-subtle
+    flex
     items-center
     justify-between
-    border
-    border-subtle
-    rounded-md
     px-2
     py-1.5
+    rounded-md
     text-typography-subtle;
 
   > span {

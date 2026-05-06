@@ -475,8 +475,8 @@ watch(
 }
 
 .group-cell-content {
-  @apply py-3
-    px-4;
+  @apply px-4
+    py-3;
 }
 
 .group-toggle {
@@ -489,9 +489,9 @@ watch(
 }
 
 .group-toggle-icon {
-  @apply shrink-0
-    transition-transform
-    duration-150;
+  @apply duration-150
+    shrink-0
+    transition-transform;
 
   &.expanded {
     @apply rotate-180;
@@ -499,9 +499,9 @@ watch(
 }
 
 .campaign-count {
-  @apply text-xs
+  @apply font-normal
     text-typography-subtle
-    font-normal;
+    text-xs;
 }
 
 .campaign-name .collapse-cell-content {
@@ -509,9 +509,9 @@ watch(
 }
 
 .campaign-row > td {
-  @apply transition-colors
-    duration-300
-    ease-out;
+  @apply duration-300
+    ease-out
+    transition-colors;
 }
 
 .collapse-cell {
@@ -526,7 +526,7 @@ watch(
 }
 
 .collapse-cell-inner {
-  @apply overflow-hidden
-    min-h-0;
+  @apply min-h-0
+    overflow-hidden;
 }
 </style>

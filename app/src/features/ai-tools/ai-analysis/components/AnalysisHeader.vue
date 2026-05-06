@@ -60,13 +60,13 @@ const periodLabel = computed(() =>
 
 <style lang="scss" scoped>
 .analysis-header {
-  @apply w-full
+  @apply font-medium
     grow
-    text-base
-    font-medium
-    tracking-wider
     m-0
-    text-primary-light;
+    text-base
+    text-primary-light
+    tracking-wider
+    w-full;
 }
 
 .analysis-header-meta {

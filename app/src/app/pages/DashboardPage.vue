@@ -104,28 +104,28 @@ const {
 
 <style lang="scss" scoped>
 .dashboard-shell {
-  @apply h-screen
-    w-screen
-    grid
+  @apply grid
     grid-cols-1
     grid-rows-[min-content_1fr]
-    overflow-hidden;
+    h-screen
+    overflow-hidden
+    w-screen;
 }
 
 .dashboard-header {
-  @apply flex
-    items-center
-    justify-start
-    gap-x-2
-    shrink-0
-    px-4
-    sm:px-6
-    py-2.5
-    shadow-md
+  @apply bg-primary-ink
     border-b
     border-primary-deeper
-    bg-primary-ink
-    min-h-16;
+    flex
+    gap-x-2
+    items-center
+    justify-start
+    min-h-16
+    px-4
+    py-2.5
+    shadow-md
+    shrink-0
+    sm:px-6;
 }
 
 .dashboard-title {
@@ -133,61 +133,61 @@ const {
     grow;
 
   .title-wrapper {
-    @apply bg-gradient-to-r
+    @apply bg-clip-text
+      bg-gradient-to-r
       from-accent
-      via-info-light
-      via-info
-      via-info-darker
-      via-primary
-      via-primary-light
-      to-secondary
-      bg-clip-text
-      text-transparent
-      text-lg
       leading-6
-      sm:text-xl
       md:text-2xl
       md:tracking-wide
+      sm:not-sr-only
+      sm:text-xl
       sr-only
-      sm:not-sr-only;
+      text-lg
+      text-transparent
+      to-secondary
+      via-info
+      via-info-darker
+      via-info-light
+      via-primary
+      via-primary-light;
   }
 }
 
 .dashboard-main {
   @apply flex
     flex-col
-    justify-center
     items-center
-    w-full
+    justify-center
     mx-auto
     overflow-x-hidden
-    overflow-y-hidden;
+    overflow-y-hidden
+    w-full;
 }
 
 .connected-status {
-  @apply absolute
+  @apply -right-1.5
     -top-1.5
-    -right-1.5
-    z-10
-    w-3.5
-    h-3.5
-    rounded-full
+    absolute
     bg-surface
     flex
+    h-3.5
     items-center
     justify-center
-    overflow-visible;
+    overflow-visible
+    rounded-full
+    w-3.5
+    z-10;
 
   animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 .connected-status-dot {
-  @apply block
-    w-2
+  @apply bg-success
+    block
     h-2
     rounded-full
-    bg-success
-    shadow-connection;
+    shadow-connection
+    w-2;
 }
 
 @keyframes dot-pop {

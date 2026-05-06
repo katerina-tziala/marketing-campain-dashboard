@@ -128,7 +128,7 @@ watch(
     >
       <div
         ref="modalRef"
-        class="modal"
+        class="modal-container modal"
         :class="props.size"
         tabindex="-1"
       >
@@ -146,33 +146,24 @@ watch(
 
 <style lang="scss" scoped>
 .modal {
-  @apply w-fit
-    h-fit
-    overflow-hidden
-    rounded-md
-    shadow-md
-    bg-surface-elevated
-    border
-    border-faint
-    outline-none
-    flex
+  @apply flex
     flex-col
-    max-h-[98vh]
-    max-w-[98vw];
+    h-fit
+    w-fit;
 
   &.small {
-    @apply w-full
-      max-w-2xl;
+    @apply max-w-2xl
+      w-full;
   }
 
   &.medium {
-    @apply w-full
-      max-w-3xl;
+    @apply max-w-3xl
+      w-full;
   }
 
   &.large {
-    @apply w-full
-      max-w-5xl;
+    @apply max-w-5xl
+      w-full;
   }
 }
 </style>

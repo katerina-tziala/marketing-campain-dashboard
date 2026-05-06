@@ -30,28 +30,28 @@ const props = withDefaults(
 
 <style lang="scss" scoped>
 .badge {
-  @apply rounded-full
+  @apply bg-primary-ink
     inline-flex
-    bg-primary-ink;
+    rounded-full;
 
   .badge-body {
-    @apply w-full
+    @apply bg-primary-lighter/10
       border
+      border-primary-lighter/25
+      capitalize
       flex
+      font-semibold
+      gap-1
       items-center
       justify-center
-      text-center
-      capitalize
-      gap-1
-      py-1
-      px-2
-      text-xs
-      font-semibold
       leading-4
+      px-2
+      py-1
       rounded-full
+      text-center
       text-primary-lighter
-      bg-primary-lighter/10
-      border-primary-lighter/25;
+      text-xs
+      w-full;
   }
 
   &.success .badge-body {
@@ -127,8 +127,8 @@ const props = withDefaults(
   }
 
   &.small > .badge-body {
-    @apply py-0.5
-      px-1.5
+    @apply px-1.5
+      py-0.5
       text-xs;
   }
 

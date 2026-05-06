@@ -10,18 +10,18 @@
 
 <style lang="scss" scoped>
 .modal-body {
-  @apply grow
-    flex
+  @apply flex
     flex-col
-    justify-stretch
     gap-3
-    p-4
-    w-full
-    max-w-full
-    text-typography-soft
-    text-sm
+    grow
+    justify-stretch
     leading-6
+    max-w-full
     outline-none
-    overflow-auto;
+    overflow-auto
+    p-4
+    text-sm
+    text-typography-soft
+    w-full;
 }
 </style>

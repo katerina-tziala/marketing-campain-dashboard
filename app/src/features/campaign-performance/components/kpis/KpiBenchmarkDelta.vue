@@ -77,10 +77,10 @@ const arrowState = computed(() => {
 
 <style lang="scss" scoped>
 .delta-value {
-  @apply inline-flex
-    items-center
+  @apply font-semibold
     gap-1
-    font-semibold
+    inline-flex
+    items-center
     text-typography-soft;
 
   &.positive {

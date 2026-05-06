@@ -43,31 +43,31 @@ defineEmits<{ change: [value: string | number] }>();
 
 <style lang="scss" scoped>
 .radio-item {
-  @apply inline-flex
+  @apply cursor-pointer
+    inline-flex
     items-center
-    justify-center
-    cursor-pointer;
+    justify-center;
 
   .radio-indicator {
-    @apply w-6
-      h-6
-      rounded-full
-      border-2
+    @apply border-2
+      duration-300
       flex
+      h-6
       items-center
       justify-center
+      rounded-full
       transition-colors
-      duration-300;
+      w-6;
 
     &::before {
-      @apply content-['']
+      @apply bg-transparent
         block
-        w-3
+        content-['']
+        duration-300
         h-3
         rounded-full
-        bg-transparent
         transition-colors
-        duration-300;
+        w-3;
     }
   }
 }
@@ -129,9 +129,9 @@ input[type='radio'] {
 
     &:focus-visible + .radio-indicator {
       @apply ring-2
+        ring-info-dark
         ring-offset-1
-        ring-offset-background
-        ring-info-dark;
+        ring-offset-background;
     }
 
     /*  checked */

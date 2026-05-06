@@ -59,14 +59,14 @@ const emit = defineEmits<{ clear: [] }>();
 .group-title-row {
   @apply flex
     flex-wrap
-    items-center
     gap-2
+    items-center
     min-h-9
     px-0.5;
 }
 
 .group-title-text {
-  @apply min-w-0
-    break-words;
+  @apply break-words
+    min-w-0;
 }
 </style>

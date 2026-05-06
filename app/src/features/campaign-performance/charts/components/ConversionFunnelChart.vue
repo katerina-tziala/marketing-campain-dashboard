@@ -101,89 +101,89 @@ const chartAriaLabel = computed(() =>
 
 <style lang="scss" scoped>
 .funnel {
-  @apply w-full
-    h-full
+  @apply border-l
+    border-typography-strong/[7%]
     flex
     flex-col
+    h-full
     justify-between
     py-4
-    border-l
-    border-typography-strong/[7%];
+    w-full;
 }
 
 .funnel-row {
   @apply flex
     flex-row
-    justify-start
     items-start
+    justify-start
     min-h-[28%];
 
   .funnel-region-1 {
     @apply grow
-      relative
-      h-full;
+      h-full
+      relative;
 
     .bar-percentage {
-      @apply min-w-16
+      @apply duration-500
         h-full
-        w-full
+        min-w-16
         rounded-r-md
-        duration-500
-        transition-[width];
+        transition-[width]
+        w-full;
     }
 
     .bar-label {
-      @apply flex
+      @apply absolute
+        flex
         flex-col
         gap-0
-        justify-center
-        items-start
-        absolute
-        top-0
         h-full
-        w-fit
-        left-6;
+        items-start
+        justify-center
+        left-6
+        top-0
+        w-fit;
 
       > .value {
-        @apply min-w-0
-          text-lg
+        @apply drop-shadow-sm
           font-semibold
           leading-tight
-          text-typography-inverse
-          drop-shadow-sm;
+          min-w-0
+          text-lg
+          text-typography-inverse;
       }
 
       > .label {
-        @apply min-w-0
-          text-sm
+        @apply drop-shadow-sm
           font-medium
           leading-tight
-          text-typography-inverse
-          drop-shadow-sm;
+          min-w-0
+          text-sm
+          text-typography-inverse;
       }
     }
   }
 
   .funnel-region-2 {
-    @apply shrink-0
-      flex
+    @apply flex
       h-full
       items-center
-      justify-end;
+      justify-end
+      shrink-0;
 
     .funnel-rate {
-      @apply inline-flex
+      @apply content-center
         flex-row
         flex-wrap
         gap-x-1
         gap-y-0
-        justify-end
-        content-center
+        inline-flex
         items-center
-        max-w-full
-        text-right
+        justify-end
         leading-tight
-        px-2;
+        max-w-full
+        px-2
+        text-right;
     }
   }
 }

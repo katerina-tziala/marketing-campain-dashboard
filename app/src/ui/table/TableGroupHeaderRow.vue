@@ -9,15 +9,15 @@
 <style lang="scss" scoped>
 .table-group-header-row {
   :deep(td) {
-    @apply py-3
-      px-4
-      text-sm
-      font-medium
-      tracking-wide
-      text-typography-muted
-      bg-background/30
+    @apply bg-background/30
       border-b
-      !border-b-info-dark/40;
+      border-b-info-dark/40
+      font-medium
+      px-4
+      py-3
+      text-sm
+      text-typography-muted
+      tracking-wide;
   }
 }
 </style>

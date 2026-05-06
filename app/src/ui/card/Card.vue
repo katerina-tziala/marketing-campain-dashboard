@@ -22,68 +22,68 @@ const props = withDefaults(
 
 <style lang="scss">
 .card {
-  @apply rounded
+  @apply bg-surface-elevated
+    border
+    border-faint
     flex
     flex-col
+    gap-4
     items-start
     justify-stretch
-    gap-4
     p-4
+    rounded
     shadow-md
     text-sm
-    text-typography-soft
-    bg-surface-elevated
-    border
-    border-faint;
+    text-typography-soft;
 
   h3 {
-    @apply text-base
-      font-medium
-      tracking-wider
+    @apply font-medium
       m-0
-      text-primary-lighter;
+      text-base
+      text-primary-lighter
+      tracking-wider;
   }
 }
 
 .card.secondary {
-  @apply rounded-md
-    shadow-sm
+  @apply bg-background
     border
-    p-3.5
+    border-darker
     flex
     flex-col
+    gap-3.5
     items-start
     justify-stretch
-    gap-3.5
+    p-3.5
+    rounded-md
+    shadow-sm
     text-sm
-    text-typography-subtle
-    bg-background
-    border-darker;
+    text-typography-subtle;
 
   h5 {
-    @apply w-full
-      font-semibold
-      text-primary-lighter
+    @apply font-semibold
       leading-5
-      tracking-wide;
+      text-primary-lighter
+      tracking-wide
+      w-full;
   }
 }
 
 .card.raised {
-  @apply rounded-md
-    p-3
+  @apply bg-surface-hover
+    border
+    border-faint
     gap-3
+    p-3
+    rounded-md
     shadow-md
     text-sm
-    text-typography-muted
-    bg-surface-hover
-    border
-    border-faint;
+    text-typography-muted;
 
   h4 {
     @apply font-medium
-      text-typography-primary
-      leading-5;
+      leading-5
+      text-typography-primary;
   }
 }
 </style>

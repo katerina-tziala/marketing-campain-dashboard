@@ -10,18 +10,18 @@
 <style lang="scss" scoped>
 .split-pane-layout {
   @apply flex
-    flex-row
     flex-1
+    flex-row
     overflow-hidden;
 }
 
 .split-pane-main {
   @apply flex
     flex-col
-    w-full
     mx-auto
     overflow-x-hidden
-    overflow-y-hidden;
+    overflow-y-hidden
+    w-full;
   @include cq-container('main');
 }
 </style>

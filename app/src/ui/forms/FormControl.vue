@@ -145,9 +145,9 @@ const describedBy = computed(() => {
 
 <style lang="scss" scoped>
 %_theme-transition {
-  @apply transition-colors
-    duration-300
-    ease-linear;
+  @apply duration-300
+    ease-linear
+    transition-colors;
 }
 
 .field {
@@ -158,18 +158,18 @@ const describedBy = computed(() => {
   &[as='fieldset'],
   &:is(fieldset) {
     @apply border-0
-      p-0
-      m-0;
+      m-0
+      p-0;
   }
 }
 
 .field-label {
   @extend %_theme-transition;
-  @apply text-sm
-    font-medium
-    text-primary-lighter
-    tracking-wide
+  @apply font-medium
     inline-block
+    text-primary-lighter
+    text-sm
+    tracking-wide
     w-fit;
 }
 
@@ -177,28 +177,28 @@ const describedBy = computed(() => {
   @extend %_theme-transition;
   @apply content-["*"]
     inline-block
-    translate-y-0.5
+    leading-none
     text-primary-lighter/70
     text-xl
-    leading-none;
+    translate-y-0.5;
 }
 
 :deep(.form-control) {
-  @apply text-sm
-    rounded-md
-    w-full
+  @apply bg-background/60
     block
     border
-    outline-none
-    transition-colors
+    border-primary-light/60
     duration-300
     ease-out
-    tracking-wider
-    px-3
     min-h-10
-    bg-background/60
-    border-primary-light/60
-    text-primary-light;
+    outline-none
+    px-3
+    rounded-md
+    text-primary-light
+    text-sm
+    tracking-wider
+    transition-colors
+    w-full;
 
   &::placeholder {
     @apply text-typography-faint;
@@ -214,8 +214,8 @@ const describedBy = computed(() => {
   }
 
   &:disabled {
-    @apply opacity-80
-      cursor-not-allowed;
+    @apply cursor-not-allowed
+      opacity-80;
   }
 }
 

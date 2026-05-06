@@ -9,14 +9,14 @@
 
 <style lang="scss" scoped>
 .modal-footer {
-  @apply flex
+  @apply border-t
+    flex
     flex-col
+    gap-4
     items-stretch
     justify-center
-    gap-4
-    border-t
-    py-5
     px-6
+    py-5
     sm:flex-row
     sm:items-center
     sm:justify-stretch;

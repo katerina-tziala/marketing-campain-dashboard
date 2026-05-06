@@ -127,56 +127,56 @@ function applySelection(): void {
 }
 
 .filters-panel {
-  @apply min-w-32
-    w-full
-    max-w-[90%]
-    max-h-96
-    grid
+  @apply grid
     grid-cols-1
-    grid-rows-[min-content_minmax(0,1fr)_min-content];
+    grid-rows-[min-content_minmax(0,1fr)_min-content]
+    max-h-96
+    max-w-[90%]
+    min-w-32
+    w-full;
 }
 
 .panel-header {
-  @apply flex
+  @apply border-b
+    flex
+    h-11
     items-center
     justify-between
     px-3
-    py-2
-    border-b
-    h-11;
+    py-2;
 
   .panel-title {
-    @apply text-sm
+    @apply capitalize
       font-semibold
+      text-sm
       text-typography-muted
-      capitalize
       tracking-wide;
   }
 
   .selection-count {
-    @apply text-xs
-      text-typography-subtle
-      font-medium
+    @apply font-medium
       normal-case
+      text-typography-subtle
+      text-xs
       whitespace-nowrap;
   }
 }
 
 .panel-content {
-  @apply w-full
-    h-full
+  @apply h-full
     overflow-y-auto
+    px-0
     py-2
-    px-0;
+    w-full;
 }
 
 .panel-footer {
-  @apply flex
+  @apply border-t
+    flex
+    gap-6
     items-center
     justify-end
-    gap-6
     px-3
-    py-2
-    border-t;
+    py-2;
 }
 </style>

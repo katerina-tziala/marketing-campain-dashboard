@@ -27,8 +27,8 @@ const emit = defineEmits<{
     @apply bg-info-darker/10;
 
     :deep(td) {
-      @apply text-typography-inverse
-        font-medium;
+      @apply font-medium
+        text-typography-inverse;
     }
   }
 

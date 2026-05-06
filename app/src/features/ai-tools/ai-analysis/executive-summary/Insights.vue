@@ -74,10 +74,10 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 <style lang="scss" scoped>
 .insight-metric {
-  @apply w-full
+  @apply gap-2
     justify-between
     rounded-sm
-    gap-2;
+    w-full;
 }
 
 .insight-metric-label {
@@ -87,9 +87,9 @@ function insightTypeVariant(type: InsightType): BadgeVariant {
 
 .insight-metric-value {
   @apply font-bold
-    normal-case
-    whitespace-nowrap
     inline-block
-    pl-1;
+    normal-case
+    pl-1
+    whitespace-nowrap;
 }
 </style>

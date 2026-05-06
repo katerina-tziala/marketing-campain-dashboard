@@ -35,11 +35,11 @@ watch(
 
 <style lang="scss" scoped>
 .ai-tools-analysis {
-  @apply h-full
-    grid
+  @apply grid
     grid-cols-1
     grid-rows-[min-content_min-content_1fr]
-    overflow-hidden
-    min-h-[50vh];
+    h-full
+    min-h-[50vh]
+    overflow-hidden;
 }
 </style>

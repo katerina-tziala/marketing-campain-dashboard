@@ -48,30 +48,30 @@ defineEmits<{ 'update:modelValue': [value: string] }>();
 
 <style lang="scss" scoped>
 .radio-toggle {
-  @apply grid
-    grid-rows-1
-    gap-0.5
-    bg-surface
+  @apply bg-surface
     border
+    gap-0.5
+    grid
+    grid-rows-1
     rounded-md;
 }
 
 .option-label {
-  @apply w-full
+  @apply cursor-pointer
     flex
+    font-medium
+    h-full
     items-center
     justify-center
-    h-full
-    text-center
-    cursor-pointer
-    font-medium
-    tracking-wide
-    text-sm
+    min-h-10
+    overflow-hidden
     px-2
     py-1.5
-    min-h-10
+    text-center
     text-primary-lighter
-    overflow-hidden;
+    text-sm
+    tracking-wide
+    w-full;
 }
 
 label {
@@ -86,8 +86,8 @@ label {
 
 .radio-toggle.small {
   .option-label {
-    @apply py-1
-      min-h-9;
+    @apply min-h-9
+      py-1;
   }
 
   label {
@@ -103,8 +103,8 @@ label {
 
 .radio-toggle.tiny {
   .option-label {
-    @apply py-1
-      min-h-7;
+    @apply min-h-7
+      py-1;
   }
 
   label {
@@ -125,8 +125,8 @@ input[type='radio'] {
   }
 
   &:disabled + .option-label {
-    @apply opacity-50
-      cursor-not-allowed
+    @apply cursor-not-allowed
+      opacity-50
       text-on-primary;
   }
 
@@ -138,11 +138,11 @@ input[type='radio'] {
 
     &:focus-visible + .option-label {
       @apply bg-primary
-        text-on-primary
         ring-2
         ring-offset-1
         ring-offset-background
-        ring-primary-dark;
+        ring-primary-dark
+        text-on-primary;
     }
   }
 }
@@ -168,11 +168,11 @@ input[type='radio'] {
 
       &:focus-visible + .option-label {
         @apply bg-primary
-          text-on-primary
           ring-2
           ring-offset-1
           ring-offset-background
-          ring-primary-dark;
+          ring-primary-dark
+          text-on-primary;
       }
     }
   }

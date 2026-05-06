@@ -32,23 +32,23 @@ const props = withDefaults(
 
 <style lang="scss" scoped>
 .table-container {
-  @apply w-full
+  @apply h-full
     max-w-full
-    h-full
-    overflow-auto;
+    overflow-auto
+    w-full;
 
   > table {
-    @apply w-full
-      border-separate
+    @apply border-separate
       border-spacing-0
       relative
-      table-auto;
+      table-auto
+      w-full;
 
     &:deep(td) {
-      @apply p-2.5
+      @apply break-words
+        p-2.5
         text-center
-        whitespace-normal
-        break-words;
+        whitespace-normal;
 
       &.left-alignment {
         @apply text-left;

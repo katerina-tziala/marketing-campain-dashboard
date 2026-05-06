@@ -109,13 +109,13 @@ const sortedExpansions = computed(() =>
 }
 
 .expansion-header {
-  @apply w-full
-    flex
+  @apply flex
     flex-col
     gap-x-2
     gap-y-2
     items-start
-    justify-between;
+    justify-between
+    w-full;
 
   @include cq-up(cq-540, 'expansion-card') {
     @apply flex-row;
@@ -124,9 +124,9 @@ const sortedExpansions = computed(() =>
 
 .expansion-title {
   @apply flex
+    flex-1
     flex-col
     gap-0.5
-    flex-1
     min-w-[50%];
 }
 
@@ -141,9 +141,9 @@ const sortedExpansions = computed(() =>
 }
 
 .expansion-channel {
-  @apply inline-block
-    text-xs
+  @apply font-medium
+    inline-block
     text-typography-muted
-    font-medium;
+    text-xs;
 }
 </style>

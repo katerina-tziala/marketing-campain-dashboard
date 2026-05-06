@@ -172,13 +172,13 @@ const sortedReductions = computed(() =>
 }
 
 .reduction-header {
-  @apply w-full
-    flex
+  @apply flex
     flex-col
     gap-x-2
     gap-y-2
     items-start
-    justify-between;
+    justify-between
+    w-full;
 
   @include cq-up(cq-540, 'reduction-card') {
     @apply flex-row;
@@ -187,9 +187,9 @@ const sortedReductions = computed(() =>
 
 .reduction-title {
   @apply flex
+    flex-1
     flex-col
     gap-0.5
-    flex-1
     min-w-[50%];
 }
 
@@ -204,15 +204,15 @@ const sortedReductions = computed(() =>
 }
 
 .reduction-channel {
-  @apply inline-block
-    text-xs
+  @apply font-medium
+    inline-block
     text-typography-muted
-    font-medium;
+    text-xs;
 }
 
 .reduction-impact-value {
-  @apply inline-block
-    text-typography-soft
-    font-bold;
+  @apply font-bold
+    inline-block
+    text-typography-soft;
 }
 </style>

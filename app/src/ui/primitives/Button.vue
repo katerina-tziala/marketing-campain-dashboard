@@ -57,30 +57,30 @@ defineExpose({
 
 <style lang="scss" scoped>
 .btn {
-  @apply cursor-pointer
-    outline-none
-    relative
-    overflow-hidden
+  @apply border
+    border-transparent
+    cursor-pointer
+    duration-150
+    ease-in-out
+    font-medium
+    gap-1.5
+    h-10
     inline-flex
     items-center
     justify-center
-    whitespace-nowrap
-    transition
-    ease-in-out
-    duration-150
-    rounded-md
+    leading-none
     opacity-85
-    tracking-wide
-    gap-1.5
+    outline-none
+    overflow-hidden
     px-2.5
     py-3
-    h-10
-    border
-    border-transparent
+    relative
+    rounded-md
     text-base
-    font-medium
-    leading-none
-    text-center;
+    text-center
+    tracking-wide
+    transition
+    whitespace-nowrap;
 
   &:deep(svg) {
     @apply text-xl;
@@ -97,20 +97,20 @@ defineExpose({
 
   /* variant small */
   &.btn.small {
-    @apply text-sm
+    @apply h-9
+      leading-4
       px-3
-      h-9
       py-0
-      leading-4;
+      text-sm;
   }
 
   /* variant smaller */
   &.btn.smaller {
-    @apply text-xs
+    @apply h-7
+      leading-none
       px-2.5
-      h-7
       py-0
-      leading-none;
+      text-xs;
   }
 }
 
@@ -178,14 +178,14 @@ defineExpose({
 /* variant outline */
 .btn.outline {
   @apply bg-surface
-    text-primary-light
-    border-primary-light;
+    border-primary-light
+    text-primary-light;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply text-primary-lighter
-        border-primary-lighter;
+      @apply border-primary-lighter
+        text-primary-lighter;
     }
 
     &:not(.no-ring):focus-visible {
@@ -200,31 +200,31 @@ defineExpose({
 /* variant accent-outline */
 .btn.accent-outline {
   @apply bg-surface
-    text-accent-light
-    border-accent-dark;
+    border-accent-dark
+    text-accent-light;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply text-accent-lighter
-        border-accent;
+      @apply border-accent
+        text-accent-lighter;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
+        ring-accent
         ring-offset-1
-        ring-offset-background
-        ring-accent;
+        ring-offset-background;
     }
   }
 }
 
 /* variant info-text-only */
 .btn.info-text-only {
-  @apply text-typography-subtle
+  @apply bg-transparent
     border
     border-transparent
-    bg-transparent;
+    text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
@@ -235,9 +235,9 @@ defineExpose({
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
+        ring-info-dark
         ring-offset-1
-        ring-offset-background
-        ring-info-dark;
+        ring-offset-background;
     }
   }
 }
@@ -278,9 +278,9 @@ defineExpose({
 
 /* variant info-outline */
 .btn.info-outline {
-  @apply border-info-dark
-    text-info
-    bg-surface;
+  @apply bg-surface
+    border-info-dark
+    text-info;
 
   &:not(:disabled) {
     &:hover,
@@ -292,9 +292,9 @@ defineExpose({
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
+        ring-info
         ring-offset-1
-        ring-offset-background
-        ring-info;
+        ring-offset-background;
     }
   }
 }
@@ -302,8 +302,8 @@ defineExpose({
 /* variant destructive */
 .btn.destructive {
   @apply border-transparent
-    text-typography-subtle
-    font-normal;
+    font-normal
+    text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,

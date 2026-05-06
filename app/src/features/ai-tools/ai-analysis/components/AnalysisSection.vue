@@ -20,10 +20,10 @@ defineProps<{
 }
 
 .section-title {
-  @apply text-sm
-    font-semibold
-    tracking-wider
+  @apply font-semibold
     m-0
-    text-primary-lighter;
+    text-primary-lighter
+    text-sm
+    tracking-wider;
 }
 </style>

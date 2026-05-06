@@ -29,11 +29,11 @@ const toastStore = useToastStore();
 
 <style lang="scss" scoped>
 .toast-container {
-  @apply fixed
-    bottom-6
+  @apply bottom-6
+    fixed
     left-6
-    z-1100
-    pointer-events-none;
+    pointer-events-none
+    z-1100;
 }
 
 .toast-list {
@@ -45,10 +45,10 @@ const toastStore = useToastStore();
 
 .toast-enter-active,
 .toast-leave-active {
-  @apply transition-opacity
-    transition-transform
-    duration-300
-    ease-in-out;
+  @apply duration-300
+    ease-in-out
+    transition-opacity
+    transition-transform;
 }
 
 .toast-enter-from {
@@ -57,7 +57,7 @@ const toastStore = useToastStore();
 }
 
 .toast-leave-to {
-  @apply opacity-0
-    -translate-x-4;
+  @apply -translate-x-4
+    opacity-0;
 }
 </style>

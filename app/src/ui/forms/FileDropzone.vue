@@ -137,14 +137,14 @@ defineExpose({
 
 <style lang="scss" scoped>
 .dropzone {
-  @apply flex
+  @apply cursor-pointer
+    flex
     flex-col
+    gap-2
     items-center
     justify-center
-    gap-2
-    py-8
     px-4
-    cursor-pointer
+    py-8
     text-center
     w-full;
 

@@ -62,15 +62,15 @@ const channelsByGapImpact = computed(() =>
 
 <style lang="scss" scoped>
 .revenue-budget-chart-area {
-  @apply w-full
-    h-96
+  @apply h-96
     min-h-0
-    min-w-0;
+    min-w-0
+    w-full;
 }
 
 .chart-fill {
   @apply h-full
-    min-h-0
-    max-h-none;
+    max-h-none
+    min-h-0;
 }
 </style>

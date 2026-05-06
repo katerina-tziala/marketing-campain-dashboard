@@ -149,16 +149,16 @@ function handleApiKeyBlur(): void {
     flex-col
     gap-5
     h-full
+    min-h-[50vh]
     overflow-auto
     pt-4
-    px-2
-    min-h-[50vh];
+    px-2;
 }
 
 .conn-intro {
-  @apply text-sm
-    text-typography-soft
-    leading-5;
+  @apply leading-5
+    text-sm
+    text-typography-soft;
 }
 
 .conn-fieldset {

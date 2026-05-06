@@ -47,12 +47,12 @@ defineProps<{
 
 <style lang="scss" scoped>
 .help-steps {
-  @apply text-sm
-    text-typography-soft
-    list-inside
+  @apply leading-5
     list-decimal
-    leading-5
-    px-1;
+    list-inside
+    px-1
+    text-sm
+    text-typography-muted;
 
   > li {
     @apply py-1;
@@ -60,10 +60,10 @@ defineProps<{
 }
 
 .chevron {
-  @apply transition-transform
+  @apply -rotate-90
     duration-200
     mr-1
-    -rotate-90;
+    transition-transform;
 }
 
 .chevron-open {

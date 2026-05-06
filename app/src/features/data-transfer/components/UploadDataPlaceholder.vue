@@ -50,38 +50,38 @@ const { downloadTemplate } = useDownloadTemplate();
 .empty-state {
   @apply flex
     flex-col
+    gap-6
     items-center
     justify-center
-    text-center
-    p-8
-    gap-6
     m-auto
+    p-8
+    text-center
     w-full;
 }
 
 .empty-state-title {
-  @apply text-primary-light
-    text-xl
-    font-semibold
+  @apply font-semibold
     leading-6
+    text-primary-light
+    text-xl
     tracking-wide;
 }
 
 .empty-state-description {
-  @apply text-typography-muted
+  @apply leading-6
     text-sm
-    leading-6
+    text-typography-muted
     tracking-wide;
 }
 
 .file-actions {
   @apply flex
-    items-center
+    flex-col
     gap-6
+    items-center
+    max-w-md
     mt-2
     w-full
-    flex-col
-    max-w-md
     xs:flex-row;
 }
 </style>

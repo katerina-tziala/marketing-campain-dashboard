@@ -92,11 +92,11 @@ const ariaLive = computed(() => {
   @apply rounded-md;
 
   .notification-body {
-    @apply p-3
-      rounded-md
+    @apply bg-primary/10
       border
-      bg-primary/10
-      border-primary/25;
+      border-primary/25
+      p-3
+      rounded-md;
 
     .notification-icon,
     .notification-title {
@@ -154,8 +154,8 @@ const ariaLive = computed(() => {
 }
 
 .notification-body {
-  @apply flex-1
-    flex
+  @apply flex
+    flex-1
     flex-col
     gap-0.5;
 }
@@ -169,17 +169,17 @@ const ariaLive = computed(() => {
 
 .notification-head {
   @apply flex
+    gap-2
     items-start
-    justify-start
-    gap-2;
+    justify-start;
 }
 
 .notification-title {
-  @apply grow
+  @apply font-medium
+    grow
     leading-5
-    tracking-wide
     text-base
-    font-medium;
+    tracking-wide;
 }
 
 .notification-action {

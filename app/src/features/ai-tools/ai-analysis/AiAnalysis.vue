@@ -29,16 +29,16 @@ const tabs: Tab[] = [
 
 <style lang="scss" scoped>
 .panel-container {
-  @apply h-full
-    overflow-y-auto
-    overflow-x-hidden
-    flex
+  @apply flex
     flex-col
     gap-6
+    h-full
+    overflow-x-hidden
+    overflow-y-auto
     pb-2
-    pt-4
     pl-1.5
     pr-3
+    pt-4
     text-sm
     text-typography;
 }

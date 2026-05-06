@@ -100,16 +100,16 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 <style lang="scss" scoped>
 %_theme-transition {
-  @apply transition-colors
-    duration-300
-    ease-linear;
+  @apply duration-300
+    ease-linear
+    transition-colors;
 }
 
 .field-error {
   @extend %_theme-transition;
-  @apply text-sm
+  @apply m-0
     text-danger
-    m-0;
+    text-sm;
 }
 
 .field-error-hint {
@@ -120,9 +120,9 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 :slotted(.field-error) {
   @extend %_theme-transition;
-  @apply text-sm
+  @apply m-0
     text-danger
-    m-0;
+    text-sm;
 }
 
 :slotted(.field-error-hint) {
@@ -138,24 +138,24 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 }
 
 .field-message-animated {
-  @apply grid
-    overflow-hidden
-    [grid-template-rows:1fr];
+  @apply [grid-template-rows:1fr]
+    grid
+    overflow-hidden;
 }
 
 .field-message-content {
   @apply flex
-    min-h-0
     flex-col
     gap-1
+    min-h-0
     overflow-hidden;
 }
 
 .field-message-enter-active,
 .field-message-leave-active {
-  @apply transition-[grid-template-rows]
-    duration-300
+  @apply duration-300
     ease-out
+    transition-[grid-template-rows]
     will-change-[grid-template-rows];
 }
 
@@ -170,9 +170,9 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 
 .field-message-enter-active .field-message-content,
 .field-message-leave-active .field-message-content {
-  @apply transition-[opacity,transform]
-    duration-300
+  @apply duration-300
     ease-out
+    transition-[opacity,transform]
     will-change-[opacity,transform];
 }
 
@@ -183,7 +183,7 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 .field-message-enter-from .field-message-content,
 .field-message-leave-to .field-message-content {
   @apply -translate-y-1
-    scale-[0.98]
-    opacity-0;
+    opacity-0
+    scale-[0.98];
 }
 </style>

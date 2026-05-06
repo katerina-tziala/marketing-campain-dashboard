@@ -84,18 +84,18 @@ function sortAriaLabel(col: DataTableColumn): string {
 
 <style lang="scss" scoped>
 ._header-padding {
-  @apply py-3.5
-    p-2.5;
+  @apply p-2.5
+    py-3.5;
 }
 
 th {
   @extend ._header-padding;
-  @apply text-center
-    whitespace-normal
-    break-words
+  @apply break-words
     capitalize
     font-semibold
-    tracking-wider;
+    text-center
+    tracking-wider
+    whitespace-normal;
 
   &.left-alignment {
     @apply text-left;
@@ -107,16 +107,16 @@ th {
 
   .sortable-button {
     @extend ._header-padding;
-    @apply inline-flex
+    @apply border-transparent
+      border-x-[1rem]
+      cursor-pointer
+      duration-150
+      inline-flex
       items-center
       justify-center
-      w-full
-      cursor-pointer
       outline-none
       transition-transform
-      duration-150
-      border-transparent
-      border-x-[1rem];
+      w-full;
   }
 
   .button-content {
@@ -127,13 +127,13 @@ th {
       w-fit;
 
     .sort-icon {
-      @apply inline-block
+      @apply -right-5
         absolute
-        -right-5
+        duration-150
+        inline-block
         text-base
         text-transparent
-        transition-transform
-        duration-150;
+        transition-transform;
 
       &.desc {
         @apply rotate-180;
@@ -147,9 +147,9 @@ th {
     }
 
     .button-content {
-      @apply w-full
+      @apply pr-5
         text-left
-        pr-5;
+        w-full;
 
       .sort-icon {
         @apply right-0;
@@ -166,9 +166,9 @@ th {
 
 /* default theming */
 th {
-  @apply border-b
+  @apply bg-surface-elevated
+    border-b
     border-b-info/50
-    bg-surface-elevated
     shadow-md
     text-typography-subtle;
 }
@@ -183,8 +183,8 @@ th {
 
   &:hover,
   &:focus-visible {
-    @apply text-info-light
-      bg-info/[8%];
+    @apply bg-info/[8%]
+      text-info-light;
 
     .sort-icon {
       @apply text-info-light;

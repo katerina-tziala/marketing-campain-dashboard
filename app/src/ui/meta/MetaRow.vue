@@ -28,9 +28,9 @@ const props = withDefaults(
 .meta-row {
   @apply flex
     flex-wrap
-    items-center
     gap-x-1.5
-    gap-y-1.5;
+    gap-y-1.5
+    items-center;
 
   &.meta-row.divider {
     @apply gap-x-2;
@@ -55,14 +55,14 @@ const props = withDefaults(
 
 /* bullet variant */
 .meta-row.bullet :slotted(*:not(:first-child))::before {
-  @apply content-['']
-    inline-block
-    w-1
-    h-1
-    rounded-full
+  @apply align-middle
     bg-primary-light
-    align-middle
-    mr-1.5;
+    content-['']
+    h-1
+    inline-block
+    mr-1.5
+    rounded-full
+    w-1;
 }
 
 /* divider variant */

@@ -125,7 +125,7 @@ watch(modalOpen, (open) => {
       <section
         ref="drawerModalRef"
         v-bind="dialogAria"
-        class="responsive-drawer-modal"
+        class="modal-container responsive-drawer-modal"
         tabindex="-1"
       >
         <ModalHeader
@@ -160,21 +160,21 @@ watch(modalOpen, (open) => {
 .responsive-drawer {
   @apply hidden
     lg:block
-    lg:relative
-    lg:overflow-hidden
-    lg:shrink-0
-    w-0
-    lg:ease-in-out
     lg:duration-300
-    lg:transition-[width];
+    lg:ease-in-out
+    lg:overflow-hidden
+    lg:relative
+    lg:shrink-0
+    lg:transition-[width]
+    w-0;
 
   &.open {
     @apply lg:w-[30rem];
   }
 
   &.left .responsive-drawer-panel {
-    @apply lg:left-0
-      lg:-translate-x-full;
+    @apply lg:-translate-x-full
+      lg:left-0;
   }
 
   &.right .responsive-drawer-panel {
@@ -193,32 +193,27 @@ watch(modalOpen, (open) => {
   @apply grid
     grid-cols-1
     grid-rows-[min-content_1fr]
-    w-full
-    overflow-hidden
-    shadow-md
-    bg-surface-elevated
-    border
-    border-faint
-    text-typography-soft;
+    text-typography-soft
+    w-full;
 }
 
 .responsive-drawer-panel {
-  @apply h-full
-    sticky
-    top-0
+  @apply bg-surface-elevated
+    border
+    border-faint
+    h-full
     lg:absolute
-    lg:inset-y-0
-    lg:w-[30rem]
-    lg:opacity-0
-    lg:ease-in-out
     lg:duration-300
-    lg:transition-[opacity,transform];
-}
-
-.responsive-drawer-modal {
-  @apply rounded-md
-    max-h-[92vh]
-    max-w-[92vw];
+    lg:ease-in-out
+    lg:inset-y-0
+    lg:opacity-0
+    lg:transition-[opacity,transform]
+    lg:w-[30rem]
+    outline-none
+    overflow-hidden
+    shadow-md
+    sticky
+    top-0;
 }
 
 .responsive-drawer-content {

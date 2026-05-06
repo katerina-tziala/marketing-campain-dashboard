@@ -1,18 +1,18 @@
 @layer base {
   html,
   body {
-    @apply font-sans
-      bg-background
-      text-typography-soft
-      w-screen
+    @apply bg-background
+      font-sans
       h-screen
       overflow-hidden
-      relative;
+      relative
+      text-typography-soft
+      w-screen;
   }
 
   #app {
-    @apply w-screen
-      h-screen
-      overflow-hidden;
+    @apply h-screen
+      overflow-hidden
+      w-screen;
   }
 }

@@ -83,30 +83,30 @@ const errorNotification = computed(() => {
 .loader {
   @apply flex
     flex-col
-    items-center
     gap-4
+    items-center
     pt-12;
 }
 
 .message-title {
-  @apply text-sm
-    font-normal;
+  @apply font-normal
+    text-sm;
 }
 
 .idle {
   :deep(> p) {
-    @apply py-2
+    @apply leading-5
+      py-2
       text-sm
       text-typography-soft
-      leading-5
       tracking-wide;
   }
 }
 
 .result {
-  @apply grow
-    flex
+  @apply flex
     flex-col
-    gap-6;
+    gap-6
+    grow;
 }
 </style>
