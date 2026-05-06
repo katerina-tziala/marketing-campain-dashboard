@@ -15851,3 +15851,32 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Requirements compressed after review — repeated model discovery, evaluation, ranking, and strongest-model wording was consolidated so the README stays scannable
 - Error handling documented by category — normalized provider failures are more maintainable to document than specific request internals
 - Credential boundary made explicit — API keys are connection input, not portfolio data or analysis output
+
+## [#668] AI analysis per-tab auto-refresh opt-in
+
+**Type:** implementation
+
+**Summary:** Changed AI analysis auto-refresh behavior so each tab requires its own explicit first run before automatic refresh is allowed. Executive Summary and Budget Optimization now opt into automatic refresh independently, preventing one tab's manual run from enabling automatic execution on the other tab.
+
+**Brainstorming:** The previous implementation had a global activation flag for AI analysis. That meant once any AI tab had been manually triggered, the other tab could auto-run on revisit or context change even if the user had never explicitly opted into that feature. The desired behavior is clearer and safer: each AI feature requires one manual run before it can refresh automatically. This keeps user intent local to the feature while preserving useful automatic updates after opt-in.
+
+**Prompt:** Update AI analysis flow so Summary and Optimization both require a manual first run, while later revisits allow auto-refresh. The rule should be: each AI feature requires one explicit opt-in before it becomes automatic.
+
+**What changed:**
+
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — replaced the global `analysisActivated` flag with per-tab `autoRefreshEnabled` state
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — manual analysis now enables auto-refresh only for the requested tab
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — automatic tab evaluation, channel-filter refresh, and model-change refresh now require the active tab's opt-in flag
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — portfolio switches and disconnects reset both tab opt-in flags
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — restored cached results now re-enable auto-refresh for that specific tab, treating cached visibility as a later revisit
+- `app/src/features/ai-tools/ai-analysis/utils/tab-state.ts` — removed the redundant first-analysis completion flag
+- `app/src/features/ai-tools/ai-analysis/executive-summary/ExecutiveSummaryAnalysis.vue` — summary action label now depends on the summary tab's opt-in state
+- `app/src/features/ai-tools/ai-analysis/budget-optimization/BudgetOptimizationAnalysis.vue` — optimization action label now depends on the optimization tab's opt-in state
+
+**Key decisions & why:**
+
+- Per-tab opt-in over global activation — Summary and Optimization are separate AI features and should not grant automatic behavior to each other
+- Manual first run remains required — first execution is an explicit user choice before provider cost, latency, or token usage begins
+- Cached results count as later revisits — if a tab already has a valid visible result, refreshing that tab automatically is consistent with revisit behavior
+- Portfolio switch resets opt-in — a new dataset changes the analysis context enough to require fresh explicit intent
+- Disconnect resets opt-in — provider/model state is no longer valid, so automatic analysis should not survive disconnection

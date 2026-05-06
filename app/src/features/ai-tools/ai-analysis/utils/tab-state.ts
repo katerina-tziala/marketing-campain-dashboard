@@ -2,7 +2,6 @@ import type { CacheEntry } from './analysis-cache';
 import { AnalysisCache } from './analysis-cache';
 
 export class TabState {
-  firstAnalyzeCompleted = false;
   controller: AbortController | null = null;
   debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -19,12 +18,7 @@ export class TabState {
     }
   }
 
-  completeFirstAnalysis(): void {
-    this.firstAnalyzeCompleted = true;
-  }
-
   reset(): void {
-    this.firstAnalyzeCompleted = false;
     this.controller = null;
     this.debounceTimer = null;
   }

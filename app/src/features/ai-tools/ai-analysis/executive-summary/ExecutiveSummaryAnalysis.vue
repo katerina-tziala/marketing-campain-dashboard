@@ -18,7 +18,7 @@ const response = computed(() => analysisStore.executiveSummary.response);
 const error = computed(() => analysisStore.executiveSummary.error);
 const notice = computed(() => analysisStore.executiveSummary.notice);
 const canAnalyze = computed(() => analysisStore.summaryCanAnalyze);
-const analysisActivated = computed(() => analysisStore.analysisActivated);
+const analysisActivated = computed(() => analysisStore.executiveSummaryActivated);
 
 const headerTitle = computed(() =>
   analysisStore.portfolioContext.filtersActive ? 'Performance Summary' : 'Portfolio Summary',

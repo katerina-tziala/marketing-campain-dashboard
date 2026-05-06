@@ -33,8 +33,11 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
   // ── Shared state ──────────────────────────────────────────────────────
   const activeTab = ref<AiAnalysisType>('executiveSummary');
-  const analysisActivated = ref(false);
   const analysisContext = ref<AiAnalysisRequestContext | null>(null);
+  const autoRefreshEnabled = ref<Record<AiAnalysisType, boolean>>({
+    budgetOptimizer: false,
+    executiveSummary: false,
+  });
 
   // ── Per-tab internal state ────────────────────────────────────────────
   const tabs = {
@@ -61,6 +64,9 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const portfolioContext = computed<AnalysisPortfolioContext>(
     () => analysisContext.value ?? DEFAULT_PORTFOLIO_CONTEXT,
   );
+
+  const budgetOptimizerActivated = computed(() => autoRefreshEnabled.value.budgetOptimizer);
+  const executiveSummaryActivated = computed(() => autoRefreshEnabled.value.executiveSummary);
 
   const optimizerCanAnalyze = computed(() => {
     if (budgetOptimizer.value.status === 'loading') {
@@ -155,6 +161,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       return false;
     }
     setDone(tab, entry.response);
+    autoRefreshEnabled.value = { ...autoRefreshEnabled.value, [tab]: true };
     return true;
   }
 
@@ -265,7 +272,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
 
       const now = result.timestamp ?? Date.now();
       setDone(tab, result);
-      tabState.completeFirstAnalysis();
       tabState.setCached(portfolioId, context.selectedChannelIds, provider, {
         response: result,
         timestamp: now,
@@ -334,7 +340,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function analyze(tab: AiAnalysisType): void {
     const display = getDisplay(tab);
     display.value = { ...display.value, notice: null };
-    analysisActivated.value = true;
+    autoRefreshEnabled.value = { ...autoRefreshEnabled.value, [tab]: true };
     executeAnalysis(tab, false);
   }
 
@@ -358,7 +364,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
       return;
     }
 
-    if (analysisActivated.value) {
+    if (autoRefreshEnabled.value[tab]) {
       executeAnalysis(tab, true);
     }
   }
@@ -383,7 +389,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function onPortfolioSwitch(): void {
     cancelAllRequests();
     cooldown.clearAll();
-    analysisActivated.value = false;
+    autoRefreshEnabled.value = {
+      budgetOptimizer: false,
+      executiveSummary: false,
+    };
 
     for (const tab of ALL_TABS) {
       getTabState(tab).reset();
@@ -396,7 +405,10 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   function clearStateForDisconnect(): void {
     cancelAllRequests();
     cooldown.clearAll();
-    analysisActivated.value = false;
+    autoRefreshEnabled.value = {
+      budgetOptimizer: false,
+      executiveSummary: false,
+    };
 
     for (const tab of ALL_TABS) {
       const tabState = getTabState(tab);
@@ -434,10 +446,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     const tab = activeTab.value;
     const tabState = getTabState(tab);
 
-    if (!analysisActivated.value) {
-      return;
-    }
-    if (!tabState.firstAnalyzeCompleted) {
+    if (!autoRefreshEnabled.value[tab]) {
       return;
     }
 
@@ -471,7 +480,7 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   }
 
   function onModelChange(): void {
-    if (!analysisActivated.value) {
+    if (!autoRefreshEnabled.value[activeTab.value]) {
       return;
     }
     if (evaluationDisabled.value) {
@@ -490,13 +499,15 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     // Shared
     activeTab,
     tokenLimitReached,
-    analysisActivated,
+    autoRefreshEnabled,
     analysisContext,
     // Per-tab reactive display state
     budgetOptimizer,
     executiveSummary,
     // Computed
     portfolioContext,
+    budgetOptimizerActivated,
+    executiveSummaryActivated,
     optimizerCanAnalyze,
     summaryCanAnalyze,
     // Actions
