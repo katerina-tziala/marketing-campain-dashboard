@@ -15880,3 +15880,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Cached results count as later revisits — if a tab already has a valid visible result, refreshing that tab automatically is consistent with revisit behavior
 - Portfolio switch resets opt-in — a new dataset changes the analysis context enough to require fresh explicit intent
 - Disconnect resets opt-in — provider/model state is no longer valid, so automatic analysis should not survive disconnection
+
+## [#669] AI Analysis README documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/ai-analysis.md` as a behavior-focused feature README for AI Analysis. The document explains Executive Summary and Budget Optimization responsibilities, per-tab manual opt-in, automatic refresh rules, caching, cooldowns, request cancellation, stale-result fallback, model-limit fallback, state transitions, edge cases, limitations, and future improvements.
+
+**Brainstorming:** AI Analysis needed documentation that explains why the feature is intentionally conservative with provider calls. The important behavior is not the internal store wiring, but the safeguards: first runs are manual, auto-refresh is per-tab, cache is checked before provider calls, filter updates are debounced, matching cached results avoid token usage, stale results are preserved when refresh fails, and exhausted models are skipped before another provider call is attempted. The documentation was then tightened by making Automatic Refresh Rules and Caching and Token Protection the source-of-truth sections to reduce repetition.
+
+**Prompt:** Document the AI Analysis feature. Describe the flow for automatic updates, caching, limitations, and why those safeguards exist so the app does not exhaust tokens when calling AI. Follow the principal-engineer feature documentation prompt and avoid unnecessary implementation detail.
+
+**What changed:**
+
+- `docs/ai-analysis.md` — added a new AI Analysis feature README
+- Documented the feature boundary: AI Analysis depends on AI Connection for provider/model readiness and Campaign Performance for portfolio analysis context
+- Added feature responsibilities for executive summaries, budget optimization, per-tab opt-in, cache reuse, debounced refreshes, request cancellation, model fallback, stale-result fallback, and disconnect cleanup
+- Added functional and non-functional requirements focused on safe provider usage, token protection, cache determinism, per-tab opt-in, and avoiding stale overwrites
+- Added processing and feature flows describing manual first runs, later automatic refresh, active-tab-only evaluation, panel open behavior, filter changes, model changes, and tab switches
+- Added Automatic Refresh Rules as the source of truth for when automatic provider calls are allowed
+- Added Caching and Token Protection as the source of truth for cache scope, cooldowns, stale-result fallback, cancellation, and model exhaustion behavior
+- Added validation/readiness rules, state handling, edge cases, limitations, and future improvements
+- Reduced repeated invariant statements by consolidating duplicated opt-in, cache-before-provider, active-tab refresh, cancellation, model fallback, and stale-result behavior
+
+**Key decisions & why:**
+
+- Manual first run is explicit opt-in — avoids silent token usage, latency, and provider cost before user intent is clear
+- Per-tab opt-in is documented as a core guarantee — Summary and Optimization can have different cost/value expectations
+- Cache-before-provider is central — repeated identical contexts should not trigger unnecessary AI calls
+- Cooldowns and debounce are documented as token protection — filter changes and revisits can otherwise create request bursts
+- Stale results are preserved intentionally — a previous useful answer is better than replacing it with an error when refresh fails
+- Model fallback is part of resilience — token or quota limits should try the next ranked model before failing the feature
