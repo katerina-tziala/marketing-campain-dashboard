@@ -1,1 +1,1 @@
-export { generateModelEvaluationPrompt } from './model-evaluation-prompt.v1';
+export { generateModelEvaluationPrompt } from './model-evaluation-prompt';

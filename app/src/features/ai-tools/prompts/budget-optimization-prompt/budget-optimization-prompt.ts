@@ -6,7 +6,7 @@ import {
   OUTPUT_SCHEMA,
   ROLE_TASK_OBJECTIVE_RULES,
   SELECTION_ANALYSIS_RULES,
-} from './config';
+} from './config.v1';
 
 export function generateBudgetOptimizationPrompt(context: AiAnalysisContext): string {
   const { analysis, businessContext, portfolioBenchmark } = context;

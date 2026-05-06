@@ -1,7 +1,7 @@
 import type { AiModelCandidate } from '../../providers/types';
 import { OUTPUT_REQUIREMENTS_RULES } from '../constants';
 import { getPromptRuleGroup } from '../utils';
-import { EVALUATION_RULES, OUTPUT_SCHEMA, ROLE_AND_TASK_RULES } from './config';
+import { EVALUATION_RULES, OUTPUT_SCHEMA, ROLE_AND_TASK_RULES } from './config.v1';
 
 export function generateModelEvaluationPrompt(models: AiModelCandidate[]): string {
   const promptSections = [

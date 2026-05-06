@@ -1,1 +1,1 @@
-export { generateExecutiveSummaryPrompt } from './executive-summary-prompt.v1';
+export { generateExecutiveSummaryPrompt } from './executive-summary-prompt';
