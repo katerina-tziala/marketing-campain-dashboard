@@ -63,6 +63,8 @@ const periodLabel = computed(() =>
   @apply font-medium
     grow
     m-0
+    pt-1.5
+    shrink
     text-base
     text-primary-light
     tracking-wider

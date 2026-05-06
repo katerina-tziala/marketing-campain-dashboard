@@ -18,7 +18,9 @@ export interface CampaignDataRowError extends CampaignDataFieldIssue {
 }
 
 export interface CampaignDataDuplicateGroup {
+  key: string;
   campaignName: string;
+  channelName: string;
   rows: Campaign[];
 }
 

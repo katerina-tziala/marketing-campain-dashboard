@@ -33,7 +33,7 @@ const VALIDATION_ERROR_MESSAGES: Record<CampaignDataValidationErrorType, string>
   missing_columns: 'CSV file headers are missing: {cols}. Please consult the template',
   invalid_rows: '{count} {rows} failed validation',
   parse_error: 'Failed to parse file: {detail}',
-  duplicate_campaigns: 'Some campaign names appear more than once in the file',
+  duplicate_campaigns: 'Some campaigns appear more than once in the file',
 };
 
 function replacePlaceholders(template: string, values: Record<string, string>): string {
