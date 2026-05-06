@@ -15942,3 +15942,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Runtime validation as final authority — prompt compliance alone is not trusted; application-side validation owns response acceptance
 - Derived analytics signals stay authoritative — LLMs interpret precomputed metrics instead of becoming alternate calculation engines
 - Versioning is operational, not cosmetic — versioned prompts make behavior reviewable and reduce silent drift in downstream product features
+
+## [#671] Frontend Architecture documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/frontend-architecture.md` as a cross-cutting frontend architecture document. The document explains the Vue client boundary, technology stack, project organization, feature ownership, state movement, AI UI integration, conventions, and future improvement areas without repeating feature-level README content.
+
+**Brainstorming:** The existing documentation already covers Data Transfer, Campaign Performance, AI Connection, AI Analysis, and AI Prompt Architecture in detail. The frontend architecture document needed to sit above those files and describe how the client is organized as a system: where responsibilities live, how state moves between upload, portfolio analysis, campaign filtering, and AI analysis, and how app-level orchestration keeps feature stores isolated. Feature-specific rules were linked instead of repeated so the document remains maintainable as a navigation and architecture reference.
+
+**Prompt:** Write `docs/frontend-architecture.md` with sections for Overview, Tech Stack, Project Structure, Feature Architecture, Data Flow and State, AI UI Integration, Conventions, and Future Improvements. Do not repeat sections from previous documents.
+
+**What changed:**
+
+- `docs/frontend-architecture.md` — added a new Frontend Architecture document
+- Added an overview of the frontend's client-owned responsibilities, including browser-side ingestion, derived dashboard state, provider connection state, AI request orchestration, and interactive presentation
+- Added a Tech Stack section covering Vue, Vite, TypeScript, Vue Router, Pinia, SCSS/Tailwind, Chart.js, Papa Parse, AI provider dependencies, and frontend tooling
+- Added Project Structure guidance for `app`, `features`, `shared`, `ui`, `styles`, and `docs`
+- Added Feature Architecture guidance for feature-local components, stores, composables, utilities, types, and when behavior should become shared
+- Added Data Flow and State documentation describing upload-to-portfolio-to-analysis-to-AI state movement at the architecture level
+- Added AI UI Integration guidance for connection readiness, selected model state, result rendering, cache/stale behavior, provider errors, and fallback states
+- Added Conventions for naming, aliases, component boundaries, TypeScript usage, and introducing shared abstractions
+- Compressed Future Improvements into grouped bullets for testing, accessibility, observability, performance, bundle analysis, and state-machine coverage
+
+**Key decisions & why:**
+
+- Cross-cutting architecture over feature duplication — feature docs remain the source of truth for business rules and detailed behavior
+- Links to existing docs — keeps the architecture document useful as a map without restating already-maintained sections
+- App-level orchestration called out explicitly — the orchestrator is the intended mediator between feature stores and prevents direct feature-to-feature coupling
+- Feature-level ownership emphasized — behavior should stay local until reuse is stable and the shared contract is clear
+- AI UI state documented by responsibility — connection, analysis, provider errors, cache, stale output, and fallback states have different owners and should not blur together
