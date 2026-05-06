@@ -58,6 +58,10 @@ function onToggle(id: string): void {
   }
 }
 
+function getCampaignCountTitle(count: number): string {
+  return `${count} ${count === 1 ? 'campaign' : 'campaigns'}`;
+}
+
 function getRootEl(): HTMLElement | undefined {
   return rootRef.value;
 }
@@ -103,7 +107,12 @@ defineExpose({
       @click="onClear"
     >
       All
-      <span class="channel-chip-count">{{ totalCampaigns }}</span>
+      <span
+        class="channel-chip-count"
+        :title="getCampaignCountTitle(totalCampaigns)"
+      >
+        {{ totalCampaigns }}
+      </span>
     </Chip>
     <Chip
       v-for="channel in visibleChannels"
@@ -116,7 +125,12 @@ defineExpose({
       @click="onToggle(channel.id)"
     >
       {{ channel.name }}
-      <span class="channel-chip-count">{{ channel.campaigns.length }}</span>
+      <span
+        class="channel-chip-count"
+        :title="getCampaignCountTitle(channel.campaigns.length)"
+      >
+        {{ channel.campaigns.length }}
+      </span>
     </Chip>
   </div>
 </template>

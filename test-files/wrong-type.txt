@@ -1,3 +1,0 @@
-This is a plain text file, not a CSV.
-Drag and drop this file into the upload modal dropzone to trigger the "wrong file type" error.
-Expected result: inline error under the dropzone — "Only CSV files are accepted."
