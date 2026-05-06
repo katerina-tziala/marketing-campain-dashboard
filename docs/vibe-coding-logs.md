@@ -16035,3 +16035,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - README skipped — the user explicitly asked not to include README in this pass
 - Product name normalized only where it represents the product — generic "dashboard" wording stayed when it describes UI state or visible context
 - Link verification included — moving docs without checking relative links would create quiet navigation failures
+
+## [#674] README portfolio presentation refresh
+
+**Type:** documentation
+
+**Summary:** Reworked `README.md` into a portfolio-facing project presentation for Marketing Intelligence Dashboard. The README now introduces the product, highlights core capabilities, summarizes engineering decisions, links to the reorganized architecture and feature documentation, and keeps setup instructions concise.
+
+**Brainstorming:** The previous README was accurate but read like a feature checklist and repeated details that now live in dedicated docs. Since the goal is to present the work for hiring reviewers, the README needed to quickly communicate product value and engineering maturity: validated data ingestion, deterministic analytics, AI-assisted summaries and optimization, provider abstraction, session-scoped AI safeguards, typed feature boundaries, and runtime validation. The content was then adjusted to remove over-explanatory sections, keep the product name consistent, add a future Product Preview placeholder as a commented TODO, and avoid using an existing image that did not fit the README presentation.
+
+**Prompt:** Fix the README using the Marketing Intelligence Dashboard name, make it more like a presentation for getting hired, remove the "Why This Project Matters" section, add the logo before the title, refine wording around AI-assisted summaries and compatible text-generation model discovery, and keep a Product Preview section with a commented TODO instead of an image.
+
+**What changed:**
+
+- `README.md` — renamed the project heading to `Marketing Intelligence Dashboard`
+- Added the product logo before the title using the existing SVG asset
+- Replaced the old detailed README with a portfolio-style structure: Project Snapshot, Product Preview, Core Capabilities, Engineering Highlights, Tech Stack, Architecture Docs, Feature Docs, Getting Started, CSV Input, and AI Provider Notes
+- Added concise capability summaries for Data Transfer, Campaign Performance, AI Connection, and AI Analysis
+- Added engineering highlights covering feature-based architecture, shared domain analytics, app-level orchestration, strict TypeScript, reusable UI primitives, provider abstraction, prompt architecture, and runtime validation
+- Updated README documentation links to the new `docs/architecture/` and `docs/features/` paths
+- Added a commented TODO under Product Preview for future screenshots or demo captures
+- Removed the preview image after review
+- Verified README links and current product-name references
+
+**Key decisions & why:**
+
+- README as hiring-facing presentation — the root README should sell the project clearly before readers dive into implementation docs
+- Detailed feature behavior stays in docs — the README links to feature READMEs instead of duplicating validation, AI flow, and architecture details
+- Product name kept consistent — all current README wording uses `Marketing Intelligence Dashboard`
+- Logo in the title — gives the page a more polished portfolio feel without adding new assets
+- Product Preview kept as a TODO comment — preserves a clear future placement for screenshots without showing placeholder copy or a mismatched image
