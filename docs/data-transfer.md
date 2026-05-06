@@ -103,7 +103,7 @@ Validation is intentionally strict because imported rows become the source data 
 ## Validation Outcomes
 
 - Fully valid import: no validation errors; all parsed campaigns are loaded
-- Partial import: invalid rows exist, but at least one valid or duplicate-resolvable row remains; users can import valid rows or fix the file
+- Partial import: invalid rows exist, but at least one valid or duplicate-resolvable row remains; users can import valid rows or correct the CSV file and upload it again
 - Duplicate resolution required: valid rows contain duplicate campaign/channel groups; users resolve duplicates before import
 - Blocked import: no importable rows remain, headers are missing, the file is empty, parsing fails, or file constraints fail
 

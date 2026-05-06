@@ -61,7 +61,7 @@ const showProceed = computed(
             <p>
               You can import the
               <strong>{{ validCampaigns.length }} valid {{ summaryWords.validRowWord }}</strong
-              >, or go back and fix the file
+              >, or upload a corrected CSV file
             </p>
           </template>
         </DataErrorSummary>
@@ -92,7 +92,7 @@ const showProceed = computed(
       variant="primary"
       class="min-w-24"
       @click="emit('back')"
-      >Fix file</Button
+      >Upload corrected file</Button
     >
   </ModalFooter>
 </template>

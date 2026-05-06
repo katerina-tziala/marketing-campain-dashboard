@@ -76,3 +76,32 @@
 - Stable group key for selection state — avoids UI selection collisions when the same campaign name appears in multiple channels
 - User-facing copy stays campaign-focused — the implementation is channel-aware, but concise copy is easier for users to understand in validation summaries
 - Invalid rows stay outside duplicate detection — duplicates are only evaluated after row validation so users resolve importable data, not already-rejected rows
+
+## [#204] Campaign Performance README documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/campaign-performance.md` as a behavior-focused feature README for Campaign Performance. The document explains the feature boundary, responsibilities, analytical rules, channel filtering semantics, visual analysis outputs, table behavior, state transitions, edge cases, limitations, and future improvements without turning the README into a component inventory.
+
+**Brainstorming:** The documentation needed to describe the system guarantees behind the performance dashboard rather than list Vue files or internal method calls. The feature sits downstream of Data Transfer, so the README makes that boundary explicit: Campaign Performance assumes validated campaign data and focuses on analytical derivation, filtering, benchmarking, classification, and presentation. The validation section was renamed to Analytical Rules because the feature does not validate raw input; it defines metric semantics and analytical invariants.
+
+**Prompt:** Write a concise, maintainable README for Campaign Performance as a principal software engineer. Document purpose, responsibilities, logic, behavior, processing rules, flow, requirements, state transitions, edge cases, limitations, and future improvements. Avoid component inventory, framework internals, unnecessary code structure, fluff, and step-by-step UI narration. Also explain the chart types and campaign table sorting behavior.
+
+**What changed:**
+
+- `docs/campaign-performance.md` — added a new Campaign Performance feature README
+- Documented feature responsibilities, including portfolio performance presentation, KPI derivation, channel-scoped filtering, benchmark preservation, channel grouping, sortable campaign detail, and reset behavior when the active portfolio changes
+- Added functional and non-functional requirements for deterministic metric derivation, consistent filtered analysis, safe empty states, stable ordering, benchmark behavior, and separation from ingestion validation
+- Added processing flow from validated portfolio records through performance metrics, channel grouping, summaries, classification groups, derived signals, and rendered analytical views
+- Added feature flow covering unfiltered analysis, selected-channel analysis, all-channel filter collapse, and portfolio replacement behavior
+- Added Visual Analysis Outputs covering ROI by channel, revenue versus budget by channel, ROI by campaign, budget share by campaign, conversion funnel, and scaling opportunities
+- Added campaign detail table documentation, including displayed fields and sorting by every displayed column with revenue descending as the default
+- Renamed validation-oriented wording to Analytical Rules to better reflect metric semantics and analytical guarantees
+
+**Key decisions & why:**
+
+- Behavior over implementation — the README focuses on stable feature guarantees rather than component names or store method choreography
+- Explicit feature boundary — Campaign Performance starts after Data Transfer validation and should not own CSV integrity rules
+- Analytical Rules over Validation Logic — the feature defines metric semantics, safe ratio behavior, share efficiency, and allocation gaps rather than raw input validation
+- Chart documentation at the outcome level — chart types are described by the questions they answer, not by implementation components
+- Table behavior included because it is observable analysis functionality — sorting changes how users inspect campaign performance and is part of the feature contract
