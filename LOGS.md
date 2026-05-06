@@ -105,3 +105,32 @@
 - Analytical Rules over Validation Logic — the feature defines metric semantics, safe ratio behavior, share efficiency, and allocation gaps rather than raw input validation
 - Chart documentation at the outcome level — chart types are described by the questions they answer, not by implementation components
 - Table behavior included because it is observable analysis functionality — sorting changes how users inspect campaign performance and is part of the feature contract
+
+## [#205] AI Connection README documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/ai-connection.md` as a behavior-focused feature README for AI Connection. The document explains supported providers, connection responsibilities, model discovery and selection, provider error handling, connection state transitions, model exhaustion behavior, limitations, and future improvements without documenting component topology or internal method choreography.
+
+**Brainstorming:** AI Connection needed documentation at the system-boundary level because it sits between user-supplied provider credentials and downstream AI analysis features. The important behavior is not which UI component submits the key, but what the feature guarantees: only supported providers can connect, an API key is required, compatible text models are discovered and ranked before analysis is enabled, connection failures remain disconnected, and disconnect clears both provider and analysis state. The model-selection section was kept explicit because provider/model choice directly affects AI output quality and availability.
+
+**Prompt:** Write `ai-connection.md` following the feature documentation prompt. Also explain supported providers and the flow for model selection. Keep the README concise, maintainable, behavior-focused, and free of unnecessary implementation details.
+
+**What changed:**
+
+- `docs/ai-connection.md` — added a new AI Connection feature README
+- Documented supported providers: Google Gemini and Groq
+- Added feature responsibilities for provider/API key connection, model discovery, compatible model ranking, selected-model readiness, model availability tracking, and safe disconnect behavior
+- Added functional and non-functional requirements covering connection readiness, provider errors, model selection, disabled evaluation states, deterministic model selection, and disconnection cleanup
+- Added processing flow from provider selection through model discovery, model ranking, selected-model assignment, connected state, and normalized failure handling
+- Added a Model Selection Flow section covering compatible text-generation model filtering, analytics-oriented ranking criteria, strongest-model default selection, and fallback when model limits are reached
+- Added state handling for disconnected, connecting, connected, connection error, selected-model exhaustion, all-model exhaustion, panel close, and user disconnect states
+- Added edge cases, limitations, and future improvements for provider access, model availability, quotas, credential handling, manual model selection, and additional provider support
+
+**Key decisions & why:**
+
+- Supported providers called out explicitly — provider availability is a stable product boundary and affects user setup expectations
+- Model selection documented as behavior — ranking and fallback are core system guarantees for AI analysis quality and resilience
+- Requirements compressed after review — repeated model discovery, evaluation, ranking, and strongest-model wording was consolidated so the README stays scannable
+- Error handling documented by category — normalized provider failures are more maintainable to document than specific request internals
+- Credential boundary made explicit — API keys are connection input, not portfolio data or analysis output
