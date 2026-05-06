@@ -1,6 +1,6 @@
 # Software Architecture
 
-The application is a browser-based marketing analytics system for importing campaign data, deriving portfolio performance insights, exploring campaign performance, and adding AI-assisted interpretation on top of deterministic analytics.
+Marketing Intelligence Dashboard is a browser-based system for importing campaign data, deriving portfolio performance insights, exploring campaign performance, and adding AI-assisted interpretation on top of deterministic analytics.
 
 The system supports:
 
@@ -115,10 +115,10 @@ Provider calls should receive only the context needed for the requested AI task.
 
 - [Frontend Architecture](./frontend-architecture.md)
 - [AI Prompt Architecture](./ai-prompt-architecture.md)
-- [AI Connection](./ai-connection.md)
-- [AI Analysis](./ai-analysis.md)
-- [Data Transfer](./data-transfer.md)
-- [Campaign Performance](./campaign-performance.md)
+- [AI Connection](../features/ai-connection.md)
+- [AI Analysis](../features/ai-analysis.md)
+- [Data Transfer](../features/data-transfer.md)
+- [Campaign Performance](../features/campaign-performance.md)
 
 ## Future Improvements
 

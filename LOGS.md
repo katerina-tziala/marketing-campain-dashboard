@@ -287,3 +287,32 @@
 - Provider behavior normalized behind contracts — provider APIs, metadata, and response behavior are external variability that should not leak across the app
 - Runtime validation remains the acceptance boundary — prompt compliance improves reliability but does not replace application-side validation
 - Security boundaries called out — API keys and business data must be treated as scoped session inputs, not durable or broadly logged state
+
+## [#211] Documentation folder organization and product naming alignment
+
+**Type:** documentation
+
+**Summary:** Reorganized the current documentation into `docs/architecture/` and `docs/features/`, updated relative documentation links after the move, and aligned current app/docs product-name references to `Marketing Intelligence Dashboard`.
+
+**Brainstorming:** The docs folder had grown into a flat list containing both system-level architecture documents and feature READMEs. Splitting those into architecture and feature folders makes the documentation easier to scan without changing the content model. The historical `docs/vibe-coding-logs.md` file was intentionally left untouched. After the move, relative links needed to be updated so the docs still work from their new locations. A second pass checked current docs and app text for product-name drift, keeping generic UI terms like "dashboard" where they describe the interface while normalizing actual product references to `Marketing Intelligence Dashboard`.
+
+**Prompt:** Order files in the docs folder into `architecture/` and `features/`. Do not touch `vibe-coding-logs.md`. Make sure links to documents work properly. Then review docs and app mentions so the product name consistently refers to `Marketing Intelligence Dashboard`, skipping README for now.
+
+**What changed:**
+
+- Moved architecture documents into `docs/architecture/`
+- Moved feature READMEs into `docs/features/`
+- Left `docs/vibe-coding-logs.md` at the docs root unchanged
+- Updated relative links in architecture docs to point to the new feature and architecture paths
+- Verified relative markdown links across the moved docs resolve
+- Updated current docs references from marketing-analytics-oriented product wording to `Marketing Intelligence Dashboard`
+- Updated app page metadata default title and route description to use `Marketing Intelligence Dashboard`
+- Updated the model-evaluation prompt role text to reference `Marketing Intelligence Dashboard`
+
+**Key decisions & why:**
+
+- Architecture and feature docs separated — readers can now find system-level docs and feature contracts without scanning one flat folder
+- Historical logs untouched — `docs/vibe-coding-logs.md` is an audit trail and should not be rewritten during current-doc organization
+- README skipped — the user explicitly asked not to include README in this pass
+- Product name normalized only where it represents the product — generic "dashboard" wording stayed when it describes UI state or visible context
+- Link verification included — moving docs without checking relative links would create quiet navigation failures

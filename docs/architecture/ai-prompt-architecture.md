@@ -1,8 +1,8 @@
 # AI Prompt Architecture
 
-The AI prompt architecture supports model selection, executive summary generation, and budget optimization for the marketing analytics dashboard. Its boundary starts with normalized provider/model metadata or portfolio analysis context, and ends with schema-constrained responses that downstream features can validate and render.
+The AI prompt architecture supports model selection, executive summary generation, and budget optimization for the Marketing Intelligence Dashboard. Its boundary starts with normalized provider/model metadata or portfolio analysis context, and ends with schema-constrained responses that downstream features can validate and render.
 
-This document focuses on prompt strategy and system behavior. For provider connection flow, see [AI Connection](./ai-connection.md). For analysis execution, caching, automatic refresh, and token protection, see [AI Analysis](./ai-analysis.md).
+This document focuses on prompt strategy and system behavior. For provider connection flow, see [AI Connection](../features/ai-connection.md). For analysis execution, caching, automatic refresh, and token protection, see [AI Analysis](../features/ai-analysis.md).
 
 ## System Overview
 

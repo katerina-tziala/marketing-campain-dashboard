@@ -4,10 +4,10 @@ The frontend is a Vue single-page application for importing campaign performance
 
 Feature-specific behavior is documented separately:
 
-- [Data Transfer](./data-transfer.md)
-- [Campaign Performance](./campaign-performance.md)
-- [AI Connection](./ai-connection.md)
-- [AI Analysis](./ai-analysis.md)
+- [Data Transfer](../features/data-transfer.md)
+- [Campaign Performance](../features/campaign-performance.md)
+- [AI Connection](../features/ai-connection.md)
+- [AI Analysis](../features/ai-analysis.md)
 - [AI Prompt Architecture](./ai-prompt-architecture.md)
 
 This document describes frontend organization, ownership boundaries, state movement, and conventions. It does not repeat feature-level business rules.

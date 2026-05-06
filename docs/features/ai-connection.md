@@ -22,7 +22,7 @@ AI Connection is responsible for:
 - accepting a supported provider and API key
 - validating that an API key is present before attempting connection
 - checking that the selected provider can be reached with the supplied key
-- discovering and ranking compatible provider models for marketing analytics use cases
+- discovering and ranking compatible provider models for Marketing Intelligence Dashboard use cases
 - selecting the strongest available model for downstream AI requests
 - tracking model availability when provider limits are reached
 - exposing connected, connecting, error, exhausted, and disconnected states
@@ -55,7 +55,7 @@ AI Connection is responsible for:
 1. The user selects a supported provider and supplies an API key
 2. The system validates that the API key is present
 3. The provider connection process fetches the provider's available model list
-4. Compatible text-generation models are evaluated and ranked for marketing analytics use cases
+4. Compatible text-generation models are evaluated and ranked for Marketing Intelligence Dashboard use cases
 5. Unsuitable models are excluded from the ranked model set
 6. The strongest remaining model becomes the selected model
 7. Connected state is exposed to AI analysis features
@@ -63,7 +63,7 @@ AI Connection is responsible for:
 
 ## Model Selection Flow
 
-Model selection is part of connection, not a separate user workflow. The system discovers candidate models from the selected provider, keeps only compatible text-generation models, and ranks candidates for marketing analytics work.
+Model selection is part of connection, not a separate user workflow. The system discovers candidate models from the selected provider, keeps only compatible text-generation models, and ranks candidates for Marketing Intelligence Dashboard workloads.
 
 The model evaluation criteria prioritize:
 
