@@ -15911,3 +15911,34 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Cooldowns and debounce are documented as token protection — filter changes and revisits can otherwise create request bursts
 - Stale results are preserved intentionally — a previous useful answer is better than replacing it with an error when refresh fails
 - Model fallback is part of resilience — token or quota limits should try the next ranked model before failing the feature
+
+## [#670] AI Prompt Architecture documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/ai-prompt-architecture.md` as a high-level technical document for the application's AI prompt pipeline. The document explains model selection, executive summary generation, budget optimization, provider normalization, schema-constrained outputs, runtime validation boundaries, reliability safeguards, and prompt versioning strategy without exposing raw production prompts.
+
+**Brainstorming:** The AI prompt system needed documentation above the feature README level because multiple AI features share the same architectural concerns: provider abstraction, normalized inputs, strict response contracts, derived analytics signals, token efficiency, and runtime validation. The document was written to describe design rationale and operational guarantees rather than prompt text. Later refinements clarified that LLM content is probabilistic even when output structure is constrained, added provider normalization as its own architectural boundary, and made runtime validation the explicit final authority for trusting responses.
+
+**Prompt:** Generate high-level technical documentation for the AI-powered marketing analytics application. Explain the architecture, design rationale, prompt engineering strategy, and system behavior for model selection, executive summary generation, and budget optimization. Do not reproduce exact prompts line-by-line. Include system overview, prompt architecture, model selection strategy, executive summary strategy, budget optimization strategy, reliability and safety mechanisms, and versioning and iteration strategy.
+
+**What changed:**
+
+- `docs/ai-prompt-architecture.md` — added a new AI prompt architecture document
+- Added System Overview covering why multiple prompt types exist and how prompts interact with normalized provider/model data and portfolio analysis context
+- Added Provider Normalization Strategy explaining why raw provider payloads are normalized before prompt evaluation
+- Added Prompt Architecture covering reusable rule groups, scoped reasoning, schema-constrained responses, provider abstraction, modularity, and versioning
+- Added AI Model Selection Prompt Strategy covering candidate normalization, text-model filtering, ranking methodology, scoring logic, identifier integrity, metadata derivation, token optimization, unstable-model handling, and machine-validated output
+- Added Executive Summary Prompt Strategy covering executive-level summarization, scoped analysis, concise communication, derived-signal grounding, unsupported-inference reduction, and output constraints
+- Added Budget Optimization Prompt Strategy covering allocation goals, tradeoff analysis, constrained budget logic, recommendation consistency, explainability, and no-recommendation behavior
+- Added Reliability and Safety Mechanisms covering schema validation, identifier validation, duplicate prevention, ranking consistency, provider-agnostic abstractions, token efficiency, authoritative derived analytics signals, and runtime acceptance boundaries
+- Added Versioning and Iteration Strategy covering prompt versioning, regression testing, prompt evolution, logging, backward compatibility, and prevention of silent behavioral drift
+
+**Key decisions & why:**
+
+- High-level architecture over raw prompts — the documentation should explain durable system behavior without exposing production prompt text or becoming stale after prompt wording changes
+- Provider normalization is a first-class boundary — normalized candidate models reduce provider coupling, prompt branching, and token usage
+- Structurally deterministic wording — avoids implying that LLM content is fully reproducible while still documenting stable response-shape guarantees
+- Runtime validation as final authority — prompt compliance alone is not trusted; application-side validation owns response acceptance
+- Derived analytics signals stay authoritative — LLMs interpret precomputed metrics instead of becoming alternate calculation engines
+- Versioning is operational, not cosmetic — versioned prompts make behavior reviewable and reduce silent drift in downstream product features
