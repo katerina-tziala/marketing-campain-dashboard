@@ -255,3 +255,35 @@
 - App-level orchestration called out explicitly — the orchestrator is the intended mediator between feature stores and prevents direct feature-to-feature coupling
 - Feature-level ownership emphasized — behavior should stay local until reuse is stable and the shared contract is clear
 - AI UI state documented by responsibility — connection, analysis, provider errors, cache, stale output, and fallback states have different owners and should not blur together
+
+## [#210] Software Architecture documentation
+
+**Type:** documentation
+
+**Summary:** Added `docs/software-architecture.md` as the top-level system architecture document. The document explains the application's purpose, main capabilities, architecture principles, system components, end-to-end data flow, domain analytics boundary, AI system boundary, reliability/state management, security/privacy boundaries, documentation map, and future improvement areas.
+
+**Brainstorming:** The project now has focused feature and frontend docs, so the software architecture document needed to provide the system-level map above them. The goal was to describe how campaign import, portfolio analysis, campaign exploration, AI connection, executive summaries, and budget optimization fit together without repeating the lower-level READMEs. The final wording emphasizes that the architecture is frontend-centered, deterministic analytics run before AI interpretation, and runtime validation remains the acceptance boundary for generated output.
+
+**Prompt:** Create `docs/software-architecture.md` with sections for Overview, Architecture Principles, System Components, Data Flow, Domain Data and Analytics, AI System Boundary, Reliability and State Management, Security and Privacy Boundaries, Documentation Map, and Future Improvements.
+
+**What changed:**
+
+- `docs/software-architecture.md` — added a new Software Architecture document
+- Added the application purpose and supported capabilities: campaign data import, portfolio analysis, campaign performance exploration, AI provider connection, executive summaries, and budget optimization
+- Added Architecture Principles covering feature-based organization, normalized domain data, derived analytics before AI interpretation, schema-constrained outputs, provider abstraction, client-side safeguards, and conservative shared abstractions
+- Added System Components for the frontend application, feature modules, shared domain analytics layer, AI provider integration layer, prompt generation layer, validation/parsing layer, and session cache/request orchestration
+- Added an end-to-end Data Flow from CSV import through validation, portfolio analysis, filtered performance views, AI context building, provider/model selection, prompt execution, response validation, and UI rendering
+- Added Domain Data and Analytics guidance explaining why raw uploads are not final analytics state and why AI prompts consume derived signals
+- Added AI System Boundary guidance covering external providers, normalized provider payloads, ranked model selection, schema-constrained responses, runtime validation, and deterministic analytics ownership
+- Added Reliability and State Management guidance for validation-before-state, cache keys, cooldowns, cancellation, stale fallback, provider error normalization, and invalid AI output rejection
+- Added Security and Privacy Boundaries covering durable credential ownership, API key handling, logging constraints, and minimal provider context
+- Added a Documentation Map linking to the frontend, prompt, connection, analysis, data transfer, and campaign performance docs
+
+**Key decisions & why:**
+
+- Top-level map over duplicate detail — the system architecture doc explains how the existing documents relate instead of restating their feature contracts
+- Frontend-centered architecture made explicit — deterministic analytics and AI orchestration currently execute in the client
+- Deterministic analytics before AI — AI assists interpretation but does not own metric calculation or source-of-truth analytics
+- Provider behavior normalized behind contracts — provider APIs, metadata, and response behavior are external variability that should not leak across the app
+- Runtime validation remains the acceptance boundary — prompt compliance improves reliability but does not replace application-side validation
+- Security boundaries called out — API keys and business data must be treated as scoped session inputs, not durable or broadly logged state
