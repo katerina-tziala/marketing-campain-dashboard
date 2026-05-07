@@ -10,7 +10,7 @@ const analysisStore = useAiAnalysisStore();
 
 const tabs: Tab[] = [
   { id: 'executiveSummary', label: 'Summary', icon: FileTextIcon },
-  { id: 'budgetOptimizer', label: 'Optimizer', icon: SlidersIcon },
+  { id: 'budgetOptimizer', label: 'Optimization', icon: SlidersIcon },
 ];
 </script>
 

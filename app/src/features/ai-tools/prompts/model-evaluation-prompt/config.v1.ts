@@ -5,7 +5,7 @@ export const ROLE_AND_TASK_RULES: PromptRuleGroup[] = [
     title: 'ROLE',
     type: 'none',
     list: [
-      'You are a model selection specialist evaluating LLMs for a marketing analytics application.',
+      'You are a model selection specialist evaluating LLMs for the Marketing Intelligence Dashboard.',
     ],
   },
   {

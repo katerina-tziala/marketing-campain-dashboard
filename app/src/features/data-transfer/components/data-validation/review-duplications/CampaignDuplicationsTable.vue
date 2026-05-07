@@ -61,18 +61,18 @@ const needsAttentionMode = computed(
   () => props.requiredSelection === true && selections.value.size === 0,
 );
 
-function isSelected(campaignName: string, rowId: number): boolean {
-  return selections.value.get(campaignName) === rowId;
+function isSelected(groupKey: string, rowId: number): boolean {
+  return selections.value.get(groupKey) === rowId;
 }
 
-function isGroupSelected(campaignName: string): boolean {
-  return selections.value.has(campaignName);
+function isGroupSelected(groupKey: string): boolean {
+  return selections.value.has(groupKey);
 }
 
 function emitSelections(map: Map<string, number>): void {
   const selected: Campaign[] = [];
   for (const group of props.duplicateGroups) {
-    const selectedRowId = map.get(group.campaignName);
+    const selectedRowId = map.get(group.key);
     if (selectedRowId !== undefined) {
       const entry = group.rows.find((r) => r.rowId === selectedRowId);
       if (entry) {
@@ -83,15 +83,15 @@ function emitSelections(map: Map<string, number>): void {
   emit('change', selected);
 }
 
-function selectRow(campaignName: string, rowId: number): void {
-  const next = new Map(selections.value).set(campaignName, rowId);
+function selectRow(groupKey: string, rowId: number): void {
+  const next = new Map(selections.value).set(groupKey, rowId);
   selections.value = next;
   emitSelections(next);
 }
 
-function clearGroupSelection(campaignName: string): void {
+function clearGroupSelection(groupKey: string): void {
   const next = new Map(selections.value);
-  next.delete(campaignName);
+  next.delete(groupKey);
   selections.value = next;
   emitSelections(next);
 }
@@ -116,33 +116,33 @@ defineExpose({ reset });
     <tbody>
       <template
         v-for="group in sortedGroups"
-        :key="group.campaignName"
+        :key="group.key"
       >
         <TableGroupHeaderRow>
           <td colspan="8">
             <DuplicationsHeader
               :campaign-name="group.campaignName"
               :row-count="group.rows.length"
-              :is-selected="isGroupSelected(group.campaignName)"
+              :is-selected="isGroupSelected(group.key)"
               :needs-attention-mode="needsAttentionMode"
-              @clear="clearGroupSelection(group.campaignName)"
+              @clear="clearGroupSelection(group.key)"
             />
           </td>
         </TableGroupHeaderRow>
         <TableSelectableRow
           v-for="entry in group.rows"
           :key="entry.rowId"
-          :selected="isSelected(group.campaignName, entry.rowId)"
-          @select="selectRow(group.campaignName, entry.rowId)"
+          :selected="isSelected(group.key, entry.rowId)"
+          @select="selectRow(group.key, entry.rowId)"
         >
           <td class="cell-select">
             <RadioItem
-              :name="`group-${group.campaignName}`"
+              :name="`group-${group.key}`"
               :value="entry.rowId"
               variant="info"
-              :checked="isSelected(group.campaignName, entry.rowId)"
+              :checked="isSelected(group.key, entry.rowId)"
               :aria-label="`Select row ${entry.rowId}`"
-              @change="selectRow(group.campaignName, entry.rowId)"
+              @change="selectRow(group.key, entry.rowId)"
             />
           </td>
           <td>{{ entry.rowId }}</td>

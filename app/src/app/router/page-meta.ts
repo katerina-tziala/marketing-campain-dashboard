@@ -1,8 +1,8 @@
 import type { RouteLocationNormalizedLoaded } from 'vue-router';
 
-const DEFAULT_PAGE_TITLE = 'Marketing Campaign Dashboard';
+const DEFAULT_PAGE_TITLE = 'Marketing Intelligence Dashboard';
 const DEFAULT_PAGE_DESCRIPTION =
-  'AI-powered marketing intelligence platform for performance analysis, budget optimization, and executive summaries';
+  'AI-powered Marketing Intelligence Dashboard for performance analysis, budget optimization, and executive summaries';
 
 type PageMeta = {
   title?: string;

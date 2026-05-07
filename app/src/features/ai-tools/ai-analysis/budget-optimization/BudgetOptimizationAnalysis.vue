@@ -22,7 +22,7 @@ const response = computed(() => analysisStore.budgetOptimizer.response);
 const error = computed(() => analysisStore.budgetOptimizer.error);
 const notice = computed(() => analysisStore.budgetOptimizer.notice);
 const canAnalyze = computed(() => analysisStore.optimizerCanAnalyze);
-const analysisActivated = computed(() => analysisStore.analysisActivated);
+const analysisActivated = computed(() => analysisStore.budgetOptimizerActivated);
 
 const isBelowMinimum = computed(() => error.value?.code === 'min-campaigns');
 const minCampaignsEntry = ANALYSIS_ERROR_MESSAGES['min-campaigns'];

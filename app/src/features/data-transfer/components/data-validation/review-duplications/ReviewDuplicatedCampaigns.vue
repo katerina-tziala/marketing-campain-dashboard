@@ -25,7 +25,9 @@ const selectedCampaigns = ref<Campaign[]>([]);
 const requiredSelection = computed(() => props.validCampaigns.length === 0);
 const resolvedCount = computed(() => selectedCampaigns.value.length);
 const allResolved = computed(() => resolvedCount.value === props.duplicateGroups.length);
-const backLabel = computed(() => (props.hasPreviousErrors ? 'Review errors' : 'Fix file'));
+const backLabel = computed(() =>
+  props.hasPreviousErrors ? 'Review errors' : 'Upload corrected file',
+);
 const importLabel = computed(() => {
   if (requiredSelection.value || selectedCampaigns.value.length > 0) {
     return 'Import selected rows';

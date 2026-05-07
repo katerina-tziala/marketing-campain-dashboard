@@ -2,41 +2,30 @@ import type { AiAnalysisContext } from '../../ai-analysis/types';
 import { OUTPUT_REQUIREMENTS_RULES } from '../constants';
 import { getPromptRuleGroup } from '../utils';
 import {
-  FULL_PORTFOLIO_ANALYSIS_RULES,
+  FULL_PORTFOLIO_OPTIMIZATION_RULES,
   OUTPUT_SCHEMA,
   ROLE_TASK_OBJECTIVE_RULES,
   SELECTION_ANALYSIS_RULES,
-} from './config';
+} from './config.v1';
 
-export function generateExecutiveSummaryPrompt(context: AiAnalysisContext): string {
+export function generateBudgetOptimizationPrompt(context: AiAnalysisContext): string {
   const { analysis, businessContext, portfolioBenchmark } = context;
+  const { portfolio, campaignGroups, channels, channelContext, channelGroups, derivedSignals } =
+    analysis;
 
-  const {
-    portfolio,
-    campaignGroups,
-    channels,
-    channelGroups,
-    derivedSignals: { inefficientChannels, scalingOpportunities, concentrationFlag, correlations },
-  } = analysis;
-
-  // remove noise
   const promptInput = {
     portfolio,
-    portfolioBenchmark, // full portfolio benchmark when filtered
-    campaignGroups,
     channels,
+    channelContext,
+    campaignGroups,
     channelGroups,
-    derivedSignals: {
-      inefficientChannels,
-      scalingOpportunities,
-      concentrationFlag,
-      correlations,
-    },
+    derivedSignals,
+    portfolioBenchmark, // full portfolio benchmark when filtered
   };
 
   const analysisRules = portfolioBenchmark
     ? SELECTION_ANALYSIS_RULES
-    : FULL_PORTFOLIO_ANALYSIS_RULES;
+    : FULL_PORTFOLIO_OPTIMIZATION_RULES;
 
   const promptSections = [
     ...ROLE_TASK_OBJECTIVE_RULES.map(getPromptRuleGroup),

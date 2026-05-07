@@ -85,7 +85,7 @@ function handleApiKeyBlur(): void {
 <template>
   <div class="scrollbar-stable-both scrollbar-on-surface conn-form">
     <p class="conn-intro">
-      Connect your AI API key to enable Executive Summary and Budget Optimizer features
+      Connect your AI API key to enable Executive Summary and Budget Optimization features
     </p>
     <Form @submit.prevent="handleConnect">
       <!-- Provider -->

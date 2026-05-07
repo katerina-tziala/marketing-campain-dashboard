@@ -14,16 +14,16 @@ const props = defineProps<{
 const words = computed(() => {
   const singular = props.count === 1;
   return {
-    group: singular ? 'campaign name' : 'campaign names',
+    group: singular ? 'campaign' : 'campaigns',
     verb: singular ? 'appears' : 'appear',
-    nameHas: singular ? 'name has' : 'names have',
+    campaignHas: singular ? 'campaign has' : 'campaigns have',
   };
 });
 </script>
 
 <template>
   <DataErrorSummary>
-    <template #title> Duplicate campaign names detected </template>
+    <template #title> Duplicate campaigns detected </template>
     <template #badge>
       <Badge
         v-if="variant === 'resolve' && !hasValidCampaigns"
@@ -49,8 +49,8 @@ const words = computed(() => {
       </template>
       <template v-else>
         <p>
-          <strong>{{ count }} campaign</strong> {{ words.nameHas }} duplicate rows that will need to
-          be resolved
+          <strong>{{ count }} {{ words.group }}</strong> {{ words.campaignHas }} duplicate rows that
+          will need to be resolved
         </p>
         <p>You will be asked to resolve these duplicates in the next step</p>
       </template>
