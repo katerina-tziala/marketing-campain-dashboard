@@ -16131,3 +16131,33 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - External provider boundary is explicit — Gemini and Groq are outside the application and should not visually appear as internal runtime code
 - AI Runtime Layer groups dense lower-level AI behavior — provider normalization, prompt construction, caching, cancellation, fallback, and validation scan as one subsystem
 - Visual polish matters — this diagram is part of the portfolio presentation, so small spacing, shadow, and label decisions affect readability
+
+## [#677] System Use-Case Diagram refinement
+
+**Type:** documentation
+
+**Summary:** Created and refined the system use-case diagram for Marketing Intelligence Dashboard so it models actor-facing goals and externally observable system capabilities instead of internal orchestration mechanics.
+
+**Brainstorming:** The first use-case diagram mixed true use cases with implementation behavior such as validation stages, model selection, caching, cooldowns, cancellation, and fallback. The diagram was corrected to follow UML intent: it now focuses on what the Marketing Analyst can accomplish with the system and how the system interacts with the external AI provider. Internal behavior remains documented in architecture, feature READMEs, processing flows, and AI analysis documentation rather than being modeled as user goals.
+
+**Prompt:** Build and refine a system use-case diagram in English, using the provided example as inspiration, then correct it as a principal engineer so it represents actor goals rather than internal system mechanics.
+
+**What changed:**
+
+- `docs/assets/system-use-case-diagram.svg` — added the system-level use-case diagram as a documentation asset
+- Modeled `Marketing Analyst` as the primary actor
+- Modeled `External AI Provider` as an external system boundary, not as a user actor
+- Added actor-facing capabilities for uploading campaign data, reviewing validation issues, resolving duplicates, replacing the active portfolio, analyzing campaign performance, filtering views, inspecting campaign metrics, connecting an AI provider, generating executive summaries, and generating budget optimization recommendations
+- Removed internal mechanics from the use-case model, including file validation as a standalone use case, model selection, cache behavior, cooldowns, cancellation, fallback, and runtime safeguards
+- Grouped related capabilities visually by feature color
+- Refined labels to use consistent capability-oriented naming
+- Reworked connector semantics and layout so include/extend relationships use straight lines anchored to bubbles or external boundaries
+- Embedded the system use-case diagram in `docs/architecture/software-architecture.md` with a constrained display size
+
+**Key decisions & why:**
+
+- Use cases describe user goals — validation pipelines, model ranking, caching, and fallback are important but belong in processing or architecture diagrams
+- External providers are systems, not actors — Gemini and Groq support AI capabilities but do not initiate user goals
+- AI use cases depend on provider connection — executive summary and budget optimization include provider connection at the capability level, while model selection stays internal
+- Data-transfer outcomes are conditional extensions — validation review, duplicate resolution, and portfolio replacement are user-visible outcomes of upload, not separate primary flows
+- The diagram supports architecture documentation — it complements the software architecture diagram by showing system capabilities from the actor’s point of view

@@ -15,6 +15,10 @@ The architecture is frontend-centered, with deterministic analytics and AI orche
 
 ![Marketing Intelligence Dashboard software architecture](../assets/system-architecture.svg)
 
+The system use-case diagram captures actor-facing capabilities only. Internal processing concerns such as validation stages, model ranking, caching, cooldowns, cancellation, and fallback behavior are documented in feature and architecture sections rather than modeled as user goals.
+
+<img src="../assets/system-use-case-diagram.svg" alt="Marketing Intelligence Dashboard system use-case diagram" width="720" />
+
 ## Overview
 
 The application turns uploaded campaign performance reports into a portfolio analysis workspace. Raw campaign rows are accepted only after client-side parsing and validation. Accepted data is converted into domain state, analyzed deterministically, and then rendered through campaign performance views.
