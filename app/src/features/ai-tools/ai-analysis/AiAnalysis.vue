@@ -35,8 +35,9 @@ const tabs: Tab[] = [
     h-full
     overflow-x-hidden
     overflow-y-auto
-    p-5
     pb-2
+    pt-5
+    px-2
     text-sm
     text-typography;
 }
