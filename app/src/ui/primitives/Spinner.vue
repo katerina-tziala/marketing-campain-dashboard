@@ -44,9 +44,9 @@ const props = withDefaults(
 <style lang="scss" scoped>
 .spinner {
   @apply block
-    h-24
-    shrink-0
-    w-24;
+  	h-24
+  	shrink-0
+  	w-24;
 
   animation: spinner-rotate 1.8s linear infinite;
 
@@ -65,12 +65,12 @@ const props = withDefaults(
 
 .spinner.sm {
   @apply h-5
-    w-5;
+  	w-5;
 }
 
 .spinner.xxl {
   @apply h-24
-    w-24;
+  	w-24;
 }
 
 .spinner.inverse {

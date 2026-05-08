@@ -85,17 +85,17 @@ function sortAriaLabel(col: DataTableColumn): string {
 <style lang="scss" scoped>
 ._header-padding {
   @apply p-2.5
-    py-3.5;
+  	py-3.5;
 }
 
 th {
   @extend ._header-padding;
   @apply break-words
-    capitalize
-    font-semibold
-    text-center
-    tracking-wider
-    whitespace-normal;
+  	capitalize
+  	font-semibold
+  	text-center
+  	tracking-wider
+  	whitespace-normal;
 
   &.left-alignment {
     @apply text-left;
@@ -108,32 +108,32 @@ th {
   .sortable-button {
     @extend ._header-padding;
     @apply border-transparent
-      border-x-[1rem]
-      cursor-pointer
-      duration-150
-      inline-flex
-      items-center
-      justify-center
-      outline-none
-      transition-transform
-      w-full;
+    	border-x-[1rem]
+    	cursor-pointer
+    	duration-150
+    	inline-flex
+    	items-center
+    	justify-center
+    	outline-none
+    	transition-transform
+    	w-full;
   }
 
   .button-content {
     @apply inline-flex
-      items-center
-      justify-between
-      relative
-      w-fit;
+    	items-center
+    	justify-between
+    	relative
+    	w-fit;
 
     .sort-icon {
       @apply -right-5
-        absolute
-        duration-150
-        inline-block
-        text-base
-        text-transparent
-        transition-transform;
+      	absolute
+      	duration-150
+      	inline-block
+      	text-base
+      	text-transparent
+      	transition-transform;
 
       &.desc {
         @apply rotate-180;
@@ -148,8 +148,8 @@ th {
 
     .button-content {
       @apply pr-5
-        text-left
-        w-full;
+      	text-left
+      	w-full;
 
       .sort-icon {
         @apply right-0;
@@ -160,17 +160,17 @@ th {
 
 .is-sticky > tr > th {
   @apply sticky
-    top-0
-    z-10;
+  	top-0
+  	z-10;
 }
 
 /* default theming */
 th {
   @apply bg-surface-elevated
-    border-b
-    border-b-info/50
-    shadow-md
-    text-typography-subtle;
+  	border-b
+  	border-b-info/50
+  	shadow-md
+  	text-typography-subtle;
 }
 
 .sortable-button {
@@ -184,7 +184,7 @@ th {
   &:hover,
   &:focus-visible {
     @apply bg-info/[8%]
-      text-info-light;
+    	text-info-light;
 
     .sort-icon {
       @apply text-info-light;
@@ -194,6 +194,6 @@ th {
 
 .vertical-separators > tr > th:not(:last-of-type) {
   @apply border-r
-    border-r-info-dark/10;
+  	border-r-info-dark/10;
 }
 </style>

@@ -94,21 +94,21 @@ function handleProceed(): void {
 <style lang="scss" scoped>
 .body-content {
   @apply gap-4
-    grid
-    grid-cols-1
-    grid-rows-[min-content_1fr]
-    max-w-full
-    w-full;
+  	grid
+  	grid-cols-1
+  	grid-rows-[min-content_1fr]
+  	max-w-full
+  	w-full;
 }
 
 .resolve-indicator {
   @apply -mb-3
-    flex
-    font-semibold
-    gap-2
-    items-center
-    text-sm
-    text-typography-subtle;
+  	flex
+  	font-semibold
+  	gap-2
+  	items-center
+  	text-sm
+  	text-typography-subtle;
 
   &.resolved {
     @apply text-primary-light;

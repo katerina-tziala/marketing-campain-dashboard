@@ -40,35 +40,35 @@ function handleDisconnect(): void {
 <style lang="scss" scoped>
 .ai-status {
   @apply bg-success/[0.05]
-    border-b
-    flex
-    flex-wrap
-    gap-x-6
-    gap-y-1.5
-    items-center
-    justify-between
-    pl-6
-    pr-4
-    py-2
-    w-full;
+  	border-b
+  	flex
+  	flex-wrap
+  	gap-x-6
+  	gap-y-1.5
+  	items-center
+  	justify-between
+  	pl-6
+  	pr-4
+  	py-2
+  	w-full;
 }
 
 .status-provider {
   @apply font-semibold
-    grow
-    shrink-0
-    text-sm
-    text-typography-soft;
+  	grow
+  	shrink-0
+  	text-sm
+  	text-typography-soft;
 
   flex-grow: 100;
 }
 
 .status-connected {
   @apply font-semibold
-    relative
-    text-success
-    text-xs
-    whitespace-nowrap;
+  	relative
+  	text-success
+  	text-xs
+  	whitespace-nowrap;
 
   &::before {
     @apply mr-1.5;

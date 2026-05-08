@@ -101,62 +101,62 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 <style lang="scss" scoped>
 %_theme-transition {
   @apply duration-300
-    ease-linear
-    transition-colors;
+  	ease-linear
+  	transition-colors;
 }
 
 .field-error {
   @extend %_theme-transition;
   @apply m-0
-    text-danger
-    text-sm;
+  	text-danger
+  	text-sm;
 }
 
 .field-error-hint {
   @extend %_theme-transition;
   @apply text-sm
-    text-typography-subtle;
+  	text-typography-subtle;
 }
 
 :slotted(.field-error) {
   @extend %_theme-transition;
   @apply m-0
-    text-danger
-    text-sm;
+  	text-danger
+  	text-sm;
 }
 
 :slotted(.field-error-hint) {
   @extend %_theme-transition;
   @apply text-sm
-    text-typography-subtle;
+  	text-typography-subtle;
 }
 
 .field-message {
   @apply flex
-    flex-col
-    gap-1;
+  	flex-col
+  	gap-1;
 }
 
 .field-message-animated {
   @apply [grid-template-rows:1fr]
-    grid
-    overflow-hidden;
+  	grid
+  	overflow-hidden;
 }
 
 .field-message-content {
   @apply flex
-    flex-col
-    gap-1
-    min-h-0
-    overflow-hidden;
+  	flex-col
+  	gap-1
+  	min-h-0
+  	overflow-hidden;
 }
 
 .field-message-enter-active,
 .field-message-leave-active {
   @apply duration-300
-    ease-out
-    transition-[grid-template-rows]
-    will-change-[grid-template-rows];
+  	ease-out
+  	transition-[grid-template-rows]
+  	will-change-[grid-template-rows];
 }
 
 .field-message-leave-active {
@@ -171,9 +171,9 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 .field-message-enter-active .field-message-content,
 .field-message-leave-active .field-message-content {
   @apply duration-300
-    ease-out
-    transition-[opacity,transform]
-    will-change-[opacity,transform];
+  	ease-out
+  	transition-[opacity,transform]
+  	will-change-[opacity,transform];
 }
 
 .field-message-leave-active .field-message-content {
@@ -183,7 +183,7 @@ const hasFeedback = computed(() => hasHint.value || hasError.value);
 .field-message-enter-from .field-message-content,
 .field-message-leave-to .field-message-content {
   @apply -translate-y-1
-    opacity-0
-    scale-[0.98];
+  	opacity-0
+  	scale-[0.98];
 }
 </style>

@@ -146,59 +146,59 @@ const describedBy = computed(() => {
 <style lang="scss" scoped>
 %_theme-transition {
   @apply duration-300
-    ease-linear
-    transition-colors;
+  	ease-linear
+  	transition-colors;
 }
 
 .field {
   @apply flex
-    flex-col
-    gap-2;
+  	flex-col
+  	gap-2;
 
   &[as='fieldset'],
   &:is(fieldset) {
     @apply border-0
-      m-0
-      p-0;
+    	m-0
+    	p-0;
   }
 }
 
 .field-label {
   @extend %_theme-transition;
   @apply font-medium
-    inline-block
-    text-primary-lighter
-    text-sm
-    tracking-wide
-    w-fit;
+  	inline-block
+  	text-primary-lighter
+  	text-sm
+  	tracking-wide
+  	w-fit;
 }
 
 .field-label.is-required::after {
   @extend %_theme-transition;
   @apply content-["*"]
-    inline-block
-    leading-none
-    text-primary-lighter/70
-    text-xl
-    translate-y-0.5;
+  	inline-block
+  	leading-none
+  	text-primary-lighter/70
+  	text-xl
+  	translate-y-0.5;
 }
 
 :deep(.form-control) {
   @apply bg-background/60
-    block
-    border
-    border-primary-light/60
-    duration-300
-    ease-out
-    min-h-10
-    outline-none
-    px-3
-    rounded-md
-    text-primary-light
-    text-sm
-    tracking-wider
-    transition-colors
-    w-full;
+  	block
+  	border
+  	border-primary-light/60
+  	duration-300
+  	ease-out
+  	min-h-10
+  	outline-none
+  	px-3
+  	rounded-md
+  	text-primary-light
+  	text-sm
+  	tracking-wider
+  	transition-colors
+  	w-full;
 
   &::placeholder {
     @apply text-typography-faint;
@@ -209,27 +209,27 @@ const describedBy = computed(() => {
     &:focus-within,
     &:hover {
       @apply border-primary-lighter
-        text-primary-lighter;
+      	text-primary-lighter;
     }
   }
 
   &:disabled {
     @apply cursor-not-allowed
-      opacity-80;
+    	opacity-80;
   }
 }
 
 :deep(.input-error) {
   @extend %_theme-transition;
   @apply border-danger
-    text-danger;
+  	text-danger;
 
   &:not(:disabled) {
     &:focus,
     &:focus-within,
     &:hover {
       @apply border-primary-lighter
-        text-primary-lighter;
+      	text-primary-lighter;
     }
   }
 }

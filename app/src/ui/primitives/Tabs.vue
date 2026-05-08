@@ -51,46 +51,46 @@ onMounted(() => {
 <style lang="scss" scoped>
 .tabs {
   @apply border-b
-    flex
-    w-full;
+  	flex
+  	w-full;
 }
 
 .tab {
   @apply -mb-[1px]
-    border-b-2
-    border-transparent
-    cursor-pointer
-    duration-150
-    ease-in-out
-    flex
-    flex-wrap
-    font-medium
-    gap-2
-    grow
-    items-center
-    justify-center
-    outline-none
-    px-4
-    py-3
-    text-sm
-    text-typography-subtle
-    tracking-wider
-    transition-colors;
+  	border-b-2
+  	border-transparent
+  	cursor-pointer
+  	duration-150
+  	ease-in-out
+  	flex
+  	flex-wrap
+  	font-medium
+  	gap-2
+  	grow
+  	items-center
+  	justify-center
+  	outline-none
+  	px-4
+  	py-3
+  	text-sm
+  	text-typography-subtle
+  	tracking-wider
+  	transition-colors;
 
   &.tab-active {
     @apply border-primary
-      text-primary-light;
+    	text-primary-light;
   }
 
   .tab-icon {
     @apply shrink-0
-      text-base;
+    	text-base;
   }
 
   &:hover,
   &:focus-visible {
     @apply bg-primary/20
-      text-primary-lighter;
+    	text-primary-lighter;
   }
 }
 </style>

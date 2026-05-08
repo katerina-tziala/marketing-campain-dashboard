@@ -120,41 +120,41 @@ const sortedRecommendations = computed(() =>
 <style lang="scss" scoped>
 .recommendation-route {
   @apply flex
-    flex-wrap
-    gap-x-6
-    gap-y-3
-    items-center
-    justify-between
-    w-full;
+  	flex-wrap
+  	gap-x-6
+  	gap-y-3
+  	items-center
+  	justify-between
+  	w-full;
 }
 
 .recommendation-route-item {
   @apply flex
-    flex-col
-    gap-0.5
-    grow;
+  	flex-col
+  	gap-0.5
+  	grow;
 }
 
 .recommendation-badges {
   @apply flex
-    flex-wrap
-    gap-x-4
-    gap-y-2
-    items-center
-    justify-start
-    shrink
-    w-fit;
+  	flex-wrap
+  	gap-x-4
+  	gap-y-2
+  	items-center
+  	justify-start
+  	shrink
+  	w-fit;
 }
 
 .recommendation-label {
   @apply font-normal
-    text-typography-subtle
-    text-xs;
+  	text-typography-subtle
+  	text-xs;
 }
 
 .recommendation-channel {
   @apply font-medium
-    text-typography-muted
-    text-xs;
+  	text-typography-muted
+  	text-xs;
 }
 </style>

@@ -147,23 +147,23 @@ watch(
 <style lang="scss" scoped>
 .modal {
   @apply flex
-    flex-col
-    h-fit
-    w-fit;
+  	flex-col
+  	h-fit
+  	w-fit;
 
   &.small {
     @apply max-w-2xl
-      w-full;
+    	w-full;
   }
 
   &.medium {
     @apply max-w-3xl
-      w-full;
+    	w-full;
   }
 
   &.large {
     @apply max-w-5xl
-      w-full;
+    	w-full;
   }
 }
 </style>

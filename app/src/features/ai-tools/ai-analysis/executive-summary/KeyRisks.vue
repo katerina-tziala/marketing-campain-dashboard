@@ -70,16 +70,16 @@ const sortedRisks = computed(() =>
 <style lang="scss" scoped>
 .risk-card.low {
   @apply border-l-2
-    border-l-primary-lighter;
+  	border-l-primary-lighter;
 }
 
 .risk-card.medium {
   @apply border-l-2
-    border-l-warning;
+  	border-l-warning;
 }
 
 .risk-card.high {
   @apply border-l-2
-    border-l-danger;
+  	border-l-danger;
 }
 </style>

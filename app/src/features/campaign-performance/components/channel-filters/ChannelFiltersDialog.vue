@@ -128,55 +128,55 @@ function applySelection(): void {
 
 .filters-panel {
   @apply grid
-    grid-cols-1
-    grid-rows-[min-content_minmax(0,1fr)_min-content]
-    max-h-96
-    max-w-[90%]
-    min-w-32
-    w-full;
+  	grid-cols-1
+  	grid-rows-[min-content_minmax(0,1fr)_min-content]
+  	max-h-96
+  	max-w-[90%]
+  	min-w-32
+  	w-full;
 }
 
 .panel-header {
   @apply border-b
-    flex
-    h-11
-    items-center
-    justify-between
-    px-3
-    py-2;
+  	flex
+  	h-11
+  	items-center
+  	justify-between
+  	px-3
+  	py-2;
 
   .panel-title {
     @apply capitalize
-      font-semibold
-      text-sm
-      text-typography-muted
-      tracking-wide;
+    	font-semibold
+    	text-sm
+    	text-typography-muted
+    	tracking-wide;
   }
 
   .selection-count {
     @apply font-medium
-      normal-case
-      text-typography-subtle
-      text-xs
-      whitespace-nowrap;
+    	normal-case
+    	text-typography-subtle
+    	text-xs
+    	whitespace-nowrap;
   }
 }
 
 .panel-content {
   @apply h-full
-    overflow-y-auto
-    px-0
-    py-2
-    w-full;
+  	overflow-y-auto
+  	px-0
+  	py-2
+  	w-full;
 }
 
 .panel-footer {
   @apply border-t
-    flex
-    gap-6
-    items-center
-    justify-end
-    px-3
-    py-2;
+  	flex
+  	gap-6
+  	items-center
+  	justify-end
+  	px-3
+  	py-2;
 }
 </style>

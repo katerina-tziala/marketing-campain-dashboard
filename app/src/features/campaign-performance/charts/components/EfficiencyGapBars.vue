@@ -181,20 +181,20 @@ const chartAriaLabel = computed(() =>
 <style lang="scss" scoped>
 .efficiency-gap-bars {
   @apply gap-0
-    grid
-    grid-cols-1
-    grid-rows-[auto_minmax(0,1fr)]
-    h-full
-    min-h-0
-    pt-3.5
-    w-full;
+  	grid
+  	grid-cols-1
+  	grid-rows-[auto_minmax(0,1fr)]
+  	h-full
+  	min-h-0
+  	pt-3.5
+  	w-full;
 }
 
 .legend-item {
   @apply flex
-    flex-nowrap
-    gap-1.5
-    justify-end;
+  	flex-nowrap
+  	gap-1.5
+  	justify-end;
 
   > span {
     @apply inline-block;
@@ -203,28 +203,28 @@ const chartAriaLabel = computed(() =>
 
 .legend-indicator {
   @apply border
-    border-white/20
-    size-[0.813rem];
+  	border-white/20
+  	size-[0.813rem];
 }
 
 .efficiency-empty {
   @apply gap-2
-    grid
-    min-h-80
-    place-content-center
-    text-center
-    text-sm
-    text-typography-muted;
+  	grid
+  	min-h-80
+  	place-content-center
+  	text-center
+  	text-sm
+  	text-typography-muted;
 }
 
 .efficiency-empty-title {
   @apply font-semibold
-    text-base
-    text-typography-primary;
+  	text-base
+  	text-typography-primary;
 }
 
 .efficiency-empty-copy {
   @apply max-w-md
-    mx-auto;
+  	mx-auto;
 }
 </style>

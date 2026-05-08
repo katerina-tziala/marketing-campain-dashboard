@@ -49,39 +49,39 @@ const { downloadTemplate } = useDownloadTemplate();
 <style lang="scss" scoped>
 .empty-state {
   @apply flex
-    flex-col
-    gap-6
-    items-center
-    justify-center
-    m-auto
-    p-8
-    text-center
-    w-full;
+  	flex-col
+  	gap-6
+  	items-center
+  	justify-center
+  	m-auto
+  	p-8
+  	text-center
+  	w-full;
 }
 
 .empty-state-title {
   @apply font-semibold
-    leading-6
-    text-primary-light
-    text-xl
-    tracking-wide;
+  	leading-6
+  	text-primary-light
+  	text-xl
+  	tracking-wide;
 }
 
 .empty-state-description {
   @apply leading-6
-    text-sm
-    text-typography-muted
-    tracking-wide;
+  	text-sm
+  	text-typography-muted
+  	tracking-wide;
 }
 
 .file-actions {
   @apply flex
-    flex-col
-    gap-6
-    items-center
-    max-w-md
-    mt-2
-    w-full
-    xs:flex-row;
+  	flex-col
+  	gap-6
+  	items-center
+  	max-w-md
+  	mt-2
+  	w-full
+  	xs:flex-row;
 }
 </style>

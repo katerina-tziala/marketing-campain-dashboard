@@ -159,14 +159,14 @@ watch(modalOpen, (open) => {
 <style lang="scss" scoped>
 .responsive-drawer {
   @apply hidden
-    lg:block
-    lg:duration-300
-    lg:ease-in-out
-    lg:overflow-hidden
-    lg:relative
-    lg:shrink-0
-    lg:transition-[width]
-    w-0;
+  	lg:block
+  	lg:duration-300
+  	lg:ease-in-out
+  	lg:overflow-hidden
+  	lg:relative
+  	lg:shrink-0
+  	lg:transition-[width]
+  	w-0;
 
   &.open {
     @apply lg:w-[30rem];
@@ -174,51 +174,51 @@ watch(modalOpen, (open) => {
 
   &.left .responsive-drawer-panel {
     @apply lg:-translate-x-full
-      lg:left-0;
+    	lg:left-0;
   }
 
   &.right .responsive-drawer-panel {
     @apply lg:right-0
-      lg:translate-x-full;
+    	lg:translate-x-full;
   }
 
   &.open .responsive-drawer-panel {
     @apply lg:opacity-100
-      lg:translate-x-0;
+    	lg:translate-x-0;
   }
 }
 
 .responsive-drawer-panel,
 .responsive-drawer-modal {
   @apply grid
-    grid-cols-1
-    grid-rows-[min-content_1fr]
-    text-typography-soft
-    w-full;
+  	grid-cols-1
+  	grid-rows-[min-content_1fr]
+  	text-typography-soft
+  	w-full;
 }
 
 .responsive-drawer-panel {
   @apply bg-surface-elevated
-    border
-    border-faint
-    h-full
-    lg:absolute
-    lg:duration-300
-    lg:ease-in-out
-    lg:inset-y-0
-    lg:opacity-0
-    lg:transition-[opacity,transform]
-    lg:w-[30rem]
-    outline-none
-    overflow-hidden
-    shadow-md
-    sticky
-    top-0;
+  	border
+  	border-faint
+  	h-full
+  	lg:absolute
+  	lg:duration-300
+  	lg:ease-in-out
+  	lg:inset-y-0
+  	lg:opacity-0
+  	lg:transition-[opacity,transform]
+  	lg:w-[30rem]
+  	outline-none
+  	overflow-hidden
+  	shadow-md
+  	sticky
+  	top-0;
 }
 
 .responsive-drawer-content {
   @apply min-h-0
-    overflow-hidden
-    pb-4;
+  	overflow-hidden
+  	pb-4;
 }
 </style>

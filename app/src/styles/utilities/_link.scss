@@ -1,0 +1,21 @@
+@layer utilities {
+  .link {
+    @apply hover:text-primary
+    	inline-block
+    	px-1
+    	text-primary-lighter
+    	underline
+    	underline-offset-2
+    	visited:text-primary-light;
+
+    &:focus-visible {
+      @apply no-underline
+      	outline-none
+      	ring-2
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-light
+      	rounded-sm;
+    }
+  }
+}

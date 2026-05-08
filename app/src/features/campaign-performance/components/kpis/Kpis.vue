@@ -105,9 +105,9 @@ function formatShare(value: number, total: number): string {
 
 .kpis-grid {
   @apply gap-4
-    grid
-    grid-cols-1
-    w-full;
+  	grid
+  	grid-cols-1
+  	w-full;
 
   @include cq-up(cq-540, 'kpis') {
     @apply grid-cols-2;

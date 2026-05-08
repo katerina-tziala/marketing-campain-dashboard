@@ -27,10 +27,10 @@ const props = withDefaults(
 <style lang="scss" scoped>
 .meta-row {
   @apply flex
-    flex-wrap
-    gap-x-1.5
-    gap-y-1.5
-    items-center;
+  	flex-wrap
+  	gap-x-1.5
+  	gap-y-1.5
+  	items-center;
 
   &.meta-row.divider {
     @apply gap-x-2;
@@ -56,26 +56,26 @@ const props = withDefaults(
 /* bullet variant */
 .meta-row.bullet :slotted(*:not(:first-child))::before {
   @apply align-middle
-    bg-primary-light
-    content-['']
-    h-1
-    inline-block
-    mr-1.5
-    rounded-full
-    w-1;
+  	bg-primary-light
+  	content-['']
+  	h-1
+  	inline-block
+  	mr-1.5
+  	rounded-full
+  	w-1;
 }
 
 /* divider variant */
 .meta-row.divider :slotted(*:not(:first-child)) {
   @apply border-l
-    border-primary-light
-    pl-2;
+  	border-primary-light
+  	pl-2;
 }
 
 .meta-row.divider .meta-item + .meta-item {
   @apply border-l
-    border-primary-light
-    pl-2;
+  	border-primary-light
+  	pl-2;
 }
 
 .meta-row.info.bullet :slotted(*:not(:first-child))::before {

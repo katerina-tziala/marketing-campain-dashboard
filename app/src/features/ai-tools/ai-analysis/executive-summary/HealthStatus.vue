@@ -54,9 +54,9 @@ const readableLabel = computed(
 <style lang="scss" scoped>
 .health-container {
   @apply flex
-    flex-col
-    gap-1
-    items-center
-    justify-center;
+  	flex-col
+  	gap-1
+  	items-center
+  	justify-center;
 }
 </style>

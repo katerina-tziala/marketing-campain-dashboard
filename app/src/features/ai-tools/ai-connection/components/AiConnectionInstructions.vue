@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { Button, Card, ChevronIcon, Disclosure } from '@/ui';
 
+import type { ProviderHelpStep } from '../../providers/utils';
+
 defineProps<{
-  instructions: { title: string; steps: string[]; note?: string };
+  instructions: { title: string; steps: ProviderHelpStep[]; note?: string };
 }>();
+
+function hasLink(step: ProviderHelpStep): boolean {
+  return Boolean(step.linkText && step.href);
+}
 </script>
 
 <template>
@@ -29,9 +35,21 @@ defineProps<{
       <ol class="help-steps">
         <li
           v-for="step in instructions.steps"
-          :key="step"
+          :key="step.href ?? step.text"
         >
-          {{ step }}
+          <template v-if="hasLink(step)">
+            {{ step.text.split('{link}')[0]
+            }}<a
+              class="link help-link"
+              :href="step.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              >{{ step.linkText }}</a
+            >{{ step.text.split('{link}')[1] }}
+          </template>
+          <template v-else>
+            {{ step.text }}
+          </template>
         </li>
       </ol>
       <p
@@ -48,22 +66,26 @@ defineProps<{
 <style lang="scss" scoped>
 .help-steps {
   @apply leading-5
-    list-decimal
-    list-inside
-    px-1
-    text-sm
-    text-typography-muted;
+  	list-decimal
+  	list-inside
+  	px-1
+  	text-sm
+  	text-typography-muted;
 
   > li {
     @apply py-1;
   }
 }
 
+.help-link {
+  @apply font-semibold;
+}
+
 .chevron {
   @apply -rotate-90
-    duration-200
-    mr-1
-    transition-transform;
+  	duration-200
+  	mr-1
+  	transition-transform;
 }
 
 .chevron-open {

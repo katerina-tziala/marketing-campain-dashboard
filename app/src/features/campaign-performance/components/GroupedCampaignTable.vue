@@ -455,19 +455,19 @@ watch(
 <style lang="scss" scoped>
 .grouped-campaign-table {
   @apply flex
-    flex-col
-    gap-2
-    min-h-0;
+  	flex-col
+  	gap-2
+  	min-h-0;
 }
 
 .table-actions {
   @apply flex
-    justify-start;
+  	justify-start;
 }
 
 .table-cell-content {
   @apply p-2.5
-    text-center;
+  	text-center;
 }
 
 .left-alignment .table-cell-content {
@@ -476,13 +476,13 @@ watch(
 
 .group-cell-content {
   @apply px-4
-    py-3;
+  	py-3;
 }
 
 .group-toggle {
   @apply gap-2
-    text-left
-    w-full;
+  	text-left
+  	w-full;
 
   justify-content: flex-start;
   padding-inline: 0;
@@ -490,8 +490,8 @@ watch(
 
 .group-toggle-icon {
   @apply duration-150
-    shrink-0
-    transition-transform;
+  	shrink-0
+  	transition-transform;
 
   &.expanded {
     @apply rotate-180;
@@ -500,8 +500,8 @@ watch(
 
 .campaign-count {
   @apply font-normal
-    text-typography-subtle
-    text-xs;
+  	text-typography-subtle
+  	text-xs;
 }
 
 .campaign-name .collapse-cell-content {
@@ -510,13 +510,13 @@ watch(
 
 .campaign-row > td {
   @apply duration-300
-    ease-out
-    transition-colors;
+  	ease-out
+  	transition-colors;
 }
 
 .collapse-cell {
   @apply grid
-    opacity-100;
+  	opacity-100;
 
   grid-template-rows: 1fr;
 }
@@ -527,6 +527,6 @@ watch(
 
 .collapse-cell-inner {
   @apply min-h-0
-    overflow-hidden;
+  	overflow-hidden;
 }
 </style>

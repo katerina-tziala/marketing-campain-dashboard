@@ -58,29 +58,29 @@ defineExpose({
 <style lang="scss" scoped>
 .btn {
   @apply border
-    border-transparent
-    cursor-pointer
-    duration-150
-    ease-in-out
-    font-medium
-    gap-1.5
-    h-10
-    inline-flex
-    items-center
-    justify-center
-    leading-none
-    opacity-85
-    outline-none
-    overflow-hidden
-    px-2.5
-    py-3
-    relative
-    rounded-md
-    text-base
-    text-center
-    tracking-wide
-    transition
-    whitespace-nowrap;
+  	border-transparent
+  	cursor-pointer
+  	duration-150
+  	ease-in-out
+  	font-medium
+  	gap-1.5
+  	h-10
+  	inline-flex
+  	items-center
+  	justify-center
+  	leading-none
+  	opacity-85
+  	outline-none
+  	overflow-hidden
+  	px-2.5
+  	py-3
+  	relative
+  	rounded-md
+  	text-base
+  	text-center
+  	tracking-wide
+  	transition
+  	whitespace-nowrap;
 
   &:deep(svg) {
     @apply text-xl;
@@ -88,7 +88,7 @@ defineExpose({
 
   &:disabled {
     @apply cursor-not-allowed
-      opacity-50;
+    	opacity-50;
   }
 
   &:active {
@@ -98,26 +98,26 @@ defineExpose({
   /* variant small */
   &.btn.small {
     @apply h-9
-      leading-4
-      px-3
-      py-0
-      text-sm;
+    	leading-4
+    	px-3
+    	py-0
+    	text-sm;
   }
 
   /* variant smaller */
   &.btn.smaller {
     @apply h-7
-      leading-none
-      px-2.5
-      py-0
-      text-xs;
+    	leading-none
+    	px-2.5
+    	py-0
+    	text-xs;
   }
 }
 
 /* variant icon-only */
 .btn.icon-only {
   @apply p-0
-    size-10;
+  	size-10;
 
   &:deep(svg) {
     @apply text-2xl;
@@ -125,7 +125,7 @@ defineExpose({
 
   &.btn.small {
     @apply p-0
-      size-9;
+    	size-9;
 
     &:deep(svg) {
       @apply text-xl;
@@ -136,20 +136,20 @@ defineExpose({
 /* variant primary */
 .btn.primary {
   @apply bg-primary-darker
-    text-typography-strong;
+  	text-typography-strong;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-primary-deep
-        text-typography-inverse;
+      	text-typography-inverse;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-offset-1
-        ring-offset-background
-        ring-primary-light;
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-light;
     }
   }
 }
@@ -157,20 +157,20 @@ defineExpose({
 /* variant text-only */
 .btn.text-only {
   @apply border-transparent
-    text-primary-lighter/80;
+  	text-primary-lighter/80;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-primary-light/[12%]
-        text-primary-light;
+      	text-primary-light;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-offset-1
-        ring-offset-background
-        ring-primary-lighter;
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-lighter;
     }
   }
 }
@@ -178,21 +178,21 @@ defineExpose({
 /* variant outline */
 .btn.outline {
   @apply bg-surface
-    border-primary-light
-    text-primary-light;
+  	border-primary-light
+  	text-primary-light;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply border-primary-lighter
-        text-primary-lighter;
+      	text-primary-lighter;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-offset-1
-        ring-offset-background
-        ring-primary-light;
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-light;
     }
   }
 }
@@ -200,21 +200,21 @@ defineExpose({
 /* variant accent-outline */
 .btn.accent-outline {
   @apply bg-surface
-    border-accent-dark
-    text-accent-light;
+  	border-accent-dark
+  	text-accent-light;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply border-accent
-        text-accent-lighter;
+      	text-accent-lighter;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-accent
-        ring-offset-1
-        ring-offset-background;
+      	ring-accent
+      	ring-offset-1
+      	ring-offset-background;
     }
   }
 }
@@ -222,22 +222,22 @@ defineExpose({
 /* variant info-text-only */
 .btn.info-text-only {
   @apply bg-transparent
-    border
-    border-transparent
-    text-typography-subtle;
+  	border
+  	border-transparent
+  	text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-surface
-        text-info;
+      	text-info;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-info-dark
-        ring-offset-1
-        ring-offset-background;
+      	ring-info-dark
+      	ring-offset-1
+      	ring-offset-background;
     }
   }
 }
@@ -245,20 +245,20 @@ defineExpose({
 /* variant ghost */
 .btn.ghost {
   @apply border-transparent
-    text-typography-subtle;
+  	text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-typography/[8%]
-        text-typography;
+      	text-typography;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-offset-1
-        ring-offset-background
-        ring-primary-lighter;
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-lighter;
     }
   }
 }
@@ -279,22 +279,22 @@ defineExpose({
 /* variant info-outline */
 .btn.info-outline {
   @apply bg-surface
-    border-info-dark
-    text-info;
+  	border-info-dark
+  	text-info;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-info-dark
-        text-info
-        text-primary-ink;
+      	text-info
+      	text-primary-ink;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-info
-        ring-offset-1
-        ring-offset-background;
+      	ring-info
+      	ring-offset-1
+      	ring-offset-background;
     }
   }
 }
@@ -302,21 +302,21 @@ defineExpose({
 /* variant destructive */
 .btn.destructive {
   @apply border-transparent
-    font-normal
-    text-typography-subtle;
+  	font-normal
+  	text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
       @apply bg-danger-darker/10
-        text-danger;
+      	text-danger;
     }
 
     &:not(.no-ring):focus-visible {
       @apply ring-2
-        ring-danger/60
-        ring-offset-1
-        ring-offset-background;
+      	ring-danger/60
+      	ring-offset-1
+      	ring-offset-background;
     }
   }
 }

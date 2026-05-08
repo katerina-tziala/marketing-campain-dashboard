@@ -33,22 +33,22 @@ const props = withDefaults(
 <style lang="scss" scoped>
 .table-container {
   @apply h-full
-    max-w-full
-    overflow-auto
-    w-full;
+  	max-w-full
+  	overflow-auto
+  	w-full;
 
   > table {
     @apply border-separate
-      border-spacing-0
-      relative
-      table-auto
-      w-full;
+    	border-spacing-0
+    	relative
+    	table-auto
+    	w-full;
 
     &:deep(td) {
       @apply break-words
-        p-2.5
-        text-center
-        whitespace-normal;
+      	p-2.5
+      	text-center
+      	whitespace-normal;
 
       &.left-alignment {
         @apply text-left;
@@ -60,11 +60,11 @@ const props = withDefaults(
 /* default theming */
 .table-container > table {
   @apply text-sm
-    text-typography-muted;
+  	text-typography-muted;
 
   &:deep(tr:not(:last-of-type) > td) {
     @apply border-b
-      border-b-info-dark/20;
+    	border-b-info-dark/20;
   }
 }
 
@@ -78,7 +78,7 @@ const props = withDefaults(
 
 .table-container.vertical-separators > table :deep(tr > td:not(:last-of-type)) {
   @apply border-r
-    border-x-info-dark/10;
+  	border-x-info-dark/10;
 }
 
 .table-container.cell-padding-none > table :deep(td) {

@@ -44,30 +44,30 @@ defineEmits<{ change: [value: string | number] }>();
 <style lang="scss" scoped>
 .radio-item {
   @apply cursor-pointer
-    inline-flex
-    items-center
-    justify-center;
+  	inline-flex
+  	items-center
+  	justify-center;
 
   .radio-indicator {
     @apply border-2
-      duration-300
-      flex
-      h-6
-      items-center
-      justify-center
-      rounded-full
-      transition-colors
-      w-6;
+    	duration-300
+    	flex
+    	h-6
+    	items-center
+    	justify-center
+    	rounded-full
+    	transition-colors
+    	w-6;
 
     &::before {
       @apply bg-transparent
-        block
-        content-['']
-        duration-300
-        h-3
-        rounded-full
-        transition-colors
-        w-3;
+      	block
+      	content-['']
+      	duration-300
+      	h-3
+      	rounded-full
+      	transition-colors
+      	w-3;
     }
   }
 }
@@ -89,14 +89,14 @@ input[type='radio'] {
     &:hover + .radio-indicator,
     &:focus-visible + .radio-indicator {
       @apply bg-surface-active
-        border-primary-light;
+      	border-primary-light;
     }
 
     &:focus-visible + .radio-indicator {
       @apply ring-2
-        ring-offset-1
-        ring-offset-background
-        ring-primary;
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary;
     }
 
     /*  checked */
@@ -124,14 +124,14 @@ input[type='radio'] {
     &:hover + .radio-indicator,
     &:focus-visible + .radio-indicator {
       @apply bg-surface-active
-        border-info;
+      	border-info;
     }
 
     &:focus-visible + .radio-indicator {
       @apply ring-2
-        ring-info-dark
-        ring-offset-1
-        ring-offset-background;
+      	ring-info-dark
+      	ring-offset-1
+      	ring-offset-background;
     }
 
     /*  checked */
@@ -145,6 +145,6 @@ input[type='radio'] {
 /* disabled */
 .radio-item.disabled {
   @apply cursor-not-allowed
-    opacity-50;
+  	opacity-50;
 }
 </style>

@@ -96,22 +96,22 @@ const medians = computed<RoiBudgetScalingMedians>(() => {
 <style lang="scss" scoped>
 .content-container {
   @apply flex
-    flex-col
-    grow
-    h-full
-    items-center
-    justify-center
-    p-8
-    w-full;
+  	flex-col
+  	grow
+  	h-full
+  	items-center
+  	justify-center
+  	p-8
+  	w-full;
 }
 
 .scatter-legend-dash {
   @apply border-dashed
-    border-t
-    border-typography-soft
-    inline-block
-    mb-1
-    mr-2
-    w-3;
+  	border-t
+  	border-typography-soft
+  	inline-block
+  	mb-1
+  	mr-2
+  	w-3;
 }
 </style>

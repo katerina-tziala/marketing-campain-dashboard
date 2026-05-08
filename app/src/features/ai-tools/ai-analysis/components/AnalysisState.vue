@@ -82,31 +82,31 @@ const errorNotification = computed(() => {
 <style lang="scss" scoped>
 .loader {
   @apply flex
-    flex-col
-    gap-4
-    items-center
-    pt-12;
+  	flex-col
+  	gap-4
+  	items-center
+  	pt-12;
 }
 
 .message-title {
   @apply font-normal
-    text-sm;
+  	text-sm;
 }
 
 .idle {
   :deep(> p) {
     @apply leading-5
-      py-2
-      text-sm
-      text-typography-soft
-      tracking-wide;
+    	py-2
+    	text-sm
+    	text-typography-soft
+    	tracking-wide;
   }
 }
 
 .result {
   @apply flex
-    flex-col
-    gap-6
-    grow;
+  	flex-col
+  	gap-8
+  	grow;
 }
 </style>

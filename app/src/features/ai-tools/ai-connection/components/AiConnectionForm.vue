@@ -83,82 +83,95 @@ function handleApiKeyBlur(): void {
 </script>
 
 <template>
-  <div class="scrollbar-stable-both scrollbar-on-surface conn-form">
-    <p class="conn-intro">
-      Connect your AI API key to enable Executive Summary and Budget Optimization features
-    </p>
-    <Form @submit.prevent="handleConnect">
-      <!-- Provider -->
-      <FormControl
-        id="ai-provider"
-        as="fieldset"
-        label="Provider"
-        class="conn-fieldset"
-      >
-        <RadioToggle
-          v-model="selectedProvider"
-          :options="PROVIDER_OPTIONS"
-          name="ai-provider"
-          :disabled="store.isConnecting"
-        />
-      </FormControl>
-      <!-- API Key -->
-      <FormControl
-        id="ai-key"
-        label="API Key"
-        required
-        :error-text="connectionErrorDisplay?.message"
-        :error-hint-text="connectionErrorDisplay?.hint"
-      >
-        <template #default="{ id, invalid, describedBy }">
-          <PasswordInput
-            :id="id"
-            :model-value="apiKey"
-            placeholder="Paste your API key"
+  <div class="conn-form">
+    <div class="scrollbar-on-surface conn-form-content">
+      <p class="conn-intro">
+        Connect your AI API key to enable Executive Summary and Budget Optimization features
+      </p>
+      <Form @submit.prevent="handleConnect">
+        <!-- Provider -->
+        <FormControl
+          id="ai-provider"
+          as="fieldset"
+          label="Provider"
+          class="conn-fieldset"
+        >
+          <RadioToggle
+            v-model="selectedProvider"
+            :options="PROVIDER_OPTIONS"
+            name="ai-provider"
             :disabled="store.isConnecting"
-            :invalid="invalid"
-            :described-by="describedBy"
-            @update:model-value="handleApiKeyUpdate"
-            @blur="handleApiKeyBlur"
           />
-        </template>
-      </FormControl>
-      <!-- Connect -->
-      <Button
-        variant="primary"
-        type="submit"
-        :disabled="store.isConnecting"
-      >
-        <Spinner
-          v-if="store.isConnecting"
-          size="sm"
-          tone="inverse"
-        />
-        <PlugIcon v-else />
-        {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
-      </Button>
-      <!-- Instructions -->
-      <AiConnectionInstructions :instructions="providerHelp" />
-    </Form>
+        </FormControl>
+        <!-- API Key -->
+        <FormControl
+          id="ai-key"
+          label="API Key"
+          required
+          :error-text="connectionErrorDisplay?.message"
+          :error-hint-text="connectionErrorDisplay?.hint"
+        >
+          <template #default="{ id, invalid, describedBy }">
+            <PasswordInput
+              :id="id"
+              :model-value="apiKey"
+              placeholder="Paste your API key"
+              :disabled="store.isConnecting"
+              :invalid="invalid"
+              :described-by="describedBy"
+              @update:model-value="handleApiKeyUpdate"
+              @blur="handleApiKeyBlur"
+            />
+          </template>
+        </FormControl>
+        <!-- Connect -->
+        <Button
+          variant="primary"
+          type="submit"
+          :disabled="store.isConnecting"
+        >
+          <Spinner
+            v-if="store.isConnecting"
+            size="sm"
+            tone="inverse"
+          />
+          <PlugIcon v-else />
+          {{ store.isConnecting ? 'Connecting…' : 'Connect' }}
+        </Button>
+        <!-- Instructions -->
+        <AiConnectionInstructions :instructions="providerHelp" />
+      </Form>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .conn-form {
+  @apply h-full
+  	min-h-[50vh]
+  	overflow-hidden
+  	pb-2
+  	pt-4
+  	px-0
+  	w-full;
+}
+
+.conn-form-content {
   @apply flex
-    flex-col
-    gap-5
-    h-full
-    min-h-[50vh]
-    overflow-auto
-    pt-4
-    px-2;
+  	flex-col
+  	gap-6
+  	h-full
+  	mx-auto
+  	overflow-auto
+  	pl-6
+  	pr-6
+  	w-full;
 }
 
 .conn-intro {
   @apply leading-5
-    text-sm
-    text-typography-soft;
+  	text-sm
+  	text-typography-soft;
 }
 
 .conn-fieldset {

@@ -28,13 +28,13 @@ const emit = defineEmits<{
 
     :deep(td) {
       @apply font-medium
-        text-typography-inverse;
+      	text-typography-inverse;
     }
   }
 
   &:hover {
     @apply bg-info-lighter/10
-      text-typography;
+    	text-typography;
   }
 }
 </style>

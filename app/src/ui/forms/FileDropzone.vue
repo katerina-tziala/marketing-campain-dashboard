@@ -138,20 +138,20 @@ defineExpose({
 <style lang="scss" scoped>
 .dropzone {
   @apply cursor-pointer
-    flex
-    flex-col
-    gap-2
-    items-center
-    justify-center
-    px-4
-    py-8
-    text-center
-    w-full;
+  	flex
+  	flex-col
+  	gap-2
+  	items-center
+  	justify-center
+  	px-4
+  	py-8
+  	text-center
+  	w-full;
 
   &:not(:disabled) {
     &:hover {
       @apply border-primary-light/60
-        text-primary-light;
+      	text-primary-light;
     }
   }
 

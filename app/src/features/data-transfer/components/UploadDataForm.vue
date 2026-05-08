@@ -227,7 +227,7 @@ function handleSubmit(): void {
 <style lang="scss" scoped>
 .optional-label {
   @apply font-normal
-    text-typography-subtle
-    text-xs;
+  	text-typography-subtle
+  	text-xs;
 }
 </style>

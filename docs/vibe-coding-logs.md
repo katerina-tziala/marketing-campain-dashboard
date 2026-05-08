@@ -16161,3 +16161,31 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - AI use cases depend on provider connection — executive summary and budget optimization include provider connection at the capability level, while model selection stays internal
 - Data-transfer outcomes are conditional extensions — validation review, duplicate resolution, and portfolio replacement are user-visible outcomes of upload, not separate primary flows
 - The diagram supports architecture documentation — it complements the software architecture diagram by showing system capabilities from the actor’s point of view
+
+## [#678] Provider instruction links and Tailwind apply formatter refinement
+
+**Type:** update
+
+**Summary:** Added external provider-console links to AI connection instructions, normalized provider help steps to a single object structure, introduced link utility styling, and extended the Tailwind `@apply` formatter so wrapped utility lines use a tab continuation and duplicate utilities are removed.
+
+**Brainstorming:** The AI connection instructions needed direct paths to the provider consoles without turning the instruction text into raw HTML or provider-specific template logic. Keeping all help steps as `{ text, linkText?, href? }` gives the renderer one stable shape: linked steps render an external anchor, while plain steps render normal text. The new shared link utility makes anchor styling reusable instead of leaving link presentation inside one feature component. Separately, the Tailwind formatter already enforced sorted `@apply` blocks; adding duplicate removal and a tabbed continuation keeps style blocks cleaner and makes formatting deterministic across Vue and SCSS files.
+
+**Prompt:** Add links for Groq Console and Google AI Studio in provider instructions with `target="_blank"`. Make all instruction steps use the same `{ text }` structure, rendering normal text when `linkText` or `href` is missing. Extend the Tailwind formatter to add a tab to new `@apply` lines and remove duplicate rules, then apply the formatter to the changed files.
+
+**What changed:**
+
+- `app/src/features/ai-tools/providers/utils/providers-meta.ts` — changed provider help steps from mixed strings and linked objects to a uniform `ProviderHelpStep` object shape with optional `linkText` and `href`; added Groq Console and Google AI Studio URLs
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionInstructions.vue` — renders linked provider steps as external anchors with `target="_blank"` and `rel="noopener noreferrer"`; renders steps without link metadata as plain text
+- `app/src/styles/utilities/_link.scss` — added reusable `.link` and focus-visible utility styling for inline links
+- `app/src/styles/utilities/index.scss` — included the new link utility partial
+- `app/scripts/format-tailwind-apply.mjs` — deduplicates utilities inside each `@apply` block and indents wrapped continuation lines with one tab after the current rule indentation
+- `app/src/**/*.vue` and `app/src/**/*.scss` files containing Tailwind `@apply` rules — reformatted mechanically with the updated formatter, preserving sorted utilities while normalizing continuation indentation and removing duplicate utilities
+
+**Key decisions & why:**
+
+- Uniform step objects over mixed string/object values — one data shape makes provider help copy easier to extend and safer to render
+- Optional link metadata — instructions can stay plain text unless both `linkText` and `href` are present
+- External links use `noopener noreferrer` — provider consoles open in a new tab without granting the new page access to the app window
+- Shared link utility over feature-local styling — link appearance and focus behavior can be reused consistently across the app
+- Formatter-owned deduplication — repeated Tailwind utilities are mechanical noise and should be removed by tooling rather than by manual review
+- Tab continuation for wrapped `@apply` blocks — nested utility lines now stand out from the rule indentation while remaining deterministic under the formatter

@@ -16,29 +16,37 @@ const tabs: Tab[] = [
 
 <template>
   <Tabs
+    class="mb-4"
     aria-label="AI Tools"
     :tabs="tabs"
     :active-tab="analysisStore.activeTab"
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
-  <div class="scrollbar-stable-both scrollbar-on-surface panel-container">
-    <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
-    <ExecutiveSummaryAnalysis v-else />
+  <div class="scrollbar-stable scrollbar-on-surface ai-analysis-container">
+    <div class="ai-analysis-content">
+      <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
+      <ExecutiveSummaryAnalysis v-else />
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.panel-container {
+.ai-analysis-container {
+  @apply h-full
+  	overflow-x-hidden
+  	overflow-y-auto
+  	pb-2
+  	px-0
+  	text-sm
+  	text-typography
+  	w-full;
+}
+
+.ai-analysis-content {
   @apply flex
-    flex-col
-    gap-6
-    h-full
-    overflow-x-hidden
-    overflow-y-auto
-    pb-2
-    pt-5
-    px-2
-    text-sm
-    text-typography;
+  	flex-col
+  	gap-6
+  	px-6
+  	w-full;
 }
 </style>

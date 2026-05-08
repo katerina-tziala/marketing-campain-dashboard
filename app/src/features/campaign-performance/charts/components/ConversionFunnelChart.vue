@@ -102,88 +102,88 @@ const chartAriaLabel = computed(() =>
 <style lang="scss" scoped>
 .funnel {
   @apply border-l
-    border-typography-strong/[7%]
-    flex
-    flex-col
-    h-full
-    justify-between
-    py-4
-    w-full;
+  	border-typography-strong/[7%]
+  	flex
+  	flex-col
+  	h-full
+  	justify-between
+  	py-4
+  	w-full;
 }
 
 .funnel-row {
   @apply flex
-    flex-row
-    items-start
-    justify-start
-    min-h-[28%];
+  	flex-row
+  	items-start
+  	justify-start
+  	min-h-[28%];
 
   .funnel-region-1 {
     @apply grow
-      h-full
-      relative;
+    	h-full
+    	relative;
 
     .bar-percentage {
       @apply duration-500
-        h-full
-        min-w-16
-        rounded-r-md
-        transition-[width]
-        w-full;
+      	h-full
+      	min-w-16
+      	rounded-r-md
+      	transition-[width]
+      	w-full;
     }
 
     .bar-label {
       @apply absolute
-        flex
-        flex-col
-        gap-0
-        h-full
-        items-start
-        justify-center
-        left-6
-        top-0
-        w-fit;
+      	flex
+      	flex-col
+      	gap-0
+      	h-full
+      	items-start
+      	justify-center
+      	left-6
+      	top-0
+      	w-fit;
 
       > .value {
         @apply drop-shadow-sm
-          font-semibold
-          leading-tight
-          min-w-0
-          text-lg
-          text-typography-inverse;
+        	font-semibold
+        	leading-tight
+        	min-w-0
+        	text-lg
+        	text-typography-inverse;
       }
 
       > .label {
         @apply drop-shadow-sm
-          font-medium
-          leading-tight
-          min-w-0
-          text-sm
-          text-typography-inverse;
+        	font-medium
+        	leading-tight
+        	min-w-0
+        	text-sm
+        	text-typography-inverse;
       }
     }
   }
 
   .funnel-region-2 {
     @apply flex
-      h-full
-      items-center
-      justify-end
-      shrink-0;
+    	h-full
+    	items-center
+    	justify-end
+    	shrink-0;
 
     .funnel-rate {
       @apply content-center
-        flex-row
-        flex-wrap
-        gap-x-1
-        gap-y-0
-        inline-flex
-        items-center
-        justify-end
-        leading-tight
-        max-w-full
-        px-2
-        text-right;
+      	flex-row
+      	flex-wrap
+      	gap-x-1
+      	gap-y-0
+      	inline-flex
+      	items-center
+      	justify-end
+      	leading-tight
+      	max-w-full
+      	px-2
+      	text-right;
     }
   }
 }

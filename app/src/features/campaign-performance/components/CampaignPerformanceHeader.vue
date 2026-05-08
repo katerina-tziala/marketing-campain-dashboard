@@ -56,12 +56,12 @@ const periodLabel = computed(() =>
 <style lang="scss" scoped>
 .performance-header {
   @apply font-medium
-    grow
-    min-h-9
-    pt-1
-    text-typography-primary
-    text-xl
-    tracking-wider
-    w-full;
+  	grow
+  	min-h-9
+  	pt-1
+  	text-typography-primary
+  	text-xl
+  	tracking-wider
+  	w-full;
 }
 </style>

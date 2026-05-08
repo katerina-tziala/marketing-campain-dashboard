@@ -2,17 +2,17 @@
   html,
   body {
     @apply bg-background
-      font-sans
-      h-screen
-      overflow-hidden
-      relative
-      text-typography-soft
-      w-screen;
+    	font-sans
+    	h-screen
+    	overflow-hidden
+    	relative
+    	text-typography-soft
+    	w-screen;
   }
 
   #app {
     @apply h-screen
-      overflow-hidden
-      w-screen;
+    	overflow-hidden
+    	w-screen;
   }
 }

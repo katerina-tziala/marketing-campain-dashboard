@@ -111,12 +111,12 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 
 .charts-grid {
   @apply auto-rows-min
-    gap-5
-    grid
-    grid-cols-1
-    max-w-7xl
-    mx-auto
-    w-full;
+  	gap-5
+  	grid
+  	grid-cols-1
+  	max-w-7xl
+  	mx-auto
+  	w-full;
 
   @include cq-up(cq-1024, 'performance-charts') {
     @apply grid-cols-2;

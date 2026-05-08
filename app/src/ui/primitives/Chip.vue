@@ -21,25 +21,25 @@ defineProps<{
 <style lang="scss" scoped>
 .chip {
   @apply bg-primary-ink
-    bg-surface
-    border
-    font-medium
-    font-semibold
-    inline-block
-    outline-none
-    rounded-full
-    shrink-0
-    text-sm
-    text-typography-subtle
-    tracking-wide;
+  	bg-surface
+  	border
+  	font-medium
+  	font-semibold
+  	inline-block
+  	outline-none
+  	rounded-full
+  	shrink-0
+  	text-sm
+  	text-typography-subtle
+  	tracking-wide;
 
   .chip-content {
     @apply gap-1.5
-      inline-flex
-      items-center
-      px-2
-      py-1
-      rounded-full;
+    	inline-flex
+    	items-center
+    	px-2
+    	py-1
+    	rounded-full;
   }
 
   &[aria-pressed='true'] {
@@ -47,32 +47,32 @@ defineProps<{
 
     > .chip-content {
       @apply bg-info-dark/10
-        text-info/90;
+      	text-info/90;
     }
   }
 
   &.readonly {
     @apply cursor-default
-      pointer-events-none;
+    	pointer-events-none;
   }
 
   &:not(.readonly) {
     &:hover,
     &:focus-visible {
       @apply bg-surface
-        border-info;
+      	border-info;
 
       > .chip-content {
         @apply bg-transparent
-          text-info-light;
+        	text-info-light;
       }
     }
 
     &:focus-visible {
       @apply ring-2
-        ring-info
-        ring-offset-1
-        ring-offset-background;
+      	ring-info
+      	ring-offset-1
+      	ring-offset-background;
     }
   }
 }

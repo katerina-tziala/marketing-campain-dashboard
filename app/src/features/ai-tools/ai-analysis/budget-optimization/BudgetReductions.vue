@@ -173,12 +173,12 @@ const sortedReductions = computed(() =>
 
 .reduction-header {
   @apply flex
-    flex-col
-    gap-x-2
-    gap-y-2
-    items-start
-    justify-between
-    w-full;
+  	flex-col
+  	gap-x-2
+  	gap-y-2
+  	items-start
+  	justify-between
+  	w-full;
 
   @include cq-up(cq-540, 'reduction-card') {
     @apply flex-row;
@@ -187,32 +187,32 @@ const sortedReductions = computed(() =>
 
 .reduction-title {
   @apply flex
-    flex-1
-    flex-col
-    gap-0.5
-    min-w-[50%];
+  	flex-1
+  	flex-col
+  	gap-0.5
+  	min-w-[50%];
 }
 
 .reduction-badges {
   @apply flex
-    flex-nowrap
-    gap-x-4
-    gap-y-2
-    items-center
-    justify-start
-    w-fit;
+  	flex-nowrap
+  	gap-x-4
+  	gap-y-2
+  	items-center
+  	justify-start
+  	w-fit;
 }
 
 .reduction-channel {
   @apply font-medium
-    inline-block
-    text-typography-muted
-    text-xs;
+  	inline-block
+  	text-typography-muted
+  	text-xs;
 }
 
 .reduction-impact-value {
   @apply font-bold
-    inline-block
-    text-typography-soft;
+  	inline-block
+  	text-typography-soft;
 }
 </style>

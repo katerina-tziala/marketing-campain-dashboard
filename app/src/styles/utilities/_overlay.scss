@@ -1,25 +1,25 @@
 @layer utilities {
   .overlay {
     @apply bg-surface-backdrop/70
-      box-border
-      fixed
-      flex
-      inset-0
-      items-center
-      justify-center
-      overflow-hidden
-      p-6
-      z-1000;
+    	box-border
+    	fixed
+    	flex
+    	inset-0
+    	items-center
+    	justify-center
+    	overflow-hidden
+    	p-6
+    	z-1000;
   }
 
   .modal-container {
     @apply bg-surface-elevated
-      border
-      border-faint
-      outline-none
-      overflow-hidden
-      rounded-md
-      shadow-md;
+    	border
+    	border-faint
+    	outline-none
+    	overflow-hidden
+    	rounded-md
+    	shadow-md;
 
     max-height: calc(100dvh - 2rem);
     max-width: calc(100dvw - 2rem);
