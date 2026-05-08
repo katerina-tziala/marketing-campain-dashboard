@@ -2,7 +2,7 @@
 
 AI Connection connects the dashboard to a user-provided AI provider account and prepares a ranked set of compatible models for AI analysis features. Its boundary starts with provider selection and an API key, and ends with a connected provider state, selected model, and model availability metadata used by Executive Summary and Budget Optimization.
 
-The feature does not own analysis prompts or portfolio interpretation. It owns provider connectivity, model discovery, model suitability filtering, connection state, and safe disconnect behavior.
+The feature does not own analysis prompts or portfolio interpretation. It owns provider connectivity, model discovery, local candidate preparation, model suitability evaluation, connection state, and safe disconnect behavior.
 
 ## Supported Providers
 
@@ -22,7 +22,8 @@ AI Connection is responsible for:
 - accepting a supported provider and API key
 - validating that an API key is present before attempting connection
 - checking that the selected provider can be reached with the supplied key
-- discovering and ranking compatible provider models for Marketing Intelligence Dashboard use cases
+- discovering provider models and preparing compatible candidates for evaluation
+- evaluating and ranking prepared candidates for Marketing Intelligence Dashboard use cases
 - selecting the strongest available model for downstream AI requests
 - tracking model availability when provider limits are reached
 - exposing connected, connecting, error, exhausted, and disconnected states
@@ -41,7 +42,7 @@ AI Connection is responsible for:
 
 ## Non-Functional Requirements
 
-- Model selection behavior must be deterministic for the same provider response inputs
+- Local candidate filtering and sorting must be deterministic for the same provider response inputs
 - Model selection must prefer production-suitable text models over unsupported, non-text, or unstable candidates
 - Provider errors must be normalized into stable application error categories
 - Failed connection attempts must not leave the app in a partially connected state
@@ -55,15 +56,25 @@ AI Connection is responsible for:
 1. The user selects a supported provider and supplies an API key
 2. The system validates that the API key is present
 3. The provider connection process fetches the provider's available model list
-4. Compatible text-generation models are evaluated and ranked for Marketing Intelligence Dashboard use cases
-5. Unsuitable models are excluded from the ranked model set
-6. The strongest remaining model becomes the selected model
-7. Connected state is exposed to AI analysis features
-8. If connection fails, the error is normalized and the app remains disconnected
+4. Provider models are converted into application-level model candidates
+5. Candidates are filtered and sorted locally before AI evaluation
+6. The prepared candidate list is sent to the model evaluation prompt
+7. Model evaluation ranks candidate suitability for downstream dashboard tasks
+8. The strongest usable ranked model becomes the selected model
+9. Connected state is exposed to AI analysis features
+10. If connection fails, the error is normalized and the app remains disconnected
 
 ## Model Selection Flow
 
-Model selection is part of connection, not a separate user workflow. The system discovers candidate models from the selected provider, keeps only compatible text-generation models, and ranks candidates for Marketing Intelligence Dashboard workloads.
+Model selection is part of connection, not a separate user workflow. The system uses a two-stage flow: deterministic local candidate preparation followed by AI-based suitability evaluation.
+
+Provider discovery runs first with the user-supplied API key. Returned provider models are normalized into application-level candidates, so the evaluation prompt receives compact fields such as provider, identifier, text-generation support, context capacity, output capacity, and reasoning-related metadata when available.
+
+Local preparation removes candidates that are known to be incompatible before prompt evaluation. For Gemini, the local filter keeps models that support text generation through `generateContent` and excludes identifiers containing unsupported terms such as `embedding`, `image`, `audio`, `tts`, `veo`, `imagen`, `lyria`, and `robotics`.
+
+The remaining compatible candidates are sorted locally before AI evaluation. The ordering favors thinking-capable models, larger context windows, larger output limits, lower stability risk, and newer versions. This sort is deterministic and establishes the order in which candidate models may be used to run the evaluation request if earlier candidates fail.
+
+The model evaluation prompt then ranks the already prepared candidate list for Marketing Intelligence Dashboard workloads. This AI-based ranking determines final model suitability rather than repeating provider discovery or raw compatibility filtering.
 
 The model evaluation criteria prioritize:
 
@@ -75,7 +86,7 @@ The model evaluation criteria prioritize:
 - stable identifiers and expected usage sustainability
 - useful context and output capacity
 
-Models below the minimum suitability threshold are excluded. The highest-ranked remaining model is selected by default. If a selected model later reaches a provider limit, it is marked unavailable and the system attempts to move to the next available ranked model.
+Low-suitability models may be excluded from the ranked output by the evaluation step. The strongest usable ranked model is selected by default. If a selected model later reaches a provider limit, it is marked unavailable and the system attempts to move to the next available ranked model.
 
 If all compatible models are exhausted or no compatible models are found, AI evaluation is disabled until the user reconnects, waits for provider limits to reset, or switches provider.
 
@@ -95,10 +106,10 @@ AI Connection validates connection readiness and model suitability, not portfoli
 
 - Provider must be one of the supported providers
 - API key is required before connection
-- Provider model lists must contain at least one compatible text-generation model
+- Provider model lists must yield at least one compatible prepared candidate
 - Model identifiers returned by model evaluation must match identifiers from the provider model list
 - Duplicate model entries are not allowed in the selected ranked model set
-- Models must meet a minimum strength threshold before they can be used for analysis
+- Model evaluation must return at least one usable ranked model before analysis can run
 - Exhausted models are skipped for future requests within the same connection session
 
 These rules protect downstream AI tools from running with missing credentials, unsupported models, weak models, or stale model availability assumptions.

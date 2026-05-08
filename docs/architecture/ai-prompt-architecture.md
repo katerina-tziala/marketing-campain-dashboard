@@ -10,7 +10,7 @@ The AI pipeline exists to turn deterministic analytics data into structured AI-a
 
 Multiple prompt types exist because each AI task has a different risk profile and output contract:
 
-- Model selection evaluates provider model metadata and returns a ranked compatible model set
+- Model selection evaluates prepared provider model candidates and returns a ranked compatible model set
 - Executive summary interprets portfolio performance into decision-ready business insights
 - Budget optimization reasons over allocation signals and returns constrained recommendations
 
@@ -20,7 +20,7 @@ All prompts operate on normalized inputs. Portfolio prompts receive precomputed 
 
 Provider normalization is the boundary between provider-specific APIs and application-level prompt behavior. Providers expose inconsistent metadata, naming conventions, capability flags, limits, and lifecycle labels, so raw provider payloads are not passed directly into prompts.
 
-Models are normalized into a unified candidate shape before model selection. The prompt receives only the fields needed to evaluate suitability, such as provider identity, stable model identifier, text-generation support, context capacity, output capacity, and reasoning-related capability metadata when available.
+Models are normalized into a unified candidate shape before model selection. Provider-specific connection code may also filter and sort candidates locally before prompt evaluation. The prompt receives only the fields needed to evaluate suitability, such as provider identity, stable model identifier, text-generation support, context capacity, output capacity, and reasoning-related capability metadata when available.
 
 This reduces provider coupling and keeps ranking behavior comparable across Gemini and Groq. It also reduces prompt branching and token usage because the LLM evaluates a compact application-owned model contract instead of multiple provider payload formats.
 
@@ -42,9 +42,11 @@ Prompt modularity and versioning allow each prompt family to evolve independentl
 
 ## AI Model Selection Prompt Strategy
 
-Model selection starts after provider discovery normalizes provider-specific model records into a shared candidate shape. This gives the evaluation prompt a consistent view of model identity, provider, text-generation support, context capacity, output capacity, and reasoning-related metadata when available.
+Model selection starts after provider discovery and local candidate preparation. Provider-specific model records are converted into a shared candidate shape before they reach the prompt. This gives the evaluation prompt a consistent view of model identity, provider, text-generation support, context capacity, output capacity, and reasoning-related metadata when available.
 
-Irrelevant or unsupported models are filtered before or during candidate evaluation. Non-text models, models without usable identifiers, and candidates that cannot support downstream text prompts should not reach analysis features.
+Irrelevant or unsupported models are filtered before candidate evaluation when provider metadata makes that decision deterministic. For Gemini, local preparation keeps models that support text generation, excludes known unsupported model families, and sorts compatible candidates before AI evaluation. The prompt therefore receives an already filtered and ordered candidate list, not the raw provider model list.
+
+The evaluation prompt ranks suitability for the dashboard's downstream AI tasks. It should not be treated as provider discovery, raw compatibility detection, or user-controlled model choice; it is an application-owned suitability layer over prepared candidates.
 
 The ranking methodology scores models for the application's actual needs:
 
@@ -62,7 +64,7 @@ Identifier integrity is a hard requirement. Returned model identifiers must matc
 
 Metadata derivation is limited to display concerns such as user-friendly names and model family labels. These values help the product communicate selected model state without changing the provider identifier used for requests.
 
-Token optimization starts at model selection. The system ranks only the candidate list needed for connection, limits the returned model set, and prefers models that can handle structured analytical prompts without excessive retries or fallback churn.
+Token optimization starts before model evaluation. The system sends only the prepared candidate list needed for connection, limits the returned model set, and prefers models that can handle structured analytical prompts without excessive retries or fallback churn.
 
 Unstable, preview, gated, or low-suitability models are treated cautiously. A model may be technically visible from a provider but still be a poor default for production analytics if access, quota, identifier stability, or output consistency is uncertain.
 
