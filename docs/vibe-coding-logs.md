@@ -1,4 +1,4 @@
-# Vibe Coding Log — Marketing Campaign Dashboard
+# Vibe Coding Log — Marketing Intelligence Dashboard
 
 Development log for the project. Every feature built, bug fixed, refactoring done, and architecture decision made is recorded here.
 
@@ -6,20 +6,20 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Type:** architecture
 
-**Summary:** Defined the project scope, tech stack, and development workflow. Created foundational documentation files (README, CLAUDE.md, LOGS.md) before scaffolding begins.
+**Summary:** Defined the project scope, tech stack, and development workflow. Created foundational documentation files (README, CLAUDE.md, vibe-coding-logs.md) before scaffolding begins.
 
-**Brainstorming:** Decided to document the full process from the very start — before any code exists — so the MBA submission captures the entire development journey including planning decisions. CLAUDE.md serves as the living spec and progress tracker; LOGS.md captures reasoning and iterations for each step.
+**Brainstorming:** Decided to document the full process from the very start — before any code exists — so the MBA submission captures the entire development journey including planning decisions. CLAUDE.md serves as the living spec and progress tracker; vibe-coding-logs.md captures reasoning and iterations for each step.
 
-**Prompt:** Create CLAUDE.md and LOGS.md based on the README. Set up ongoing workflow rules for every type of interaction (feature, fix, refactor).
+**Prompt:** Create CLAUDE.md and vibe-coding-logs.md based on the README. Set up ongoing workflow rules for every type of interaction (feature, fix, refactor).
 
 **What was built:**
 
 - `CLAUDE.md` — project context, tech stack table, full feature checklist with checkboxes, architecture section (to be filled post-scaffold), workflow rules
-- `LOGS.md` — this file; vibe coding log for MBA submission
+- `vibe-coding-logs.md` — this file; vibe coding log for MBA submission
 
 **Key decisions & why:**
 
-- Separate CLAUDE.md from LOGS.md — CLAUDE.md is the living spec (state of the project at any moment), LOGS.md is the historical record (how we got there)
+- Separate CLAUDE.md from vibe-coding-logs.md — CLAUDE.md is the living spec (state of the project at any moment), vibe-coding-logs.md is the historical record (how we got there)
 - Feature checklist in CLAUDE.md — makes it easy to track progress at a glance and check off items as they're built
 - Log format distinguishes Full Entry vs Short Entry — keeps the log readable without burying small fixes in the same detail as major features
 
@@ -42,7 +42,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `app/src/style.scss` — replaces `style.css`; includes `@tailwind` directives and base body/app resets using `theme()` helper
 - `app/src/components/AppShell.vue` — layout wrapper with indigo header and main content slot; uses BEM + scoped SCSS + Tailwind `theme()` for values
 - `app/src/App.vue` — root component, mounts `AppShell`
-- `app/index.html` — updated title to "Marketing Campaign Dashboard"
+- `app/index.html` — updated title to "Marketing Intelligence Dashboard"
 - `.gitignore` — at repo root, excludes `node_modules/`, `dist/`, `.env*`, editor and OS files
 - `README.md` — added "Getting Started" section with `npm install`, `npm run dev`, `npm run build`, `npm run preview`
 
@@ -7321,7 +7321,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** The previous `dark.scss` mixed raw color scales with semantic role assignments in one file. Splitting palette from semantics makes it easier to swap palettes or add themes without touching the semantic layer. The new token naming (surface-0/1/2/3, color-border-subtle/default/strong, color-text-muted/subtle etc.) aligns the CSS vars with the Tailwind token names already used in components. `MetaRow`/`MetaItem` were added as generic slot-based wrappers to replace ad-hoc inline patterns for metadata like campaign/channel counts — the bullet and divider variants are driven by modifier classes so no props are needed. The RoiCpaScatter quadrant labels were renamed from action-oriented (Scale/Optimize/Improve/Cut) to descriptive (Efficient/Costly/Weak funnel/Inefficient) to better reflect what the axes measure.
 
-**Prompt:** Check the changed files (RoiCpaScatter.vue, style.scss, \_card.scss, \_detail-item.scss, dark.scss, MetaItem.vue, MetaRow.vue, tailwind.config.js, dark-pallette.scss), update CLAUDE.md to reflect all changes, write the LOGS.md entry, and give a commit message.
+**Prompt:** Check the changed files (RoiCpaScatter.vue, style.scss, \_card.scss, \_detail-item.scss, dark.scss, MetaItem.vue, MetaRow.vue, tailwind.config.js, dark-pallette.scss), update CLAUDE.md to reflect all changes, write the vibe-coding-logs.md entry, and give a commit message.
 
 **What changed:**
 
@@ -8725,7 +8725,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** The original approach applied `bg-clip-text text-transparent` to the `.sheet-header-title` div expecting the child `<h2>` text to inherit it. This does not work: `background-clip: text` clips the background to the element's own inline text content, not to text inside block-level descendants. The `<h2>` creates its own block box, so the parent wrapper had no direct text to clip to — the gradient was invisible. The fix is to apply `bg-gradient-to-r bg-clip-text text-transparent w-fit` directly to the projected heading via `:slotted(h1–h6)`. `w-fit` is required so the background only covers the text width and clips correctly. Layout also restructured: icon and title are co-wrapped in a `grow flex items-start gap-2` div so both move as a unit; `.sheet-header` becomes `items-start`.
 
-**Prompt:** Fix gradient not applying and text looking bolder in SheetHeader — sync CLAUDE.md and LOGS.md.
+**Prompt:** Fix gradient not applying and text looking bolder in SheetHeader — sync CLAUDE.md and vibe-coding-logs.md.
 
 **What changed:**
 
@@ -10771,7 +10771,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `app/src/ui/table/TableHeader.vue` — centralized header padding with a shared local class; moved sticky header and default header theming into clearer sections; reworked sortable header content so labels and sort icons share a stable `.button-content` wrapper; aligned sortable header colors with the info palette; added `vertical-separators` support for header cells
 - `app/src/styles/utilities/_scrollbar.scss` — added a `scrollbar-colors($thumb, $track, $thumb-hover)` mixin that wires `scrollbar-color`, WebKit track color, WebKit thumb color, and WebKit hover color from one source; updated `scrollbar-on-surface` to use theme variables; added `scrollbar-info-on-surface` for table-oriented scroll areas
 - `app/src/features/data-transfer/components/data-validation/review-errors/DataErrorsTable.vue` — updated the table to use `striped-even vertical-separators`; applied the same separator modifier to `TableHeader`; widened the row column from `max-w-6` to `max-w-14`
-- `LOGS.md` — corrected the older table log wording from `stripped-*` to `striped-*` so the documentation matches the renamed modifiers
+- `vibe-coding-logs.md` — corrected the older table log wording from `stripped-*` to `striped-*` so the documentation matches the renamed modifiers
 
 **Key decisions & why:**
 
@@ -12164,8 +12164,8 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **What was built:**
 
 - `app/src/app/router/page-meta.ts` — added `applyPageMeta(route)` for runtime document metadata updates; defines default page title and description; reads `route.meta.page.title` and `route.meta.page.description`; updates `document.title`; creates or updates `<meta name="description">` at runtime.
-- `app/src/app/router/index.ts` — imported `applyPageMeta`; added `meta.page` to the dashboard route; set the route title to `Marketing Campaign Dashboard | Campaign Performance`; set the route description to `Analyze campaign performance with AI-driven budget recommendations and executive summaries for faster, data-driven decisions.`; added a `router.afterEach()` hook so metadata updates after navigation.
-- `app/index.html` — kept the app-level `<html lang="en">`; added static `<meta name="application-name" content="Marketing Campaign Dashboard">`; added static `<meta name="theme-color" content="#0e1022">`; kept the base `<title>` fallback; intentionally did not include a static description because page descriptions are now route-owned and applied dynamically.
+- `app/src/app/router/index.ts` — imported `applyPageMeta`; added `meta.page` to the dashboard route; set the route title to `Marketing Intelligence Dashboard | Campaign Performance`; set the route description to `Analyze campaign performance with AI-driven budget recommendations and executive summaries for faster, data-driven decisions.`; added a `router.afterEach()` hook so metadata updates after navigation.
+- `app/index.html` — kept the app-level `<html lang="en">`; added static `<meta name="application-name" content="Marketing Intelligence Dashboard">`; added static `<meta name="theme-color" content="#0e1022">`; kept the base `<title>` fallback; intentionally did not include a static description because page descriptions are now route-owned and applied dynamically.
 - `npm run build` — completed successfully after wiring the route metadata helper.
 
 **Key decisions & why:**
@@ -12793,7 +12793,7 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Brainstorming:** Code quality standards require all variable names to be at least 3 characters long, ensuring clarity and avoiding single-letter ambiguity. This is a straightforward refactoring to enforce the naming convention across the utils layer. Single-letter variables like `f`, `c`, `h`, `i`, and underscore-based placeholders make code harder to scan and understand. Meaningful names (`file`, `campaign`, `header`, `index`, `placeholderKey`) immediately convey intent without requiring context switching.
 
-**Prompt:** Check all files in data-transfer/utils for variable names shorter than 3 characters. Replace them with meaningful equivalents. Verify build passes. Update LOGS.md.
+**Prompt:** Check all files in data-transfer/utils for variable names shorter than 3 characters. Replace them with meaningful equivalents. Verify build passes. Update vibe-coding-logs.md.
 
 **What was built:**
 
