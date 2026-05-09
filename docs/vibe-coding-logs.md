@@ -16213,3 +16213,36 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Keep wrapper attrs for layout concerns — classes and non-ARIA attrs still belong on the sizing container
 - Filter wrapper `role` and `aria-label` — avoids duplicate semantics and prevents stale labels from landing on the container
 - Omit `aria-describedby` — no chart description elements currently exist, so forwarding it would add API surface without current value
+
+## [#680] Improve drawer, file input, table header, and chip accessibility
+
+**Type:** accessibility
+
+**Summary:** Addressed several accessibility audit findings across the AI drawer, CSV file upload, duplicate-row selection table, and channel filter chips. The pass also adjusted nearby spacing and typography so focus rings and compact AI content remain readable.
+
+**Brainstorming:** The closed responsive drawer used `aria-hidden` while keeping focusable AI controls mounted, which can leave keyboard-reachable elements inside a hidden subtree. The native file input inside the custom dropzone also needed its own accessible name, even though the visible dropzone button is labeled by the form control. The duplicate review table used an empty selection header with `aria-label`; replacing it with real screen-reader text is more robust for table-header audits. Channel chips needed readonly focus styling to preserve keyboard visibility, and small padding adjustments were needed so rings are not clipped by tight containers.
+
+**Prompt:** Improve accessibility issues found during testing: use `inert` for the responsive drawer instead of hiding focusable descendants with `aria-hidden`, label the hidden file input, give the duplicate table selection header discernible text, and keep readonly chip focus-visible styling visible. Also account for the padding adjustments made so focus rings render fully.
+
+**What changed:**
+
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — replaced closed-state `aria-hidden` with an `inert` binding so mounted drawer contents are not focusable when the desktop drawer is closed
+- `app/src/ui/forms/FileDropzone.vue` — added optional `fileInputLabel` and applies it as the native file input `aria-label`, with `Choose file` as the fallback
+- `app/src/features/data-transfer/components/UploadDataForm.vue` — passes `Choose campaign data CSV file` to the file dropzone input label
+- `app/src/ui/table/TableHeader.vue` — added `visuallyHiddenLabel` support so non-sortable headers can render real `sr-only` text
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampaignDuplicationsTable.vue` — changed the selection column from an empty label with `ariaLabel` to a visually hidden `Select` header
+- `app/src/ui/primitives/Chip.vue` — added readonly `:focus-visible` ring styling so focus remains visible without enabling interaction
+- `app/src/features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — added horizontal padding and matching negative margin so chip focus rings have room to render
+- `app/src/ui/primitives/Button.vue` — restored wider horizontal button padding so focus rings and button content have more comfortable spacing
+- `app/src/ui/forms/FormControl.vue` — added spacing below fieldset legends to improve grouped form layout
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` and `AnalysisHeader.vue` — added small top spacing around AI analysis content and header metadata
+- `app/src/features/ai-tools/ai-analysis/components/AnalysisState.vue`, `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue`, and `AiConnectionForm.vue` — shifted secondary copy from `text-typography-soft` to `text-typography-muted`
+
+**Key decisions & why:**
+
+- `inert` over `aria-hidden` for the closed drawer — it prevents focus and interaction in the hidden subtree instead of only hiding it from assistive technology
+- Explicit native file input label — custom file controls still need the underlying input to have a discernible accessible name
+- Real hidden text for table headers — `sr-only` header content satisfies table semantics more reliably than an empty `<th>` with only `aria-label`
+- `:focus-visible` only for readonly chips — keyboard focus receives a visible ring without adding `:focus-within` behavior or changing pointer interaction
+- Padding around chip containers — focus rings need physical space so accessibility styling is visible, not clipped by compact layout constraints
+- Formatter pass after spacing edits — Tailwind `@apply` rules were normalized with the project formatter before verification

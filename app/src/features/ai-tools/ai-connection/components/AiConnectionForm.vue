@@ -171,7 +171,7 @@ function handleApiKeyBlur(): void {
 .conn-intro {
   @apply leading-5
   	text-sm
-  	text-typography-soft;
+  	text-typography-muted;
 }
 
 .conn-fieldset {

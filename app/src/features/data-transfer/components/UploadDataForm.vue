@@ -182,6 +182,7 @@ function handleSubmit(): void {
             :disabled="isLoading"
             required
             accept=".csv,text/csv"
+            file-input-label="Choose campaign data CSV file"
             :max-size-bytes="MAX_CSV_FILE_SIZE_BYTES"
             :invalid="invalid"
             :described-by="describedBy"

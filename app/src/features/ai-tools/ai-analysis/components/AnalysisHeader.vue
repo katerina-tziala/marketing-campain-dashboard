@@ -45,7 +45,7 @@ const periodLabel = computed(() =>
     </template>
     <MetaRow
       separator="bullet"
-      class="analysis-header-meta text-typography-subtle"
+      class="analysis-header-meta"
     >
       <MetaItem>{{ context.portfolioTitle }}</MetaItem>
       <MetaItem v-if="periodLabel">{{ periodLabel }}</MetaItem>
@@ -73,6 +73,8 @@ const periodLabel = computed(() =>
 
 .analysis-header-meta {
   @apply flex
-  	sticky-header:hidden;
+  	pt-1
+  	sticky-header:hidden
+  	text-typography-subtle;
 }
 </style>

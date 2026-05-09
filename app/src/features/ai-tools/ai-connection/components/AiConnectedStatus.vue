@@ -58,7 +58,7 @@ function handleDisconnect(): void {
   	grow
   	shrink-0
   	text-sm
-  	text-typography-soft;
+  	text-typography-muted;
 
   flex-grow: 100;
 }
