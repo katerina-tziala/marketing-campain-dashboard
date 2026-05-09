@@ -16189,3 +16189,27 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Shared link utility over feature-local styling — link appearance and focus behavior can be reused consistently across the app
 - Formatter-owned deduplication — repeated Tailwind utilities are mechanical noise and should be removed by tooling rather than by manual review
 - Tab continuation for wrapped `@apply` blocks — nested utility lines now stand out from the rule indentation while remaining deterministic under the formatter
+
+## [#679] Move chart ARIA labels to rendered canvases
+
+**Type:** accessibility
+
+**Summary:** Updated reusable Chart.js wrapper components so chart accessible names are forwarded to the actual `vue-chartjs` components, which render the `<canvas role="img">`, instead of being applied to the outer layout containers.
+
+**Brainstorming:** The chart wrappers already receive meaningful `aria-label` values from feature components, but the label belonged on the semantic image element rather than the surrounding sizing container. Since `vue-chartjs` renders canvases with `role="img"` and supports an `ariaLabel` prop through Vue's kebab-case binding, forwarding `aria-label` directly to `Bar`, `Doughnut`, and `Bubble` keeps the accessible name on the element assistive technology interprets as the chart. `aria-describedby` was considered, but removed because the current app does not provide separate chart description text.
+
+**Prompt:** Move ARIA labels for charts into the component we use from the library. The canvas elements have `role="img"`, so attach `aria-label` to the chart elements directly. Do not keep unused `aria-describedby` forwarding.
+
+**What changed:**
+
+- `app/src/ui/charts/components/BarChart.vue` — removed `role="img"` and `aria-label` from the outer wrapper; forwards computed `chartAriaLabel` to the rendered `Bar` component; filters `aria-label` and `role` out of container attrs
+- `app/src/ui/charts/components/GroupedBarChart.vue` — moved the accessible label from the wrapper to the rendered `Bar` component and keeps layout attrs on the container
+- `app/src/ui/charts/components/DonutChart.vue` — forwards `aria-label` to `Doughnut` so the generated canvas receives the accessible name
+- `app/src/ui/charts/components/BubbleChart.vue` — forwards `aria-label` to `Bubble` while preserving non-semantic wrapper attrs on the outer container
+
+**Key decisions & why:**
+
+- Label the canvas, not the wrapper — the library canvas is the element with `role="img"`, so it should own the accessible name
+- Keep wrapper attrs for layout concerns — classes and non-ARIA attrs still belong on the sizing container
+- Filter wrapper `role` and `aria-label` — avoids duplicate semantics and prevents stale labels from landing on the container
+- Omit `aria-describedby` — no chart description elements currently exist, so forwarding it would add API surface without current value

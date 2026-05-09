@@ -89,16 +89,20 @@ const options = computed<BarChartOptions>(() => ({
 const chartAriaLabel = computed(() =>
   typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : (props.yLabel ?? 'Bar chart'),
 );
+
+const containerAttrs = computed(() => {
+  const { 'aria-label': _ariaLabel, role: _role, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
   <div
-    v-bind="$attrs"
+    v-bind="containerAttrs"
     class="w-full h-full min-h-64"
-    role="img"
-    :aria-label="chartAriaLabel"
   >
     <Bar
+      :aria-label="chartAriaLabel"
       :data="chartData"
       :options="options"
     />
