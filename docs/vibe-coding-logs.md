@@ -16325,3 +16325,26 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `max-height` on `panelRef` wrapper only — callers already use `max-h-full` or grid row sizing inside the panel, so constraining the wrapper is sufficient and requires no caller changes
 - Three cases rather than two — the previous two-case flip gave no guarantee when neither direction had enough space; the third case ensures the panel always stays within the viewport
 - `spaceBelow >= spaceAbove` tiebreak favours below — matches user expectation that dropdowns open downward by default
+
+
+## [#685] Wire all chart components to useCampaignPerformanceTheme
+**Type:** refactor
+
+**Summary:** Replaced hardcoded color constants with `useCampaignPerformanceTheme()` in all chart components that weren't using it, and deleted the now-dead color config file.
+
+**Brainstorming:** Three chart components were not using the theme composable: `RevenueVsBudgetBars` used hardcoded `CAMPAIGN_PERFORMANCE_CHART_COLORS.budget/revenue` from config; `RoiBarChart` used `getCampaignPerformanceChartFillColor` from config; `BudgetShareDonutChart` used `withAlpha` from `@/ui` directly. All three needed to call `useCampaignPerformanceTheme()` and consume `performanceChartColors`/`getFillColor` instead. Once all consumers moved to the theme composable, `campaign-performance-chart-colors.ts` (with its hardcoded RGB constants) became fully dead and was deleted. The `roi-budget-scaling-chart.config.ts` also had dead exports (`ROI_BUDGET_SCALING_QUADRANTS`, `ROI_BUDGET_SCALING_DIVIDER_STYLE`, `QUADRANT_BACKGROUNDS`) that referenced the deleted file — those were removed too. `ConversionFunnelChart` uses Tailwind CSS class names (design tokens, not JS color values) — no change needed there.
+
+**Prompt:** useCampaignPerformanceTheme should be used to apply chart colors to all charts. Check the campaign-performance feature and adjust all of them properly so we can eventually change themes.
+
+**What changed:**
+- `charts/components/RevenueVsBudgetBars.vue` — removed `CAMPAIGN_PERFORMANCE_CHART_COLORS`/`getCampaignPerformanceChartFillColor` imports; added `useCampaignPerformanceTheme()` call; uses `performanceChartColors.budget/.revenue` and `getFillColor`
+- `charts/components/RoiBarChart.vue` — removed `getCampaignPerformanceChartFillColor` import; added `useCampaignPerformanceTheme()` call; uses `getFillColor` for background colors
+- `charts/components/BudgetShareDonutChart.vue` — removed `withAlpha` from `@/ui`; added `useCampaignPerformanceTheme()` call; uses `getFillColor` in `getSegmentColor`
+- `charts/config/campaign-performance-chart-colors.ts` — deleted entirely (was the only source of hardcoded RGB color strings)
+- `charts/config/roi-budget-scaling-chart.config.ts` — removed dead `ROI_BUDGET_SCALING_QUADRANTS`, `ROI_BUDGET_SCALING_DIVIDER_STYLE`, `QUADRANT_BACKGROUNDS` exports that depended on deleted file
+- `charts/config/index.ts` — removed exports for deleted constants from barrel
+
+**Key decisions & why:**
+- Deleted the color config file entirely rather than migrating it to CSS vars — the whole point of `useCampaignPerformanceTheme` is to be the single source of resolved chart colors; keeping the config file would split responsibility
+- `ConversionFunnelChart` left unchanged — it uses Tailwind class names that map to CSS custom properties, not JS-resolved Chart.js colors; a different theming path that is already theme-aware
+- `getFillColor` is the theme composable's wrapper for `withAlpha` — all direct `withAlpha` calls from chart components replaced with it to keep color logic in one place

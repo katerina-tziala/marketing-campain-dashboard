@@ -8,9 +8,9 @@ import {
   type DonutLegendLabelFilter,
   type DonutTooltipCallbacks,
   type DonutTooltipItem,
-  withAlpha,
 } from '@/ui';
 
+import { useCampaignPerformanceTheme } from '../composables';
 import {
   CAMPAIGN_PERFORMANCE_DONUT_DATASET_STYLE,
   CAMPAIGN_PERFORMANCE_DONUT_DIM_ALPHA,
@@ -26,6 +26,8 @@ const props = defineProps<{
   items: BudgetShareDonutItem[];
   kpis: PortfolioKPIs;
 }>();
+
+const { getFillColor } = useCampaignPerformanceTheme();
 
 function getTooltipDataIndex(ctx: DonutTooltipItem): number {
   return ctx.dataIndex;
@@ -58,7 +60,7 @@ function getSegmentAlpha(item: BudgetShareDonutItem, index: number): number {
 }
 
 function getSegmentColor(item: BudgetShareDonutItem, index: number): string {
-  return withAlpha(item.color, getSegmentAlpha(item, index));
+  return getFillColor(item.color, getSegmentAlpha(item, index));
 }
 
 function isDimmedSegment(item: BudgetShareDonutItem, index: number): boolean {

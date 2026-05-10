@@ -5,16 +5,15 @@ import type { Channel } from '@/shared/data';
 import { formatCompactNumber } from '@/shared/utils';
 import { type BarChartData, type BarTooltipCallbacks, GroupedBarChart } from '@/ui';
 
-import {
-  CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
-  CAMPAIGN_PERFORMANCE_CHART_COLORS,
-  getCampaignPerformanceChartFillColor,
-} from '../config';
+import { useCampaignPerformanceTheme } from '../composables';
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config';
 import { formatBudgetTooltip, formatRevenueTooltip } from '../utils';
 
 const props = defineProps<{
   channels: Channel[];
 }>();
+
+const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
 
 const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
@@ -30,19 +29,15 @@ const chartData = computed<BarChartData>(() => ({
     {
       label: 'Budget (€)',
       data: props.channels.map((ch) => ch.budget),
-      backgroundColor: getCampaignPerformanceChartFillColor(
-        CAMPAIGN_PERFORMANCE_CHART_COLORS.budget,
-      ),
-      borderColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.budget,
+      backgroundColor: getFillColor(performanceChartColors.budget),
+      borderColor: performanceChartColors.budget,
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
     {
       label: 'Revenue (€)',
       data: props.channels.map((ch) => ch.revenue),
-      backgroundColor: getCampaignPerformanceChartFillColor(
-        CAMPAIGN_PERFORMANCE_CHART_COLORS.revenue,
-      ),
-      borderColor: CAMPAIGN_PERFORMANCE_CHART_COLORS.revenue,
+      backgroundColor: getFillColor(performanceChartColors.revenue),
+      borderColor: performanceChartColors.revenue,
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },
   ],
