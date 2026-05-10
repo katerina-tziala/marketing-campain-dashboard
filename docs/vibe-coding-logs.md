@@ -16263,3 +16263,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Drop the attribute entirely rather than switching to `inputmode="decimal"` — `decimal` still lacks a slash key on iOS and adds a locale-variable separator that is meaningless here
 - No replacement inputmode set — the default (`text`) is correct for a free-text date field that accepts letters, digits, and punctuation
+
+
+## [#682] Fix mobile scroll jump on radio toggle interaction
+**Type:** fix
+
+**Summary:** Fixed a mobile-only scroll jump triggered by tapping the Revenue vs Budget chart toggle, caused by mobile browsers firing `scrollIntoView` on focus for `sr-only` radio inputs that have a real document position.
+
+**Brainstorming:** The issue manifested as the entire page jumping to an unexpected scroll position when tapping the Performance/Efficiency radio toggle on mobile. Investigation ruled out multiple causes one by one: Chart.js canvas remount, `ResizeObserver` callbacks, `overflow-hidden` clipping, `max-h-full` collapse, `overflow-anchor`, `@pointerdown.prevent`, and `blur()` on `@change`. The key insight came from comparing toggle behaviour to channel filter behaviour — filters re-render existing components in place, while the radio toggle causes a `v-if`/`v-else` DOM swap. However, the jump persisted even with the charts commented out entirely, proving the chart remount was not the cause. The root cause turned out to be standard mobile browser behaviour: on touch devices, tapping any input fires a `focus` event and the browser automatically calls `scrollIntoView` to bring the focused element into view. The `sr-only` Tailwind utility uses `position: absolute` with clipping — visually invisible but with a real document position, giving the browser a scroll target. Desktop browsers do not scroll on click because they assume the clicked element is already visible. Mobile browsers always scroll on focus regardless. Some mobile browsers (notably Chrome on Android) even ignore `overflow-hidden` on ancestor containers when handling focus scroll, which is why the jump affected the entire app shell. The fix is `position: fixed` on the radio input — this removes it from document flow entirely so there is no document position to scroll to, while keeping it accessible to screen readers via DOM order, `name`, `value`, and checked state.
+
+**Prompt:** Revenue vs Budget toggle causes a full page scroll jump on mobile only. Investigate why and fix without breaking accessibility or scroll behaviour. Log the full investigation and resolution.
+
+**What changed:**
+- `app/src/ui/forms/RadioToggle.vue` — replaced `class="sr-only"` on the radio input with `position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none` in scoped styles; added explanatory comment; added `.blur()` call on `@change` as secondary guard; removed redundant `sr-only` class from template
+- `app/src/ui/forms/RadioItem.vue` — same `position: fixed` treatment applied for consistency; removed `sr-only` class from template; added same explanatory comment
+- `app/src/features/campaign-performance/charts/RevenueVsBudgetChart.vue` — removed `max-h-full` from Card (was collapsing the card on mobile due to `auto-rows-min` parent grid); removed `min-h-0` from `.revenue-budget-chart-area` (no longer needed); added `overflow-anchor: none` (later confirmed not the root cause but harmless); removed `min-h-96` experiment from Card
+
+**Key decisions & why:**
+- `position: fixed` over `position: absolute` (sr-only) — `absolute` has a document scroll position; `fixed` is in viewport coordinate space and gives the browser nothing to scroll to
+- Applied to both `RadioToggle` and `RadioItem` — same root cause applies anywhere a `sr-only` radio input exists in a scrollable context; `RadioItem` is currently only used in a modal (low risk) but fixed proactively for consistency
+- Kept `blur()` on `@change` as a secondary guard — belt-and-suspenders; after `position: fixed` the scroll can't happen, but blur ensures focus doesn't linger on the input after selection
+- Did not switch to `v-show` — the chart remount was not the actual cause; `v-if`/`v-else` is semantically correct for mutually exclusive views and avoids initialising both Chart.js instances on mount
+- `overflow-anchor: none` left in `.revenue-budget-chart-area` — harmless and prevents a separate class of scroll anchor issues if layout shifts occur near the chart area

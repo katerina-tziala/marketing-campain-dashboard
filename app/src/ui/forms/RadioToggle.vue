@@ -38,8 +38,10 @@ defineEmits<{ 'update:modelValue': [value: string] }>();
         :value="option.value"
         :checked="modelValue === option.value"
         :disabled="disabled"
-        class="sr-only"
-        @change="$emit('update:modelValue', option.value)"
+        @change="
+          $emit('update:modelValue', option.value);
+          ($event.target as HTMLInputElement).blur();
+        "
       />
       <span class="option-label">{{ option.label }}</span>
     </label>
@@ -118,7 +120,20 @@ label {
   }
 }
 
+/*
+  position: fixed removes the input from document flow so mobile browsers
+  have no scroll target when focus fires on tap — position: absolute (sr-only)
+  gives the browser a real document position it tries to scroll into view.
+*/
 input[type='radio'] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+
   &:checked + .option-label {
     @apply bg-primary-dark
     	text-typography-strong;

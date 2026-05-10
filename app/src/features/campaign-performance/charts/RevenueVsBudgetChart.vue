@@ -28,11 +28,9 @@ const channelsByGapImpact = computed(() =>
 </script>
 
 <template>
-  <Card class="grid gap-2 grid-cols-1 grid-rows-[min-content_1fr] max-h-full">
-    <CardHeader class="flex-wrap !gap-0.5">
-      <h3 class="grow flex items-center justify-start pt-0.5 text-base">
-        Revenue vs Budget by Channel
-      </h3>
+  <Card class="revenue-budget-chart-card">
+    <CardHeader class="flex-wrap !gap-0.5 !gap-y-4">
+      <h3 class="grow pt-0.5 text-base">Revenue vs Budget by Channel</h3>
       <RadioToggle
         v-model="revenueBudgetView"
         class="mx-auto"
@@ -61,6 +59,14 @@ const channelsByGapImpact = computed(() =>
 </template>
 
 <style lang="scss" scoped>
+.revenue-budget-chart-card {
+  @apply gap-2
+  	grid
+  	grid-cols-1
+  	grid-rows-[min-content_1fr]
+  	max-h-full;
+}
+
 .revenue-budget-chart-area {
   @apply h-96
   	min-h-0

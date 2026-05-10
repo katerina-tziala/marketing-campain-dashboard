@@ -122,7 +122,7 @@ const chartAriaLabel = computed(() =>
   >
     <MetaRow
       size="tiny"
-      class="mx-auto -mb-0.5"
+      class="mx-auto -mb-[1px]"
     >
       <MetaItem class="legend-item">
         <span
@@ -194,6 +194,7 @@ const chartAriaLabel = computed(() =>
   @apply flex
   	flex-nowrap
   	gap-1.5
+  	items-center
   	justify-end;
 
   > span {
