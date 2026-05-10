@@ -16246,3 +16246,20 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `:focus-visible` only for readonly chips — keyboard focus receives a visible ring without adding `:focus-within` behavior or changing pointer interaction
 - Padding around chip containers — focus rings need physical space so accessibility styling is visible, not clipped by compact layout constraints
 - Formatter pass after spacing edits — Tailwind `@apply` rules were normalized with the project formatter before verification
+
+
+## [#681] Remove inputmode="numeric" from DateField
+**Type:** fix
+
+**Summary:** Removed `inputmode="numeric"` from `DateField.vue` because it blocked mobile users from typing the `/` separator required by the DD/MM/YYYY format.
+
+**Brainstorming:** The field uses `type="text"` with DD/MM/YYYY free-text entry. `inputmode="numeric"` was present to offer a digit-friendly keyboard on mobile, but iOS renders a pure number pad (0–9 only) when this attribute is set — no slash key, making it impossible to type a valid date. The attribute served no purpose for correctness: validation runs on blur against the full string value and is entirely independent of how the user typed it. Removing the attribute restores the default (`inputmode="text"`), which shows the full keyboard on all devices and changes nothing on desktop. A segmented three-field input (DD / MM / YYYY, each `inputmode="numeric"`) would be a better mobile UX long-term, but is out of scope here.
+
+**Prompt:** Date field in mobile opens only numbers inputs — no slash key available. Remove `inputmode="numeric"` since validation is blur-based and doesn't depend on keyboard type. Append log entry.
+
+**What changed:**
+- `app/src/ui/forms/DateField.vue` — removed `inputmode="numeric"` attribute from the `<input>` element
+
+**Key decisions & why:**
+- Drop the attribute entirely rather than switching to `inputmode="decimal"` — `decimal` still lacks a slash key on iOS and adds a locale-variable separator that is meaningless here
+- No replacement inputmode set — the default (`text`) is correct for a free-text date field that accepts letters, digits, and punctuation
