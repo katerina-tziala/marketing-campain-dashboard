@@ -141,8 +141,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── components/     # Shared chart wrapper components
 │   │   │   │   ├── BarChart.vue      # Bar chart wrapper — props: chartData, yLabel?, horizontal?, tooltipCallbacks?, valueTickFormatter?, valueScaleMin?, valueScaleMax?, showLegend?; ariaLabel passed to <canvas> via $attrs; applies value-axis bounds to x scale (horizontal) or y scale (vertical); uses useChartConfig + useChartTooltip; default tooltip callbacks (compact number formatting); w-full + min-h-80 chart container
 │   │   │   │   ├── DonutChart.vue    # Doughnut chart wrapper — props: chartData, ariaLabel?, tooltipCallbacks?, legendLabelFilter?; applies arc.separatorColor when dataset has borderWidth; w-full + min-h-80 chart container
-│   │   │   │   ├── GroupedBarChart.vue # Grouped bar chart wrapper — props: chartData, yLabel?, tooltipCallbacks?, valueTickFormatter?; ariaLabel passed to <canvas> via $attrs; uses useChartConfig + useChartTooltip; w-full + min-h-80 chart container
-│   │   │   │   ├── BubbleChart.vue   # Bubble chart wrapper — props: chartData, xLabel?, yLabel?, xMin?, xMax?, yMin?, yMax?, xTickFormatter?, yTickFormatter?, xTickValues?, yTickValues?, tooltipCallbacks?, plugins?, legendPosition?, usePointLegend?; ariaLabel passed to <canvas> via $attrs; w-full + min-h-80 chart container
+│   │   │   │   ├── GroupedBarChart.vue # Grouped bar chart wrapper — props: chartData, yLabel?, tooltipCallbacks?, valueTickFormatter?, showLegend? (default true); ariaLabel passed to <canvas> via $attrs; uses useChartConfig + useChartTooltip; w-full + min-h-80 chart container
+│   │   │   │   ├── BubbleChart.vue   # Bubble chart wrapper — props: chartData, xLabel?, yLabel?, xMin?, xMax?, yMin?, yMax?, xTickFormatter?, yTickFormatter?, xTickValues?, yTickValues?, tooltipCallbacks?, plugins?, legendPosition?, usePointLegend?, showLegend? (default true); ariaLabel passed to <canvas> via $attrs; w-full + min-h-80 chart container
 │   │   │   │   └── index.ts          # Barrel — exports BarChart, DonutChart, GroupedBarChart, BubbleChart
 │   │   │   ├── composables/    # Chart composables
 │   │   │   │   ├── useChartTheme.ts  # Runtime theme mapper — returns ComputedRef<ChartTheme> mapped from resolveChartsThemeTokens(); re-evaluates on theme switch via useTheme(); falls back to DEFAULT_CHART_THEME when CSS vars unavailable
@@ -591,13 +591,13 @@ The `@/features/` prefix is **only for cross-feature and cross-layer imports** (
 2. Build it.
 3. Update `README.md` — document the feature.
 4. Update `CLAUDE.md` — mark checklist item done, update Architecture if new files were added.
-5. **Immediately** append a Full Entry to `LOGS.md` — this is the last tool call before responding.
+5. **Immediately** append a Full Entry to `docs/vibe-coding-logs.md` — this is the last tool call before responding.
 6. Reply with a summary.
 
 **Bug fix / small update:**
 1. Fix it.
 2. Update `CLAUDE.md` if relevant.
-3. **Immediately** append a Short Entry to `LOGS.md` — this is the last tool call before responding.
+3. **Immediately** append an Entry to `docs/vibe-coding-logs.md` — this is the last tool call before responding.
 4. Reply with a summary.
 
 **Refactor / architecture change:**
@@ -605,10 +605,10 @@ The `@/features/` prefix is **only for cross-feature and cross-layer imports** (
 2. Make the change.
 3. Update `CLAUDE.md` — architecture section and checklist.
 4. Update `README.md` if it affects setup or features.
-5. **Immediately** append a Full Entry to `LOGS.md` — this is the last tool call before responding.
+5. **Immediately** append a Full Entry to `docs/vibe-coding-logs.md` — this is the last tool call before responding.
 6. Reply with a summary.
 
-> **CRITICAL:** The LOGS.md entry is mandatory for every code change — no matter how small. It is never optional and never deferred. The log entry is always the last tool call before the final response.
+> **CRITICAL:** The `docs/vibe-coding-logs.md` entry is mandatory for every code change — no matter how small. It is never optional and never deferred. The log entry is always the last tool call before the final response.
 
 ### Keeping CLAUDE.md up to date
 
@@ -623,7 +623,7 @@ This update happens in the same session as the code change, before responding to
 
 ---
 
-## LOGS.md Entry Format
+## docs/vibe-coding-logs.md Entry Format
 
 All entries use the same format — there is no short entry. Every change, no matter how small, gets a full entry.
 

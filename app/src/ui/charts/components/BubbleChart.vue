@@ -32,6 +32,7 @@ const props = withDefaults(
     plugins?: BubbleChartPlugin[];
     legendPosition?: ChartLegendPosition<'bubble'>;
     usePointLegend?: boolean;
+    showLegend?: boolean;
   }>(),
   {
     xLabel: undefined,
@@ -48,6 +49,7 @@ const props = withDefaults(
     plugins: () => [],
     legendPosition: 'top',
     usePointLegend: false,
+    showLegend: true,
   },
 );
 
@@ -87,6 +89,7 @@ const options = computed<BubbleChartOptions>(() => ({
     ...basePlugins,
     legend: {
       ...basePlugins.legend,
+      display: props.showLegend,
       position: props.legendPosition,
       labels: (() => {
         const {

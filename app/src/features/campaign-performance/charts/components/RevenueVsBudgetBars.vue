@@ -53,6 +53,7 @@ function formatValueTick(value: string | number): string {
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
     :value-tick-formatter="formatValueTick"
+    :show-legend="false"
     y-label="Amount (€)"
   />
 </template>

@@ -17,11 +17,13 @@ const props = withDefaults(
     yLabel?: string;
     tooltipCallbacks?: BarTooltipCallbacks;
     valueTickFormatter?: ChartTickFormatter;
+    showLegend?: boolean;
   }>(),
   {
     yLabel: undefined,
     tooltipCallbacks: undefined,
     valueTickFormatter: undefined,
+    showLegend: true,
   },
 );
 
@@ -37,6 +39,7 @@ const options = computed<BarChartOptions>(() => ({
   ...baseOptions,
   plugins: {
     ...basePlugins,
+    legend: { display: props.showLegend },
     tooltip: groupedBarTooltip,
   },
   scales: {

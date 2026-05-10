@@ -16348,3 +16348,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Deleted the color config file entirely rather than migrating it to CSS vars — the whole point of `useCampaignPerformanceTheme` is to be the single source of resolved chart colors; keeping the config file would split responsibility
 - `ConversionFunnelChart` left unchanged — it uses Tailwind class names that map to CSS custom properties, not JS-resolved Chart.js colors; a different theming path that is already theme-aware
 - `getFillColor` is the theme composable's wrapper for `withAlpha` — all direct `withAlpha` calls from chart components replaced with it to keep color logic in one place
+
+
+## [#686] Add showLegend prop to all UI chart components and disable legend in RevenueVsBudgetBars
+**Type:** update
+
+**Summary:** Added `showLegend` prop to all chart components in the UI library that were missing it, and disabled the legend in `RevenueVsBudgetBars`.
+
+**Brainstorming:** `BarChart` and `DonutChart` already had a `showLegend` prop. `GroupedBarChart` and `BubbleChart` did not — their legends were always visible via `basePlugins`. Added `showLegend?: boolean` to both (defaulting to `true` to preserve existing behavior for all other consumers), wired it into each component's legend plugin options, and passed `:show-legend="false"` from `RevenueVsBudgetBars` through `GroupedBarChart`.
+
+**Prompt:** Add this property (showLegend) to all charts in the UI library and disable the legend for RevenueVsBudgetBars.
+
+**What changed:**
+- `ui/charts/components/GroupedBarChart.vue` — added `showLegend?: boolean` prop (default `true`); wired `legend: { display: props.showLegend }` into chart options
+- `ui/charts/components/BubbleChart.vue` — added `showLegend?: boolean` prop (default `true`); wired `legend: { display: props.showLegend }` into chart options
+- `charts/components/RevenueVsBudgetBars.vue` — added `:show-legend="false"` to the `GroupedBarChart` binding
+
+**Key decisions & why:**
+- Default `showLegend` to `true` on both new additions — preserves existing visible-legend behavior; consumers opt out explicitly
+- `BarChart` and `DonutChart` already had the prop — no changes needed there
