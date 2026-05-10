@@ -36,7 +36,7 @@ export async function collectFiles(directory, supportedExtensionsFilter) {
 
 function formatApplyRules(source) {
   return source.replace(applyRulePattern, (_rule, indent, rawClasses) => {
-    const classes = [...new Set(rawClasses.trim().split(/\s+/).filter(Boolean))].sort();
+    const classes = [...new Set(rawClasses.trim().split(/\s+/).filter(Boolean))];
 
     if (classes.length === 0) {
       return `${indent}@apply;`;

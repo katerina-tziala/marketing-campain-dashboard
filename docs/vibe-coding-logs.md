@@ -16285,3 +16285,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Kept `blur()` on `@change` as a secondary guard — belt-and-suspenders; after `position: fixed` the scroll can't happen, but blur ensures focus doesn't linger on the input after selection
 - Did not switch to `v-show` — the chart remount was not the actual cause; `v-if`/`v-else` is semantically correct for mutually exclusive views and avoids initialising both Chart.js instances on mount
 - `overflow-anchor: none` left in `.revenue-budget-chart-area` — harmless and prevents a separate class of scroll anchor issues if layout shifts occur near the chart area
+
+
+## [#683] Extract sr-only-scroll-safe utility class and remove @apply sort from formatter
+**Type:** refactor
+
+**Summary:** Extracted the `position: fixed` radio input hiding pattern into a reusable `.sr-only-scroll-safe` global utility class, and removed alphabetical sorting from the `@apply` formatter so class order is preserved as written.
+
+**Brainstorming:** After fixing the mobile scroll jump in #682 using `position: fixed` on radio inputs, the inline scoped CSS in `RadioToggle` and `RadioItem` was the right immediate fix but not the right long-term home. The pattern is reusable — any future hidden input that needs to avoid mobile focus-scroll would need the same treatment. A global utility class is cleaner. The name needed to be meaningful: `sr-only-scroll-safe` reads as "screen-reader-only, scroll-safe" — it names both what the element is (visually hidden, SR-accessible) and the guarantee it provides (no scroll side effect). The class uses `@apply sr-only fixed pointer-events-none` rather than raw CSS properties — consistent with how all other utility classes in the project are written. Removing the `.sort()` from the formatter was a prerequisite: without that change, the formatter would reorder `sr-only fixed` to `fixed sr-only` alphabetically, and since `sr-only` sets `position: absolute` and must be overridden by `fixed` (which sets `position: fixed`), order matters here.
+
+**Prompt:** Create a utility class named `sr-only-scroll-safe` using `@apply sr-only fixed pointer-events-none`. Before doing that, remove sorting from the tailwind @apply formatting script so class order is preserved.
+
+**What changed:**
+- `app/scripts/format-tailwind-apply.mjs` — removed `.sort()` from the class deduplication step; classes now preserve author order instead of being sorted alphabetically
+- `app/src/styles/utilities/_sr-only-scroll-safe.scss` — new utility class: `@apply sr-only fixed pointer-events-none` with explanatory comment
+- `app/src/styles/utilities/index.scss` — added `@use './sr-only-scroll-safe'`
+- `app/src/ui/forms/RadioToggle.vue` — replaced scoped `input[type='radio']` hiding block with `class="sr-only-scroll-safe"` on the input element
+- `app/src/ui/forms/RadioItem.vue` — same; removed scoped hiding block, added `class="sr-only-scroll-safe"` to input
+
+**Key decisions & why:**
+- Removed sort before creating the utility — `@apply sr-only fixed` works because `fixed` overrides `position: absolute` from `sr-only`; alphabetical sort would produce `@apply fixed sr-only` which is also fine here, but order-dependence in `@apply` is subtle enough that preserving author intent is the safer default going forward
+- Used `@apply` rather than raw CSS in the utility file — consistent with every other utility class in the project
+- Comment kept in the utility file — the why behind `fixed` over `absolute` is non-obvious; future developers need to understand this before changing it

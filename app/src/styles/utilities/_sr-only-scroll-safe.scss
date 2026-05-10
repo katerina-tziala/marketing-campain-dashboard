@@ -1,0 +1,10 @@
+/*
+  Visually hides an element for sighted users while keeping it accessible to screen readers.
+  Uses position: fixed instead of position: absolute (sr-only) so mobile browsers have no
+  document position to scroll to when focus fires on tap.
+*/
+.sr-only-scroll-safe {
+  @apply sr-only
+  	fixed
+  	pointer-events-none;
+}

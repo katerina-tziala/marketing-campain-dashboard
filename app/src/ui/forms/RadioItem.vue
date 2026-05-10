@@ -28,6 +28,7 @@ defineEmits<{ change: [value: string | number] }>();
     :class="[props.variant, { error, disabled }]"
   >
     <input
+      class="sr-only-scroll-safe"
       type="radio"
       :name="name"
       :value="value"
@@ -69,21 +70,6 @@ defineEmits<{ change: [value: string | number] }>();
       	w-3;
     }
   }
-}
-
-/*
-  position: fixed removes the input from document flow so mobile browsers
-  have no scroll target when focus fires on tap — position: absolute (sr-only)
-  gives the browser a real document position it tries to scroll into view.
-*/
-input[type='radio'] {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* variant primary */
