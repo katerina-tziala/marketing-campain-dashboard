@@ -16307,3 +16307,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Removed sort before creating the utility — `@apply sr-only fixed` works because `fixed` overrides `position: absolute` from `sr-only`; alphabetical sort would produce `@apply fixed sr-only` which is also fine here, but order-dependence in `@apply` is subtle enough that preserving author intent is the safer default going forward
 - Used `@apply` rather than raw CSS in the utility file — consistent with every other utility class in the project
 - Comment kept in the utility file — the why behind `fixed` over `absolute` is non-obvious; future developers need to understand this before changing it
+
+
+## [#684] Dynamic max-height positioning in Dropdown
+**Type:** fix
+
+**Summary:** Updated `Dropdown.vue` to compute and apply a dynamic `max-height` on the panel wrapper based on available viewport space, so the panel never overflows the screen regardless of whether it opens below or above the anchor.
+
+**Brainstorming:** The previous logic checked whether the panel fit below using a fixed `maxHeight` prop value, and flipped to above if not — but never actually constrained the panel's height dynamically. If neither direction had enough space for the full desired height, the panel could overflow off-screen. The fix introduces three cases: fits below (desired height), fits above (desired height), neither fits (pick the bigger of spaceBelow/spaceAbove and cap to that). The `max-height` is written directly into `dropdownStyle` so it lands on `panelRef` — the same element that already receives position styles — with no changes needed to `DropdownPanel` or any caller.
+
+**Prompt:** Dropdown needs dynamic max-height positioning. Primary position is below. If it doesn't fit below, try above. If neither fits the full content, pick the bigger vertical area and constrain max-height to that space. Apply max-height to panelRef via dropdownStyle only — no changes to DropdownPanel or callers.
+
+**What changed:**
+- `app/src/ui/dropdown/Dropdown.vue` — `calculatePosition()` now computes `spaceBelow` and `spaceAbove`, applies three-case logic (fits below / fits above / constrained), and includes `max-height` in the returned style object
+
+**Key decisions & why:**
+- `max-height` on `panelRef` wrapper only — callers already use `max-h-full` or grid row sizing inside the panel, so constraining the wrapper is sufficient and requires no caller changes
+- Three cases rather than two — the previous two-case flip gave no guarantee when neither direction had enough space; the third case ensures the panel always stays within the viewport
+- `spaceBelow >= spaceAbove` tiebreak favours below — matches user expectation that dropdowns open downward by default
