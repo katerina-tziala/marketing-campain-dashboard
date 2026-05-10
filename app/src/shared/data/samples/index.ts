@@ -1,1 +1,1 @@
-export { CAMPAIGNS_SAMPLE } from './campaigns';
+export { CAMPAIGNS_MOCK, CAMPAIGNS_SAMPLE } from './campaigns';
