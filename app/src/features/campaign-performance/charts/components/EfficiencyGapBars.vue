@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue';
+import { computed } from 'vue';
 
 import type { Channel } from '@/shared/data';
 import type { PortfolioKPIs } from '@/shared/portfolio';
@@ -8,8 +8,8 @@ import {
   BarChart,
   type BarChartData,
   type BarTooltipCallbacks,
-  MetaItem,
-  MetaRow,
+  ChartLegend,
+  type ChartLegendItem,
   Notification,
 } from '@/ui';
 
@@ -26,17 +26,22 @@ const props = defineProps<{
   kpis: PortfolioKPIs;
 }>();
 
-defineOptions({
-  inheritAttrs: false,
-});
-
 const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
 
-const attrs = useAttrs();
-const rootAttrs = computed(() => {
-  const { 'aria-label': _ariaLabel, ...rest } = attrs;
-  return rest;
-});
+const legendItems = computed<ChartLegendItem[]>(() => [
+  {
+    id: 'overperforming',
+    name: 'Overperforming',
+    color: getFillColor(performanceChartColors.positiveGap),
+    borderColor: performanceChartColors.positiveGap,
+  },
+  {
+    id: 'underperforming',
+    name: 'Underperforming',
+    color: getFillColor(performanceChartColors.negativeGap),
+    borderColor: performanceChartColors.negativeGap,
+  },
+]);
 
 function getGapPercent(channel: Channel): number {
   return getChannelEfficiencyGapPercent(channel, props.kpis);
@@ -109,123 +114,41 @@ const valueScaleBounds = computed<{ min?: number; max?: number }>(() => {
 function formatValueTick(value: string | number): string {
   return formatDecimal(Number(value), 1);
 }
-
-const chartAriaLabel = computed(() =>
-  typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : 'Efficiency Gap by Channel',
-);
 </script>
 
 <template>
-  <div
-    v-bind="rootAttrs"
-    class="efficiency-gap-bars"
-  >
-    <MetaRow
-      size="tiny"
-      class="mx-auto -mb-[1px]"
-    >
-      <MetaItem class="legend-item">
-        <span
-          class="legend-indicator"
-          :style="{ backgroundColor: performanceChartColors.positiveGap }"
-        />
-        <span>Overperforming</span>
-      </MetaItem>
-      <MetaItem class="legend-item">
-        <span
-          class="legend-indicator"
-          :style="{ backgroundColor: performanceChartColors.negativeGap }"
-        />
-        <span>Underperforming</span>
-      </MetaItem>
-    </MetaRow>
+  <template v-if="showChart">
+    <ChartLegend :items="legendItems" />
     <BarChart
-      v-if="showChart"
-      class="h-full min-h-0"
+      class="grow"
       :chart-data="chartData"
-      :aria-label="chartAriaLabel"
+      :show-legend="false"
+      aria-label="Efficiency Gap by Channel"
       :tooltip-callbacks="tooltipCallbacks"
       :value-tick-formatter="formatValueTick"
       :value-scale-min="valueScaleBounds.min"
       :value-scale-max="valueScaleBounds.max"
       y-label="Gap (%)"
-    />
-    <div
-      v-else
-      class="p-4 flex items-center justify-center"
-    >
-      <Notification
-        class="text-sm"
-        variant="info"
-        :show-icon="true"
-      >
-        <template #title>
-          <span>
-            {{
-              isSingleChannelView
-                ? 'Share efficiency needs comparison'
-                : 'No share efficiency difference'
-            }}
-          </span>
-        </template>
+  /></template>
+  <Notification
+    v-else
+    class="text-sm"
+    variant="info"
+    :show-icon="true"
+  >
+    <template #title>
+      <span>
         {{
           isSingleChannelView
-            ? 'Select at least two channels to compare revenue share against budget share'
-            : 'These channels have the same revenue-to-budget balance in the current selection'
+            ? 'Share efficiency needs comparison'
+            : 'No share efficiency difference'
         }}
-      </Notification>
-    </div>
-  </div>
+      </span>
+    </template>
+    {{
+      isSingleChannelView
+        ? 'Select at least two channels to compare revenue share against budget share'
+        : 'These channels have the same revenue-to-budget balance in the current selection'
+    }}
+  </Notification>
 </template>
-
-<style lang="scss" scoped>
-.efficiency-gap-bars {
-  @apply gap-0
-  	grid
-  	grid-cols-1
-  	grid-rows-[auto_minmax(0,1fr)]
-  	h-full
-  	min-h-0
-  	pt-3.5
-  	w-full;
-}
-
-.legend-item {
-  @apply flex
-  	flex-nowrap
-  	gap-1.5
-  	items-center
-  	justify-end;
-
-  > span {
-    @apply inline-block;
-  }
-}
-
-.legend-indicator {
-  @apply border
-  	border-white/20
-  	size-[0.813rem];
-}
-
-.efficiency-empty {
-  @apply gap-2
-  	grid
-  	min-h-80
-  	place-content-center
-  	text-center
-  	text-sm
-  	text-typography-muted;
-}
-
-.efficiency-empty-title {
-  @apply font-semibold
-  	text-base
-  	text-typography-primary;
-}
-
-.efficiency-empty-copy {
-  @apply max-w-md
-  	mx-auto;
-}
-</style>

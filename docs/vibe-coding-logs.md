@@ -16367,3 +16367,109 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Default `showLegend` to `true` on both new additions — preserves existing visible-legend behavior; consumers opt out explicitly
 - `BarChart` and `DonutChart` already had the prop — no changes needed there
+
+
+## [#687] Add ChartLegend component to UI chart library
+**Type:** feature
+
+**Summary:** Added a `ChartLegend` Vue component to the UI charts library that renders a custom legend from a typed array of `ChartLegendItem` objects.
+
+**Brainstorming:** The built-in Chart.js legend is tightly coupled to chart datasets and hard to customize from outside the chart config. A standalone component gives callers full control — they can render it anywhere in the layout (above, below, or beside the chart), drive it from their own data, and hide the Chart.js built-in legend via `showLegend: false`. The component accepts `ChartLegendItem[]` (id/name/color) and reads swatch dimensions, border radius, and text color from `useChartTheme()` so it automatically stays in sync with theme switches. Color strings are passed in by the caller (already resolved, e.g. from `useCampaignPerformanceTheme`) — no color logic inside the component.
+
+**Prompt:** Create a custom chart legend component in the chart.js library. We should pass an array of objects (id, name, color).
+
+**What was built:**
+- `ui/charts/components/ChartLegend.vue` — new component; props: `items: ChartLegendItem[]`; renders a flex-wrap `<ul>` of swatch + label `<li>` items; swatch size/radius/color from `useChartTheme().value.legend`; label color/font-size from same; `aria-hidden` on swatches
+- `ui/charts/types/chart.types.ts` — added `ChartLegendItem` type (`{ id: string; name: string; color: string }`)
+- `ui/charts/types/index.ts` — exported `ChartLegendItem`
+- `ui/charts/components/index.ts` — exported `ChartLegend`
+
+**Key decisions & why:**
+- Reads swatch dimensions from `useChartTheme()` — keeps legend visually consistent with Chart.js built-in legends without hardcoding pixel values
+- `color` is a plain CSS string on the caller — callers own color resolution (e.g. via `useCampaignPerformanceTheme`); the legend component has no color logic
+- `id` on `ChartLegendItem` drives the `v-for` key — stable identity even when name or color changes
+
+
+## [#688] Add custom ChartLegend to EfficiencyGapBars and RevenueVsBudgetBars
+**Type:** update
+
+**Summary:** Wired the new `ChartLegend` component into `EfficiencyGapBars` and `RevenueVsBudgetBars`, replacing the built-in Chart.js legend with the custom one in both charts.
+
+**Brainstorming:** Both charts already had `showLegend: false` on their underlying chart components (or the built-in legend was not meaningful for single-dataset charts). `EfficiencyGapBars` had a fully commented-out custom legend using `MetaRow`/`MetaItem` — that dead code was removed and replaced with `ChartLegend`. `RevenueVsBudgetBars` had no legend at all since the built-in was disabled. Both charts source their legend colors from `performanceChartColors` (already resolved via `useCampaignPerformanceTheme`), so those values pass straight into `ChartLegendItem.color`. Each chart is now wrapped in a flex column container (`flex flex-col gap-2 h-full w-full min-h-0`) with `ChartLegend` on top and the chart below growing to fill remaining space.
+
+**Prompt:** Add custom legend for EfficiencyGapBars and RevenueVsBudgetBars.
+
+**What changed:**
+- `charts/components/EfficiencyGapBars.vue` — removed all commented-out legacy legend markup and dead SCSS; added `ChartLegend` + `ChartLegendItem` imports; added `legendItems` computed (overperforming/underperforming from `performanceChartColors`); wrapped template in flex-col container; `ChartLegend` rendered above chart when `showChart` is true; `MetaItem`, `MetaRow` imports removed
+- `charts/components/RevenueVsBudgetBars.vue` — added `ChartLegend` + `ChartLegendItem` imports; added `legendItems` computed (budget/revenue from `performanceChartColors`); wrapped template in flex-col container; `ChartLegend` rendered above chart
+
+**Key decisions & why:**
+- `ChartLegend` is only rendered when `showChart` is true in `EfficiencyGapBars` — no point showing a legend for the info/empty state
+- Legend items use `performanceChartColors` border colors (not fill colors) as the swatch color — matches the visible bar border color which is more saturated than the filled alpha variant
+
+
+## [#689] Fix ChartLegend runtime error and import sort
+**Type:** fix
+
+**Summary:** Fixed a runtime crash in `ChartLegend` caused by accessing `chartTheme.value` directly in the template, and corrected the import sort order in `RevenueVsBudgetBars`.
+
+**Brainstorming:** `useChartTheme()` returns a `ComputedRef<ChartTheme>`. In `<script setup>`, Vue auto-unwraps refs in the template — so writing `chartTheme.value.legend` in the template tries to access `.value` on the already-unwrapped value, which is `undefined`. The fix is to derive `swatchStyle` and `labelStyle` as computed refs in `<script setup>` and bind those in the template instead of accessing `.value` directly. This also makes the template cleaner. The import sort error in `RevenueVsBudgetBars` was a linter rule requiring values before types within the same import block.
+
+**Prompt:** Runtime error: Cannot read properties of undefined (reading 'legend') in ChartLegend.vue.
+
+**What changed:**
+- `ui/charts/components/ChartLegend.vue` — replaced direct `chartTheme.value.*` template bindings with `swatchStyle` and `labelStyle` computed refs derived in `<script setup>`; added `computed` import
+- `charts/components/RevenueVsBudgetBars.vue` — moved `GroupedBarChart` (value) before type imports to satisfy linter import sort rule
+
+**Key decisions & why:**
+- `swatchStyle` excludes `backgroundColor` so per-item color still binds as a separate style property via spread — keeps the computed reusable across all items
+
+
+## [#690] Fix multi-root template crash in RevenueVsBudgetBars
+**Type:** fix
+
+**Summary:** Restored the wrapper `<div>` in `RevenueVsBudgetBars` that the linter had commented out, which left a multi-root template and caused a Vue runtime crash.
+
+**Brainstorming:** Vue's `shouldUpdateComponent` crashes with `Cannot read properties of null (reading 'emitsOptions')` when it tries to diff a component that resolved to null — which happens when a multi-root template causes incorrect vnode patching. The linter had commented out the `<div>` wrapper added in #688, creating a multi-root template (`ChartLegend` + `GroupedBarChart` as siblings). Restoring the wrapper as a single root fixes the diffing issue.
+
+**Prompt:** Errors in RevenueVsBudgetBars charts.
+
+**What changed:**
+- `charts/components/RevenueVsBudgetBars.vue` — restored `<div class="flex flex-col gap-2 h-full w-full min-h-0">` wrapper; removed commented-out div lines
+
+**Key decisions & why:**
+- Single-root template is required here — `GroupedBarChart` uses `inheritAttrs: false` and `useAttrs()` internally; multi-root breaks Vue's component diffing
+
+
+## [#691] Clean up EfficiencyGapBars attrs plumbing
+**Type:** fix
+
+**Summary:** Removed `useAttrs`, `defineOptions({ inheritAttrs: false })`, and `rootAttrs` from `EfficiencyGapBars` since the wrapper div is gone and `aria-label` is now a static prop on `BarChart` directly.
+
+**Brainstorming:** The original attrs plumbing existed to forward non-aria-label attributes to a wrapper div and pass aria-label to the chart. With the wrapper div removed and no other attrs being forwarded, the whole mechanism was dead. The aria-label is now a static string inlined on the `BarChart` binding.
+
+**Prompt:** Errors in EfficiencyGapBars after removing wrapper div.
+
+**What changed:**
+- `charts/components/EfficiencyGapBars.vue` — removed `useAttrs`, `defineOptions`, `attrs`, `rootAttrs`, and `chartAriaLabel` computed; replaced `:aria-label="chartAriaLabel"` with static `aria-label="Efficiency Gap by Channel"`
+
+
+## [#692] Add borderColor to ChartLegend swatches
+**Type:** update
+
+**Summary:** Added optional `borderColor` to `ChartLegendItem` and wired it into `ChartLegend` swatches so they match the bar chart border treatment; both `EfficiencyGapBars` and `RevenueVsBudgetBars` now pass fill color as `color` and solid color as `borderColor`.
+
+**Brainstorming:** Chart.js legend swatches render with a border matching the dataset `borderColor`. Our custom `ChartLegend` was only applying a background fill, so swatches looked slightly different. The fix is to add `borderColor?: string` to `ChartLegendItem` and apply it conditionally in the swatch style. Callers pass `getFillColor(solidColor)` as `color` (matching the bar fill) and the solid color as `borderColor` (matching the bar border). `getSwatchStyle` builds the per-item style object in `<script setup>` to keep template clean.
+
+**Prompt:** Chart legend items have a lighter border. Update ChartLegend to support borderColor on legend items and wire it into EfficiencyGapBars and RevenueVsBudgetBars.
+
+**What changed:**
+- `ui/charts/types/chart.types.ts` — added `borderColor?: string` to `ChartLegendItem`
+- `ui/charts/components/ChartLegend.vue` — replaced single `swatchStyle` computed with `swatchBaseStyle` + `getSwatchStyle(item)` function that merges base size, `backgroundColor`, and optional border properties
+- `charts/components/EfficiencyGapBars.vue` — `legendItems` now passes `color: getFillColor(...)` + `borderColor: solidColor` for both entries
+- `charts/components/RevenueVsBudgetBars.vue` — same pattern for budget and revenue legend items
+
+**Key decisions & why:**
+- `borderColor` is optional so existing callers (if any) don't need updating and a border-free swatch remains valid
+- Style merged in a function rather than inline template expression to avoid verbose ternary chains and satisfy the return-type linter rule
+- `color` is the fill (alpha variant) and `borderColor` is the solid — matches exactly how Chart.js dataset styles are defined in both chart components

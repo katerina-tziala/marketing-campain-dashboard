@@ -45,14 +45,12 @@ const channelsByGapImpact = computed(() =>
         v-if="revenueBudgetView === 'budgetVsRevenue'"
         class="chart-fill"
         :channels="channelsByGapImpact"
-        aria-label="Revenue vs budget by channel bar chart"
       />
       <EfficiencyGapBars
         v-else
         class="chart-fill"
         :channels="channelsByGapImpact"
         :kpis="kpis"
-        aria-label="Efficiency gap by channel bar chart"
       />
     </div>
   </Card>
@@ -68,10 +66,13 @@ const channelsByGapImpact = computed(() =>
 }
 
 .revenue-budget-chart-area {
-  @apply h-96
-  	min-h-0
-  	min-w-0
-  	w-full;
+  @apply min-h-96
+  	w-full
+  	flex
+  	flex-col
+  	justify-center
+  	items-center
+  	gap-y-1;
 }
 
 .chart-fill {

@@ -3,7 +3,13 @@ import { computed } from 'vue';
 
 import type { Channel } from '@/shared/data';
 import { formatCompactNumber } from '@/shared/utils';
-import { type BarChartData, type BarTooltipCallbacks, GroupedBarChart } from '@/ui';
+import {
+  type BarChartData,
+  type BarTooltipCallbacks,
+  ChartLegend,
+  type ChartLegendItem,
+  GroupedBarChart,
+} from '@/ui';
 
 import { useCampaignPerformanceTheme } from '../composables';
 import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config';
@@ -14,6 +20,21 @@ const props = defineProps<{
 }>();
 
 const { performanceChartColors, getFillColor } = useCampaignPerformanceTheme();
+
+const legendItems = computed<ChartLegendItem[]>(() => [
+  {
+    id: 'budget',
+    name: 'Budget (€)',
+    color: getFillColor(performanceChartColors.budget),
+    borderColor: performanceChartColors.budget,
+  },
+  {
+    id: 'revenue',
+    name: 'Revenue (€)',
+    color: getFillColor(performanceChartColors.revenue),
+    borderColor: performanceChartColors.revenue,
+  },
+]);
 
 const tooltipCallbacks: BarTooltipCallbacks = {
   label: (ctx) => {
@@ -49,11 +70,14 @@ function formatValueTick(value: string | number): string {
 </script>
 
 <template>
+  <ChartLegend :items="legendItems" />
   <GroupedBarChart
     :chart-data="chartData"
     :tooltip-callbacks="tooltipCallbacks"
     :value-tick-formatter="formatValueTick"
     :show-legend="false"
     y-label="Amount (€)"
+    class="grow"
+    aria-label="Revenue vs budget by channel bar chart"
   />
 </template>
