@@ -10,6 +10,7 @@ export type DataTableColumn = {
   title?: string;
   sortable?: boolean;
   ariaLabel?: string;
+  visuallyHiddenLabel?: boolean;
   class?: string;
 };
 
@@ -76,7 +77,12 @@ function sortAriaLabel(col: DataTableColumn): string {
               :class="sortIconClass(col.key)"
           /></span>
         </button>
-        <template v-else>{{ col.label }}</template>
+        <span
+          v-else
+          :class="{ 'sr-only': col.visuallyHiddenLabel }"
+        >
+          {{ col.label }}
+        </span>
       </th>
     </tr>
   </thead>

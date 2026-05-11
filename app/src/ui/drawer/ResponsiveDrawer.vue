@@ -36,6 +36,7 @@ const drawerClass = computed(() => ({
   right: props.side === 'right',
 }));
 const modalOpen = computed(() => props.open && !isDesktop.value);
+const drawerInert = computed(() => (!props.open ? true : undefined));
 
 function syncViewport(e: MediaQueryList | MediaQueryListEvent): void {
   isDesktop.value = e.matches;
@@ -87,7 +88,7 @@ watch(modalOpen, (open) => {
   <div
     class="responsive-drawer"
     :class="drawerClass"
-    :aria-hidden="!open"
+    :inert="drawerInert"
   >
     <aside
       v-if="isDesktop"

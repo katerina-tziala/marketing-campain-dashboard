@@ -28,13 +28,13 @@ defineEmits<{ change: [value: string | number] }>();
     :class="[props.variant, { error, disabled }]"
   >
     <input
+      class="sr-only-scroll-safe"
       type="radio"
       :name="name"
       :value="value"
       :checked="checked"
       :disabled="disabled"
       :aria-label="ariaLabel"
-      class="sr-only"
       @change="$emit('change', value)"
     />
     <span class="radio-indicator" />

@@ -3,16 +3,18 @@
   body {
     @apply bg-background
     	font-sans
-    	h-screen
     	overflow-hidden
     	relative
-    	text-typography-soft
-    	w-screen;
+    	text-typography-soft;
+
+    width: 100dvw;
+    height: 100dvh;
   }
 
   #app {
-    @apply h-screen
-    	overflow-hidden
-    	w-screen;
+    @apply overflow-hidden;
+
+    width: 100dvw;
+    height: 100dvh;
   }
 }

@@ -4,10 +4,8 @@ import { computed } from 'vue';
 import type { PortfolioKPIs } from '@/shared/portfolio';
 import { BarChart, type BarChartData, type BarTooltipCallbacks, type BarTooltipItem } from '@/ui';
 
-import {
-  CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
-  getCampaignPerformanceChartFillColor,
-} from '../config';
+import { useCampaignPerformanceTheme } from '../composables';
+import { CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE } from '../config';
 import type { RoiBarChartItem } from '../types';
 import { formatRoiAllocationTooltipLines } from '../utils';
 
@@ -15,6 +13,8 @@ const props = defineProps<{
   items: RoiBarChartItem[];
   kpis: PortfolioKPIs;
 }>();
+
+const { getFillColor } = useCampaignPerformanceTheme();
 
 function getTooltipDataIndex(ctx: BarTooltipItem): number {
   return ctx.dataIndex;
@@ -49,7 +49,7 @@ const chartData = computed<BarChartData>(() => ({
     {
       label: 'ROI (%)',
       data: roiValues.value,
-      backgroundColor: props.items.map((item) => getCampaignPerformanceChartFillColor(item.color)),
+      backgroundColor: props.items.map((item) => getFillColor(item.color)),
       borderColor: props.items.map((item) => item.color),
       ...CAMPAIGN_PERFORMANCE_BAR_DATASET_STYLE,
     },

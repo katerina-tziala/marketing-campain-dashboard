@@ -72,7 +72,7 @@ defineExpose({
   	opacity-85
   	outline-none
   	overflow-hidden
-  	px-2.5
+  	px-4
   	py-3
   	relative
   	rounded-md

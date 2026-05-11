@@ -35,20 +35,35 @@ function calculatePosition(): Record<string, string | undefined> {
 
   const gap = props.gap ?? DROPDOWN_GAP;
   const minWidth = props.minWidth ?? DROPDOWN_MIN_WIDTH;
-  const maxHeight = props.maxHeight ?? DROPDOWN_MAX_HEIGHT;
+  const desiredMaxHeight = props.maxHeight ?? DROPDOWN_MAX_HEIGHT;
   const edgeMargin = props.edgeMargin ?? DROPDOWN_EDGE_MARGIN;
 
-  const fitsBelow = rect.bottom + gap + maxHeight <= window.innerHeight;
-  const vertical = fitsBelow
-    ? { top: `${rect.bottom + gap}px` }
-    : { bottom: `${window.innerHeight - rect.top + gap}px` };
+  const spaceBelow = window.innerHeight - rect.bottom - gap - edgeMargin;
+  const spaceAbove = rect.top - gap - edgeMargin;
+
+  let vertical: Record<string, string>;
+  let effectiveMaxHeight: number;
+
+  if (spaceBelow >= desiredMaxHeight) {
+    vertical = { top: `${rect.bottom + gap}px` };
+    effectiveMaxHeight = desiredMaxHeight;
+  } else if (spaceAbove >= desiredMaxHeight) {
+    vertical = { bottom: `${window.innerHeight - rect.top + gap}px` };
+    effectiveMaxHeight = desiredMaxHeight;
+  } else {
+    const useBelow = spaceBelow >= spaceAbove;
+    vertical = useBelow
+      ? { top: `${rect.bottom + gap}px` }
+      : { bottom: `${window.innerHeight - rect.top + gap}px` };
+    effectiveMaxHeight = useBelow ? spaceBelow : spaceAbove;
+  }
 
   const horizontal =
     props.align === 'right'
       ? { right: `${window.innerWidth - rect.right}px` }
       : { left: `${Math.min(rect.left, window.innerWidth - minWidth - edgeMargin)}px` };
 
-  return { ...vertical, ...horizontal };
+  return { ...vertical, ...horizontal, 'max-height': `${effectiveMaxHeight}px` };
 }
 
 function onKeydown(e: KeyboardEvent): void {

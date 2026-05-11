@@ -33,13 +33,16 @@ defineEmits<{ 'update:modelValue': [value: string] }>();
       class="block"
     >
       <input
+        class="sr-only-scroll-safe"
         type="radio"
         :name="name"
         :value="option.value"
         :checked="modelValue === option.value"
         :disabled="disabled"
-        class="sr-only"
-        @change="$emit('update:modelValue', option.value)"
+        @change="
+          $emit('update:modelValue', option.value);
+          ($event.target as HTMLInputElement).blur();
+        "
       />
       <span class="option-label">{{ option.label }}</span>
     </label>

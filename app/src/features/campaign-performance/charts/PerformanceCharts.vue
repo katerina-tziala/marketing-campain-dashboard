@@ -49,7 +49,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 </script>
 
 <template>
-  <div class="chards-wrapper">
+  <div class="charts-wrapper">
     <section
       class="charts-grid"
       role="region"
@@ -104,7 +104,7 @@ const budgetCampaignItems = useCampaignBudgetShareDonutItems(
 </template>
 
 <style lang="scss" scoped>
-.chards-wrapper {
+.charts-wrapper {
   @apply w-full;
   @include cq-container('performance-charts');
 }

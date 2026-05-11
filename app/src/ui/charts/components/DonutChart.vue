@@ -110,16 +110,20 @@ const options: DonutChartOptions = {
 const chartAriaLabel = computed(() =>
   typeof attrs['aria-label'] === 'string' ? attrs['aria-label'] : 'Donut chart',
 );
+
+const containerAttrs = computed(() => {
+  const { 'aria-label': _ariaLabel, role: _role, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
   <div
-    v-bind="$attrs"
+    v-bind="containerAttrs"
     class="w-full h-full min-h-64"
-    role="img"
-    :aria-label="chartAriaLabel"
   >
     <Doughnut
+      :aria-label="chartAriaLabel"
       :data="chartDataWithDefaultBorders"
       :options="options"
     />

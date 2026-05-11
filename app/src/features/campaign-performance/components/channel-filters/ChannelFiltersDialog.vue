@@ -90,7 +90,7 @@ function applySelection(): void {
             >{{ pendingSelectedCount }} / {{ channels.length }} selected</span
           >
         </p>
-        <div class="scrollbar-stable-both scrollbar-on-surface panel-content">
+        <div class="scrollbar-on-surface panel-content">
           <ChannelFilterChips
             layout="plain"
             :channels="channels"
@@ -165,7 +165,7 @@ function applySelection(): void {
 .panel-content {
   @apply h-full
   	overflow-y-auto
-  	px-0
+  	px-3
   	py-2
   	w-full;
 }

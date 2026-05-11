@@ -1,4 +1,4 @@
-import { CAMPAIGNS_SAMPLE } from '@/shared/data';
+import { CAMPAIGNS_MOCK } from '@/shared/data';
 import { usePortfolioStore } from '@/shared/portfolio';
 
 const DEV_PORTFOLIO_INPUT = {
@@ -8,7 +8,7 @@ const DEV_PORTFOLIO_INPUT = {
     to: '2025-03-31',
   },
   industry: 'Retail',
-  campaigns: CAMPAIGNS_SAMPLE,
+  campaigns: CAMPAIGNS_MOCK,
 };
 
 export function activateDevPortfolio(): void {

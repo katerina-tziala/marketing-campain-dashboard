@@ -98,7 +98,7 @@ const errorNotification = computed(() => {
     @apply leading-5
     	py-2
     	text-sm
-    	text-typography-soft
+    	text-typography-muted
     	tracking-wide;
   }
 }

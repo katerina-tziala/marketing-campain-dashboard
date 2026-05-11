@@ -17,11 +17,13 @@ const props = withDefaults(
     yLabel?: string;
     tooltipCallbacks?: BarTooltipCallbacks;
     valueTickFormatter?: ChartTickFormatter;
+    showLegend?: boolean;
   }>(),
   {
     yLabel: undefined,
     tooltipCallbacks: undefined,
     valueTickFormatter: undefined,
+    showLegend: true,
   },
 );
 
@@ -37,6 +39,7 @@ const options = computed<BarChartOptions>(() => ({
   ...baseOptions,
   plugins: {
     ...basePlugins,
+    legend: { display: props.showLegend },
     tooltip: groupedBarTooltip,
   },
   scales: {
@@ -53,16 +56,20 @@ const chartAriaLabel = computed(() =>
     ? attrs['aria-label']
     : (props.yLabel ?? 'Grouped bar chart'),
 );
+
+const containerAttrs = computed(() => {
+  const { 'aria-label': _ariaLabel, role: _role, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
   <div
-    v-bind="$attrs"
+    v-bind="containerAttrs"
     class="w-full h-full min-h-64"
-    role="img"
-    :aria-label="chartAriaLabel"
   >
     <Bar
+      :aria-label="chartAriaLabel"
       :data="chartData"
       :options="options"
     />

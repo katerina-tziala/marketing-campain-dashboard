@@ -51,7 +51,6 @@ defineExpose({
     class="form-control"
     :class="{ 'input-error': invalid }"
     type="text"
-    inputmode="numeric"
     :placeholder="placeholder"
     autocomplete="off"
     :required="required"

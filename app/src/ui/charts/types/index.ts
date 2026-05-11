@@ -9,6 +9,7 @@ export type {
   BubbleTooltipCallbacks,
   BubbleTooltipItem,
   CartesianChartScaleOptions,
+  ChartLegendItem,
   ChartLegendPosition,
   ChartScaleTicks,
   ChartTickFormatter,

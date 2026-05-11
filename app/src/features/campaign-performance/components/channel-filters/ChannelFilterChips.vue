@@ -137,9 +137,11 @@ defineExpose({
 
 <style lang="scss" scoped>
 .channel-filter-chips {
-  @apply flex
+  @apply -mx-2
+  	flex
   	flex-wrap
   	gap-2.5
+  	px-2
   	py-1;
 
   &:not(.plain) {

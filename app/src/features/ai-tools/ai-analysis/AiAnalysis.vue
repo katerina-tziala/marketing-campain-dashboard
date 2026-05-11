@@ -46,6 +46,7 @@ const tabs: Tab[] = [
   @apply flex
   	flex-col
   	gap-6
+  	pt-1
   	px-6
   	w-full;
 }

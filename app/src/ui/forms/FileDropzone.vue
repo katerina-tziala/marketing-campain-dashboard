@@ -15,6 +15,7 @@ const props = defineProps<{
   invalid?: boolean;
   describedBy?: string;
   disabled?: boolean;
+  fileInputLabel?: string;
 }>();
 
 const emit = defineEmits<{
@@ -129,6 +130,7 @@ defineExpose({
     type="file"
     :accept="accept"
     :disabled="disabled"
+    :aria-label="fileInputLabel ?? 'Choose file'"
     tabindex="-1"
     class="sr-only"
     @change="onChange"

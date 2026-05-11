@@ -54,6 +54,13 @@ defineProps<{
   &.readonly {
     @apply cursor-default
     	pointer-events-none;
+
+    &:focus-visible {
+      @apply ring-2
+      	ring-info
+      	ring-offset-1
+      	ring-offset-background;
+    }
   }
 
   &:not(.readonly) {

@@ -38,7 +38,7 @@ function handleSort(key: string): void {
 }
 
 const COLUMNS: DataTableColumn[] = [
-  { key: 'select', label: '', ariaLabel: 'Select', class: 'w-9' },
+  { key: 'select', label: 'Select', visuallyHiddenLabel: true, class: 'w-9' },
   { key: 'rowId', label: 'Row', sortable: true },
   { key: 'channel', label: 'Channel' },
   { key: 'budget', label: 'Budget' },

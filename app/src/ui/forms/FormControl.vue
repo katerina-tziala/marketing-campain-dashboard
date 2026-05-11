@@ -173,6 +173,10 @@ const describedBy = computed(() => {
   	w-fit;
 }
 
+legend.field-label {
+  @apply mb-2;
+}
+
 .field-label.is-required::after {
   @extend %_theme-transition;
   @apply content-["*"]

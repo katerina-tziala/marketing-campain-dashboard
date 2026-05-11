@@ -51,6 +51,13 @@ export type ChartTooltipOptions<TType extends ChartType> = Omit<
   callbacks: Partial<TooltipCallbacks<TType>>;
 };
 
+export type ChartLegendItem = {
+  id: string;
+  name: string;
+  color: string;
+  borderColor?: string;
+};
+
 export type BarChartData = ChartData<'bar'>;
 export type BarChartOptions = ChartOptions<'bar'>;
 export type BarTooltipCallbacks = Partial<TooltipCallbacks<'bar'>>;

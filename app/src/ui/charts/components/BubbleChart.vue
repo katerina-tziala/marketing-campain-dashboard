@@ -32,6 +32,7 @@ const props = withDefaults(
     plugins?: BubbleChartPlugin[];
     legendPosition?: ChartLegendPosition<'bubble'>;
     usePointLegend?: boolean;
+    showLegend?: boolean;
   }>(),
   {
     xLabel: undefined,
@@ -48,6 +49,7 @@ const props = withDefaults(
     plugins: () => [],
     legendPosition: 'top',
     usePointLegend: false,
+    showLegend: true,
   },
 );
 
@@ -87,6 +89,7 @@ const options = computed<BubbleChartOptions>(() => ({
     ...basePlugins,
     legend: {
       ...basePlugins.legend,
+      display: props.showLegend,
       position: props.legendPosition,
       labels: (() => {
         const {
@@ -129,16 +132,20 @@ const chartAriaLabel = computed(() =>
     ? attrs['aria-label']
     : (props.yLabel ?? props.xLabel ?? 'Bubble chart'),
 );
+
+const containerAttrs = computed(() => {
+  const { 'aria-label': _ariaLabel, role: _role, ...rest } = attrs;
+  return rest;
+});
 </script>
 
 <template>
   <div
-    v-bind="$attrs"
+    v-bind="containerAttrs"
     class="w-full h-full min-h-64"
-    role="img"
-    :aria-label="chartAriaLabel"
   >
     <Bubble
+      :aria-label="chartAriaLabel"
       :data="chartData"
       :options="options"
       :plugins="plugins"

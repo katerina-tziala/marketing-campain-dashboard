@@ -16189,3 +16189,287 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Shared link utility over feature-local styling — link appearance and focus behavior can be reused consistently across the app
 - Formatter-owned deduplication — repeated Tailwind utilities are mechanical noise and should be removed by tooling rather than by manual review
 - Tab continuation for wrapped `@apply` blocks — nested utility lines now stand out from the rule indentation while remaining deterministic under the formatter
+
+## [#679] Move chart ARIA labels to rendered canvases
+
+**Type:** accessibility
+
+**Summary:** Updated reusable Chart.js wrapper components so chart accessible names are forwarded to the actual `vue-chartjs` components, which render the `<canvas role="img">`, instead of being applied to the outer layout containers.
+
+**Brainstorming:** The chart wrappers already receive meaningful `aria-label` values from feature components, but the label belonged on the semantic image element rather than the surrounding sizing container. Since `vue-chartjs` renders canvases with `role="img"` and supports an `ariaLabel` prop through Vue's kebab-case binding, forwarding `aria-label` directly to `Bar`, `Doughnut`, and `Bubble` keeps the accessible name on the element assistive technology interprets as the chart. `aria-describedby` was considered, but removed because the current app does not provide separate chart description text.
+
+**Prompt:** Move ARIA labels for charts into the component we use from the library. The canvas elements have `role="img"`, so attach `aria-label` to the chart elements directly. Do not keep unused `aria-describedby` forwarding.
+
+**What changed:**
+
+- `app/src/ui/charts/components/BarChart.vue` — removed `role="img"` and `aria-label` from the outer wrapper; forwards computed `chartAriaLabel` to the rendered `Bar` component; filters `aria-label` and `role` out of container attrs
+- `app/src/ui/charts/components/GroupedBarChart.vue` — moved the accessible label from the wrapper to the rendered `Bar` component and keeps layout attrs on the container
+- `app/src/ui/charts/components/DonutChart.vue` — forwards `aria-label` to `Doughnut` so the generated canvas receives the accessible name
+- `app/src/ui/charts/components/BubbleChart.vue` — forwards `aria-label` to `Bubble` while preserving non-semantic wrapper attrs on the outer container
+
+**Key decisions & why:**
+
+- Label the canvas, not the wrapper — the library canvas is the element with `role="img"`, so it should own the accessible name
+- Keep wrapper attrs for layout concerns — classes and non-ARIA attrs still belong on the sizing container
+- Filter wrapper `role` and `aria-label` — avoids duplicate semantics and prevents stale labels from landing on the container
+- Omit `aria-describedby` — no chart description elements currently exist, so forwarding it would add API surface without current value
+
+## [#680] Improve drawer, file input, table header, and chip accessibility
+
+**Type:** accessibility
+
+**Summary:** Addressed several accessibility audit findings across the AI drawer, CSV file upload, duplicate-row selection table, and channel filter chips. The pass also adjusted nearby spacing and typography so focus rings and compact AI content remain readable.
+
+**Brainstorming:** The closed responsive drawer used `aria-hidden` while keeping focusable AI controls mounted, which can leave keyboard-reachable elements inside a hidden subtree. The native file input inside the custom dropzone also needed its own accessible name, even though the visible dropzone button is labeled by the form control. The duplicate review table used an empty selection header with `aria-label`; replacing it with real screen-reader text is more robust for table-header audits. Channel chips needed readonly focus styling to preserve keyboard visibility, and small padding adjustments were needed so rings are not clipped by tight containers.
+
+**Prompt:** Improve accessibility issues found during testing: use `inert` for the responsive drawer instead of hiding focusable descendants with `aria-hidden`, label the hidden file input, give the duplicate table selection header discernible text, and keep readonly chip focus-visible styling visible. Also account for the padding adjustments made so focus rings render fully.
+
+**What changed:**
+
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — replaced closed-state `aria-hidden` with an `inert` binding so mounted drawer contents are not focusable when the desktop drawer is closed
+- `app/src/ui/forms/FileDropzone.vue` — added optional `fileInputLabel` and applies it as the native file input `aria-label`, with `Choose file` as the fallback
+- `app/src/features/data-transfer/components/UploadDataForm.vue` — passes `Choose campaign data CSV file` to the file dropzone input label
+- `app/src/ui/table/TableHeader.vue` — added `visuallyHiddenLabel` support so non-sortable headers can render real `sr-only` text
+- `app/src/features/data-transfer/components/data-validation/review-duplications/CampaignDuplicationsTable.vue` — changed the selection column from an empty label with `ariaLabel` to a visually hidden `Select` header
+- `app/src/ui/primitives/Chip.vue` — added readonly `:focus-visible` ring styling so focus remains visible without enabling interaction
+- `app/src/features/campaign-performance/components/channel-filters/ChannelFilterChips.vue` — added horizontal padding and matching negative margin so chip focus rings have room to render
+- `app/src/ui/primitives/Button.vue` — restored wider horizontal button padding so focus rings and button content have more comfortable spacing
+- `app/src/ui/forms/FormControl.vue` — added spacing below fieldset legends to improve grouped form layout
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` and `AnalysisHeader.vue` — added small top spacing around AI analysis content and header metadata
+- `app/src/features/ai-tools/ai-analysis/components/AnalysisState.vue`, `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue`, and `AiConnectionForm.vue` — shifted secondary copy from `text-typography-soft` to `text-typography-muted`
+
+**Key decisions & why:**
+
+- `inert` over `aria-hidden` for the closed drawer — it prevents focus and interaction in the hidden subtree instead of only hiding it from assistive technology
+- Explicit native file input label — custom file controls still need the underlying input to have a discernible accessible name
+- Real hidden text for table headers — `sr-only` header content satisfies table semantics more reliably than an empty `<th>` with only `aria-label`
+- `:focus-visible` only for readonly chips — keyboard focus receives a visible ring without adding `:focus-within` behavior or changing pointer interaction
+- Padding around chip containers — focus rings need physical space so accessibility styling is visible, not clipped by compact layout constraints
+- Formatter pass after spacing edits — Tailwind `@apply` rules were normalized with the project formatter before verification
+
+
+## [#681] Remove inputmode="numeric" from DateField
+**Type:** fix
+
+**Summary:** Removed `inputmode="numeric"` from `DateField.vue` because it blocked mobile users from typing the `/` separator required by the DD/MM/YYYY format.
+
+**Brainstorming:** The field uses `type="text"` with DD/MM/YYYY free-text entry. `inputmode="numeric"` was present to offer a digit-friendly keyboard on mobile, but iOS renders a pure number pad (0–9 only) when this attribute is set — no slash key, making it impossible to type a valid date. The attribute served no purpose for correctness: validation runs on blur against the full string value and is entirely independent of how the user typed it. Removing the attribute restores the default (`inputmode="text"`), which shows the full keyboard on all devices and changes nothing on desktop. A segmented three-field input (DD / MM / YYYY, each `inputmode="numeric"`) would be a better mobile UX long-term, but is out of scope here.
+
+**Prompt:** Date field in mobile opens only numbers inputs — no slash key available. Remove `inputmode="numeric"` since validation is blur-based and doesn't depend on keyboard type. Append log entry.
+
+**What changed:**
+- `app/src/ui/forms/DateField.vue` — removed `inputmode="numeric"` attribute from the `<input>` element
+
+**Key decisions & why:**
+- Drop the attribute entirely rather than switching to `inputmode="decimal"` — `decimal` still lacks a slash key on iOS and adds a locale-variable separator that is meaningless here
+- No replacement inputmode set — the default (`text`) is correct for a free-text date field that accepts letters, digits, and punctuation
+
+
+## [#682] Fix mobile scroll jump on radio toggle interaction
+**Type:** fix
+
+**Summary:** Fixed a mobile-only scroll jump triggered by tapping the Revenue vs Budget chart toggle, caused by mobile browsers firing `scrollIntoView` on focus for `sr-only` radio inputs that have a real document position.
+
+**Brainstorming:** The issue manifested as the entire page jumping to an unexpected scroll position when tapping the Performance/Efficiency radio toggle on mobile. Investigation ruled out multiple causes one by one: Chart.js canvas remount, `ResizeObserver` callbacks, `overflow-hidden` clipping, `max-h-full` collapse, `overflow-anchor`, `@pointerdown.prevent`, and `blur()` on `@change`. The key insight came from comparing toggle behaviour to channel filter behaviour — filters re-render existing components in place, while the radio toggle causes a `v-if`/`v-else` DOM swap. However, the jump persisted even with the charts commented out entirely, proving the chart remount was not the cause. The root cause turned out to be standard mobile browser behaviour: on touch devices, tapping any input fires a `focus` event and the browser automatically calls `scrollIntoView` to bring the focused element into view. The `sr-only` Tailwind utility uses `position: absolute` with clipping — visually invisible but with a real document position, giving the browser a scroll target. Desktop browsers do not scroll on click because they assume the clicked element is already visible. Mobile browsers always scroll on focus regardless. Some mobile browsers (notably Chrome on Android) even ignore `overflow-hidden` on ancestor containers when handling focus scroll, which is why the jump affected the entire app shell. The fix is `position: fixed` on the radio input — this removes it from document flow entirely so there is no document position to scroll to, while keeping it accessible to screen readers via DOM order, `name`, `value`, and checked state.
+
+**Prompt:** Revenue vs Budget toggle causes a full page scroll jump on mobile only. Investigate why and fix without breaking accessibility or scroll behaviour. Log the full investigation and resolution.
+
+**What changed:**
+- `app/src/ui/forms/RadioToggle.vue` — replaced `class="sr-only"` on the radio input with `position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none` in scoped styles; added explanatory comment; added `.blur()` call on `@change` as secondary guard; removed redundant `sr-only` class from template
+- `app/src/ui/forms/RadioItem.vue` — same `position: fixed` treatment applied for consistency; removed `sr-only` class from template; added same explanatory comment
+- `app/src/features/campaign-performance/charts/RevenueVsBudgetChart.vue` — removed `max-h-full` from Card (was collapsing the card on mobile due to `auto-rows-min` parent grid); removed `min-h-0` from `.revenue-budget-chart-area` (no longer needed); added `overflow-anchor: none` (later confirmed not the root cause but harmless); removed `min-h-96` experiment from Card
+
+**Key decisions & why:**
+- `position: fixed` over `position: absolute` (sr-only) — `absolute` has a document scroll position; `fixed` is in viewport coordinate space and gives the browser nothing to scroll to
+- Applied to both `RadioToggle` and `RadioItem` — same root cause applies anywhere a `sr-only` radio input exists in a scrollable context; `RadioItem` is currently only used in a modal (low risk) but fixed proactively for consistency
+- Kept `blur()` on `@change` as a secondary guard — belt-and-suspenders; after `position: fixed` the scroll can't happen, but blur ensures focus doesn't linger on the input after selection
+- Did not switch to `v-show` — the chart remount was not the actual cause; `v-if`/`v-else` is semantically correct for mutually exclusive views and avoids initialising both Chart.js instances on mount
+- `overflow-anchor: none` left in `.revenue-budget-chart-area` — harmless and prevents a separate class of scroll anchor issues if layout shifts occur near the chart area
+
+
+## [#683] Extract sr-only-scroll-safe utility class and remove @apply sort from formatter
+**Type:** refactor
+
+**Summary:** Extracted the `position: fixed` radio input hiding pattern into a reusable `.sr-only-scroll-safe` global utility class, and removed alphabetical sorting from the `@apply` formatter so class order is preserved as written.
+
+**Brainstorming:** After fixing the mobile scroll jump in #682 using `position: fixed` on radio inputs, the inline scoped CSS in `RadioToggle` and `RadioItem` was the right immediate fix but not the right long-term home. The pattern is reusable — any future hidden input that needs to avoid mobile focus-scroll would need the same treatment. A global utility class is cleaner. The name needed to be meaningful: `sr-only-scroll-safe` reads as "screen-reader-only, scroll-safe" — it names both what the element is (visually hidden, SR-accessible) and the guarantee it provides (no scroll side effect). The class uses `@apply sr-only fixed pointer-events-none` rather than raw CSS properties — consistent with how all other utility classes in the project are written. Removing the `.sort()` from the formatter was a prerequisite: without that change, the formatter would reorder `sr-only fixed` to `fixed sr-only` alphabetically, and since `sr-only` sets `position: absolute` and must be overridden by `fixed` (which sets `position: fixed`), order matters here.
+
+**Prompt:** Create a utility class named `sr-only-scroll-safe` using `@apply sr-only fixed pointer-events-none`. Before doing that, remove sorting from the tailwind @apply formatting script so class order is preserved.
+
+**What changed:**
+- `app/scripts/format-tailwind-apply.mjs` — removed `.sort()` from the class deduplication step; classes now preserve author order instead of being sorted alphabetically
+- `app/src/styles/utilities/_sr-only-scroll-safe.scss` — new utility class: `@apply sr-only fixed pointer-events-none` with explanatory comment
+- `app/src/styles/utilities/index.scss` — added `@use './sr-only-scroll-safe'`
+- `app/src/ui/forms/RadioToggle.vue` — replaced scoped `input[type='radio']` hiding block with `class="sr-only-scroll-safe"` on the input element
+- `app/src/ui/forms/RadioItem.vue` — same; removed scoped hiding block, added `class="sr-only-scroll-safe"` to input
+
+**Key decisions & why:**
+- Removed sort before creating the utility — `@apply sr-only fixed` works because `fixed` overrides `position: absolute` from `sr-only`; alphabetical sort would produce `@apply fixed sr-only` which is also fine here, but order-dependence in `@apply` is subtle enough that preserving author intent is the safer default going forward
+- Used `@apply` rather than raw CSS in the utility file — consistent with every other utility class in the project
+- Comment kept in the utility file — the why behind `fixed` over `absolute` is non-obvious; future developers need to understand this before changing it
+
+
+## [#684] Dynamic max-height positioning in Dropdown
+**Type:** fix
+
+**Summary:** Updated `Dropdown.vue` to compute and apply a dynamic `max-height` on the panel wrapper based on available viewport space, so the panel never overflows the screen regardless of whether it opens below or above the anchor.
+
+**Brainstorming:** The previous logic checked whether the panel fit below using a fixed `maxHeight` prop value, and flipped to above if not — but never actually constrained the panel's height dynamically. If neither direction had enough space for the full desired height, the panel could overflow off-screen. The fix introduces three cases: fits below (desired height), fits above (desired height), neither fits (pick the bigger of spaceBelow/spaceAbove and cap to that). The `max-height` is written directly into `dropdownStyle` so it lands on `panelRef` — the same element that already receives position styles — with no changes needed to `DropdownPanel` or any caller.
+
+**Prompt:** Dropdown needs dynamic max-height positioning. Primary position is below. If it doesn't fit below, try above. If neither fits the full content, pick the bigger vertical area and constrain max-height to that space. Apply max-height to panelRef via dropdownStyle only — no changes to DropdownPanel or callers.
+
+**What changed:**
+- `app/src/ui/dropdown/Dropdown.vue` — `calculatePosition()` now computes `spaceBelow` and `spaceAbove`, applies three-case logic (fits below / fits above / constrained), and includes `max-height` in the returned style object
+
+**Key decisions & why:**
+- `max-height` on `panelRef` wrapper only — callers already use `max-h-full` or grid row sizing inside the panel, so constraining the wrapper is sufficient and requires no caller changes
+- Three cases rather than two — the previous two-case flip gave no guarantee when neither direction had enough space; the third case ensures the panel always stays within the viewport
+- `spaceBelow >= spaceAbove` tiebreak favours below — matches user expectation that dropdowns open downward by default
+
+
+## [#685] Wire all chart components to useCampaignPerformanceTheme
+**Type:** refactor
+
+**Summary:** Replaced hardcoded color constants with `useCampaignPerformanceTheme()` in all chart components that weren't using it, and deleted the now-dead color config file.
+
+**Brainstorming:** Three chart components were not using the theme composable: `RevenueVsBudgetBars` used hardcoded `CAMPAIGN_PERFORMANCE_CHART_COLORS.budget/revenue` from config; `RoiBarChart` used `getCampaignPerformanceChartFillColor` from config; `BudgetShareDonutChart` used `withAlpha` from `@/ui` directly. All three needed to call `useCampaignPerformanceTheme()` and consume `performanceChartColors`/`getFillColor` instead. Once all consumers moved to the theme composable, `campaign-performance-chart-colors.ts` (with its hardcoded RGB constants) became fully dead and was deleted. The `roi-budget-scaling-chart.config.ts` also had dead exports (`ROI_BUDGET_SCALING_QUADRANTS`, `ROI_BUDGET_SCALING_DIVIDER_STYLE`, `QUADRANT_BACKGROUNDS`) that referenced the deleted file — those were removed too. `ConversionFunnelChart` uses Tailwind CSS class names (design tokens, not JS color values) — no change needed there.
+
+**Prompt:** useCampaignPerformanceTheme should be used to apply chart colors to all charts. Check the campaign-performance feature and adjust all of them properly so we can eventually change themes.
+
+**What changed:**
+- `charts/components/RevenueVsBudgetBars.vue` — removed `CAMPAIGN_PERFORMANCE_CHART_COLORS`/`getCampaignPerformanceChartFillColor` imports; added `useCampaignPerformanceTheme()` call; uses `performanceChartColors.budget/.revenue` and `getFillColor`
+- `charts/components/RoiBarChart.vue` — removed `getCampaignPerformanceChartFillColor` import; added `useCampaignPerformanceTheme()` call; uses `getFillColor` for background colors
+- `charts/components/BudgetShareDonutChart.vue` — removed `withAlpha` from `@/ui`; added `useCampaignPerformanceTheme()` call; uses `getFillColor` in `getSegmentColor`
+- `charts/config/campaign-performance-chart-colors.ts` — deleted entirely (was the only source of hardcoded RGB color strings)
+- `charts/config/roi-budget-scaling-chart.config.ts` — removed dead `ROI_BUDGET_SCALING_QUADRANTS`, `ROI_BUDGET_SCALING_DIVIDER_STYLE`, `QUADRANT_BACKGROUNDS` exports that depended on deleted file
+- `charts/config/index.ts` — removed exports for deleted constants from barrel
+
+**Key decisions & why:**
+- Deleted the color config file entirely rather than migrating it to CSS vars — the whole point of `useCampaignPerformanceTheme` is to be the single source of resolved chart colors; keeping the config file would split responsibility
+- `ConversionFunnelChart` left unchanged — it uses Tailwind class names that map to CSS custom properties, not JS-resolved Chart.js colors; a different theming path that is already theme-aware
+- `getFillColor` is the theme composable's wrapper for `withAlpha` — all direct `withAlpha` calls from chart components replaced with it to keep color logic in one place
+
+
+## [#686] Add showLegend prop to all UI chart components and disable legend in RevenueVsBudgetBars
+**Type:** update
+
+**Summary:** Added `showLegend` prop to all chart components in the UI library that were missing it, and disabled the legend in `RevenueVsBudgetBars`.
+
+**Brainstorming:** `BarChart` and `DonutChart` already had a `showLegend` prop. `GroupedBarChart` and `BubbleChart` did not — their legends were always visible via `basePlugins`. Added `showLegend?: boolean` to both (defaulting to `true` to preserve existing behavior for all other consumers), wired it into each component's legend plugin options, and passed `:show-legend="false"` from `RevenueVsBudgetBars` through `GroupedBarChart`.
+
+**Prompt:** Add this property (showLegend) to all charts in the UI library and disable the legend for RevenueVsBudgetBars.
+
+**What changed:**
+- `ui/charts/components/GroupedBarChart.vue` — added `showLegend?: boolean` prop (default `true`); wired `legend: { display: props.showLegend }` into chart options
+- `ui/charts/components/BubbleChart.vue` — added `showLegend?: boolean` prop (default `true`); wired `legend: { display: props.showLegend }` into chart options
+- `charts/components/RevenueVsBudgetBars.vue` — added `:show-legend="false"` to the `GroupedBarChart` binding
+
+**Key decisions & why:**
+- Default `showLegend` to `true` on both new additions — preserves existing visible-legend behavior; consumers opt out explicitly
+- `BarChart` and `DonutChart` already had the prop — no changes needed there
+
+
+## [#687] Add ChartLegend component to UI chart library
+**Type:** feature
+
+**Summary:** Added a `ChartLegend` Vue component to the UI charts library that renders a custom legend from a typed array of `ChartLegendItem` objects.
+
+**Brainstorming:** The built-in Chart.js legend is tightly coupled to chart datasets and hard to customize from outside the chart config. A standalone component gives callers full control — they can render it anywhere in the layout (above, below, or beside the chart), drive it from their own data, and hide the Chart.js built-in legend via `showLegend: false`. The component accepts `ChartLegendItem[]` (id/name/color) and reads swatch dimensions, border radius, and text color from `useChartTheme()` so it automatically stays in sync with theme switches. Color strings are passed in by the caller (already resolved, e.g. from `useCampaignPerformanceTheme`) — no color logic inside the component.
+
+**Prompt:** Create a custom chart legend component in the chart.js library. We should pass an array of objects (id, name, color).
+
+**What was built:**
+- `ui/charts/components/ChartLegend.vue` — new component; props: `items: ChartLegendItem[]`; renders a flex-wrap `<ul>` of swatch + label `<li>` items; swatch size/radius/color from `useChartTheme().value.legend`; label color/font-size from same; `aria-hidden` on swatches
+- `ui/charts/types/chart.types.ts` — added `ChartLegendItem` type (`{ id: string; name: string; color: string }`)
+- `ui/charts/types/index.ts` — exported `ChartLegendItem`
+- `ui/charts/components/index.ts` — exported `ChartLegend`
+
+**Key decisions & why:**
+- Reads swatch dimensions from `useChartTheme()` — keeps legend visually consistent with Chart.js built-in legends without hardcoding pixel values
+- `color` is a plain CSS string on the caller — callers own color resolution (e.g. via `useCampaignPerformanceTheme`); the legend component has no color logic
+- `id` on `ChartLegendItem` drives the `v-for` key — stable identity even when name or color changes
+
+
+## [#688] Add custom ChartLegend to EfficiencyGapBars and RevenueVsBudgetBars
+**Type:** update
+
+**Summary:** Wired the new `ChartLegend` component into `EfficiencyGapBars` and `RevenueVsBudgetBars`, replacing the built-in Chart.js legend with the custom one in both charts.
+
+**Brainstorming:** Both charts already had `showLegend: false` on their underlying chart components (or the built-in legend was not meaningful for single-dataset charts). `EfficiencyGapBars` had a fully commented-out custom legend using `MetaRow`/`MetaItem` — that dead code was removed and replaced with `ChartLegend`. `RevenueVsBudgetBars` had no legend at all since the built-in was disabled. Both charts source their legend colors from `performanceChartColors` (already resolved via `useCampaignPerformanceTheme`), so those values pass straight into `ChartLegendItem.color`. Each chart is now wrapped in a flex column container (`flex flex-col gap-2 h-full w-full min-h-0`) with `ChartLegend` on top and the chart below growing to fill remaining space.
+
+**Prompt:** Add custom legend for EfficiencyGapBars and RevenueVsBudgetBars.
+
+**What changed:**
+- `charts/components/EfficiencyGapBars.vue` — removed all commented-out legacy legend markup and dead SCSS; added `ChartLegend` + `ChartLegendItem` imports; added `legendItems` computed (overperforming/underperforming from `performanceChartColors`); wrapped template in flex-col container; `ChartLegend` rendered above chart when `showChart` is true; `MetaItem`, `MetaRow` imports removed
+- `charts/components/RevenueVsBudgetBars.vue` — added `ChartLegend` + `ChartLegendItem` imports; added `legendItems` computed (budget/revenue from `performanceChartColors`); wrapped template in flex-col container; `ChartLegend` rendered above chart
+
+**Key decisions & why:**
+- `ChartLegend` is only rendered when `showChart` is true in `EfficiencyGapBars` — no point showing a legend for the info/empty state
+- Legend items use `performanceChartColors` border colors (not fill colors) as the swatch color — matches the visible bar border color which is more saturated than the filled alpha variant
+
+
+## [#689] Fix ChartLegend runtime error and import sort
+**Type:** fix
+
+**Summary:** Fixed a runtime crash in `ChartLegend` caused by accessing `chartTheme.value` directly in the template, and corrected the import sort order in `RevenueVsBudgetBars`.
+
+**Brainstorming:** `useChartTheme()` returns a `ComputedRef<ChartTheme>`. In `<script setup>`, Vue auto-unwraps refs in the template — so writing `chartTheme.value.legend` in the template tries to access `.value` on the already-unwrapped value, which is `undefined`. The fix is to derive `swatchStyle` and `labelStyle` as computed refs in `<script setup>` and bind those in the template instead of accessing `.value` directly. This also makes the template cleaner. The import sort error in `RevenueVsBudgetBars` was a linter rule requiring values before types within the same import block.
+
+**Prompt:** Runtime error: Cannot read properties of undefined (reading 'legend') in ChartLegend.vue.
+
+**What changed:**
+- `ui/charts/components/ChartLegend.vue` — replaced direct `chartTheme.value.*` template bindings with `swatchStyle` and `labelStyle` computed refs derived in `<script setup>`; added `computed` import
+- `charts/components/RevenueVsBudgetBars.vue` — moved `GroupedBarChart` (value) before type imports to satisfy linter import sort rule
+
+**Key decisions & why:**
+- `swatchStyle` excludes `backgroundColor` so per-item color still binds as a separate style property via spread — keeps the computed reusable across all items
+
+
+## [#690] Fix multi-root template crash in RevenueVsBudgetBars
+**Type:** fix
+
+**Summary:** Restored the wrapper `<div>` in `RevenueVsBudgetBars` that the linter had commented out, which left a multi-root template and caused a Vue runtime crash.
+
+**Brainstorming:** Vue's `shouldUpdateComponent` crashes with `Cannot read properties of null (reading 'emitsOptions')` when it tries to diff a component that resolved to null — which happens when a multi-root template causes incorrect vnode patching. The linter had commented out the `<div>` wrapper added in #688, creating a multi-root template (`ChartLegend` + `GroupedBarChart` as siblings). Restoring the wrapper as a single root fixes the diffing issue.
+
+**Prompt:** Errors in RevenueVsBudgetBars charts.
+
+**What changed:**
+- `charts/components/RevenueVsBudgetBars.vue` — restored `<div class="flex flex-col gap-2 h-full w-full min-h-0">` wrapper; removed commented-out div lines
+
+**Key decisions & why:**
+- Single-root template is required here — `GroupedBarChart` uses `inheritAttrs: false` and `useAttrs()` internally; multi-root breaks Vue's component diffing
+
+
+## [#691] Clean up EfficiencyGapBars attrs plumbing
+**Type:** fix
+
+**Summary:** Removed `useAttrs`, `defineOptions({ inheritAttrs: false })`, and `rootAttrs` from `EfficiencyGapBars` since the wrapper div is gone and `aria-label` is now a static prop on `BarChart` directly.
+
+**Brainstorming:** The original attrs plumbing existed to forward non-aria-label attributes to a wrapper div and pass aria-label to the chart. With the wrapper div removed and no other attrs being forwarded, the whole mechanism was dead. The aria-label is now a static string inlined on the `BarChart` binding.
+
+**Prompt:** Errors in EfficiencyGapBars after removing wrapper div.
+
+**What changed:**
+- `charts/components/EfficiencyGapBars.vue` — removed `useAttrs`, `defineOptions`, `attrs`, `rootAttrs`, and `chartAriaLabel` computed; replaced `:aria-label="chartAriaLabel"` with static `aria-label="Efficiency Gap by Channel"`
+
+
+## [#692] Add borderColor to ChartLegend swatches
+**Type:** update
+
+**Summary:** Added optional `borderColor` to `ChartLegendItem` and wired it into `ChartLegend` swatches so they match the bar chart border treatment; both `EfficiencyGapBars` and `RevenueVsBudgetBars` now pass fill color as `color` and solid color as `borderColor`.
+
+**Brainstorming:** Chart.js legend swatches render with a border matching the dataset `borderColor`. Our custom `ChartLegend` was only applying a background fill, so swatches looked slightly different. The fix is to add `borderColor?: string` to `ChartLegendItem` and apply it conditionally in the swatch style. Callers pass `getFillColor(solidColor)` as `color` (matching the bar fill) and the solid color as `borderColor` (matching the bar border). `getSwatchStyle` builds the per-item style object in `<script setup>` to keep template clean.
+
+**Prompt:** Chart legend items have a lighter border. Update ChartLegend to support borderColor on legend items and wire it into EfficiencyGapBars and RevenueVsBudgetBars.
+
+**What changed:**
+- `ui/charts/types/chart.types.ts` — added `borderColor?: string` to `ChartLegendItem`
+- `ui/charts/components/ChartLegend.vue` — replaced single `swatchStyle` computed with `swatchBaseStyle` + `getSwatchStyle(item)` function that merges base size, `backgroundColor`, and optional border properties
+- `charts/components/EfficiencyGapBars.vue` — `legendItems` now passes `color: getFillColor(...)` + `borderColor: solidColor` for both entries
+- `charts/components/RevenueVsBudgetBars.vue` — same pattern for budget and revenue legend items
+
+**Key decisions & why:**
+- `borderColor` is optional so existing callers (if any) don't need updating and a border-free swatch remains valid
+- Style merged in a function rather than inline template expression to avoid verbose ternary chains and satisfy the return-type linter rule
+- `color` is the fill (alpha variant) and `borderColor` is the solid — matches exactly how Chart.js dataset styles are defined in both chart components
