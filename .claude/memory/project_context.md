@@ -1,6 +1,6 @@
 ---
 name: Project Context
-description: Marketing Campaign Dashboard — MBA project, full status, key architecture facts, latest log entries
+description: Marketing Intelligence Dashboard — MBA project, full status, key architecture facts, latest log entries
 type: project
 originSessionId: 639d9e4c-681f-4f4d-af28-648955043fb7
 ---

@@ -1,4 +1,4 @@
-# CLAUDE.md — Marketing Campaign Dashboard
+# CLAUDE.md — Marketing Intelligence Dashboard
 
 ## Project Context
 
@@ -32,7 +32,7 @@ app/                        # Vue 3 + Vite project
 │   │   ├── App.vue             # Root component — renders RouterView + ToastContainer (from @/ui) as global app infrastructure
 │   │   ├── router/
 │   │   │   ├── index.ts        # Vue Router — single route: / → DashboardPage; imports applyPageMeta; router.afterEach() applies page metadata on navigation; route meta.page: { title, description }
-│   │   │   └── page-meta.ts    # applyPageMeta(route) — updates document.title (format: "Marketing Campaign Dashboard | Page Title") and creates/updates <meta name="description"> at runtime; reads route.meta.page; defines fallback defaults
+│   │   │   └── page-meta.ts    # applyPageMeta(route) — updates document.title (format: "Marketing Intelligence Dashboard | Page Title") and creates/updates <meta name="description"> at runtime; reads route.meta.page; defines fallback defaults
 │   │   ├── pages/
 │   │   │   └── DashboardPage.vue # Page-level orchestrator — owns dashboard shell: top header (AppLogo + gradient title + Upload CTA when hasCampaigns), content area routes to UploadDataPlaceholder (no campaigns) or SplitPaneLayout (CampaignPerformanceView main + ResponsiveDrawer #aside hosting AiTools); upload modal + replace confirmation modal mounted at root; reads dashboardOrchestrator.store; projects AI button (SparklesIcon + animated connected dot) into CampaignPerformanceView #header-action slot — button visibility/dot driven by orchestrator state; wires openAiPanel/closeAiPanel through orchestrator; manages upload modal via useUploadModal(uploadModal)
 │   │   ├── composables/
