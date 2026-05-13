@@ -80,6 +80,7 @@ const {
           title="AI Assistant"
           side="right"
           close-label="Close AI panel"
+          modal-full-height
           @close="dashboard.closeAiPanel"
         >
           <template #icon>

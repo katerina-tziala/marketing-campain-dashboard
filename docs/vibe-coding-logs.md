@@ -16473,3 +16473,45 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `borderColor` is optional so existing callers (if any) don't need updating and a border-free swatch remains valid
 - Style merged in a function rather than inline template expression to avoid verbose ternary chains and satisfy the return-type linter rule
 - `color` is the fill (alpha variant) and `borderColor` is the solid — matches exactly how Chart.js dataset styles are defined in both chart components
+
+
+## [#693] Add mobile full-height option to ResponsiveDrawer for AI Assistant
+**Type:** update
+
+**Summary:** Added an opt-in `modalFullHeight` prop to `ResponsiveDrawer` and enabled it for the AI Assistant drawer so its mobile modal uses the full available overlay height.
+
+**Brainstorming:** `ResponsiveDrawer` behaves as a fixed side panel on desktop and as a centered modal on smaller viewports. The AI Assistant needs more vertical working room on mobile because it contains connection status, tabs, and scrollable analysis content. Changing the default modal height would affect every future drawer consumer, so the safer shape is a boolean prop that leaves existing behavior untouched and lets this specific drawer opt into `calc(100dvh - 3rem)`, matching the global `.modal-container` available viewport calculation.
+
+**Prompt:** Make `ResponsiveDrawer` as a modal extend to full available height, but make this a parameter to pass. Implement this for the AI Assistant.
+
+**What changed:**
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — added `modalFullHeight?: boolean` prop with default `false`; added a computed modal class; applies `.full-height` only to the mobile modal container when opted in
+- `app/src/app/pages/DashboardPage.vue` — passed `modal-full-height` to the AI Assistant `ResponsiveDrawer`
+
+**Key decisions & why:**
+- Prop is mobile-modal specific — desktop drawer already fills its container with `h-full`, so the new behavior only targets the centered modal rendering
+- Default stays `false` — avoids surprising other drawer usages
+- Height uses `calc(100dvh - 3rem)` — aligns with existing overlay padding and modal max-height behavior while using dynamic viewport units for mobile browser chrome
+
+
+## [#694] Add health-score CSV samples and executive summary calibration
+**Type:** feature
+
+**Summary:** Added three 10-channel valid CSV samples for Excellent, Needs Attention, and Critical executive-summary scenarios, then tightened executive-summary prompt calibration so the AI interprets ROI and health-score bands consistently.
+
+**Brainstorming:** The goal was not just valid CSVs, but fixtures that naturally drive different executive-summary health outcomes. Each file keeps the existing CSV schema and uses 20 campaigns across exactly 10 channels. The Excellent sample needed extra iteration because the first version had strong total ROI but too much relative skew, causing several channels to be classified as weak against a very high portfolio average. The final Excellent sample is intentionally balanced: high ROI, no inefficient channels, and low concentration. The prompt also needed explicit metric semantics because ROI values in the app are decimal ratios (`7` means 700% ROI), and models can under-score if that scale is not stated.
+
+**Prompt:** Create three more sample files like `valid-10-channels-good`, each with 10 different channels, matching health scores Excellent, NeedsAttention, and Critical when AI analysis is called. Then adjust the Excellent sample and prompt because the model returned Good / 80 / 70 instead of Excellent.
+
+**What changed:**
+- `samples/csv/valid/valid-10-channels-excellent.csv` — added and tuned to 20 campaigns across 10 channels with balanced allocation, low concentration, no inefficient channels, and very strong ROI
+- `samples/csv/valid/valid-10-channels-needs-attention.csv` — added a mixed-performance 10-channel fixture with several inefficient channels
+- `samples/csv/valid/valid-10-channels-critical.csv` — added a 10-channel fixture with negative ROI, multiple inefficient channels, and high concentration risk
+- `app/src/features/ai-tools/prompts/executive-summary-prompt/config.v1.ts` — clarified that ROI and share fields are decimal ratios; made health-score bands binding; added calibration that strongly positive ROI plus no inefficiency and low concentration should score in Excellent unless another material risk exists
+- `app/.env.local` — turned off `VITE_DEV_AI_ANALYSIS_CYCLE` locally so uploaded CSVs are analyzed instead of the dev mock carousel
+
+**Key decisions & why:**
+- Kept the fixtures as CSV-only samples — they exercise the same upload and portfolio-analysis path as user-provided data
+- Balanced the Excellent file instead of only inflating revenue — high ROI alone was not enough because relative channel classification can still imply allocation risk
+- Prompt calibration documents data semantics — the AI sees raw JSON, so it must know that `aggregatedRoi: 7` means 700% ROI and not a small score-like number
+- Dev analysis cycle disabled locally — otherwise uploaded files do not affect executive-summary health labels because the app returns canned sample responses

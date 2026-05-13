@@ -1,0 +1,21 @@
+campaign,channel,budget,impressions,clicks,conversions,revenue
+Email Reactivation,Email,3000,90000,9000,540,15000
+Newsletter Discount,Email,2500,76000,6080,304,6000
+Brand Search,Paid Search,9000,300000,12000,600,18000
+Generic Search Expansion,Paid Search,11000,430000,12900,387,9000
+Instagram Prospecting,Social,8500,920000,18400,276,11040
+Facebook Lookalike,Social,7000,740000,11100,222,8880
+YouTube Awareness,Video,9500,1250000,18750,188,5640
+YouTube Remarketing,Video,6500,720000,11520,288,8640
+SEO Commercial Pages,Organic,2500,260000,18200,1092,30000
+Content Hub,Organic,3000,210000,10500,525,14000
+Cashback Network,Affiliate,5500,210000,8400,504,14000
+Coupon Partner,Affiliate,4500,180000,6300,315,9450
+Display Prospecting,Display,9000,2100000,10500,105,3150
+Retargeting Banners,Display,5500,640000,9600,288,8640
+Macro Influencer Push,Influencer,10000,680000,13600,272,13600
+Creator Whitelist Test,Influencer,6500,360000,7200,216,8640
+Podcast Host Read,Podcast,6000,105000,3150,126,5040
+Podcast Network Buy,Podcast,5500,98000,2450,74,2960
+Referral Rewards,Referral,2200,30000,5400,810,24000
+Invite Milestone Bonus,Referral,1800,24000,4080,571,16000
