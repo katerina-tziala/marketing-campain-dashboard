@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 
 import type { Component } from 'vue';
 
@@ -18,6 +18,41 @@ const emit = defineEmits<{
   change: [tab: string];
 }>();
 
+const tablistRef = ref<HTMLElement | null>(null);
+
+function getTabButtons(): HTMLElement[] {
+  return Array.from(tablistRef.value?.querySelectorAll<HTMLElement>('[role="tab"]') ?? []);
+}
+
+function handleKeydown(event: KeyboardEvent): void {
+  const buttons = getTabButtons();
+  const count = buttons.length;
+  if (count === 0) {
+    return;
+  }
+
+  const focused = buttons.findIndex((el) => el === document.activeElement);
+  if (focused === -1) {
+    return;
+  }
+
+  let next = -1;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+    next = (focused + 1) % count;
+  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+    next = (focused - 1 + count) % count;
+  } else if (event.key === 'Home') {
+    next = 0;
+  } else if (event.key === 'End') {
+    next = count - 1;
+  }
+
+  if (next !== -1) {
+    event.preventDefault();
+    buttons[next].focus();
+  }
+}
+
 onMounted(() => {
   if (!props.activeTab && props.tabs.length) {
     emit('change', props.tabs[0].id);
@@ -27,16 +62,21 @@ onMounted(() => {
 
 <template>
   <div
+    ref="tablistRef"
     class="tabs"
     role="tablist"
+    @keydown="handleKeydown"
   >
     <button
       v-for="tab in tabs"
+      :id="`tab-${tab.id}`"
       :key="tab.id"
       class="tab"
       :class="{ 'tab-active': activeTab === tab.id }"
       role="tab"
       :aria-selected="activeTab === tab.id"
+      :aria-controls="`tabpanel-${tab.id}`"
+      :tabindex="(activeTab ?? tabs[0]?.id) === tab.id ? 0 : -1"
       @click="emit('change', tab.id)"
     >
       <component

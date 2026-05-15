@@ -16606,3 +16606,23 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `Map<string, string>` declared `readonly` — same as the existing `store` field; the map itself is not replaced, only mutated
 - `deletePortfolio` extended to also clean up `lastVisibleCacheKey` — without this, evicted portfolio IDs would accumulate as phantom entries in the key map indefinitely
 - No callers changed — `TabState` delegates through unchanged method signatures; the fix is fully contained in `AnalysisCache`
+
+
+## [#700] Fix incomplete ARIA tab pattern in Tabs.vue
+**Type:** fix
+
+**Summary:** Completed the ARIA tabs pattern by adding `id`, `aria-controls`, and roving `tabindex` to tab buttons, adding Left/Right/Home/End arrow key navigation on the tablist, and adding `role="tabpanel"`, `id`, and `aria-labelledby` to the panel container in AiAnalysis.vue.
+
+**Brainstorming:** The existing implementation had `role="tablist"` and `role="tab"` with `aria-selected`, but was missing the three other requirements from the ARIA authoring practices: (1) `aria-controls` on each tab pointing to its panel; (2) `role="tabpanel"` + `aria-labelledby` on each panel; (3) arrow key navigation with roving tabindex inside the tablist. The roving tabindex pattern means only the active tab has `tabindex="0"` — the rest get `tabindex="-1"` — so Tab/Shift+Tab treats the entire tablist as a single stop and arrow keys move between tabs. An ID convention of `tab-{tab.id}` / `tabpanel-{tab.id}` links tabs to panels without coupling the component to caller structure. The panel attributes are added in AiAnalysis.vue (the only caller) rather than inside Tabs.vue, since Tabs.vue only renders the tab bar; the panel container is owned by the caller.
+
+**Prompt:** Fix the incomplete ARIA tab pattern in Tabs.vue — add aria-controls, roving tabindex, and Left/Right/Home/End arrow key navigation to the tablist. Add role="tabpanel", id, aria-labelledby, and tabindex="0" to the panel container in AiAnalysis.vue.
+
+**What changed:**
+- `app/src/ui/primitives/Tabs.vue` — added `ref="tablistRef"` on the tablist div; `@keydown="handleKeydown"` on the tablist; `id="tab-{tab.id}"`, `aria-controls="tabpanel-{tab.id}"`, and roving `:tabindex` on each tab button; added `getTabButtons()` and `handleKeydown()` functions handling ArrowRight/ArrowLeft/ArrowDown/ArrowUp/Home/End
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — added `role="tabpanel"`, `:id="tabpanel-${activeTab}"`, `:aria-labelledby="tab-${activeTab}"`, and `tabindex="0"` to the `.ai-analysis-content` div
+
+**Key decisions & why:**
+- Roving tabindex defaults to `tabs[0]?.id` when `activeTab` is undefined — prevents a brief window on initial render where all tabs are `tabindex="-1"` and the tablist is unreachable by keyboard
+- Arrow navigation focuses the button but does not select the tab — consistent with the ARIA authoring practices "manual activation" pattern; selection still requires Enter/Space or click
+- `handleKeydown` returns early if no tab button is focused — prevents interference when focus is elsewhere inside the tablist container
+- Panel `id` and `aria-labelledby` are set dynamically on the single always-present panel container — avoids needing multiple panel elements in the DOM since only one tab is active at a time

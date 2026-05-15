@@ -23,7 +23,13 @@ const tabs: Tab[] = [
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
   <div class="scrollbar-stable scrollbar-on-surface ai-analysis-container">
-    <div class="ai-analysis-content">
+    <div
+      :id="`tabpanel-${analysisStore.activeTab}`"
+      class="ai-analysis-content"
+      role="tabpanel"
+      :aria-labelledby="`tab-${analysisStore.activeTab}`"
+      tabindex="0"
+    >
       <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
       <ExecutiveSummaryAnalysis v-else />
     </div>
