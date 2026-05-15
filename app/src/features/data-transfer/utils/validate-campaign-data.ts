@@ -72,10 +72,7 @@ export function validateCampaignData(
 ): CampaignDataParseResult {
   // ── Column validation ──────────────────────────────────────────────────────
   const headerMap = buildHeaderMap(fields);
-  const actualHeaders = Object.values(headerMap);
-  const missingColumns = EXPECTED_HEADERS.filter(
-    (header) => !actualHeaders.includes(header.toLowerCase()),
-  );
+  const missingColumns = EXPECTED_HEADERS.filter((header) => !(header in headerMap));
 
   if (missingColumns.length > 0) {
     return { campaigns: [], errors: [{ type: 'missing_columns', missingColumns }] };

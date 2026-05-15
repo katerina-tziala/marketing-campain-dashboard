@@ -494,6 +494,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   });
   watch(() => aiStore.selectedModel, onModelChange);
   watch(() => analysisContext.value?.portfolioId, onPortfolioSwitch);
+  watch(
+    () => aiStore.isConnected,
+    (isConnected) => {
+      if (!isConnected) {
+        clearStateForDisconnect();
+      }
+    },
+  );
 
   return {
     // Shared

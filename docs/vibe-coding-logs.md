@@ -16535,3 +16535,74 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `failCount` map replaces the `tried` set — the map encodes both runner eligibility and strike count in one structure, avoiding two separate tracking variables
 - Token-limit does not increment `failCount` — the model is removed immediately so the count is irrelevant; keeping them separate avoids conflating exhaustion with transient failure
 - `MAX_RUNNER_ATTEMPTS = 3` as a module-level named constant — makes the threshold explicit and easy to adjust without hunting through the logic
+
+
+## [#696] Fix getNextAvailableModel typo in models-utils.ts
+**Type:** fix
+
+**Summary:** Renamed `getNextAvailableMode` to `getNextAvailableModel` in `models-utils.ts` and updated the import and call site in `aiConnection.store.ts`.
+
+**Brainstorming:** The function name `getNextAvailableMode` was a typo — the missing `l` at the end made the exported name differ from what callers would naturally type (`getNextAvailableModel`). The store imported and called the wrong name, which meant any future refactor or new call site using the correct spelling would result in a TypeScript error. Since both the definition and the only call site used the same wrong spelling, it compiled fine but was a latent correctness hazard.
+
+**Prompt:** Fix the typo: models-utils.ts exports getNextAvailableMode but it should be getNextAvailableModel. Update the definition and all call sites.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/models-utils.ts` — renamed `getNextAvailableMode` → `getNextAvailableModel`
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — updated named import and call in `selectNextAvailableModel()` to use the corrected name
+
+**Key decisions & why:**
+- Both barrels (`providers/utils/index.ts` and `providers/index.ts`) use `export *` so the rename flows through automatically — no barrel changes required
+
+
+## [#697] Fix CSV header case-sensitivity bug in validateCampaignData
+**Type:** fix
+
+**Summary:** Fixed a bug where title-cased CSV headers (e.g. `Campaign`, `CamPaign`) were incorrectly reported as missing columns because the validation check read the wrong side of the header map.
+
+**Brainstorming:** `buildHeaderMap` correctly normalises all headers to lowercase keys, mapping e.g. `'Campaign'` → key `'campaign'`. The data extraction path (`extractCampaignFields`) used the map correctly via `headerMap[key]`. But the column validation called `Object.values(headerMap)` which returns the original-cased strings, then compared them against `header.toLowerCase()` — so `'campaign'` was never found in `['Campaign', 'Channel', ...]`. The fix reads the keys instead, which are already normalised, making the check case-insensitive for any header casing.
+
+**Prompt:** Fix the CSV header case-sensitivity bug — validate-campaign-data.ts compares header.toLowerCase() against actualHeaders which contains original-cased values. Title-cased CSVs silently report missing columns even when headers are correct.
+
+**What changed:**
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — replaced `Object.values(headerMap)` + `.includes(header.toLowerCase())` with a single `!(header in headerMap)` check; the intermediate `actualHeaders` variable was removed
+
+**Key decisions & why:**
+- `header in headerMap` is the most direct expression of the intent — "does this expected key exist in the map" — and avoids constructing an intermediate array
+- No changes to `buildHeaderMap` or `extractCampaignFields` — the normalisation logic was already correct; only the validation check was reading the wrong side of the map
+
+
+## [#698] Fix AiConnectedStatus layering violation — move disconnect side effect into ai-analysis store
+**Type:** fix
+
+**Summary:** Removed the cross-subtree import of `useAiAnalysisStore` from `AiConnectedStatus` by adding a watcher on `aiStore.isConnected` inside `aiAnalysis.store.ts` that calls `clearStateForDisconnect()` automatically when the connection is dropped.
+
+**Brainstorming:** `AiConnectedStatus` lived in `ai-connection/` but imported `useAiAnalysisStore` from the sibling `ai-analysis/` subtree to call `clearStateForDisconnect()` on disconnect. This reversed the correct dependency direction: `ai-analysis` already depends on `ai-connection` (it reads `aiStore.isConnected`, `aiStore.selectedModel`, etc.), so `ai-connection` reaching back into `ai-analysis` created a circular coupling at the component level. The fix is to let `aiAnalysis.store` own the reaction: it already holds `aiStore` as a reference, so watching `aiStore.isConnected` and calling `clearStateForDisconnect()` internally keeps all the coordination inside the store that owns the state being cleared. `AiConnectedStatus` is left with a single responsibility — display connection state and trigger `disconnect()`.
+
+**Prompt:** Fix the layering violation: AiConnectedStatus (in ai-connection/) imports useAiAnalysisStore from ai-analysis/. Move the clearStateForDisconnect() call into a watcher inside aiAnalysis.store.ts on aiStore.isConnected.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — added watcher on `aiStore.isConnected`; calls `clearStateForDisconnect()` when it becomes `false`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — removed `useAiAnalysisStore` import and `analysisStore` ref; removed `handleDisconnect` wrapper function; Disconnect button now calls `store.disconnect` directly
+
+**Key decisions & why:**
+- Watcher in `aiAnalysis.store` rather than the orchestrator — the orchestrator is for cross-feature mediation; this is an internal reaction to a state change that `aiAnalysis.store` already observes, so internalising it is cleaner
+- No `immediate: true` on the watcher — `isConnected` starts `false` and `clearStateForDisconnect` on initial setup would be a no-op at best and surprising at worst
+- `clearStateForDisconnect` kept in the public return — removing it would be a separate cleanup; leaving it available does not break anything
+
+
+## [#699] Fix AnalysisCache lastVisibleCacheKey portfolio isolation bug
+**Type:** fix
+
+**Summary:** `lastVisibleCacheKey` was a single `string | null` shared across all portfolios; switching portfolios left a stale key that could cause `getLastVisible` to return `null` for a portfolio that had a valid cached entry, silently breaking the revert-on-cancel fallback.
+
+**Brainstorming:** The cache storage was already correctly scoped per portfolio via `Map<portfolioId, Map<cacheKey, CacheEntry>>`. `lastVisibleCacheKey` tracked the most recently read or written cache key so that `getLastVisible` could restore the last shown result when a request was cancelled mid-flight. But the key was stored as a single class-level field — not per portfolio. A write or hit for Portfolio B would overwrite the key set by Portfolio A, so returning to Portfolio A and calling `getLastVisible("portfolio-A")` would look up B's key in A's sub-map and find nothing. The fix mirrors the existing storage pattern: replace the single field with `Map<portfolioId, string>` so each portfolio independently tracks its own last-visible key. The bug only manifested when: (1) switching to a portfolio with no cache, (2) triggering an analysis that was then cancelled, (3) `revertTab` failing to restore the old result — a narrow but real path.
+
+**Prompt:** Fix the AnalysisCache portfolio key isolation bug — lastVisibleCacheKey is a single string | null shared across all portfolios. Replace it with Map<portfolioId, string> so each portfolio tracks its own last-visible key independently.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-cache/AnalysisCache.ts` — `lastVisibleCacheKey` changed from `string | null` to `Map<string, string>`; `get()` uses `.set(portfolioId, key)` on hit; `set()` uses `.set(portfolioId, key)` on write; `getLastVisible()` reads `.get(portfolioId)` and early-returns `null` when absent; `deletePortfolio()` also deletes the key entry; `clear()` calls `.clear()` on the map
+
+**Key decisions & why:**
+- `Map<string, string>` declared `readonly` — same as the existing `store` field; the map itself is not replaced, only mutated
+- `deletePortfolio` extended to also clean up `lastVisibleCacheKey` — without this, evicted portfolio IDs would accumulate as phantom entries in the key map indefinitely
+- No callers changed — `TabState` delegates through unchanged method signatures; the fix is fully contained in `AnalysisCache`

@@ -6,7 +6,7 @@ import {
   connectProvider,
   getAllModelsLimitReached,
   getModelById,
-  getNextAvailableMode,
+  getNextAvailableModel,
 } from '../../providers';
 import type { AiConnectionError, AiConnectionEvent, AiProviderType } from '../../types';
 import { getErrorCode } from '../utils/error-handling';
@@ -94,7 +94,7 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
   }
 
   function selectNextAvailableModel(): boolean {
-    const next = getNextAvailableMode(models.value);
+    const next = getNextAvailableModel(models.value);
     if (!next) {
       return false;
     }

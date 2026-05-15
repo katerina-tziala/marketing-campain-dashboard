@@ -3,18 +3,11 @@ import { computed } from 'vue';
 
 import { Button } from '@/ui';
 
-import { useAiAnalysisStore } from '../../ai-analysis/stores';
 import { PROVIDER_LABELS } from '../../providers/utils';
 import { useAiConnectionStore } from '../stores';
 
 const store = useAiConnectionStore();
-const analysisStore = useAiAnalysisStore();
 const providerLabel = computed(() => (store.provider ? PROVIDER_LABELS[store.provider] : ''));
-
-function handleDisconnect(): void {
-  analysisStore.clearStateForDisconnect();
-  store.disconnect();
-}
 </script>
 
 <template>
@@ -30,7 +23,7 @@ function handleDisconnect(): void {
       <Button
         variant="destructive"
         size="smaller"
-        @click="handleDisconnect"
+        @click="store.disconnect"
         >Disconnect</Button
       >
     </div>
