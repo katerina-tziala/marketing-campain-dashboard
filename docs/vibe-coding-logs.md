@@ -16513,3 +16513,25 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Kept the fixtures as CSV-only samples — they exercise the same upload and portfolio-analysis path as user-provided data
 - Balanced the Excellent file instead of only inflating revenue — high ROI alone was not enough because relative channel classification can still imply allocation risk
 - Prompt calibration documents data semantics — the AI sees raw JSON, so it must know that `aggregatedRoi: 7` means 700% ROI and not a small score-like number
+
+
+## [#695] Extract shared model evaluation logic and refine runner retry strategy
+**Type:** refactor
+
+**Summary:** Extracted the duplicated `evaluateModels` + `tryWithModel` logic from both provider connect files into a shared `evaluate-models.ts` utility, and replaced the catch-all error fallback with a token-limit-aware retry strategy that demotes failing runners and removes them after three non-limit failures.
+
+**Brainstorming:** Both `gemini/connect.ts` and `qroq/connect.ts` had identical `tryWithModel` and `evaluateModels` implementations — the only difference was which chat completion function was called. The old catch-all `.catch(() => evaluateModels(apiKey, remaining))` permanently removed any failing model from the candidate pool regardless of why it failed, which was too aggressive. The right behavior is: token-limit errors remove immediately (model is exhausted); other errors give the model up to three chances as runner before removal, and until then keep it in the candidate list so the next successful runner still evaluates it. A `failCount` map per model replaces the old `tried` set and naturally encodes both the runner-eligibility check and the three-strike threshold.
+
+**Prompt:** Extract the model evaluation recursive logic from both provider connect files into a shared utility that accepts the chat completion function as a parameter. Refine the retry strategy so token-limit errors remove the model immediately, other errors move the model to the end of the candidate list, and after three non-limit failures the model is removed entirely.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/evaluate-models.ts` — new file; exports `ChatCompletionFn` type and `evaluateModels(completionFn, apiKey, candidates, failCount?)`; `tryWithModel` is file-private; `MAX_RUNNER_ATTEMPTS = 3`; token-limit removes from candidates immediately; other errors increment failCount and demote runner to end; three strikes removes from candidates
+- `app/src/features/ai-tools/providers/utils/index.ts` — added `export * from './evaluate-models'`
+- `app/src/features/ai-tools/providers/gemini/connect.ts` — simplified to fetch + extractCandidates + delegate to `evaluateModels(requestGeminiChatCompletion, apiKey, candidates)`
+- `app/src/features/ai-tools/providers/qroq/connect.ts` — simplified to fetch + extractCandidates + delegate to `evaluateModels(requestGroqChatCompletion, apiKey, candidates)`
+
+**Key decisions & why:**
+- `ChatCompletionFn` as a parameter rather than a deps object — only one function varies between providers; a wrapper object would be unnecessary abstraction
+- `failCount` map replaces the `tried` set — the map encodes both runner eligibility and strike count in one structure, avoiding two separate tracking variables
+- Token-limit does not increment `failCount` — the model is removed immediately so the count is irrelevant; keeping them separate avoids conflating exhaustion with transient failure
+- `MAX_RUNNER_ATTEMPTS = 3` as a module-level named constant — makes the threshold explicit and easy to adjust without hunting through the logic
