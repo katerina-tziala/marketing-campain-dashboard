@@ -16813,3 +16813,37 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Entire style block removed, not just the rule — leaving an empty `<style>` block would be noise
 - `.table-selectable-row:hover` kept — it is not orphaned; it works via Vue's scoped-attribute inheritance on child component root elements
+
+
+## [#712] Remove no-op trailing return from assertResponseOk
+**Type:** fix
+
+**Summary:** Removed a redundant `return;` at the end of `assertResponseOk` — an `async` function returning `Promise<void>` implicitly returns `undefined` when execution falls off the end; the explicit return added nothing.
+
+**Brainstorming:** The trailing `return;` in `assertResponseOk` had no effect — there is no code after the `if` block, so there is nothing to skip. Contrast with `assertChatResponseOk` directly below, which uses an early `return;` as a genuine guard to skip the async `response.text()` call when the response is OK. That usage is load-bearing; this one was not.
+
+**Prompt:** Fix assertResponseOk trailing return — error-handling.ts ends with a no-op return in an async function returning Promise<void>.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/error-handling.ts` — removed trailing `return;` from `assertResponseOk`
+
+**Key decisions & why:**
+- No behavior change — implicit `undefined` return is identical to explicit `return;` in a `Promise<void>` function
+
+
+## [#713] Move cooldown reactive dependency from canAnalyze into computed callsites
+**Type:** fix
+
+**Summary:** Removed the `void cooldown.tick.value` trick from `canAnalyze`, making it a pure function; moved the `cooldown.tick.value` read explicitly into `optimizerCanAnalyze` and `summaryCanAnalyze` where the reactive dependency is self-documenting.
+
+**Brainstorming:** The `void cooldown.tick.value` pattern inside `canAnalyze` registered a hidden reactive dependency — necessary to re-evaluate the button-enable computeds when the cooldown timer fires, but surprising to readers who expect `void expr` to be a no-op. A `watch(cooldown.tick, () => evaluateTab(...))` approach would have been a behavior change: it would trigger side-effectful analysis on cooldown expiry instead of just re-enabling the button, which is wrong. The correct fix is to move the bare `cooldown.tick.value` read into the two computeds that consume `canAnalyze`. A bare ref read inside a `computed()` body is a recognizable Vue pattern — it is clearly a dependency declaration at the callsite, not a hidden side effect buried inside a helper function. `canAnalyze` becomes a pure function with no reactive coupling.
+
+**Prompt:** Fix void cooldown.tick.value reactive dependency pattern — works, but is surprising. Readers need the comment to understand it. A watchEffect would make the intent self-documenting.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — removed `void cooldown.tick.value` from `canAnalyze`; added `cooldown.tick.value` read directly inside `optimizerCanAnalyze` and `summaryCanAnalyze` computed bodies with a one-line comment
+
+**Key decisions & why:**
+- `watchEffect` rejected — it runs side effects, not computed invalidation; using it here would trigger `evaluateTab` on cooldown expiry, changing behavior
+- Bare read in computed body chosen over extracting a `cooldownVersion` computed — one extra indirection with no clarity gain
+- Comment retained at each read site — a bare ref read for dependency-only purposes is always non-obvious without it, even in a computed

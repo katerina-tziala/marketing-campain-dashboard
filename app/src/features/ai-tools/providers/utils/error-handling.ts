@@ -45,7 +45,6 @@ export async function assertResponseOk(response: Response): Promise<void> {
   if (!response.ok) {
     throw new Error(errorCodeFromStatus(response.status));
   }
-  return;
 }
 
 export async function assertChatResponseOk(response: Response): Promise<void> {
