@@ -16626,3 +16626,40 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Arrow navigation focuses the button but does not select the tab — consistent with the ARIA authoring practices "manual activation" pattern; selection still requires Enter/Space or click
 - `handleKeydown` returns early if no tab button is focused — prevents interference when focus is elsewhere inside the tablist container
 - Panel `id` and `aria-labelledby` are set dynamically on the single always-present panel container — avoids needing multiple panel elements in the DOM since only one tab is active at a time
+
+
+## [#701] Remove redundant null guard in orchestrator onAnalysisContextChange
+**Type:** fix
+
+**Summary:** Removed the dead `!context.businessContext` condition from the orchestrator's `onAnalysisContextChange` guard — when `portfolioId` is null, `businessContext` is always null by construction, so the second check is unreachable noise.
+
+**Brainstorming:** Both `activePortfolioId` and `businessContext` in `campaignPerformance.store.ts` derive from the same `portfolioStore.getById(activePortfolioId.value ?? '')` call. When `activePortfolioId` is null, `getById('')` returns undefined, making both fields null simultaneously. There is no independent code path where `portfolioId` is non-null but `businessContext` is null. The guard `!context.portfolioId || !context.businessContext` therefore has a dead second branch. TypeScript cannot infer the structural dependency between the two fields, so a non-null assertion `context.businessContext!` is needed at the call site after removing the guard.
+
+**Prompt:** Fix the redundant null guard in orchestrator — `if (!context.portfolioId || !context.businessContext)` — when `portfolioId` is null, `businessContext` is always null by construction. The second check adds noise.
+
+**What changed:**
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — guard simplified from `!context.portfolioId || !context.businessContext` to `!context.portfolioId`; non-null assertion `context.businessContext!` added at the spread call site since TypeScript cannot infer the structural dependency
+
+**Key decisions & why:**
+- Non-null assertion preferred over a runtime check — the construction guarantee is enforced by `mapAnalysisContext` and `campaignPerformance.store`; adding a runtime check would contradict the goal of removing noise
+- No change to `mapAnalysisContext` or store types — the `string | null` / `BusinessContext | null` types remain accurate at the boundary; the assertion is internal to the orchestrator's narrowing logic
+
+
+## [#702] Consolidate hasCampaigns to a single source of truth in orchestrator
+**Type:** fix
+
+**Summary:** `hasCampaigns` was computed independently in two places — `useUploadModal` from `portfolioStore.portfolios.length > 0` and `dashboardOrchestrator.store` from `campaignPerformance.campaigns.length > 0` — now the orchestrator is the single owner using `portfolioStore.portfolios.length > 0`.
+
+**Brainstorming:** Two independent derivations of the same concept diverge subtly: `portfolioStore.portfolios.length > 0` is "is there any portfolio loaded?", while `campaignPerformance.campaigns.length > 0` is "does the active portfolio have campaigns?". These can differ during a portfolio switch (brief transitional window) or theoretically if a portfolio somehow had no campaigns. The orchestrator's version was the weaker one — `portfolioStore.portfolios.length > 0` is the canonical "is there data?" check and matches both the UI intent (show dashboard vs placeholder, show upload button vs hide it) and the replace gate in the upload flow. Fix: orchestrator adopts the portfolio count source; `useUploadModal` reads from the orchestrator instead of computing locally; `DashboardPage` uses `dashboard.hasCampaigns` for both the header button and view routing.
+
+**Prompt:** Fix hasCampaigns computed twice — useUploadModal derives it from portfolioStore.portfolios.length > 0; dashboardOrchestrator.store derives it from campaignPerformance.campaigns.length > 0. One source of truth should own this.
+
+**What changed:**
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — `hasCampaigns` changed from `campaignPerformance.campaigns.length > 0` to `portfolioStore.portfolios.length > 0`
+- `app/src/app/composables/useUploadModal.ts` — removed local `hasCampaigns` computed and `portfolioStore` import; imported `useDashboardOrchestratorStore`; `requestUpload()` now reads `dashboard.hasCampaigns`; `hasCampaigns` removed from return type and return value; `computed` removed from vue import
+- `app/src/app/pages/DashboardPage.vue` — removed `hasCampaigns` from `useUploadModal` destructure; header upload button changed from `v-if="hasCampaigns"` to `v-if="dashboard.hasCampaigns"`
+
+**Key decisions & why:**
+- Orchestrator is the right owner — it is already the page-level mediator that composes stores and exposes page-ready derived state; `DashboardPage` reads from it for all other dashboard flags
+- `portfolioStore.portfolios.length > 0` chosen as the canonical expression — it is portfolio-level existence, not campaign-level content, which matches the UI semantics (replace gate, view routing, header button)
+- `useUploadModal` importing the orchestrator creates no circular dependency — the orchestrator does not import the composable

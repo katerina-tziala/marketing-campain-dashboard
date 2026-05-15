@@ -13,7 +13,6 @@ const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
 const {
-  hasCampaigns,
   showReplaceConfirm,
   requestUpload,
   handleUploadComplete,
@@ -30,7 +29,7 @@ const {
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
       <Button
-        v-if="hasCampaigns"
+        v-if="dashboard.hasCampaigns"
         variant="outline"
         size="small"
         class="shrink-0"
