@@ -16847,3 +16847,21 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `watchEffect` rejected — it runs side effects, not computed invalidation; using it here would trigger `evaluateTab` on cooldown expiry, changing behavior
 - Bare read in computed body chosen over extracting a `cooldownVersion` computed — one extra indirection with no clarity gain
 - Comment retained at each read site — a bare ref read for dependency-only purposes is always non-obvious without it, even in a computed
+
+
+## [#714] Consolidate connected-dot implementations into a single utility
+**Type:** fix
+
+**Summary:** Replaced two separate connected-dot implementations with composable utility classes — `.connected-dot-badge` added to `_connected-dot.scss`, eliminating the scoped `.connected-status` / `.connected-status-dot` / `@keyframes dot-pop` styles from `DashboardPage.vue`.
+
+**Brainstorming:** The existing `.connected-dot::before` pseudo-element handles the inline green dot (used in AiConnectedStatus). DashboardPage had a separate two-element structure: a halo ring wrapper with a spring pop animation and an inner dot span. Adding `.connected-dot-badge` to the utility lets the two classes compose — `.connected-dot` provides the `::before` green dot, `.connected-dot-badge` provides the absolute positioning, halo ring, flex centering, and animation. Because the badge wrapper is `flex items-center justify-center`, the `::before` pseudo-element participates in flex layout and centers naturally, removing the need for a separate inner `<span>`. Template goes from two elements to one.
+
+**Prompt:** Two "connected dot" implementations — DashboardPage.vue has an inline animated dot for the AI button header, and there is also a _connected-dot.scss utility class. Both exist for the same visual concept. Create a variation in connected-dot utils.
+
+**What changed:**
+- `app/src/styles/utilities/_connected-dot.scss` — added `.connected-dot-badge` with absolute positioning, halo ring, flex centering, z-index, and `connected-dot-pop` keyframe animation
+- `app/src/app/pages/DashboardPage.vue` — replaced two-element `connected-status` / `connected-status-dot` markup with single `<span class="connected-dot connected-dot-badge" />`; removed `.connected-status`, `.connected-status-dot`, and `@keyframes dot-pop` scoped styles
+
+**Key decisions & why:**
+- Single element in template — `::before` flex item centers inside the badge wrapper without an inner span
+- Keyframe renamed `connected-dot-pop` to match the utility namespace and avoid collision with any other local `dot-pop` name

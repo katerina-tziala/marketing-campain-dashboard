@@ -64,11 +64,9 @@ const {
             </Button>
             <span
               v-if="dashboard.showConnectedDot"
-              class="connected-status"
+              class="connected-dot connected-dot-badge"
               aria-hidden="true"
-            >
-              <span class="connected-status-dot" />
-            </span>
+            />
           </div>
         </template>
       </CampaignPerformanceView>
@@ -162,43 +160,5 @@ const {
   	overflow-x-hidden
   	overflow-y-hidden
   	w-full;
-}
-
-.connected-status {
-  @apply -right-1.5
-  	-top-1.5
-  	absolute
-  	bg-surface
-  	flex
-  	h-3.5
-  	items-center
-  	justify-center
-  	overflow-visible
-  	rounded-full
-  	w-3.5
-  	z-10;
-
-  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.connected-status-dot {
-  @apply bg-success
-  	block
-  	h-2
-  	rounded-full
-  	shadow-connection
-  	w-2;
-}
-
-@keyframes dot-pop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 </style>
