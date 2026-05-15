@@ -19,8 +19,7 @@ export class TabState {
   }
 
   reset(): void {
-    this.controller = null;
-    this.debounceTimer = null;
+    this.cancelRequest();
   }
 
   getCached(portfolioId: string, channelIds: string[], provider: string): CacheEntry | undefined {

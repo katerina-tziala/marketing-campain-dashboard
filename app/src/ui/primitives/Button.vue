@@ -265,13 +265,22 @@ defineExpose({
 
 /* variant ghost-outline */
 .btn.ghost-outline {
-  @extend .ghost;
-  @apply border-typography-subtle;
+  @apply border-typography-subtle
+  	text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply border-typography-soft;
+      @apply bg-typography/[8%]
+      	border-typography-soft
+      	text-typography;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-lighter;
     }
   }
 }

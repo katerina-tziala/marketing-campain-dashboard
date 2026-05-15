@@ -224,11 +224,3 @@ function handleSubmit(): void {
     </Button>
   </ModalFooter>
 </template>
-
-<style lang="scss" scoped>
-.optional-label {
-  @apply font-normal
-  	text-typography-subtle
-  	text-xs;
-}
-</style>

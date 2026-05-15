@@ -16663,3 +16663,153 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Orchestrator is the right owner — it is already the page-level mediator that composes stores and exposes page-ready derived state; `DashboardPage` reads from it for all other dashboard flags
 - `portfolioStore.portfolios.length > 0` chosen as the canonical expression — it is portfolio-level existence, not campaign-level content, which matches the UI semantics (replace gate, view routing, header button)
 - `useUploadModal` importing the orchestrator creates no circular dependency — the orchestrator does not import the composable
+
+
+## [#703] Replace direct store mutation with clearConnectionError action
+**Type:** fix
+
+**Summary:** `AiConnectionForm.vue` was setting `store.connectionError = null` directly in three places — bypassing Pinia's action layer; fixed by adding a `clearConnectionError()` action to `aiConnection.store.ts` and calling it from the form.
+
+**Brainstorming:** Direct mutation of Pinia store state from a component bypasses action tracking, makes state changes harder to trace in devtools, and couples the component to the store's internal shape. The fix is minimal: a one-line action that encapsulates the mutation, and a find-replace of all three callsites in the form. No behavior change.
+
+**Prompt:** Fix direct store mutation — AiConnectionForm.vue sets store.connectionError = null directly instead of calling an action. Bypasses Pinia's action tracking.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — added `clearConnectionError()` action that sets `connectionError.value = null`; added to the return object
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — replaced all three `store.connectionError = null` direct mutations with `store.clearConnectionError()` calls (in `selectedProvider` watcher, `resetKey` watcher, and `handleApiKeyUpdate`)
+
+**Key decisions & why:**
+- Single action for all three callsites — the mutation is semantically identical in all three contexts (clear the error); no need for separate named actions
+- No behavior change — purely structural; the action body is a single assignment identical to the direct mutation it replaces
+
+
+## [#704] Fix in-place sort mutation in getCacheKey
+**Type:** fix
+
+**Summary:** `getCacheKey` called `channelIds.sort()` which sorts the caller's array in place, silently reordering the `selectedChannelIds` array held by the store; fixed with `[...channelIds].sort()`.
+
+**Brainstorming:** `Array.prototype.sort()` mutates in place and returns the same reference. Any caller passing `selectedChannelIds` from the store would have their array silently reordered after `getCacheKey` returns. The fix is a one-character spread copy before sorting — no behavior change to the key generation logic.
+
+**Prompt:** Fix cache-key.ts mutates input array — channelIds.sort() sorts the caller's array in place. Should be [...channelIds].sort().
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-cache/cache-key.ts` — `channelIds.sort()` replaced with `[...channelIds].sort()`
+
+**Key decisions & why:**
+- Spread copy is the minimal fix — alternatives like `Array.from` or `.slice()` are equivalent; spread is the most idiomatic and concise
+
+
+## [#705] Fix TabState.reset() leaks timers
+**Type:** fix
+
+**Summary:** `TabState.reset()` nulled `controller` and `debounceTimer` without calling `abort()` or `clearTimeout()` first, orphaning in-flight requests and pending timers; fixed by delegating to `cancelRequest()`.
+
+**Brainstorming:** `cancelRequest()` already performs the correct teardown sequence — `abort()` the controller then null it, `clearTimeout` the timer then null it — with null guards on both. `reset()` was duplicating the null assignments but skipping the cleanup calls entirely, meaning any in-flight fetch kept running and any pending debounce callback kept ticking after `reset()` returned. The fix is one line: call `cancelRequest()` from `reset()`. A completed request already sets `controller` to null, so calling `abort()` on null is guarded and is a no-op — no unintended side effects.
+
+**Prompt:** Fix TabState.reset() leaks timers — sets controller = null and debounceTimer = null without calling abort() or clearTimeout() first. In-flight requests and pending timers are orphaned.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/tab-state.ts` — `reset()` body replaced with `this.cancelRequest()` instead of two bare null assignments
+
+**Key decisions & why:**
+- Delegate to `cancelRequest()` rather than inline the cleanup — avoids duplicating teardown logic; `cancelRequest()` is already the single authoritative teardown path and has the correct null guards
+
+
+## [#706] Fix @extend in scoped SCSS for ghost-outline button variant
+**Type:** fix
+
+**Summary:** `ghost-outline` used `@extend .ghost` inside a `<style scoped>` block; scoped attribute injection happens after Sass compiles `@extend`, so the extended selectors can omit the scoped attribute and fail to match at runtime; fixed by inlining the ghost styles directly.
+
+**Brainstorming:** Sass `@extend` works by merging selectors at compile time. In Vue scoped SCSS, the `[data-v-xxxxxxxx]` attribute is appended after Sass compilation, which means extended selectors may not receive the scoped attribute and therefore won't match the rendered DOM. The correct fix is to duplicate the shared declarations inline — `ghost-outline` only borrows three things from `ghost`: `text-typography-subtle`, the hover/focus background+text, and the focus ring. `border-transparent` from ghost is immediately overridden by `border-typography-subtle` so it's dropped. The hover state merges ghost's `bg-typography/[8%] text-typography` with ghost-outline's own `border-typography-soft`.
+
+**Prompt:** Fix @extend in scoped SCSS (Button.vue) — ghost-outline extends .ghost inside a <style scoped> block. Scoped attribute injection happens after @extend compiles, which can produce selectors that don't match correctly at runtime.
+
+**What changed:**
+- `app/src/ui/primitives/Button.vue` — `.btn.ghost-outline` block: removed `@extend .ghost` and `@apply border-typography-subtle`; replaced with inlined `@apply border-typography-subtle text-typography-subtle` base, merged hover/focus state (`bg-typography/[8%] border-typography-soft text-typography`), and explicit focus ring (`ring-2 ring-offset-1 ring-offset-background ring-primary-lighter`) matching ghost
+
+**Key decisions & why:**
+- Inline rather than extract to a mixin — the shared declarations are small (3 properties) and a mixin would add indirection for no reuse benefit; plain duplication is clearer here
+- Drop `border-transparent` from the inlined base — ghost-outline always has a visible border (`border-typography-subtle`), so inheriting the transparent border only to override it immediately is noise
+
+
+## [#707] Fix O(n²) campaign array accumulation in channel-map.ts
+**Type:** fix
+
+**Summary:** `groupCampaignsByChannel` spread the existing campaigns array on every push (`[...existing.campaigns, performance]`), making accumulation quadratic per channel; replaced with a conditional `push()` that mutates the accumulator in place.
+
+**Brainstorming:** The spread pattern `{ ...existing, campaigns: [...existing.campaigns, performance] }` copies the entire campaigns array on every iteration. For a channel with k campaigns, this allocates arrays of length 1, 2, 3, …, k — total O(k²) allocations. Across all channels this is O(n²) in the worst case (single channel). The accumulator is a local `Map` that never escapes this function, so mutating `existing.campaigns` directly is safe. The fix: check `grouped.get(id)` — if the accumulator exists, `push()` into its campaigns array; if not, insert a new entry with a single-element array. The `grouped.set()` call for the existing case is also eliminated, reducing Map writes by the number of duplicate channel campaigns.
+
+**Prompt:** Fix O(n² accumulator in channel-map.ts — { ...existing, campaigns: [...existing.campaigns, campaign] } copies the campaigns array on every push. For channels with many campaigns this is quadratic. Use push() or build the array then wrap.
+
+**What changed:**
+- `app/src/shared/portfolio/analysis/channel-map.ts` — `groupCampaignsByChannel`: replaced `grouped.get(id) ?? { ... }` + spread-assign pattern with an explicit branch: `existing.campaigns.push(performance)` when the accumulator already exists, `grouped.set(id, { id, name, campaigns: [performance] })` on first encounter
+
+**Key decisions & why:**
+- Mutate the accumulator's `campaigns` array directly — it is a private local object that never escapes `groupCampaignsByChannel`, so mutation is safe and eliminates all intermediate array allocations
+- Remove the redundant `grouped.set()` call on the existing-entry branch — `push()` mutates in place; the Map already holds the reference, no re-set needed
+
+
+## [#708] Remove dead provide() call from useUploadModal
+**Type:** fix
+
+**Summary:** `useUploadModal` called `provide('openUploadModal', openUploadModal)` as a side effect, but nothing in the codebase ever called `inject('openUploadModal')` — the registration was unused and misleading to readers.
+
+**Brainstorming:** `provide()` signals to readers that a descendant will inject the value. Since no component does, it's dead documentation noise. The upload flow works via `requestUpload()` returned from the composable — `UploadDataPlaceholder` emits `upload` → `DashboardPage` calls `requestUpload()`, and the header button calls it directly. Both callers are direct children of `DashboardPage`, which already has the composable result in scope, so inject was never needed. Also noted: what was being provided was `openUploadModal` (the inner ungated function), not `requestUpload` — bypassing the replace-confirm gate — so even if something had injected it, it would have been the wrong function.
+
+**Prompt:** Remove the dead provide('openUploadModal', openUploadModal) call from useUploadModal — nothing injects it and the composable already exposes requestUpload() for callers.
+
+**What changed:**
+- `app/src/app/composables/useUploadModal.ts` — removed `provide` from the Vue import; removed `provide('openUploadModal', openUploadModal)` call
+
+**Key decisions & why:**
+- No refactoring of callers needed — `DashboardPage` already uses `requestUpload` from the composable return value directly
+
+
+## [#709] Use DEFAULT_STATE in createTabDisplay via spread
+**Type:** fix
+
+**Summary:** `createTabDisplay()` duplicated the `DEFAULT_STATE` structure inline instead of using it, making `DEFAULT_STATE` dead code; replaced the inline object with `{ ...DEFAULT_STATE }` spread cast to the generic type.
+
+**Brainstorming:** `DEFAULT_STATE` is typed as `TabDisplay` (no generic) and `createTabDisplay` returns `TabDisplay<T>`. A shallow spread is safe here — all four fields are primitives or null, so there are no reference aliasing concerns. The `as TabDisplay<T>` cast is needed because `DEFAULT_STATE.response` is typed as `AnalysisResponse | null` while the generic slot expects `T | null`; at runtime both are null so the cast is sound.
+
+**Prompt:** DEFAULT_STATE is dead code — createTabDisplay() duplicates the same structure inline instead of using it. Use it with spread operator.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts` — `createTabDisplay` body replaced with `return { ...DEFAULT_STATE } as TabDisplay<T>`
+
+**Key decisions & why:**
+- Shallow spread is sufficient — all fields are primitives or null; no nested object references to worry about
+- `as TabDisplay<T>` cast required to satisfy the generic return type without widening the signature
+
+
+## [#710] Replace unnecessary computed() with plain object in useModalAria
+**Type:** fix
+
+**Summary:** `dialogAria` was wrapped in `computed()` despite depending only on `titleId` which is a static UUID string generated once — replaced with a plain object constant.
+
+**Brainstorming:** `computed()` is only useful when the returned value depends on reactive state that can change. `titleId` is set once via `crypto.randomUUID()` and never mutated, so `dialogAria` would never recompute. Both consumers (`Modal.vue` and `ResponsiveDrawer.vue`) bind it via `v-bind="dialogAria"` — Vue handles both plain objects and computed refs identically in `v-bind`, so no template changes are needed. Removed the `computed` and `ComputedRef` imports as they are no longer used.
+
+**Prompt:** dialogAria unnecessary computed — useModalAria.ts wraps a static object in computed(). titleId never changes so dialogAria never recomputes; it should be a plain constant.
+
+**What changed:**
+- `app/src/ui/accessibility/useModalAria.ts` — removed `computed` and `ComputedRef` imports; changed `dialogAria` from `computed(() => ({ ... }))` to a plain object literal; updated the return type annotation accordingly
+
+**Key decisions & why:**
+- No consumer changes needed — `v-bind="dialogAria"` works identically with a plain object; Vue does not require a ref or computed for `v-bind`
+
+
+## [#711] Remove orphaned .optional-label scoped style from UploadDataForm
+**Type:** fix
+
+**Summary:** Removed an unused `.optional-label` scoped SCSS rule from `UploadDataForm.vue` — the class was never applied in the template, leaving an empty style block that was deleted entirely.
+
+**Brainstorming:** Scanned all Vue files with scoped style blocks across the codebase. Only one genuine orphan was found: `.optional-label` in `UploadDataForm.vue`. A second candidate (`.table-selectable-row:hover` in `CampaignDuplicationsTable.vue`) looked orphaned but is actually valid — Vue applies the parent's scoped data attribute to child component root elements, so that selector correctly matches the `<tr class="table-selectable-row">` rendered by `TableSelectableRow` on hover, with `:deep()` piercing through to style the `RadioItem` inside.
+
+**Prompt:** Fix orphaned .optional-label CSS — UploadDataForm.vue has a scoped style for .optional-label that is never applied in the template. Check other places as well.
+
+**What changed:**
+- `app/src/features/data-transfer/components/UploadDataForm.vue` — removed the entire `<style lang="scss" scoped>` block (was the only rule in it)
+
+**Key decisions & why:**
+- Entire style block removed, not just the rule — leaving an empty `<style>` block would be noise
+- `.table-selectable-row:hover` kept — it is not orphaned; it works via Vue's scoped-attribute inheritance on child component root elements

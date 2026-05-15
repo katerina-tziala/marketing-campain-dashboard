@@ -1,4 +1,4 @@
-import { provide, type Ref, ref } from 'vue';
+import { type Ref, ref } from 'vue';
 
 import type UploadDataModal from '@/features/data-transfer/components/UploadDataModal.vue';
 import { type PortfolioInput, usePortfolioStore } from '@/shared/portfolio';
@@ -40,8 +40,6 @@ export function useUploadModal(modalRef: Ref<InstanceType<typeof UploadDataModal
   function closeReplaceConfirm(): void {
     showReplaceConfirm.value = false;
   }
-
-  provide('openUploadModal', openUploadModal);
 
   return {
     showReplaceConfirm,

@@ -32,6 +32,8 @@ export function getScalingOpportunities(
   return rankByRoiDesc(scalingOpportunities).slice(0, thresholds.maxScalingOpportunities);
 }
 
+// TODO: implement pairwise correlation logic here. This will be O(n²) over campaigns —
+// if the file size limit increases significantly, move computePortfolioAnalysis off the main thread.
 export function getCorrelations(
   campaigns: CampaignSummary[],
   thresholds: PortfolioSignalThresholds = DEFAULT_PORTFOLIO_SIGNAL_THRESHOLDS,

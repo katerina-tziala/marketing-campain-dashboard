@@ -30,7 +30,7 @@ const apiKey = ref('');
 const apiKeyError = ref('');
 
 watch(selectedProvider, () => {
-  store.connectionError = null;
+  store.clearConnectionError();
   apiKeyError.value = '';
   apiKey.value = '';
 });
@@ -41,7 +41,7 @@ watch(
     selectedProvider.value = defaultProvider;
     apiKey.value = '';
     apiKeyError.value = '';
-    store.connectionError = null;
+    store.clearConnectionError();
   },
 );
 
@@ -72,7 +72,7 @@ async function handleConnect(): Promise<void> {
 }
 
 function handleApiKeyUpdate(value: string): void {
-  store.connectionError = null;
+  store.clearConnectionError();
   apiKeyError.value = '';
   apiKey.value = value;
 }

@@ -111,6 +111,10 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
     selectedModel.value = null;
   }
 
+  function clearConnectionError(): void {
+    connectionError.value = null;
+  }
+
   function openPanel(): void {
     aiPanelOpen.value = true;
   }
@@ -135,6 +139,7 @@ export const useAiConnectionStore = defineStore('aiConnection', () => {
     // actions
     connect,
     disconnect,
+    clearConnectionError,
     markModelLimitReached,
     selectNextAvailableModel,
     openPanel,

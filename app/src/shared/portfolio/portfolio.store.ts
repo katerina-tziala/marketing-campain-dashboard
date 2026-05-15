@@ -13,6 +13,8 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     return portfolios.value.find((p) => p.id === id);
   }
 
+  // TODO: if computePortfolioAnalysis becomes expensive (e.g. getCorrelations implemented, file limit raised),
+  // make loadPortfolio async, yield a frame before this call, and expose an isLoading flag for a dashboard spinner.
   function buildEntry(input: PortfolioInput): Portfolio {
     const channelMap = buildChannelMap(input.campaigns);
     const channels = Array.from(channelMap.values());

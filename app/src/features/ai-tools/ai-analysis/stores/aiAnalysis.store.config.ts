@@ -26,12 +26,7 @@ export const DEFAULT_STATE: TabDisplay = {
 };
 
 export function createTabDisplay<T extends AnalysisResponse>(): TabDisplay<T> {
-  return {
-    status: DEFAULT_STATE.status,
-    response: null,
-    error: null,
-    notice: null,
-  };
+  return { ...DEFAULT_STATE } as TabDisplay<T>;
 }
 
 export const ALL_TABS: AiAnalysisType[] = ['budgetOptimizer', 'executiveSummary'];
