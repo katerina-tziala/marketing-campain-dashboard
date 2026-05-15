@@ -16508,10 +16508,8 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `samples/csv/valid/valid-10-channels-needs-attention.csv` — added a mixed-performance 10-channel fixture with several inefficient channels
 - `samples/csv/valid/valid-10-channels-critical.csv` — added a 10-channel fixture with negative ROI, multiple inefficient channels, and high concentration risk
 - `app/src/features/ai-tools/prompts/executive-summary-prompt/config.v1.ts` — clarified that ROI and share fields are decimal ratios; made health-score bands binding; added calibration that strongly positive ROI plus no inefficiency and low concentration should score in Excellent unless another material risk exists
-- `app/.env.local` — turned off `VITE_DEV_AI_ANALYSIS_CYCLE` locally so uploaded CSVs are analyzed instead of the dev mock carousel
 
 **Key decisions & why:**
 - Kept the fixtures as CSV-only samples — they exercise the same upload and portfolio-analysis path as user-provided data
 - Balanced the Excellent file instead of only inflating revenue — high ROI alone was not enough because relative channel classification can still imply allocation risk
 - Prompt calibration documents data semantics — the AI sees raw JSON, so it must know that `aggregatedRoi: 7` means 700% ROI and not a small score-like number
-- Dev analysis cycle disabled locally — otherwise uploaded files do not affect executive-summary health labels because the app returns canned sample responses
