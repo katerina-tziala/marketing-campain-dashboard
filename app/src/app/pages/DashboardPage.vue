@@ -24,7 +24,7 @@ const {
 <template>
   <div class="dashboard-shell">
     <header class="dashboard-header">
-      <AppLogo class="w-14" />
+      <AppLogo class="w-12 sm:w-14 shrink-0" />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
@@ -32,11 +32,11 @@ const {
         v-if="dashboard.hasCampaigns"
         variant="outline"
         size="small"
-        class="shrink-0"
+        class="upload-button"
         @click="requestUpload"
       >
         <UploadIcon />
-        Upload data
+        <span class="sr-only sm:not-sr-only">Upload data</span>
       </Button>
     </header>
 
@@ -116,9 +116,10 @@ const {
   	border-primary-deeper
   	flex
   	gap-x-2
+  	sm:gap-x-4
   	items-center
   	justify-start
-  	min-h-16
+  	h-16
   	px-4
   	py-2.5
   	shadow-md
@@ -128,27 +129,36 @@ const {
 
 .dashboard-title {
   @apply font-semibold
-  	grow;
+  	grow
+  	pt-1
+  	leading-5;
 
   .title-wrapper {
-    @apply bg-clip-text
+    @apply text-lg
+    	xs:text-xl
+    	sm:text-2xl
+    	md:tracking-wide
+    	text-transparent
+    	bg-clip-text
     	bg-gradient-to-r
     	from-accent
-    	leading-6
-    	md:text-2xl
-    	md:tracking-wide
-    	sm:not-sr-only
-    	sm:text-xl
-    	sr-only
-    	text-lg
-    	text-transparent
-    	to-secondary
     	via-info
     	via-info-darker
     	via-info-light
     	via-primary
-    	via-primary-light;
+    	via-primary-light
+    	to-secondary;
+
+    line-height: 0;
   }
+}
+
+.upload-button.small.btn.outline {
+  @apply shrink-0
+  	w-9
+  	px-0
+  	sm:w-fit
+  	sm:px-3;
 }
 
 .dashboard-main {

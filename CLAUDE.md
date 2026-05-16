@@ -112,7 +112,7 @@ app/                        # Vue 3 + Vite project
 │   │       └── index.ts            # Barrel — export * from './types'; export * from './samples'; imported by shared/types for public re-export via @/shared/types
 │   ├── ui/                     # UI component library — generic, reusable, no app dependencies
 │   │   ├── primitives/         # Generic building blocks — atomic UI components
-│   │   │   ├── Button.vue      # Generic button wrapper — props: variant? ('primary'|'outline'|'accent-outline'|'text-only'|'info-text-only'|'ghost'|'ghost-outline'|'info-outline'|'destructive'; default 'primary'), size? ('default'|'small'|'smaller'), iconOnly?, noRing?; native attributes pass through via v-bind="$attrs" (disabled, type, aria-label, etc.); exposes getRootEl() → HTMLButtonElement for dropdown anchoring; auto-derives title from aria-label when iconOnly; focus-visible ring per variant unless noRing; disabled: cursor-not-allowed opacity-50
+│   │   │   ├── Button.vue      # Generic button wrapper — props: variant? ('primary'|'outline'|'accent-outline'|'text-only'|'info-text-only'|'ghost'|'ghost-outline'|'info-outline'|'destructive'; default 'primary'), size? ('default'|'small'|'smaller'), iconOnly?, noRing?; inheritAttrs: false — native attributes applied once via v-bind="$attrs" (disabled, type, aria-label, class, etc.); exposes getRootEl() → HTMLButtonElement for dropdown anchoring; auto-derives title from aria-label when iconOnly; focus-visible ring per variant unless noRing; disabled: cursor-not-allowed opacity-50
 │   │   │   ├── button.types.ts # ButtonVariant + ButtonSize types
 │   │   │   ├── Badge.vue       # Generic badge — two-layer structure: outer `.badge` + inner `.badge-body`; props: variant? (success/warning/danger/info/opportunity/primary; default primary), tone? (solid/dimmed/text-only; default solid), shape? (pill/rounded/soft-rounded; default pill), size? (default/small)
 │   │   │   ├── badge.types.ts  # BadgeVariant | BadgeTone | BadgeShape | BadgeSize types
@@ -470,7 +470,7 @@ app/                        # Vue 3 + Vite project
 │   └── check-format.mjs          # CI format checker — runs prettier + formatTailwindApply and reports files with style drift; exits with code 1 if any file differs
 ├── public/                     # Static assets served as-is by Vite — favicon (.ico/.svg/16x16/32x32), apple-touch-icon, PWA icons (192/512), og.png
 ├── index.html                  # data-theme="dark" — dark mode active before JS runs
-├── tailwind.config.js          # Tailwind v3 — darkMode: 'class'; all semantic color tokens via CSS vars; xs (30rem) + sticky-header (78rem) screen breakpoints; zIndex: { 1000: "1000", 1100: "1100" }; h-29: "464px" custom height utility; boxShadow.connection
+├── tailwind.config.js          # Tailwind v3 — darkMode: 'class'; all semantic color tokens via CSS vars; theme.screens (not extend) defines xs→sm→md→lg→sticky-header→xl→2xl in ascending order to control CSS generation order; zIndex: { 1000: "1000", 1100: "1100" }; h-29: "464px" custom height utility; boxShadow.connection
 ├── postcss.config.js
 ├── vite.config.ts              # Aliases: @ → src/, @app → src/app, @features → src/features, @shared → src/shared, @ui → src/ui; rolldown codeSplitting groups (vue-vendor, chart-vendor, vendor); SCSS additionalData globally injects @/styles/mixins/container-queries as *
 ├── tsconfig.json               # Root TypeScript config — references tsconfig.app.json and tsconfig.node.json

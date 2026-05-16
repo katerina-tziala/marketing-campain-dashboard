@@ -17027,3 +17027,68 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - All consumers import from `@/ui` barrel — no import paths needed updating; the move is transparent to all callers
 - `primitives/index.ts` description updated to remove Tabs/TabPanels; `ui/index.ts` description updated to include tabs/*
+
+
+## [#723] Fix Button double class application with inheritAttrs: false
+**Type:** fix
+
+**Summary:** Added `defineOptions({ inheritAttrs: false })` to `Button.vue` so external `class` bindings are applied exactly once via the explicit `v-bind="$attrs"` instead of twice (auto-inheritance + explicit bind).
+
+**Brainstorming:** Vue's default `inheritAttrs: true` causes the root element to receive fallthrough attributes automatically. When `v-bind="$attrs"` is also present on the same element, `class` (and other attrs) gets applied twice. Setting `inheritAttrs: false` makes `v-bind="$attrs"` the single, controlled point of application. No template changes needed — the existing `v-bind="$attrs"` already handles all native attribute forwarding.
+
+**Prompt:** Fix Button.vue so external class bindings are not applied twice. Use inheritAttrs: false — Option A from the brainstorm.
+
+**What changed:**
+- `app/src/ui/primitives/Button.vue` — added `defineOptions({ inheritAttrs: false })` after `withDefaults(defineProps(...))` block (ESLint requires defineProps before defineOptions)
+
+**Key decisions & why:**
+- `defineOptions` placed after `withDefaults(defineProps(...))` — ESLint `vue/define-macros-order` rule requires defineProps first; defineOptions follows
+- No template changes — `v-bind="$attrs"` was already the intended forwarding mechanism; this fix simply stops the duplicate auto-forwarding path
+
+
+## [#724] Spread defaultTheme.screens into tailwind.config.js
+**Type:** update
+
+**Summary:** Added `...defaultTheme.screens` to the custom screens block so all default Tailwind breakpoints are explicitly visible in the config alongside the project's custom ones.
+
+**Brainstorming:** The project previously only declared `xs` and `sticky-header` in `extend.screens`; the default sm/md/lg/xl/2xl breakpoints were inherited implicitly. Spreading `defaultTheme.screens` makes all breakpoints visible in one place. `xs` (480px) stays first, the spread covers sm→2xl, and `sticky-header` (1120px) follows with a comment noting it sits between lg and xl. Tailwind v3 sorts breakpoints by pixel value in the generated CSS so the object key order doesn't affect output correctness.
+
+**Prompt:** Add ...defaultTheme.screens to the tailwind.config.js screens section, maintaining order from smaller to bigger.
+
+**What changed:**
+- `app/tailwind.config.js` — added `import defaultTheme from 'tailwindcss/defaultTheme'`; updated `extend.screens` to spread `defaultTheme.screens` between `xs` and `sticky-header`
+
+**Key decisions & why:**
+- `xs` before spread, `sticky-header` after — xs (480px) is smaller than sm (640px) so it goes first; sticky-header (1120px) is between lg and xl but appears last in the object literal (idiomatic spread pattern); Tailwind sorts by value so CSS output is correct regardless
+
+
+## [#725] Fix screens order in tailwind.config.js
+**Type:** fix
+
+**Summary:** Replaced `...defaultTheme.screens` spread with explicit per-key references so `sticky-header` (1120px) sits correctly between `lg` (1024px) and `xl` (1280px) in the object literal.
+
+**Brainstorming:** The spread placed `2xl` (1536px) before `sticky-header` (1120px) in the object because JS object spread order is insertion-order. Explicit key listing is the only way to interleave a custom breakpoint in the middle of the default set while keeping the object readable and correctly ordered.
+
+**Prompt:** Fix — 2xl appears before sticky-header in the screens object. Reorder properly.
+
+**What changed:**
+- `app/tailwind.config.js` — replaced `...defaultTheme.screens` spread with explicit `sm/md/lg/xl/2xl` keys referencing `defaultTheme.screens.*`; `sticky-header` now sits between `lg` and `xl`
+
+**Key decisions & why:**
+- Individual key references over spread — only way to interleave a custom breakpoint inside the default set while maintaining correct object key order; `defaultTheme.screens.*` references preserve the "single source of truth" benefit of the original spread
+
+
+## [#726] Move screens from theme.extend to theme.screens
+**Type:** fix
+
+**Summary:** Moved the screens definition from `theme.extend.screens` to `theme.screens` to take full control of CSS generation order and fix responsive utility override bugs.
+
+**Brainstorming:** With `extend.screens`, default breakpoints (sm/md/lg/xl/2xl) are generated first in the CSS, then extend additions (xs, sticky-header) follow. At viewport ≥640px both `xs` (≥480px) and `sm` (≥640px) media queries match; since xs is generated later it wins via cascade last-rule-wins, silently overriding `sm:*` utilities. Moving to `theme.screens` replaces the defaults entirely and gives exact control over generation order — xs→sm→md→lg→sticky-header→xl→2xl — so later breakpoints correctly override earlier ones.
+
+**Prompt:** Move screens out of extend into theme.screens so the CSS generation order matches breakpoint size order.
+
+**What changed:**
+- `app/tailwind.config.js` — moved `screens` block from `theme.extend.screens` to `theme.screens` (top-level theme key, before extend)
+
+**Key decisions & why:**
+- `theme.screens` not `theme.extend.screens` — only way to guarantee CSS generation order matches breakpoint pixel order; extend appends custom screens after defaults in the CSS output regardless of config key order
