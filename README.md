@@ -18,18 +18,65 @@ The project demonstrates frontend architecture, domain modeling, data validation
 - Generates AI-assisted executive summaries and budget optimization recommendations from derived analytics
 - Uses session-scoped caching, cooldowns, cancellation, and model fallback to reduce unnecessary AI calls
 
-<!--
+
 ## Product Preview
-TODO: Add product screenshots or demo captures:
-- Empty state with CSV upload entry point
-- CSV validation review with row-level issues or duplicate resolution
-- Campaign performance dashboard with KPIs, charts, and channel filters
-- Campaign detail table with sorting
-- AI provider connection panel
-- Executive Summary AI result
-- Budget Optimization AI result
-- Cached or stale AI result state, if useful
--->
+
+The following screenshots walk through the full user journey — from uploading a campaign dataset for the first time, through the analytics workspace and channel filtering, to connecting an AI provider and reading the generated insights.
+
+### Empty State
+
+The landing screen when no data has been loaded. Provides a CSV template download and a direct upload entry point to get started quickly.
+
+![Empty state with CSV upload entry point](./docs/assets/empty-state-preview.png)
+
+### Upload Form
+
+The upload modal collects a report name, reporting period, optional industry context, and the CSV file in a single validated form. All fields are checked before the data reaches the portfolio store, so invalid submissions are caught at the boundary before any analytics state changes.
+
+![Upload form with portfolio metadata and CSV file input](./docs/assets/upload-form.png)
+
+### Validation Review
+
+When the uploaded CSV contains invalid rows, they are surfaced in a structured review table with row-level error details. Users can proceed with the valid rows, go back to correct the file, or cancel the import entirely.
+
+![Upload data error review with row-level validation issues](./docs/assets/upload-data-error-review.png)
+
+### Duplicate Resolution
+
+When the same campaign and channel combination appears more than once in the file, the duplicates are grouped for explicit resolution before import. Users select which row to keep per group, and unresolved groups are excluded from the import.
+
+![Upload data duplicate resolution with selectable row groups](./docs/assets/upload-data-resolve-duplications.png)
+
+### Campaign Performance Dashboard
+
+The main analytics workspace after a portfolio is loaded. Shows portfolio-level KPIs, ROI and budget share charts, a conversion funnel, a scaling scatter chart, and a sortable campaign table. Channel filters scope all views to a selected subset without reloading data.
+
+![Campaign performance dashboard with KPIs, charts, and channel filters](./docs/assets/dashboard-preview.png)
+
+### Responsive Design
+
+The dashboard adapts across screen sizes. The AI panel opens as a push drawer beside the dashboard on wide viewports and switches to a full-height overlay on smaller screens.
+
+![Responsive layout across screen sizes](./docs/assets/responsive-design.png)
+
+### AI Provider Connection
+
+The connection panel where users select a provider (Google Gemini or Groq), supply an API key, and trigger live model discovery and ranking. Connection errors are surfaced inline with actionable hints.
+
+![AI provider connection panel](./docs/assets/connection-panel.png)
+
+### Executive Summary
+
+An AI-generated portfolio health report covering overall health score, bottom-line assessment, key insights, strategic priorities, risks by severity, and growth outlook. Scoped to the active channel selection when filters are applied.
+
+![Executive Summary AI result](./docs/assets/executive-summary.png)
+
+### Budget Optimization
+
+AI-generated budget recommendations organized into three groups: reallocation opportunities between campaigns, growth expansions into high-performing channels, and reduction candidates. Each recommendation includes expected impact, confidence, and execution risk.
+
+![Budget Optimization AI result](./docs/assets/budget-optimization.png)
+
 
 ## Core Capabilities
 
