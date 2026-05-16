@@ -9,6 +9,7 @@ Feature-specific behavior is documented separately:
 - [AI Connection](../features/ai-connection.md)
 - [AI Analysis](../features/ai-analysis.md)
 - [AI Prompt Architecture](./ai-prompt-architecture.md)
+- [Portfolio Analysis](./portfolio-analysis.md)
 
 This document describes frontend organization, ownership boundaries, state movement, and conventions. It does not repeat feature-level business rules.
 

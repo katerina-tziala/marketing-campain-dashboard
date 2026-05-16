@@ -39,12 +39,12 @@ Each document covers one feature slice — its responsibilities, boundaries, int
 
 ## Assets
 
-Diagrams and brand assets referenced by the documentation above.
+Architecture and use-case diagrams embedded in [Software Architecture](architecture/software-architecture.md), plus brand assets.
 
 | File | Description |
 |---|---|
-| [system-architecture.svg](assets/system-architecture.svg) | System-level architecture diagram |
-| [system-use-case-diagram.svg](assets/system-use-case-diagram.svg) | Use case diagram |
+| [system-architecture.svg](assets/system-architecture.svg) | System-level architecture diagram — rendered in Software Architecture |
+| [system-use-case-diagram.svg](assets/system-use-case-diagram.svg) | Use case diagram — rendered in Software Architecture |
 | [logo.svg](assets/logo.svg) / [logo.png](assets/logo.png) | Application logo |
 
 ---
@@ -55,5 +55,6 @@ If you are new to the codebase, read in this order:
 
 1. [Software Architecture](architecture/software-architecture.md) — understand the system boundaries
 2. [Frontend Architecture](architecture/frontend-architecture.md) — understand the application structure
-3. The feature document for the slice you are working in
-4. [AI Prompt Architecture](architecture/ai-prompt-architecture.md) — only needed if touching AI provider integration or prompt logic
+3. [Portfolio Analysis](architecture/portfolio-analysis.md) — understand the shared domain layer that underlies Campaign Performance, AI Analysis, and the portfolio store; every feature that reads KPIs, groups, or signals depends on this layer
+4. The feature document for the slice you are working in
+5. [AI Prompt Architecture](architecture/ai-prompt-architecture.md) — only needed if touching AI provider integration or prompt logic

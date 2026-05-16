@@ -17186,3 +17186,98 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Strategy over implementation detail for the Gemini filter — the doc should remain accurate as providers evolve; the filtering intent (non-text, non-generation exclusion) is stable; the specific substrings are not
 - Inline note on the Styling bullet rather than a separate section — the theme mechanism is a one-sentence clarification, not a system requiring its own heading; embedding it in the bullet keeps the tech stack list self-contained
 - Explicit statement that `darkMode: 'class'` is present but not primary — omitting it would leave a reader wondering why the Tailwind config has it; including both facts gives the full picture without ambiguity
+
+
+## [#732] Document shared portfolio domain layer
+**Type:** update
+
+**Summary:** Created `docs/architecture/portfolio-domain.md` to document the shared portfolio domain layer — the only part of the codebase with no dedicated documentation despite being the analytical core consumed by three distinct callers.
+
+**Brainstorming:** The shared portfolio domain layer (`app/src/shared/portfolio/analysis/`) contains the most complex logic in the codebase: metric derivation, channel grouping, a full classification system with dynamic size gates and funnel-leak predicates, seven signal types with separate threshold trees, and pre-ranked output for every result list. Campaign performance, AI analysis prompts, and the portfolio store all consume it. Despite this, the only documentation was the terse CLAUDE.md architecture block, which lists file names but explains nothing about how the pieces fit together, why classification and signal thresholds are separate, what the dynamic size gate prevents, or why the layer lives in shared/ at all. A reader studying any of the three consuming features would have to trace the source across six or seven files to reconstruct the computational model. The fix is a dedicated architecture document covering every module with enough depth that a reader can understand both the contract and the rationale without reading the source.
+
+**Prompt:** No doc for the shared portfolio domain layer. The analysis layer (shared/portfolio/analysis/) is the most complex part of the codebase — metrics, classification, signals, rankings. It's referenced in every feature doc and the architecture doc but never described in its own section. It deserves at least a short dedicated doc or a clear section in software-architecture.md explaining what it owns and why it lives in shared/ rather than a feature. Create the proper documentation.
+
+**What was built:**
+- `docs/architecture/portfolio-domain.md` — new document covering: why the layer lives in shared/, the full module structure, the computation entry point and its pipeline order, metric helpers (computePerformanceMetrics, computeShareEfficiency, computePortfolioKPIs, aggregation), the channel map construction and normalization rules, all neutral predicates in checkers.ts and classification-checkers.ts, the campaign and channel classification cascades with their group conditions and ranking rules, the dynamic size gate for Top classification, all seven signal types with their threshold parameters and output shapes (inefficient channels, inefficient campaigns, budget scaling candidates, transfer candidates, scaling opportunities, concentration flag, correlations), the ranking helper table, the PortfolioAnalysis output contract as a field table, the caller table mapping each consumer to how it uses the layer, and limitations and future improvements
+- `docs/architecture/frontend-architecture.md` — added Portfolio Domain Layer link to the documentation index at the top of the file
+
+**Key decisions & why:**
+- Separate architecture document rather than a section in frontend-architecture.md — the layer is substantial enough to warrant its own file; embedding it would make frontend-architecture.md significantly harder to navigate
+- Led with "Why shared/" — this is the first question a reader asks when they see domain logic outside a feature; answering it upfront frames everything else
+- Documented the dynamic size gate and threshold separation explicitly — both are non-obvious design decisions that affect correctness; without explanation a reader would not understand why classification thresholds and signal thresholds are separate types or why micro-campaigns are excluded from Top classification
+- Caller table included — the three consumers use the layer differently; a table makes the boundary clear without repeating the description of each feature
+- Correlations documented as unimplemented — the function exists, the type is defined, but the body returns `[]`; documenting this prevents a reader from assuming it produces real output
+- Used field tables for PortfolioAnalysis output and ranking helpers — tabular form is more scannable than prose for mapping type fields to their meaning
+
+
+## [#733] Rewrite portfolio-domain.md to focus on logic only
+**Type:** update
+
+**Summary:** Rewrote `docs/architecture/portfolio-domain.md` to remove all code documentation and focus entirely on business and analytical logic.
+
+**Brainstorming:** The previous version documented implementation details alongside logic — file paths, TypeScript function signatures, type names, module structure diagrams, and internal helper names. These details couple the documentation to the code and silently become incorrect as the implementation evolves. The logic — formulas, classification conditions, signal derivation rules, threshold separation rationale — is stable and belongs in documentation. The code structure does not. The rewrite strips all code references and documents only what the layer computes, why it computes it, and how the outputs are used.
+
+**Prompt:** Edit the portfolio-domain.md document. Rename the title to "Portfolio". Remove all slash characters from section headings. Remove all code documentation — file names, function names, TypeScript type names, module structure diagrams, code blocks. Focus on documenting the logic: formulas, predicate conditions, classification rules, signal derivation rules, threshold rationale, and output descriptions.
+
+**What changed:**
+- `docs/architecture/portfolio-domain.md` — rewritten: title changed to "Portfolio"; "Why shared/" section renamed to "Ownership"; Module Structure section removed entirely; TypeScript function signature code block removed; all function name references removed from prose and section headings; file name references removed throughout; Predicates table columns renamed from code identifiers to descriptive check names; Classification cascade prose rewritten without function call references; Signals section headers stripped of function names; Signal Thresholds subsection merged into a short note without file references; Ranking section rewritten without function name table; Output Contract table Type column removed; Callers section rewritten as prose without file names; Future Improvements items rewritten without function name references
+
+**Key decisions & why:**
+- Removed Module Structure entirely — a file tree documents code organization, not logic; it becomes stale immediately and belongs in CLAUDE.md, not architecture docs
+- Renamed predicate table column from function name to "Check" — the condition is what matters; the identifier is an implementation detail
+- Changed signal section headers from `` `getFunctionName` `` to plain English names — readable without knowing the codebase
+- Rewrote Callers as prose instead of a table — three short paragraphs are more readable than a table with long cells, and prose lets the consumer's role be described without naming files
+- Kept all formulas, predicate conditions, classification rules, and threshold values — these are the logic and are stable independently of how the code is organized
+
+
+## [#734] Rename portfolio-domain.md to campaign-analytics.md
+**Type:** update
+
+**Summary:** Renamed `docs/architecture/portfolio-domain.md` to `campaign-analytics.md` and updated the reference in `frontend-architecture.md`.
+
+**Brainstorming:** `campaign-portfolio` couples the filename to the current data model entity. `campaign-analytics` describes what the layer does — analytical computation over campaign data — rather than what it currently produces. Every planned future expansion (period comparison, pairwise correlations, configurable threshold profiles) still falls under campaign analytics, so the name stays accurate regardless of how the output shape or entity model evolves.
+
+**Prompt:** Rename the portfolio-domain.md doc to campaign-analytics.md considering the future implementations. Update all references.
+
+**What changed:**
+- `docs/architecture/portfolio-domain.md` → renamed to `docs/architecture/campaign-analytics.md`
+- `docs/architecture/frontend-architecture.md` — updated link from `./portfolio-domain.md` to `./campaign-analytics.md`; updated link label from "Portfolio Domain Layer" to "Campaign Analytics"
+
+**Key decisions & why:**
+- Chose `campaign-analytics` over `campaign-portfolio` — "portfolio" is an entity name tied to the current data model; "analytics" describes the function and remains accurate as the layer grows
+- Chose `campaign-analytics` over `portfolio-analysis` — avoids confusion with the `PortfolioAnalysis` output type; is also broader in scope
+
+
+## [#735] Rename campaign-analytics.md to portfolio-analysis.md
+**Type:** update
+
+**Summary:** Renamed `docs/architecture/campaign-analytics.md` to `portfolio-analysis.md` and updated the document title to "Portfolio Analysis" to align with the project's established domain vocabulary.
+
+**Brainstorming:** "campaign-analytics" described the layer from an outside-reader perspective but diverged from the project's internal vocabulary, where "analysis" is the consistent term across function names, type names, and feature names. "portfolio-analysis" aligns the doc name with that vocabulary while still being specific enough to distinguish it from other architecture docs.
+
+**Prompt:** Rename the md file to portfolio-analysis and update the document title to match.
+
+**What changed:**
+- `docs/architecture/campaign-analytics.md` → renamed to `docs/architecture/portfolio-analysis.md`
+- `docs/architecture/portfolio-analysis.md` — title updated from "Portfolio" to "Portfolio Analysis"
+- `docs/architecture/frontend-architecture.md` — link updated to `./portfolio-analysis.md` with label "Portfolio Analysis"
+
+**Key decisions & why:**
+- "portfolio-analysis" over "campaign-analytics" — matches the project's established vocabulary; the codebase uses "analysis" consistently (computePortfolioAnalysis, PortfolioAnalysis, aiAnalysis); "analytics" would create friction between the doc name and every identifier inside the layer it describes
+
+
+## [#736] Improve docs/README.md — assets section and reading order
+**Type:** update
+
+**Summary:** Added context to the Assets section explaining where the SVG diagrams are rendered, and inserted Portfolio Analysis as step 3 in the reading order to signpost the shared domain layer for readers working on any dependent feature.
+
+**Brainstorming:** Two gaps existed in the README. First, the assets table listed the SVG files without saying where they appear — a reader who skips the Software Architecture doc would not know the diagrams exist or where to find them rendered. Second, the reading order said "read the feature doc for the slice you're working in" but gave no signal that a shared layer underlies every feature. A reader diving into Campaign Performance or AI Analysis will immediately encounter the portfolio analysis layer without any pointer to its documentation.
+
+**Prompt:** The assets section has no mention of where the SVG diagrams are rendered. The reading order doesn't call out the shared portfolio layer. Fix both.
+
+**What changed:**
+- `docs/README.md` — assets section intro updated to name the embedding document; "rendered in Software Architecture" annotation added to each diagram row; Portfolio Analysis inserted as step 3 in the reading order with a description of which features depend on it
+
+**Key decisions & why:**
+- Annotated each diagram row individually rather than just updating the section intro — a reader scanning the table sees immediately where each file is used without having to read surrounding prose
+- Placed Portfolio Analysis at step 3 (before the feature doc) — a reader needs the shared layer context before the feature doc will make sense, because both Campaign Performance and AI Analysis build directly on it
