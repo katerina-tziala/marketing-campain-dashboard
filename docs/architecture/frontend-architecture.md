@@ -35,7 +35,7 @@ The client should not become the source of truth for durable credentials, cross-
 - Language: TypeScript with strict compiler settings
 - Routing: Vue Router
 - State: Pinia setup stores
-- Styling: SCSS, Tailwind utility classes, design tokens, shared theme utilities
+- Styling: SCSS, Tailwind utility classes, design tokens, shared theme utilities; dark mode is SCSS-driven via a `data-theme` attribute on `<html>` with token files targeting `[data-theme="dark"]`; Tailwind's `darkMode: 'class'` is present in the configuration but is not the primary theming mechanism
 - Charts: Chart.js with Vue Chart.js wrappers and local chart primitives
 - Tables: shared table primitives plus feature-level sorting logic
 - CSV parsing: Papa Parse

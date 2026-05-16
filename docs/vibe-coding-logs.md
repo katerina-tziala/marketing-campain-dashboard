@@ -17167,3 +17167,22 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - Null guard condition called out explicitly — the `portfolioId`/`businessContext` null check is the condition that clears AI analysis state; it is not obvious from reading the store name alone
 - Toast suppression rule documented — the "panel open → no toast" guard is a meaningful behavioral decision that affects UX; without it, readers would not know why toasts sometimes appear and sometimes do not
 - Exposed surface as a table — makes the public API scannable and distinguishes it from internal implementation detail
+
+
+## [#731] Fix accuracy issues in ai-connection.md and frontend-architecture.md
+**Type:** fix
+
+**Summary:** Removed a hardcoded list of Gemini model exclusion substrings from `ai-connection.md` and replaced it with a description of the filtering strategy; corrected the Tech Stack section in `frontend-architecture.md` to accurately describe the SCSS-driven `data-theme` theming mechanism rather than implying Tailwind class-based dark mode.
+
+**Brainstorming:** Two distinct accuracy problems. The Gemini filter term list (`embedding`, `image`, `audio`, `tts`, `veo`, `imagen`, `lyria`, `robotics`) documents implementation detail rather than intent: as Gemini adds model families the list silently diverges from the actual filter logic, and a reader following the doc would not know whether the list is exhaustive or illustrative. The fix is to state what the filter does (keep models that declare `generateContent` support, exclude identifiers indicating non-text or non-generation capabilities) without binding the doc to specific substrings. The dark mode issue is a structural misrepresentation: `darkMode: 'class'` is in the Tailwind config but the actual theme resolution happens in SCSS via `[data-theme="dark"]` selectors applied to palette and token files. A reader following the tech stack entry would expect standard Tailwind dark mode utility classes, not SCSS token files and a `data-theme` attribute. The fix makes the actual mechanism explicit in the Styling bullet.
+
+**Prompt:** Fix/improve: (1) ai-connection.md hardcodes Gemini filter terms as a definitive list — describe the filtering strategy instead. (2) frontend-architecture.md describes darkMode: 'class' behavior but actual dark mode is SCSS-driven via data-theme — clarify that the theme system uses a data-theme attribute on <html> resolved by SCSS token files, with Tailwind's darkMode: 'class' present but not the primary theming mechanism.
+
+**What changed:**
+- `docs/features/ai-connection.md` — replaced the enumerated Gemini model exclusion substring list with a strategy description: keeps models declaring `generateContent` support, excludes identifiers indicating non-text modalities or non-generation capabilities
+- `docs/architecture/frontend-architecture.md` — updated the Styling bullet in the Tech Stack section to document that dark mode is SCSS-driven via `data-theme` on `<html>` with token files targeting `[data-theme="dark"]`, and that Tailwind's `darkMode: 'class'` is present in the config but is not the primary theming mechanism
+
+**Key decisions & why:**
+- Strategy over implementation detail for the Gemini filter — the doc should remain accurate as providers evolve; the filtering intent (non-text, non-generation exclusion) is stable; the specific substrings are not
+- Inline note on the Styling bullet rather than a separate section — the theme mechanism is a one-sentence clarification, not a system requiring its own heading; embedding it in the bullet keeps the tech stack list self-contained
+- Explicit statement that `darkMode: 'class'` is present but not primary — omitting it would leave a reader wondering why the Tailwind config has it; including both facts gives the full picture without ambiguity

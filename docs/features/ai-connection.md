@@ -70,7 +70,7 @@ Model selection is part of connection, not a separate user workflow. The system 
 
 Provider discovery runs first with the user-supplied API key. Returned provider models are normalized into application-level candidates, so the evaluation prompt receives compact fields such as provider, identifier, text-generation support, context capacity, output capacity, and reasoning-related metadata when available.
 
-Local preparation removes candidates that are known to be incompatible before prompt evaluation. For Gemini, the local filter keeps models that support text generation through `generateContent` and excludes identifiers containing unsupported terms such as `embedding`, `image`, `audio`, `tts`, `veo`, `imagen`, `lyria`, and `robotics`.
+Local preparation removes candidates that are known to be incompatible before prompt evaluation. For Gemini, the local filter keeps models that declare text generation support through `generateContent` and excludes identifiers that indicate non-text modalities or non-generation capabilities.
 
 The remaining compatible candidates are sorted locally before AI evaluation. The ordering favors thinking-capable models, larger context windows, larger output limits, lower stability risk, and newer versions. This sort is deterministic and establishes the order in which candidate models may be used to run the evaluation request if earlier candidates fail.
 
