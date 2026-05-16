@@ -4,7 +4,7 @@ export function getModelById(models: AiModel[], modelId: string): AiModel | unde
   return models.find((model) => model.id === modelId);
 }
 
-export function getNextAvailableMode(models: AiModel[]): AiModel | undefined {
+export function getNextAvailableModel(models: AiModel[]): AiModel | undefined {
   return models.find((model) => !model.limitReached);
 }
 

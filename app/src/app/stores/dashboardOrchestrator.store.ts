@@ -32,7 +32,7 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
   activateDevMode(DEV_MODE_CONFIG);
 
   // Page state derived from the composed features.
-  const hasCampaigns = computed(() => campaignPerformance.campaigns.length > 0);
+  const hasCampaigns = computed(() => portfolioStore.portfolios.length > 0);
   const showAiButton = computed(() => !aiConnection.aiPanelOpen);
   const showConnectedDot = computed(() => aiConnection.isConnected && !aiConnection.aiPanelOpen);
 
@@ -59,15 +59,16 @@ export const useDashboardOrchestratorStore = defineStore('dashboardOrchestrator'
     portfolioBenchmark?: PortfolioSummary;
     businessContext: BusinessContext | null;
   }): void {
-    if (!context.portfolioId || !context.businessContext) {
+    const { portfolioId, businessContext } = context;
+    if (!portfolioId || !businessContext) {
       aiAnalysis.setAnalysisContext(null);
       return;
     }
 
     aiAnalysis.setAnalysisContext({
       ...context,
-      portfolioId: context.portfolioId,
-      businessContext: context.businessContext,
+      portfolioId,
+      businessContext,
     });
   }
 

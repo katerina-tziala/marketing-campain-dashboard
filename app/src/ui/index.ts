@@ -10,5 +10,6 @@ export * from './meta';
 export * from './modal';
 export * from './primitives';
 export * from './table';
+export * from './tabs';
 export * from './theme';
 export * from './toast';

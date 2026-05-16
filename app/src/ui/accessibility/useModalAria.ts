@@ -1,20 +1,20 @@
-import { computed, type ComputedRef } from 'vue';
+import { generateId } from '@/shared/utils';
 
 export function useModalAria(): {
   titleId: string;
-  dialogAria: ComputedRef<{
+  dialogAria: {
     role: string;
     'aria-modal': boolean;
     'aria-labelledby': string;
-  }>;
+  };
 } {
-  const titleId = `modal-title-${crypto.randomUUID()}`;
+  const titleId = generateId('modal-title');
 
-  const dialogAria = computed(() => ({
+  const dialogAria = {
     role: 'dialog',
     'aria-modal': true,
     'aria-labelledby': titleId,
-  }));
+  };
 
   return {
     titleId,

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
+import { generateId } from '@/shared/utils';
+
 const isOpen = ref(false);
-const contentId = `disclosure-${Math.random().toString(36).slice(2, 9)}`;
+const contentId = generateId('disclosure');
 
 function toggle(): void {
   isOpen.value = !isOpen.value;

@@ -80,7 +80,7 @@ const ariaLive = computed(() => {
           <slot name="action" />
         </div>
       </div>
-      <p class="text-sm text-typography-muted">
+      <p class="text-sm text-typography-muted pt-1">
         <slot />
       </p>
     </div>

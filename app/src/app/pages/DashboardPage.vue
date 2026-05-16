@@ -13,7 +13,6 @@ const dashboard = useDashboardOrchestratorStore();
 
 const uploadModal = ref<InstanceType<typeof UploadDataModal> | null>(null);
 const {
-  hasCampaigns,
   showReplaceConfirm,
   requestUpload,
   handleUploadComplete,
@@ -25,19 +24,19 @@ const {
 <template>
   <div class="dashboard-shell">
     <header class="dashboard-header">
-      <AppLogo class="w-14" />
+      <AppLogo class="w-12 sm:w-14 shrink-0" />
       <h1 class="dashboard-title">
         <span class="title-wrapper">Marketing Intelligence Dashboard</span>
       </h1>
       <Button
-        v-if="hasCampaigns"
+        v-if="dashboard.hasCampaigns"
         variant="outline"
         size="small"
-        class="shrink-0"
+        class="upload-button"
         @click="requestUpload"
       >
         <UploadIcon />
-        Upload data
+        <span class="sr-only sm:not-sr-only">Upload data</span>
       </Button>
     </header>
 
@@ -65,11 +64,9 @@ const {
             </Button>
             <span
               v-if="dashboard.showConnectedDot"
-              class="connected-status"
+              class="connected-dot connected-dot-badge"
               aria-hidden="true"
-            >
-              <span class="connected-status-dot" />
-            </span>
+            />
           </div>
         </template>
       </CampaignPerformanceView>
@@ -80,6 +77,7 @@ const {
           title="AI Assistant"
           side="right"
           close-label="Close AI panel"
+          modal-full-height
           @close="dashboard.closeAiPanel"
         >
           <template #icon>
@@ -118,9 +116,10 @@ const {
   	border-primary-deeper
   	flex
   	gap-x-2
+  	sm:gap-x-3
   	items-center
   	justify-start
-  	min-h-16
+  	h-16
   	px-4
   	py-2.5
   	shadow-md
@@ -130,27 +129,36 @@ const {
 
 .dashboard-title {
   @apply font-semibold
-  	grow;
+  	grow
+  	pt-1
+  	leading-5;
 
   .title-wrapper {
-    @apply bg-clip-text
+    @apply text-lg
+    	xs:text-xl
+    	sm:text-2xl
+    	md:tracking-wide
+    	text-transparent
+    	bg-clip-text
     	bg-gradient-to-r
     	from-accent
-    	leading-6
-    	md:text-2xl
-    	md:tracking-wide
-    	sm:not-sr-only
-    	sm:text-xl
-    	sr-only
-    	text-lg
-    	text-transparent
-    	to-secondary
     	via-info
     	via-info-darker
     	via-info-light
     	via-primary
-    	via-primary-light;
+    	via-primary-light
+    	to-secondary;
+
+    line-height: 0;
   }
+}
+
+.upload-button.small.btn.outline {
+  @apply shrink-0
+  	w-9
+  	px-0
+  	sm:w-fit
+  	sm:px-3;
 }
 
 .dashboard-main {
@@ -162,43 +170,5 @@ const {
   	overflow-x-hidden
   	overflow-y-hidden
   	w-full;
-}
-
-.connected-status {
-  @apply -right-1.5
-  	-top-1.5
-  	absolute
-  	bg-surface
-  	flex
-  	h-3.5
-  	items-center
-  	justify-center
-  	overflow-visible
-  	rounded-full
-  	w-3.5
-  	z-10;
-
-  animation: dot-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.connected-status-dot {
-  @apply bg-success
-  	block
-  	h-2
-  	rounded-full
-  	shadow-connection
-  	w-2;
-}
-
-@keyframes dot-pop {
-  from {
-    transform: scale(0);
-    opacity: 0;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 </style>

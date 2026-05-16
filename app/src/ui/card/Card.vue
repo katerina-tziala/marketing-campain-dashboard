@@ -46,7 +46,7 @@ const props = withDefaults(
 }
 
 .card.secondary {
-  @apply bg-background
+  @apply bg-background/80
   	border
   	border-darker
   	flex

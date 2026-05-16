@@ -12,10 +12,12 @@ const props = withDefaults(
     title: string;
     side?: DrawerSide;
     closeLabel?: string;
+    modalFullHeight?: boolean;
   }>(),
   {
     side: 'right',
     closeLabel: 'Close drawer',
+    modalFullHeight: false,
   },
 );
 
@@ -34,6 +36,9 @@ const drawerClass = computed(() => ({
   open: props.open,
   left: props.side === 'left',
   right: props.side === 'right',
+}));
+const modalClass = computed(() => ({
+  'full-height': props.modalFullHeight,
 }));
 const modalOpen = computed(() => props.open && !isDesktop.value);
 const drawerInert = computed(() => (!props.open ? true : undefined));
@@ -127,6 +132,7 @@ watch(modalOpen, (open) => {
         ref="drawerModalRef"
         v-bind="dialogAria"
         class="modal-container responsive-drawer-modal"
+        :class="modalClass"
         tabindex="-1"
       >
         <ModalHeader
@@ -198,6 +204,12 @@ watch(modalOpen, (open) => {
   	w-full;
 }
 
+.responsive-drawer-modal {
+  &.full-height {
+    height: calc(100dvh - 3rem);
+  }
+}
+
 .responsive-drawer-panel {
   @apply bg-surface-elevated
   	border
@@ -219,7 +231,6 @@ watch(modalOpen, (open) => {
 
 .responsive-drawer-content {
   @apply min-h-0
-  	overflow-hidden
-  	pb-4;
+  	overflow-hidden;
 }
 </style>

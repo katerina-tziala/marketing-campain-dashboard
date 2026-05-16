@@ -16473,3 +16473,811 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 - `borderColor` is optional so existing callers (if any) don't need updating and a border-free swatch remains valid
 - Style merged in a function rather than inline template expression to avoid verbose ternary chains and satisfy the return-type linter rule
 - `color` is the fill (alpha variant) and `borderColor` is the solid — matches exactly how Chart.js dataset styles are defined in both chart components
+
+
+## [#693] Add mobile full-height option to ResponsiveDrawer for AI Assistant
+**Type:** update
+
+**Summary:** Added an opt-in `modalFullHeight` prop to `ResponsiveDrawer` and enabled it for the AI Assistant drawer so its mobile modal uses the full available overlay height.
+
+**Brainstorming:** `ResponsiveDrawer` behaves as a fixed side panel on desktop and as a centered modal on smaller viewports. The AI Assistant needs more vertical working room on mobile because it contains connection status, tabs, and scrollable analysis content. Changing the default modal height would affect every future drawer consumer, so the safer shape is a boolean prop that leaves existing behavior untouched and lets this specific drawer opt into `calc(100dvh - 3rem)`, matching the global `.modal-container` available viewport calculation.
+
+**Prompt:** Make `ResponsiveDrawer` as a modal extend to full available height, but make this a parameter to pass. Implement this for the AI Assistant.
+
+**What changed:**
+- `app/src/ui/drawer/ResponsiveDrawer.vue` — added `modalFullHeight?: boolean` prop with default `false`; added a computed modal class; applies `.full-height` only to the mobile modal container when opted in
+- `app/src/app/pages/DashboardPage.vue` — passed `modal-full-height` to the AI Assistant `ResponsiveDrawer`
+
+**Key decisions & why:**
+- Prop is mobile-modal specific — desktop drawer already fills its container with `h-full`, so the new behavior only targets the centered modal rendering
+- Default stays `false` — avoids surprising other drawer usages
+- Height uses `calc(100dvh - 3rem)` — aligns with existing overlay padding and modal max-height behavior while using dynamic viewport units for mobile browser chrome
+
+
+## [#694] Add health-score CSV samples and executive summary calibration
+**Type:** feature
+
+**Summary:** Added three 10-channel valid CSV samples for Excellent, Needs Attention, and Critical executive-summary scenarios, then tightened executive-summary prompt calibration so the AI interprets ROI and health-score bands consistently.
+
+**Brainstorming:** The goal was not just valid CSVs, but fixtures that naturally drive different executive-summary health outcomes. Each file keeps the existing CSV schema and uses 20 campaigns across exactly 10 channels. The Excellent sample needed extra iteration because the first version had strong total ROI but too much relative skew, causing several channels to be classified as weak against a very high portfolio average. The final Excellent sample is intentionally balanced: high ROI, no inefficient channels, and low concentration. The prompt also needed explicit metric semantics because ROI values in the app are decimal ratios (`7` means 700% ROI), and models can under-score if that scale is not stated.
+
+**Prompt:** Create three more sample files like `valid-10-channels-good`, each with 10 different channels, matching health scores Excellent, NeedsAttention, and Critical when AI analysis is called. Then adjust the Excellent sample and prompt because the model returned Good / 80 / 70 instead of Excellent.
+
+**What changed:**
+- `samples/csv/valid/valid-10-channels-excellent.csv` — added and tuned to 20 campaigns across 10 channels with balanced allocation, low concentration, no inefficient channels, and very strong ROI
+- `samples/csv/valid/valid-10-channels-needs-attention.csv` — added a mixed-performance 10-channel fixture with several inefficient channels
+- `samples/csv/valid/valid-10-channels-critical.csv` — added a 10-channel fixture with negative ROI, multiple inefficient channels, and high concentration risk
+- `app/src/features/ai-tools/prompts/executive-summary-prompt/config.v1.ts` — clarified that ROI and share fields are decimal ratios; made health-score bands binding; added calibration that strongly positive ROI plus no inefficiency and low concentration should score in Excellent unless another material risk exists
+
+**Key decisions & why:**
+- Kept the fixtures as CSV-only samples — they exercise the same upload and portfolio-analysis path as user-provided data
+- Balanced the Excellent file instead of only inflating revenue — high ROI alone was not enough because relative channel classification can still imply allocation risk
+- Prompt calibration documents data semantics — the AI sees raw JSON, so it must know that `aggregatedRoi: 7` means 700% ROI and not a small score-like number
+
+
+## [#695] Extract shared model evaluation logic and refine runner retry strategy
+**Type:** refactor
+
+**Summary:** Extracted the duplicated `evaluateModels` + `tryWithModel` logic from both provider connect files into a shared `evaluate-models.ts` utility, and replaced the catch-all error fallback with a token-limit-aware retry strategy that demotes failing runners and removes them after three non-limit failures.
+
+**Brainstorming:** Both `gemini/connect.ts` and `qroq/connect.ts` had identical `tryWithModel` and `evaluateModels` implementations — the only difference was which chat completion function was called. The old catch-all `.catch(() => evaluateModels(apiKey, remaining))` permanently removed any failing model from the candidate pool regardless of why it failed, which was too aggressive. The right behavior is: token-limit errors remove immediately (model is exhausted); other errors give the model up to three chances as runner before removal, and until then keep it in the candidate list so the next successful runner still evaluates it. A `failCount` map per model replaces the old `tried` set and naturally encodes both the runner-eligibility check and the three-strike threshold.
+
+**Prompt:** Extract the model evaluation recursive logic from both provider connect files into a shared utility that accepts the chat completion function as a parameter. Refine the retry strategy so token-limit errors remove the model immediately, other errors move the model to the end of the candidate list, and after three non-limit failures the model is removed entirely.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/evaluate-models.ts` — new file; exports `ChatCompletionFn` type and `evaluateModels(completionFn, apiKey, candidates, failCount?)`; `tryWithModel` is file-private; `MAX_RUNNER_ATTEMPTS = 3`; token-limit removes from candidates immediately; other errors increment failCount and demote runner to end; three strikes removes from candidates
+- `app/src/features/ai-tools/providers/utils/index.ts` — added `export * from './evaluate-models'`
+- `app/src/features/ai-tools/providers/gemini/connect.ts` — simplified to fetch + extractCandidates + delegate to `evaluateModels(requestGeminiChatCompletion, apiKey, candidates)`
+- `app/src/features/ai-tools/providers/qroq/connect.ts` — simplified to fetch + extractCandidates + delegate to `evaluateModels(requestGroqChatCompletion, apiKey, candidates)`
+
+**Key decisions & why:**
+- `ChatCompletionFn` as a parameter rather than a deps object — only one function varies between providers; a wrapper object would be unnecessary abstraction
+- `failCount` map replaces the `tried` set — the map encodes both runner eligibility and strike count in one structure, avoiding two separate tracking variables
+- Token-limit does not increment `failCount` — the model is removed immediately so the count is irrelevant; keeping them separate avoids conflating exhaustion with transient failure
+- `MAX_RUNNER_ATTEMPTS = 3` as a module-level named constant — makes the threshold explicit and easy to adjust without hunting through the logic
+
+
+## [#696] Fix getNextAvailableModel typo in models-utils.ts
+**Type:** fix
+
+**Summary:** Renamed `getNextAvailableMode` to `getNextAvailableModel` in `models-utils.ts` and updated the import and call site in `aiConnection.store.ts`.
+
+**Brainstorming:** The function name `getNextAvailableMode` was a typo — the missing `l` at the end made the exported name differ from what callers would naturally type (`getNextAvailableModel`). The store imported and called the wrong name, which meant any future refactor or new call site using the correct spelling would result in a TypeScript error. Since both the definition and the only call site used the same wrong spelling, it compiled fine but was a latent correctness hazard.
+
+**Prompt:** Fix the typo: models-utils.ts exports getNextAvailableMode but it should be getNextAvailableModel. Update the definition and all call sites.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/models-utils.ts` — renamed `getNextAvailableMode` → `getNextAvailableModel`
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — updated named import and call in `selectNextAvailableModel()` to use the corrected name
+
+**Key decisions & why:**
+- Both barrels (`providers/utils/index.ts` and `providers/index.ts`) use `export *` so the rename flows through automatically — no barrel changes required
+
+
+## [#697] Fix CSV header case-sensitivity bug in validateCampaignData
+**Type:** fix
+
+**Summary:** Fixed a bug where title-cased CSV headers (e.g. `Campaign`, `CamPaign`) were incorrectly reported as missing columns because the validation check read the wrong side of the header map.
+
+**Brainstorming:** `buildHeaderMap` correctly normalises all headers to lowercase keys, mapping e.g. `'Campaign'` → key `'campaign'`. The data extraction path (`extractCampaignFields`) used the map correctly via `headerMap[key]`. But the column validation called `Object.values(headerMap)` which returns the original-cased strings, then compared them against `header.toLowerCase()` — so `'campaign'` was never found in `['Campaign', 'Channel', ...]`. The fix reads the keys instead, which are already normalised, making the check case-insensitive for any header casing.
+
+**Prompt:** Fix the CSV header case-sensitivity bug — validate-campaign-data.ts compares header.toLowerCase() against actualHeaders which contains original-cased values. Title-cased CSVs silently report missing columns even when headers are correct.
+
+**What changed:**
+- `app/src/features/data-transfer/utils/validate-campaign-data.ts` — replaced `Object.values(headerMap)` + `.includes(header.toLowerCase())` with a single `!(header in headerMap)` check; the intermediate `actualHeaders` variable was removed
+
+**Key decisions & why:**
+- `header in headerMap` is the most direct expression of the intent — "does this expected key exist in the map" — and avoids constructing an intermediate array
+- No changes to `buildHeaderMap` or `extractCampaignFields` — the normalisation logic was already correct; only the validation check was reading the wrong side of the map
+
+
+## [#698] Fix AiConnectedStatus layering violation — move disconnect side effect into ai-analysis store
+**Type:** fix
+
+**Summary:** Removed the cross-subtree import of `useAiAnalysisStore` from `AiConnectedStatus` by adding a watcher on `aiStore.isConnected` inside `aiAnalysis.store.ts` that calls `clearStateForDisconnect()` automatically when the connection is dropped.
+
+**Brainstorming:** `AiConnectedStatus` lived in `ai-connection/` but imported `useAiAnalysisStore` from the sibling `ai-analysis/` subtree to call `clearStateForDisconnect()` on disconnect. This reversed the correct dependency direction: `ai-analysis` already depends on `ai-connection` (it reads `aiStore.isConnected`, `aiStore.selectedModel`, etc.), so `ai-connection` reaching back into `ai-analysis` created a circular coupling at the component level. The fix is to let `aiAnalysis.store` own the reaction: it already holds `aiStore` as a reference, so watching `aiStore.isConnected` and calling `clearStateForDisconnect()` internally keeps all the coordination inside the store that owns the state being cleared. `AiConnectedStatus` is left with a single responsibility — display connection state and trigger `disconnect()`.
+
+**Prompt:** Fix the layering violation: AiConnectedStatus (in ai-connection/) imports useAiAnalysisStore from ai-analysis/. Move the clearStateForDisconnect() call into a watcher inside aiAnalysis.store.ts on aiStore.isConnected.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — added watcher on `aiStore.isConnected`; calls `clearStateForDisconnect()` when it becomes `false`
+- `app/src/features/ai-tools/ai-connection/components/AiConnectedStatus.vue` — removed `useAiAnalysisStore` import and `analysisStore` ref; removed `handleDisconnect` wrapper function; Disconnect button now calls `store.disconnect` directly
+
+**Key decisions & why:**
+- Watcher in `aiAnalysis.store` rather than the orchestrator — the orchestrator is for cross-feature mediation; this is an internal reaction to a state change that `aiAnalysis.store` already observes, so internalising it is cleaner
+- No `immediate: true` on the watcher — `isConnected` starts `false` and `clearStateForDisconnect` on initial setup would be a no-op at best and surprising at worst
+- `clearStateForDisconnect` kept in the public return — removing it would be a separate cleanup; leaving it available does not break anything
+
+
+## [#699] Fix AnalysisCache lastVisibleCacheKey portfolio isolation bug
+**Type:** fix
+
+**Summary:** `lastVisibleCacheKey` was a single `string | null` shared across all portfolios; switching portfolios left a stale key that could cause `getLastVisible` to return `null` for a portfolio that had a valid cached entry, silently breaking the revert-on-cancel fallback.
+
+**Brainstorming:** The cache storage was already correctly scoped per portfolio via `Map<portfolioId, Map<cacheKey, CacheEntry>>`. `lastVisibleCacheKey` tracked the most recently read or written cache key so that `getLastVisible` could restore the last shown result when a request was cancelled mid-flight. But the key was stored as a single class-level field — not per portfolio. A write or hit for Portfolio B would overwrite the key set by Portfolio A, so returning to Portfolio A and calling `getLastVisible("portfolio-A")` would look up B's key in A's sub-map and find nothing. The fix mirrors the existing storage pattern: replace the single field with `Map<portfolioId, string>` so each portfolio independently tracks its own last-visible key. The bug only manifested when: (1) switching to a portfolio with no cache, (2) triggering an analysis that was then cancelled, (3) `revertTab` failing to restore the old result — a narrow but real path.
+
+**Prompt:** Fix the AnalysisCache portfolio key isolation bug — lastVisibleCacheKey is a single string | null shared across all portfolios. Replace it with Map<portfolioId, string> so each portfolio tracks its own last-visible key independently.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-cache/AnalysisCache.ts` — `lastVisibleCacheKey` changed from `string | null` to `Map<string, string>`; `get()` uses `.set(portfolioId, key)` on hit; `set()` uses `.set(portfolioId, key)` on write; `getLastVisible()` reads `.get(portfolioId)` and early-returns `null` when absent; `deletePortfolio()` also deletes the key entry; `clear()` calls `.clear()` on the map
+
+**Key decisions & why:**
+- `Map<string, string>` declared `readonly` — same as the existing `store` field; the map itself is not replaced, only mutated
+- `deletePortfolio` extended to also clean up `lastVisibleCacheKey` — without this, evicted portfolio IDs would accumulate as phantom entries in the key map indefinitely
+- No callers changed — `TabState` delegates through unchanged method signatures; the fix is fully contained in `AnalysisCache`
+
+
+## [#700] Fix incomplete ARIA tab pattern in Tabs.vue
+**Type:** fix
+
+**Summary:** Completed the ARIA tabs pattern by adding `id`, `aria-controls`, and roving `tabindex` to tab buttons, adding Left/Right/Home/End arrow key navigation on the tablist, and adding `role="tabpanel"`, `id`, and `aria-labelledby` to the panel container in AiAnalysis.vue.
+
+**Brainstorming:** The existing implementation had `role="tablist"` and `role="tab"` with `aria-selected`, but was missing the three other requirements from the ARIA authoring practices: (1) `aria-controls` on each tab pointing to its panel; (2) `role="tabpanel"` + `aria-labelledby` on each panel; (3) arrow key navigation with roving tabindex inside the tablist. The roving tabindex pattern means only the active tab has `tabindex="0"` — the rest get `tabindex="-1"` — so Tab/Shift+Tab treats the entire tablist as a single stop and arrow keys move between tabs. An ID convention of `tab-{tab.id}` / `tabpanel-{tab.id}` links tabs to panels without coupling the component to caller structure. The panel attributes are added in AiAnalysis.vue (the only caller) rather than inside Tabs.vue, since Tabs.vue only renders the tab bar; the panel container is owned by the caller.
+
+**Prompt:** Fix the incomplete ARIA tab pattern in Tabs.vue — add aria-controls, roving tabindex, and Left/Right/Home/End arrow key navigation to the tablist. Add role="tabpanel", id, aria-labelledby, and tabindex="0" to the panel container in AiAnalysis.vue.
+
+**What changed:**
+- `app/src/ui/primitives/Tabs.vue` — added `ref="tablistRef"` on the tablist div; `@keydown="handleKeydown"` on the tablist; `id="tab-{tab.id}"`, `aria-controls="tabpanel-{tab.id}"`, and roving `:tabindex` on each tab button; added `getTabButtons()` and `handleKeydown()` functions handling ArrowRight/ArrowLeft/ArrowDown/ArrowUp/Home/End
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — added `role="tabpanel"`, `:id="tabpanel-${activeTab}"`, `:aria-labelledby="tab-${activeTab}"`, and `tabindex="0"` to the `.ai-analysis-content` div
+
+**Key decisions & why:**
+- Roving tabindex defaults to `tabs[0]?.id` when `activeTab` is undefined — prevents a brief window on initial render where all tabs are `tabindex="-1"` and the tablist is unreachable by keyboard
+- Arrow navigation focuses the button but does not select the tab — consistent with the ARIA authoring practices "manual activation" pattern; selection still requires Enter/Space or click
+- `handleKeydown` returns early if no tab button is focused — prevents interference when focus is elsewhere inside the tablist container
+- Panel `id` and `aria-labelledby` are set dynamically on the single always-present panel container — avoids needing multiple panel elements in the DOM since only one tab is active at a time
+
+
+## [#701] Remove redundant null guard in orchestrator onAnalysisContextChange
+**Type:** fix
+
+**Summary:** Removed the dead `!context.businessContext` condition from the orchestrator's `onAnalysisContextChange` guard — when `portfolioId` is null, `businessContext` is always null by construction, so the second check is unreachable noise.
+
+**Brainstorming:** Both `activePortfolioId` and `businessContext` in `campaignPerformance.store.ts` derive from the same `portfolioStore.getById(activePortfolioId.value ?? '')` call. When `activePortfolioId` is null, `getById('')` returns undefined, making both fields null simultaneously. There is no independent code path where `portfolioId` is non-null but `businessContext` is null. The guard `!context.portfolioId || !context.businessContext` therefore has a dead second branch. TypeScript cannot infer the structural dependency between the two fields, so a non-null assertion `context.businessContext!` is needed at the call site after removing the guard.
+
+**Prompt:** Fix the redundant null guard in orchestrator — `if (!context.portfolioId || !context.businessContext)` — when `portfolioId` is null, `businessContext` is always null by construction. The second check adds noise.
+
+**What changed:**
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — guard simplified from `!context.portfolioId || !context.businessContext` to `!context.portfolioId`; non-null assertion `context.businessContext!` added at the spread call site since TypeScript cannot infer the structural dependency
+
+**Key decisions & why:**
+- Non-null assertion preferred over a runtime check — the construction guarantee is enforced by `mapAnalysisContext` and `campaignPerformance.store`; adding a runtime check would contradict the goal of removing noise
+- No change to `mapAnalysisContext` or store types — the `string | null` / `BusinessContext | null` types remain accurate at the boundary; the assertion is internal to the orchestrator's narrowing logic
+
+
+## [#702] Consolidate hasCampaigns to a single source of truth in orchestrator
+**Type:** fix
+
+**Summary:** `hasCampaigns` was computed independently in two places — `useUploadModal` from `portfolioStore.portfolios.length > 0` and `dashboardOrchestrator.store` from `campaignPerformance.campaigns.length > 0` — now the orchestrator is the single owner using `portfolioStore.portfolios.length > 0`.
+
+**Brainstorming:** Two independent derivations of the same concept diverge subtly: `portfolioStore.portfolios.length > 0` is "is there any portfolio loaded?", while `campaignPerformance.campaigns.length > 0` is "does the active portfolio have campaigns?". These can differ during a portfolio switch (brief transitional window) or theoretically if a portfolio somehow had no campaigns. The orchestrator's version was the weaker one — `portfolioStore.portfolios.length > 0` is the canonical "is there data?" check and matches both the UI intent (show dashboard vs placeholder, show upload button vs hide it) and the replace gate in the upload flow. Fix: orchestrator adopts the portfolio count source; `useUploadModal` reads from the orchestrator instead of computing locally; `DashboardPage` uses `dashboard.hasCampaigns` for both the header button and view routing.
+
+**Prompt:** Fix hasCampaigns computed twice — useUploadModal derives it from portfolioStore.portfolios.length > 0; dashboardOrchestrator.store derives it from campaignPerformance.campaigns.length > 0. One source of truth should own this.
+
+**What changed:**
+- `app/src/app/stores/dashboardOrchestrator.store.ts` — `hasCampaigns` changed from `campaignPerformance.campaigns.length > 0` to `portfolioStore.portfolios.length > 0`
+- `app/src/app/composables/useUploadModal.ts` — removed local `hasCampaigns` computed and `portfolioStore` import; imported `useDashboardOrchestratorStore`; `requestUpload()` now reads `dashboard.hasCampaigns`; `hasCampaigns` removed from return type and return value; `computed` removed from vue import
+- `app/src/app/pages/DashboardPage.vue` — removed `hasCampaigns` from `useUploadModal` destructure; header upload button changed from `v-if="hasCampaigns"` to `v-if="dashboard.hasCampaigns"`
+
+**Key decisions & why:**
+- Orchestrator is the right owner — it is already the page-level mediator that composes stores and exposes page-ready derived state; `DashboardPage` reads from it for all other dashboard flags
+- `portfolioStore.portfolios.length > 0` chosen as the canonical expression — it is portfolio-level existence, not campaign-level content, which matches the UI semantics (replace gate, view routing, header button)
+- `useUploadModal` importing the orchestrator creates no circular dependency — the orchestrator does not import the composable
+
+
+## [#703] Replace direct store mutation with clearConnectionError action
+**Type:** fix
+
+**Summary:** `AiConnectionForm.vue` was setting `store.connectionError = null` directly in three places — bypassing Pinia's action layer; fixed by adding a `clearConnectionError()` action to `aiConnection.store.ts` and calling it from the form.
+
+**Brainstorming:** Direct mutation of Pinia store state from a component bypasses action tracking, makes state changes harder to trace in devtools, and couples the component to the store's internal shape. The fix is minimal: a one-line action that encapsulates the mutation, and a find-replace of all three callsites in the form. No behavior change.
+
+**Prompt:** Fix direct store mutation — AiConnectionForm.vue sets store.connectionError = null directly instead of calling an action. Bypasses Pinia's action tracking.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-connection/stores/aiConnection.store.ts` — added `clearConnectionError()` action that sets `connectionError.value = null`; added to the return object
+- `app/src/features/ai-tools/ai-connection/components/AiConnectionForm.vue` — replaced all three `store.connectionError = null` direct mutations with `store.clearConnectionError()` calls (in `selectedProvider` watcher, `resetKey` watcher, and `handleApiKeyUpdate`)
+
+**Key decisions & why:**
+- Single action for all three callsites — the mutation is semantically identical in all three contexts (clear the error); no need for separate named actions
+- No behavior change — purely structural; the action body is a single assignment identical to the direct mutation it replaces
+
+
+## [#704] Fix in-place sort mutation in getCacheKey
+**Type:** fix
+
+**Summary:** `getCacheKey` called `channelIds.sort()` which sorts the caller's array in place, silently reordering the `selectedChannelIds` array held by the store; fixed with `[...channelIds].sort()`.
+
+**Brainstorming:** `Array.prototype.sort()` mutates in place and returns the same reference. Any caller passing `selectedChannelIds` from the store would have their array silently reordered after `getCacheKey` returns. The fix is a one-character spread copy before sorting — no behavior change to the key generation logic.
+
+**Prompt:** Fix cache-key.ts mutates input array — channelIds.sort() sorts the caller's array in place. Should be [...channelIds].sort().
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/analysis-cache/cache-key.ts` — `channelIds.sort()` replaced with `[...channelIds].sort()`
+
+**Key decisions & why:**
+- Spread copy is the minimal fix — alternatives like `Array.from` or `.slice()` are equivalent; spread is the most idiomatic and concise
+
+
+## [#705] Fix TabState.reset() leaks timers
+**Type:** fix
+
+**Summary:** `TabState.reset()` nulled `controller` and `debounceTimer` without calling `abort()` or `clearTimeout()` first, orphaning in-flight requests and pending timers; fixed by delegating to `cancelRequest()`.
+
+**Brainstorming:** `cancelRequest()` already performs the correct teardown sequence — `abort()` the controller then null it, `clearTimeout` the timer then null it — with null guards on both. `reset()` was duplicating the null assignments but skipping the cleanup calls entirely, meaning any in-flight fetch kept running and any pending debounce callback kept ticking after `reset()` returned. The fix is one line: call `cancelRequest()` from `reset()`. A completed request already sets `controller` to null, so calling `abort()` on null is guarded and is a no-op — no unintended side effects.
+
+**Prompt:** Fix TabState.reset() leaks timers — sets controller = null and debounceTimer = null without calling abort() or clearTimeout() first. In-flight requests and pending timers are orphaned.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/utils/tab-state.ts` — `reset()` body replaced with `this.cancelRequest()` instead of two bare null assignments
+
+**Key decisions & why:**
+- Delegate to `cancelRequest()` rather than inline the cleanup — avoids duplicating teardown logic; `cancelRequest()` is already the single authoritative teardown path and has the correct null guards
+
+
+## [#706] Fix @extend in scoped SCSS for ghost-outline button variant
+**Type:** fix
+
+**Summary:** `ghost-outline` used `@extend .ghost` inside a `<style scoped>` block; scoped attribute injection happens after Sass compiles `@extend`, so the extended selectors can omit the scoped attribute and fail to match at runtime; fixed by inlining the ghost styles directly.
+
+**Brainstorming:** Sass `@extend` works by merging selectors at compile time. In Vue scoped SCSS, the `[data-v-xxxxxxxx]` attribute is appended after Sass compilation, which means extended selectors may not receive the scoped attribute and therefore won't match the rendered DOM. The correct fix is to duplicate the shared declarations inline — `ghost-outline` only borrows three things from `ghost`: `text-typography-subtle`, the hover/focus background+text, and the focus ring. `border-transparent` from ghost is immediately overridden by `border-typography-subtle` so it's dropped. The hover state merges ghost's `bg-typography/[8%] text-typography` with ghost-outline's own `border-typography-soft`.
+
+**Prompt:** Fix @extend in scoped SCSS (Button.vue) — ghost-outline extends .ghost inside a <style scoped> block. Scoped attribute injection happens after @extend compiles, which can produce selectors that don't match correctly at runtime.
+
+**What changed:**
+- `app/src/ui/primitives/Button.vue` — `.btn.ghost-outline` block: removed `@extend .ghost` and `@apply border-typography-subtle`; replaced with inlined `@apply border-typography-subtle text-typography-subtle` base, merged hover/focus state (`bg-typography/[8%] border-typography-soft text-typography`), and explicit focus ring (`ring-2 ring-offset-1 ring-offset-background ring-primary-lighter`) matching ghost
+
+**Key decisions & why:**
+- Inline rather than extract to a mixin — the shared declarations are small (3 properties) and a mixin would add indirection for no reuse benefit; plain duplication is clearer here
+- Drop `border-transparent` from the inlined base — ghost-outline always has a visible border (`border-typography-subtle`), so inheriting the transparent border only to override it immediately is noise
+
+
+## [#707] Fix O(n²) campaign array accumulation in channel-map.ts
+**Type:** fix
+
+**Summary:** `groupCampaignsByChannel` spread the existing campaigns array on every push (`[...existing.campaigns, performance]`), making accumulation quadratic per channel; replaced with a conditional `push()` that mutates the accumulator in place.
+
+**Brainstorming:** The spread pattern `{ ...existing, campaigns: [...existing.campaigns, performance] }` copies the entire campaigns array on every iteration. For a channel with k campaigns, this allocates arrays of length 1, 2, 3, …, k — total O(k²) allocations. Across all channels this is O(n²) in the worst case (single channel). The accumulator is a local `Map` that never escapes this function, so mutating `existing.campaigns` directly is safe. The fix: check `grouped.get(id)` — if the accumulator exists, `push()` into its campaigns array; if not, insert a new entry with a single-element array. The `grouped.set()` call for the existing case is also eliminated, reducing Map writes by the number of duplicate channel campaigns.
+
+**Prompt:** Fix O(n² accumulator in channel-map.ts — { ...existing, campaigns: [...existing.campaigns, campaign] } copies the campaigns array on every push. For channels with many campaigns this is quadratic. Use push() or build the array then wrap.
+
+**What changed:**
+- `app/src/shared/portfolio/analysis/channel-map.ts` — `groupCampaignsByChannel`: replaced `grouped.get(id) ?? { ... }` + spread-assign pattern with an explicit branch: `existing.campaigns.push(performance)` when the accumulator already exists, `grouped.set(id, { id, name, campaigns: [performance] })` on first encounter
+
+**Key decisions & why:**
+- Mutate the accumulator's `campaigns` array directly — it is a private local object that never escapes `groupCampaignsByChannel`, so mutation is safe and eliminates all intermediate array allocations
+- Remove the redundant `grouped.set()` call on the existing-entry branch — `push()` mutates in place; the Map already holds the reference, no re-set needed
+
+
+## [#708] Remove dead provide() call from useUploadModal
+**Type:** fix
+
+**Summary:** `useUploadModal` called `provide('openUploadModal', openUploadModal)` as a side effect, but nothing in the codebase ever called `inject('openUploadModal')` — the registration was unused and misleading to readers.
+
+**Brainstorming:** `provide()` signals to readers that a descendant will inject the value. Since no component does, it's dead documentation noise. The upload flow works via `requestUpload()` returned from the composable — `UploadDataPlaceholder` emits `upload` → `DashboardPage` calls `requestUpload()`, and the header button calls it directly. Both callers are direct children of `DashboardPage`, which already has the composable result in scope, so inject was never needed. Also noted: what was being provided was `openUploadModal` (the inner ungated function), not `requestUpload` — bypassing the replace-confirm gate — so even if something had injected it, it would have been the wrong function.
+
+**Prompt:** Remove the dead provide('openUploadModal', openUploadModal) call from useUploadModal — nothing injects it and the composable already exposes requestUpload() for callers.
+
+**What changed:**
+- `app/src/app/composables/useUploadModal.ts` — removed `provide` from the Vue import; removed `provide('openUploadModal', openUploadModal)` call
+
+**Key decisions & why:**
+- No refactoring of callers needed — `DashboardPage` already uses `requestUpload` from the composable return value directly
+
+
+## [#709] Use DEFAULT_STATE in createTabDisplay via spread
+**Type:** fix
+
+**Summary:** `createTabDisplay()` duplicated the `DEFAULT_STATE` structure inline instead of using it, making `DEFAULT_STATE` dead code; replaced the inline object with `{ ...DEFAULT_STATE }` spread cast to the generic type.
+
+**Brainstorming:** `DEFAULT_STATE` is typed as `TabDisplay` (no generic) and `createTabDisplay` returns `TabDisplay<T>`. A shallow spread is safe here — all four fields are primitives or null, so there are no reference aliasing concerns. The `as TabDisplay<T>` cast is needed because `DEFAULT_STATE.response` is typed as `AnalysisResponse | null` while the generic slot expects `T | null`; at runtime both are null so the cast is sound.
+
+**Prompt:** DEFAULT_STATE is dead code — createTabDisplay() duplicates the same structure inline instead of using it. Use it with spread operator.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.config.ts` — `createTabDisplay` body replaced with `return { ...DEFAULT_STATE } as TabDisplay<T>`
+
+**Key decisions & why:**
+- Shallow spread is sufficient — all fields are primitives or null; no nested object references to worry about
+- `as TabDisplay<T>` cast required to satisfy the generic return type without widening the signature
+
+
+## [#710] Replace unnecessary computed() with plain object in useModalAria
+**Type:** fix
+
+**Summary:** `dialogAria` was wrapped in `computed()` despite depending only on `titleId` which is a static UUID string generated once — replaced with a plain object constant.
+
+**Brainstorming:** `computed()` is only useful when the returned value depends on reactive state that can change. `titleId` is set once via `crypto.randomUUID()` and never mutated, so `dialogAria` would never recompute. Both consumers (`Modal.vue` and `ResponsiveDrawer.vue`) bind it via `v-bind="dialogAria"` — Vue handles both plain objects and computed refs identically in `v-bind`, so no template changes are needed. Removed the `computed` and `ComputedRef` imports as they are no longer used.
+
+**Prompt:** dialogAria unnecessary computed — useModalAria.ts wraps a static object in computed(). titleId never changes so dialogAria never recomputes; it should be a plain constant.
+
+**What changed:**
+- `app/src/ui/accessibility/useModalAria.ts` — removed `computed` and `ComputedRef` imports; changed `dialogAria` from `computed(() => ({ ... }))` to a plain object literal; updated the return type annotation accordingly
+
+**Key decisions & why:**
+- No consumer changes needed — `v-bind="dialogAria"` works identically with a plain object; Vue does not require a ref or computed for `v-bind`
+
+
+## [#711] Remove orphaned .optional-label scoped style from UploadDataForm
+**Type:** fix
+
+**Summary:** Removed an unused `.optional-label` scoped SCSS rule from `UploadDataForm.vue` — the class was never applied in the template, leaving an empty style block that was deleted entirely.
+
+**Brainstorming:** Scanned all Vue files with scoped style blocks across the codebase. Only one genuine orphan was found: `.optional-label` in `UploadDataForm.vue`. A second candidate (`.table-selectable-row:hover` in `CampaignDuplicationsTable.vue`) looked orphaned but is actually valid — Vue applies the parent's scoped data attribute to child component root elements, so that selector correctly matches the `<tr class="table-selectable-row">` rendered by `TableSelectableRow` on hover, with `:deep()` piercing through to style the `RadioItem` inside.
+
+**Prompt:** Fix orphaned .optional-label CSS — UploadDataForm.vue has a scoped style for .optional-label that is never applied in the template. Check other places as well.
+
+**What changed:**
+- `app/src/features/data-transfer/components/UploadDataForm.vue` — removed the entire `<style lang="scss" scoped>` block (was the only rule in it)
+
+**Key decisions & why:**
+- Entire style block removed, not just the rule — leaving an empty `<style>` block would be noise
+- `.table-selectable-row:hover` kept — it is not orphaned; it works via Vue's scoped-attribute inheritance on child component root elements
+
+
+## [#712] Remove no-op trailing return from assertResponseOk
+**Type:** fix
+
+**Summary:** Removed a redundant `return;` at the end of `assertResponseOk` — an `async` function returning `Promise<void>` implicitly returns `undefined` when execution falls off the end; the explicit return added nothing.
+
+**Brainstorming:** The trailing `return;` in `assertResponseOk` had no effect — there is no code after the `if` block, so there is nothing to skip. Contrast with `assertChatResponseOk` directly below, which uses an early `return;` as a genuine guard to skip the async `response.text()` call when the response is OK. That usage is load-bearing; this one was not.
+
+**Prompt:** Fix assertResponseOk trailing return — error-handling.ts ends with a no-op return in an async function returning Promise<void>.
+
+**What changed:**
+- `app/src/features/ai-tools/providers/utils/error-handling.ts` — removed trailing `return;` from `assertResponseOk`
+
+**Key decisions & why:**
+- No behavior change — implicit `undefined` return is identical to explicit `return;` in a `Promise<void>` function
+
+
+## [#713] Move cooldown reactive dependency from canAnalyze into computed callsites
+**Type:** fix
+
+**Summary:** Removed the `void cooldown.tick.value` trick from `canAnalyze`, making it a pure function; moved the `cooldown.tick.value` read explicitly into `optimizerCanAnalyze` and `summaryCanAnalyze` where the reactive dependency is self-documenting.
+
+**Brainstorming:** The `void cooldown.tick.value` pattern inside `canAnalyze` registered a hidden reactive dependency — necessary to re-evaluate the button-enable computeds when the cooldown timer fires, but surprising to readers who expect `void expr` to be a no-op. A `watch(cooldown.tick, () => evaluateTab(...))` approach would have been a behavior change: it would trigger side-effectful analysis on cooldown expiry instead of just re-enabling the button, which is wrong. The correct fix is to move the bare `cooldown.tick.value` read into the two computeds that consume `canAnalyze`. A bare ref read inside a `computed()` body is a recognizable Vue pattern — it is clearly a dependency declaration at the callsite, not a hidden side effect buried inside a helper function. `canAnalyze` becomes a pure function with no reactive coupling.
+
+**Prompt:** Fix void cooldown.tick.value reactive dependency pattern — works, but is surprising. Readers need the comment to understand it. A watchEffect would make the intent self-documenting.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/stores/aiAnalysis.store.ts` — removed `void cooldown.tick.value` from `canAnalyze`; added `cooldown.tick.value` read directly inside `optimizerCanAnalyze` and `summaryCanAnalyze` computed bodies with a one-line comment
+
+**Key decisions & why:**
+- `watchEffect` rejected — it runs side effects, not computed invalidation; using it here would trigger `evaluateTab` on cooldown expiry, changing behavior
+- Bare read in computed body chosen over extracting a `cooldownVersion` computed — one extra indirection with no clarity gain
+- Comment retained at each read site — a bare ref read for dependency-only purposes is always non-obvious without it, even in a computed
+
+
+## [#714] Consolidate connected-dot implementations into a single utility
+**Type:** fix
+
+**Summary:** Replaced two separate connected-dot implementations with composable utility classes — `.connected-dot-badge` added to `_connected-dot.scss`, eliminating the scoped `.connected-status` / `.connected-status-dot` / `@keyframes dot-pop` styles from `DashboardPage.vue`.
+
+**Brainstorming:** The existing `.connected-dot::before` pseudo-element handles the inline green dot (used in AiConnectedStatus). DashboardPage had a separate two-element structure: a halo ring wrapper with a spring pop animation and an inner dot span. Adding `.connected-dot-badge` to the utility lets the two classes compose — `.connected-dot` provides the `::before` green dot, `.connected-dot-badge` provides the absolute positioning, halo ring, flex centering, and animation. Because the badge wrapper is `flex items-center justify-center`, the `::before` pseudo-element participates in flex layout and centers naturally, removing the need for a separate inner `<span>`. Template goes from two elements to one.
+
+**Prompt:** Two "connected dot" implementations — DashboardPage.vue has an inline animated dot for the AI button header, and there is also a _connected-dot.scss utility class. Both exist for the same visual concept. Create a variation in connected-dot utils.
+
+**What changed:**
+- `app/src/styles/utilities/_connected-dot.scss` — added `.connected-dot-badge` with absolute positioning, halo ring, flex centering, z-index, and `connected-dot-pop` keyframe animation
+- `app/src/app/pages/DashboardPage.vue` — replaced two-element `connected-status` / `connected-status-dot` markup with single `<span class="connected-dot connected-dot-badge" />`; removed `.connected-status`, `.connected-status-dot`, and `@keyframes dot-pop` scoped styles
+
+**Key decisions & why:**
+- Single element in template — `::before` flex item centers inside the badge wrapper without an inner span
+- Keyframe renamed `connected-dot-pop` to match the utility namespace and avoid collision with any other local `dot-pop` name
+
+
+## [#715] Centralise UI ID generation in a shared utility
+**Type:** refactor
+
+**Summary:** Replaced inconsistent ID generation across the UI library (`Math.random()` in `Disclosure.vue`, inline `crypto.randomUUID()` in `useModalAria.ts`) with a single `generateId(prefix)` utility in `ui/utils/`.
+
+**Brainstorming:** Two components in the UI library were generating unique IDs using different approaches. `Disclosure.vue` used `Math.random().toString(36).slice(2, 9)` which produces a short but non-cryptographically-random suffix and is easy to silently weaken if copy-pasted elsewhere. `useModalAria.ts` used `crypto.randomUUID()` directly, which is correct but inline. A thin wrapper in a dedicated utils folder standardises the pattern, makes the intent explicit via the `prefix` parameter, and gives a single place to change the strategy if needed.
+
+**Prompt:** Disclosure.vue uses Math.random() for ID generation — useModalAria uses crypto.randomUUID(). Inconsistent ID generation across the UI library. Create a utils folder in ui and create an ID generator that wraps crypto. Then use that function where we generate IDs for UI.
+
+**What was built:**
+- `app/src/ui/utils/generate-id.ts` — `generateId(prefix: string): string` wraps `crypto.randomUUID()` and returns `"${prefix}-${uuid}"`
+- `app/src/ui/utils/index.ts` — barrel exporting `generateId`
+- `app/src/ui/index.ts` — added `export * from './utils'` to public barrel
+- `app/src/ui/primitives/Disclosure.vue` — replaced `Math.random()` expression with `generateId('disclosure')`; added local import from `../utils`
+- `app/src/ui/accessibility/useModalAria.ts` — replaced inline `crypto.randomUUID()` with `generateId('modal-title')`; added local import from `../utils`
+
+**Key decisions & why:**
+- Wrapper kept minimal (one line) — no options, no fallback, no polyfill; `crypto.randomUUID()` is available in all target environments
+- `utils/` exported from the public `@/ui` barrel — consistent with all other UI sub-folders; keeps the surface area of `generateId` available to app/feature code if ever needed without a separate import path
+
+
+## [#716] Move generateId to shared/utils and enforce single crypto call site
+**Type:** refactor
+
+**Summary:** Moved `generateId` from `ui/utils/` to `shared/utils/` so all `crypto.randomUUID()` calls across the codebase go through a single wrapper; updated `portfolio.store.ts` to use it instead of calling crypto directly.
+
+**Brainstorming:** After #715 added `generateId` to `ui/utils/`, two problems remained: `shared/portfolio/portfolio.store.ts` still called `crypto.randomUUID()` directly (a layer that cannot import from `@/ui`), and the rule that crypto should only be called through the wrapper was not yet enforced. Moving `generateId` to `shared/utils/` fixes the layer direction (`ui` can import from `shared`, not the reverse) and makes the wrapper the only path to `crypto.randomUUID()` in the codebase. The `ui/utils/` folder was deleted since it no longer had a purpose; `Disclosure.vue` and `useModalAria.ts` now import from `@/shared/utils` directly.
+
+**Prompt:** Move generateId to shared — we should not use crypto any other way, only through the wrapper.
+
+**What changed:**
+- `app/src/shared/utils/generate-id.ts` — created; contains `generateId(prefix)` wrapping `crypto.randomUUID()`
+- `app/src/shared/utils/index.ts` — added `export * from './generate-id'`
+- `app/src/shared/portfolio/portfolio.store.ts` — replaced `crypto.randomUUID()` with `generateId('portfolio')`; added import from `@/shared/utils`
+- `app/src/ui/primitives/Disclosure.vue` — updated import from `../utils` → `@/shared/utils`
+- `app/src/ui/accessibility/useModalAria.ts` — updated import from `../utils` → `@/shared/utils`
+- `app/src/ui/utils/generate-id.ts` — deleted
+- `app/src/ui/utils/index.ts` — deleted
+- `app/src/ui/index.ts` — removed `export * from './utils'`
+
+**Key decisions & why:**
+- `shared/utils` is the correct home — it has no framework dependencies, is importable by both `shared/` and `ui/`, and follows the existing layer hierarchy
+- Portfolio entity IDs now get a `"portfolio-"` prefix — entity keys only need uniqueness, and the prefix makes log/debug output self-describing
+- `ui/utils/` deleted entirely — no remaining content; leaving an empty barrel would be noise
+
+
+## [#717] Extract budget optimizer reallocation sort into a utility
+**Type:** refactor
+
+**Summary:** Moved the inline null-safe revenue-change comparator out of `BudgetOptimizationAnalysis.vue` into a dedicated `budget-optimization-sort.ts` utility in `ai-analysis/utils/`.
+
+**Brainstorming:** The inline sort comparator in the `reallocations` computed was a presentation concern leaking into a component that should only compose views. A pure utility function is trivially testable without Pinia setup, immediately reusable by any other component in the feature, and keeps the component computed readable at a glance. The utility lives in `ai-analysis/utils/` (not inside `budget-optimization/`) because `BudgetRecommendation` is an `ai-analysis` response type and `ai-analysis/utils/` is the established utilities layer for this feature — placing it inside the subfolder would create an inconsistent parallel utils layer.
+
+**Prompt:** Extract the inline sort comparator from BudgetOptimizationAnalysis.vue into a utility in ai-analysis/utils/.
+
+**What changed:**
+- `ai-analysis/utils/budget-optimization-sort.ts` — created; exports `sortReallocationsByRevenueDesc(recommendations)` — null-safe descending sort on `revenueChange`
+- `ai-analysis/utils/index.ts` — added `export * from './budget-optimization-sort'`
+- `budget-optimization/BudgetOptimizationAnalysis.vue` — replaced 13-line inline comparator with `sortReallocationsByRevenueDesc(...)` call; imported from `../utils`
+
+**Key decisions & why:**
+- New file rather than adding to an existing utils file — consistent with the focused single-concern naming pattern already used (`analysis-messages.ts`, `analysis-prompt.ts`, `tab-state.ts`)
+- `slice()` moved into the utility — the utility owns the sort contract, so it should also own the immutability guarantee
+
+
+## [#718] Document GroupedCampaignTable animation technique
+**Type:** update
+
+**Summary:** Added a reference comment block to `GroupedCampaignTable.vue` explaining the smooth table-row expand/collapse technique so it is preserved as a study reference and not mistakenly deleted as dead code.
+
+**Brainstorming:** The file is not wired into the production view but contains a non-obvious JS-driven animation pattern worth keeping. Rather than deleting it or leaving it undocumented, a comment block at the top of the script captures the full technique — the three-div nesting structure, the `grid-template-rows: 0fr → 1fr` trick, the forced-reflow step, and how Vue's `:css="false"` hooks integrate with the JS driver.
+
+**Prompt:** GroupedCampaignTable.vue is dead code but I need to keep it as a study reference for its smooth transitioning table. Add comments at the top of the file explaining the implementation so it is kept intact.
+
+**What changed:**
+- `app/src/features/campaign-performance/components/GroupedCampaignTable.vue` — added a multi-line reference comment block at the top of the `<script setup>` block explaining the grid-template-rows trick, the three-div nesting, the reflow-then-transition driver pattern, and the Vue Transition `:css="false"` integration
+
+**Key decisions & why:**
+- Comment placed at the very top of the script block so it is seen immediately when the file is opened
+- Explains the "why" of each layer (`.collapse-cell` / `.collapse-cell-inner` / `.collapse-cell-content`) — without this, the nesting looks redundant
+- Notes the `void cells[0].offsetHeight` reflow trick explicitly — this is the line most likely to be misread as a mistake and deleted
+
+
+## [#719] Remove redundant tabindex from AI analysis tab panel
+**Type:** fix
+
+**Summary:** Removed `tabindex="0"` from the tabpanel `<div>` in `AiAnalysis.vue` — it was redundant because the panel always contains focusable children, and was causing an unwanted focus outline on a non-interactive container.
+
+**Brainstorming:** `tabindex="0"` on a tabpanel is only needed when the panel has no focusable children, giving keyboard users somewhere to land. Both analysis tabs always contain at least an Analyze button (sometimes disabled, but other focusable elements are present), so users Tab naturally into the panel content. The attribute was producing a visible browser focus ring on the container div with no accessibility benefit.
+
+**Prompt:** Remove tabindex="0" from the tabpanel div in AiAnalysis.vue.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — removed `tabindex="0"` from the tabpanel div
+
+**Key decisions & why:**
+- No replacement needed — `role="tabpanel"` and `aria-labelledby` are retained; only the redundant focusability is removed
+- A disabled button does not receive focus but other panel elements do, so the panel is never a keyboard dead end
+
+
+## [#720] Fix broken aria-controls in Tabs component
+**Type:** fix
+
+**Summary:** Removed `aria-controls` from `Tabs.vue` and the corresponding `id` from the tab panel in `AiAnalysis.vue` — `aria-controls` was referencing panel IDs that don't exist in the DOM when panels use `v-if`.
+
+**Brainstorming:** `aria-controls` on each tab button pointed to `id="tabpanel-${tab.id}"`, but only the active panel is mounted (v-if). Every inactive tab button held a broken ARIA reference. Per the APG spec, `aria-controls` is optional for tabs — the authoritative accessibility connection is `aria-labelledby` on the panel pointing back to the tab button ID. Dropping `aria-controls` removes the broken references with no accessibility regression. The panel ID was only needed as an `aria-controls` target, so it is removed too.
+
+**Prompt:** Fix aria-controls in Tabs.vue — it references panel IDs that don't exist when panels use v-if. Option A: drop aria-controls (optional per spec) and remove the panel id.
+
+**What changed:**
+- `app/src/ui/primitives/Tabs.vue` — removed `:aria-controls` from tab buttons
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — removed `:id` from the tabpanel div
+
+**Key decisions & why:**
+- Dropped aria-controls rather than switching to v-show — v-if is intentional (lazy mount per tab); mounting both analysis components immediately would trigger unwanted store watchers
+- aria-controls is marked optional in WAI-ARIA APG and has inconsistent screen reader support — dropping it is a clean fix with no functional cost
+
+
+## [#721] Add TabPanels primitive and use it in AiAnalysis
+**Type:** feature
+
+**Summary:** Extracted the tab panel wrapper into a reusable `TabPanels.vue` primitive that renders the active named slot with proper ARIA attributes, replacing the `v-if/v-else` switching in `AiAnalysis.vue`.
+
+**Brainstorming:** The existing pattern in `AiAnalysis.vue` used `v-if/v-else` to switch between `BudgetOptimizationAnalysis` and `ExecutiveSummaryAnalysis`, with the ARIA role and labelledby hardcoded on a plain `<div>`. Extracting this into a `TabPanels.vue` primitive via Vue's dynamic named slot (`<slot :name="activeTab" />`) encapsulates the ARIA wiring generically, keeps lazy rendering (inactive slots are never mounted — equivalent to `v-if`), and keeps `TabPanels` as a separate primitive from `Tabs` to preserve independent styling flexibility on the panel wrapper. Content is projected by callers as `<template #tabId>` named slots — slot names must match tab IDs (TypeScript cannot validate this at the slot-name level since slot names are typed as `string`).
+
+**Prompt:** Implement TabPanels.vue as a ui primitive that renders active named slot content with role="tabpanel" and aria-labelledby. Update AiAnalysis.vue to use it with named slots instead of v-if/v-else.
+
+**What was built:**
+- `app/src/ui/primitives/TabPanels.vue` — new primitive; props: `activeTab: string`; renders `<slot :name="activeTab" />` inside a `role="tabpanel"` div with `aria-labelledby="tab-{activeTab}"`; accepts class pass-through
+- `app/src/ui/primitives/index.ts` — added `TabPanels` export
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — replaced `v-if/v-else` switching + plain tabpanel div with `<TabPanels :active-tab="...">` using `#executiveSummary` and `#budgetOptimizer` named slots
+
+**Key decisions & why:**
+- `TabPanels` kept separate from `Tabs` (not merged) — independent components give callers styling flexibility; the panel wrapper can have its own class, overflow, scroll, and layout without coupling to the tablist
+- Dynamic named slot (`<slot :name="activeTab" />`) preserves lazy rendering — inactive panel templates are never mounted, preventing unwanted store watcher triggers
+- No default slot — callers must use named slots matching tab IDs, making the usage explicit
+
+
+## [#722] Move Tabs and TabPanels into dedicated ui/tabs/ folder
+**Type:** refactor
+
+**Summary:** Moved `Tabs.vue` and `TabPanels.vue` out of `ui/primitives/` into a new `ui/tabs/` folder to match the module structure pattern used by `drawer/`, `modal/`, `card/`, etc.
+
+**Brainstorming:** Primitives is the right home for atomic, standalone components (Button, Badge, Chip, Spinner, Disclosure). `Tabs` + `TabPanels` form a paired module — they work together as a composite widget — which is exactly the pattern that gets its own folder in this codebase. Moving them to `ui/tabs/` gives the pair a consistent home, keeps primitives lean, and mirrors the existing folder convention.
+
+**Prompt:** Move Tabs and TabPanels out of primitives into their own ui/tabs/ folder, consistent with how drawer/, modal/, card/ etc. are structured.
+
+**What changed:**
+- `app/src/ui/tabs/` — new folder
+- `app/src/ui/tabs/Tabs.vue` — moved from primitives/
+- `app/src/ui/tabs/TabPanels.vue` — moved from primitives/
+- `app/src/ui/tabs/index.ts` — new barrel; exports TabPanels, Tabs, Tab
+- `app/src/ui/primitives/index.ts` — removed Tabs/TabPanels/Tab exports
+- `app/src/ui/primitives/Tabs.vue` — deleted
+- `app/src/ui/primitives/TabPanels.vue` — deleted
+- `app/src/ui/index.ts` — added `export * from './tabs'`
+
+**Key decisions & why:**
+- All consumers import from `@/ui` barrel — no import paths needed updating; the move is transparent to all callers
+- `primitives/index.ts` description updated to remove Tabs/TabPanels; `ui/index.ts` description updated to include tabs/*
+
+
+## [#723] Fix Button double class application with inheritAttrs: false
+**Type:** fix
+
+**Summary:** Added `defineOptions({ inheritAttrs: false })` to `Button.vue` so external `class` bindings are applied exactly once via the explicit `v-bind="$attrs"` instead of twice (auto-inheritance + explicit bind).
+
+**Brainstorming:** Vue's default `inheritAttrs: true` causes the root element to receive fallthrough attributes automatically. When `v-bind="$attrs"` is also present on the same element, `class` (and other attrs) gets applied twice. Setting `inheritAttrs: false` makes `v-bind="$attrs"` the single, controlled point of application. No template changes needed — the existing `v-bind="$attrs"` already handles all native attribute forwarding.
+
+**Prompt:** Fix Button.vue so external class bindings are not applied twice. Use inheritAttrs: false — Option A from the brainstorm.
+
+**What changed:**
+- `app/src/ui/primitives/Button.vue` — added `defineOptions({ inheritAttrs: false })` after `withDefaults(defineProps(...))` block (ESLint requires defineProps before defineOptions)
+
+**Key decisions & why:**
+- `defineOptions` placed after `withDefaults(defineProps(...))` — ESLint `vue/define-macros-order` rule requires defineProps first; defineOptions follows
+- No template changes — `v-bind="$attrs"` was already the intended forwarding mechanism; this fix simply stops the duplicate auto-forwarding path
+
+
+## [#724] Spread defaultTheme.screens into tailwind.config.js
+**Type:** update
+
+**Summary:** Added `...defaultTheme.screens` to the custom screens block so all default Tailwind breakpoints are explicitly visible in the config alongside the project's custom ones.
+
+**Brainstorming:** The project previously only declared `xs` and `sticky-header` in `extend.screens`; the default sm/md/lg/xl/2xl breakpoints were inherited implicitly. Spreading `defaultTheme.screens` makes all breakpoints visible in one place. `xs` (480px) stays first, the spread covers sm→2xl, and `sticky-header` (1120px) follows with a comment noting it sits between lg and xl. Tailwind v3 sorts breakpoints by pixel value in the generated CSS so the object key order doesn't affect output correctness.
+
+**Prompt:** Add ...defaultTheme.screens to the tailwind.config.js screens section, maintaining order from smaller to bigger.
+
+**What changed:**
+- `app/tailwind.config.js` — added `import defaultTheme from 'tailwindcss/defaultTheme'`; updated `extend.screens` to spread `defaultTheme.screens` between `xs` and `sticky-header`
+
+**Key decisions & why:**
+- `xs` before spread, `sticky-header` after — xs (480px) is smaller than sm (640px) so it goes first; sticky-header (1120px) is between lg and xl but appears last in the object literal (idiomatic spread pattern); Tailwind sorts by value so CSS output is correct regardless
+
+
+## [#725] Fix screens order in tailwind.config.js
+**Type:** fix
+
+**Summary:** Replaced `...defaultTheme.screens` spread with explicit per-key references so `sticky-header` (1120px) sits correctly between `lg` (1024px) and `xl` (1280px) in the object literal.
+
+**Brainstorming:** The spread placed `2xl` (1536px) before `sticky-header` (1120px) in the object because JS object spread order is insertion-order. Explicit key listing is the only way to interleave a custom breakpoint in the middle of the default set while keeping the object readable and correctly ordered.
+
+**Prompt:** Fix — 2xl appears before sticky-header in the screens object. Reorder properly.
+
+**What changed:**
+- `app/tailwind.config.js` — replaced `...defaultTheme.screens` spread with explicit `sm/md/lg/xl/2xl` keys referencing `defaultTheme.screens.*`; `sticky-header` now sits between `lg` and `xl`
+
+**Key decisions & why:**
+- Individual key references over spread — only way to interleave a custom breakpoint inside the default set while maintaining correct object key order; `defaultTheme.screens.*` references preserve the "single source of truth" benefit of the original spread
+
+## [#726] Move screens from theme.extend to theme.screens
+**Type:** fix
+
+**Summary:** Moved the screens definition from `theme.extend.screens` to `theme.screens` to take full control of CSS generation order and fix responsive utility override bugs.
+
+**Brainstorming:** With `extend.screens`, default breakpoints (sm/md/lg/xl/2xl) are generated first in the CSS, then extend additions (xs, sticky-header) follow. At viewport ≥640px both `xs` (≥480px) and `sm` (≥640px) media queries match; since xs is generated later it wins via cascade last-rule-wins, silently overriding `sm:*` utilities. Moving to `theme.screens` replaces the defaults entirely and gives exact control over generation order — xs→sm→md→lg→sticky-header→xl→2xl — so later breakpoints correctly override earlier ones.
+
+**Prompt:** Move screens out of extend into theme.screens so the CSS generation order matches breakpoint size order.
+
+**What changed:**
+- `app/tailwind.config.js` — moved `screens` block from `theme.extend.screens` to `theme.screens` (top-level theme key, before extend)
+
+**Key decisions & why:**
+- `theme.screens` not `theme.extend.screens` — only way to guarantee CSS generation order matches breakpoint pixel order; extend appends custom screens after defaults in the CSS output regardless of config key order
+
+## [#727] Document portfolio metadata form in data-transfer.md
+**Type:** update
+
+**Summary:** Added a dedicated Portfolio Metadata section to `docs/features/data-transfer.md` covering the four upload form fields — report name, reporting period, industry, and CSV file — with field-level rules, validation logic, and downstream impact on `BusinessContext` and AI prompts.
+
+**Brainstorming:** The doc thoroughly covered the CSV format and validation pipeline but said nothing about the form fields the user must fill before submitting. Report name, start date, end date, and industry are all required to construct `PortfolioInput` / `BusinessContext`. Omitting them leaves readers unable to understand the upload flow or why AI prompts know the time horizon and sector context. The fix is a dedicated section that documents each field individually — label, required status, validation rules, placeholder, and downstream use — plus an expansion of the Upload Flow section to make clear that metadata and file are validated together on submit.
+
+**Prompt:** Portfolio metadata form is undocumented. data-transfer.md thoroughly covers the CSV format but says nothing about the upload form's metadata fields — report name, period (from/to), and optional industry. These are required inputs that drive the BusinessContext consumed by AI prompts. The upload flow section should describe them. Make sure the documentation is top notch.
+
+**What changed:**
+- `docs/features/data-transfer.md` — expanded Upload Flow section from 3 sentences to a proper submission-flow description; added new Portfolio Metadata section with four subsections: Campaign Report Name (required, trim, hint, error), Reporting Period (required, DD/MM/YYYY format, cross-field range check, ISO storage, downstream in BusinessContext), Industry (optional, trim, undefined when empty, AI prompt impact), CSV File (required, cross-reference to existing sections)
+
+**Key decisions & why:**
+- Separate subsection per field — each field has different required/optional status, different validation rules, and different downstream use; flat prose would bury these distinctions
+- Validation table for period — the period field has four independent checks (required, format, valid date, range); a table communicates this more clearly than a list
+- Explicit downstream impact per field — name → dashboard header, period → dashboard header + AI prompt time horizon, industry → AI prompt sector calibration; this connects the form to feature behavior that would otherwise be invisible to a reader
+- CSV File subsection added — closes the form description without duplicating content; the cross-reference keeps the section self-contained
+
+
+## [#728] Document Revenue vs Budget toggle in campaign-performance.md
+**Type:** update
+
+**Summary:** Expanded the Visual Analysis Outputs section in `docs/features/campaign-performance.md` to document the Revenue vs Budget chart as two distinct views — Performance (grouped bars) and Efficiency (gap percentage axis) — including toggle behavior, axis semantics, tooltip format, guard states, and the UX rationale for the toggle.
+
+**Brainstorming:** The doc described "Revenue vs budget by channel" as a single view. In the app it is a card with a pill toggle that switches between two fundamentally different charts: one absolute (budget + revenue side by side), one relative (efficiency gap in percentage points with direction-coded bars). These answer different questions. A user reading the doc would have no idea the toggle exists, why it exists, or what "efficiency gap" means. The fix is a dedicated subsection per view that explains what each shows, how to read the y-axis, and what the guard states mean — so a reader understands the UX decision and can interpret both charts.
+
+**Prompt:** Revenue vs Budget chart toggle is missing from campaign-performance.md. The Visual Analysis Outputs section describes "Revenue vs budget by channel" as a single view, but it's actually two — a "Performance" grouped-bar view and an "Efficiency Gap" percentage-axis view. The toggle is a meaningful UX decision worth documenting.
+
+**What changed:**
+- `docs/features/campaign-performance.md` — updated the "Revenue vs budget by channel" bullet to mention the two-view toggle; added a "Revenue vs Budget by Channel" subsection under Visual Analysis Outputs with: Performance view description (grouped bars, compact currency y-axis), Efficiency view description (efficiency gap in pp, direction-coded bars, legend, tooltip format, symmetric axis, minimum range guard), guard states table (single channel and zero-gap conditions with exact copy)
+
+**Key decisions & why:**
+- Separate subsection per view — the two views answer different questions; merging them in a single paragraph would bury the distinction that matters most: one is absolute spend/revenue, the other is share-relative allocation efficiency
+- Efficiency gap definition spelled out — "revenue share minus budget share" is not self-evident; without it, "overperforming" and "underperforming" labels are ambiguous
+- Guard states as a table — two distinct conditions with different messages; a table makes the conditions and their copy scannable without prose clutter
+- "Guard states are informative, not errors" note — prevents a reader from inferring the app is broken when the chart doesn't appear
+
+
+## [#729] Document tab ordering and noRecommendationReason in ai-analysis.md
+**Type:** update
+
+**Summary:** Added a Tabs section to `docs/features/ai-analysis.md` documenting the deliberate Summary-first, Optimization-second tab order, and a Budget Optimization Output section documenting the `noRecommendationReason` field and both user-facing states it produces.
+
+**Brainstorming:** The doc covered execution flow, caching, and error states well but said nothing about which tab appears first or why. Summary before Optimization is a product decision — orient before prescribe — that shapes the entire user experience of the AI panel. A reader has no way to infer this from the feature responsibilities list. Similarly, `noRecommendationReason` is a typed first-class field on `BudgetOptimizerOutput` (`string | null`), yet the doc had no mention of it. When both `recommendations` and `expansions` are empty the UI enters a distinct "no opportunities" state whose notification body is driven by this field — AI-provided explanation when non-null, a static default when null. Both are legitimate outcomes with different UX meaning. Documenting them closes a gap between the schema, the rendering logic, and what a reader can understand.
+
+**Prompt:** ai-analysis.md doesn't describe tab ordering or the noRecommendationReason field. The tab order (Summary first, Optimization second) is a deliberate product decision. noRecommendationReason is a first-class output field that determines whether a "no recommendations" state is shown with an AI-provided explanation or a default fallback — both are meaningful user-facing behaviors.
+
+**What changed:**
+- `docs/features/ai-analysis.md` — added Tabs section (immediately after the opening paragraph) documenting Summary-first ordering and the "orient before prescribe" rationale; added Budget Optimization Output section (before State Handling) documenting the no-recommendation state, the two `noRecommendationReason` paths (non-null string vs null), and the fallback copy
+
+**Key decisions & why:**
+- Tabs section placed before Feature Responsibilities — it sets the user-facing mental model before the implementation details; a reader encounters the structure before the behavior rules
+- "Orient before prescribe" named explicitly — the rationale is not self-evident from the UI; naming it makes the ordering decision readable as intent rather than accident
+- No-recommendation state described as valid outcome, not an error — both the type (`string | null`) and the rendering logic treat null as legitimate; the doc must communicate the same so readers don't treat an empty result as a defect
+- Null vs non-null distinction documented — these are two different user-facing strings with different origins (AI-generated vs static default); collapsing them in the doc would misrepresent the behavior
+
+
+## [#730] Document dashboard orchestrator in frontend-architecture.md
+**Type:** update
+
+**Summary:** Added a dedicated Dashboard Orchestrator section to `docs/architecture/frontend-architecture.md` covering the mediator's responsibilities, AI panel lifecycle, context translation contract, portfolio eviction path, connection event notification rules, and exposed surface.
+
+**Brainstorming:** The orchestrator was mentioned in two places — a single sentence in Feature Architecture and three bullets in AI UI Integration — but never described as a system. It is the only store allowed to compose feature stores, it owns two coordinated multi-store actions (openAiPanel/closeAiPanel), it runs three reactive watchers with distinct guard conditions, and its context translation logic (mapAnalysisContext) is the bridge between campaign performance state and AI analysis state. None of that was documented. A reader studying the codebase would have to trace four files to reconstruct the pattern. The fix is a dedicated section that specifies each responsibility, the exact translation contract, and the guard conditions for eviction and toast dispatch.
+
+**Prompt:** The dashboard orchestrator isn't documented beyond one paragraph in frontend-architecture.md. It's the only place where feature stores communicate, it owns the AI panel open/close lifecycle, it translates campaign context into AI context, and it dispatches toast notifications on connection events. That pattern deserves more than a side note. Document as a principal software engineer.
+
+**What changed:**
+- `docs/architecture/frontend-architecture.md` — added Dashboard Orchestrator section between Feature Architecture and Data Flow and State, with subsections: Responsibilities, AI Panel Lifecycle, Context Translation (field-level table of mapAnalysisContext output), Portfolio Eviction, Connection Event Notifications, Exposed Surface (table of computed state and actions)
+
+**Key decisions & why:**
+- Placed before Data Flow and State — the Data Flow section references the orchestrator in step 5; the orchestrator section must appear first so a reader has the full model before the data flow walkthrough
+- Context translation documented as a field table — the mapping is the orchestrator's most complex behavior; prose would obscure which fields are computed vs passed through vs conditionally set
+- Null guard condition called out explicitly — the `portfolioId`/`businessContext` null check is the condition that clears AI analysis state; it is not obvious from reading the store name alone
+- Toast suppression rule documented — the "panel open → no toast" guard is a meaningful behavioral decision that affects UX; without it, readers would not know why toasts sometimes appear and sometimes do not
+- Exposed surface as a table — makes the public API scannable and distinguishes it from internal implementation detail
+
+
+## [#731] Fix accuracy issues in ai-connection.md and frontend-architecture.md
+**Type:** fix
+
+**Summary:** Removed a hardcoded list of Gemini model exclusion substrings from `ai-connection.md` and replaced it with a description of the filtering strategy; corrected the Tech Stack section in `frontend-architecture.md` to accurately describe the SCSS-driven `data-theme` theming mechanism rather than implying Tailwind class-based dark mode.
+
+**Brainstorming:** Two distinct accuracy problems. The Gemini filter term list (`embedding`, `image`, `audio`, `tts`, `veo`, `imagen`, `lyria`, `robotics`) documents implementation detail rather than intent: as Gemini adds model families the list silently diverges from the actual filter logic, and a reader following the doc would not know whether the list is exhaustive or illustrative. The fix is to state what the filter does (keep models that declare `generateContent` support, exclude identifiers indicating non-text or non-generation capabilities) without binding the doc to specific substrings. The dark mode issue is a structural misrepresentation: `darkMode: 'class'` is in the Tailwind config but the actual theme resolution happens in SCSS via `[data-theme="dark"]` selectors applied to palette and token files. A reader following the tech stack entry would expect standard Tailwind dark mode utility classes, not SCSS token files and a `data-theme` attribute. The fix makes the actual mechanism explicit in the Styling bullet.
+
+**Prompt:** Fix/improve: (1) ai-connection.md hardcodes Gemini filter terms as a definitive list — describe the filtering strategy instead. (2) frontend-architecture.md describes darkMode: 'class' behavior but actual dark mode is SCSS-driven via data-theme — clarify that the theme system uses a data-theme attribute on <html> resolved by SCSS token files, with Tailwind's darkMode: 'class' present but not the primary theming mechanism.
+
+**What changed:**
+- `docs/features/ai-connection.md` — replaced the enumerated Gemini model exclusion substring list with a strategy description: keeps models declaring `generateContent` support, excludes identifiers indicating non-text modalities or non-generation capabilities
+- `docs/architecture/frontend-architecture.md` — updated the Styling bullet in the Tech Stack section to document that dark mode is SCSS-driven via `data-theme` on `<html>` with token files targeting `[data-theme="dark"]`, and that Tailwind's `darkMode: 'class'` is present in the config but is not the primary theming mechanism
+
+**Key decisions & why:**
+- Strategy over implementation detail for the Gemini filter — the doc should remain accurate as providers evolve; the filtering intent (non-text, non-generation exclusion) is stable; the specific substrings are not
+- Inline note on the Styling bullet rather than a separate section — the theme mechanism is a one-sentence clarification, not a system requiring its own heading; embedding it in the bullet keeps the tech stack list self-contained
+- Explicit statement that `darkMode: 'class'` is present but not primary — omitting it would leave a reader wondering why the Tailwind config has it; including both facts gives the full picture without ambiguity
+
+
+## [#732] Document shared portfolio domain layer
+**Type:** update
+
+**Summary:** Created `docs/architecture/portfolio-domain.md` to document the shared portfolio domain layer — the only part of the codebase with no dedicated documentation despite being the analytical core consumed by three distinct callers.
+
+**Brainstorming:** The shared portfolio domain layer (`app/src/shared/portfolio/analysis/`) contains the most complex logic in the codebase: metric derivation, channel grouping, a full classification system with dynamic size gates and funnel-leak predicates, seven signal types with separate threshold trees, and pre-ranked output for every result list. Campaign performance, AI analysis prompts, and the portfolio store all consume it. Despite this, the only documentation was the terse CLAUDE.md architecture block, which lists file names but explains nothing about how the pieces fit together, why classification and signal thresholds are separate, what the dynamic size gate prevents, or why the layer lives in shared/ at all. A reader studying any of the three consuming features would have to trace the source across six or seven files to reconstruct the computational model. The fix is a dedicated architecture document covering every module with enough depth that a reader can understand both the contract and the rationale without reading the source.
+
+**Prompt:** No doc for the shared portfolio domain layer. The analysis layer (shared/portfolio/analysis/) is the most complex part of the codebase — metrics, classification, signals, rankings. It's referenced in every feature doc and the architecture doc but never described in its own section. It deserves at least a short dedicated doc or a clear section in software-architecture.md explaining what it owns and why it lives in shared/ rather than a feature. Create the proper documentation.
+
+**What was built:**
+- `docs/architecture/portfolio-domain.md` — new document covering: why the layer lives in shared/, the full module structure, the computation entry point and its pipeline order, metric helpers (computePerformanceMetrics, computeShareEfficiency, computePortfolioKPIs, aggregation), the channel map construction and normalization rules, all neutral predicates in checkers.ts and classification-checkers.ts, the campaign and channel classification cascades with their group conditions and ranking rules, the dynamic size gate for Top classification, all seven signal types with their threshold parameters and output shapes (inefficient channels, inefficient campaigns, budget scaling candidates, transfer candidates, scaling opportunities, concentration flag, correlations), the ranking helper table, the PortfolioAnalysis output contract as a field table, the caller table mapping each consumer to how it uses the layer, and limitations and future improvements
+- `docs/architecture/frontend-architecture.md` — added Portfolio Domain Layer link to the documentation index at the top of the file
+
+**Key decisions & why:**
+- Separate architecture document rather than a section in frontend-architecture.md — the layer is substantial enough to warrant its own file; embedding it would make frontend-architecture.md significantly harder to navigate
+- Led with "Why shared/" — this is the first question a reader asks when they see domain logic outside a feature; answering it upfront frames everything else
+- Documented the dynamic size gate and threshold separation explicitly — both are non-obvious design decisions that affect correctness; without explanation a reader would not understand why classification thresholds and signal thresholds are separate types or why micro-campaigns are excluded from Top classification
+- Caller table included — the three consumers use the layer differently; a table makes the boundary clear without repeating the description of each feature
+- Correlations documented as unimplemented — the function exists, the type is defined, but the body returns `[]`; documenting this prevents a reader from assuming it produces real output
+- Used field tables for PortfolioAnalysis output and ranking helpers — tabular form is more scannable than prose for mapping type fields to their meaning
+
+
+## [#733] Rewrite portfolio-domain.md to focus on logic only
+**Type:** update
+
+**Summary:** Rewrote `docs/architecture/portfolio-domain.md` to remove all code documentation and focus entirely on business and analytical logic.
+
+**Brainstorming:** The previous version documented implementation details alongside logic — file paths, TypeScript function signatures, type names, module structure diagrams, and internal helper names. These details couple the documentation to the code and silently become incorrect as the implementation evolves. The logic — formulas, classification conditions, signal derivation rules, threshold separation rationale — is stable and belongs in documentation. The code structure does not. The rewrite strips all code references and documents only what the layer computes, why it computes it, and how the outputs are used.
+
+**Prompt:** Edit the portfolio-domain.md document. Rename the title to "Portfolio". Remove all slash characters from section headings. Remove all code documentation — file names, function names, TypeScript type names, module structure diagrams, code blocks. Focus on documenting the logic: formulas, predicate conditions, classification rules, signal derivation rules, threshold rationale, and output descriptions.
+
+**What changed:**
+- `docs/architecture/portfolio-domain.md` — rewritten: title changed to "Portfolio"; "Why shared/" section renamed to "Ownership"; Module Structure section removed entirely; TypeScript function signature code block removed; all function name references removed from prose and section headings; file name references removed throughout; Predicates table columns renamed from code identifiers to descriptive check names; Classification cascade prose rewritten without function call references; Signals section headers stripped of function names; Signal Thresholds subsection merged into a short note without file references; Ranking section rewritten without function name table; Output Contract table Type column removed; Callers section rewritten as prose without file names; Future Improvements items rewritten without function name references
+
+**Key decisions & why:**
+- Removed Module Structure entirely — a file tree documents code organization, not logic; it becomes stale immediately and belongs in CLAUDE.md, not architecture docs
+- Renamed predicate table column from function name to "Check" — the condition is what matters; the identifier is an implementation detail
+- Changed signal section headers from `` `getFunctionName` `` to plain English names — readable without knowing the codebase
+- Rewrote Callers as prose instead of a table — three short paragraphs are more readable than a table with long cells, and prose lets the consumer's role be described without naming files
+- Kept all formulas, predicate conditions, classification rules, and threshold values — these are the logic and are stable independently of how the code is organized
+
+
+## [#734] Rename portfolio-domain.md to campaign-analytics.md
+**Type:** update
+
+**Summary:** Renamed `docs/architecture/portfolio-domain.md` to `campaign-analytics.md` and updated the reference in `frontend-architecture.md`.
+
+**Brainstorming:** `campaign-portfolio` couples the filename to the current data model entity. `campaign-analytics` describes what the layer does — analytical computation over campaign data — rather than what it currently produces. Every planned future expansion (period comparison, pairwise correlations, configurable threshold profiles) still falls under campaign analytics, so the name stays accurate regardless of how the output shape or entity model evolves.
+
+**Prompt:** Rename the portfolio-domain.md doc to campaign-analytics.md considering the future implementations. Update all references.
+
+**What changed:**
+- `docs/architecture/portfolio-domain.md` → renamed to `docs/architecture/campaign-analytics.md`
+- `docs/architecture/frontend-architecture.md` — updated link from `./portfolio-domain.md` to `./campaign-analytics.md`; updated link label from "Portfolio Domain Layer" to "Campaign Analytics"
+
+**Key decisions & why:**
+- Chose `campaign-analytics` over `campaign-portfolio` — "portfolio" is an entity name tied to the current data model; "analytics" describes the function and remains accurate as the layer grows
+- Chose `campaign-analytics` over `portfolio-analysis` — avoids confusion with the `PortfolioAnalysis` output type; is also broader in scope
+
+
+## [#735] Rename campaign-analytics.md to portfolio-analysis.md
+**Type:** update
+
+**Summary:** Renamed `docs/architecture/campaign-analytics.md` to `portfolio-analysis.md` and updated the document title to "Portfolio Analysis" to align with the project's established domain vocabulary.
+
+**Brainstorming:** "campaign-analytics" described the layer from an outside-reader perspective but diverged from the project's internal vocabulary, where "analysis" is the consistent term across function names, type names, and feature names. "portfolio-analysis" aligns the doc name with that vocabulary while still being specific enough to distinguish it from other architecture docs.
+
+**Prompt:** Rename the md file to portfolio-analysis and update the document title to match.
+
+**What changed:**
+- `docs/architecture/campaign-analytics.md` → renamed to `docs/architecture/portfolio-analysis.md`
+- `docs/architecture/portfolio-analysis.md` — title updated from "Portfolio" to "Portfolio Analysis"
+- `docs/architecture/frontend-architecture.md` — link updated to `./portfolio-analysis.md` with label "Portfolio Analysis"
+
+**Key decisions & why:**
+- "portfolio-analysis" over "campaign-analytics" — matches the project's established vocabulary; the codebase uses "analysis" consistently (computePortfolioAnalysis, PortfolioAnalysis, aiAnalysis); "analytics" would create friction between the doc name and every identifier inside the layer it describes
+
+
+## [#736] Improve docs/README.md — assets section and reading order
+**Type:** update
+
+**Summary:** Added context to the Assets section explaining where the SVG diagrams are rendered, and inserted Portfolio Analysis as step 3 in the reading order to signpost the shared domain layer for readers working on any dependent feature.
+
+**Brainstorming:** Two gaps existed in the README. First, the assets table listed the SVG files without saying where they appear — a reader who skips the Software Architecture doc would not know the diagrams exist or where to find them rendered. Second, the reading order said "read the feature doc for the slice you're working in" but gave no signal that a shared layer underlies every feature. A reader diving into Campaign Performance or AI Analysis will immediately encounter the portfolio analysis layer without any pointer to its documentation.
+
+**Prompt:** The assets section has no mention of where the SVG diagrams are rendered. The reading order doesn't call out the shared portfolio layer. Fix both.
+
+**What changed:**
+- `docs/README.md` — assets section intro updated to name the embedding document; "rendered in Software Architecture" annotation added to each diagram row; Portfolio Analysis inserted as step 3 in the reading order with a description of which features depend on it
+
+**Key decisions & why:**
+- Annotated each diagram row individually rather than just updating the section intro — a reader scanning the table sees immediately where each file is used without having to read surrounding prose
+- Placed Portfolio Analysis at step 3 (before the feature doc) — a reader needs the shared layer context before the feature doc will make sense, because both Campaign Performance and AI Analysis build directly on it

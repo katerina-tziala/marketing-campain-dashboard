@@ -8,8 +8,9 @@ All workflow rules, log entry format, language rules, and git rules are defined 
 
 Key rules to never forget:
 - Brainstorm and get approval before writing any code for new features or refactors
-- Write a LOGS.md entry after **every** code change — it is the last tool call before responding
+- Write a docs/vibe-coding-logs.md entry after **every** code change — it is the last tool call before responding
 - Every log entry requires both **Brainstorming** and **Prompt** fields
+- **NEVER write a docs/vibe-coding-logs.md entry for CLAUDE.md-only syncs** — updating CLAUDE.md or memory files is not a code change and produces zero log entries, no exceptions (user removed entries #431 and #695 for this)
 - Keep CLAUDE.md up to date after every change — Status, Architecture, and Feature Checklist must always reflect current state
 - English only — all communication, code, comments, and docs
 - Never run any git commands — user handles all git operations

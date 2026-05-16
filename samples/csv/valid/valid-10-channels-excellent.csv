@@ -1,0 +1,21 @@
+campaign,channel,budget,impressions,clicks,conversions,revenue
+Lifecycle Welcome,Email,4800,96000,9600,960,38400
+VIP Retention,Email,5200,104000,10400,1040,41600
+Brand Capture,Paid Search,6200,124000,12400,1240,49600
+High Intent Search,Paid Search,5800,116000,11600,1160,46400
+Creator Shorts,Social,5100,102000,10200,1020,40800
+Community Carousel,Social,4900,98000,9800,980,39200
+Product Demo Pre-roll,Video,5300,106000,10600,1060,42400
+Customer Story Video,Video,4700,94000,9400,940,37600
+SEO Buying Guides,Organic,4500,90000,9000,900,36000
+Organic Comparison Pages,Organic,5500,110000,11000,1100,44000
+Partner Cashback,Affiliate,5200,104000,10400,1040,41600
+Editorial Partners,Affiliate,4800,96000,9600,960,38400
+Retargeting Display,Display,5100,102000,10200,1020,40800
+Programmatic Prospecting,Display,4900,98000,9800,980,39200
+Expert Review Pack,Influencer,5400,108000,10800,1080,43200
+Ambassador Launch,Influencer,4600,92000,9200,920,36800
+Founder Interview,Podcast,4700,94000,9400,940,37600
+Category Sponsorship,Podcast,5300,106000,10600,1060,42400
+Referral Accelerator,Referral,5000,100000,10000,1000,40000
+Member Invite Program,Referral,5000,100000,10000,1000,40000

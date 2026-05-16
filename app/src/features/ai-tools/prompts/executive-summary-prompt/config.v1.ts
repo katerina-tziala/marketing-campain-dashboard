@@ -82,6 +82,8 @@ export const FULL_PORTFOLIO_ANALYSIS_RULES: PromptRuleGroup[] = [
     list: [
       'Use only the provided input data; do not invent metrics, causes, or assumptions.',
       'Treat derivedSignals as authoritative.',
+      'ROI fields are decimal ratios: 1.0 means 100% ROI, 4.0 means 400% ROI, and negative values mean loss.',
+      'Share fields are decimal ratios: 0.10 means 10% share.',
       'BUSINESS CONTEXT may influence interpretation, not override data.',
       'Do not restate dashboard-visible metrics unless required to support a non-obvious conclusion.',
       'Focus on implications, risks, allocation quality, concentration, and scalability.',
@@ -107,6 +109,10 @@ export const FULL_PORTFOLIO_ANALYSIS_RULES: PromptRuleGroup[] = [
       '70–84 = Good: solid performance with clear optimization opportunities',
       '50–69 = NeedsAttention: mixed performance or meaningful inefficiencies',
       '0–49 = Critical: significant inefficiency or structural risk',
+      'Use the score bands as binding calibration, not loose labels.',
+      'If aggregated ROI is strongly positive, inefficientChannels is empty, and concentrationFlag.level is Low, do not score below 85 unless another material risk is present in the input.',
+      'For calibration, aggregatedRoi >= 1.0 is strongly positive; aggregatedRoi >= 3.0 with no inefficiency and Low concentration is an Excellent signal.',
+      'Do not downgrade a balanced, low-risk portfolio to Good only because it has fewer obvious optimization opportunities.',
     ],
   },
   {
@@ -188,6 +194,8 @@ export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
     list: [
       'Use only the provided input data; do not invent metrics, causes, or assumptions.',
       'Treat derivedSignals from INPUT DATA as authoritative.',
+      'ROI fields are decimal ratios: 1.0 means 100% ROI, 4.0 means 400% ROI, and negative values mean loss.',
+      'Share fields are decimal ratios: 0.10 means 10% share.',
       'BUSINESS CONTEXT may influence interpretation, not override data.',
       'Use portfolioBenchmark only for comparison; do not base conclusions solely on benchmark data.',
       'Do not restate dashboard-visible metrics unless required to support a non-obvious conclusion.',
@@ -215,6 +223,10 @@ export const SELECTION_ANALYSIS_RULES: PromptRuleGroup[] = [
       '70–84 = Good: solid performance with clear optimization opportunities',
       '50–69 = NeedsAttention: mixed performance or meaningful inefficiencies',
       '0–49 = Critical: significant inefficiency or structural risk',
+      'Use the score bands as binding calibration, not loose labels.',
+      'If aggregated ROI is strongly positive, inefficientChannels is empty, and concentrationFlag.level is Low, do not score below 85 unless another material risk is present in the input.',
+      'For calibration, aggregatedRoi >= 1.0 is strongly positive; aggregatedRoi >= 3.0 with no inefficiency and Low concentration is an Excellent signal.',
+      'Do not downgrade a balanced, low-risk subset to Good only because it has fewer obvious optimization opportunities.',
     ],
   },
   {

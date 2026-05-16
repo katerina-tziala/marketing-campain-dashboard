@@ -17,7 +17,7 @@ defineProps<{
       variant="secondary"
     >
       <CardHeader>
-        <span class="font-extrabold text-sm min-w-5 text-primary-soft"
+        <span class="font-extrabold text-sm min-w-5 text-primary-lighter"
           >#{{ priority.priority }}</span
         >
         <h5 class="card-title">{{ priority.title }}</h5>

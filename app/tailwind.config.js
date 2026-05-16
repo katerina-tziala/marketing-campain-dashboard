@@ -1,9 +1,20 @@
+import defaultTheme from 'tailwindcss/defaultTheme';
+
 /** @type {import('tailwindcss').Config} */
 
 export default {
   content: ['./index.html', './src/**/*.{vue,ts}'],
   darkMode: 'class',
   theme: {
+    screens: {
+      xs: '30rem', // 480px
+      sm: defaultTheme.screens.sm, // 640px
+      md: defaultTheme.screens.md, // 768px
+      lg: defaultTheme.screens.lg, // 1024px
+      'sticky-header': '70rem', // 1120px
+      xl: defaultTheme.screens.xl, // 1280px
+      '2xl': defaultTheme.screens['2xl'], // 1536px
+    },
     extend: {
       colors: {
         background: 'rgb(var(--color-background) / <alpha-value>)',
@@ -112,10 +123,6 @@ export default {
       },
       boxShadow: {
         connection: '0 0 4px rgb(var(--color-success) / 0.6)',
-      },
-      screens: {
-        xs: '30rem',
-        'sticky-header': '78rem', // 1248px
       },
       borderColor: {
         DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',

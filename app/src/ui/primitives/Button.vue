@@ -18,6 +18,8 @@ const props = withDefaults(
   },
 );
 
+defineOptions({ inheritAttrs: false });
+
 const attrs = useAttrs();
 const buttonRef = ref<HTMLButtonElement>();
 const buttonClasses = computed(() => [
@@ -162,7 +164,7 @@ defineExpose({
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light/[12%]
+      @apply bg-primary-light/10
       	text-primary-light;
     }
 
@@ -170,7 +172,7 @@ defineExpose({
       @apply ring-2
       	ring-offset-1
       	ring-offset-background
-      	ring-primary-lighter;
+      	ring-primary-light;
     }
   }
 }
@@ -265,13 +267,22 @@ defineExpose({
 
 /* variant ghost-outline */
 .btn.ghost-outline {
-  @extend .ghost;
-  @apply border-typography-subtle;
+  @apply border-typography-subtle
+  	text-typography-subtle;
 
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply border-typography-soft;
+      @apply bg-typography/[8%]
+      	border-typography-soft
+      	text-typography;
+    }
+
+    &:not(.no-ring):focus-visible {
+      @apply ring-2
+      	ring-offset-1
+      	ring-offset-background
+      	ring-primary-lighter;
     }
   }
 }

@@ -18,9 +18,12 @@ function groupCampaignsByChannel(campaigns: Campaign[]): Map<string, ChannelAccu
   for (const campaign of campaigns) {
     const performance = toCampaignPerformance(campaign);
     const id = toChannelId(campaign.channel);
-    const existing = grouped.get(id) ?? { id, name: campaign.channel, campaigns: [] };
-
-    grouped.set(id, { ...existing, campaigns: [...existing.campaigns, performance] });
+    const existing = grouped.get(id);
+    if (existing) {
+      existing.campaigns.push(performance);
+    } else {
+      grouped.set(id, { id, name: campaign.channel, campaigns: [performance] });
+    }
   }
 
   return grouped;

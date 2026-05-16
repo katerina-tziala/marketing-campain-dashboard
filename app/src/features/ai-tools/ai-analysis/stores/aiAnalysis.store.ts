@@ -78,6 +78,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     if (isBelowOptimizerMinimum()) {
       return false;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    cooldown.tick.value; // re-evaluate when cooldown expires
     return canAnalyze('budgetOptimizer');
   });
 
@@ -88,6 +90,8 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
     if (tokenLimitReached.value) {
       return false;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    cooldown.tick.value; // re-evaluate when cooldown expires
     return canAnalyze('executiveSummary');
   });
 
@@ -177,7 +181,6 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   const cooldown = useCooldown(COOLDOWN_MS);
 
   function canAnalyze(tab: AiAnalysisType): boolean {
-    void cooldown.tick.value; // reactive dependency — triggers re-evaluation when cooldown expires
     if (!aiStore.provider) {
       return false;
     }
@@ -494,6 +497,14 @@ export const useAiAnalysisStore = defineStore('aiAnalysis', () => {
   });
   watch(() => aiStore.selectedModel, onModelChange);
   watch(() => analysisContext.value?.portfolioId, onPortfolioSwitch);
+  watch(
+    () => aiStore.isConnected,
+    (isConnected) => {
+      if (!isConnected) {
+        clearStateForDisconnect();
+      }
+    },
+  );
 
   return {
     // Shared

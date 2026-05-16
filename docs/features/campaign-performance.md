@@ -68,13 +68,42 @@ When a new portfolio is loaded, the active portfolio selection changes and chann
 The feature presents several analytical views over the same filtered campaign set:
 
 - ROI by channel: compares channel-level return against the active portfolio context
-- Revenue vs budget by channel: compares spend, revenue, and allocation efficiency across channels
+- Revenue vs budget by channel: two-view card — a Performance view showing absolute budget and revenue per channel as grouped bars, and an Efficiency view showing revenue share relative to budget share as a percentage axis; toggled by a pill selector in the card header
 - ROI by campaign: ranks campaigns by return and highlights relative performance across the active selection
 - Budget share by campaign: shows how spend is distributed across campaigns
 - Conversion funnel: summarizes impressions, clicks, conversions, CTR, and CVR for the active selection
 - Scaling opportunities: plots campaign ROI against budget to surface high-return, underfunded, and inefficient campaigns
 
 The campaign detail table shows campaign name, channel, budget, clicks, impressions, CTR, conversions, CVR, revenue, CPA, and ROI. It defaults to revenue descending and supports sorting by every displayed column so users can inspect spend, volume, funnel efficiency, revenue, acquisition cost, and return from different angles.
+
+### Revenue vs Budget by Channel
+
+This card exposes two complementary views of the same channel data. Channels are pre-sorted by efficiency gap impact descending in both views so the most misaligned channels appear first.
+
+**Performance (default view)**
+
+A grouped bar chart plotting absolute budget and revenue side by side for each channel. The y-axis uses compact currency formatting.
+
+**Efficiency**
+
+A single-bar chart plotting the efficiency gap percentage for each channel. The efficiency gap is revenue share minus budget share, expressed in percentage points (pp). A positive value means the channel earns a larger share of portfolio revenue than it consumes of portfolio budget — it is overperforming its allocation. A negative value means the reverse.
+
+- Bars are colored by direction: one color for overperforming, another for underperforming
+- A custom legend labels the two directions
+- The y-axis label is "Gap (%)" with one-decimal tick formatting
+- The tooltip shows the direction label and gap value in pp, then the signed currency amount of the gap on a second line
+- The y-axis is symmetric when all channels fall on the same side of zero, with a minimum axis range of 5pp to prevent over-zooming on small differences
+
+**Guard states**
+
+The Efficiency view replaces the chart with an informational message in two situations:
+
+| Condition | Message |
+| --------- | ------- |
+| Exactly one channel in the current selection | "Share efficiency needs comparison — Select at least two channels to compare revenue share against budget share" |
+| All channels have an efficiency gap of zero | "No share efficiency difference — These channels have the same revenue-to-budget balance in the current selection" |
+
+Both conditions indicate that the efficiency gap chart has no meaningful data to render. They are not data quality errors.
 
 ## Analytical Rules
 

@@ -1,4 +1,29 @@
 <script setup lang="ts">
+// REFERENCE IMPLEMENTATION — kept intentionally, not used in production.
+//
+// Demonstrates a smooth table-row expand/collapse animation without max-height hacks.
+//
+// Technique — grid-template-rows trick:
+//   Each <td> wraps its content in three layers:
+//     .collapse-cell      — display:grid; grid-template-rows transitions between 0fr ↔ 1fr
+//     .collapse-cell-inner — overflow:hidden; clips content during the transition
+//     .collapse-cell-content — actual cell content at natural height
+//
+//   Animating grid-template-rows from 0fr to 1fr collapses/expands the row to its
+//   natural height without knowing the height in advance — no JS measurement needed.
+//
+// JavaScript driver (transitionCollapseCells):
+//   1. Set initial inline styles (0fr / opacity 0) with transition:none.
+//   2. Force a reflow (void cells[0].offsetHeight) so the browser paints the initial state.
+//   3. Apply the CSS transition and flip to the target state (1fr / opacity 1).
+//   4. Listen for transitionend (once:true) to clean up inline styles.
+//   All cells in the row run in parallel; done() fires when the last one finishes.
+//
+// Vue integration:
+//   <Transition :css="false" @enter="onCampaignRowEnter" @leave="onCampaignRowLeave">
+//   :css="false" disables Vue's own CSS class injection so the JS hooks are in full control.
+//   done() must be called to let Vue remove the leaving element from the DOM.
+
 import { computed, ref, watch } from 'vue';
 
 import { useSort } from '@/shared/composables';
