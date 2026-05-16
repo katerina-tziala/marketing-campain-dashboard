@@ -70,7 +70,7 @@ function hasLink(step: ProviderHelpStep): boolean {
   	list-inside
   	px-1
   	text-sm
-  	text-typography-muted;
+  	text-typography-subtle;
 
   > li {
     @apply py-1;

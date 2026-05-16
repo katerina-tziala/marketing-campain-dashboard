@@ -116,7 +116,7 @@ const {
   	border-primary-deeper
   	flex
   	gap-x-2
-  	sm:gap-x-4
+  	sm:gap-x-3
   	items-center
   	justify-start
   	h-16
