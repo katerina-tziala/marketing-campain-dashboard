@@ -115,7 +115,7 @@ export default {
       },
       screens: {
         xs: '30rem',
-        'sticky-header': '78rem', // 1248px
+        'sticky-header': '70rem', // 1120px
       },
       borderColor: {
         DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',

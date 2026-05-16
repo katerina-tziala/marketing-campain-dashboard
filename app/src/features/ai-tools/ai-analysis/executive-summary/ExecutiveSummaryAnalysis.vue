@@ -34,52 +34,68 @@ function handleSummarize(): void {
 </script>
 
 <template>
-  <AnalysisHeader
-    :title="headerTitle"
-    :action-label="actionLabel"
-    :is-button-disabled="isButtonDisabled"
-    :context="analysisStore.portfolioContext"
-    @analyze="handleSummarize"
-  />
-  <AnalysisState
-    :status="status"
-    :error="error"
-    :token-limit-reached="analysisStore.tokenLimitReached"
-    :has-result="!!response"
-  >
-    <template #loading>Generating summary…</template>
+  <div class="scrollbar-stable scrollbar-on-surface summary-analysis">
+    <AnalysisHeader
+      :title="headerTitle"
+      :action-label="actionLabel"
+      :is-button-disabled="isButtonDisabled"
+      :context="analysisStore.portfolioContext"
+      @analyze="handleSummarize"
+    />
+    <AnalysisState
+      :status="status"
+      :error="error"
+      :token-limit-reached="analysisStore.tokenLimitReached"
+      :has-result="!!response"
+    >
+      <template #loading>Generating summary…</template>
 
-    <template #idle>
-      <p>
-        Generate an AI summary for the current portfolio view, including performance context and
-        recommended next actions
-      </p>
-    </template>
+      <template #idle>
+        <p>
+          Generate an AI summary for the current portfolio view, including performance context and
+          recommended next actions
+        </p>
+      </template>
 
-    <template v-if="response">
-      <Card variant="raised">
-        <h4 class="text-typography-soft">
-          <HealthStatus
-            class="inline-action-float"
-            :health-score="response.healthScore"
-          />
-          {{ response.healthScore.reasoning }}
-        </h4>
-        <p>{{ response.overview }}</p>
-        <p>{{ response.bottomLine }}</p>
-      </Card>
-      <PriorityActions :priorities="response.keyPriorities" />
-      <Insights
-        :insights="response.executiveInsights"
-        title="Executive Insights"
-      />
-      <KeyRisks :risks="response.keyRisks" />
-      <GrowthOutlook :outlook="response.growthOutlook" />
-      <AnalysisResponseMeta
-        :timestamp="response.timestamp ?? null"
-        :model-display-name="response.model?.displayName"
-        :notice="notice"
-      />
-    </template>
-  </AnalysisState>
+      <template v-if="response">
+        <Card variant="raised">
+          <h4 class="text-typography-soft">
+            <HealthStatus
+              class="inline-action-float"
+              :health-score="response.healthScore"
+            />
+            {{ response.healthScore.reasoning }}
+          </h4>
+          <p>{{ response.overview }}</p>
+          <p>{{ response.bottomLine }}</p>
+        </Card>
+        <PriorityActions :priorities="response.keyPriorities" />
+        <Insights
+          :insights="response.executiveInsights"
+          title="Executive Insights"
+        />
+        <KeyRisks :risks="response.keyRisks" />
+        <GrowthOutlook :outlook="response.growthOutlook" />
+        <AnalysisResponseMeta
+          :timestamp="response.timestamp ?? null"
+          :model-display-name="response.model?.displayName"
+          :notice="notice"
+        />
+      </template>
+    </AnalysisState>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.summary-analysis {
+  @apply flex
+  	flex-col
+  	gap-6
+  	py-0
+  	px-6
+  	w-full
+  	h-full
+  	overflow-x-hidden
+  	overflow-y-auto;
+}
+</style>

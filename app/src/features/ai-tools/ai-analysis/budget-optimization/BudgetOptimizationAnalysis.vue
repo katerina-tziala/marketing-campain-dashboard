@@ -66,70 +66,86 @@ function handleAnalyze(): void {
 </script>
 
 <template>
-  <AnalysisHeader
-    :title="headerTitle"
-    :action-label="actionLabel"
-    :is-button-disabled="isButtonDisabled"
-    :context="analysisStore.portfolioContext"
-    @analyze="handleAnalyze"
-  />
-  <AnalysisState
-    :status="status"
-    :error="error"
-    :token-limit-reached="analysisStore.tokenLimitReached"
-    :has-result="!!response"
-  >
-    <template #loading>Analyzing campaigns…</template>
+  <div class="scrollbar-stable scrollbar-on-surface optimization-analysis">
+    <AnalysisHeader
+      :title="headerTitle"
+      :action-label="actionLabel"
+      :is-button-disabled="isButtonDisabled"
+      :context="analysisStore.portfolioContext"
+      @analyze="handleAnalyze"
+    />
+    <AnalysisState
+      :status="status"
+      :error="error"
+      :token-limit-reached="analysisStore.tokenLimitReached"
+      :has-result="!!response"
+    >
+      <template #loading>Analyzing campaigns…</template>
 
-    <template #idle>
-      <Notification
-        v-if="isBelowMinimum"
-        variant="warning"
-        :show-icon="false"
-      >
-        <template #title>
-          <span class="text-sm font-normal">{{ minCampaignsEntry.title }}</span>
-        </template>
-        {{ minCampaignsEntry.message }}
-      </Notification>
-      <p v-else>Get budget reallocation recommendations based on campaign performance</p>
-    </template>
-
-    <template v-if="response">
-      <Card variant="raised">
-        <p>{{ response.summary }}</p>
-      </Card>
-      <AnalysisSection
-        v-if="hasNoResults"
-        title="Summary"
-      >
+      <template #idle>
         <Notification
-          variant="info"
-          :show-icon="true"
+          v-if="isBelowMinimum"
+          variant="warning"
+          :show-icon="false"
         >
-          <template #title>No Optimization Opportunities Identified</template>
-          {{ noRecommendationMessage }}
+          <template #title>
+            <span class="text-sm font-normal">{{ minCampaignsEntry.title }}</span>
+          </template>
+          {{ minCampaignsEntry.message }}
         </Notification>
-      </AnalysisSection>
-      <template v-else>
-        <BudgetRecommendations
-          title="Reallocate"
-          :recommendations="reallocations"
-        />
-        <BudgetExpansions
-          v-if="response.expansions.length"
-          :expansions="response.expansions"
-        />
-        <BudgetReductions
-          v-if="reductions.length"
-          :reductions="reductions"
-        />
-        <AnalysisResponseMeta
-          :timestamp="response.timestamp ?? null"
-          :model-display-name="response.model?.displayName"
-          :notice="notice"
-        />
+        <p v-else>Get budget reallocation recommendations based on campaign performance</p>
       </template>
-    </template>
-  </AnalysisState>
+
+      <template v-if="response">
+        <Card variant="raised">
+          <p>{{ response.summary }}</p>
+        </Card>
+        <AnalysisSection
+          v-if="hasNoResults"
+          title="Summary"
+        >
+          <Notification
+            variant="info"
+            :show-icon="true"
+          >
+            <template #title>No Optimization Opportunities Identified</template>
+            {{ noRecommendationMessage }}
+          </Notification>
+        </AnalysisSection>
+        <template v-else>
+          <BudgetRecommendations
+            title="Reallocate"
+            :recommendations="reallocations"
+          />
+          <BudgetExpansions
+            v-if="response.expansions.length"
+            :expansions="response.expansions"
+          />
+          <BudgetReductions
+            v-if="reductions.length"
+            :reductions="reductions"
+          />
+          <AnalysisResponseMeta
+            :timestamp="response.timestamp ?? null"
+            :model-display-name="response.model?.displayName"
+            :notice="notice"
+          />
+        </template>
+      </template>
+    </AnalysisState>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.optimization-analysis {
+  @apply flex
+  	flex-col
+  	gap-6
+  	py-0
+  	px-6
+  	w-full
+  	h-full
+  	overflow-x-hidden
+  	overflow-y-auto;
+}
+</style>

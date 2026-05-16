@@ -60,10 +60,11 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── sorting.ts      # compareNullsLast(a, b) → number|null; compareDirectional(a, b, dir) → number; sortWithNullsLast(a, b, dir) → number — null-safe directional sort composing the two; SortDirection type; SortableValue type; sortByValue(items, fn, dir) → sorted array; sortByValueDesc(items, fn) → sorted array — shared null-safe value sorting used across tables and chart sorts
 │   │   │   ├── formatters.ts   # APP_LOCALE = 'en-IE'; APP_CURRENCY = 'EUR'; formatCurrency(val: number|null, decimals=0, fallback='N/A') → '€N' or fallback; formatNumber(value) → localized string; formatDecimal(value, decimals) → fixed-decimal locale string; formatPercentage(value: number|null, fallback='N/A', decimals=2) → 'N.NN%' (0–2 decimals, trailing zeros stripped) or fallback; formatCompactCurrency(value) → compact EUR; formatCompactNumber(value) → compact locale; formatTimestamp(timestamp: number) → time string; all use Intl.NumberFormat with APP_LOCALE
 │   │   │   ├── date-format.ts  # formatIsoDate, formatIsoDateRange (using APP_LOCALE); DD/MM/YYYY format metadata (placeholder, example date); ISO normalization; date parsing and invalid-format vs invalid-date error keys
-│   │   │   └── index.ts        # Barrel — exports sorting, formatting, math helpers, and date-format utilities (no portfolio-domain exports)
+│   │   │   ├── generate-id.ts  # generateId(prefix: string) → string — prefixed UUID generator using crypto.randomUUID(); used by Disclosure (contentId), useModalAria (titleId), portfolio.store (portfolio id)
+│   │   │   └── index.ts        # Barrel — exports sorting, formatting, math helpers, date-format utilities, and generateId (no portfolio-domain exports)
 │   │   ├── portfolio/
 │   │   │   ├── index.ts            # Barrel — exports usePortfolioStore, computePortfolioAnalysis, buildChannelMap, and all portfolio types
-│   │   │   ├── portfolio.store.ts  # Pinia store (usePortfolioStore, id: 'portfolio') — Portfolio array (id/name/period/industry?/channelMap/analysis/uploadedAt); signals: pendingSelectionId (ref<string|null> — set on add/replace, watched by campaignPerformance.store), lastEvictedId (ref<string|null> — set on deletePortfolio, watched by campaignPerformance.store + orchestrator); internal buildEntry(input: PortfolioInput) constructs Portfolio (uses crypto.randomUUID + buildChannelMap + computePortfolioAnalysis); actions: addPortfolio, replacePortfolio, loadPortfolio (delegates to add or replace based on portfolios.length), deletePortfolio, getById; no selection logic in this store
+│   │   │   ├── portfolio.store.ts  # Pinia store (usePortfolioStore, id: 'portfolio') — Portfolio array (id/name/period/industry?/channelMap/analysis/uploadedAt); signals: pendingSelectionId (ref<string|null> — set on add/replace, watched by campaignPerformance.store), lastEvictedId (ref<string|null> — set on deletePortfolio, watched by campaignPerformance.store + orchestrator); internal buildEntry(input: PortfolioInput) constructs Portfolio (uses generateId('portfolio') + buildChannelMap + computePortfolioAnalysis); actions: addPortfolio, replacePortfolio, loadPortfolio (delegates to add or replace based on portfolios.length), deletePortfolio, getById; no selection logic in this store
 │   │   │   ├── types/              # Portfolio entity types
 │   │   │   │   ├── portfolio.ts    # Period { from, to }; BusinessContext { period: Period, industry? }; PortfolioDetails extends BusinessContext + name; PortfolioInput extends PortfolioDetails + campaigns; Portfolio { id, name, period, industry?, channelMap, analysis: PortfolioAnalysis, uploadedAt }; PortfolioKPIs
 │   │   │   │   ├── analysis.ts     # PortfolioAnalysis shape — portfolio: PortfolioSummary, channels: ChannelSummary[], channelContext: ChannelContext, campaignGroups, channelGroups, derivedSignals: DerivedSignals; DerivedSignals interface; ChannelContext interface
@@ -119,8 +120,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── Disclosure.vue  # ARIA disclosure pattern — manages isOpen internally; generates unique contentId; #trigger scoped slot exposes { open, toggle, contentId }; JS-driven height animation (0→scrollHeight via transitionend); no max-h hack
 │   │   │   ├── Spinner.vue     # Reusable SVG spinner — props: size? (SpinnerSize), tone? (SpinnerTone); two-circle material-style arc animation; aria-hidden
 │   │   │   ├── spinner.types.ts # SpinnerSize + SpinnerTone types
-│   │   │   ├── Tabs.vue        # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
-│   │   │   └── index.ts        # Barrel — exports Button, ButtonVariant, ButtonSize, Badge, BadgeVariant, BadgeTone, BadgeShape, BadgeSize, Chip, Disclosure, Spinner, SpinnerSize, SpinnerTone, Tabs, Tab
+│   │   │   └── index.ts        # Barrel — exports Button, ButtonVariant, ButtonSize, Badge, BadgeVariant, BadgeTone, BadgeShape, BadgeSize, Chip, Disclosure, Spinner, SpinnerSize, SpinnerTone
 │   │   ├── layout/             # Reusable structural layout shells
 │   │   │   ├── Section.vue # Flex layout shell — header slot (grows, centered) + action slot (shrinks) in nowrap row; default slot below; no props, no scoped styles
 │   │   │   ├── SplitPaneLayout.vue # Flex-row split layout — default slot (main pane, container-query boundary 'main', x/y overflow hidden) + #aside slot (sibling pane outside container query); used by DashboardPage to host CampaignPerformanceView main + ResponsiveDrawer aside
@@ -211,7 +211,8 @@ app/                        # Vue 3 + Vite project
 │   │   │   ├── validation/         # Reusable form validators (no component logic, pure validation)
 │   │   │   │   ├── required.validation.ts    # Required field validation
 │   │   │   │   ├── date-field.validation.ts # Date-field validation (invalid-format, invalid-date)
-│   │   │   │   └── file.validation.ts       # File validation (required, accepted type, max-size)
+│   │   │   │   ├── file.validation.ts       # File validation (required, accepted type, max-size)
+│   │   │   │   └── index.ts                 # Barrel — re-exports all validators
 │   │   │   └── index.ts            # Barrel — exports Form, FormControl, FormFieldFeedback, DateField, PeriodFields, FileDropzone, PasswordInput, RadioItem, RadioToggle, form validators, and types (FormSpacing, FormControlVariant, RadioItemVariant, RadioToggleSize, DateFieldErrorKey, DateFieldValidation, FileFieldErrorKey, FileFieldValidation)
 │   │   ├── meta/
 │   │   │   ├── MetaItem.vue    # Inline <span> wrapper — default slot; no props
@@ -252,7 +253,11 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── theme.types.ts  # AppTheme ('dark'|'light') + ChartThemeTokens interface with JSDoc on every field grouping tooltip/axes/arc/text/legend/performance/quadrant/palette sections
 │   │   │   │   └── index.ts        # Barrel — exports AppTheme, ChartThemeTokens
 │   │   │   └── index.ts        # Barrel — re-exports from composables/, utils/, types/
-│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/*, theme/* (accessibility/ is internal — not re-exported)
+│   │   ├── tabs/               # Tabs component module
+│   │   │   ├── TabPanels.vue   # Tab panel wrapper — props: activeTab (string); renders active named slot via <slot :name="activeTab" />; owns role="tabpanel" + aria-labelledby="tab-{activeTab}"; class pass-through for panel styling; no default slot — callers project content as named templates matching tab IDs
+│   │   │   ├── Tabs.vue        # Generic tab bar — Tab<T> type; tabs + activeTab props; change emit; optional icon per tab via Component; auto-selects first tab on mount; @apply styles
+│   │   │   └── index.ts        # Barrel — exports TabPanels, Tabs, Tab
+│   │   └── index.ts            # Barrel — re-exports primitives/*, layout/*, feedback/*, drawer/*, charts/*, icons/*, toast/*, forms/*, meta/*, modal/*, card/*, dropdown/*, table/*, tabs/*, theme/* (accessibility/ is internal — not re-exported)
 │   ├── features/
 │   │   ├── ai-tools/               # AI Tools feature folder
 │   │   │   ├── components/
@@ -266,16 +271,17 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   │   ├── tab-state.ts        # TabState class — per-tab request state (controller, debounceTimer, private AnalysisCache); methods: cancelRequest(), reset(), getCached/setCached/getLastVisible/clearCache/deletePortfolioCache(portfolioId); used by aiAnalysis.store
 │   │   │   │   │   ├── analysis-messages.ts  # ANALYSIS_ERROR_MESSAGES (Record<AiErrorCode, {title,message}> — all 11 codes incl. 'min-campaigns'); TOKEN_LIMIT_MESSAGE
 │   │   │   │   │   ├── analysis-prompt.ts  # buildAnalysisPrompt (internal); runAnalysisPrompt(providerState, analysisPromptContext, signal) → AnalysisResponse|null; stamps model+timestamp on result; [DEV ONLY] setAnalysisPromptRunnerOverride export
+│   │   │   │   │   ├── budget-optimization-sort.ts # sortReallocationsByRevenueDesc(recommendations: BudgetRecommendation[]) → BudgetRecommendation[] — null-safe sort by revenueChange desc; used by BudgetRecommendations.vue
 │   │   │   │   │   ├── analysis-cache/     # Cache module — AnalysisCache class + CacheEntry type + key generation
 │   │   │   │   │   │   ├── cache-key.ts    # getCacheKey(channelIds, provider) → 16-char hex string (xxhashjs h64, seed=0); internal to analysis-cache
 │   │   │   │   │   │   ├── AnalysisCache.ts # AnalysisCache class — no constructor args; get(portfolioId, channelIds, provider) auto-tracks lastVisibleCacheKey on hit; getLastVisible(portfolioId); set(portfolioId, channelIds, provider, entry) auto-tracks lastVisibleCacheKey on write; deletePortfolio/clear; CacheEntry { response, timestamp, cooldownUntil }
 │   │   │   │   │   │   └── index.ts        # Barrel — exports AnalysisCache, CacheEntry
-│   │   │   │   │   └── index.ts        # Barrel — exports analysis-cache, analysis-messages, analysis-prompt, tab-state
+│   │   │   │   │   └── index.ts        # Barrel — exports analysis-cache, analysis-messages, analysis-prompt, budget-optimization-sort, tab-state
 │   │   │   │   ├── types/
 │   │   │   │   │   ├── output.types.ts  # AI response output types — ConfidenceLevel, ExecutionRisk, HealthLabel, InsightType, RiskSeverity, GrowthOutlookLabel, PortfolioScope; Executive Summary shapes (ExecutiveInsight, KeyPriority, KeyRisk, GrowthOutlook, HealthScore, ExecutiveSummaryOutput); Budget Optimizer shapes (ExpectedImpact, BudgetRecommendation, BudgetExpansion, BudgetOptimizerOutput); response envelope types (BudgetOptimizerResponse, ExecutiveSummaryResponse, AnalysisResponse)
 │   │   │   │   │   ├── context.types.ts # Analysis input/context types — AiAnalysisContext (slim prompt input: { analysis, businessContext, portfolioBenchmark? }), AnalysisPromptContext ({ type, context }), AnalysisProviderState ({ provider, apiKey, selectedModel }), AnalysisPortfolioContext ({ portfolioTitle, channelCount, campaignCount, filtersActive, businessContext|null }), AiAnalysisRequestContext (extends AnalysisPortfolioContext + portfolioId/selectedChannelIds/portfolioAnalysis/portfolioBenchmark?/businessContext)
 │   │   │   │   │   └── index.ts    # Barrel — re-exports AiAnalysisError/AiAnalysisNotice/AiAnalysisNoticeCode from ai-tools/types + all output.types and context.types
-│   │   │   │   ├── AiAnalysis.vue          # Tab switcher — Tabs order: 'Summary' (FileTextIcon) first, 'Optimization' (SlidersIcon) second; scrollable .ai-analysis-container; reads aiAnalysis.store; @change calls setActiveTab; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
+│   │   │   │   ├── AiAnalysis.vue          # Tab switcher — Tabs order: 'Summary' (FileTextIcon) first, 'Optimization' (SlidersIcon) second; TabPanels with named slots (#executiveSummary, #budgetOptimizer) replaces v-if/v-else switching; .ai-analysis-container class on TabPanels; reads aiAnalysis.store; @change calls setActiveTab; imports tab orchestrators from sibling budget-optimization/ and executive-summary/ folders
 │   │   │   │   ├── index.ts                # Barrel — exports AiAnalysis
 │   │   │   │   ├── components/             # Shared display primitives — no store reads, props-only
 │   │   │   │   │   ├── AnalysisHeader.vue      # Tab header — props: title, actionLabel, isButtonDisabled, context (AnalysisPortfolioContext); emits: analyze; renders portfolio, channel, campaign metadata + portfolio period/industry (hidden at sticky-header breakpoint via sticky-header:hidden); analyze button is icon-only (MagicWandIcon) with actionLabel as aria-label; Section + MetaRow (bullet)
@@ -350,7 +356,7 @@ app/                        # Vue 3 + Vite project
 │   │   │   │   ├── index.ts            # Barrel — exports CampaignPerformanceHeader, ChannelFilters, Kpis (CampaignTable consumed via direct import from CampaignPerformanceView)
 │   │   │   │   ├── CampaignPerformanceHeader.vue # Props-only header — props: title, businessContext, counts; exposes #action slot (passed to Section #action); no AI-specific props or emits — callers project action content via slot
 │   │   │   │   ├── CampaignTable.vue   # Sortable campaign data table — props: campaigns (CampaignPerformance[]); sort via useSort / sortByValue(); PerformanceIndicator for Revenue (roi-colored) and CVR (dimmed); channel cell uses .badge.info.dimmed
-│   │   │   │   ├── GroupedCampaignTable.vue # [DEAD CODE — not imported by CampaignPerformanceView] Sortable campaign table grouped by channel; aggregates per-channel totals; expand/collapse all; PerformanceIndicator on Revenue/CVR/ROI
+│   │   │   │   ├── GroupedCampaignTable.vue # [REFERENCE IMPLEMENTATION — kept intentionally, not used in production] Demonstrates smooth table-row expand/collapse via grid-template-rows 0fr→1fr trick + JS-driven transitionend hooks; aggregates per-channel totals; expand/collapse all; PerformanceIndicator on Revenue/CVR/ROI
 │   │   │   │   ├── channel-filters/    # ChannelFilters module — props-only, no store reads
 │   │   │   │   │   ├── index.ts        # Barrel — exports ChannelFilters
 │   │   │   │   │   ├── ChannelFilterChips.vue  # Internal chip renderer — props: variant? ('visible'|'probe'), layout? ('strip'|'plain'), channels, totalCampaigns, selectedIds?, showAll?, allActive?, allReadonly?, singleRow?; probe variant is absolutely-positioned invisible measurement layer (aria-hidden); exposes getRootEl(), getChannelChipEls(), hasOverflow(); emits clear / toggle (suppressed in probe mode); scoped SCSS with --channel-filter-max-height CSS var
@@ -540,6 +546,16 @@ samples/                        # CSV fixture files for manual testing and dev
 ---
 
 ## Workflow Rules
+
+### Documentation sync — MANDATORY
+**Every code change must be followed immediately by a CLAUDE.md update before responding to the user.** No exceptions, no deferring.
+
+After every change, check and update:
+- **Architecture** — any new files, folders, or structural changes added; removed or renamed files deleted; descriptions updated to match current behaviour
+- **Status** — reflects what is currently built
+- **Feature Checklist** — completed items marked `[x]`
+
+If nothing in CLAUDE.md needs to change (e.g. a purely internal refactor with no new files), explicitly confirm this before responding.
 
 ### Language
 - **English only** — all communication, code, comments, and documentation files without exception.

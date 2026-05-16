@@ -16983,3 +16983,47 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Dropped aria-controls rather than switching to v-show — v-if is intentional (lazy mount per tab); mounting both analysis components immediately would trigger unwanted store watchers
 - aria-controls is marked optional in WAI-ARIA APG and has inconsistent screen reader support — dropping it is a clean fix with no functional cost
+
+
+## [#721] Add TabPanels primitive and use it in AiAnalysis
+**Type:** feature
+
+**Summary:** Extracted the tab panel wrapper into a reusable `TabPanels.vue` primitive that renders the active named slot with proper ARIA attributes, replacing the `v-if/v-else` switching in `AiAnalysis.vue`.
+
+**Brainstorming:** The existing pattern in `AiAnalysis.vue` used `v-if/v-else` to switch between `BudgetOptimizationAnalysis` and `ExecutiveSummaryAnalysis`, with the ARIA role and labelledby hardcoded on a plain `<div>`. Extracting this into a `TabPanels.vue` primitive via Vue's dynamic named slot (`<slot :name="activeTab" />`) encapsulates the ARIA wiring generically, keeps lazy rendering (inactive slots are never mounted — equivalent to `v-if`), and keeps `TabPanels` as a separate primitive from `Tabs` to preserve independent styling flexibility on the panel wrapper. Content is projected by callers as `<template #tabId>` named slots — slot names must match tab IDs (TypeScript cannot validate this at the slot-name level since slot names are typed as `string`).
+
+**Prompt:** Implement TabPanels.vue as a ui primitive that renders active named slot content with role="tabpanel" and aria-labelledby. Update AiAnalysis.vue to use it with named slots instead of v-if/v-else.
+
+**What was built:**
+- `app/src/ui/primitives/TabPanels.vue` — new primitive; props: `activeTab: string`; renders `<slot :name="activeTab" />` inside a `role="tabpanel"` div with `aria-labelledby="tab-{activeTab}"`; accepts class pass-through
+- `app/src/ui/primitives/index.ts` — added `TabPanels` export
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — replaced `v-if/v-else` switching + plain tabpanel div with `<TabPanels :active-tab="...">` using `#executiveSummary` and `#budgetOptimizer` named slots
+
+**Key decisions & why:**
+- `TabPanels` kept separate from `Tabs` (not merged) — independent components give callers styling flexibility; the panel wrapper can have its own class, overflow, scroll, and layout without coupling to the tablist
+- Dynamic named slot (`<slot :name="activeTab" />`) preserves lazy rendering — inactive panel templates are never mounted, preventing unwanted store watcher triggers
+- No default slot — callers must use named slots matching tab IDs, making the usage explicit
+
+
+## [#722] Move Tabs and TabPanels into dedicated ui/tabs/ folder
+**Type:** refactor
+
+**Summary:** Moved `Tabs.vue` and `TabPanels.vue` out of `ui/primitives/` into a new `ui/tabs/` folder to match the module structure pattern used by `drawer/`, `modal/`, `card/`, etc.
+
+**Brainstorming:** Primitives is the right home for atomic, standalone components (Button, Badge, Chip, Spinner, Disclosure). `Tabs` + `TabPanels` form a paired module — they work together as a composite widget — which is exactly the pattern that gets its own folder in this codebase. Moving them to `ui/tabs/` gives the pair a consistent home, keeps primitives lean, and mirrors the existing folder convention.
+
+**Prompt:** Move Tabs and TabPanels out of primitives into their own ui/tabs/ folder, consistent with how drawer/, modal/, card/ etc. are structured.
+
+**What changed:**
+- `app/src/ui/tabs/` — new folder
+- `app/src/ui/tabs/Tabs.vue` — moved from primitives/
+- `app/src/ui/tabs/TabPanels.vue` — moved from primitives/
+- `app/src/ui/tabs/index.ts` — new barrel; exports TabPanels, Tabs, Tab
+- `app/src/ui/primitives/index.ts` — removed Tabs/TabPanels/Tab exports
+- `app/src/ui/primitives/Tabs.vue` — deleted
+- `app/src/ui/primitives/TabPanels.vue` — deleted
+- `app/src/ui/index.ts` — added `export * from './tabs'`
+
+**Key decisions & why:**
+- All consumers import from `@/ui` barrel — no import paths needed updating; the move is transparent to all callers
+- `primitives/index.ts` description updated to remove Tabs/TabPanels; `ui/index.ts` description updated to include tabs/*

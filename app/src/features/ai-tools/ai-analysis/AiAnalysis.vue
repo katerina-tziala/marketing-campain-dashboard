@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileTextIcon, SlidersIcon, type Tab, Tabs } from '@/ui';
+import { FileTextIcon, SlidersIcon, type Tab, TabPanels, Tabs } from '@/ui';
 
 import type { AiAnalysisType } from '../types';
 import { BudgetOptimizationAnalysis } from './budget-optimization';
@@ -21,16 +21,17 @@ const tabs: Tab[] = [
     :active-tab="analysisStore.activeTab"
     @change="analysisStore.setActiveTab($event as AiAnalysisType)"
   />
-  <div class="ai-analysis-container">
-    <div
-      class="scrollbar-stable scrollbar-on-surface ai-analysis-content"
-      role="tabpanel"
-      :aria-labelledby="`tab-${analysisStore.activeTab}`"
-    >
-      <BudgetOptimizationAnalysis v-if="analysisStore.activeTab === 'budgetOptimizer'" />
-      <ExecutiveSummaryAnalysis v-else />
-    </div>
-  </div>
+  <TabPanels
+    class="ai-analysis-container"
+    :active-tab="analysisStore.activeTab"
+  >
+    <template #executiveSummary>
+      <ExecutiveSummaryAnalysis />
+    </template>
+    <template #budgetOptimizer>
+      <BudgetOptimizationAnalysis />
+    </template>
+  </TabPanels>
 </template>
 
 <style lang="scss" scoped>

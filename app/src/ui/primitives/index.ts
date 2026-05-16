@@ -6,5 +6,3 @@ export { default as Chip } from './Chip.vue';
 export { default as Disclosure } from './Disclosure.vue';
 export type { SpinnerSize, SpinnerTone } from './spinner.types';
 export { default as Spinner } from './Spinner.vue';
-export type { Tab } from './Tabs.vue';
-export { default as Tabs } from './Tabs.vue';

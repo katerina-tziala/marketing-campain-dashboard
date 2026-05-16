@@ -40,7 +40,7 @@ const providerLabel = computed(() => (store.provider ? PROVIDER_LABELS[store.pro
   	gap-y-1.5
   	items-center
   	justify-between
-  	pl-6
+  	pl-5
   	pr-4
   	py-2
   	w-full;
