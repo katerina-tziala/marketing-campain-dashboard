@@ -73,6 +73,62 @@ Feature code should stay local until there is a stable reuse case. Shared abstra
 
 The application-level orchestrator is the intentional exception to feature isolation. It is allowed to compose feature stores and translate lifecycle events between them so feature stores do not import each other directly. This keeps feature boundaries clearer while still allowing the dashboard page to behave as one coherent workflow.
 
+## Dashboard Orchestrator
+
+`useDashboardOrchestratorStore` (`id: 'dashboardOrchestrator'`, located in `app/src/app/stores/`) is the single coordination point between feature stores. Feature stores do not import each other. The orchestrator composes them and owns the flows that cross feature boundaries: AI panel lifecycle, campaign-to-AI context translation, portfolio eviction cleanup, and connection event notifications.
+
+Its exposed surface is narrow by design. The page receives derived computed state and two actions. Internal feature store references are not returned from the store setup function.
+
+### Responsibilities
+
+- Opening and closing the AI panel, coordinating both the connection store and the analysis store in a single call
+- Translating current campaign performance state into an AI analysis context object whenever portfolio selection or channel filters change
+- Clearing AI analysis cache when a portfolio is removed from the portfolio store
+- Dispatching toast notifications when a connection event occurs while the AI panel is closed
+
+### AI Panel Lifecycle
+
+`openAiPanel()` calls `aiConnection.openPanel()` then `aiAnalysis.onPanelOpen()`. `closeAiPanel()` calls `aiConnection.closePanel()` then `aiAnalysis.onPanelClose()`. Both stores must update on panel transitions: the connection store owns panel visibility state, the analysis store uses it to gate automatic refresh and request cancellation. All panel transitions must go through the orchestrator — no caller should reach the feature stores directly.
+
+### Context Translation
+
+A watcher on `mapAnalysisContext(campaignPerformance)` runs immediately on setup and re-runs on every campaign performance state change. It calls `onAnalysisContextChange`, which forwards the result to `aiAnalysis.setAnalysisContext()`.
+
+`mapAnalysisContext` reads from the campaign performance store and returns a flat object shaped to `AiAnalysisRequestContext`:
+
+| Field | Value |
+| --- | --- |
+| `portfolioId` | Active portfolio ID, or `null` when no portfolio is loaded |
+| `portfolioTitle` | Portfolio name |
+| `selectedChannelIds` | Copy of the selected channel IDs array |
+| `channelCount` | Number of selected channels when filters are active; total channel count otherwise |
+| `campaignCount` | Number of campaigns in the current filtered or unfiltered view |
+| `filtersActive` | `true` when at least one channel filter is selected |
+| `portfolioAnalysis` | `PortfolioAnalysis` derived from the active channel selection |
+| `portfolioBenchmark` | Unfiltered `PortfolioSummary` when filters are active; `undefined` otherwise |
+| `businessContext` | Portfolio `BusinessContext` (period + optional industry), or `null` when no portfolio is loaded |
+
+Before forwarding, `onAnalysisContextChange` checks that both `portfolioId` and `businessContext` are non-null. If either is missing, it calls `aiAnalysis.setAnalysisContext(null)`, which clears AI analysis state. This prevents the analysis store from operating on a partial or mismatched context.
+
+### Portfolio Eviction
+
+A watcher on `portfolioStore.lastEvictedId` fires when a portfolio is deleted. If the ID is non-null, the orchestrator calls `aiAnalysis.clearCacheForPortfolio(id)` to remove cached responses for that portfolio. The AI analysis store does not read portfolio store state directly, so this cleanup path is the orchestrator's responsibility.
+
+### Connection Event Notifications
+
+A watcher on `aiConnection.lastConnectionEvent` fires after each connection attempt. If the event is null, or if the AI panel is currently open, no toast is shown — the panel already surfaces connection feedback inline. When the panel is closed, a successful event produces a success toast with the provider name; a failed event produces an error toast with a hint to reopen the panel for details. This prevents duplicate feedback for users who complete a connection with the panel visible.
+
+### Exposed Surface
+
+| Computed | Source | Purpose |
+| --- | --- | --- |
+| `hasCampaigns` | `portfolioStore.portfolios.length > 0` | Controls whether the dashboard renders the upload placeholder or the campaign view |
+| `aiPanelOpen` | `aiConnection.aiPanelOpen` | Controls the drawer open state on the page |
+| `showAiButton` | `!aiConnection.aiPanelOpen` | Hides the AI button in the header while the panel is open |
+| `showConnectedDot` | `aiConnection.isConnected && !aiConnection.aiPanelOpen` | Shows the connected indicator on the AI button only when the panel is closed |
+
+Actions: `openAiPanel()`, `closeAiPanel()`.
+
 ## Data Flow and State
 
 Data flow is staged so invalid or stale data does not leak into downstream views:

@@ -54,11 +54,58 @@ Validation returns valid, non-duplicate campaign rows together with structured v
 
 ## Upload Flow
 
-Users provide portfolio metadata and upload a CSV file. Metadata is captured once per report and includes the report name, reporting period, and optional industry context.
+The upload modal collects portfolio metadata and a CSV file in a single form. Metadata is validated together with the file on submit. If any field fails validation, the form blocks submission and surfaces field-level errors.
 
-Successful imports emit a finalized portfolio payload. The portfolio store creates the portfolio entry, rebuilds derived channel mappings, and recomputes portfolio analysis state. Imports either initialize the first portfolio or replace the existing one.
+Once validation passes, a finalized `PortfolioInput` is emitted. The portfolio store creates the portfolio entry, rebuilds derived channel mappings, and recomputes the full portfolio analysis. Imports either initialize the first portfolio or replace the existing one.
 
-Replacement is intentional: when a portfolio already exists, the user must confirm before a new upload can replace the current dataset and reset active analysis.
+When a portfolio already exists, the user must confirm before a new upload can replace the current dataset and reset active analysis.
+
+## Portfolio Metadata
+
+The upload form collects four inputs that become the portfolio's identity and business context. Three are required; one is optional. All four are validated before the CSV data enters the portfolio store.
+
+### Campaign Report Name
+
+**Required.** A free-text label the user assigns to this dataset.
+
+- Validated as non-empty on blur and on submit
+- Trimmed before storage
+- Placeholder: `e.g. Q2 2025 Marketing Data`
+- Hint: "Use a name you will recognize later in the dashboard"
+
+The name is stored as `Portfolio.name` and displayed in the dashboard header throughout the session.
+
+### Reporting Period
+
+**Required.** A start date and end date that define the time range covered by the uploaded campaigns.
+
+Both dates are required and validated independently, then cross-validated as a pair:
+
+| Check | Rule |
+| ----- | ---- |
+| Required | Field must not be empty |
+| Format | Must match `DD/MM/YYYY` |
+| Valid date | Must be a real calendar date |
+| Range | Start date must be before or equal to end date |
+
+The date format is locale-driven (`DD/MM/YYYY` for `en-IE`). Dates are stored as ISO strings in `Period { from: string, to: string }` after passing validation.
+
+The period is stored as `Portfolio.period` and displayed in the dashboard header and AI analysis panel header. It is also passed to AI prompts as part of `BusinessContext` so the model can scope its analysis to the correct time range.
+
+### Industry
+
+**Optional.** A free-text label describing the business sector the campaigns belong to.
+
+- Empty input is accepted and stored as `undefined`
+- Trimmed before storage
+- Placeholder: `e.g. Retail, SaaS, Finance`
+- Hint: "Used to improve recommendations"
+
+When provided, industry is stored as `Portfolio.industry` and included in the `BusinessContext` passed to both AI analysis prompts (Budget Optimizer and Executive Summary). The model uses it to contextualize recommendations against sector-relevant benchmarks.
+
+### CSV File
+
+**Required.** The campaign data file. Full format and validation rules are covered in [CSV Format](#csv-format) and [Validation Logic](#validation-logic).
 
 ## CSV Format
 

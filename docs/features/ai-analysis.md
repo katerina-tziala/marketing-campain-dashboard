@@ -4,6 +4,14 @@ AI Analysis generates provider-backed insights from the active portfolio analysi
 
 The feature depends on AI Connection for provider credentials and selected model readiness. It depends on Campaign Performance for the current portfolio analysis context. It does not own provider connection, model discovery, raw campaign validation, or portfolio metric computation.
 
+## Tabs
+
+The feature presents two tabs: **Summary** and **Optimization**, in that order.
+
+**Summary** (Executive Summary) appears first. It provides a portfolio-level overview — health score, key insights, priorities, risks, and growth outlook — before the user sees any prescriptive recommendations. This order ensures the optimization recommendations in the second tab are evaluated against the context already established by the first.
+
+**Optimization** (Budget Optimizer) appears second. It provides budget reallocation and expansion recommendations derived from the portfolio analysis signals surfaced in the Summary tab.
+
 ## Feature Responsibilities
 
 AI Analysis is responsible for:
@@ -103,6 +111,21 @@ AI Analysis validates execution readiness and analysis constraints, not raw camp
 - Token-limited models must be excluded from later attempts in the same connection session
 
 These rules protect provider quotas, reduce misleading output, and keep AI responses aligned with the currently visible dashboard context.
+
+## Budget Optimization Output
+
+When Budget Optimization runs successfully, the response always includes a `summary`, a `recommendations` array, an `expansions` array, and a `noRecommendationReason` field.
+
+### No-recommendation state
+
+When both `recommendations` and `expansions` are empty, the portfolio has no actionable optimization opportunities in the current context. This is a valid, expected outcome — not an error.
+
+In this state the UI shows a "No Optimization Opportunities Identified" info notification. The body of that notification comes from `noRecommendationReason`:
+
+- **`noRecommendationReason` is a non-null string**: the model provides an explanation for why no recommendations were generated. This string is shown verbatim as the notification body.
+- **`noRecommendationReason` is null**: the model returned no explanation. The UI falls back to: "No optimization opportunities identified at this time."
+
+`noRecommendationReason` is typed as `string | null` on `BudgetOptimizerOutput`. Null is a valid provider response. Both values produce a complete user-facing state.
 
 ## State Handling
 

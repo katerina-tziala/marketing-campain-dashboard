@@ -17077,7 +17077,6 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Individual key references over spread — only way to interleave a custom breakpoint inside the default set while maintaining correct object key order; `defaultTheme.screens.*` references preserve the "single source of truth" benefit of the original spread
 
-
 ## [#726] Move screens from theme.extend to theme.screens
 **Type:** fix
 
@@ -17092,3 +17091,79 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 
 **Key decisions & why:**
 - `theme.screens` not `theme.extend.screens` — only way to guarantee CSS generation order matches breakpoint pixel order; extend appends custom screens after defaults in the CSS output regardless of config key order
+
+## [#727] Document portfolio metadata form in data-transfer.md
+**Type:** update
+
+**Summary:** Added a dedicated Portfolio Metadata section to `docs/features/data-transfer.md` covering the four upload form fields — report name, reporting period, industry, and CSV file — with field-level rules, validation logic, and downstream impact on `BusinessContext` and AI prompts.
+
+**Brainstorming:** The doc thoroughly covered the CSV format and validation pipeline but said nothing about the form fields the user must fill before submitting. Report name, start date, end date, and industry are all required to construct `PortfolioInput` / `BusinessContext`. Omitting them leaves readers unable to understand the upload flow or why AI prompts know the time horizon and sector context. The fix is a dedicated section that documents each field individually — label, required status, validation rules, placeholder, and downstream use — plus an expansion of the Upload Flow section to make clear that metadata and file are validated together on submit.
+
+**Prompt:** Portfolio metadata form is undocumented. data-transfer.md thoroughly covers the CSV format but says nothing about the upload form's metadata fields — report name, period (from/to), and optional industry. These are required inputs that drive the BusinessContext consumed by AI prompts. The upload flow section should describe them. Make sure the documentation is top notch.
+
+**What changed:**
+- `docs/features/data-transfer.md` — expanded Upload Flow section from 3 sentences to a proper submission-flow description; added new Portfolio Metadata section with four subsections: Campaign Report Name (required, trim, hint, error), Reporting Period (required, DD/MM/YYYY format, cross-field range check, ISO storage, downstream in BusinessContext), Industry (optional, trim, undefined when empty, AI prompt impact), CSV File (required, cross-reference to existing sections)
+
+**Key decisions & why:**
+- Separate subsection per field — each field has different required/optional status, different validation rules, and different downstream use; flat prose would bury these distinctions
+- Validation table for period — the period field has four independent checks (required, format, valid date, range); a table communicates this more clearly than a list
+- Explicit downstream impact per field — name → dashboard header, period → dashboard header + AI prompt time horizon, industry → AI prompt sector calibration; this connects the form to feature behavior that would otherwise be invisible to a reader
+- CSV File subsection added — closes the form description without duplicating content; the cross-reference keeps the section self-contained
+
+
+## [#728] Document Revenue vs Budget toggle in campaign-performance.md
+**Type:** update
+
+**Summary:** Expanded the Visual Analysis Outputs section in `docs/features/campaign-performance.md` to document the Revenue vs Budget chart as two distinct views — Performance (grouped bars) and Efficiency (gap percentage axis) — including toggle behavior, axis semantics, tooltip format, guard states, and the UX rationale for the toggle.
+
+**Brainstorming:** The doc described "Revenue vs budget by channel" as a single view. In the app it is a card with a pill toggle that switches between two fundamentally different charts: one absolute (budget + revenue side by side), one relative (efficiency gap in percentage points with direction-coded bars). These answer different questions. A user reading the doc would have no idea the toggle exists, why it exists, or what "efficiency gap" means. The fix is a dedicated subsection per view that explains what each shows, how to read the y-axis, and what the guard states mean — so a reader understands the UX decision and can interpret both charts.
+
+**Prompt:** Revenue vs Budget chart toggle is missing from campaign-performance.md. The Visual Analysis Outputs section describes "Revenue vs budget by channel" as a single view, but it's actually two — a "Performance" grouped-bar view and an "Efficiency Gap" percentage-axis view. The toggle is a meaningful UX decision worth documenting.
+
+**What changed:**
+- `docs/features/campaign-performance.md` — updated the "Revenue vs budget by channel" bullet to mention the two-view toggle; added a "Revenue vs Budget by Channel" subsection under Visual Analysis Outputs with: Performance view description (grouped bars, compact currency y-axis), Efficiency view description (efficiency gap in pp, direction-coded bars, legend, tooltip format, symmetric axis, minimum range guard), guard states table (single channel and zero-gap conditions with exact copy)
+
+**Key decisions & why:**
+- Separate subsection per view — the two views answer different questions; merging them in a single paragraph would bury the distinction that matters most: one is absolute spend/revenue, the other is share-relative allocation efficiency
+- Efficiency gap definition spelled out — "revenue share minus budget share" is not self-evident; without it, "overperforming" and "underperforming" labels are ambiguous
+- Guard states as a table — two distinct conditions with different messages; a table makes the conditions and their copy scannable without prose clutter
+- "Guard states are informative, not errors" note — prevents a reader from inferring the app is broken when the chart doesn't appear
+
+
+## [#729] Document tab ordering and noRecommendationReason in ai-analysis.md
+**Type:** update
+
+**Summary:** Added a Tabs section to `docs/features/ai-analysis.md` documenting the deliberate Summary-first, Optimization-second tab order, and a Budget Optimization Output section documenting the `noRecommendationReason` field and both user-facing states it produces.
+
+**Brainstorming:** The doc covered execution flow, caching, and error states well but said nothing about which tab appears first or why. Summary before Optimization is a product decision — orient before prescribe — that shapes the entire user experience of the AI panel. A reader has no way to infer this from the feature responsibilities list. Similarly, `noRecommendationReason` is a typed first-class field on `BudgetOptimizerOutput` (`string | null`), yet the doc had no mention of it. When both `recommendations` and `expansions` are empty the UI enters a distinct "no opportunities" state whose notification body is driven by this field — AI-provided explanation when non-null, a static default when null. Both are legitimate outcomes with different UX meaning. Documenting them closes a gap between the schema, the rendering logic, and what a reader can understand.
+
+**Prompt:** ai-analysis.md doesn't describe tab ordering or the noRecommendationReason field. The tab order (Summary first, Optimization second) is a deliberate product decision. noRecommendationReason is a first-class output field that determines whether a "no recommendations" state is shown with an AI-provided explanation or a default fallback — both are meaningful user-facing behaviors.
+
+**What changed:**
+- `docs/features/ai-analysis.md` — added Tabs section (immediately after the opening paragraph) documenting Summary-first ordering and the "orient before prescribe" rationale; added Budget Optimization Output section (before State Handling) documenting the no-recommendation state, the two `noRecommendationReason` paths (non-null string vs null), and the fallback copy
+
+**Key decisions & why:**
+- Tabs section placed before Feature Responsibilities — it sets the user-facing mental model before the implementation details; a reader encounters the structure before the behavior rules
+- "Orient before prescribe" named explicitly — the rationale is not self-evident from the UI; naming it makes the ordering decision readable as intent rather than accident
+- No-recommendation state described as valid outcome, not an error — both the type (`string | null`) and the rendering logic treat null as legitimate; the doc must communicate the same so readers don't treat an empty result as a defect
+- Null vs non-null distinction documented — these are two different user-facing strings with different origins (AI-generated vs static default); collapsing them in the doc would misrepresent the behavior
+
+
+## [#730] Document dashboard orchestrator in frontend-architecture.md
+**Type:** update
+
+**Summary:** Added a dedicated Dashboard Orchestrator section to `docs/architecture/frontend-architecture.md` covering the mediator's responsibilities, AI panel lifecycle, context translation contract, portfolio eviction path, connection event notification rules, and exposed surface.
+
+**Brainstorming:** The orchestrator was mentioned in two places — a single sentence in Feature Architecture and three bullets in AI UI Integration — but never described as a system. It is the only store allowed to compose feature stores, it owns two coordinated multi-store actions (openAiPanel/closeAiPanel), it runs three reactive watchers with distinct guard conditions, and its context translation logic (mapAnalysisContext) is the bridge between campaign performance state and AI analysis state. None of that was documented. A reader studying the codebase would have to trace four files to reconstruct the pattern. The fix is a dedicated section that specifies each responsibility, the exact translation contract, and the guard conditions for eviction and toast dispatch.
+
+**Prompt:** The dashboard orchestrator isn't documented beyond one paragraph in frontend-architecture.md. It's the only place where feature stores communicate, it owns the AI panel open/close lifecycle, it translates campaign context into AI context, and it dispatches toast notifications on connection events. That pattern deserves more than a side note. Document as a principal software engineer.
+
+**What changed:**
+- `docs/architecture/frontend-architecture.md` — added Dashboard Orchestrator section between Feature Architecture and Data Flow and State, with subsections: Responsibilities, AI Panel Lifecycle, Context Translation (field-level table of mapAnalysisContext output), Portfolio Eviction, Connection Event Notifications, Exposed Surface (table of computed state and actions)
+
+**Key decisions & why:**
+- Placed before Data Flow and State — the Data Flow section references the orchestrator in step 5; the orchestrator section must appear first so a reader has the full model before the data flow walkthrough
+- Context translation documented as a field table — the mapping is the orchestrator's most complex behavior; prose would obscure which fields are computed vs passed through vs conditionally set
+- Null guard condition called out explicitly — the `portfolioId`/`businessContext` null check is the condition that clears AI analysis state; it is not obvious from reading the store name alone
+- Toast suppression rule documented — the "panel open → no toast" guard is a meaningful behavioral decision that affects UX; without it, readers would not know why toasts sometimes appear and sometimes do not
+- Exposed surface as a table — makes the public API scannable and distinguishes it from internal implementation detail
