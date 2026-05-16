@@ -231,7 +231,6 @@ watch(modalOpen, (open) => {
 
 .responsive-drawer-content {
   @apply min-h-0
-  	overflow-hidden
-  	pb-4;
+  	overflow-hidden;
 }
 </style>

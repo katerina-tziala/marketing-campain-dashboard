@@ -84,7 +84,7 @@ function handleApiKeyBlur(): void {
 
 <template>
   <div class="conn-form">
-    <div class="scrollbar-on-surface conn-form-content">
+    <div class="scrollbar-stable scrollbar-on-surface conn-form-content">
       <p class="conn-intro">
         Connect your AI API key to enable Executive Summary and Budget Optimization features
       </p>
@@ -150,8 +150,7 @@ function handleApiKeyBlur(): void {
   @apply h-full
   	min-h-[50vh]
   	overflow-hidden
-  	pb-2
-  	pt-4
+  	py-4
   	px-0
   	w-full;
 }
@@ -163,8 +162,8 @@ function handleApiKeyBlur(): void {
   	h-full
   	mx-auto
   	overflow-auto
-  	pl-6
-  	pr-6
+  	px-6
+  	py-0
   	w-full;
 }
 

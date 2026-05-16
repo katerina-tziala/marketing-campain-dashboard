@@ -10,7 +10,7 @@ import {
   AnalysisState,
 } from '../components';
 import { useAiAnalysisStore } from '../stores';
-import { ANALYSIS_ERROR_MESSAGES } from '../utils';
+import { ANALYSIS_ERROR_MESSAGES, sortReallocationsByRevenueDesc } from '../utils';
 import BudgetExpansions from './BudgetExpansions.vue';
 import BudgetRecommendations from './BudgetRecommendations.vue';
 import BudgetReductions from './BudgetReductions.vue';
@@ -44,22 +44,9 @@ const noRecommendationMessage = computed(
 );
 
 const reallocations = computed(() =>
-  (response.value?.recommendations.filter((r) => r.type === 'reallocation') ?? [])
-    .slice()
-    .sort((a, b) => {
-      const aRev = a.expectedImpact.revenueChange;
-      const bRev = b.expectedImpact.revenueChange;
-      if (aRev === null && bRev === null) {
-        return 0;
-      }
-      if (aRev === null) {
-        return 1;
-      }
-      if (bRev === null) {
-        return -1;
-      }
-      return bRev - aRev;
-    }),
+  sortReallocationsByRevenueDesc(
+    response.value?.recommendations.filter((r) => r.type === 'reallocation') ?? [],
+  ),
 );
 
 const reductions = computed(

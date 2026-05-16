@@ -162,7 +162,7 @@ defineExpose({
   &:not(:disabled) {
     &:hover,
     &:focus-visible {
-      @apply bg-primary-light/[12%]
+      @apply bg-primary-light/10
       	text-primary-light;
     }
 
@@ -170,7 +170,7 @@ defineExpose({
       @apply ring-2
       	ring-offset-1
       	ring-offset-background
-      	ring-primary-lighter;
+      	ring-primary-light;
     }
   }
 }

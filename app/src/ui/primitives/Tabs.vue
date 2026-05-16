@@ -75,7 +75,6 @@ onMounted(() => {
       :class="{ 'tab-active': activeTab === tab.id }"
       role="tab"
       :aria-selected="activeTab === tab.id"
-      :aria-controls="`tabpanel-${tab.id}`"
       :tabindex="(activeTab ?? tabs[0]?.id) === tab.id ? 0 : -1"
       @click="emit('change', tab.id)"
     >

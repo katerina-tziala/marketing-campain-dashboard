@@ -1,6 +1,8 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 
+import { generateId } from '@/shared/utils';
+
 import { buildChannelMap, computePortfolioAnalysis } from './analysis';
 import type { Portfolio, PortfolioInput } from './types';
 
@@ -19,7 +21,7 @@ export const usePortfolioStore = defineStore('portfolio', () => {
     const channelMap = buildChannelMap(input.campaigns);
     const channels = Array.from(channelMap.values());
     return {
-      id: crypto.randomUUID(),
+      id: generateId('portfolio'),
       name: input.name,
       period: input.period,
       industry: input.industry,

@@ -16865,3 +16865,121 @@ Development log for the project. Every feature built, bug fixed, refactoring don
 **Key decisions & why:**
 - Single element in template — `::before` flex item centers inside the badge wrapper without an inner span
 - Keyframe renamed `connected-dot-pop` to match the utility namespace and avoid collision with any other local `dot-pop` name
+
+
+## [#715] Centralise UI ID generation in a shared utility
+**Type:** refactor
+
+**Summary:** Replaced inconsistent ID generation across the UI library (`Math.random()` in `Disclosure.vue`, inline `crypto.randomUUID()` in `useModalAria.ts`) with a single `generateId(prefix)` utility in `ui/utils/`.
+
+**Brainstorming:** Two components in the UI library were generating unique IDs using different approaches. `Disclosure.vue` used `Math.random().toString(36).slice(2, 9)` which produces a short but non-cryptographically-random suffix and is easy to silently weaken if copy-pasted elsewhere. `useModalAria.ts` used `crypto.randomUUID()` directly, which is correct but inline. A thin wrapper in a dedicated utils folder standardises the pattern, makes the intent explicit via the `prefix` parameter, and gives a single place to change the strategy if needed.
+
+**Prompt:** Disclosure.vue uses Math.random() for ID generation — useModalAria uses crypto.randomUUID(). Inconsistent ID generation across the UI library. Create a utils folder in ui and create an ID generator that wraps crypto. Then use that function where we generate IDs for UI.
+
+**What was built:**
+- `app/src/ui/utils/generate-id.ts` — `generateId(prefix: string): string` wraps `crypto.randomUUID()` and returns `"${prefix}-${uuid}"`
+- `app/src/ui/utils/index.ts` — barrel exporting `generateId`
+- `app/src/ui/index.ts` — added `export * from './utils'` to public barrel
+- `app/src/ui/primitives/Disclosure.vue` — replaced `Math.random()` expression with `generateId('disclosure')`; added local import from `../utils`
+- `app/src/ui/accessibility/useModalAria.ts` — replaced inline `crypto.randomUUID()` with `generateId('modal-title')`; added local import from `../utils`
+
+**Key decisions & why:**
+- Wrapper kept minimal (one line) — no options, no fallback, no polyfill; `crypto.randomUUID()` is available in all target environments
+- `utils/` exported from the public `@/ui` barrel — consistent with all other UI sub-folders; keeps the surface area of `generateId` available to app/feature code if ever needed without a separate import path
+
+
+## [#716] Move generateId to shared/utils and enforce single crypto call site
+**Type:** refactor
+
+**Summary:** Moved `generateId` from `ui/utils/` to `shared/utils/` so all `crypto.randomUUID()` calls across the codebase go through a single wrapper; updated `portfolio.store.ts` to use it instead of calling crypto directly.
+
+**Brainstorming:** After #715 added `generateId` to `ui/utils/`, two problems remained: `shared/portfolio/portfolio.store.ts` still called `crypto.randomUUID()` directly (a layer that cannot import from `@/ui`), and the rule that crypto should only be called through the wrapper was not yet enforced. Moving `generateId` to `shared/utils/` fixes the layer direction (`ui` can import from `shared`, not the reverse) and makes the wrapper the only path to `crypto.randomUUID()` in the codebase. The `ui/utils/` folder was deleted since it no longer had a purpose; `Disclosure.vue` and `useModalAria.ts` now import from `@/shared/utils` directly.
+
+**Prompt:** Move generateId to shared — we should not use crypto any other way, only through the wrapper.
+
+**What changed:**
+- `app/src/shared/utils/generate-id.ts` — created; contains `generateId(prefix)` wrapping `crypto.randomUUID()`
+- `app/src/shared/utils/index.ts` — added `export * from './generate-id'`
+- `app/src/shared/portfolio/portfolio.store.ts` — replaced `crypto.randomUUID()` with `generateId('portfolio')`; added import from `@/shared/utils`
+- `app/src/ui/primitives/Disclosure.vue` — updated import from `../utils` → `@/shared/utils`
+- `app/src/ui/accessibility/useModalAria.ts` — updated import from `../utils` → `@/shared/utils`
+- `app/src/ui/utils/generate-id.ts` — deleted
+- `app/src/ui/utils/index.ts` — deleted
+- `app/src/ui/index.ts` — removed `export * from './utils'`
+
+**Key decisions & why:**
+- `shared/utils` is the correct home — it has no framework dependencies, is importable by both `shared/` and `ui/`, and follows the existing layer hierarchy
+- Portfolio entity IDs now get a `"portfolio-"` prefix — entity keys only need uniqueness, and the prefix makes log/debug output self-describing
+- `ui/utils/` deleted entirely — no remaining content; leaving an empty barrel would be noise
+
+
+## [#717] Extract budget optimizer reallocation sort into a utility
+**Type:** refactor
+
+**Summary:** Moved the inline null-safe revenue-change comparator out of `BudgetOptimizationAnalysis.vue` into a dedicated `budget-optimization-sort.ts` utility in `ai-analysis/utils/`.
+
+**Brainstorming:** The inline sort comparator in the `reallocations` computed was a presentation concern leaking into a component that should only compose views. A pure utility function is trivially testable without Pinia setup, immediately reusable by any other component in the feature, and keeps the component computed readable at a glance. The utility lives in `ai-analysis/utils/` (not inside `budget-optimization/`) because `BudgetRecommendation` is an `ai-analysis` response type and `ai-analysis/utils/` is the established utilities layer for this feature — placing it inside the subfolder would create an inconsistent parallel utils layer.
+
+**Prompt:** Extract the inline sort comparator from BudgetOptimizationAnalysis.vue into a utility in ai-analysis/utils/.
+
+**What changed:**
+- `ai-analysis/utils/budget-optimization-sort.ts` — created; exports `sortReallocationsByRevenueDesc(recommendations)` — null-safe descending sort on `revenueChange`
+- `ai-analysis/utils/index.ts` — added `export * from './budget-optimization-sort'`
+- `budget-optimization/BudgetOptimizationAnalysis.vue` — replaced 13-line inline comparator with `sortReallocationsByRevenueDesc(...)` call; imported from `../utils`
+
+**Key decisions & why:**
+- New file rather than adding to an existing utils file — consistent with the focused single-concern naming pattern already used (`analysis-messages.ts`, `analysis-prompt.ts`, `tab-state.ts`)
+- `slice()` moved into the utility — the utility owns the sort contract, so it should also own the immutability guarantee
+
+
+## [#718] Document GroupedCampaignTable animation technique
+**Type:** update
+
+**Summary:** Added a reference comment block to `GroupedCampaignTable.vue` explaining the smooth table-row expand/collapse technique so it is preserved as a study reference and not mistakenly deleted as dead code.
+
+**Brainstorming:** The file is not wired into the production view but contains a non-obvious JS-driven animation pattern worth keeping. Rather than deleting it or leaving it undocumented, a comment block at the top of the script captures the full technique — the three-div nesting structure, the `grid-template-rows: 0fr → 1fr` trick, the forced-reflow step, and how Vue's `:css="false"` hooks integrate with the JS driver.
+
+**Prompt:** GroupedCampaignTable.vue is dead code but I need to keep it as a study reference for its smooth transitioning table. Add comments at the top of the file explaining the implementation so it is kept intact.
+
+**What changed:**
+- `app/src/features/campaign-performance/components/GroupedCampaignTable.vue` — added a multi-line reference comment block at the top of the `<script setup>` block explaining the grid-template-rows trick, the three-div nesting, the reflow-then-transition driver pattern, and the Vue Transition `:css="false"` integration
+
+**Key decisions & why:**
+- Comment placed at the very top of the script block so it is seen immediately when the file is opened
+- Explains the "why" of each layer (`.collapse-cell` / `.collapse-cell-inner` / `.collapse-cell-content`) — without this, the nesting looks redundant
+- Notes the `void cells[0].offsetHeight` reflow trick explicitly — this is the line most likely to be misread as a mistake and deleted
+
+
+## [#719] Remove redundant tabindex from AI analysis tab panel
+**Type:** fix
+
+**Summary:** Removed `tabindex="0"` from the tabpanel `<div>` in `AiAnalysis.vue` — it was redundant because the panel always contains focusable children, and was causing an unwanted focus outline on a non-interactive container.
+
+**Brainstorming:** `tabindex="0"` on a tabpanel is only needed when the panel has no focusable children, giving keyboard users somewhere to land. Both analysis tabs always contain at least an Analyze button (sometimes disabled, but other focusable elements are present), so users Tab naturally into the panel content. The attribute was producing a visible browser focus ring on the container div with no accessibility benefit.
+
+**Prompt:** Remove tabindex="0" from the tabpanel div in AiAnalysis.vue.
+
+**What changed:**
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — removed `tabindex="0"` from the tabpanel div
+
+**Key decisions & why:**
+- No replacement needed — `role="tabpanel"` and `aria-labelledby` are retained; only the redundant focusability is removed
+- A disabled button does not receive focus but other panel elements do, so the panel is never a keyboard dead end
+
+
+## [#720] Fix broken aria-controls in Tabs component
+**Type:** fix
+
+**Summary:** Removed `aria-controls` from `Tabs.vue` and the corresponding `id` from the tab panel in `AiAnalysis.vue` — `aria-controls` was referencing panel IDs that don't exist in the DOM when panels use `v-if`.
+
+**Brainstorming:** `aria-controls` on each tab button pointed to `id="tabpanel-${tab.id}"`, but only the active panel is mounted (v-if). Every inactive tab button held a broken ARIA reference. Per the APG spec, `aria-controls` is optional for tabs — the authoritative accessibility connection is `aria-labelledby` on the panel pointing back to the tab button ID. Dropping `aria-controls` removes the broken references with no accessibility regression. The panel ID was only needed as an `aria-controls` target, so it is removed too.
+
+**Prompt:** Fix aria-controls in Tabs.vue — it references panel IDs that don't exist when panels use v-if. Option A: drop aria-controls (optional per spec) and remove the panel id.
+
+**What changed:**
+- `app/src/ui/primitives/Tabs.vue` — removed `:aria-controls` from tab buttons
+- `app/src/features/ai-tools/ai-analysis/AiAnalysis.vue` — removed `:id` from the tabpanel div
+
+**Key decisions & why:**
+- Dropped aria-controls rather than switching to v-show — v-if is intentional (lazy mount per tab); mounting both analysis components immediately would trigger unwanted store watchers
+- aria-controls is marked optional in WAI-ARIA APG and has inconsistent screen reader support — dropping it is a clean fix with no functional cost

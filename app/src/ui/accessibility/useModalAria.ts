@@ -1,3 +1,5 @@
+import { generateId } from '@/shared/utils';
+
 export function useModalAria(): {
   titleId: string;
   dialogAria: {
@@ -6,7 +8,7 @@ export function useModalAria(): {
     'aria-labelledby': string;
   };
 } {
-  const titleId = `modal-title-${crypto.randomUUID()}`;
+  const titleId = generateId('modal-title');
 
   const dialogAria = {
     role: 'dialog',

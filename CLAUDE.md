@@ -592,6 +592,9 @@ The `@/features/` prefix is **only for cross-feature and cross-layer imports** (
   - Props: defined as `myProp` in script, bound as `:my-prop` in template.
   - Events: emitted as `emit('myEvent')` in script, listened to as `@my-event` in template.
 
+### TypeScript / ESLint rules
+- **Always use braces for `if` bodies** — `curly: ['error', 'all']` is enforced. Never write braceless one-liner `if` statements, even for early returns.
+
 ### Constants and default values
 - Prop defaults and magic numbers are declared as named `const` above `defineProps`, not inline with `??`. Example: `const MIN_WIDTH = 300` then `props.minWidth ?? MIN_WIDTH`.
 - Use SCREAMING_SNAKE_CASE for module-level constants.

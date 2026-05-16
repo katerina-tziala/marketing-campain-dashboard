@@ -17,7 +17,7 @@ function hasLink(step: ProviderHelpStep): boolean {
     <template #trigger="{ open, toggle, contentId }">
       <Button
         variant="text-only"
-        class="self-start w-full !px-2.5 !justify-start"
+        class="self-start w-full !px-2 !justify-start !border-b !border"
         type="button"
         :aria-expanded="open"
         :aria-controls="contentId"
